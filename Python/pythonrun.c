@@ -1277,34 +1277,21 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     if (!globals) {
         goto error;
     }
-    else if (PyDict_Check(globals)) {
-        has_builtins = PyDict_ContainsString(globals, "__builtins__");
-        if (has_builtins < 0) {
-            return NULL;
-        }
-        if (!has_builtins) {
-            if (PyDict_SetItemString(globals, "__builtins__",
-                                     tstate->interp->builtins) < 0) {
-                return NULL;
-            }
-        }
-    }
-    else if (PyMapping_Check(globals)) {
-        has_builtins = PyMapping_HasKeyStringWithError(globals, "__builtins__");
-        if (has_builtins < 0) {
-            return NULL;
-        }
-        if (!has_builtins) {
-            if (PyMapping_SetItemString(globals, "__builtins__",
-                                        tstate->interp->builtins) < 0) {
-                return NULL;
-            }
-        }
-    }
+    else _Py_IF_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__builtins__),
+                                         has_builtins, TEST_MAPPING)
     else {
 error:
         PyErr_SetString(PyExc_SystemError, "globals must be a mapping");
         return NULL;
+    }
+    if (!has_builtins) {
+        int r;
+        _Py_IF_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                       tstate->interp->builtins, r,
+                                       NOTEST_MAPPING)
+        if (r < 0) {
+            return NULL;
+        }
     }
 
     v = PyEval_EvalCode((PyObject*)co, globals, locals);

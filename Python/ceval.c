@@ -206,12 +206,8 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
         return 0;
     }
     int r;
-    if (PyDict_Check(globals)) {
-        r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
-    }
-    else {
-        r = PyMapping_HasKeyWithError(globals, &_Py_ID(__lltrace__));
-    }
+    _Py_IF_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__lltrace__), r,
+                                    NOTEST_MAPPING)
     if (r < 0) {
         return -1;
     }

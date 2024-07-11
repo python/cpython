@@ -18,7 +18,7 @@ PyDoc_STRVAR(func_new__doc__,
 "  code\n"
 "    a code object\n"
 "  globals\n"
-"    the globals dictionary\n"
+"    the globals mapping\n"
 "  name\n"
 "    a string that overrides the name from the code object\n"
 "  argdefs\n"
@@ -82,10 +82,6 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     code = (PyCodeObject *)fastargs[0];
-    if (!PyDict_Check(fastargs[1])) {
-        _PyArg_BadArgument("function", "argument 'globals'", "dict", fastargs[1]);
-        goto exit;
-    }
     globals = fastargs[1];
     if (!noptargs) {
         goto skip_optional_pos;
@@ -115,4 +111,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=10947342188f38a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea683473928f1d5d input=a9049054013a1b77]*/

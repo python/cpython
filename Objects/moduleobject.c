@@ -62,16 +62,20 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     if (doc == NULL)
         doc = Py_None;
 
-    if (PyDict_SetItem(md_dict, &_Py_ID(__name__), name) != 0)
-        return -1;
-    if (PyDict_SetItem(md_dict, &_Py_ID(__doc__), doc) != 0)
-        return -1;
-    if (PyDict_SetItem(md_dict, &_Py_ID(__package__), Py_None) != 0)
-        return -1;
-    if (PyDict_SetItem(md_dict, &_Py_ID(__loader__), Py_None) != 0)
-        return -1;
-    if (PyDict_SetItem(md_dict, &_Py_ID(__spec__), Py_None) != 0)
-        return -1;
+    int r;
+
+#define _Py_MODULE_INIT_SETATTR(name, value) \
+    _Py_IF_DICT_OR_MAPPING_SETITEM(md_dict, &_Py_ID(name), value, r, \
+                                   NOTEST_MAPPING) \
+    if (r != 0) { \
+        return -1; \
+    }
+
+    _Py_MODULE_INIT_SETATTR(__name__, name)
+    _Py_MODULE_INIT_SETATTR(__doc__, doc)
+    _Py_MODULE_INIT_SETATTR(__package__, Py_None)
+    _Py_MODULE_INIT_SETATTR(__loader__, Py_None)
+    _Py_MODULE_INIT_SETATTR(__spec__, Py_None)
     if (PyUnicode_CheckExact(name)) {
         Py_XSETREF(mod->md_name, Py_NewRef(name));
     }
@@ -566,11 +570,14 @@ PyModule_GetNameObject(PyObject *mod)
         return NULL;
     }
     PyObject *dict = ((PyModuleObject *)mod)->md_dict;  // borrowed reference
-    if (dict == NULL || !PyDict_Check(dict)) {
+    if (dict == NULL || !PyMapping_Check(dict)) {
         goto error;
     }
     PyObject *name;
-    if (PyDict_GetItemRef(dict, &_Py_ID(__name__), &name) <= 0) {
+    int r;
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__name__), &name, r,
+                                      NOTEST_MAPPING)
+    if (r <= 0) {
         // error or not found
         goto error;
     }
@@ -611,7 +618,10 @@ PyModule_GetFilenameObject(PyObject *mod)
         goto error;
     }
     PyObject *fileobj;
-    if (PyDict_GetItemRef(dict, &_Py_ID(__file__), &fileobj) <= 0) {
+    int r;
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__file__), &fileobj, r,
+                                      NOTEST_MAPPING)
+    if (r <= 0) {
         // error or not found
         goto error;
     }
@@ -672,57 +682,79 @@ _PyModule_Clear(PyObject *m)
 void
 _PyModule_ClearDict(PyObject *d)
 {
-    /* To make the execution order of destructors for global
-       objects a bit more predictable, we first zap all objects
-       whose name starts with a single underscore, before we clear
-       the entire dictionary.  We zap them by replacing them with
-       None, rather than deleting them from the dictionary, to
-       avoid rehashing the dictionary (to some extent). */
+    /* To make the execution order of destructors for global objects a bit
+       more predictable, we first zap all objects whose name starts with a
+       single underscore, before we clear the entire mapping.  We zap them
+       by replacing them with None, rather than deleting them from the mapping,
+       to avoid rehashing the mapping (to some extent). */
 
     Py_ssize_t pos;
     PyObject *key, *value;
 
     int verbose = _Py_GetConfig()->verbose;
 
-    /* First, clear only names starting with a single underscore */
-    pos = 0;
-    while (PyDict_Next(d, &pos, &key, &value)) {
-        if (value != Py_None && PyUnicode_Check(key)) {
-            if (PyUnicode_READ_CHAR(key, 0) == '_' &&
-                PyUnicode_READ_CHAR(key, 1) != '_') {
-                if (verbose > 1) {
-                    const char *s = PyUnicode_AsUTF8(key);
-                    if (s != NULL)
-                        PySys_WriteStderr("#   clear[1] %s\n", s);
-                    else
-                        PyErr_Clear();
-                }
-                if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
-                }
-            }
-        }
+#define _Py_MODULE_CLEARDICT_ITER_DICT(action_block) \
+    pos = 0; \
+    while (PyDict_Next(d, &pos, &key, &value)) { \
+        action_block \
     }
 
-    /* Next, clear all names except for __builtins__ */
-    pos = 0;
-    while (PyDict_Next(d, &pos, &key, &value)) {
-        if (value != Py_None && PyUnicode_Check(key)) {
-            if (PyUnicode_READ_CHAR(key, 0) != '_' ||
-                !_PyUnicode_EqualToASCIIString(key, "__builtins__"))
-            {
-                if (verbose > 1) {
-                    const char *s = PyUnicode_AsUTF8(key);
-                    if (s != NULL)
-                        PySys_WriteStderr("#   clear[2] %s\n", s);
-                    else
-                        PyErr_Clear();
-                }
-                if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
-                }
-            }
-        }
+#define _Py_MODULE_CLEARDICT_ITER_MAPPING(action_block) \
+    for (pos = 0; pos < size; pos++) { \
+        PyObject *key_value = PyList_GET_ITEM(items, pos); \
+        key = PyTuple_GET_ITEM(key_value, 0); \
+        value = PyTuple_GET_ITEM(key_value, 1); \
+        action_block \
+    }
+
+#define _Py_MODULE_CLEARDICT_BY(filter, phase) \
+    if (value != Py_None && PyUnicode_Check(key)) { \
+        if (filter) { \
+            if (verbose > 1) { \
+                const char *s = PyUnicode_AsUTF8(key); \
+                if (s != NULL) \
+                    PySys_WriteStderr("#   clear[" phase "] %s\n", s); \
+                else \
+                    PyErr_Clear(); \
+            } \
+            int r; \
+            _Py_IF_DICT_OR_MAPPING_SETITEM(d, key, Py_None, r, \
+                                           NOTEST_MAPPING) \
+            if (r != 0) { \
+                PyErr_FormatUnraisable( \
+                    "Exception ignored on clearing module dict"); \
+            } \
+        } \
+    }
+
+    if (PyDict_Check(d)) {
+        /* First, clear only names starting with a single underscore */
+        _Py_MODULE_CLEARDICT_ITER_DICT(
+            _Py_MODULE_CLEARDICT_BY(
+                PyUnicode_READ_CHAR(key, 0) == '_' &&
+                PyUnicode_READ_CHAR(key, 1) != '_', "1"))
+
+        /* Next, clear all names except for __builtins__ */
+        _Py_MODULE_CLEARDICT_ITER_DICT(
+            _Py_MODULE_CLEARDICT_BY(
+                PyUnicode_READ_CHAR(key, 0) != '_' &&
+                !_PyUnicode_EqualToASCIIString(key, "__builtins__"), "2"))
+    }
+    else {
+        PyObject *items = PyMapping_Items(d);
+        Py_ssize_t size = PyList_Size(items);
+
+        /* First, clear only names starting with a single underscore */
+        _Py_MODULE_CLEARDICT_ITER_MAPPING(
+            _Py_MODULE_CLEARDICT_BY(
+                PyUnicode_READ_CHAR(key, 0) == '_' &&
+                PyUnicode_READ_CHAR(key, 1) != '_', "1"))
+
+        /* Next, clear all names except for __builtins__ */
+        _Py_MODULE_CLEARDICT_ITER_MAPPING(
+            _Py_MODULE_CLEARDICT_BY(
+                PyUnicode_READ_CHAR(key, 0) != '_' &&
+                !_PyUnicode_EqualToASCIIString(key, "__builtins__"), "2"))
     }
 
     /* Note: we leave __builtins__ in place, so that destructors
@@ -940,7 +972,10 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         PyErr_Clear();
     }
     assert(m->md_dict != NULL);
-    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
+    int r;
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__getattr__),
+                                     &getattr, r, NOTEST_MAPPING)
+    if (r < 0) {
         return NULL;
     }
     if (getattr) {
@@ -958,7 +993,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     if (suppress == 1) {
         return NULL;
     }
-    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name) < 0) {
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__name__), &mod_name,
+                                     r, NOTEST_MAPPING)
+    if (r < 0) {
         return NULL;
     }
     if (!mod_name || !PyUnicode_Check(mod_name)) {
@@ -968,7 +1005,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         return NULL;
     }
     PyObject *spec;
-    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__spec__), &spec, r,
+                                     NOTEST_MAPPING)
+    if (r < 0) {
         Py_DECREF(mod_name);
         return NULL;
     }
@@ -1109,17 +1148,21 @@ module_dir(PyObject *self, PyObject *args)
     PyObject *dict = PyObject_GetAttr(self, &_Py_ID(__dict__));
 
     if (dict != NULL) {
-        if (PyDict_Check(dict)) {
-            PyObject *dirfunc = PyDict_GetItemWithError(dict, &_Py_ID(__dir__));
-            if (dirfunc) {
-                result = _PyObject_CallNoArgs(dirfunc);
-            }
-            else if (!PyErr_Occurred()) {
-                result = PyDict_Keys(dict);
-            }
-        }
+        PyObject *dirfunc;
+        int r;
+        _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__dir__), &dirfunc, r,
+                                          TEST_MAPPING)
         else {
-            PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
+            PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a mapping");
+        }
+        if (!PyErr_Occurred()) {
+            if (r == 0) {
+                _Py_IF_DICT_OR_MAPPING_KEYS(dict, result, NOTEST_MAPPING)
+            }
+            else {
+                result = _PyObject_CallNoArgs(dirfunc);
+                Py_DECREF(dirfunc);
+            }
         }
     }
 
@@ -1140,8 +1183,8 @@ module_get_dict(PyModuleObject *m)
     if (dict == NULL) {
         return NULL;
     }
-    if (!PyDict_Check(dict)) {
-        PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
+    if (!PyMapping_Check(dict)) {
+        PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a mapping");
         Py_DECREF(dict);
         return NULL;
     }
@@ -1157,9 +1200,14 @@ module_get_annotate(PyModuleObject *m, void *Py_UNUSED(ignored))
     }
 
     PyObject *annotate;
-    if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) == 0) {
+    int r;
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotate__), &annotate,
+        r, NOTEST_MAPPING)
+    if (r == 0) {
         annotate = Py_None;
-        if (PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate) == -1) {
+        _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotate__), annotate,
+        r, NOTEST_MAPPING)
+        if (r == -1) {
             Py_CLEAR(annotate);
         }
     }
@@ -1185,14 +1233,22 @@ module_set_annotate(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored)
         return -1;
     }
 
-    if (PyDict_SetItem(dict, &_Py_ID(__annotate__), value) == -1) {
+    int r;
+    _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotate__), value, r,
+                                   NOTEST_MAPPING)
+    if (r == -1) {
         Py_DECREF(dict);
         return -1;
     }
     if (!Py_IsNone(value)) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
-            Py_DECREF(dict);
-            return -1;
+        _Py_IF_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotations__), r,
+                                       NOTEST_MAPPING)
+        if (r == -1) {
+            if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+                Py_DECREF(dict);
+                return -1;
+            }
+            PyErr_Clear();
         }
     }
     Py_DECREF(dict);
@@ -1208,9 +1264,15 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
     }
 
     PyObject *annotations;
-    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) == 0) {
+    int r;
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotations__),
+                                      &annotations, r, NOTEST_MAPPING)
+    if (r == 0) {
         PyObject *annotate;
-        int annotate_result = PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate);
+        int annotate_result;
+        _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotate__),
+                                      &annotate, annotate_result,
+                                      NOTEST_MAPPING)
         if (annotate_result < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -1224,7 +1286,8 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                PyErr_Format(PyExc_TypeError,
+                             "__annotate__ returned non-dict of type '%.100s'",
                              Py_TYPE(annotations)->tp_name);
                 Py_DECREF(annotate);
                 Py_DECREF(annotations);
@@ -1237,8 +1300,9 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
         }
         Py_XDECREF(annotate);
         if (annotations) {
-            int result = PyDict_SetItem(
-                    dict, &_Py_ID(__annotations__), annotations);
+            int result;
+            _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotations__),
+                                           annotations, result, NOTEST_MAPPING)
             if (result) {
                 Py_CLEAR(annotations);
             }
@@ -1259,21 +1323,32 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
 
     if (value != NULL) {
         /* set */
-        ret = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
+        _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotations__), value,
+                                       ret, NOTEST_MAPPING)
     }
     else {
         /* delete */
-        ret = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
-        if (ret == 0) {
+        _Py_IF_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotations__), ret,
+                                       NOTEST_MAPPING)
+        if (ret == -1 && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__annotations__));
-            ret = -1;
         }
         else if (ret > 0) {
             ret = 0;
         }
     }
-    if (ret == 0 && PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
-        ret = -1;
+    if (ret == 0) {
+        int r;
+        _Py_IF_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotate__), r,
+                                       NOTEST_MAPPING)
+        if (r == -1) {
+            if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                PyErr_Clear();
+            }
+            else {
+                ret = -1;
+            }
+        }
     }
 
     Py_DECREF(dict);

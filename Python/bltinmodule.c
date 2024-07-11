@@ -990,18 +990,8 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     int r;
-    if (PyDict_Check(globals)) {
-        r = PyDict_Contains(globals, &_Py_ID(__builtins__));
-        if (r == 0) {
-            r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
-        }
-    }
-    else if (PyMapping_Check(globals)) {
-        r = PyMapping_HasKeyWithError(globals, &_Py_ID(__builtins__));
-        if (r == 0) {
-            r = PyObject_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
-        }
-    }
+    _Py_IF_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__builtins__), r,
+                                    TEST_MAPPING)
     else {
         PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
                      Py_TYPE(globals)->tp_name);
@@ -1009,6 +999,13 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
     if (r < 0) {
         goto error;
+    }
+    if (r == 0) {
+        _Py_IF_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                       PyEval_GetBuiltins(), r, NOTEST_MAPPING)
+        if (r < 0) {
+            goto error;
+        }
     }
 
     if (PyCode_Check(source)) {
@@ -1102,18 +1099,8 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     int r;
-    if (PyDict_Check(globals)) {
-        r = PyDict_Contains(globals, &_Py_ID(__builtins__));
-        if (r == 0) {
-            r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
-        }
-    }
-    else if (PyMapping_Check(globals)) {
-        r = PyMapping_HasKeyWithError(globals, &_Py_ID(__builtins__));
-        if (r == 0) {
-            r = PyObject_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
-        }
-    }
+    _Py_IF_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__builtins__), r,
+                                    TEST_MAPPING)
     else {
         PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
                      Py_TYPE(globals)->tp_name);
@@ -1121,6 +1108,13 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
     if (r < 0) {
         goto error;
+    }
+    if (r == 0) {
+        _Py_IF_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                       PyEval_GetBuiltins(), r, NOTEST_MAPPING)
+        if (r < 0) {
+            goto error;
+        }
     }
 
     if (closure == Py_None) {

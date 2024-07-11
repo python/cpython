@@ -351,9 +351,6 @@ class ArbitraryFunctionAttrTest(FuncAttrsTest):
 class FunctionDictsTest(FuncAttrsTest):
     def test_setting_dict_to_invalid(self):
         self.cannot_set_attr(self.b, '__dict__', None, TypeError)
-        from collections import UserDict
-        d = UserDict({'known_attr': 7})
-        self.cannot_set_attr(self.fi.a.__func__, '__dict__', d, TypeError)
 
     def test_setting_dict_to_valid(self):
         d = {'known_attr': 7}
@@ -370,6 +367,10 @@ class FunctionDictsTest(FuncAttrsTest):
         # ... and again, on all the different method's names
         self.assertEqual(self.fi.a.__func__.known_attr, 7)
         self.assertEqual(self.fi.a.known_attr, 7)
+        from collections import UserDict
+        d = UserDict({'known_attr': 7})
+        self.b.__dict__ = d
+        self.assertEqual(self.b.known_attr, 7)
 
     def test_delete___dict__(self):
         try:

@@ -190,4 +190,52 @@
 // "comparison of unsigned expression in '< 0' is always false".
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
+/* Test if dict_or_mapping is a dict, call dict_func if it is, or call
+ * mapping_func if not. If test_mapping is TEST_MAPPING, also test if
+ * dict_or_mapping is a mapping before calling mapping_func. test_mapping
+ * should be set to NOTEST_MAPPING otherwise.
+ */
+#define _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, dict_func, \
+    mapping_func, test_mapping, ...) _Py_IF_DICT_OR_MAPPING_##test_mapping( \
+    dict_or_mapping, result, dict_func, mapping_func, ##__VA_ARGS__)
+
+#define _Py_IF_DICT_OR_MAPPING_TEST_MAPPING(dict_or_mapping, result, \
+    dict_func, mapping_func, ...) \
+    if (PyDict_Check(dict_or_mapping)) { \
+        result = dict_func(dict_or_mapping, ##__VA_ARGS__); \
+    } \
+    else if (PyMapping_Check(dict_or_mapping)) { \
+        result = mapping_func(dict_or_mapping, ##__VA_ARGS__); \
+    }
+
+#define _Py_IF_DICT_OR_MAPPING_NOTEST_MAPPING(dict_or_mapping, result, \
+    dict_func, mapping_func, ...) \
+    if (PyDict_Check(dict_or_mapping)) { \
+        result = dict_func(dict_or_mapping, ##__VA_ARGS__); \
+    } \
+    else { \
+        result = mapping_func(dict_or_mapping, ##__VA_ARGS__); \
+    }
+
+// Unified API for dict and mapping
+#define _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict_or_mapping, obj, ref, result, \
+    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
+    PyDict_GetItemRef, PyMapping_GetOptionalItem, test_mapping, obj, ref)
+
+#define _Py_IF_DICT_OR_MAPPING_SETITEM(dict_or_mapping, obj, ref, result, \
+    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
+    PyDict_SetItem, PyObject_SetItem, test_mapping, obj, ref)
+
+#define _Py_IF_DICT_OR_MAPPING_DELITEM(dict_or_mapping, obj, result, \
+    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
+    PyDict_DelItem, PyMapping_DelItem, test_mapping, obj)
+
+#define _Py_IF_DICT_OR_MAPPING_CONTAINS(dict_or_mapping, obj, result, \
+    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
+    PyDict_Contains, PyMapping_HasKeyWithError, test_mapping, obj)
+
+#define _Py_IF_DICT_OR_MAPPING_KEYS(dict_or_mapping, result, test_mapping) \
+    _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_Keys, \
+    PyMapping_Keys, test_mapping)
+
 #endif /* Py_PYMACRO_H */

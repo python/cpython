@@ -1468,14 +1468,9 @@ dummy_func(
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            if (PyDict_Check(globals)) {
-                err = PyDict_SetItem(globals, name,
-                                     PyStackRef_AsPyObjectBorrow(v));
-            }
-            else {
-                err = PyObject_SetItem(globals, name,
-                                       PyStackRef_AsPyObjectBorrow(v));
-            }
+            _Py_IF_DICT_OR_MAPPING_SETITEM(globals, name,
+                                           PyStackRef_AsPyObjectBorrow(v), err,
+                                           NOTEST_MAPPING)
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1484,12 +1479,7 @@ dummy_func(
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            if (PyDict_Check(globals)) {
-                err = PyDict_Pop(globals, name, NULL);
-            }
-            else {
-                err = PyMapping_DelItem(globals, name);
-            }
+            _Py_IF_DICT_OR_MAPPING_DELITEM(globals, name, err, NOTEST_MAPPING)
             // Can't use ERROR_IF here.
             if (err < 0) {
                 if (_PyErr_Occurred(tstate) &&
@@ -1568,12 +1558,10 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v_o == NULL) {
-                if (PyDict_Check(globals)) {
-                    if (PyDict_GetItemRef(globals, name, &v_o) < 0) {
-                        ERROR_NO_POP();
-                    }
-                }
-                else if (PyMapping_GetOptionalItem(globals, name, &v_o) < 0) {
+                int r;
+                _Py_IF_DICT_OR_MAPPING_GETITEMREF(globals, name, &v_o, r,
+                                                  NOTEST_MAPPING)
+                if (r < 0) {
                     ERROR_NO_POP();
                 }
                 if (v_o == NULL) {

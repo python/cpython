@@ -104,14 +104,8 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
     PyObject *module;
     int r;
-    if (PyDict_Check(constr->fc_globals)) {
-        r = PyDict_GetItemRef(constr->fc_globals, &_Py_ID(__name__),
-                              &module);
-    }
-    else {
-        r = PyMapping_GetOptionalItem(constr->fc_globals,  &_Py_ID(__name__),
-                                      &module);
-    }
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(constr->fc_globals, &_Py_ID(__name__),
+                                   &module, r, NOTEST_MAPPING)
     if (r < 0) {
         return NULL;
     }
@@ -150,7 +144,6 @@ PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
     Py_INCREF(globals);
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -183,7 +176,13 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     // __module__: Use globals['__name__'] if it exists, or NULL.
     PyObject *module;
     PyObject *builtins = NULL;
-    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) < 0) {
+    int r;
+    _Py_IF_DICT_OR_MAPPING_GETITEMREF(globals, &_Py_ID(__name__), &module, r,
+                                   TEST_MAPPING)
+    else {
+        goto error;
+    }
+    if (r < 0) {
         goto error;
     }
 
@@ -930,8 +929,8 @@ class function "PyFunctionObject *" "&PyFunction_Type"
 function.__new__ as func_new
     code: object(type="PyCodeObject *", subclass_of="&PyCode_Type")
         a code object
-    globals: object(subclass_of="&PyDict_Type")
-        the globals dictionary
+    globals: object
+        the globals mapping
     name: object = None
         a string that overrides the name from the code object
     argdefs as defaults: object = None
@@ -948,11 +947,16 @@ static PyObject *
 func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
               PyObject *name, PyObject *defaults, PyObject *closure,
               PyObject *kwdefaults)
-/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
+/*[clinic end generated code: output=de72f4c22ac57144 input=d6fcf687f69bd689]*/
 {
     PyFunctionObject *newfunc;
     Py_ssize_t nclosure;
 
+    if (!PyMapping_Check(globals)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "arg 2 (globals) must be a mapping");
+        return NULL;
+    }
     if (name != Py_None && !PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
                         "arg 3 (name) must be None or string");
