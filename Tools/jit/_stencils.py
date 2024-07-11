@@ -184,7 +184,7 @@ class Stencil:
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> None:
+    def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> Hole:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
         assert hole.symbol is not None
         reuse_trampoline = hole.symbol in self.trampolines
@@ -194,14 +194,10 @@ class Stencil:
         else:
             self.pad(alignment)
             base = len(self.body)
-        where = slice(hole.offset, hole.offset + 4)
-        instruction = int.from_bytes(self.body[where], sys.byteorder)
-        instruction &= 0xFC000000
-        instruction |= ((base - hole.offset) >> 2) & 0x03FFFFFF
-        self.body[where] = instruction.to_bytes(4, sys.byteorder)
+        new_hole = hole.replace(addend=base, symbol=None, value=HoleValue.DATA)
 
         if reuse_trampoline:
-            return
+            return new_hole
 
         self.disassembly += [
             f"{base + 4 * 0:x}: 58000048      ldr     x8, 8",
@@ -219,6 +215,7 @@ class Stencil:
             self.body.extend(code)
         self.holes.append(hole.replace(offset=base + 8, kind="R_AARCH64_ABS64"))
         self.trampolines[hole.symbol] = base
+        return new_hole
 
     def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
@@ -294,8 +291,9 @@ class StencilGroup:
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
             ):
-                self.code.emit_aarch64_trampoline(hole, alignment)
+                new_hole = self.data.emit_aarch64_trampoline(hole, alignment)
                 self.code.holes.remove(hole)
+                self.code.holes.append(new_hole)
         self.code.remove_jump(alignment=alignment)
         self.code.pad(alignment)
         self.data.pad(8)

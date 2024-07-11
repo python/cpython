@@ -264,6 +264,12 @@ def clear_caches():
         for f in typing._cleanups:
             f()
 
+        import inspect
+        abs_classes = filter(inspect.isabstract, typing.__dict__.values())
+        for abc in abs_classes:
+            for obj in abc.__subclasses__() + [abc]:
+                obj._abc_caches_clear()
+
     try:
         fractions = sys.modules['fractions']
     except KeyError:
@@ -684,35 +690,6 @@ def cleanup_temp_dir(tmp_dir: StrPath):
         else:
             print("Remove file: %s" % name)
             os_helper.unlink(name)
-
-WINDOWS_STATUS = {
-    0xC0000005: "STATUS_ACCESS_VIOLATION",
-    0xC00000FD: "STATUS_STACK_OVERFLOW",
-    0xC000013A: "STATUS_CONTROL_C_EXIT",
-}
-
-def get_signal_name(exitcode):
-    if exitcode < 0:
-        signum = -exitcode
-        try:
-            return signal.Signals(signum).name
-        except ValueError:
-            pass
-
-    # Shell exit code (ex: WASI build)
-    if 128 < exitcode < 256:
-        signum = exitcode - 128
-        try:
-            return signal.Signals(signum).name
-        except ValueError:
-            pass
-
-    try:
-        return WINDOWS_STATUS[exitcode]
-    except KeyError:
-        pass
-
-    return None
 
 
 ILLEGAL_XML_CHARS_RE = re.compile(

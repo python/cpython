@@ -1,14 +1,18 @@
 import io
 import itertools
 import os
+import pathlib
 import rlcompleter
 import select
 import subprocess
 import sys
+import tempfile
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
+from test.support.import_helper import import_module
+from test.support.os_helper import unlink
 
 from .support import (
     FakeConsole,
@@ -898,10 +902,40 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    def test_not_wiping_history_file(self):
+        # skip, if readline module is not available
+        import_module('readline')
+
+        hfile = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(unlink, hfile.name)
+        env = os.environ.copy()
+        env["PYTHON_HISTORY"] = hfile.name
+        commands = "123\nspam\nexit()\n"
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("123", output)
+        self.assertIn("spam", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
+        hfile.file.truncate()
+        hfile.close()
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("123", output)
+        self.assertIn("spam", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
     def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
+        cmd = [sys.executable, "-i", "-u"]
+        if env is None:
+            cmd.append("-I")
         process = subprocess.Popen(
-            [sys.executable, "-i", "-u"],
+            cmd,
             stdin=slave_fd,
             stdout=slave_fd,
             stderr=slave_fd,
