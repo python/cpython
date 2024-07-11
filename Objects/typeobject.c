@@ -192,6 +192,7 @@ managed_static_type_fini_def(PyTypeObject *def, PyTypeObject *type,
         /* For now we exclude extension module types,
            since currently some of their instances are getting cleaned up
            after the types, rather than before. */
+        managed_static_type_index_clear(type);
         return;
     }
 
@@ -343,7 +344,7 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
 
 /* Reset the type's per-interpreter state.
    This basically undoes what managed_static_type_state_init() did. */
-static static_type_def
+static void
 managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
                                 int isbuiltin, int final)
 {
@@ -351,7 +352,6 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     size_t full_index = isbuiltin
         ? index
         : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-    PyTypeObject *def = &_PyRuntime.types.managed_static.types[full_index].def;
 
     managed_static_type_state *state = isbuiltin
         ? &(interp->types.builtins.initialized[index])
@@ -371,7 +371,9 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
         assert(!_PyRuntime.types.managed_static.types[full_index].interp_count);
         _PyRuntime.types.managed_static.types[full_index].type = NULL;
 
-        managed_static_type_index_clear(self);
+        /* It could make sense to call managed_static_type_index_clear(self)
+           here.  However, we need to know the index to finalize the preserved
+           def and that must happen only after we've cleared the state here. */
     }
 
     if (isbuiltin) {
@@ -387,8 +389,6 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
         }
         PyMutex_Unlock(&interp->types.mutex);
     }
-
-    return def;
 }
 
 // Also see _PyStaticType_InitBuiltin() and _PyStaticType_FiniBuiltin().
@@ -5916,11 +5916,11 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     }
 
     _PyStaticType_ClearWeakRefs(interp, type);
-    static_type_def def =
-        managed_static_type_state_clear(interp, type, isbuiltin, final);
+    managed_static_type_state_clear(interp, type, isbuiltin, final);
 
     if (final) {
         /* We need to restore the copy of the original static type struct, */
+        static_type_def def = managed_static_type_get_def(type, isbuiltin);
         managed_static_type_fini_def(def, type, isbuiltin);
     }
 }
