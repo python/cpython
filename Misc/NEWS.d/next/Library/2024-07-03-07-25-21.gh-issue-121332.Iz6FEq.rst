@@ -1,0 +1,4 @@
+Fix constructor of :mod:`ast` nodes with custom ``_attributes``. Previously,
+passing custom attributes would raise a :py:exc:`DeprecationWarning`. Passing
+arguments to the constructor that are not in ``_fields`` or ``_attributes``
+remains deprecated. Patch by Jelle Zijlstra.

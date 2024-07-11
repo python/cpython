@@ -21,6 +21,12 @@ inherit from pure paths but also provide I/O operations.
 .. image:: pathlib-inheritance.png
    :align: center
    :class: invert-in-dark-mode
+   :alt: Inheritance diagram showing the classes available in pathlib. The
+         most basic class is PurePath, which has three direct subclasses:
+         PurePosixPath, PureWindowsPath, and Path. Further to these four
+         classes, there are two classes that use multiple inheritance:
+         PosixPath subclasses PurePosixPath and Path, and WindowsPath
+         subclasses PureWindowsPath and Path.
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
@@ -1533,7 +1539,7 @@ Creating files and directories
 Copying, renaming and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target, *, follow_symlinks=True)
+.. method:: Path.copy(target, *, follow_symlinks=True, preserve_metadata=False)
 
    Copy the contents of this file to the *target* file. If *target* specifies
    a file that already exists, it will be replaced.
@@ -1542,16 +1548,11 @@ Copying, renaming and deleting
    will be created as a symbolic link. If *follow_symlinks* is true and this
    file is a symbolic link, *target* will be a copy of the symlink target.
 
-   .. note::
-      This method uses operating system functionality to copy file content
-      efficiently. The OS might also copy some metadata, such as file
-      permissions. After the copy is complete, users may wish to call
-      :meth:`Path.chmod` to set the permissions of the target file.
-
-   .. warning::
-      On old builds of Windows (before Windows 10 build 19041), this method
-      raises :exc:`OSError` when a symlink to a directory is encountered and
-      *follow_symlinks* is false.
+   If *preserve_metadata* is false (the default), only the file data is
+   guaranteed to be copied. Set *preserve_metadata* to true to ensure that the
+   file mode (permissions), flags, last access and modification times, and
+   extended attributes are copied where supported. This argument has no effect
+   on Windows, where metadata is always preserved when copying.
 
    .. versionadded:: 3.14
 
