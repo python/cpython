@@ -134,6 +134,11 @@ Node classes
    Simple indices are represented by their value, extended slices are
    represented as tuples.
 
+.. versionchanged:: 3.14
+
+    The :meth:`~object.__repr__` output of :class:`~ast.AST` nodes includes
+    the values of the node fields.
+
 .. deprecated:: 3.8
 
    Old classes :class:`!ast.Num`, :class:`!ast.Str`, :class:`!ast.Bytes`,
