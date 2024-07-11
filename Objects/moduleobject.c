@@ -1142,22 +1142,20 @@ module_dir(PyObject *self, PyObject *args)
     PyObject *dict = PyObject_GetAttr(self, &_Py_ID(__dict__));
 
     if (dict != NULL) {
-        PyObject *dirfunc;
-        int r;
+        PyObject *dirfunc = NULL;
+        int r = -1;
         _Py_DICT_OR_MAPPING_GETITEMREF_ELSE(dict, &_Py_ID(__dir__), &dirfunc, r,
             {
                 PyErr_Format(PyExc_TypeError,
                              "<module>.__dict__ is not a mapping");
             }
         )
-        if (!PyErr_Occurred()) {
-            if (r == 0) {
-                _Py_DICT_OR_MAPPING_KEYS(dict, result)
-            }
-            else {
-                result = _PyObject_CallNoArgs(dirfunc);
-                Py_DECREF(dirfunc);
-            }
+        if (dirfunc) {
+            result = _PyObject_CallNoArgs(dirfunc);
+            Py_DECREF(dirfunc);
+        }
+        else if (r == 0) {
+            _Py_DICT_OR_MAPPING_KEYS(dict, result)
         }
     }
 
