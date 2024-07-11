@@ -70,8 +70,13 @@ extern PyObject* _Py_device_encoding(int);
 #   define _PY_WRITE_MAX INT_MAX
 #else
     /* write() should truncate the input to PY_SSIZE_T_MAX bytes,
-       but it's safer to do it ourself to have a portable behaviour */
-#   define _PY_READ_MAX  PY_SSIZE_T_MAX
+       but it's safer to do it ourself to have a portable behaviour
+
+       read() fills a PyBytes object, which has a capped size defined in
+       bytesobject.c. Prefer reading less data (meets the API spec) to causing
+       an overflow error.
+    */
+#   define _PY_READ_MAX  PY_SSIZE_T_MAX - 4096
 #   define _PY_WRITE_MAX PY_SSIZE_T_MAX
 #endif
 
