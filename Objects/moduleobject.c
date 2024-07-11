@@ -709,10 +709,12 @@ _PyModule_ClearDict(PyObject *d)
         if (filter) { \
             if (verbose > 1) { \
                 const char *s = PyUnicode_AsUTF8(key); \
-                if (s != NULL) \
+                if (s != NULL) { \
                     PySys_WriteStderr("#   clear[" phase "] %s\n", s); \
-                else \
+                } \
+                else { \
                     PyErr_Clear(); \
+                } \
             } \
             int r; \
             _Py_DICT_OR_MAPPING_SETITEM(d, key, Py_None, r) \
@@ -733,7 +735,7 @@ _PyModule_ClearDict(PyObject *d)
         /* Next, clear all names except for __builtins__ */
         _Py_MODULE_CLEARDICT_ITER_DICT(
             _Py_MODULE_CLEARDICT_BY(
-                PyUnicode_READ_CHAR(key, 0) != '_' &&
+                PyUnicode_READ_CHAR(key, 0) != '_' ||
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"), "2"))
     }
     else {
@@ -749,8 +751,9 @@ _PyModule_ClearDict(PyObject *d)
         /* Next, clear all names except for __builtins__ */
         _Py_MODULE_CLEARDICT_ITER_MAPPING(
             _Py_MODULE_CLEARDICT_BY(
-                PyUnicode_READ_CHAR(key, 0) != '_' &&
+                PyUnicode_READ_CHAR(key, 0) != '_' ||
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"), "2"))
+
         Py_DECREF(items);
     }
 

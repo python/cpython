@@ -1278,7 +1278,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
         goto error;
     }
     else _Py_DICT_OR_MAPPING_CONTAINS_ELSE(globals, &_Py_ID(__builtins__),
-                                      has_builtins,
+                                           has_builtins,
         {
 error:
             PyErr_SetString(PyExc_SystemError, "globals must be a mapping");
