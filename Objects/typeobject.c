@@ -149,7 +149,11 @@ managed_static_type_index_clear(PyTypeObject *self)
 }
 
 
+#ifdef MS_WINDOWS
+static pytype_slotdef slotdefs[100];
+#else
 static pytype_slotdef slotdefs[];
+#endif
 static void ** slotptr(PyTypeObject *, int);
 
 typedef struct static_type_def *static_type_def;
