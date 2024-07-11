@@ -5293,7 +5293,7 @@ foo`` does not require a module object named *foo* to exist, rather it requires
 an (external) *definition* for a module named *foo* somewhere.)
 
 A special attribute of every module is :attr:`~object.__dict__`. This is the
-:term:`mapping`` containing the module's symbol table. Modifying this mapping
+:term:`mapping` containing the module's symbol table. Modifying this mapping
 will actually change the module's symbol table, but direct assignment to the
 :attr:`~object.__dict__` attribute is not possible (you can write
 ``m.__dict__['a'] = 1``, which defines ``m.a`` to be ``1``, but you can't write
