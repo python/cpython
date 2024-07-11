@@ -1386,15 +1386,7 @@ class CopyTests(unittest.TestCase):
         self.assertEqual(node.y, 1)
 
         y = object()
-        # custom attributes are currently not supported and raise a warning
-        # because the allowed attributes are hard-coded !
-        msg = (
-            "MyNode.__init__ got an unexpected keyword argument 'y'. "
-            "Support for arbitrary keyword arguments is deprecated and "
-            "will be removed in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
-            repl = copy.replace(node, y=y)
+        repl = copy.replace(node, y=y)
         # assert that there is no side-effect
         self.assertEqual(node.x, 0)
         self.assertEqual(node.y, 1)
