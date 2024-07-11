@@ -5473,7 +5473,11 @@ ast_repr_max_depth(AST_object *self, int depth)
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
     }
 
-    PyObject *repr = NULL;
+    const char* tp_name = Py_TYPE(self)->tp_name;
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    _PyUnicodeWriter_WriteASCIIString(&writer, tp_name, strlen(tp_name));
+    _PyUnicodeWriter_WriteChar(&writer, '(');
     for (Py_ssize_t i = 0; i < numfields; i++) {
         PyObject *name = PySequence_GetItem(fields, i);
         if (!name) {
@@ -5501,29 +5505,26 @@ ast_repr_max_depth(AST_object *self, int depth)
             goto error;
         }
 
-        if (i == 0) {
-            repr = PyUnicode_FromFormat("%U=%U", name, value_repr);
-        } else {
-            PyObject *prev_repr = repr;
-            PyObject *tmp = PyUnicode_FromFormat(", %U=%U", name, value_repr);
-            repr = PyUnicode_Concat(prev_repr, tmp);
-            Py_DECREF(prev_repr);
-            Py_DECREF(tmp);
+        if (i > 0) {
+            _PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2);
         }
+        _PyUnicodeWriter_WriteStr(&writer, name);
+        _PyUnicodeWriter_WriteChar(&writer, '=');
+        _PyUnicodeWriter_WriteStr(&writer, value_repr);
+
         Py_DECREF(name);
         Py_DECREF(value);
         Py_DECREF(value_repr);
     }
-
+    _PyUnicodeWriter_WriteChar(&writer, ')');
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    PyObject *ret = PyUnicode_FromFormat("%s(%U)", Py_TYPE(self)->tp_name, repr);
-    Py_DECREF(repr);
-    return ret;
+    return _PyUnicodeWriter_Finish(&writer);
 
 error:
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
+    _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
 
