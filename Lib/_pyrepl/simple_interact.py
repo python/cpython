@@ -27,12 +27,19 @@ from __future__ import annotations
 
 import _sitebuiltins
 import linecache
+import builtins
 import sys
 import code
 from types import ModuleType
 
 from .console import InteractiveColoredConsole
 from .readline import _get_reader, multiline_input
+
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+
 
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
@@ -75,18 +82,16 @@ REPL_COMMANDS = {
 
 
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None = None,
+    namespace: dict[str, Any],
     future_flags: int = 0,
     console: code.InteractiveConsole | None = None,
 ) -> None:
-    import __main__
     from .readline import _setup
-    _setup()
+    _setup(namespace)
 
-    mainmodule = mainmodule or __main__
     if console is None:
         console = InteractiveColoredConsole(
-            mainmodule.__dict__, filename="<stdin>"
+            namespace, filename="<stdin>"
         )
     if future_flags:
         console.compile.compiler.flags |= future_flags
@@ -149,7 +154,7 @@ def run_multiline_interactive_console(
             assert not more
             input_n += 1
         except KeyboardInterrupt:
-            console.write("\nKeyboardInterrupt\n")
+            console.write("KeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")

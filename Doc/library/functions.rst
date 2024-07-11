@@ -1561,7 +1561,9 @@ are always available.  They are listed here in alphabetical order.
    returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
    type :class:`int` or :class:`float` and a non-integral exponent, a complex
    result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
-   to ``3j``.
+   to ``3j``. Whereas, for a negative base of type :class:`int` or :class:`float`
+   with an integral exponent, a float result is delivered. For example,
+   ``pow(-9, 2.0)`` returns ``81.0``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
    also be of integer type and *mod* must be nonzero. If *mod* is present and
@@ -1931,6 +1933,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
       that gives higher accuracy and better commutativity on most builds.
+
+   .. versionchanged:: 3.14
+      Added specialization for summation of complexes,
+      using same algorithm as for summation of floats.
 
 
 .. class:: super()

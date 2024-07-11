@@ -88,8 +88,7 @@ _Py_c_quot(Py_complex a, Py_complex b)
      * numerators and denominator by whichever of {b.real, b.imag} has
      * larger magnitude.  The earliest reference I found was to CACM
      * Algorithm 116 (Complex Division, Robert L. Smith, Stanford
-     * University).  As usual, though, we're still ignoring all IEEE
-     * endcases.
+     * University).
      */
      Py_complex r;      /* the result */
      const double abs_breal = b.real < 0 ? -b.real : b.real;
@@ -120,6 +119,28 @@ _Py_c_quot(Py_complex a, Py_complex b)
         /* At least one of b.real or b.imag is a NaN */
         r.real = r.imag = Py_NAN;
     }
+
+    /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
+       the C11, Annex G.5.2, routine _Cdivd(). */
+    if (isnan(r.real) && isnan(r.imag)) {
+        if ((isinf(a.real) || isinf(a.imag))
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
+            const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
+            r.real = Py_INFINITY * (x*b.real + y*b.imag);
+            r.imag = Py_INFINITY * (y*b.real - x*b.imag);
+        }
+        else if ((isinf(abs_breal) || isinf(abs_bimag))
+                 && isfinite(a.real) && isfinite(a.imag))
+        {
+            const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
+            const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
+            r.real = 0.0 * (a.real*x + a.imag*y);
+            r.imag = 0.0 * (a.imag*x - a.real*y);
+        }
+    }
+
     return r;
 }
 #ifdef _M_ARM64
@@ -523,7 +544,7 @@ complex_div(PyObject *v, PyObject *w)
     errno = 0;
     quot = _Py_c_quot(a, b);
     if (errno == EDOM) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return NULL;
     }
     return PyComplex_FromCComplex(quot);
@@ -554,7 +575,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     _Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "0.0 to a negative or complex power");
+                        "zero to a negative or complex power");
         return NULL;
     }
     else if (errno == ERANGE) {
@@ -912,7 +933,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
  * handles the case of no arguments and one positional argument, and calls
  * complex_new(), implemented with Argument Clinic, to handle the remaining
  * cases: 'real' and 'imag' arguments.  This separation is well suited
- * for different constructor roles: convering a string or number to a complex
+ * for different constructor roles: converting a string or number to a complex
  * number and constructing a complex number from real and imaginary parts.
  */
 static PyObject *

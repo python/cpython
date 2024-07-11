@@ -125,6 +125,7 @@ test_atomic_fences(PyObject *self, PyObject *obj) {
     // Just make sure that the fences compile. We are not
     // testing any synchronizing ordering.
     _Py_atomic_fence_seq_cst();
+    _Py_atomic_fence_acquire();
     _Py_atomic_fence_release();
     Py_RETURN_NONE;
 }

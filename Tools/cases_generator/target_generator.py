@@ -14,7 +14,6 @@ from generators_common import (
     ROOT,
 )
 from cwriter import CWriter
-from typing import TextIO
 
 
 DEFAULT_OUTPUT = ROOT / "Python/opcode_targets.h"

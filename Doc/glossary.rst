@@ -594,7 +594,7 @@ Glossary
       therefore it is never deallocated.
 
       Built-in strings and singletons are immortal objects. For example,
-      :const:`True` and :const:`None` singletons are immmortal.
+      :const:`True` and :const:`None` singletons are immortal.
 
       See `PEP 683 – Immortal Objects, Using a Fixed Refcount
       <https://peps.python.org/pep-0683/>`_ for more information.
@@ -694,6 +694,9 @@ Glossary
 
          CPython does not consistently apply the requirement that an iterator
          define :meth:`~iterator.__iter__`.
+         And also please note that the free-threading CPython does not guarantee
+         the thread-safety of iterator operations.
+
 
    key function
       A key function or collation function is a callable that returns a value
