@@ -1386,15 +1386,7 @@ class CopyTests(unittest.TestCase):
         self.assertEqual(node.y, 1)
 
         y = object()
-        # custom attributes are currently not supported and raise a warning
-        # because the allowed attributes are hard-coded !
-        msg = (
-            "MyNode.__init__ got an unexpected keyword argument 'y'. "
-            "Support for arbitrary keyword arguments is deprecated and "
-            "will be removed in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
-            repl = copy.replace(node, y=y)
+        repl = copy.replace(node, y=y)
         # assert that there is no side-effect
         self.assertEqual(node.x, 0)
         self.assertEqual(node.y, 1)
@@ -3249,6 +3241,18 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertIs(obj.a, None)
         obj = FieldsAndTypes(a=1)
         self.assertEqual(obj.a, 1)
+
+    def test_custom_attributes(self):
+        class MyAttrs(ast.AST):
+            _attributes = ("a", "b")
+
+        obj = MyAttrs(a=1, b=2)
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, 2)
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"MyAttrs.__init__ got an unexpected keyword argument 'c'."):
+            obj = MyAttrs(c=3)
 
     def test_fields_and_types_no_default(self):
         class FieldsAndTypesNoDefault(ast.AST):
