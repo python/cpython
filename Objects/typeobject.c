@@ -149,10 +149,10 @@ managed_static_type_index_clear(PyTypeObject *self)
 }
 
 
-typedef PyTypeObject *static_type_def;
+typedef struct static_type_def *static_type_def;
 
 static inline static_type_def
-managed_static_type_get_def(static_type_def type, int isbuiltin)
+managed_static_type_get_def(PyTypeObject *type, int isbuiltin)
 {
     size_t index = managed_static_type_index_get(type);
     size_t full_index = isbuiltin
@@ -173,16 +173,17 @@ managed_static_type_init_def(static_type_def def, PyTypeObject *type)
     /* We preserve the original type struct value to restore during
        finalization. This will also preserve (thus restore) any extra
        values set on the struct before this. */
-    memcpy(def, type, sizeof(PyTypeObject));
+    PyTypeObject *deftype = &def->type;
+    memcpy(deftype, type, sizeof(PyTypeObject));
 
     /* For now we do not worry about preserving the index
        at finalization.  Ideally, we would keep it,
        but the related change should wait until 3.13 is ready. */
-    managed_static_type_index_clear(def);
+    managed_static_type_index_clear(deftype);
 }
 
 static void
-managed_static_type_fini_def(PyTypeObject *def, PyTypeObject *type,
+managed_static_type_fini_def(static_type_def def, PyTypeObject *type,
                              int isbuiltin)
 {
     /* It must be the final case. */
@@ -202,8 +203,8 @@ managed_static_type_fini_def(PyTypeObject *def, PyTypeObject *type,
 
     /* Restore the static type to it's (mostly) original values.
        We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
-    memcpy(type, def, sizeof(PyTypeObject));
-    assert(!managed_static_type_index_is_set(type));
+    PyTypeObject *deftype = &def->type;
+    memcpy(type, deftype, sizeof(PyTypeObject));
 
     /* Currently, there is a small set of cases where a static type
        might be used after it has been finalized.  For example, some
@@ -7932,7 +7933,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     return 0;
 }
 
-static int add_operators(PyTypeObject *, PyTypeObject *);
+static int add_operators(PyTypeObject *, static_type_def);
 static int add_tp_new_wrapper(PyTypeObject *type);
 
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
@@ -8097,7 +8098,7 @@ type_dict_set_doc(PyTypeObject *type)
 
 
 static int
-type_ready_fill_dict(PyTypeObject *type, PyTypeObject *def)
+type_ready_fill_dict(PyTypeObject *type, static_type_def def)
 {
     /* Add type-specific descriptors to tp_dict */
     if (add_operators(type, def) < 0) {
@@ -8419,7 +8420,7 @@ type_ready_post_checks(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type, PyTypeObject *def, int initial)
+type_ready(PyTypeObject *type, static_type_def def, int initial)
 {
     ASSERT_TYPE_LOCK_HELD();
 
@@ -11154,7 +11155,7 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
    infinite recursion here.) */
 
 static int
-add_operators(PyTypeObject *type, PyTypeObject *def)
+add_operators(PyTypeObject *type, static_type_def def)
 {
     PyObject *dict = lookup_tp_dict(type);
     pytype_slotdef *p;
@@ -11162,14 +11163,14 @@ add_operators(PyTypeObject *type, PyTypeObject *def)
     void **ptr;
 
     assert(def == NULL || (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    if (def == NULL) {
-        def = type;
-    }
+    PyTypeObject *deftype = def == NULL
+        ? type
+        : &def->type;
 
     for (p = slotdefs; p->name; p++) {
         if (p->wrapper == NULL)
             continue;
-        ptr = slotptr(def, p->offset);
+        ptr = slotptr(deftype, p->offset);
         if (!ptr || !*ptr)
             continue;
         int r = PyDict_Contains(dict, p->name_strobj);

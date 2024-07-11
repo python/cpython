@@ -24,6 +24,10 @@ extern "C" {
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
 
+struct static_type_def {
+    PyTypeObject type;
+};
+
 struct _types_runtime_state {
     /* Used to set PyTypeObject.tp_version_tag for core static types. */
     // bpo-42745: next_version_tag remains shared by all interpreters
@@ -33,7 +37,7 @@ struct _types_runtime_state {
     struct {
         struct {
             PyTypeObject *type;
-            PyTypeObject def;
+            struct static_type_def def;
             int64_t interp_count;
         } types[_Py_MAX_MANAGED_STATIC_TYPES];
     } managed_static;
