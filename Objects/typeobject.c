@@ -148,6 +148,78 @@ managed_static_type_index_clear(PyTypeObject *self)
     self->tp_subclasses = NULL;
 }
 
+
+typedef PyTypeObject *static_type_def;
+
+static inline static_type_def
+managed_static_type_get_def(static_type_def type, int isbuiltin)
+{
+    size_t index = managed_static_type_index_get(type);
+    size_t full_index = isbuiltin
+        ? index
+        : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
+    return &_PyRuntime.types.managed_static.types[full_index].def;
+}
+
+static void
+managed_static_type_init_def(static_type_def def, PyTypeObject *type)
+{
+    assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    assert(type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+    /* It must be the initial case. */
+    assert(!(type->tp_flags & Py_TPFLAGS_READY)
+            && !(type->tp_flags & Py_TPFLAGS_READYING));
+
+    /* We preserve the original type struct value to restore during
+       finalization. This will also preserve (thus restore) any extra
+       values set on the struct before this. */
+    memcpy(def, type, sizeof(PyTypeObject));
+
+    /* For now we do not worry about preserving the index
+       at finalization.  Ideally, we would keep it,
+       but the related change should wait until 3.13 is ready. */
+    managed_static_type_index_clear(def);
+}
+
+static void
+managed_static_type_fini_def(PyTypeObject *def, PyTypeObject *type,
+                             int isbuiltin)
+{
+    /* It must be the final case. */
+    assert(!(type->tp_flags & Py_TPFLAGS_READY));
+
+    if (!isbuiltin) {
+        /* For now we exclude extension module types,
+           since currently some of their instances are getting cleaned up
+           after the types, rather than before. */
+        return;
+    }
+
+    /* Preserve specific data before potentially wiping it. */
+    destructor dealloc = type->tp_dealloc;
+
+    /* Restore the static type to it's (mostly) original values.
+       We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
+    memcpy(type, def, sizeof(PyTypeObject));
+    assert(!managed_static_type_index_is_set(type));
+
+    /* Currently, there is a small set of cases where a static type
+       might be used after it has been finalized.  For example, some
+       instances are cleaned up after the static types are finalized.
+       Similarly, MemoryError could be raised even after it is finalized.
+
+       Ideally, none of the cases would ever happen and types would be
+       finalized only after all other objects have been destroyed
+       (or are themselves static).
+
+       However, fixing that isn't simple and not something we're doing
+       yet.  Thankfully, those exceptional cases only require a small
+       subset of the type, all of which is static data.  Thus, in the
+       meantime, we preserve those parts. */
+    type->tp_dealloc = dealloc;
+}
+
+
 static PyTypeObject *
 static_ext_type_lookup(PyInterpreterState *interp, size_t index,
                        int64_t *p_interp_count)
@@ -269,7 +341,7 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
 
 /* Reset the type's per-interpreter state.
    This basically undoes what managed_static_type_state_init() did. */
-static PyTypeObject *
+static static_type_def
 managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
                                 int isbuiltin, int final)
 {
@@ -315,16 +387,6 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     }
 
     return def;
-}
-
-static PyTypeObject *
-managed_static_type_get_def(PyTypeObject *self, int isbuiltin)
-{
-    size_t index = managed_static_type_index_get(self);
-    size_t full_index = isbuiltin
-        ? index
-        : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-    return &_PyRuntime.types.managed_static.types[full_index].def;
 }
 
 // Also see _PyStaticType_InitBuiltin() and _PyStaticType_FiniBuiltin().
@@ -5852,14 +5914,12 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     }
 
     _PyStaticType_ClearWeakRefs(interp, type);
-    PyTypeObject *def =
+    static_type_def def =
         managed_static_type_state_clear(interp, type, isbuiltin, final);
-    /* For now we exclude extension module types. */
-    if (final && isbuiltin) {
-        /* Restore the static type to it's (mostly) original values. */
-        destructor dealloc = type->tp_dealloc;
-        memcpy(type, def, sizeof(PyTypeObject));
-        type->tp_dealloc = dealloc;
+
+    if (final) {
+        /* We need to restore the copy of the original static type struct, */
+        managed_static_type_fini_def(def, type, isbuiltin);
     }
 }
 
@@ -8489,12 +8549,11 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
 
     managed_static_type_state_init(interp, self, isbuiltin, initial);
 
-    PyTypeObject *def = managed_static_type_get_def(self, isbuiltin);
+    static_type_def def = managed_static_type_get_def(self, isbuiltin);
     if (initial) {
-        memcpy(def, self, sizeof(PyTypeObject));
-        /* For now we do not worry about preserving the index
-           at finalization. */
-        managed_static_type_index_clear(def);
+        /* We need to save a copy of the original static type struct,
+           to use when readying the type. */
+        managed_static_type_init_def(def, self);
     }
 
     int res;
