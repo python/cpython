@@ -16,35 +16,6 @@ import functools
 
 __all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
 
-def fnmatch(name, pat):
-    """Test whether FILENAME matches PATTERN.
-
-    Patterns are Unix shell style:
-
-    *       matches everything
-    ?       matches any single character
-    [seq]   matches any character in seq
-    [!seq]  matches any char not in seq
-
-    An initial period in FILENAME is not special.
-    Both FILENAME and PATTERN are first case-normalized
-    if the operating system requires it.
-    If you don't want this, use fnmatchcase(FILENAME, PATTERN).
-    """
-    name = os.path.normcase(name)
-    pat = os.path.normcase(pat)
-    return fnmatchcase(name, pat)
-
-@functools.lru_cache(maxsize=32768, typed=True)
-def _compile_pattern(pat):
-    if isinstance(pat, bytes):
-        pat_str = str(pat, 'ISO-8859-1')
-        res_str = translate(pat_str)
-        res = bytes(res_str, 'ISO-8859-1')
-    else:
-        res = translate(pat)
-    return re.compile(res).match
-
 try:
     from _fnmatch import filter
 except ImportError:
@@ -63,6 +34,28 @@ except ImportError:
                 if match(os.path.normcase(name)):
                     result.append(name)
         return result
+
+try:
+    from _fnmatch import fnmatch
+except ImportError:
+    def fnmatch(name, pat):
+        """Test whether FILENAME matches PATTERN.
+
+        Patterns are Unix shell style:
+
+        *       matches everything
+        ?       matches any single character
+        [seq]   matches any character in seq
+        [!seq]  matches any char not in seq
+
+        An initial period in FILENAME is not special.
+        Both FILENAME and PATTERN are first case-normalized
+        if the operating system requires it.
+        If you don't want this, use fnmatchcase(FILENAME, PATTERN).
+        """
+        name = os.path.normcase(name)
+        pat = os.path.normcase(pat)
+        return fnmatchcase(name, pat)
 
 try:
     from _fnmatch import fnmatchcase
@@ -88,6 +81,16 @@ except ImportError:
         STAR = object()
         parts = _translate(pat, STAR, '.')
         return _join_translated_parts(parts, STAR)
+
+@functools.lru_cache(maxsize=32768, typed=True)
+def _compile_pattern(pat):
+    if isinstance(pat, bytes):
+        pat_str = str(pat, 'ISO-8859-1')
+        res_str = translate(pat_str)
+        res = bytes(res_str, 'ISO-8859-1')
+    else:
+        res = translate(pat)
+    return re.compile(res).match
 
 def _translate(pat, STAR, QUESTION_MARK):
     res = []
