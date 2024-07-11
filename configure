@@ -14044,60 +14044,6 @@ printf "%s\n" "#define Py_HAVE_C_COMPLEX 1" >>confdefs.h
 
 fi
 
-# check for fnmatch(3) support
-#
-# We test for the plain POSIX implementation (case-sensitive match).
-#
-# To ensure that the implementation of fnmatch(3) is compliant
-# we run some tests to make sure that everything works well.
-#
-# Note that MSVC does not support fnmatch(3).
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for case-sensititve fnmatch(3)" >&5
-printf %s "checking for case-sensititve fnmatch(3)... " >&6; }
-if test ${ac_cv_fnmatch_supported+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  if test "$cross_compiling" = yes
-then :
-  ac_cv_fnmatch_supported=no
-
-else $as_nop
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <fnmatch.h>
-int
-main (void)
-{
-
-    exit(!(
-        fnmatch("a*", "abc", 0) != FNM_NOMATCH &&
-        fnmatch("a*", "Abc", 0) == FNM_NOMATCH
-    ));
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  ac_cv_fnmatch_supported=yes
-else $as_nop
-  ac_cv_fnmatch_supported=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_fnmatch_supported" >&5
-printf "%s\n" "$ac_cv_fnmatch_supported" >&6; }
-if test "$ac_cv_fnmatch_supported" = "yes"; then
-
-printf "%s\n" "#define Py_HAVE_FNMATCH 1" >>confdefs.h
-
-fi
-
 # check for systems that require aligned memory access
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking aligned memory access is required" >&5
 printf %s "checking aligned memory access is required... " >&6; }
