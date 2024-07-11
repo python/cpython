@@ -1,6 +1,6 @@
 """Test cases for the fnmatch module."""
-import itertools
 
+import itertools
 import os
 import string
 import unittest
@@ -312,6 +312,7 @@ class CPythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
 
     @staticmethod
     def translate_func(pattern):
+        # Pure Python implementation of translate()
         STAR = object()
         parts = py_fnmatch._translate(pattern, STAR, '.')
         return py_fnmatch._join_translated_parts(parts, STAR)

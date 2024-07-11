@@ -36,12 +36,12 @@ _Py_fnmatch_filter(PyObject *matcher, PyObject *names)
 
     PyObject *name = NULL;
     while ((name = PyIter_Next(iter))) {
-        int rc = _Py_fnmatch_fnmatch(matcher, name);
-        if (rc < 0) {
+        int matching = _Py_fnmatch_fnmatch(matcher, name);
+        if (matching < 0) {
             assert(PyErr_Occurred());
             goto abort;
         }
-        if (rc == 1) {
+        if (matching == 1) {
             if (PyList_Append(res, name) < 0) {
                 goto abort;
             }
@@ -82,13 +82,14 @@ _Py_fnmatch_filter_normalized(PyObject *matcher, PyObject *names, PyObject *norm
         if (normalized == NULL) {
             goto abort;
         }
-        int rc = _Py_fnmatch_fnmatch(matcher, normalized);
+        int matching = _Py_fnmatch_fnmatch(matcher, normalized);
         Py_DECREF(normalized);
-        if (rc < 0) {
+        if (matching < 0) {
             assert(PyErr_Occurred());
             goto abort;
         }
-        if (rc == 1) {
+        if (matching == 1) {
+            // add the non-normalized name if its normalization matches
             if (PyList_Append(res, name) < 0) {
                 goto abort;
             }

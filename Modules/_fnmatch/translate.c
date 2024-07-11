@@ -9,9 +9,7 @@
 
 #include "_fnmatchmodule.h" // for get_fnmatchmodulestate_state()
 
-// ==== Helper declarations ==================================================
-
-typedef fnmatchmodule_state State;
+// ==== Macro definitions =====================================================
 
 #define _WRITE_OR_FAIL(writeop, onerror) \
     do { \
@@ -45,6 +43,8 @@ typedef fnmatchmodule_state State;
         } \
     } while (0)
 
+// ==== Helper declarations ===================================================
+
 /*
  * Creates a new Unicode object from a Py_UCS4 character.
  *
@@ -77,7 +77,7 @@ translate_expression(PyObject *pattern, Py_ssize_t start, Py_ssize_t stop);
  * This returns the number of written characters, or -1 if an error occurred.
  */
 static Py_ssize_t
-write_literal(State *state, PyUnicodeWriter *writer, PyObject *unicode);
+write_literal(fnmatchmodule_state *state, PyUnicodeWriter *writer, PyObject *unicode);
 
 /*
  * Write the translated pattern obtained by translate_expression().
@@ -120,7 +120,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
 #define ADVANCE_TO_NEXT(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), !=)
 #define SKIP_DUPLICATES(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), ==)
 
-    State *state = get_fnmatchmodulestate_state(module);
+    fnmatchmodule_state *state = get_fnmatchmodulestate_state(module);
     PyObject *re = state->re_module;
     const Py_ssize_t n = PyUnicode_GET_LENGTH(pattern);
     // We would write less data if there are successive '*',
@@ -431,7 +431,7 @@ abort:
 }
 
 static Py_ssize_t
-write_literal(State *state, PyUnicodeWriter *writer, PyObject *unicode)
+write_literal(fnmatchmodule_state *state, PyUnicodeWriter *writer, PyObject *unicode)
 {
     PyObject *escaped = PyObject_CallMethodOneArg(state->re_module,
                                                   &_Py_ID(escape),

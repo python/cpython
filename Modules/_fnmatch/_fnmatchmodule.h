@@ -24,6 +24,8 @@ get_fnmatchmodulestate_state(PyObject *module)
     return (fnmatchmodule_state *)state;
 }
 
+// ==== Helper prototypes =====================================================
+
 /*
  * Test whether a name matches a compiled RE pattern.
  *

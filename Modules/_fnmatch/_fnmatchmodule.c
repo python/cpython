@@ -308,6 +308,8 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
     }
 }
 
+// ==== Module specs ==========================================================
+
 static PyMethodDef fnmatchmodule_methods[] = {
     _FNMATCH_FILTER_METHODDEF
     _FNMATCH_FNMATCH_METHODDEF
