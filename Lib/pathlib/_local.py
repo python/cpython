@@ -17,8 +17,9 @@ try:
 except ImportError:
     grp = None
 
-from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._os import copyfile
+from ._os import (UnsupportedOperation, copyfile, file_metadata_keys,
+                  read_file_metadata, write_file_metadata)
+from ._abc import PurePathBase, PathBase
 
 
 __all__ = [
@@ -781,20 +782,30 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
+    _readable_metadata = _writable_metadata = file_metadata_keys
+    _read_metadata = read_file_metadata
+    _write_metadata = write_file_metadata
+
     if copyfile:
-        def copy(self, target):
+        def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
             """
-            Copy the contents of this file to the given target.
+            Copy the contents of this file to the given target. If this file is a
+            symlink and follow_symlinks is false, a symlink will be created at the
+            target.
             """
             try:
                 target = os.fspath(target)
             except TypeError:
-                if isinstance(target, PathBase):
-                    # Target is an instance of PathBase but not os.PathLike.
-                    # Use generic implementation from PathBase.
-                    return PathBase.copy(self, target)
-                raise
-            copyfile(os.fspath(self), target)
+                if not isinstance(target, PathBase):
+                    raise
+            else:
+                try:
+                    copyfile(os.fspath(self), target, follow_symlinks)
+                    return
+                except UnsupportedOperation:
+                    pass  # Fall through to generic code.
+            PathBase.copy(self, target, follow_symlinks=follow_symlinks,
+                          preserve_metadata=preserve_metadata)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

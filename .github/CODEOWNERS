@@ -42,7 +42,7 @@ Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
 Python/optimizer_analysis.c   @Fidget-Spinner
 Python/optimizer_bytecodes.c  @Fidget-Spinner
-Python/symtable.c             @JelleZijlstra @carljm 
+Python/symtable.c             @JelleZijlstra @carljm
 Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
@@ -72,6 +72,7 @@ Include/internal/pycore_freelist.h  @ericsnowcurrently
 Include/internal/pycore_global_objects.h  @ericsnowcurrently
 Include/internal/pycore_obmalloc.h  @ericsnowcurrently
 Include/internal/pycore_pymem.h     @ericsnowcurrently
+Include/internal/pycore_stackref.h  @Fidget-Spinner
 Modules/main.c                @ericsnowcurrently
 Programs/_bootstrap_python.c  @ericsnowcurrently
 Programs/python.c             @ericsnowcurrently
@@ -201,7 +202,6 @@ Doc/c-api/stable.rst          @encukou
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
-**/*queue*                    @rhettinger
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
