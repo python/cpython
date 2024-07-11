@@ -190,11 +190,8 @@
 // "comparison of unsigned expression in '< 0' is always false".
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
-/* Test if dict_or_mapping is a dict, call dict_func if it is, or call
- * mapping_func if not. If test_mapping is TEST_MAPPING, also test if
- * dict_or_mapping is a mapping before calling mapping_func. test_mapping
- * should be set to NOTEST_MAPPING otherwise.
- */
+// Test if dict_or_mapping is a dict, and call dict_func if it is, or call
+// mapping_func if not. Store the returning value in result.
 #define _Py_DICT_OR_MAPPING(dict_or_mapping, result, \
     dict_func, mapping_func, ...) \
     if (PyDict_Check(dict_or_mapping)) { \
@@ -204,6 +201,9 @@
         result = mapping_func(dict_or_mapping, ##__VA_ARGS__); \
     }
 
+// Test if dict_or_mapping is a dict, and call dict_func if it is, or call
+// mapping_func if dict_or_mapping is a mapping; otherwise execute else_block.
+// Store the returning value in result.
 #define _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, \
     dict_func, mapping_func, else_block, ...) \
     if (PyDict_Check(dict_or_mapping)) { \
