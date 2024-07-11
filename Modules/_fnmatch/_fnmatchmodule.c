@@ -174,28 +174,13 @@ static PyObject *
 _fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pat)
 /*[clinic end generated code: output=7f11aa68436d05fc input=1d233174e1c4157a]*/
 {
-#if defined(Py_HAVE_FNMATCH) && !defined(Py_USE_FNMATCH_FALLBACK)
-    // Note that the Python implementation of fnmatch.filter() does not
-    // call os.fspath() on the names being matched, whereas it does on NT.
-    if (PyBytes_Check(pat)) {
-        const char *pattern = PyBytes_AS_STRING(pat);
-        return _Py_posix_fnmatch_encoded_filter_cached(pattern, names);
-    }
-    if (PyUnicode_Check(pat)) {
-        const char *pattern = PyUnicode_AsUTF8(pat);
-        return _Py_posix_fnmatch_unicode_filter_cached(pattern, names);
-    }
-    PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
-    return NULL;
-#else
     PyObject *matcher = get_matcher_function(module, pat);
     if (matcher == NULL) {
         return NULL;
     }
-    PyObject *result = _Py_regex_fnmatch_filter(matcher, names);
+    PyObject *result = _Py_fnmatch_filter(matcher, names);
     Py_DECREF(matcher);
     return result;
-#endif
 }
 
 /*[clinic input]
@@ -240,29 +225,13 @@ static int
 _fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat)
 /*[clinic end generated code: output=4d1283b1b1fc7cb8 input=b02a6a5c8c5a46e2]*/
 {
-#if defined(Py_HAVE_FNMATCH) && !defined(Py_USE_FNMATCH_FALLBACK)
-    // This function does not transform path-like objects, nor does it
-    // case-normalize 'name' or 'pattern' (whether it is the Python or
-    // the C implementation).
-    if (PyBytes_Check(pat)) {
-        const char *pattern = PyBytes_AS_STRING(pat);
-        return _Py_posix_fnmatch_encoded_cached(pattern, name);
-    }
-    if (PyUnicode_Check(pat)) {
-        const char *pattern = PyUnicode_AsUTF8(pat);
-        return _Py_posix_fnmatch_unicode_cached(pattern, name);
-    }
-    PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
-    return -1;
-#else
     PyObject *matcher = get_matcher_function(module, pat);
     if (matcher == NULL) {
         return -1;
     }
-    int res = _Py_regex_fnmatch_generic(matcher, name);
+    int res = _Py_fnmatch_fnmatch(matcher, name);
     Py_DECREF(matcher);
     return res;
-#endif
 }
 
 /*[clinic input]
@@ -284,7 +253,7 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
             return NULL;
         }
         // translated regular expression as a str object
-        PyObject *str_expr = _Py_regex_translate(module, unicode);
+        PyObject *str_expr = _Py_fnmatch_translate(module, unicode);
         Py_DECREF(unicode);
         if (str_expr == NULL) {
             return NULL;
@@ -294,7 +263,7 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
         return expr;
     }
     else if (PyUnicode_Check(pattern)) {
-        return _Py_regex_translate(module, pattern);
+        return _Py_fnmatch_translate(module, pattern);
     }
     else {
         PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
