@@ -65,16 +65,16 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     int r;
 
 #define _Py_MODULE_INIT_SETATTR(name, value) \
-    _Py_DICT_OR_MAPPING_SETITEM(md_dict, name, value, r) \
+    _Py_DICT_OR_MAPPING_SETITEM(md_dict, &_Py_ID(name), value, r) \
     if (r != 0) { \
         return -1; \
     }
 
-    _Py_MODULE_INIT_SETATTR(&_Py_ID(__name__), name)
-    _Py_MODULE_INIT_SETATTR(&_Py_ID(__doc__), doc)
-    _Py_MODULE_INIT_SETATTR(&_Py_ID(__package__), Py_None)
-    _Py_MODULE_INIT_SETATTR(&_Py_ID(__loader__), Py_None)
-    _Py_MODULE_INIT_SETATTR(&_Py_ID(__spec__), Py_None)
+    _Py_MODULE_INIT_SETATTR(__name__, name)
+    _Py_MODULE_INIT_SETATTR(__doc__, doc)
+    _Py_MODULE_INIT_SETATTR(__package__, Py_None)
+    _Py_MODULE_INIT_SETATTR(__loader__, Py_None)
+    _Py_MODULE_INIT_SETATTR(__spec__, Py_None)
     if (PyUnicode_CheckExact(name)) {
         Py_XSETREF(mod->md_name, Py_NewRef(name));
     }
