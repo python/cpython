@@ -387,7 +387,7 @@ set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
         return -1;
     }
 
-    if (PyDict_SetItemString(d, "__loader__", loader) < 0) {
+    if (PyDict_SetItem(d, &_Py_ID(__loader__), loader) < 0) {
         Py_DECREF(loader);
         return -1;
     }

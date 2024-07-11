@@ -662,6 +662,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__len__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__length_hint__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lltrace__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__loader__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lshift__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lt__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__main__));

@@ -660,6 +660,7 @@ extern "C" {
     INIT_ID(__len__), \
     INIT_ID(__length_hint__), \
     INIT_ID(__lltrace__), \
+    INIT_ID(__loader__), \
     INIT_ID(__lshift__), \
     INIT_ID(__lt__), \
     INIT_ID(__main__), \
