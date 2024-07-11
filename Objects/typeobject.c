@@ -149,6 +149,9 @@ managed_static_type_index_clear(PyTypeObject *self)
 }
 
 
+static pytype_slotdef slotdefs[];
+static void ** slotptr(PyTypeObject *, int);
+
 typedef struct static_type_def *static_type_def;
 
 static inline static_type_def
@@ -171,8 +174,9 @@ managed_static_type_init_def(static_type_def def, PyTypeObject *type)
             && !(type->tp_flags & Py_TPFLAGS_READYING));
 
     /* We preserve the original type struct value to restore during
-       finalization. This will also preserve (thus restore) any extra
-       values set on the struct before this. */
+       finalization. This will also preserve any extra values set on
+       the struct before this.  Technically, we only need the operator
+       "tp" slots, but it's simpler to copy the whole struct. */
     PyTypeObject *deftype = &def->type;
     memcpy(deftype, type, sizeof(PyTypeObject));
 }
@@ -192,13 +196,23 @@ managed_static_type_fini_def(static_type_def def, PyTypeObject *type,
     }
 
     /* Preserve specific data before potentially wiping it. */
-    PyTypeObject *metaclass = Py_TYPE(type);
     destructor dealloc = type->tp_dealloc;
 
-    /* Restore the static type to it's (mostly) original values.
-       We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
+    /* Restore the static type's original operator "tp" slot values.
+       We do not bother restoring any of the other preserved data,
+       nor do we even overwrite any of it. */
     PyTypeObject *deftype = &def->type;
-    memcpy(type, deftype, sizeof(PyTypeObject));
+    for (pytype_slotdef *p = slotdefs; p->name; p++) {
+        void **defptr = slotptr(deftype, p->offset);
+        if (defptr == NULL) {
+            continue;
+        }
+        if (defptr == (void **)&def->type.tp_call) {
+            continue;
+        }
+        void **typeptr = slotptr(type, p->offset);
+        *typeptr = *defptr;
+    }
 
     /* Currently, there is a small set of cases where a static type
        might be used after it has been finalized.  For example, some
@@ -213,7 +227,6 @@ managed_static_type_fini_def(static_type_def def, PyTypeObject *type,
        yet.  Thankfully, those exceptional cases only require a small
        subset of the type, all of which is static data.  Thus, in the
        meantime, we preserve those parts. */
-    Py_SET_TYPE(type, metaclass);
     type->tp_dealloc = dealloc;
 }
 
