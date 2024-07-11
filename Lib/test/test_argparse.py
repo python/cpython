@@ -4357,7 +4357,6 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         g.add_argument('--op5', nargs='+')
         g.add_argument('--op6', nargs=3)
         g.add_argument('--op7', metavar=('MET1', 'MET2', 'MET3'), nargs=3)
-        parser.print_help()
 
         usage = textwrap.dedent('''\
         usage: PROG [-h] [--op1 [MET] | --op2 [MET1 [MET2 ...]] | --op3 [OP3 ...] |
