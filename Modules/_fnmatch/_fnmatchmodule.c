@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_call.h" // for _PyObject_CallMethod
+#include "pycore_call.h"
 
 #include "_fnmatchmodule.h"
 #include "clinic/_fnmatchmodule.c.h"
