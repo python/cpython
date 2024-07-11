@@ -8,9 +8,9 @@
 #include "Python.h"
 
 typedef struct {
-    PyObject *py_module;    // 'fnmatch' module
-    PyObject *re_module;    // 're' module
-    PyObject *os_module;    // 'os' module
+    PyObject *os_module;            // 'os' module
+    PyObject *posixpath_module;     // 'posixpath' module
+    PyObject *re_module;            // 're' module
 
     PyObject *lru_cache;    // the LRU cache decorator
     PyObject *translator;   // the translation unit whose calls are cached
@@ -52,6 +52,9 @@ _Py_fnmatch_fnmatch(PyObject *matcher, PyObject *string);
  */
 extern PyObject *
 _Py_fnmatch_filter(PyObject *matcher, PyObject *names);
+/* same as _Py_fnmatch_filter() but calls os.path.normcase() on each name */
+extern PyObject *
+_Py_fnmatch_filter_normalized(PyObject *matcher, PyObject *names, PyObject *normcase);
 
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.

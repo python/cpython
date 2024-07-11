@@ -26,7 +26,7 @@ fnmatchmodule_get_matcher_function(PyObject *module, PyObject *pattern)
     }
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
     // compile the pattern
-    PyObject *compiled = _PyObject_CallMethod(st->re_module, &_Py_ID(compile), "O", expr);
+    PyObject *compiled = PyObject_CallMethodOneArg(st->re_module, &_Py_ID(compile), expr);
     Py_DECREF(expr);
     if (compiled == NULL) {
         return NULL;
@@ -62,9 +62,7 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
     if (maxsize == NULL) {
         return -1;
     }
-    PyObject *args[] = {NULL, maxsize, Py_True};
-    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    PyObject *decorator = PyObject_Vectorcall(st->lru_cache, args + 1, nargsf, NULL);
+    PyObject *decorator = PyObject_CallFunctionObjArgs(st->lru_cache, maxsize, Py_True, NULL);
     Py_DECREF(maxsize);
     if (decorator == NULL) {
         return -1;
@@ -86,35 +84,30 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
 static inline PyObject *
 get_matcher_function(PyObject *module, PyObject *pattern)
 {
-    assert(module != NULL);
-    assert(pattern != NULL);
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
     assert(st->translator != NULL);
-    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    return PyObject_Vectorcall(st->translator, &pattern, nargsf, NULL);
+    return PyObject_CallOneArg(st->translator, pattern);
 }
 
 // ==== Module state functions ================================================
 
-#define IMPORT_MODULE(state, attribute, name) \
+static int
+fnmatchmodule_exec(PyObject *module)
+{
+#define IMPORT_MODULE(attribute, name) \
     do { \
-        state->attribute = NULL; \
-        state->attribute = PyImport_ImportModule((name)); \
-        if (state->attribute == NULL) { \
+        st->attribute = NULL; \
+        st->attribute = PyImport_ImportModule((name)); \
+        if (st->attribute == NULL) { \
             return -1; \
         } \
     } while (0)
 
-static int
-fnmatchmodule_exec(PyObject *module)
-{
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
-    st->py_module = NULL;
-    IMPORT_MODULE(st, py_module, "fnmatch");
-    st->os_module = NULL;
-    IMPORT_MODULE(st, os_module, "os");
-    st->re_module = NULL;
-    IMPORT_MODULE(st, re_module, "re");
+    IMPORT_MODULE(os_module, "os");
+    IMPORT_MODULE(posixpath_module, "posixpath");
+    IMPORT_MODULE(re_module, "re");
+#undef IMPORT_MODULE
     st->lru_cache = NULL;
     if (fnmatchmodule_load_lru_cache(module, st) < 0) {
         return -1;
@@ -125,14 +118,13 @@ fnmatchmodule_exec(PyObject *module)
     }
     return 0;
 }
-#undef IMPORT_MODULE
 
 static int
 fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(m);
-    Py_VISIT(st->py_module);
     Py_VISIT(st->os_module);
+    Py_VISIT(st->posixpath_module);
     Py_VISIT(st->re_module);
     Py_VISIT(st->lru_cache);
     Py_VISIT(st->translator);
@@ -143,8 +135,8 @@ static int
 fnmatchmodule_clear(PyObject *m)
 {
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(m);
-    Py_CLEAR(st->py_module);
     Py_CLEAR(st->os_module);
+    Py_CLEAR(st->posixpath_module);
     Py_CLEAR(st->re_module);
     Py_CLEAR(st->lru_cache);
     Py_CLEAR(st->translator);
@@ -174,12 +166,40 @@ static PyObject *
 _fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pat)
 /*[clinic end generated code: output=7f11aa68436d05fc input=1d233174e1c4157a]*/
 {
-    PyObject *matcher = get_matcher_function(module, pat);
-    if (matcher == NULL) {
+    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    PyObject *os_path = PyObject_GetAttr(st->os_module, &_Py_ID(path));
+    if (os_path == NULL) {
         return NULL;
     }
-    PyObject *result = _Py_fnmatch_filter(matcher, names);
+    // filter() always calls os.path.normcase() on the pattern,
+    // but not on the names being mathed if os.path is posixmodule
+    // XXX: maybe this should be changed in Python as well?
+    // Note: the Python implementation uses the *runtime* os.path.normcase.
+    PyObject *normcase = PyObject_GetAttr(os_path, &_Py_ID(normcase));
+    if (normcase == NULL) {
+        Py_DECREF(os_path);
+        return NULL;
+    }
+    PyObject *patobj = PyObject_CallOneArg(normcase, pat);
+    if (patobj == NULL) {
+        Py_DECREF(normcase);
+        Py_DECREF(os_path);
+        return NULL;
+    }
+    int isposix = Py_Is(os_path, st->posixpath_module);
+    Py_DECREF(os_path);
+    // the matcher is cached with respect to the *normalized* pattern
+    PyObject *matcher = get_matcher_function(module, patobj);
+    Py_DECREF(patobj);
+    if (matcher == NULL) {
+        Py_DECREF(normcase);
+        return NULL;
+    }
+    PyObject *result = isposix
+        ? _Py_fnmatch_filter(matcher, names)
+        : _Py_fnmatch_filter_normalized(matcher, names, normcase);
     Py_DECREF(matcher);
+    Py_DECREF(normcase);
     return result;
 }
 
@@ -196,15 +216,31 @@ _fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pat)
 /*[clinic end generated code: output=b4cd0bd911e8bc93 input=c45e0366489540b8]*/
 {
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
-    PyObject *res = _PyObject_CallMethod(st->py_module, &_Py_ID(fnmatch), "OO", name, pat);
-    if (res == NULL) {
+    // use the runtime 'os.path' value and not a cached one
+    PyObject *os_path = PyObject_GetAttr(st->os_module, &_Py_ID(path));
+    if (os_path == NULL) {
         return -1;
     }
-    int matching = PyLong_AsLong(res);
-    if (matching < 0) {
+    PyObject *normcase = PyObject_GetAttr(os_path, &_Py_ID(normcase));
+    Py_DECREF(os_path);
+    if (normcase == NULL) {
         return -1;
     }
-    Py_DECREF(res);
+    // apply case normalization on both arguments
+    PyObject *nameobj = PyObject_CallOneArg(normcase, name);
+    if (nameobj == NULL) {
+        Py_DECREF(normcase);
+        return -1;
+    }
+    PyObject *patobj = PyObject_CallOneArg(normcase, pat);
+    Py_DECREF(normcase);
+    if (patobj == NULL) {
+        Py_DECREF(nameobj);
+        return -1;
+    }
+    int matching = _fnmatch_fnmatchcase_impl(module, nameobj, patobj);
+    Py_DECREF(patobj);
+    Py_DECREF(nameobj);
     return matching;
 }
 
@@ -225,6 +261,7 @@ static int
 _fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat)
 /*[clinic end generated code: output=4d1283b1b1fc7cb8 input=b02a6a5c8c5a46e2]*/
 {
+    // fnmatchcase() does not apply any case normalization on the inputs
     PyObject *matcher = get_matcher_function(module, pat);
     if (matcher == NULL) {
         return -1;
