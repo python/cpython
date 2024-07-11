@@ -269,7 +269,7 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
 
 /* Reset the type's per-interpreter state.
    This basically undoes what managed_static_type_state_init() did. */
-static PyTypeObject *
+static void
 managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
                                 int isbuiltin, int final)
 {
@@ -277,7 +277,6 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     size_t full_index = isbuiltin
         ? index
         : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-    PyTypeObject *def = &_PyRuntime.types.managed_static.types[full_index].def;
 
     managed_static_type_state *state = isbuiltin
         ? &(interp->types.builtins.initialized[index])
@@ -313,8 +312,6 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
         }
         PyMutex_Unlock(&interp->types.mutex);
     }
-
-    return def;
 }
 
 static PyTypeObject *
@@ -5852,15 +5849,7 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     }
 
     _PyStaticType_ClearWeakRefs(interp, type);
-    PyTypeObject *def =
-        managed_static_type_state_clear(interp, type, isbuiltin, final);
-    /* For now we exclude extension module types. */
-    if (final && isbuiltin) {
-        /* Restore the static type to it's (mostly) original values. */
-        destructor dealloc = type->tp_dealloc;
-        memcpy(type, def, sizeof(PyTypeObject));
-        type->tp_dealloc = dealloc;
-    }
+    managed_static_type_state_clear(interp, type, isbuiltin, final);
 }
 
 void
@@ -8492,9 +8481,6 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     PyTypeObject *def = managed_static_type_get_def(self, isbuiltin);
     if (initial) {
         memcpy(def, self, sizeof(PyTypeObject));
-        /* For now we do not worry about preserving the index
-           at finalization. */
-        managed_static_type_index_clear(def);
     }
 
     int res;
@@ -8504,10 +8490,6 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     if (res < 0) {
         _PyStaticType_ClearWeakRefs(interp, self);
         managed_static_type_state_clear(interp, self, isbuiltin, initial);
-    }
-
-    if (initial) {
-        Py_SET_TYPE(def, Py_TYPE(self));
     }
 
     return res;
