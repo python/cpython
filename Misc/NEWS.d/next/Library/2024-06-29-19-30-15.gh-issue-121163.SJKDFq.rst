@@ -1,3 +1,2 @@
 Add support for ``all`` as an valid ``action`` for :func:`warnings.simplefilter`
-and :func:`warnings.filterswarnings`.
-
+and :func:`warnings.filterwarnings`.

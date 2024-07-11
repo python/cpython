@@ -815,7 +815,6 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-
     def test_deopt_and_exit(self):
         input = """
         pure op(OP, (arg1 -- out)) {
@@ -826,6 +825,49 @@ class TestGeneratedCases(unittest.TestCase):
         output = ""
         with self.assertRaises(Exception):
             self.run_cases_test(input, output)
+
+    def test_array_of_one(self):
+        input = """
+        inst(OP, (arg[1] -- out[1])) {
+            out[0] = arg[0];
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef *arg;
+            _PyStackRef *out;
+            arg = &stack_pointer[-1];
+            out = &stack_pointer[-1];
+            out[0] = arg[0];
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_pointer_to_stackref(self):
+        input = """
+        inst(OP, (arg: _PyStackRef * -- out)) {
+            out = *arg;
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef *arg;
+            _PyStackRef out;
+            arg = (_PyStackRef *)stack_pointer[-1].bits;
+            out = *arg;
+            stack_pointer[-1] = out;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

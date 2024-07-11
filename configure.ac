@@ -3709,7 +3709,6 @@ AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
-  [riscv64-linux-gnu], [perf_trampoline=yes],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
@@ -7690,7 +7689,6 @@ PY_STDLIB_MOD_SIMPLE([_csv])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
 PY_STDLIB_MOD_SIMPLE([_lsprof])
-PY_STDLIB_MOD_SIMPLE([_opcode])
 PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
