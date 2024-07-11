@@ -179,6 +179,26 @@ managed_static_type_init_def(static_type_def def, PyTypeObject *type)
        "tp" slots, but it's simpler to copy the whole struct. */
     PyTypeObject *deftype = &def->type;
     memcpy(deftype, type, sizeof(PyTypeObject));
+    if (deftype->tp_as_buffer != NULL) {
+        memcpy(&def->as_buffer, type->tp_as_buffer, sizeof(PyBufferProcs));
+        deftype->tp_as_buffer = &def->as_buffer;
+    }
+    if (deftype->tp_as_sequence != NULL) {
+        memcpy(&def->as_sequence, type->tp_as_sequence, sizeof(PySequenceMethods));
+        deftype->tp_as_sequence = &def->as_sequence;
+    }
+    if (deftype->tp_as_mapping != NULL) {
+        memcpy(&def->as_mapping, type->tp_as_mapping, sizeof(PyMappingMethods));
+        deftype->tp_as_mapping = &def->as_mapping;
+    }
+    if (deftype->tp_as_number != NULL) {
+        memcpy(&def->as_number, type->tp_as_number, sizeof(PyNumberMethods));
+        deftype->tp_as_number = &def->as_number;
+    }
+    if (deftype->tp_as_async != NULL) {
+        memcpy(&def->as_async, type->tp_as_async, sizeof(PyAsyncMethods));
+        deftype->tp_as_async = &def->as_async;
+    }
 }
 
 static void
@@ -212,6 +232,21 @@ managed_static_type_fini_def(static_type_def def, PyTypeObject *type,
         }
         void **typeptr = slotptr(type, p->offset);
         *typeptr = *defptr;
+    }
+    if (deftype->tp_as_buffer == NULL) {
+        type->tp_as_buffer = NULL;
+    }
+    if (deftype->tp_as_sequence== NULL) {
+        type->tp_as_sequence = NULL;
+    }
+    if (deftype->tp_as_mapping == NULL) {
+        type->tp_as_mapping = NULL;
+    }
+    if (deftype->tp_as_number == NULL) {
+        type->tp_as_number = NULL;
+    }
+    if (deftype->tp_as_async == NULL) {
+        type->tp_as_async = NULL;
     }
 
     /* Currently, there is a small set of cases where a static type

@@ -26,6 +26,11 @@ extern "C" {
 
 struct static_type_def {
     PyTypeObject type;
+    PyNumberMethods as_number;
+    PySequenceMethods as_sequence;
+    PyMappingMethods as_mapping;
+    PyBufferProcs as_buffer;
+    PyAsyncMethods as_async;
 };
 
 struct _types_runtime_state {
