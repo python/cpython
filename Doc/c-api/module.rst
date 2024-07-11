@@ -43,7 +43,7 @@ Module Objects
    to ``None``); the caller is responsible for providing a :attr:`__file__`
    attribute.
 
-   On error return ``NULL`` with an exception set.
+   Return ``NULL`` with an exception set on error.
 
    .. versionadded:: 3.3
 
@@ -689,14 +689,14 @@ since multiple such modules can be created from a single definition.
 
    The caller must hold the GIL.
 
-   Return ``0`` on success or ``-1`` with an exception set on error.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.3
 
 .. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
-   Return ``0`` on success or ``-1`` with an exception set on error.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    The caller must hold the GIL.
 
