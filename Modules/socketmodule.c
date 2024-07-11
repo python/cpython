@@ -3254,7 +3254,7 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
         if (s->sock_family == AF_RDS) {
             res = getsockopt(s->sock_fd, level, optname,
                         buf, &buflen);
-            if (res < 0){
+            if (res < 0) {
                 return PyLong_FromUnsignedLong(buflen);
             }
         }
@@ -3304,7 +3304,7 @@ get_buf:
 
 #ifdef AF_RDS
     if (s->sock_family == AF_RDS) {
-        PyObject *each = PyBytes_FromFormat("%d",res);
+        PyObject *each = PyBytes_FromFormat("%d", res);
         _PyBytes_Resize(&each, 4);
         PyBytes_Concat(&buf, each);
     }
