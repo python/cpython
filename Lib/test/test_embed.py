@@ -48,6 +48,8 @@ API_ISOLATED = 3
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
+ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
+
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -1285,11 +1287,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ver = sys.version_info
             return [
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}{ver.minor}.zip'),
+                             f'python{ver.major}{ver.minor}{ABI_THREAD}.zip'),
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}'),
                 os.path.join(exec_prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}', 'lib-dynload'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}', 'lib-dynload'),
             ]
 
     @contextlib.contextmanager
@@ -1343,7 +1345,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1384,7 +1386,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1515,7 +1517,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 lib_dynload = os.path.join(pyvenv_home,
                                            sys.platlibdir,
-                                           f'python{ver.major}.{ver.minor}',
+                                           f'python{ver.major}.{ver.minor}{ABI_THREAD}',
                                            'lib-dynload')
                 os.makedirs(lib_dynload)
             else:
