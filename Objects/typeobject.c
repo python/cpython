@@ -175,11 +175,6 @@ managed_static_type_init_def(static_type_def def, PyTypeObject *type)
        values set on the struct before this. */
     PyTypeObject *deftype = &def->type;
     memcpy(deftype, type, sizeof(PyTypeObject));
-
-    /* For now we do not worry about preserving the index
-       at finalization.  Ideally, we would keep it,
-       but the related change should wait until 3.13 is ready. */
-    managed_static_type_index_clear(deftype);
 }
 
 static void
@@ -193,7 +188,6 @@ managed_static_type_fini_def(static_type_def def, PyTypeObject *type,
         /* For now we exclude extension module types,
            since currently some of their instances are getting cleaned up
            after the types, rather than before. */
-        managed_static_type_index_clear(type);
         return;
     }
 
@@ -5923,6 +5917,7 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
         /* We need to restore the copy of the original static type struct, */
         static_type_def def = managed_static_type_get_def(type, isbuiltin);
         managed_static_type_fini_def(def, type, isbuiltin);
+        managed_static_type_index_clear(type);
     }
 }
 
