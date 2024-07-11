@@ -1613,7 +1613,7 @@ error:
 static PyObject *
 ast_repr(AST_object *self)
 {
-    return ast_repr_max_depth(self, 2);
+    return ast_repr_max_depth(self, 3);
 }
 
 static PyType_Slot AST_type_slots[] = {

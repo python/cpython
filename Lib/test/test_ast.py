@@ -1156,20 +1156,25 @@ class AST_Tests(unittest.TestCase):
                          "BinOp(left=Constant(value=1, kind=None), op=Add(), right=Constant(value=2, kind=None))")
 
         self.assertEqual(repr(ast.parse("x = 3")),
-                         "Module(body=[Assign(targets=[Name(...)], value=Constant(...), type_comment=None)], "
-                         "type_ignores=[])")
+                         "Module(body=[Assign(targets=[Name(id='x', ctx=Store(...))], "
+                         "value=Constant(value=3, kind=None), type_comment=None)], type_ignores=[])")
 
         self.assertEqual(repr(ast.parse("x=7; y=4; c,z=3,4")),
-                         "Module(body=[Assign(targets=[Name(...)], value=Constant(...), type_comment=None), ..., "
-                         "Assign(targets=[Tuple(...)], value=Tuple(...), type_comment=None)], type_ignores=[])")
+                         "Module(body=[Assign(targets=[Name(id='x', ctx=Store(...))], "
+                         "value=Constant(value=7, kind=None), type_comment=None), ..., "
+                         "Assign(targets=[Tuple(elts=[Name(...), Name(...)], ctx=Store(...))], "
+                         "value=Tuple(elts=[Constant(...), Constant(...)], ctx=Load(...)), type_comment=None)], "
+                         "type_ignores=[])")
 
         self.assertEqual(repr(ast.parse("def foo(): pass")),
-                         "Module(body=[FunctionDef(name='foo', args=arguments(...), body=[Pass(...)], "
-                         "decorator_list=[], returns=None, type_comment=None, type_params=[])], type_ignores=[])")
+                         "Module(body=[FunctionDef(name='foo', args=arguments(posonlyargs=[], args=[], vararg=None, "
+                         "kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]), body=[Pass()], decorator_list=[], "
+                         "returns=None, type_comment=None, type_params=[])], type_ignores=[])")
 
         this_module = ast.parse(Path(__file__).read_text())
         self.assertEqual(repr(this_module),
-                         "Module(body=[Import(names=[alias(...)]), ..., Expr(value=Call(...))], type_ignores=[])")
+                         "Module(body=[Import(names=[alias(name='ast', asname=None)]), ..., "
+                         "Expr(value=Call(func=Name(...), args=[], keywords=[]))], type_ignores=[])")
 
 
 class CopyTests(unittest.TestCase):
