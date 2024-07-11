@@ -2107,9 +2107,8 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
     PyObject *maybe_builtins;
     int has_builtins;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(globals, &_Py_ID(__builtins__),
-                                      &maybe_builtins, has_builtins,
-                                      NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(globals, &_Py_ID(__builtins__),
+                                   &maybe_builtins, has_builtins)
     if (has_builtins < 0) {
         return NULL;
     }

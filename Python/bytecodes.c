@@ -1468,9 +1468,8 @@ dummy_func(
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            _Py_IF_DICT_OR_MAPPING_SETITEM(globals, name,
-                                           PyStackRef_AsPyObjectBorrow(v), err,
-                                           NOTEST_MAPPING)
+            _Py_DICT_OR_MAPPING_SETITEM(globals, name,
+                                        PyStackRef_AsPyObjectBorrow(v), err)
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1479,7 +1478,7 @@ dummy_func(
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            _Py_IF_DICT_OR_MAPPING_DELITEM(globals, name, err, NOTEST_MAPPING)
+            _Py_DICT_OR_MAPPING_DELITEM(globals, name, err)
             // Can't use ERROR_IF here.
             if (err < 0) {
                 if (_PyErr_Occurred(tstate) &&
@@ -1559,8 +1558,7 @@ dummy_func(
             }
             if (v_o == NULL) {
                 int r;
-                _Py_IF_DICT_OR_MAPPING_GETITEMREF(globals, name, &v_o, r,
-                                                  NOTEST_MAPPING)
+                _Py_DICT_OR_MAPPING_GETITEMREF(globals, name, &v_o, r)
                 if (r < 0) {
                     ERROR_NO_POP();
                 }

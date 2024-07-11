@@ -195,20 +195,7 @@
  * dict_or_mapping is a mapping before calling mapping_func. test_mapping
  * should be set to NOTEST_MAPPING otherwise.
  */
-#define _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, dict_func, \
-    mapping_func, test_mapping, ...) _Py_IF_DICT_OR_MAPPING_##test_mapping( \
-    dict_or_mapping, result, dict_func, mapping_func, ##__VA_ARGS__)
-
-#define _Py_IF_DICT_OR_MAPPING_TEST_MAPPING(dict_or_mapping, result, \
-    dict_func, mapping_func, ...) \
-    if (PyDict_Check(dict_or_mapping)) { \
-        result = dict_func(dict_or_mapping, ##__VA_ARGS__); \
-    } \
-    else if (PyMapping_Check(dict_or_mapping)) { \
-        result = mapping_func(dict_or_mapping, ##__VA_ARGS__); \
-    }
-
-#define _Py_IF_DICT_OR_MAPPING_NOTEST_MAPPING(dict_or_mapping, result, \
+#define _Py_DICT_OR_MAPPING(dict_or_mapping, result, \
     dict_func, mapping_func, ...) \
     if (PyDict_Check(dict_or_mapping)) { \
         result = dict_func(dict_or_mapping, ##__VA_ARGS__); \
@@ -217,25 +204,42 @@
         result = mapping_func(dict_or_mapping, ##__VA_ARGS__); \
     }
 
+#define _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, \
+    dict_func, mapping_func, else_block, ...) \
+    if (PyDict_Check(dict_or_mapping)) { \
+        result = dict_func(dict_or_mapping, ##__VA_ARGS__); \
+    } \
+    else if (PyMapping_Check(dict_or_mapping)) { \
+        result = mapping_func(dict_or_mapping, ##__VA_ARGS__); \
+    } \
+    else else_block
+
 // Unified API for dict and mapping
-#define _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict_or_mapping, obj, ref, result, \
-    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
-    PyDict_GetItemRef, PyMapping_GetOptionalItem, test_mapping, obj, ref)
+#define _Py_DICT_OR_MAPPING_GETITEMREF(dict_or_mapping, obj, ref, result) \
+    _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_GetItemRef, \
+    PyMapping_GetOptionalItem, obj, ref)
 
-#define _Py_IF_DICT_OR_MAPPING_SETITEM(dict_or_mapping, obj, ref, result, \
-    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
-    PyDict_SetItem, PyObject_SetItem, test_mapping, obj, ref)
+#define _Py_DICT_OR_MAPPING_GETITEMREF_ELSE(dict_or_mapping, obj, ref, \
+    result, else_block) _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, \
+    PyDict_GetItemRef, PyMapping_GetOptionalItem, else_block, obj, ref)
 
-#define _Py_IF_DICT_OR_MAPPING_DELITEM(dict_or_mapping, obj, result, \
-    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
-    PyDict_DelItem, PyMapping_DelItem, test_mapping, obj)
+#define _Py_DICT_OR_MAPPING_SETITEM(dict_or_mapping, obj, ref, result) \
+    _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_SetItem, \
+    PyObject_SetItem, obj, ref)
 
-#define _Py_IF_DICT_OR_MAPPING_CONTAINS(dict_or_mapping, obj, result, \
-    test_mapping) _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, \
-    PyDict_Contains, PyMapping_HasKeyWithError, test_mapping, obj)
+#define _Py_DICT_OR_MAPPING_DELITEM(dict_or_mapping, obj, result) \
+    _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_DelItem, \
+    PyMapping_DelItem, obj)
 
-#define _Py_IF_DICT_OR_MAPPING_KEYS(dict_or_mapping, result, test_mapping) \
-    _Py_IF_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_Keys, \
-    PyMapping_Keys, test_mapping)
+#define _Py_DICT_OR_MAPPING_CONTAINS(dict_or_mapping, obj, result) \
+    _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_Contains, \
+    PyMapping_HasKeyWithError, obj)
+
+#define _Py_DICT_OR_MAPPING_CONTAINS_ELSE(dict_or_mapping, obj, result, \
+    else_block) _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, \
+    PyDict_Contains, PyMapping_HasKeyWithError, else_block, obj)
+
+#define _Py_DICT_OR_MAPPING_KEYS(dict_or_mapping, result) \
+    _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_Keys, PyMapping_Keys)
 
 #endif /* Py_PYMACRO_H */

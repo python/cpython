@@ -206,8 +206,7 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
         return 0;
     }
     int r;
-    _Py_IF_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__lltrace__), r,
-                                    NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__lltrace__), r)
     if (r < 0) {
         return -1;
     }

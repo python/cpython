@@ -65,8 +65,7 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     int r;
 
 #define _Py_MODULE_INIT_SETATTR(name, value) \
-    _Py_IF_DICT_OR_MAPPING_SETITEM(md_dict, &_Py_ID(name), value, r, \
-                                   NOTEST_MAPPING) \
+    _Py_DICT_OR_MAPPING_SETITEM(md_dict, &_Py_ID(name), value, r) \
     if (r != 0) { \
         return -1; \
     }
@@ -575,8 +574,7 @@ PyModule_GetNameObject(PyObject *mod)
     }
     PyObject *name;
     int r;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__name__), &name, r,
-                                      NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__name__), &name, r)
     if (r <= 0) {
         // error or not found
         goto error;
@@ -619,8 +617,7 @@ PyModule_GetFilenameObject(PyObject *mod)
     }
     PyObject *fileobj;
     int r;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__file__), &fileobj, r,
-                                      NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__file__), &fileobj, r)
     if (r <= 0) {
         // error or not found
         goto error;
@@ -718,8 +715,7 @@ _PyModule_ClearDict(PyObject *d)
                     PyErr_Clear(); \
             } \
             int r; \
-            _Py_IF_DICT_OR_MAPPING_SETITEM(d, key, Py_None, r, \
-                                           NOTEST_MAPPING) \
+            _Py_DICT_OR_MAPPING_SETITEM(d, key, Py_None, r) \
             if (r != 0) { \
                 PyErr_FormatUnraisable( \
                     "Exception ignored on clearing module dict"); \
@@ -973,8 +969,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
     assert(m->md_dict != NULL);
     int r;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__getattr__),
-                                     &getattr, r, NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__getattr__), &getattr, r)
     if (r < 0) {
         return NULL;
     }
@@ -993,8 +988,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     if (suppress == 1) {
         return NULL;
     }
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__name__), &mod_name,
-                                     r, NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__name__), &mod_name, r)
     if (r < 0) {
         return NULL;
     }
@@ -1005,8 +999,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         return NULL;
     }
     PyObject *spec;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__spec__), &spec, r,
-                                     NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(m->md_dict, &_Py_ID(__spec__), &spec, r)
     if (r < 0) {
         Py_DECREF(mod_name);
         return NULL;
@@ -1150,14 +1143,15 @@ module_dir(PyObject *self, PyObject *args)
     if (dict != NULL) {
         PyObject *dirfunc;
         int r;
-        _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__dir__), &dirfunc, r,
-                                          TEST_MAPPING)
-        else {
-            PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a mapping");
-        }
+        _Py_DICT_OR_MAPPING_GETITEMREF_ELSE(dict, &_Py_ID(__dir__), &dirfunc, r,
+            {
+                PyErr_Format(PyExc_TypeError,
+                             "<module>.__dict__ is not a mapping");
+            }
+        )
         if (!PyErr_Occurred()) {
             if (r == 0) {
-                _Py_IF_DICT_OR_MAPPING_KEYS(dict, result, NOTEST_MAPPING)
+                _Py_DICT_OR_MAPPING_KEYS(dict, result)
             }
             else {
                 result = _PyObject_CallNoArgs(dirfunc);
@@ -1201,12 +1195,10 @@ module_get_annotate(PyModuleObject *m, void *Py_UNUSED(ignored))
 
     PyObject *annotate;
     int r;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotate__), &annotate,
-        r, NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotate__), &annotate, r)
     if (r == 0) {
         annotate = Py_None;
-        _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotate__), annotate,
-        r, NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotate__), annotate, r)
         if (r == -1) {
             Py_CLEAR(annotate);
         }
@@ -1234,15 +1226,13 @@ module_set_annotate(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored)
     }
 
     int r;
-    _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotate__), value, r,
-                                   NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotate__), value, r)
     if (r == -1) {
         Py_DECREF(dict);
         return -1;
     }
     if (!Py_IsNone(value)) {
-        _Py_IF_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotations__), r,
-                                       NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotations__), r)
         if (r == -1) {
             if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
                 Py_DECREF(dict);
@@ -1265,14 +1255,13 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 
     PyObject *annotations;
     int r;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotations__),
-                                      &annotations, r, NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotations__),
+                                   &annotations, r)
     if (r == 0) {
         PyObject *annotate;
         int annotate_result;
-        _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotate__),
-                                      &annotate, annotate_result,
-                                      NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_GETITEMREF(dict, &_Py_ID(__annotate__),
+                                       &annotate, annotate_result)
         if (annotate_result < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -1301,8 +1290,8 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
         Py_XDECREF(annotate);
         if (annotations) {
             int result;
-            _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotations__),
-                                           annotations, result, NOTEST_MAPPING)
+            _Py_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotations__),
+                                        annotations, result)
             if (result) {
                 Py_CLEAR(annotations);
             }
@@ -1323,13 +1312,11 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
 
     if (value != NULL) {
         /* set */
-        _Py_IF_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotations__), value,
-                                       ret, NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_SETITEM(dict, &_Py_ID(__annotations__), value, ret)
     }
     else {
         /* delete */
-        _Py_IF_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotations__), ret,
-                                       NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotations__), ret)
         if (ret == -1 && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__annotations__));
         }
@@ -1339,8 +1326,7 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
     }
     if (ret == 0) {
         int r;
-        _Py_IF_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotate__), r,
-                                       NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_DELITEM(dict, &_Py_ID(__annotate__), r)
         if (r == -1) {
             if (PyErr_ExceptionMatches(PyExc_KeyError)) {
                 PyErr_Clear();

@@ -990,19 +990,20 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     int r;
-    _Py_IF_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__builtins__), r,
-                                    TEST_MAPPING)
-    else {
-        PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
-                     Py_TYPE(globals)->tp_name);
-        return NULL;
-    }
+    _Py_DICT_OR_MAPPING_CONTAINS_ELSE(globals, &_Py_ID(__builtins__), r,
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "globals must be a mapping or None, not %.100s",
+                         Py_TYPE(globals)->tp_name);
+            return NULL;
+        }
+    )
     if (r < 0) {
         goto error;
     }
     if (r == 0) {
-        _Py_IF_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
-                                       PyEval_GetBuiltins(), r, NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                    PyEval_GetBuiltins(), r)
         if (r < 0) {
             goto error;
         }
@@ -1099,19 +1100,20 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     int r;
-    _Py_IF_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__builtins__), r,
-                                    TEST_MAPPING)
-    else {
-        PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
-                     Py_TYPE(globals)->tp_name);
-        goto error;
-    }
+    _Py_DICT_OR_MAPPING_CONTAINS_ELSE(globals, &_Py_ID(__builtins__), r,
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "globals must be a mapping or None, not %.100s",
+                         Py_TYPE(globals)->tp_name);
+            goto error;
+        }
+    )
     if (r < 0) {
         goto error;
     }
     if (r == 0) {
-        _Py_IF_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
-                                       PyEval_GetBuiltins(), r, NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                    PyEval_GetBuiltins(), r)
         if (r < 0) {
             goto error;
         }

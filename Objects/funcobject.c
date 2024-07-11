@@ -104,8 +104,8 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
     PyObject *module;
     int r;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(constr->fc_globals, &_Py_ID(__name__),
-                                   &module, r, NOTEST_MAPPING)
+    _Py_DICT_OR_MAPPING_GETITEMREF(constr->fc_globals, &_Py_ID(__name__),
+                                   &module, r)
     if (r < 0) {
         return NULL;
     }
@@ -177,11 +177,11 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *module;
     PyObject *builtins = NULL;
     int r;
-    _Py_IF_DICT_OR_MAPPING_GETITEMREF(globals, &_Py_ID(__name__), &module, r,
-                                   TEST_MAPPING)
-    else {
-        goto error;
-    }
+    _Py_DICT_OR_MAPPING_GETITEMREF_ELSE(globals, &_Py_ID(__name__), &module, r,
+        {
+            goto error;
+        }
+    )
     if (r < 0) {
         goto error;
     }

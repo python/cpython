@@ -1499,8 +1499,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     if (dict != NULL) {
         Py_INCREF(dict);
         int r;
-        _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, name, method, r,
-                                          NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_GETITEMREF(dict, name, method, r)
         if (r != 0) {
             // found or error
             Py_DECREF(dict);
@@ -1608,7 +1607,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     if (dict != NULL) {
         Py_INCREF(dict);
         int rc;
-        _Py_IF_DICT_OR_MAPPING_GETITEMREF(dict, name, &res, rc, NOTEST_MAPPING)
+        _Py_DICT_OR_MAPPING_GETITEMREF(dict, name, &res, rc)
         Py_DECREF(dict);
         if (res != NULL) {
             goto done;
@@ -1734,11 +1733,10 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     else {
         Py_INCREF(dict);
         if (value == NULL) {
-            _Py_IF_DICT_OR_MAPPING_DELITEM(dict, name, res, NOTEST_MAPPING)
+            _Py_DICT_OR_MAPPING_DELITEM(dict, name, res)
         }
         else {
-            _Py_IF_DICT_OR_MAPPING_SETITEM(dict, name, value, res,
-                                           NOTEST_MAPPING)
+            _Py_DICT_OR_MAPPING_SETITEM(dict, name, value, res)
         }
         Py_DECREF(dict);
     }
