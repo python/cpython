@@ -1427,6 +1427,11 @@ static PyGetSetDef ast_type_getsets[] = {
 static PyObject *
 ast_repr_max_depth(AST_object *self, int depth);
 
+/* Format list and tuple properties of AST nodes.
+   Note that, only the first and last elements are shown.
+   Anything in between is represented with an ellipsis ('...').
+   For example, the list [1, 2, 3] is formatted as
+   'List(elts=[Constant(1), ..., Constant(3)])'. */
 static PyObject *
 ast_repr_list(PyObject *list, int depth)
 {
