@@ -751,6 +751,7 @@ _PyModule_ClearDict(PyObject *d)
             _Py_MODULE_CLEARDICT_BY(
                 PyUnicode_READ_CHAR(key, 0) != '_' &&
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"), "2"))
+        Py_DECREF(items);
     }
 
     /* Note: we leave __builtins__ in place, so that destructors
@@ -1155,9 +1156,9 @@ module_dir(PyObject *self, PyObject *args)
             }
             else {
                 result = _PyObject_CallNoArgs(dirfunc);
+                Py_DECREF(dirfunc);
             }
         }
-        Py_XDECREF(dirfunc);
     }
 
     Py_XDECREF(dict);
