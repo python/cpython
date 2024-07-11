@@ -1155,9 +1155,9 @@ module_dir(PyObject *self, PyObject *args)
             }
             else {
                 result = _PyObject_CallNoArgs(dirfunc);
-                Py_DECREF(dirfunc);
             }
         }
+        Py_XDECREF(dirfunc);
     }
 
     Py_XDECREF(dict);
