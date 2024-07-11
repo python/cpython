@@ -1,0 +1,4 @@
+``os.write`` on Windows no longer limits or splits up writes to console
+objects. The behavior was initially added to address bpo-11395 in 2011 as a
+workaround for the OS returning an error with too large of a write call to
+a console.
