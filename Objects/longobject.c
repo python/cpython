@@ -3563,7 +3563,7 @@ long_hash(PyLongObject *v)
     int sign;
 
     if (_PyLong_IsCompact(v)) {
-        x = (Py_uhash_t)_PyLong_CompactValue(v);
+        x = (Py_uhash_t)(Py_hash_t)_PyLong_CompactValue(v);
         if (x == (Py_uhash_t)-1) {
             x = (Py_uhash_t)-2;
         }
