@@ -951,7 +951,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fix_imports));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flags));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flush));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fnmatch));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fold));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(follow_symlinks));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
@@ -1105,6 +1104,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nlocals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_depth));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_offset));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(normcase));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ns));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nstype));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nt));
