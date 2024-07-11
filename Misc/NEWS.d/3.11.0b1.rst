@@ -285,7 +285,7 @@ macros.
 .. nonce: 11YXHQ
 .. section: Core and Builtins
 
-Add a new :c:func:`_PyFrame_IsEntryFrame` API function, to check if a
+Add a new :c:func:`!_PyFrame_IsEntryFrame` API function, to check if a
 :c:type:`PyFrameObject` is an entry frame. Patch by Pablo Galindo.
 
 ..
