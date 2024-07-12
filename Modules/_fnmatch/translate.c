@@ -151,7 +151,8 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     }
     const int kind = PyUnicode_KIND(pattern);
     const void *data = PyUnicode_DATA(pattern);
-    Py_ssize_t h = 0, i = 0;
+    // i is the current index, wi is the index of a wildcard
+    Py_ssize_t i = 0, wi = 0;
     while (i < n) {
         // read and advance to the next character
         Py_UCS4 chr = READ(i++);
@@ -159,7 +160,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             case '*': {
                 _WRITE_CHAR_OR(writer, chr, goto abort);
                 SKIP_DUPLICATES('*', i, n);
-                PyObject *index = PyLong_FromSsize_t(h++);
+                PyObject *index = PyLong_FromSsize_t(wi++);
                 if (index == NULL) {
                     goto abort;
                 }
@@ -173,7 +174,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             case '?': {
                 // translate optional '?' (fnmatch) into optional '.' (regex)
                 _WRITE_CHAR_OR(writer, '.', goto abort);
-                ++h; // increase the expected result's length
+                ++wi; // increase the expected result's length
                 break;
             }
             case '[': {
@@ -183,14 +184,14 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 ADVANCE_TO_NEXT(']', j, n); // locate closing ']'
                 if (j >= n) {
                     _WRITE_ASCII_OR(writer, "\\[", 2, goto abort);
-                    h += 2; // we just wrote 2 characters
+                    wi += 2; // we just wrote 2 characters
                     break;  // early break for clarity
                 }
                 else {
                     //              v--- pattern[j] (exclusive)
                     // '[' * ... * ']'
                     //     ^----- pattern[i] (inclusive)
-                    int pos = PyUnicode_FindChar(pattern, '-', i, j, 1);
+                    Py_ssize_t pos = PyUnicode_FindChar(pattern, '-', i, j, 1);
                     if (pos == -2) {
                         goto abort;
                     }
@@ -216,12 +217,12 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                     if (s2 == NULL) {
                         goto abort;
                     }
-                    int difflen = write_expression(writer, s2);
+                    Py_ssize_t difflen = write_expression(writer, s2);
                     Py_DECREF(s2);
                     if (difflen < 0) {
                         goto abort;
                     }
-                    h += difflen;
+                    wi += difflen;
                     i = j + 1;  // jump to the character after ']'
                     break;      // early break for clarity
                 }
@@ -231,12 +232,12 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 if (str == NULL) {
                     goto abort;
                 }
-                int difflen = write_literal(state, writer, str);
+                Py_ssize_t difflen = write_literal(state, writer, str);
                 Py_DECREF(str);
                 if (difflen < 0) {
                     goto abort;
                 }
-                h += difflen;
+                wi += difflen;
                 break;
             }
         }
