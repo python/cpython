@@ -1917,6 +1917,23 @@ channel_is_associated(_channels *channels, int64_t cid, int64_t interpid,
     return (end != NULL && end->open);
 }
 
+static int
+_channel_get_count(_channels *channels, int64_t cid, Py_ssize_t *p_count)
+{
+    PyThread_type_lock mutex = NULL;
+    _channel_state *chan = NULL;
+    int err = _channels_lookup(channels, cid, &mutex, &chan);
+    if (err != 0) {
+        return err;
+    }
+    assert(chan != NULL);
+    int64_t count = chan->queue->count;
+    PyThread_release_lock(mutex);
+
+    *p_count = (Py_ssize_t)count;
+    return 0;
+}
+
 
 /* channel info */
 
@@ -3216,6 +3233,34 @@ Close the channel for the current interpreter.  'send' and 'recv'\n\
 ends are closed.  Closing an already closed end is a noop.");
 
 static PyObject *
+channelsmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", NULL};
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&:get_count", kwlist,
+                                     channel_id_converter, &cid_data)) {
+        return NULL;
+    }
+    int64_t cid = cid_data.cid;
+
+    Py_ssize_t count = -1;
+    int err = _channel_get_count(&_globals.channels, cid, &count);
+    if (handle_channel_error(err, self, cid)) {
+        return NULL;
+    }
+    assert(count >= 0);
+    return PyLong_FromSsize_t(count);
+}
+
+PyDoc_STRVAR(channelsmod_get_count_doc,
+"get_count(cid)\n\
+\n\
+Return the number of items in the channel.");
+
+static PyObject *
 channelsmod_get_info(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
@@ -3341,6 +3386,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channelsmod_close_doc},
     {"release",                    _PyCFunction_CAST(channelsmod_release),
      METH_VARARGS | METH_KEYWORDS, channelsmod_release_doc},
+    {"get_count",                   _PyCFunction_CAST(channelsmod_get_count),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_get_count_doc},
     {"get_info",                   _PyCFunction_CAST(channelsmod_get_info),
      METH_VARARGS | METH_KEYWORDS, channelsmod_get_info_doc},
     {"get_channel_defaults",       _PyCFunction_CAST(channelsmod_get_channel_defaults),
