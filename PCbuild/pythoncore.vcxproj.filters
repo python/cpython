@@ -252,6 +252,9 @@
     <ClInclude Include="..\Modules\rotatingtree.h">
       <Filter>Modules</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\_fnmatch\_fnmatchmodule.h">
+      <Filter>Modules\_fnmatch</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\_io\_iomodule.h">
       <Filter>Modules\_io</Filter>
     </ClInclude>
@@ -1057,6 +1060,15 @@
     </ClCompile>
     <ClCompile Include="..\Modules\zlibmodule.c">
       <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_fnmatch\_fnmatchmodule.c">
+      <Filter>Modules\_fnmatch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_fnmatch\regex.c">
+      <Filter>Modules\_fnmatch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_fnmatch\translate.c">
+      <Filter>Modules\_fnmatch</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_io\fileio.c">
       <Filter>Modules\_io</Filter>

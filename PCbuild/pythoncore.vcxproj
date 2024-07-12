@@ -368,6 +368,7 @@
     <ClInclude Include="..\Modules\_math.h" />
     <ClInclude Include="..\Modules\hashtable.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
+    <ClInclude Include="..\Modules\_fnmatch\_fnmatchmodule.h" />
     <ClInclude Include="..\Modules\_io\_iomodule.h" />
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h" />
     <ClInclude Include="..\Modules\cjkcodecs\cjkcodecs.h" />
@@ -473,6 +474,9 @@
     <ClCompile Include="..\Modules\_typingmodule.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
+    <ClCompile Include="..\Modules\_fnmatch\_fnmatchmodule.c" />
+    <ClCompile Include="..\Modules\_fnmatch\regex.c" />
+    <ClCompile Include="..\Modules\_fnmatch\translate.c" />
     <ClCompile Include="..\Modules\_interpretersmodule.c" />
     <ClCompile Include="..\Modules\_interpchannelsmodule.c" />
     <ClCompile Include="..\Modules\_interpqueuesmodule.c" />
