@@ -529,10 +529,12 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Exactly what values are considered compact is an implementation detail
    and is subject to change.
 
-.. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
+.. c:function:: int PyUnstable_Long_CompactValue(const PyLongObject* op)
 
    If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
    return its value.
 
    Otherwise, the return value is undefined.
 
+   .. versionchanged:: 3.14
+      Change return type from :c:type:`Py_ssize_t` to :c:type:`int`.
