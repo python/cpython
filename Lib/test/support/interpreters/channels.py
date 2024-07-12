@@ -44,8 +44,7 @@ def _resolve_unbound(flag):
     return resolved
 
 
-# XXX Change the default to UNBOUND!
-def create(*, unbounditems=UNBOUND_REMOVE):
+def create(*, unbounditems=UNBOUND):
     """Return (recv, send) for a new cross-interpreter channel.
 
     The channel may be used to pass data safely between interpreters.

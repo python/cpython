@@ -2772,9 +2772,8 @@ static PyObject *
 channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"unboundop", NULL};
-    // XXX Make it required.
-    int unboundop = UNBOUND_REMOVE;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:create", kwlist,
+    int unboundop;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "i:create", kwlist,
                                      &unboundop))
     {
         return NULL;
