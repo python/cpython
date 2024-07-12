@@ -116,8 +116,8 @@ def create(maxsize=0, *, syncobj=False, unbounditems=UNBOUND):
 
 def list_all():
     """Return a list of all open queues."""
-    return [Queue(qid, _fmt=fmt, _unbound=unbound)
-            for qid, fmt, unbound in _queues.list_all()]
+    return [Queue(qid, _fmt=fmt, _unbound=(unboundop,))
+            for qid, fmt, unboundop in _queues.list_all()]
 
 
 _known_queues = weakref.WeakValueDictionary()
