@@ -18,7 +18,9 @@
 #endif
 
 #define REGISTERS_HEAP_TYPES
+#define HAS_UNBOUND_ITEMS
 #include "_interpreters_common.h"
+#undef HAS_UNBOUND_ITEMS
 #undef REGISTERS_HEAP_TYPES
 
 
@@ -2767,8 +2769,23 @@ clear_interpreter(void *data)
 
 
 static PyObject *
-channelsmod_create(PyObject *self, PyObject *Py_UNUSED(ignored))
+channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"unboundop", NULL};
+    // XXX Make it required.
+    int unboundop = UNBOUND_REMOVE;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:create", kwlist,
+                                     &unboundop))
+    {
+        return NULL;
+    }
+    if (!check_unbound(unboundop)) {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported unboundop %d", unboundop);
+        return NULL;
+    }
+
+    // XXX Save unboundop.
     int64_t cid = channel_create(&_globals.channels);
     if (cid < 0) {
         (void)handle_channel_error(-1, self, cid);
@@ -2796,7 +2813,7 @@ channelsmod_create(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(channelsmod_create_doc,
-"channel_create() -> cid\n\
+"channel_create(unboundop) -> cid\n\
 \n\
 Create a new cross-interpreter channel and return a unique generated ID.");
 
@@ -2860,7 +2877,16 @@ channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
             break;
         }
         assert(cidobj != NULL);
-        PyList_SET_ITEM(ids, (Py_ssize_t)i, cidobj);
+
+        // XXX get unboundop
+        int unboundop = UNBOUND_REPLACE;
+        PyObject *item = Py_BuildValue("Oi", cidobj, unboundop);
+        Py_DECREF(cidobj);
+        if (item == NULL) {
+            Py_SETREF(ids, NULL);
+            break;
+        }
+        PyList_SET_ITEM(ids, (Py_ssize_t)i, item);
     }
 
 finally:
@@ -2942,16 +2968,25 @@ receive end.");
 static PyObject *
 channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", "obj", "blocking", "timeout", NULL};
+    static char *kwlist[] = {"cid", "obj", "unboundop", "blocking", "timeout",
+                             NULL};
     struct channel_id_converter_data cid_data = {
         .module = self,
     };
     PyObject *obj;
+    // XXX Make unboundop required.
+    int unboundop = UNBOUND_REMOVE;
     int blocking = 1;
     PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|$pO:channel_send", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|i$pO:channel_send", kwlist,
                                      channel_id_converter, &cid_data, &obj,
-                                     &blocking, &timeout_obj)) {
+                                     &unboundop, &blocking, &timeout_obj))
+    {
+        return NULL;
+    }
+    if (!check_unbound(unboundop)) {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported unboundop %d", unboundop);
         return NULL;
     }
 
@@ -2963,6 +2998,7 @@ channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* Queue up the object. */
     int err = 0;
+    // XXX Store unboundop
     if (blocking) {
         err = channel_send_wait(&_globals.channels, cid, obj, timeout);
     }
@@ -2985,17 +3021,25 @@ By default this waits for the object to be received.");
 static PyObject *
 channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", "obj", "blocking", "timeout", NULL};
+    static char *kwlist[] = {"cid", "obj", "unboundop", "blocking", "timeout",
+                             NULL};
     struct channel_id_converter_data cid_data = {
         .module = self,
     };
     PyObject *obj;
+    // XXX Make unboundop required.
+    int unboundop = UNBOUND_REMOVE;
     int blocking = 1;
     PyObject *timeout_obj = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&O|$pO:channel_send_buffer", kwlist,
+                                     "O&O|i$pO:channel_send_buffer", kwlist,
                                      channel_id_converter, &cid_data, &obj,
-                                     &blocking, &timeout_obj)) {
+                                     &unboundop, &blocking, &timeout_obj)) {
+        return NULL;
+    }
+    if (!check_unbound(unboundop)) {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported unboundop %d", unboundop);
         return NULL;
     }
 
@@ -3012,6 +3056,7 @@ channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* Queue up the object. */
     int err = 0;
+    // XXX Store unboundop
     if (blocking) {
         err = channel_send_wait(&_globals.channels, cid, tempobj, timeout);
     }
@@ -3062,11 +3107,15 @@ channelsmod_recv(PyObject *self, PyObject *args, PyObject *kwds)
         obj = Py_NewRef(dflt);
     }
     Py_XDECREF(dflt);
-    return obj;
+
+    // XXX return unboundop if unbound
+    PyObject *res = Py_BuildValue("OO", obj, Py_None);
+    Py_DECREF(obj);
+    return res;
 }
 
 PyDoc_STRVAR(channelsmod_recv_doc,
-"channel_recv(cid, [default]) -> obj\n\
+"channel_recv(cid, [default]) -> (obj, unboundop)\n\
 \n\
 Return a new object from the data at the front of the channel's queue.\n\
 \n\
@@ -3195,6 +3244,41 @@ PyDoc_STRVAR(channelsmod_get_info_doc,
 Return details about the channel.");
 
 static PyObject *
+channelsmod_get_channel_defaults(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", NULL};
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&:get_channel_defaults", kwlist,
+                                     channel_id_converter, &cid_data)) {
+        return NULL;
+    }
+    int64_t cid = cid_data.cid;
+
+    // XXX get stored defaults.
+//    _channel *channel = NULL;
+//    int err = _channels_lookup(&_globals.channels, cid, &channel);
+//    if (handle_channel_error(err, self, cid)) {
+//        return NULL;
+//    }
+//    int unboundop = channel->defaults.unboundop;
+//    _channel_unmark_waiter(channel, _globals.channels.mutex);
+
+    (void)cid;
+    int unboundop = UNBOUND_REPLACE;
+
+    PyObject *defaults = Py_BuildValue("i", unboundop);
+    return defaults;
+}
+
+PyDoc_STRVAR(channelsmod_get_channel_defaults_doc,
+"get_channel_defaults(cid)\n\
+\n\
+Return the channel's default values, set when it was created.");
+
+static PyObject *
 channelsmod__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 {
     module_state *state = get_module_state(self);
@@ -3240,8 +3324,8 @@ channelsmod__register_end_types(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                     channelsmod_create,
-     METH_NOARGS,                  channelsmod_create_doc},
+    {"create",                     _PyCFunction_CAST(channelsmod_create),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_create_doc},
     {"destroy",                    _PyCFunction_CAST(channelsmod_destroy),
      METH_VARARGS | METH_KEYWORDS, channelsmod_destroy_doc},
     {"list_all",                   channelsmod_list_all,
@@ -3260,6 +3344,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channelsmod_release_doc},
     {"get_info",                   _PyCFunction_CAST(channelsmod_get_info),
      METH_VARARGS | METH_KEYWORDS, channelsmod_get_info_doc},
+    {"get_channel_defaults",       _PyCFunction_CAST(channelsmod_get_channel_defaults),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_get_channel_defaults_doc},
     {"_channel_id",                _PyCFunction_CAST(channelsmod__channel_id),
      METH_VARARGS | METH_KEYWORDS, NULL},
     {"_register_end_types",        _PyCFunction_CAST(channelsmod__register_end_types),
