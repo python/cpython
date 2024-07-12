@@ -30,6 +30,7 @@ _weakref _weakref.c
 _abc _abc.c
 _functools _functoolsmodule.c
 _locale _localemodule.c
+_opcode _opcode.c
 _operator _operator.c
 _stat _stat.c
 _symtable symtablemodule.c
