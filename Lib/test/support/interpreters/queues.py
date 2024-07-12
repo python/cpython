@@ -103,7 +103,7 @@ def create(maxsize=0, *, syncobj=False, unbounditems=UNBOUND):
     "syncobj" sets the default for Queue.put()
     and Queue.put_nowait().
 
-    "unbounditems" likewise sets the default.  See Queue.pop() for
+    "unbounditems" likewise sets the default.  See Queue.put() for
     supported values.  The default value is UNBOUND, which replaces
     the unbound item.
     """
@@ -206,7 +206,7 @@ class Queue:
         This blocks while the queue is full.
 
         If "syncobj" is None (the default) then it uses the
-        queue's default, set with create_queue()..
+        queue's default, set with create_queue().
 
         If "syncobj" is false then all objects are supported,
         at the expense of worse performance.
