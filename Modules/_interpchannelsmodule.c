@@ -2615,10 +2615,10 @@ _get_current_channelend_type(int end)
     }
     if (cls == NULL) {
         // Force the module to be loaded, to register the type.
-        PyObject *highlevel = PyImport_ImportModule("interpreters.channel");
+        PyObject *highlevel = PyImport_ImportModule("interpreters.channels");
         if (highlevel == NULL) {
             PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters.channel");
+            highlevel = PyImport_ImportModule("test.support.interpreters.channels");
             if (highlevel == NULL) {
                 return NULL;
             }
@@ -2977,7 +2977,7 @@ channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(channelsmod_send_doc,
-"channel_send(cid, obj, blocking=True)\n\
+"channel_send(cid, obj, *, blocking=True, timeout=None)\n\
 \n\
 Add the object's data to the channel's queue.\n\
 By default this waits for the object to be received.");
@@ -3027,7 +3027,7 @@ channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(channelsmod_send_buffer_doc,
-"channel_send_buffer(cid, obj, blocking=True)\n\
+"channel_send_buffer(cid, obj, *, blocking=True, timeout=None)\n\
 \n\
 Add the object's buffer to the channel's queue.\n\
 By default this waits for the object to be received.");

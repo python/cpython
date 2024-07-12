@@ -1128,12 +1128,16 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
     if (PyLong_Check(vv)) {
         v = (PyLongObject *)vv;
     }
-    else {
+    else if (flags != -1 && (flags & Py_ASNATIVEBYTES_ALLOW_INDEX)) {
         v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL) {
             return -1;
         }
         do_decref = 1;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
+        return -1;
     }
 
     if ((flags != -1 && (flags & Py_ASNATIVEBYTES_REJECT_NEGATIVE))
@@ -6045,7 +6049,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 /*[clinic input]
 int.__round__
 
-    ndigits as o_ndigits: object = NULL
+    ndigits as o_ndigits: object = None
     /
 
 Rounding an Integral returns itself.
@@ -6055,7 +6059,7 @@ Rounding with an ndigits argument also returns an integer.
 
 static PyObject *
 int___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=954fda6b18875998 input=1614cf23ec9e18c3]*/
+/*[clinic end generated code: output=954fda6b18875998 input=30c2aec788263144]*/
 {
     PyObject *temp, *result, *ndigits;
 
@@ -6073,7 +6077,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
      *
      *   m - divmod_near(m, 10**n)[1].
      */
-    if (o_ndigits == NULL)
+    if (o_ndigits == Py_None)
         return long_long(self);
 
     ndigits = _PyNumber_Index(o_ndigits);
@@ -6672,12 +6676,12 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
 
 int
 PyUnstable_Long_IsCompact(const PyLongObject* op) {
-    return _PyLong_IsCompact(op);
+    return _PyLong_IsCompact((PyLongObject*)op);
 }
 
 #undef PyUnstable_Long_CompactValue
 
 Py_ssize_t
 PyUnstable_Long_CompactValue(const PyLongObject* op) {
-    return _PyLong_CompactValue(op);
+    return _PyLong_CompactValue((PyLongObject*)op);
 }

@@ -312,6 +312,10 @@ def _getuserbase():
 # Same to sysconfig.get_path('purelib', os.name+'_user')
 def _get_path(userbase):
     version = sys.version_info
+    if hasattr(sys, 'abiflags') and 't' in sys.abiflags:
+        abi_thread = 't'
+    else:
+        abi_thread = ''
 
     implementation = _get_implementation()
     implementation_lower = implementation.lower()
@@ -322,7 +326,7 @@ def _get_path(userbase):
     if sys.platform == 'darwin' and sys._framework:
         return f'{userbase}/lib/{implementation_lower}/site-packages'
 
-    return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
+    return f'{userbase}/lib/python{version[0]}.{version[1]}{abi_thread}/site-packages'
 
 
 def getuserbase():
@@ -390,6 +394,10 @@ def getsitepackages(prefixes=None):
 
         implementation = _get_implementation().lower()
         ver = sys.version_info
+        if hasattr(sys, 'abiflags') and 't' in sys.abiflags:
+            abi_thread = 't'
+        else:
+            abi_thread = ''
         if os.sep == '/':
             libdirs = [sys.platlibdir]
             if sys.platlibdir != "lib":
@@ -397,7 +405,7 @@ def getsitepackages(prefixes=None):
 
             for libdir in libdirs:
                 path = os.path.join(prefix, libdir,
-                                    f"{implementation}{ver[0]}.{ver[1]}",
+                                    f"{implementation}{ver[0]}.{ver[1]}{abi_thread}",
                                     "site-packages")
                 sitepackages.append(path)
         else:
@@ -486,7 +494,7 @@ def register_readline():
     import atexit
     try:
         import readline
-        import rlcompleter
+        import rlcompleter  # noqa: F401
         import _pyrepl.readline
         import _pyrepl.unix_console
     except ImportError:
@@ -526,8 +534,7 @@ def register_readline():
 
         def write_history():
             try:
-                # _pyrepl.__main__ is executed as the __main__ module
-                from __main__ import CAN_USE_PYREPL
+                from _pyrepl.main import CAN_USE_PYREPL
             except ImportError:
                 CAN_USE_PYREPL = False
 
@@ -603,7 +610,7 @@ def execsitecustomize():
     """Run custom site specific code, if available."""
     try:
         try:
-            import sitecustomize
+            import sitecustomize  # noqa: F401
         except ImportError as exc:
             if exc.name == 'sitecustomize':
                 pass
@@ -623,7 +630,7 @@ def execusercustomize():
     """Run custom user specific code, if available."""
     try:
         try:
-            import usercustomize
+            import usercustomize  # noqa: F401
         except ImportError as exc:
             if exc.name == 'usercustomize':
                 pass
