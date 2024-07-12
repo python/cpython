@@ -434,7 +434,9 @@ struct _queueitem;
 
 typedef struct _queueitem {
     /* The interpreter that added the item to the queue.
-       The actual bound interpid is found in item->data. */
+       The actual bound interpid is found in item->data.
+       This is necessary because item->data might be NULL,
+       meaning the interpreter has been destroyed. */
     int64_t interpid;
     _PyCrossInterpreterData *data;
     int fmt;
@@ -481,7 +483,6 @@ _queueitem_clear(_queueitem *item)
     item->next = NULL;
     _queueitem_clear_data(item);
 }
-
 
 static _queueitem *
 _queueitem_new(int64_t interpid, _PyCrossInterpreterData *data,
