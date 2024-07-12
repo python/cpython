@@ -8,9 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyFreeListState
-#include "pycore_runtime.h"       // _PyRuntime
-#include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_freelist_state.h"  // _Py_freelists
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_tstate.h"          // _PyThreadStateImpl
 
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
@@ -278,20 +278,6 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 //
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
-
-static inline struct _Py_object_freelists* _Py_object_freelists_GET(void)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-#ifdef Py_DEBUG
-    _Py_EnsureTstateNotNULL(tstate);
-#endif
-
-#ifdef Py_GIL_DISABLED
-    return &((_PyThreadStateImpl*)tstate)->freelists;
-#else
-    return &tstate->interp->object_state.freelists;
-#endif
-}
 
 #ifdef __cplusplus
 }
