@@ -16,9 +16,6 @@ typedef struct {
 
     // strings used by translate.c
     PyObject *hyphen_str;           // hyphen glyph '-'
-    PyObject *re_empty_range_str;      // RE empty range '(?!)'
-    PyObject *re_atomic_bgroup_str;    // RE atomic group begin '(?>.*?'
-    PyObject *re_wildcard_str;         // RE wildcard '.*'
 } fnmatchmodule_state;
 
 static inline fnmatchmodule_state *

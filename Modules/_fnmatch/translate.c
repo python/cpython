@@ -97,8 +97,7 @@ write_literal(fnmatchmodule_state *state,
  * This returns the number of written characters, or -1 if an error occurred.
  */
 static Py_ssize_t
-write_expression(fnmatchmodule_state *state,
-                 PyUnicodeWriter *writer, PyObject *expression);
+write_expression(PyUnicodeWriter *writer, PyObject *expression);
 
 /*
  * Build the final regular expression by processing the wildcards.
@@ -106,8 +105,7 @@ write_expression(fnmatchmodule_state *state,
  * The position of each wildcard in 'pattern' is given by 'indices'.
  */
 static PyObject *
-process_wildcards(fnmatchmodule_state *state,
-                  PyObject *pattern, PyObject *indices);
+process_wildcards(PyObject *pattern, PyObject *indices);
 
 // ==== API implementation ====================================================
 
@@ -202,8 +200,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 ADVANCE_IF_CHAR(']', j, n); // [!] or []
                 ADVANCE_TO_NEXT(']', j, n); // locate closing ']'
                 if (j >= n) {
-                    _WRITE_CHAR_OR(writer, '\\', goto abort);
-                    _WRITE_CHAR_OR(writer, '[', goto abort);
+                    _WRITE_ASCII_OR(writer, "\\[", 2, goto abort);
                     wi += 2; // we just wrote 2 characters
                     break;  // early break for clarity
                 }
@@ -221,7 +218,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                         if (s0 == NULL) {
                             goto abort;
                         }
-                        // NOTE(picnixz): maybe cache the method and intern the arguments?
+                        // NOTE(picnixz): maybe cache the method and intern the arguments
                         // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
                         s1 = _PyObject_CallMethod(s0, &_Py_ID(replace), "ss", "\\", "\\\\");
                         Py_DECREF(s0);
@@ -234,14 +231,14 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                     if (s1 == NULL) {
                         goto abort;
                     }
-                    // NOTE(picnixz): maybe cache the method and intern the arguments?
+                    // NOTE(picnixz): maybe cache the method and intern the arguments
                     // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
                     s2 = _PyObject_CallMethod(re, &_Py_ID(sub), "ssO", "([&~|])", "\\\\\\1", s1);
                     Py_DECREF(s1);
                     if (s2 == NULL) {
                         goto abort;
                     }
-                    Py_ssize_t difflen = write_expression(state, writer, s2);
+                    Py_ssize_t difflen = write_expression(writer, s2);
                     Py_DECREF(s2);
                     if (difflen < 0) {
                         goto abort;
@@ -276,7 +273,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
         Py_DECREF(indices);
         return NULL;
     }
-    PyObject *res = process_wildcards(state, translated, indices);
+    PyObject *res = process_wildcards(translated, indices);
     Py_DECREF(translated);
     Py_DECREF(indices);
     return res;
@@ -421,13 +418,13 @@ translate_expression(fnmatchmodule_state *state,
     for (c = 0; c < chunkscount; ++c) {
         PyObject *s0 = PyList_GET_ITEM(chunks, c);
         assert(s0 != NULL);
-        // NOTE(picnixz): maybe cache the method and intern the arguments?
+        // NOTE(picnixz): maybe cache the method and intern the arguments
         // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
         PyObject *s1 = _PyObject_CallMethod(s0, &_Py_ID(replace), "ss", "\\", "\\\\");
         if (s1 == NULL) {
             goto abort;
         }
-        // NOTE(picnixz): maybe cache the method and intern the arguments?
+        // NOTE(picnixz): maybe cache the method and intern the arguments
         // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
         PyObject *s2 = _PyObject_CallMethod(s1, &_Py_ID(replace), "ss", "-", "\\-");
         Py_DECREF(s1);
@@ -456,7 +453,8 @@ abort:
 }
 
 static Py_ssize_t
-write_literal(fnmatchmodule_state *state, PyUnicodeWriter *writer, PyObject *literal)
+write_literal(fnmatchmodule_state *state,
+              PyUnicodeWriter *writer, PyObject *literal)
 {
     PyObject *escaped = PyObject_CallMethodOneArg(state->re_module,
                                                   &_Py_ID(escape),
@@ -476,17 +474,14 @@ write_literal(fnmatchmodule_state *state, PyUnicodeWriter *writer, PyObject *lit
 }
 
 static Py_ssize_t
-write_expression(fnmatchmodule_state *state,
-                 PyUnicodeWriter *writer, PyObject *expression)
+write_expression(PyUnicodeWriter *writer, PyObject *expression)
 {
 #define WRITE_CHAR(c)           _WRITE_CHAR_OR(writer, (c), return -1)
-#define WRITE_ASCII(s, n)       _WRITE_ASCII_OR(writer, (s), (n), return -1)
-#define WRITE_BLOCK(s, i, j)    _WRITE_BLOCK_OR(writer, (s), (i), (j), return -1)
 #define WRITE_STRING(s)         _WRITE_STRING_OR(writer, (s), return -1)
     Py_ssize_t grouplen = PyUnicode_GET_LENGTH(expression);
     if (grouplen == 0) {
         /* empty range: never match */
-        WRITE_STRING(state->re_empty_range_str);
+        _WRITE_ASCII_OR(writer, "(?!)", 4, return -1);
         return 4;
     }
     Py_UCS4 token = PyUnicode_READ_CHAR(expression, 0);
@@ -500,7 +495,7 @@ write_expression(fnmatchmodule_state *state,
     switch (token) {
         case '!': {
             WRITE_CHAR('^'); // replace '!' by '^'
-            WRITE_BLOCK(expression, 1, grouplen);
+            _WRITE_BLOCK_OR(writer, expression, 1, grouplen, return -1);
             break;
         }
         case '^':
@@ -518,14 +513,11 @@ write_expression(fnmatchmodule_state *state,
     WRITE_CHAR(']');
     return grouplen + extra;
 #undef WRITE_STRING
-#undef WRITE_BLOCK
-#undef WRITE_ASCII
 #undef WRITE_CHAR
 }
 
 static PyObject *
-process_wildcards(fnmatchmodule_state *state,
-                  PyObject *pattern, PyObject *indices)
+process_wildcards(PyObject *pattern, PyObject *indices)
 {
     const Py_ssize_t m = PyList_GET_SIZE(indices);
     if (m == 0) {
@@ -577,13 +569,13 @@ process_wildcards(fnmatchmodule_state *state,
         }
         assert(i < j);
         // write the atomic RE group '(?>.*?' + BLOCK + ')'
-        _WRITE_STRING_OR(writer, state->re_atomic_bgroup_str, goto abort);
+        _WRITE_ASCII_OR(writer, "(?>.*?", 6, goto abort);
         _WRITE_BLOCK_OR(writer, pattern, i, j, goto abort);
         _WRITE_CHAR_OR(writer, ')', goto abort);
         i = j + 1;
     }
     // handle the remaining wildcard
-    _WRITE_STRING_OR(writer, state->re_wildcard_str, goto abort);
+    _WRITE_ASCII_OR(writer, ".*", 2, goto abort);
     // write the remaining substring (if non-empty)
     _WRITE_BLOCK_OR(writer, pattern, i, n, goto abort);
     PyObject *processed = PyUnicodeWriter_Finish(writer);

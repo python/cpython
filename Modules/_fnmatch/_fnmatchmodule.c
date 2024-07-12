@@ -130,9 +130,6 @@ fnmatchmodule_exec(PyObject *module)
         return -1;
     }
     INTERN_STRING(st, hyphen_str, "-");
-    INTERN_STRING(st, re_empty_range_str, "(?!)");
-    INTERN_STRING(st, re_atomic_bgroup_str, "(?>.*?");
-    INTERN_STRING(st, re_wildcard_str, ".*");
     return 0;
 }
 #undef INTERN_STRING
@@ -142,9 +139,6 @@ static int
 fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
-    Py_VISIT(st->re_wildcard_str);
-    Py_VISIT(st->re_atomic_bgroup_str);
-    Py_VISIT(st->re_empty_range_str);
     Py_VISIT(st->hyphen_str);
     Py_VISIT(st->translator);
     Py_VISIT(st->re_module);
@@ -157,9 +151,6 @@ static int
 fnmatchmodule_clear(PyObject *m)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
-    Py_CLEAR(st->re_wildcard_str);
-    Py_CLEAR(st->re_atomic_bgroup_str);
-    Py_CLEAR(st->re_empty_range_str);
     Py_CLEAR(st->hyphen_str);
     Py_CLEAR(st->translator);
     Py_CLEAR(st->re_module);
