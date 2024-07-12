@@ -354,16 +354,6 @@ asend().throw()
 
 ..
 
-.. date: 2024-04-13-18-59-25
-.. gh-issue: 115874
-.. nonce: c3xG-E
-.. section: Core and Builtins
-
-Fixed a possible segfault during garbage collection of
-``_asyncio.FutureIter`` objects
-
-..
-
 .. date: 2024-04-13-16-55-53
 .. gh-issue: 117536
 .. nonce: xkVbfv
@@ -880,6 +870,16 @@ relating to PEP 706. If a ``filter`` argument is not provided to
 ``extract()`` or ``extractall``, the deprecation warning now points to the
 line in the user's code where the relevant function was called. Patch by
 Alex Waygood.
+
+..
+
+.. date: 2024-04-13-18-59-25
+.. gh-issue: 115874
+.. nonce: c3xG-E
+.. section: Library
+
+Fixed a possible segfault during garbage collection of
+``_asyncio.FutureIter`` objects. Patch by Savannah Ostrowski.
 
 ..
 
