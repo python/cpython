@@ -81,8 +81,8 @@ typedef struct {
 #   define ASYNCIO_STATE_LOCK(state) PyMutex_Lock(&state->mutex)
 #   define ASYNCIO_STATE_UNLOCK(state) PyMutex_Unlock(&state->mutex)
 #else
-#   define ASYNCIO_STATE_LOCK(state) (void(state))
-#   define ASYNCIO_STATE_UNLOCK(state) (void(state))
+#   define ASYNCIO_STATE_LOCK(state) ((void)state))
+#   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
 #endif
 
 typedef struct futureiterobject futureiterobject;
