@@ -214,30 +214,32 @@
     } \
     else else_block
 
-// Unified API for dict and mapping
+// Unified dict/mapping API
 #define _Py_DICT_OR_MAPPING_GETITEMREF(dict_or_mapping, obj, ref, result) \
     _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_GetItemRef, \
-    PyMapping_GetOptionalItem, obj, ref)
+        PyMapping_GetOptionalItem, obj, ref)
 
 #define _Py_DICT_OR_MAPPING_GETITEMREF_ELSE(dict_or_mapping, obj, ref, \
-    result, else_block) _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, \
-    PyDict_GetItemRef, PyMapping_GetOptionalItem, else_block, obj, ref)
+    result, else_block) \
+    _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, PyDict_GetItemRef, \
+        PyMapping_GetOptionalItem, else_block, obj, ref)
 
 #define _Py_DICT_OR_MAPPING_SETITEM(dict_or_mapping, obj, ref, result) \
     _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_SetItem, \
-    PyObject_SetItem, obj, ref)
+        PyObject_SetItem, obj, ref)
 
 #define _Py_DICT_OR_MAPPING_DELITEM(dict_or_mapping, obj, result) \
     _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_DelItem, \
-    PyMapping_DelItem, obj)
+        PyMapping_DelItem, obj)
 
 #define _Py_DICT_OR_MAPPING_CONTAINS(dict_or_mapping, obj, result) \
     _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_Contains, \
-    PyMapping_HasKeyWithError, obj)
+        PyMapping_HasKeyWithError, obj)
 
 #define _Py_DICT_OR_MAPPING_CONTAINS_ELSE(dict_or_mapping, obj, result, \
-    else_block) _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, \
-    PyDict_Contains, PyMapping_HasKeyWithError, else_block, obj)
+    else_block) \
+    _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, PyDict_Contains, \
+        PyMapping_HasKeyWithError, else_block, obj)
 
 #define _Py_DICT_OR_MAPPING_KEYS(dict_or_mapping, result) \
     _Py_DICT_OR_MAPPING(dict_or_mapping, result, PyDict_Keys, PyMapping_Keys)
