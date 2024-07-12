@@ -1523,25 +1523,28 @@ class PycacheTests(unittest.TestCase):
         # to seconds) and size, the difference between the source and
         # the bytecode timestamps is enough to trigger recomputation of
         # the pyc file.
-        prev_mtime = 0
+        pyc_file = importlib.util.cache_from_source(self.source)
         for i in range(10, 100):
-            with self.subTest(i):
-                while True:
-                    with open(self.source, 'w', encoding='utf-8') as fp:
-                        print(f"x = {i}", file=fp)
-                    mtime = os.stat(self.source).st_mtime
-                    if mtime > prev_mtime:
-                        break
-                    time.sleep(1e-3)
-                self.assertGreater(mtime, prev_mtime)
-                prev_mtime = mtime
+            try:
+                bytecode_mtime = os.stat(pyc_file).st_mtime
+            except FileNotFoundError:
+                # The pyc file has not yet be created.
+                bytecode_mtime = 0
+            delay = 1e-3
+            for j in range(10):
+                time.sleep(delay)
+                with open(self.source, 'w', encoding='utf-8') as fp:
+                    print(f"x = {i}", file=fp)
+                if os.stat(self.source).st_mtime > bytecode_mtime:
+                    break
+                delay *= 2
 
-                m = __import__(TESTFN)
-                self.assertEqual(m.x, i)
-                unload(TESTFN)
-                m = __import__(TESTFN)
-                self.assertEqual(m.x, i)
-                unload(TESTFN)
+            m = __import__(TESTFN)
+            self.assertEqual(m.x, i)
+            unload(TESTFN)
+            m = __import__(TESTFN)
+            self.assertEqual(m.x, i)
+            unload(TESTFN)
 
 
 class TestSymbolicallyLinkedPackage(unittest.TestCase):

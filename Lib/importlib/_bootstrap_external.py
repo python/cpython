@@ -762,7 +762,7 @@ def _validate_timestamp_pyc(self, data, source_mtime, source_size, name,
             pass
         else:
             if bytecode_mtime < source_mtime:
-                message = f'bytecode may be stale for {name!r}'
+                message = f'bytecode is stale for {name!r}'
                 _bootstrap._verbose_message('{}', message)
                 raise ImportError(message, **exc_details)
 
