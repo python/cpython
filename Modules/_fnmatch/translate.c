@@ -4,10 +4,9 @@
  * disabled on demand.
  */
 
-#include "Python.h"
-#include "pycore_call.h"    // for _PyObject_CallMethod()
-
 #include "_fnmatchmodule.h" // for get_fnmatchmodulestate_state()
+
+#include "pycore_call.h"
 
 // ==== Macro definitions =====================================================
 
