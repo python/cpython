@@ -192,8 +192,8 @@
 
 // Test if dict_or_mapping is a dict, and call dict_func if it is, or call
 // mapping_func if not. Store the returning value in result.
-#define _Py_DICT_OR_MAPPING(dict_or_mapping, result, \
-    dict_func, mapping_func, ...) \
+#define _Py_DICT_OR_MAPPING(dict_or_mapping, result, dict_func, mapping_func, \
+    ...) \
     if (PyDict_Check(dict_or_mapping)) { \
         result = dict_func(dict_or_mapping, ##__VA_ARGS__); \
     } \
@@ -204,8 +204,8 @@
 // Test if dict_or_mapping is a dict, and call dict_func if it is, or call
 // mapping_func if dict_or_mapping is a mapping; otherwise execute else_block.
 // Store the returning value in result.
-#define _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, \
-    dict_func, mapping_func, else_block, ...) \
+#define _Py_DICT_OR_MAPPING_ELSE(dict_or_mapping, result, dict_func, \
+    mapping_func, else_block, ...) \
     if (PyDict_Check(dict_or_mapping)) { \
         result = dict_func(dict_or_mapping, ##__VA_ARGS__); \
     } \

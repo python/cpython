@@ -1,2 +1,2 @@
-Allow a mapping to be passed as the *globals* argument for the built-in functions :func:`exec` and :func:`eval`.
+Allow a mapping to be the `__dict__` attribute of any object. This allows a mapping to be the global namespace of a module. It also allows a mapping to be passed as the *globals* argument for the built-in functions :func:`exec` and :func:`eval`.
 Patch by Ben Hsing
