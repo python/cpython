@@ -1700,6 +1700,9 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
+    Py_CLEAR(tstate->threading_local_key);
+    Py_CLEAR(tstate->threading_local_sentinel);
+
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
