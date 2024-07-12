@@ -236,14 +236,19 @@ class Queue:
         destroyed.
 
         If "unbound" is None (the default) then it uses the
-        queue's default, set with create_queue().
+        queue's default, set with create_queue(),
+        which is usually UNBOUND.
 
         If "unbound" is UNBOUND_ERROR then get() will raise an
         ItemInterpreterDestroyed exception if the original interpreter
-        has been destroyed.
+        has been destroyed.  This does not otherwise affect the queue;
+        the next call to put() will work like normal, returning the next
+        item in the queue.
 
         If "unbound" is UNBOUND_REMOVE then the item will be removed
         from the queue as soon as the original interpreter is destroyed.
+        Be aware that this will introduce an imbalance between put()
+        and get() calls.
 
         If "unbound" is UNBOUND then it is returned by get() in place
         of the unbound item.
