@@ -1741,10 +1741,8 @@ but effective way to define class private variables.  Any identifier of the form
 is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with any leading underscores stripped.
 
-More generally, the corresponding private member is accessed by its defining
-class using its non-transformed name. On the other hand, the transformed name
-must be used to access the private member *externally* (e.g., in a function or
-in a subclass):
+The identifier can be used unchanged within the class, but to access it outside
+the class, the mangled name must be used:
 
 .. code-block:: python
 
