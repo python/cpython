@@ -8,19 +8,20 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-PyDoc_STRVAR(_fnmatch_filter__doc__,
+PyDoc_STRVAR(fnmatch_filter__doc__,
 "filter($module, /, names, pat)\n"
 "--\n"
-"\n");
+"\n"
+"Construct a list from the names in *names* matching *pat*.");
 
-#define _FNMATCH_FILTER_METHODDEF    \
-    {"filter", _PyCFunction_CAST(_fnmatch_filter), METH_FASTCALL|METH_KEYWORDS, _fnmatch_filter__doc__},
-
-static PyObject *
-_fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pat);
+#define FNMATCH_FILTER_METHODDEF    \
+    {"filter", _PyCFunction_CAST(fnmatch_filter), METH_FASTCALL|METH_KEYWORDS, fnmatch_filter__doc__},
 
 static PyObject *
-_fnmatch_filter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pattern);
+
+static PyObject *
+fnmatch_filter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -50,33 +51,47 @@ _fnmatch_filter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject *names;
-    PyObject *pat;
+    PyObject *pattern;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     names = args[0];
-    pat = args[1];
-    return_value = _fnmatch_filter_impl(module, names, pat);
+    pattern = args[1];
+    return_value = fnmatch_filter_impl(module, names, pattern);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_fnmatch_fnmatch__doc__,
+PyDoc_STRVAR(fnmatch_fnmatch__doc__,
 "fnmatch($module, /, name, pat)\n"
 "--\n"
-"\n");
+"\n"
+"Test whether *name* matches *pat*.\n"
+"\n"
+"Patterns are Unix shell style:\n"
+"\n"
+"*       matches everything\n"
+"?       matches any single character\n"
+"[seq]   matches any character in seq\n"
+"[!seq]  matches any char not in seq\n"
+"\n"
+"An initial period in *name* is not special.\n"
+"Both *name* and *pat* are first case-normalized\n"
+"if the operating system requires it.\n"
+"\n"
+"If you don\'t want this, use fnmatchcase(name, pat).");
 
-#define _FNMATCH_FNMATCH_METHODDEF    \
-    {"fnmatch", _PyCFunction_CAST(_fnmatch_fnmatch), METH_FASTCALL|METH_KEYWORDS, _fnmatch_fnmatch__doc__},
+#define FNMATCH_FNMATCH_METHODDEF    \
+    {"fnmatch", _PyCFunction_CAST(fnmatch_fnmatch), METH_FASTCALL|METH_KEYWORDS, fnmatch_fnmatch__doc__},
 
 static int
-_fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pat);
+fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pattern);
 
 static PyObject *
-_fnmatch_fnmatch(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+fnmatch_fnmatch(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -106,7 +121,7 @@ _fnmatch_fnmatch(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject *name;
-    PyObject *pat;
+    PyObject *pattern;
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
@@ -114,8 +129,8 @@ _fnmatch_fnmatch(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto exit;
     }
     name = args[0];
-    pat = args[1];
-    _return_value = _fnmatch_fnmatch_impl(module, name, pat);
+    pattern = args[1];
+    _return_value = fnmatch_fnmatch_impl(module, name, pattern);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -125,23 +140,23 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_fnmatch_fnmatchcase__doc__,
+PyDoc_STRVAR(fnmatch_fnmatchcase__doc__,
 "fnmatchcase($module, /, name, pat)\n"
 "--\n"
 "\n"
-"Test whether `name` matches `pattern`, including case.\n"
+"Test whether *name* matches *pat*, including case.\n"
 "\n"
 "This is a version of fnmatch() which doesn\'t case-normalize\n"
 "its arguments.");
 
-#define _FNMATCH_FNMATCHCASE_METHODDEF    \
-    {"fnmatchcase", _PyCFunction_CAST(_fnmatch_fnmatchcase), METH_FASTCALL|METH_KEYWORDS, _fnmatch_fnmatchcase__doc__},
+#define FNMATCH_FNMATCHCASE_METHODDEF    \
+    {"fnmatchcase", _PyCFunction_CAST(fnmatch_fnmatchcase), METH_FASTCALL|METH_KEYWORDS, fnmatch_fnmatchcase__doc__},
 
 static int
-_fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat);
+fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pattern);
 
 static PyObject *
-_fnmatch_fnmatchcase(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+fnmatch_fnmatchcase(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -171,7 +186,7 @@ _fnmatch_fnmatchcase(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject *name;
-    PyObject *pat;
+    PyObject *pattern;
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
@@ -179,8 +194,8 @@ _fnmatch_fnmatchcase(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     name = args[0];
-    pat = args[1];
-    _return_value = _fnmatch_fnmatchcase_impl(module, name, pat);
+    pattern = args[1];
+    _return_value = fnmatch_fnmatchcase_impl(module, name, pattern);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -190,19 +205,22 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_fnmatch_translate__doc__,
+PyDoc_STRVAR(fnmatch_translate__doc__,
 "translate($module, /, pat)\n"
 "--\n"
-"\n");
+"\n"
+"Translate a shell pattern *pat* to a regular expression.\n"
+"\n"
+"There is no way to quote meta-characters.");
 
-#define _FNMATCH_TRANSLATE_METHODDEF    \
-    {"translate", _PyCFunction_CAST(_fnmatch_translate), METH_FASTCALL|METH_KEYWORDS, _fnmatch_translate__doc__},
+#define FNMATCH_TRANSLATE_METHODDEF    \
+    {"translate", _PyCFunction_CAST(fnmatch_translate), METH_FASTCALL|METH_KEYWORDS, fnmatch_translate__doc__},
 
 static PyObject *
-_fnmatch_translate_impl(PyObject *module, PyObject *pattern);
+fnmatch_translate_impl(PyObject *module, PyObject *pattern);
 
 static PyObject *
-_fnmatch_translate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+fnmatch_translate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -238,9 +256,9 @@ _fnmatch_translate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto exit;
     }
     pattern = args[0];
-    return_value = _fnmatch_translate_impl(module, pattern);
+    return_value = fnmatch_translate_impl(module, pattern);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d9bb3df00c5c2b5e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50f858ef4bfb569a input=a9049054013a1b77]*/

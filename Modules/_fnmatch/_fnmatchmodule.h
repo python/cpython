@@ -8,14 +8,17 @@
 #include "Python.h"
 
 typedef struct {
-    PyObject *os_module;        // import os
-    PyObject *posixpath_module; // import posixpath
-    PyObject *re_module;        // import re
+    PyObject *os_module;            // import os
+    PyObject *posixpath_module;     // import posixpath
+    PyObject *re_module;            // import re
 
-    PyObject *lru_cache;        // functools.lru_cache() inner decorator
-    PyObject *translator;       // the translation unit whose calls are cached
+    PyObject *translator;           // LRU-cached translation unit
 
-    PyObject *hyphen_str;       // interned hyphen glyph '-'
+    // strings used by translate.c
+    PyObject *hyphen_str;           // hyphen glyph '-'
+    PyObject *re_empty_range_str;      // RE empty range '(?!)'
+    PyObject *re_atomic_bgroup_str;    // RE atomic group begin '(?>.*?'
+    PyObject *re_wildcard_str;         // RE wildcard '.*'
 } fnmatchmodule_state;
 
 static inline fnmatchmodule_state *
@@ -33,27 +36,26 @@ get_fnmatchmodule_state(PyObject *module)
  *
  * Parameters
  *
- *      matcher  A reference to the 'match()' method of a compiled pattern.
- *      string   The string to match (str or bytes object).
+ *  matcher     A reference to the 'match()' method of a compiled pattern.
+ *  string      The string to match (str or bytes object).
  *
- * Returns 1 if the 'string' matches the pattern and 0 otherwise.
+ * Returns
  *
- * Returns -1 if (1) 'string' is not a `str` or a `bytes` object,
- * and sets a TypeError exception, or (2) something went wrong.
+ *  -1  if the call 'matcher(string)' failed (e.g., invalid type),
+ *   0  if the 'string' does NOT match the pattern,
+ *   1  if the 'string' matches the pattern.
  */
 extern int
-_Py_fnmatch_fnmatch(PyObject *matcher, PyObject *string);
+_Py_fnmatch_match(PyObject *matcher, PyObject *string);
 
 /*
- * Perform a case-sensitive match using compiled RE patterns.
+ * Returns a list of matched names, or NULL if an error occurred.
  *
  * Parameters
  *
- *      matcher  A reference to the 'match()' method of a compiled pattern.
- *      names    An iterable of strings (str or bytes objects) to match.
- *
- * Returns a list of matched names, or NULL if an error occurred.
-*/
+ *  matcher     A reference to the 'match()' method of a compiled pattern.
+ *  names       An iterable of strings (str or bytes objects) to match.
+ */
 extern PyObject *
 _Py_fnmatch_filter(PyObject *matcher, PyObject *names);
 
@@ -62,13 +64,15 @@ _Py_fnmatch_filter(PyObject *matcher, PyObject *names);
  * instead. The returned values are however a sub-sequence of 'names'.
  *
  * The 'normcase' argument is a callable implementing os.path.normcase().
- *
  */
 extern PyObject *
 _Py_fnmatch_filter_normalized(PyObject *matcher, PyObject *names, PyObject *normcase);
 
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.
+ *
+ * The 'pattern' must be a Unicode object (not a bytes) object,
+ * and the translated pattern will be a Unicode object as well.
  *
  * Note: this is the C implementation of fnmatch.translate().
  */

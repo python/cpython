@@ -1,9 +1,11 @@
-#include "_fnmatchmodule.h" // for pre-declarations
+/*
+ * Provide the implementation of the high-level matcher-based functions.
+ */
 
-// ==== API implementation ====================================================
+#include "_fnmatchmodule.h"
 
 inline int
-_Py_fnmatch_fnmatch(PyObject *matcher, PyObject *name)
+_Py_fnmatch_match(PyObject *matcher, PyObject *name)
 {
     // If 'name' is of incorrect type, it will be detected when calling
     // the matcher function (we emulate 're.compile(...).match(name)').
@@ -30,7 +32,7 @@ _Py_fnmatch_filter(PyObject *matcher, PyObject *names)
     }
     PyObject *name = NULL;
     while ((name = PyIter_Next(iter))) {
-        int matching = _Py_fnmatch_fnmatch(matcher, name);
+        int matching = _Py_fnmatch_match(matcher, name);
         if (matching < 0 || (matching == 1 && PyList_Append(res, name) < 0)) {
             goto abort;
         }
@@ -63,7 +65,7 @@ _Py_fnmatch_filter_normalized(PyObject *matcher, PyObject *names, PyObject *norm
         if (normalized == NULL) {
             goto abort;
         }
-        int matching = _Py_fnmatch_fnmatch(matcher, normalized);
+        int matching = _Py_fnmatch_match(matcher, normalized);
         Py_DECREF(normalized);
         // add the non-normalized name if its normalization matches
         if (matching < 0 || (matching == 1 && PyList_Append(res, name) < 0)) {
