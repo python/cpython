@@ -56,7 +56,7 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnsignedNativeBytes(const void* buffer,
     size_t n_bytes, int flags);
 
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
-PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
+PyAPI_FUNC(int) PyUnstable_Long_CompactValue(const PyLongObject* op);
 
 /* PyLong_GetSign.  Get the sign of an integer object:
    0, -1 or +1 for zero, negative or positive integer, respectively.

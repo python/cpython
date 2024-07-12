@@ -25,11 +25,11 @@ _testcapi_call_long_compact_api(PyObject *module, PyObject *arg)
 {
     assert(PyLong_Check(arg));
     int is_compact = PyUnstable_Long_IsCompact((PyLongObject*)arg);
-    Py_ssize_t value = -1;
+    int value = -1;
     if (is_compact) {
         value = PyUnstable_Long_CompactValue((PyLongObject*)arg);
     }
-    return Py_BuildValue("in", is_compact, value);
+    return Py_BuildValue("ii", is_compact, value);
 }
 
 

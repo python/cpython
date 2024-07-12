@@ -6665,7 +6665,7 @@ PyUnstable_Long_IsCompact(const PyLongObject* op) {
 
 #undef PyUnstable_Long_CompactValue
 
-Py_ssize_t
+int
 PyUnstable_Long_CompactValue(const PyLongObject* op) {
     return _PyLong_CompactValue((PyLongObject*)op);
 }
