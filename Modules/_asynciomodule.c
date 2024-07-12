@@ -2059,7 +2059,7 @@ register_eager_task(asyncio_state *state, PyObject *task)
 }
 
 static void
-unregister_task_no_lock(asyncio_state *state, TaskObj *task)
+unregister_task_lock_held(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
@@ -2085,7 +2085,7 @@ static void
 unregister_task(asyncio_state *state, TaskObj *task)
 {
     ASYNCIO_STATE_LOCK(state);
-    unregister_task_no_lock(state, task);
+    unregister_task_lock_held(state, task);
     ASYNCIO_STATE_UNLOCK(state);
 }
 
