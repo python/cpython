@@ -402,6 +402,7 @@ set_running_loop(asyncio_state *state, PyObject *loop)
     // for easier and quicker access.
     state->cached_running_loop = loop; // borrowed, kept alive by ts_dict
     state->cached_running_loop_tsid = PyThreadState_GetID(tstate);
+
     return 0;
 }
 
@@ -2068,7 +2069,6 @@ unregister_task_no_lock(asyncio_state *state, TaskObj *task)
         assert(state->asyncio_tasks.head != task);
         return;
     }
-
     task->next->prev = task->prev;
     if (task->prev == NULL) {
         assert(state->asyncio_tasks.head == task);
@@ -2076,7 +2076,6 @@ unregister_task_no_lock(asyncio_state *state, TaskObj *task)
     } else {
         task->prev->next = task->next;
     }
-
     task->next = NULL;
     task->prev = NULL;
     assert(state->asyncio_tasks.head != task);
