@@ -355,8 +355,8 @@ Porting to Python 3.14
   (Contributed by Victor Stinner in :gh:`120600`.)
 
 * Change :c:func:`PyUnstable_Long_CompactValue` return type from
-  :c:type:`Py_ssize_t` to :c:type:`int`.
-  (Contributed by Victor Stinner in :gh:`121153`.)
+  :c:type:`Py_ssize_t` to ``int``.
+  (Contributed by Serhiy Storchaka and Victor Stinner in :gh:`121153`.)
 
 
 Deprecated

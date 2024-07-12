@@ -1,0 +1,3 @@
+Change :c:func:`PyUnstable_Long_CompactValue` return type from
+:c:type:`Py_ssize_t` to ``int``. Patch by Serhiy Storchaka and Victor
+Stinner.

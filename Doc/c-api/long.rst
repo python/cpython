@@ -537,4 +537,4 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Otherwise, the return value is undefined.
 
    .. versionchanged:: 3.14
-      Change return type from :c:type:`Py_ssize_t` to :c:type:`int`.
+      Change return type from :c:type:`Py_ssize_t` to ``int``.
