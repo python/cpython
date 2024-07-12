@@ -1,0 +1,2 @@
+Import checks now also the modification time of the ``.pyc`` file for
+recently modified source file. This reduces chance of using stale bytecode.
