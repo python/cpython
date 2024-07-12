@@ -8,12 +8,14 @@
 #include "Python.h"
 
 typedef struct {
-    PyObject *os_module;            // 'os' module
-    PyObject *posixpath_module;     // 'posixpath' module
-    PyObject *re_module;            // 're' module
+    PyObject *os_module;        // import os
+    PyObject *posixpath_module; // import posixpath
+    PyObject *re_module;        // import re
 
-    PyObject *lru_cache;    // the LRU cache decorator
-    PyObject *translator;   // the translation unit whose calls are cached
+    PyObject *lru_cache;        // functools.lru_cache() inner decorator
+    PyObject *translator;       // the translation unit whose calls are cached
+
+    PyObject *hyphen_str;       // interned hyphen glyph '-'
 } fnmatchmodule_state;
 
 static inline fnmatchmodule_state *
@@ -51,10 +53,17 @@ _Py_fnmatch_fnmatch(PyObject *matcher, PyObject *string);
  *      names    An iterable of strings (str or bytes objects) to match.
  *
  * Returns a list of matched names, or NULL if an error occurred.
- */
+*/
 extern PyObject *
 _Py_fnmatch_filter(PyObject *matcher, PyObject *names);
-/* same as _Py_fnmatch_filter() but calls os.path.normcase() on each name */
+
+/*
+ * Similar to _Py_fnmatch_filter() but matches os.path.normcase(name)
+ * instead. The returned values are however a sub-sequence of 'names'.
+ *
+ * The 'normcase' argument is a callable implementing os.path.normcase().
+ *
+ */
 extern PyObject *
 _Py_fnmatch_filter_normalized(PyObject *matcher, PyObject *names, PyObject *normcase);
 
