@@ -690,7 +690,7 @@ _PyModule_ClearDict(PyObject *d)
 
     int verbose = _Py_GetConfig()->verbose;
 
-// Define 3 macros to DRY up 4 very similar blocks of code by type and filter
+/* Define macros to DRY up 4 very similar blocks of code by type and filter */
 #define _Py_MODULE_CLEARDICT_FOR_DICT(action_block) \
     pos = 0; \
     while (PyDict_Next(d, &pos, &key, &value)) { \
