@@ -9,7 +9,9 @@
 #include "pycore_crossinterp.h"   // struct _xid
 
 #define REGISTERS_HEAP_TYPES
+#define HAS_UNBOUND_ITEMS
 #include "_interpreters_common.h"
+#undef HAS_UNBOUND_ITEMS
 #undef REGISTERS_HEAP_TYPES
 
 
@@ -399,32 +401,6 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
         Py_DECREF(exc);
     }
     return 1;
-}
-
-
-/* unbound items ************************************************************/
-
-#define UNBOUND_REMOVE 1
-#define UNBOUND_ERROR 2
-#define UNBOUND_REPLACE 3
-
-// It would also be possible to add UNBOUND_REPLACE where the replacement
-// value is user-provided.  There would be some limitations there, though.
-// Another possibility would be something like UNBOUND_COPY, where the
-// object is released but the underlying data is copied (with the "raw"
-// allocator) and used when the item is popped off the queue.
-
-static int
-check_unbound(int unboundop)
-{
-    switch (unboundop) {
-    case UNBOUND_REMOVE:
-    case UNBOUND_ERROR:
-    case UNBOUND_REPLACE:
-        return 1;
-    default:
-        return 0;
-    }
 }
 
 
