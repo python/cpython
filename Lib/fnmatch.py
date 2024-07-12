@@ -20,7 +20,7 @@ try:
     from _fnmatch import filter
 except ImportError:
     def filter(names, pat):
-        """Construct a list from those elements of the iterable NAMES that match PAT."""
+        """Construct a list from the names in *names* matching *pat*."""
         result = []
         pat = os.path.normcase(pat)
         match = _compile_pattern(pat)
@@ -39,7 +39,7 @@ try:
     from _fnmatch import fnmatch
 except ImportError:
     def fnmatch(name, pat):
-        """Test whether FILENAME matches PATTERN.
+        """Test whether *name* matches *pat*.
 
         Patterns are Unix shell style:
 
@@ -48,10 +48,11 @@ except ImportError:
         [seq]   matches any character in seq
         [!seq]  matches any char not in seq
 
-        An initial period in FILENAME is not special.
-        Both FILENAME and PATTERN are first case-normalized
+        An initial period in *name* is not special.
+        Both *name* and *pat* are first case-normalized
         if the operating system requires it.
-        If you don't want this, use fnmatchcase(FILENAME, PATTERN).
+
+        If you don't want this, use fnmatchcase(name, pat).
         """
         name = os.path.normcase(name)
         pat = os.path.normcase(pat)
@@ -61,7 +62,7 @@ try:
     from _fnmatch import fnmatchcase
 except ImportError:
     def fnmatchcase(name, pat):
-        """Test whether FILENAME matches PATTERN, including case.
+        """Test whether *name* matches *pat*, including case.
 
         This is a version of fnmatch() which doesn't case-normalize
         its arguments.
@@ -73,7 +74,7 @@ try:
     from _fnmatch import translate
 except ImportError:
     def translate(pat):
-        """Translate a shell PATTERN to a regular expression.
+        """Translate a shell pattern *pat* to a regular expression.
 
         There is no way to quote meta-characters.
         """

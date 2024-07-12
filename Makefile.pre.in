@@ -355,7 +355,7 @@ FNMATCH_H=	Modules/_fnmatch/_fnmatchmodule.h
 
 FNMATCH_OBJS=	\
 		Modules/_fnmatch/_fnmatchmodule.o \
-		Modules/_fnmatch/regex.o \
+		Modules/_fnmatch/matcher.o \
 		Modules/_fnmatch/translate.o
 
 ##########################################################################
