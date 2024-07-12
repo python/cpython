@@ -471,6 +471,10 @@ New Features
   an interned string and deallocate it during module shutdown.
   (Contribued by Eddie Elizondo in :gh:`113601`.)
 
+* Add :c:func:`PyBytes_Join(sep, iterable) <PyBytes_Join>` function,
+  similar to ``sep.join(iterable)`` in Python.
+  (Contributed by Victor Stinner in :gh:`121645`.)
+
 Porting to Python 3.14
 ----------------------
 
