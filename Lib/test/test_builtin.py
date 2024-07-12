@@ -572,6 +572,12 @@ class BuiltinTest(unittest.TestCase):
         f = Foo("foo")
         self.assertRaises(TypeError, dir, f)
 
+        # dir(module_with_mapping__dict__)
+        class Foo(types.ModuleType):
+            __dict__ = collections.UserDict(x=7)
+        f = Foo("foo")
+        self.assertIn("x", dir(f))
+
         # dir(type)
         self.assertIn("strip", dir(str))
         self.assertNotIn("__mro__", dir(str))

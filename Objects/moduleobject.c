@@ -690,13 +690,14 @@ _PyModule_ClearDict(PyObject *d)
 
     int verbose = _Py_GetConfig()->verbose;
 
-#define _Py_MODULE_CLEARDICT_ITER_DICT(action_block) \
+// define 3 macros to DRY up 4 similar blocks of code by type and filter
+#define _Py_MODULE_CLEARDICT_FOR_DICT(action_block) \
     pos = 0; \
     while (PyDict_Next(d, &pos, &key, &value)) { \
         action_block \
     }
 
-#define _Py_MODULE_CLEARDICT_ITER_MAPPING(action_block) \
+#define _Py_MODULE_CLEARDICT_FOR_MAPPING(action_block) \
     for (pos = 0; pos < size; pos++) { \
         PyObject *key_value = PyList_GET_ITEM(items, pos); \
         key = PyTuple_GET_ITEM(key_value, 0); \
@@ -704,13 +705,13 @@ _PyModule_ClearDict(PyObject *d)
         action_block \
     }
 
-#define _Py_MODULE_CLEARDICT_BY(filter, phase) \
+#define _Py_MODULE_CLEARDICT_BY_FILTER(phase, filter) \
     if (value != Py_None && PyUnicode_Check(key)) { \
         if (filter) { \
             if (verbose > 1) { \
                 const char *s = PyUnicode_AsUTF8(key); \
                 if (s != NULL) { \
-                    PySys_WriteStderr("#   clear[" phase "] %s\n", s); \
+                    PySys_WriteStderr("#   clear[" #phase "] %s\n", s); \
                 } \
                 else { \
                     PyErr_Clear(); \
@@ -725,35 +726,25 @@ _PyModule_ClearDict(PyObject *d)
         } \
     }
 
-    if (PyDict_Check(d)) {
-        /* First, clear only names starting with a single underscore */
-        _Py_MODULE_CLEARDICT_ITER_DICT(
-            _Py_MODULE_CLEARDICT_BY(
-                PyUnicode_READ_CHAR(key, 0) == '_' &&
-                PyUnicode_READ_CHAR(key, 1) != '_', "1"))
+#define _Py_MODULE_CLEARDICT_OF_TYPE(type) \
+    /* First, clear only names starting with a single underscore */ \
+    _Py_MODULE_CLEARDICT_FOR_##type( \
+        _Py_MODULE_CLEARDICT_BY_FILTER(1, \
+            PyUnicode_READ_CHAR(key, 0) == '_' && \
+            PyUnicode_READ_CHAR(key, 1) != '_')) \
+    /* Next, clear all names except for __builtins__ */ \
+    _Py_MODULE_CLEARDICT_FOR_##type( \
+        _Py_MODULE_CLEARDICT_BY_FILTER(2, \
+            PyUnicode_READ_CHAR(key, 0) != '_' || \
+            !_PyUnicode_EqualToASCIIString(key, "__builtins__")))
 
-        /* Next, clear all names except for __builtins__ */
-        _Py_MODULE_CLEARDICT_ITER_DICT(
-            _Py_MODULE_CLEARDICT_BY(
-                PyUnicode_READ_CHAR(key, 0) != '_' ||
-                !_PyUnicode_EqualToASCIIString(key, "__builtins__"), "2"))
+    if (PyDict_Check(d)) {
+        _Py_MODULE_CLEARDICT_OF_TYPE(DICT)
     }
     else {
         PyObject *items = PyMapping_Items(d);
         Py_ssize_t size = PyList_Size(items);
-
-        /* First, clear only names starting with a single underscore */
-        _Py_MODULE_CLEARDICT_ITER_MAPPING(
-            _Py_MODULE_CLEARDICT_BY(
-                PyUnicode_READ_CHAR(key, 0) == '_' &&
-                PyUnicode_READ_CHAR(key, 1) != '_', "1"))
-
-        /* Next, clear all names except for __builtins__ */
-        _Py_MODULE_CLEARDICT_ITER_MAPPING(
-            _Py_MODULE_CLEARDICT_BY(
-                PyUnicode_READ_CHAR(key, 0) != '_' ||
-                !_PyUnicode_EqualToASCIIString(key, "__builtins__"), "2"))
-
+        _Py_MODULE_CLEARDICT_OF_TYPE(MAPPING)
         Py_DECREF(items);
     }
 
