@@ -20,9 +20,6 @@ __all__ = [
 ]
 
 
-_NOT_SET = object()
-
-
 class QueueEmpty(QueueError, queue.Empty):
     """Raised from get_nowait() when the queue is empty.
 
