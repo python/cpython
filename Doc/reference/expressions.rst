@@ -116,14 +116,14 @@ identifier is used but only the following private identifiers are mangled:
 
 The transformation rule is defined as follows:
 
+- The class name, with leading underscores removed and a single leading
+  underscore inserted, is inserted in front of the identifier, e.g., the
+  identifier ``__spam`` occurring in a class named ``Foo``, ``_Foo`` or
+  ``__Foo`` is transformed to ``_Foo__spam``.
+  
 - If the class name consists only of underscores, the transformation is the
   identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
   or ``__`` is left as is.
-
-- Otherwise, the transformation inserts the class name, with leading
-  underscores removed and a single leading underscore inserted, in front
-  of the identifier, e.g., the identifier ``__spam`` occurring in a class
-  named ``Foo``, ``_Foo`` or ``__Foo`` is transformed to ``_Foo__spam``.
 
 .. _atom-literals:
 
