@@ -14,6 +14,10 @@
 #include <pwd.h>                  // getpwuid()
 #include <unistd.h>               // sysconf()
 
+#ifndef _Py_TYPEOF
+#  include <string.h>             // memcpy()
+#endif
+
 #include "clinic/pwdmodule.c.h"
 /*[clinic input]
 module pwd
