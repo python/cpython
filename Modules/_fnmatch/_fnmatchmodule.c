@@ -24,7 +24,7 @@ fnmatchmodule_get_matcher_function(PyObject *module, PyObject *pattern)
     if (expr == NULL) {
         return NULL;
     }
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     // compile the pattern
     PyObject *compiled = PyObject_CallMethodOneArg(st->re_module, &_Py_ID(compile), expr);
     Py_DECREF(expr);
@@ -84,7 +84,7 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
 static inline PyObject *
 get_matcher_function(PyObject *module, PyObject *pattern)
 {
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     assert(st->translator != NULL);
     return PyObject_CallOneArg(st->translator, pattern);
 }
@@ -103,7 +103,7 @@ fnmatchmodule_exec(PyObject *module)
         } \
     } while (0)
 
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     IMPORT_MODULE(os_module, "os");
     IMPORT_MODULE(posixpath_module, "posixpath");
     IMPORT_MODULE(re_module, "re");
@@ -122,7 +122,7 @@ fnmatchmodule_exec(PyObject *module)
 static int
 fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(m);
+    fnmatchmodule_state *st = get_fnmatchmodule_state(m);
     Py_VISIT(st->os_module);
     Py_VISIT(st->posixpath_module);
     Py_VISIT(st->re_module);
@@ -134,7 +134,7 @@ fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 static int
 fnmatchmodule_clear(PyObject *m)
 {
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(m);
+    fnmatchmodule_state *st = get_fnmatchmodule_state(m);
     Py_CLEAR(st->os_module);
     Py_CLEAR(st->posixpath_module);
     Py_CLEAR(st->re_module);
@@ -166,7 +166,7 @@ static PyObject *
 _fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pat)
 /*[clinic end generated code: output=7f11aa68436d05fc input=1d233174e1c4157a]*/
 {
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     PyObject *os_path = PyObject_GetAttr(st->os_module, &_Py_ID(path));
     if (os_path == NULL) {
         return NULL;
@@ -215,7 +215,7 @@ static int
 _fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pat)
 /*[clinic end generated code: output=b4cd0bd911e8bc93 input=c45e0366489540b8]*/
 {
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     // use the runtime 'os.path' value and not a cached one
     PyObject *os_path = PyObject_GetAttr(st->os_module, &_Py_ID(path));
     if (os_path == NULL) {

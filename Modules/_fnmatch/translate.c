@@ -120,7 +120,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
 #define ADVANCE_TO_NEXT(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), !=)
 #define SKIP_DUPLICATES(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), ==)
 
-    fnmatchmodule_state *state = get_fnmatchmodulestate_state(module);
+    fnmatchmodule_state *state = get_fnmatchmodule_state(module);
     PyObject *re = state->re_module;
     const Py_ssize_t n = PyUnicode_GET_LENGTH(pattern);
     // We would write less data if there are successive '*',

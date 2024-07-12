@@ -17,7 +17,7 @@ typedef struct {
 } fnmatchmodule_state;
 
 static inline fnmatchmodule_state *
-get_fnmatchmodulestate_state(PyObject *module)
+get_fnmatchmodule_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
