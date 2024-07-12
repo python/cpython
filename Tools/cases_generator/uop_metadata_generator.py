@@ -15,9 +15,9 @@ from generators_common import (
     write_header,
     cflags,
 )
+from stack import Stack
 from cwriter import CWriter
 from typing import TextIO
-
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 
@@ -26,6 +26,7 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern const uint16_t _PyUop_Flags[MAX_UOP_ID+1];\n")
     out.emit("extern const uint8_t _PyUop_Replication[MAX_UOP_ID+1];\n")
     out.emit("extern const char * const _PyOpcode_uop_name[MAX_UOP_ID+1];\n\n")
+    out.emit("extern int _PyUop_num_popped(int opcode, int oparg);\n\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {\n")
     for uop in analysis.uops.values():
@@ -44,6 +45,20 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
         if uop.is_viable() and uop.properties.tier != 1:
             out.emit(f'[{uop.name}] = "{uop.name}",\n')
     out.emit("};\n")
+    out.emit("int _PyUop_num_popped(int opcode, int oparg)\n{\n")
+    out.emit("switch(opcode) {\n")
+    for uop in analysis.uops.values():
+        if uop.is_viable() and uop.properties.tier != 1:
+            stack = Stack()
+            for var in reversed(uop.stack.inputs):
+                stack.pop(var)
+            popped = (-stack.base_offset).to_c()
+            out.emit(f"case {uop.name}:\n")
+            out.emit(f"    return {popped};\n")
+    out.emit("default:\n")
+    out.emit("    return -1;\n")
+    out.emit("}\n")
+    out.emit("}\n\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
 

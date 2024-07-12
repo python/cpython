@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_atexit.h"        // struct atexit_state
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
+#include "pycore_codecs.h"        // struct codecs_state
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_dict_state.h"    // struct _Py_dict_state
@@ -22,13 +23,14 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_optimizer.h"     // _PyOptimizerObject
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -58,6 +60,12 @@ struct _stoptheworld_state {
 
     PyThreadState *requester; // Thread that requested the pause (may be NULL).
 };
+
+#ifdef Py_GIL_DISABLED
+// This should be prime but otherwise the choice is arbitrary. A larger value
+// increases concurrency at the expense of memory.
+#  define NUM_WEAKREF_LIST_LOCKS 127
+#endif
 
 /* cross-interpreter data registry */
 
@@ -97,11 +105,23 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
+#define _PyInterpreterState_WHENCE_NOTSET -1
+#define _PyInterpreterState_WHENCE_UNKNOWN 0
+#define _PyInterpreterState_WHENCE_RUNTIME 1
+#define _PyInterpreterState_WHENCE_LEGACY_CAPI 2
+#define _PyInterpreterState_WHENCE_CAPI 3
+#define _PyInterpreterState_WHENCE_XI 4
+#define _PyInterpreterState_WHENCE_STDLIB 5
+#define _PyInterpreterState_WHENCE_MAX 5
+    long _whence;
+
     /* Has been initialized to a safe state.
 
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
+    /* Has been fully initialized via pylifecycle.c. */
+    int _ready;
     int finalizing;
 
     uintptr_t last_restart_version;
@@ -164,10 +184,7 @@ struct _is {
      possible to facilitate out-of-process observability
      tools. */
 
-    PyObject *codec_search_path;
-    PyObject *codec_search_cache;
-    PyObject *codec_error_registry;
-    int codecs_initialized;
+    struct codecs_state codecs;
 
     PyConfig config;
     unsigned long feature_flags;
@@ -203,6 +220,7 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
+    PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main
@@ -228,6 +246,7 @@ struct _is {
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
+    struct _py_code_state code_state;
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
@@ -239,13 +258,6 @@ struct _is {
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
 
-    /* These two values are shifted and offset to speed up check in JUMP_BACKWARD */
-    uint32_t optimizer_resume_threshold;
-    uint32_t optimizer_backedge_threshold;
-
-    uint16_t optimizer_side_threshold;
-
-    uint32_t next_func_version;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -296,12 +308,21 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 }
 
 
-// Export for the _xxinterpchannels module.
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 
+// Exports for the _testinternalcapi module.
+PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
+
+PyAPI_FUNC(long) _PyInterpreterState_GetWhence(PyInterpreterState *interp);
+extern void _PyInterpreterState_SetWhence(
+    PyInterpreterState *interp,
+    long whence);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
@@ -381,7 +402,10 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
+        if (val < UINT8_MAX) { \
+            FT_ATOMIC_STORE_UINT8(interp->rare_events.name, val + 1); \
+        } \
         RARE_EVENT_STAT_INC(name); \
     } while (0); \
 

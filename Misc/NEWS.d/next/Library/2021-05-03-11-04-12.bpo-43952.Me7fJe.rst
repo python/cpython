@@ -1,2 +1,0 @@
-Fix :meth:`multiprocessing.connection.Listener.accept()` to accept empty bytes
-as authkey. Not accepting empty bytes as key causes it to hang indefinitely.

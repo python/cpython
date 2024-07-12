@@ -251,8 +251,7 @@ Py_SetPath(const wchar_t *path)
 }
 
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 Py_SetPythonHome(const wchar_t *home)
 {
     int has_value = home && home[0];
@@ -275,8 +274,7 @@ Py_SetPythonHome(const wchar_t *home)
 }
 
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 Py_SetProgramName(const wchar_t *program_name)
 {
     int has_value = program_name && program_name[0];

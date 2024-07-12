@@ -1,7 +1,8 @@
 import re
-from analyzer import StackItem, Instruction, Uop
+from analyzer import StackItem, StackEffect, Instruction, Uop, PseudoInstruction
 from dataclasses import dataclass
 from cwriter import CWriter
+from typing import Iterator
 
 UNUSED = {"unused"}
 
@@ -27,14 +28,15 @@ def var_size(var: StackItem) -> str:
         if var.condition == "0":
             return "0"
         elif var.condition == "1":
-            return var.size
-        elif var.condition == "oparg & 1" and var.size == "1":
+            return var.get_size()
+        elif var.condition == "oparg & 1" and not var.size:
             return f"({var.condition})"
         else:
-            return f"(({var.condition}) ? {var.size} : 0)"
-    else:
+            return f"(({var.condition}) ? {var.get_size()} : 0)"
+    elif var.size:
         return var.size
-
+    else:
+        return "1"
 
 @dataclass
 class StackOffset:
@@ -124,7 +126,7 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem) -> str:
+    def pop(self, var: StackItem, extract_bits: bool = False) -> str:
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
@@ -154,8 +156,9 @@ class Stack:
         else:
             self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
+        bits = ".bits" if cast and not extract_bits else ""
         assign = (
-            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
+            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
         )
         if var.condition:
             if var.condition == "1":
@@ -177,11 +180,12 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
+    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
                 cast = f"({cast_type})" if var.type else ""
+                bits = ".bits" if cast and not extract_bits else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":
@@ -189,7 +193,7 @@ class Stack:
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
                     out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
+                        f"stack_pointer[{self.base_offset.to_c()}]{bits} = {cast}{var.name};\n"
                     )
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():
@@ -198,6 +202,7 @@ class Stack:
         number = self.base_offset.to_c()
         if number != "0":
             out.emit(f"stack_pointer += {number};\n")
+            out.emit("assert(WITHIN_STACK_BOUNDS());\n")
         self.variables = []
         self.base_offset.clear()
         self.top_offset.clear()
@@ -208,13 +213,20 @@ class Stack:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
 
 
-def get_stack_effect(inst: Instruction) -> Stack:
+def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
-    for uop in inst.parts:
-        if not isinstance(uop, Uop):
-            continue
-        for var in reversed(uop.stack.inputs):
+    def stacks(inst : Instruction | PseudoInstruction) -> Iterator[StackEffect]:
+        if isinstance(inst, Instruction):
+            for uop in inst.parts:
+                if isinstance(uop, Uop):
+                    yield uop.stack
+        else:
+            assert isinstance(inst, PseudoInstruction)
+            yield inst.stack
+
+    for s in stacks(inst):
+        for var in reversed(s.inputs):
             stack.pop(var)
-        for i, var in enumerate(uop.stack.outputs):
+        for var in s.outputs:
             stack.push(var)
     return stack

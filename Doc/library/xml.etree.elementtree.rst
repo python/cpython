@@ -1,5 +1,5 @@
-:mod:`xml.etree.ElementTree` --- The ElementTree XML API
-========================================================
+:mod:`!xml.etree.ElementTree` --- The ElementTree XML API
+=========================================================
 
 .. module:: xml.etree.ElementTree
    :synopsis: Implementation of the ElementTree API.
@@ -49,7 +49,7 @@ and its sub-elements are done on the :class:`Element` level.
 Parsing XML
 ^^^^^^^^^^^
 
-We'll be using the following XML document as the sample data for this section:
+We'll be using the fictive :file:`country_data.xml` XML document as the sample data for this section:
 
 .. code-block:: xml
 
@@ -508,7 +508,7 @@ Functions
    `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
 
    Canonicalization is a way to normalise XML output in a way that allows
-   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   byte-by-byte comparisons and digital signatures.  It reduces the freedom
    that XML serializers have and instead generates a more constrained XML
    representation.  The main restrictions regard the placement of namespace
    declarations, the ordering of attributes, and ignorable whitespace.
@@ -840,33 +840,28 @@ Functions
 
 .. module:: xml.etree.ElementInclude
 
-.. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
-   :module:
+.. function:: default_loader(href, parse, encoding=None)
 
-   Default loader. This default loader reads an included resource from disk.  *href* is a URL.
-   *parse* is for parse mode either "xml" or "text".  *encoding*
-   is an optional text encoding.  If not given, encoding is ``utf-8``.  Returns the
-   expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree
-   instance.  If the parse mode is "text", this is a Unicode string.  If the
-   loader fails, it can return None or raise an exception.
+   Default loader. This default loader reads an included resource from disk.
+   *href* is a URL.  *parse* is for parse mode either "xml" or "text".
+   *encoding* is an optional text encoding.  If not given, encoding is ``utf-8``.
+   Returns the expanded resource.
+   If the parse mode is ``"xml"``, this is an :class:`~xml.etree.ElementTree.Element` instance.
+   If the parse mode is ``"text"``, this is a string.
+   If the loader fails, it can return ``None`` or raise an exception.
 
 
-.. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
-                                                max_depth=6)
-   :module:
+.. function:: include(elem, loader=None, base_url=None, max_depth=6)
 
-   This function expands XInclude directives.  *elem* is the root element.  *loader* is
-   an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
+   This function expands XInclude directives in-place in tree pointed by *elem*.
+   *elem* is either the root :class:`~xml.etree.ElementTree.Element` or an
+   :class:`~xml.etree.ElementTree.ElementTree` instance to find such element.
+   *loader* is an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
    :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
    relative include file references.  *max_depth* is the maximum number of recursive
-   inclusions.  Limited to reduce the risk of malicious content explosion. Pass a
-   negative value to disable the limitation.
-
-   Returns the expanded resource.  If the parse mode is
-   ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
-   this is a Unicode string.  If the loader fails, it can return None or
-   raise an exception.
+   inclusions.  Limited to reduce the risk of malicious content explosion.
+   Pass ``None`` to disable the limitation.
 
    .. versionchanged:: 3.9
       Added the *base_url* and *max_depth* parameters.
@@ -1063,9 +1058,10 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  Testing the
-   truth value of an Element is deprecated and will raise an exception in
-   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
+   Caution: Elements with no subelements will test as ``False``.  In a future
+   release of Python, all elements will test as ``True`` regardless of whether
+   subelements exist.  Instead, prefer explicit ``len(elem)`` or
+   ``elem is not None`` tests.::
 
      element = root.find('foo')
 
@@ -1402,6 +1398,11 @@ XMLParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
+      Note that :meth:`flush` has been backported to some prior releases of
+      CPython as a security fix.  Check for availability of :meth:`flush`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
+
       .. versionadded:: 3.13
 
 
@@ -1474,6 +1475,11 @@ XMLPullParser Objects
       with Expat (if currently enabled) and triggers a reparse.
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      Note that :meth:`flush` has been backported to some prior releases of
+      CPython as a security fix.  Check for availability of :meth:`flush`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
 
       .. versionadded:: 3.13
 

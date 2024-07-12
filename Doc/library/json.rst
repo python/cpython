@@ -1,5 +1,5 @@
-:mod:`json` --- JSON encoder and decoder
-========================================
+:mod:`!json` --- JSON encoder and decoder
+=========================================
 
 .. module:: json
    :synopsis: Encode and decode the JSON format.

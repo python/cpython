@@ -16,11 +16,9 @@
 
 // These functions were removed from Python 3.13 API but are still exported
 // for the stable ABI. We want to test them in this program.
-extern void Py_SetProgramName(const wchar_t *program_name);
 extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
-extern void Py_SetPythonHome(const wchar_t *home);
 
 
 int main_argc;

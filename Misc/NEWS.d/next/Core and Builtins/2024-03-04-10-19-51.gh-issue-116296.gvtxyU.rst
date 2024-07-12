@@ -1,1 +1,0 @@
-Fix possible refleak in :meth:`!object.__reduce__` internal error handling.

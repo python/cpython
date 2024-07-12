@@ -18,16 +18,15 @@ from generators_common import (
     ROOT,
     write_header,
     emit_tokens,
-    emit_to,
     replace_sync_sp,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, SizeMismatch, UNUSED
+from stack import Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
-DEFAULT_ABSTRACT_INPUT = ROOT / "Python/optimizer_bytecodes.c"
+DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
 
 
 def validate_uop(override: Uop, uop: Uop) -> None:
@@ -83,15 +82,12 @@ def emit_default(out: CWriter, uop: Uop) -> None:
         if var.name != "unused" and not var.peek:
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"{var.name}[_i] = sym_new_unknown(ctx);\n")
-                out.emit(f"if ({var.name}[_i] == NULL) goto out_of_space;\n")
+                out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
                 out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
-                out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
             else:
-                out.emit(f"{var.name} = sym_new_unknown(ctx);\n")
-                out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
+                out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
 
 
 def write_uop(
@@ -107,7 +103,7 @@ def write_uop(
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            res = stack.pop(var)
+            res = stack.pop(var, extract_bits=True)
             if not skip_inputs:
                 out.emit(res)
         if not prototype.properties.stores_sp:
@@ -144,7 +140,7 @@ def write_uop(
                 if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UopsSymbol *")
+        stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
@@ -214,19 +210,22 @@ arg_parser.add_argument(
 )
 
 
-arg_parser.add_argument("input", nargs=1, help="Abstract interpreter definition file")
+arg_parser.add_argument("input", nargs='*', help="Abstract interpreter definition file")
 
 arg_parser.add_argument(
-    "base", nargs=argparse.REMAINDER, help="The base instruction definition file(s)"
+    "base", nargs="*", help="The base instruction definition file(s)"
 )
 
 arg_parser.add_argument("-d", "--debug", help="Insert debug calls", action="store_true")
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()
-    if len(args.base) == 0:
-        args.input.append(DEFAULT_INPUT)
+    if not args.input:
+        args.base.append(DEFAULT_INPUT)
         args.input.append(DEFAULT_ABSTRACT_INPUT)
+    else:
+        args.base.append(args.input[-1])
+        args.input.pop()
     abstract = analyze_files(args.input)
     base = analyze_files(args.base)
     with open(args.output, "w") as outfile:

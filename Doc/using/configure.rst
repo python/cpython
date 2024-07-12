@@ -299,7 +299,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
+   See :ref:`free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 
@@ -389,6 +389,17 @@ Options for third-party dependencies
    C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
    overriding ``pkg-config``.
 
+.. option:: LIBMPDEC_CFLAGS
+.. option:: LIBMPDEC_LIBS
+
+   C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
+   overriding ``pkg-config``.
+
+   .. note::
+
+      These environment variables have no effect unless
+      :option:`--with-system-libmpdec` is specified.
+
 .. option:: LIBLZMA_CFLAGS
 .. option:: LIBLZMA_LIBS
 
@@ -416,7 +427,7 @@ Options for third-party dependencies
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
 
-   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+   C compiler and linker flags for PANEL, overriding ``pkg-config``.
 
    C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
    :mod:`curses.panel` module, overriding ``pkg-config``.
@@ -518,6 +529,15 @@ also be used to improve performance.
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
 
+   .. note::
+
+      During the build, you may encounter compiler warnings about
+      profile data not being available for some source files.
+      These warnings are harmless, as only a subset of the code is exercised
+      during profile data acquisition.
+      To disable these warnings on Clang, manually suppress them by adding
+      ``-Wno-profile-instr-unprofiled`` to :envvar:`CFLAGS`.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.10
@@ -595,7 +615,7 @@ also be used to improve performance.
 
 .. option:: --without-mimalloc
 
-   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
    See also :envvar:`PYTHONMALLOC` environment variable.
@@ -784,10 +804,19 @@ Libraries options
 
 .. option:: --with-system-libmpdec
 
-   Build the ``_decimal`` extension module using an installed ``mpdec``
-   library, see the :mod:`decimal` module (default is no).
+   Build the ``_decimal`` extension module using an installed ``mpdecimal``
+   library, see the :mod:`decimal` module (default is yes).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.13
+      Default to using the installed ``mpdecimal`` library.
+
+   .. deprecated-removed:: 3.13 3.15
+      A copy of the ``mpdecimal`` library sources will no longer be distributed
+      with Python 3.15.
+
+   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 
@@ -881,7 +910,7 @@ Security Options
 macOS Options
 -------------
 
-See ``Mac/README.rst``.
+See :source:`Mac/README.rst`.
 
 .. option:: --enable-universalsdk
 .. option:: --enable-universalsdk=SDKDIR
@@ -915,6 +944,31 @@ See ``Mac/README.rst``.
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+.. option:: --with-app-store-compliance
+.. option:: --with-app-store-compliance=PATCH-FILE
+
+   The Python standard library contains strings that are known to trigger
+   automated inspection tool errors when submitted for distribution by
+   the macOS and iOS App Stores. If enabled, this option will apply the list of
+   patches that are known to correct app store compliance. A custom patch
+   file can also be specified. This option is disabled by default.
+
+   .. versionadded:: 3.13
+
+iOS Options
+-----------
+
+See :source:`iOS/README.rst`.
+
+.. option:: --enable-framework=INSTALLDIR
+
+   Create a Python.framework. Unlike macOS, the *INSTALLDIR* argument
+   specifying the installation path is mandatory.
+
+.. option:: --with-framework-name=FRAMEWORK
+
+   Specify the name for the framework (default: ``Python``).
 
 
 Cross Compiling Options
@@ -991,32 +1045,99 @@ Main build steps
 Main Makefile targets
 ---------------------
 
-* ``make``: Build Python with the standard library.
-* ``make platform:``: build the ``python`` program, but don't build the
-  standard library extension modules.
-* ``make profile-opt``: build Python using Profile Guided Optimization (PGO).
-  You can use the configure :option:`--enable-optimizations` option to make
-  this the default target of the ``make`` command (``make all`` or just
-  ``make``).
+make
+^^^^
 
-* ``make test``: Build Python and run the Python test suite with ``--fast-ci``
-  option. Variables:
+For the most part, when rebuilding after editing some code or
+refreshing your checkout from upstream, all you need to do is execute
+``make``, which (per Make's semantics) builds the default target, the
+first one defined in the Makefile.  By tradition (including in the
+CPython project) this is usually the ``all`` target. The
+``configure`` script expands an ``autoconf`` variable,
+``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
+all`` will build. The three choices are:
 
-  * ``TESTOPTS``: additional regrtest command line options.
-  * ``TESTPYTHONOPTS``: additional Python command line options.
-  * ``TESTTIMEOUT``: timeout in seconds (default: 20 minutes).
+* ``profile-opt`` (configured with ``--enable-optimizations``)
+* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_all`` (configured without explicitly using either of the others)
 
-* ``make buildbottest``: Similar to ``make test``, but use ``--slow-ci``
-  option and default timeout of 20 minutes, instead of ``--fast-ci`` option
-  and a default timeout of 10 minutes.
+Depending on the most recent source file changes, Make will rebuild
+any targets (object files and executables) deemed out-of-date,
+including running ``configure`` again if necessary. Source/target
+dependencies are many and maintained manually however, so Make
+sometimes doesn't have all the information necessary to correctly
+detect all targets which need to be rebuilt.  Depending on which
+targets aren't rebuilt, you might experience a number of problems. If
+you have build or test problems which you can't otherwise explain,
+``make clean && make`` should work around most dependency problems, at
+the expense of longer build times.
 
-* ``make install``: Build and install Python.
-* ``make regen-all``: Regenerate (almost) all generated files;
-  ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
-  for the remaining generated files.
-* ``make clean``: Remove built files.
-* ``make distclean``: Same than ``make clean``, but remove also files created
-  by the configure script.
+
+make platform
+^^^^^^^^^^^^^
+
+Build the ``python`` program, but don't build the standard library
+extension modules. This generates a file named ``platform`` which
+contains a single line describing the details of the build platform,
+e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
+
+
+make profile-opt
+^^^^^^^^^^^^^^^^
+
+Build Python using profile-guided optimization (PGO).  You can use the
+configure :option:`--enable-optimizations` option to make this the
+default target of the ``make`` command (``make all`` or just
+``make``).
+
+
+
+make clean
+^^^^^^^^^^
+
+Remove built files.
+
+
+make distclean
+^^^^^^^^^^^^^^
+
+In addition to the the work done by ``make clean``, remove files
+created by the configure script.  ``configure`` will have to be run
+before building again. [#]_
+
+
+make install
+^^^^^^^^^^^^
+
+Build the ``all`` target and install Python.
+
+
+make test
+^^^^^^^^^
+
+Build the ``all`` target and run the Python test suite with the
+``--fast-ci`` option. Variables:
+
+* ``TESTOPTS``: additional regrtest command-line options.
+* ``TESTPYTHONOPTS``: additional Python command-line options.
+* ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make buildbottest
+^^^^^^^^^^^^^^^^^
+
+This is similar to ``make test``, but uses the ``--slow-ci``
+option and default timeout of 20 minutes, instead of ``--fast-ci`` option.
+
+
+make regen-all
+^^^^^^^^^^^^^^
+
+Regenerate (almost) all generated files. These include (but are not
+limited to) bytecode cases, and parser generator file.
+``make regen-stdlib-module-names`` and ``autoconf`` must be run
+separately for the remaining `generated files <#generated-files>`_.
+
 
 C extensions
 ------------
@@ -1311,3 +1432,14 @@ Linker flags
    Linker flags used for building the interpreter object files.
 
    .. versionadded:: 3.8
+
+
+.. rubric:: Footnotes
+
+.. [#] ``git clean -fdx`` is an even more extreme way to "clean" your
+   checkout. It removes all files not known to Git.
+   When bug hunting using ``git bisect``, this is
+   `recommended between probes <https://github.com/python/cpython/issues/114505#issuecomment-1907021718>`_
+   to guarantee a completely clean build. **Use with care**, as it
+   will delete all files not checked into Git, including your
+   new, uncommitted work.

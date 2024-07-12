@@ -12,17 +12,19 @@ from textwrap import dedent
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
-                          SuppressCrashReport)
+                          SuppressCrashReport,
+                          force_not_colorized)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
 from test import support
 
 try:
+    import _testcapi
     from _testcapi import INT_MAX
 except ImportError:
+    _testcapi = None
     INT_MAX = 2**31 - 1
-
 
 
 class NaiveException(Exception):
@@ -39,6 +41,7 @@ class BrokenStrException(Exception):
         raise Exception("str() is broken")
 
 # XXX This is not really enough, each *operation* should be tested!
+
 
 class ExceptionTests(unittest.TestCase):
 
@@ -345,8 +348,8 @@ class ExceptionTests(unittest.TestCase):
         class InvalidException:
             pass
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi1():
-            import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 1)
             except TypeError as err:
@@ -356,8 +359,8 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("Expected exception")
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi2():
-            import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
@@ -370,8 +373,8 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("Expected exception")
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi3():
-            import _testcapi
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
@@ -1381,6 +1384,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     def test_recursion_normalizing_exception(self):
+        import_module("_testinternalcapi")
         # Issue #22898.
         # Test that a RecursionError is raised when tstate->recursion_depth is
         # equal to recursion_limit in PyErr_NormalizeException() and check
@@ -1422,7 +1426,7 @@ class ExceptionTests(unittest.TestCase):
             next(generator)
             recursionlimit = sys.getrecursionlimit()
             try:
-                recurse(support.EXCEEDS_RECURSION_LIMIT)
+                recurse(support.exceeds_recursion_limit())
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
@@ -1435,6 +1439,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -1448,7 +1453,8 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        self.assertIn(b'RecursionError: maximum recursion depth exceeded', err)
+        expected = b'RecursionError: maximum recursion depth exceeded'
+        self.assertTrue(expected in err, msg=f"{expected!r} not found in {err[:3_000]!r}... (truncated)")
         self.assertIn(b'Done.', out)
 
 
@@ -1503,6 +1509,7 @@ class ExceptionTests(unittest.TestCase):
     # Python built with Py_TRACE_REFS fail with a fatal error in
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1525,6 +1532,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertIn(b'MemoryError', err)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_MemoryError(self):
         # PyErr_NoMemory always raises the same exception instance.
         # Check that the traceback is not doubled.
@@ -1544,8 +1552,8 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(tb1, tb2)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_exception_with_doc(self):
-        import _testcapi
         doc2 = "This is a test docstring."
         doc4 = "This is another test docstring."
 
@@ -1584,6 +1592,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(error5.__doc__, "")
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_cleanup(self):
         # Issue #5437: preallocated MemoryError instances should not keep
         # traceback objects alive.
@@ -1674,6 +1683,7 @@ class ExceptionTests(unittest.TestCase):
     # Python built with Py_TRACE_REFS fail with a fatal error in
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1792,6 +1802,7 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_in_subinterp(self):
         # gh-109894: subinterpreters shouldn't count on last resort memory error
         # when MemoryError is raised through PyErr_NoMemory() call,
@@ -1805,6 +1816,29 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, _, err = script_helper.assert_python_ok("-c", code)
         self.assertIn(b'MemoryError', err)
+
+    def test_keyerror_context(self):
+        # Make sure that _PyErr_SetKeyError() chains exceptions
+        try:
+            err1 = None
+            err2 = None
+            try:
+                d = {}
+                try:
+                    raise ValueError("bug")
+                except Exception as exc:
+                    err1 = exc
+                    d[1]
+            except Exception as exc:
+                err2 = exc
+
+            self.assertIsInstance(err1, ValueError)
+            self.assertIsInstance(err2, KeyError)
+            self.assertEqual(err2.__context__, err1)
+        finally:
+            # Break any potential reference cycle
+            exc1 = None
+            exc2 = None
 
 
 class NameErrorTests(unittest.TestCase):
@@ -1825,6 +1859,8 @@ class NameErrorTests(unittest.TestCase):
         except self.failureException:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
+        else:
+            self.fail("assertRaisesRegex should have failed.")
 
         self.assertIn("aab", err.getvalue())
 
@@ -1985,6 +2021,7 @@ class AssertionErrorTests(unittest.TestCase):
         _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
         return err.decode('utf-8').splitlines()
 
+    @force_not_colorized
     def test_assertion_error_location(self):
         cases = [
             ('assert None',
@@ -2061,6 +2098,7 @@ class AssertionErrorTests(unittest.TestCase):
                 result = self.write_source(source)
                 self.assertEqual(result[-3:], expected)
 
+    @force_not_colorized
     def test_multiline_not_highlighted(self):
         cases = [
             ("""
@@ -2093,6 +2131,7 @@ class AssertionErrorTests(unittest.TestCase):
 
 
 class SyntaxErrorTests(unittest.TestCase):
+    @force_not_colorized
     def test_range_of_offsets(self):
         cases = [
             # Basic range from 2->7

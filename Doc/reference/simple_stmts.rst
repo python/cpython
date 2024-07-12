@@ -293,7 +293,7 @@ statements, cannot be an unpacking) and the expression list, performs the binary
 operation specific to the type of assignment on the two operands, and assigns
 the result to the original target.  The target is only evaluated once.
 
-An augmented assignment expression like ``x += 1`` can be rewritten as ``x = x +
+An augmented assignment statement like ``x += 1`` can be rewritten as ``x = x +
 1`` to achieve a similar, but not exactly equal effect. In the augmented
 version, ``x`` is only evaluated once. Also, when possible, the actual operation
 is performed *in-place*, meaning that rather than creating a new object and
@@ -333,7 +333,9 @@ statement, of a variable or attribute annotation and an optional assignment stat
 
 The difference from normal :ref:`assignment` is that only a single target is allowed.
 
-For simple names as assignment targets, if in class or module scope,
+The assignment target is considered "simple" if it consists of a single
+name that is not enclosed in parentheses.
+For simple assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
 attribute :attr:`__annotations__`
 that is a dictionary mapping from variable names (mangled if private) to
@@ -341,7 +343,8 @@ evaluated annotations. This attribute is writable and is automatically
 created at the start of class or module body execution, if annotations
 are found statically.
 
-For expressions as assignment targets, the annotations are evaluated if
+If the assignment target is not simple (an attribute, subscript node, or
+parenthesized name), the annotation is evaluated if
 in class or module scope, but not stored.
 
 If a name is annotated in a function scope, then this name is local for
@@ -664,8 +667,7 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionchanged:: 3.3
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
-.. versionadded:: 3.3
-    The :attr:`~BaseException.__suppress_context__` attribute to suppress
+    Added the :attr:`~BaseException.__suppress_context__` attribute to suppress
     automatic display of the exception context.
 
 .. versionchanged:: 3.11
@@ -1007,24 +1009,28 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope excluding globals.
-This is important because the default behavior for binding is to search the
-local namespace first.  The statement allows encapsulated code to rebind
-variables outside of the local scope besides the global (module) scope.
+When the definition of a function or class is nested (enclosed) within
+the definitions of other functions, its nonlocal scopes are the local
+scopes of the enclosing functions. The :keyword:`nonlocal` statement
+causes the listed identifiers to refer to names previously bound in
+nonlocal scopes. It allows encapsulated code to rebind such nonlocal
+identifiers.  If a name is bound in more than one nonlocal scope, the
+nearest binding is used. If a name is not bound in any nonlocal scope,
+or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
-Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
-:keyword:`global` statement, must refer to pre-existing bindings in an
-enclosing scope (the scope in which a new binding should be created cannot
-be determined unambiguously).
-
-Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope.
+The nonlocal statement applies to the entire scope of a function or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its nonlocal declaration in the scope.
 
 .. seealso::
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+**Programmer's note:** :keyword:`nonlocal` is a directive to the parser
+and applies only to code parsed along with it.  See the note for the
+:keyword:`global` statement.
+
 
 .. _type:
 

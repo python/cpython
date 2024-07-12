@@ -3,11 +3,10 @@ import pickle
 import threading
 from textwrap import dedent
 import unittest
-import time
 
 from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
-_queues = import_helper.import_module('_xxinterpqueues')
+_queues = import_helper.import_module('_interpqueues')
 from test.support import interpreters
 from test.support.interpreters import queues
 from .utils import _run_output, TestBase as _TestBase
@@ -31,9 +30,9 @@ class TestBase(_TestBase):
 
 class LowLevelTests(TestBase):
 
-    # The behaviors in the low-level module is important in as much
-    # as it is exercised by the high-level module.  Therefore the
-    # most # important testing happens in the high-level tests.
+    # The behaviors in the low-level module are important in as much
+    # as they are exercised by the high-level module.  Therefore the
+    # most important testing happens in the high-level tests.
     # These low-level tests cover corner cases that are not
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.

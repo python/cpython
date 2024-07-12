@@ -852,15 +852,15 @@ PyAPI_FUNC(int) PyMapping_HasKeyWithError(PyObject *o, PyObject *key);
 
 PyAPI_FUNC(int) PyMapping_HasKeyStringWithError(PyObject *o, const char *key);
 
-/* On success, return a list or tuple of the keys in mapping object 'o'.
+/* On success, return a list of the keys in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Keys(PyObject *o);
 
-/* On success, return a list or tuple of the values in mapping object 'o'.
+/* On success, return a list of the values in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Values(PyObject *o);
 
-/* On success, return a list or tuple of the items in mapping object 'o',
+/* On success, return a list of the items in mapping object 'o',
    where each item is a tuple containing a key-value pair. On failure, return
    NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);

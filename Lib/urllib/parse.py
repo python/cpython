@@ -525,7 +525,7 @@ def urlunsplit(components):
     empty query; the RFC states that these are equivalent)."""
     scheme, netloc, url, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
-    if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
+    if netloc or (scheme and scheme in uses_netloc) or url[:2] == '//':
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
@@ -773,7 +773,11 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         def _unquote(s):
             return unquote_plus(s, encoding=encoding, errors=errors)
     else:
-        qs = bytes(qs)
+        if not qs:
+            return []
+        # Use memoryview() to reject integers and iterables,
+        # acceptable by the bytes constructor.
+        qs = bytes(memoryview(qs))
         if isinstance(separator, str):
             separator = bytes(separator, 'ascii')
         eq = b'='
@@ -818,14 +822,6 @@ _ALWAYS_SAFE = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'_.-~')
 _ALWAYS_SAFE_BYTES = bytes(_ALWAYS_SAFE)
 
-def __getattr__(name):
-    if name == 'Quoter':
-        warnings.warn('Deprecated in 3.11. '
-                      'urllib.parse.Quoter will be removed in Python 3.14. '
-                      'It was not intended to be a public API.',
-                      DeprecationWarning, stacklevel=2)
-        return _Quoter
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 class _Quoter(dict):
     """A mapping from bytes numbers (in range(0,256)) to strings.
