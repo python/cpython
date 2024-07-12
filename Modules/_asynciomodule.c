@@ -2039,6 +2039,7 @@ register_task(asyncio_state *state, TaskObj *task)
     assert(task != &state->asyncio_tasks.tail);
     if (task->next != NULL) {
         // already registered
+        ASYNCIO_STATE_UNLOCK(state);
         return;
     }
     assert(task->prev == NULL);
@@ -2057,7 +2058,7 @@ register_eager_task(asyncio_state *state, PyObject *task)
 }
 
 static void
-unregister_task(asyncio_state *state, TaskObj *task)
+unregister_task_no_lock(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
@@ -2067,7 +2068,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
         assert(state->asyncio_tasks.head != task);
         return;
     }
-    ASYNCIO_STATE_LOCK(state);
+
     task->next->prev = task->prev;
     if (task->prev == NULL) {
         assert(state->asyncio_tasks.head == task);
@@ -2075,10 +2076,18 @@ unregister_task(asyncio_state *state, TaskObj *task)
     } else {
         task->prev->next = task->next;
     }
-    ASYNCIO_STATE_UNLOCK(state);
+
     task->next = NULL;
     task->prev = NULL;
     assert(state->asyncio_tasks.head != task);
+}
+
+static void
+unregister_task(asyncio_state *state, TaskObj *task)
+{
+    ASYNCIO_STATE_LOCK(state);
+    unregister_task_no_lock(state, task);
+    ASYNCIO_STATE_UNLOCK(state);
 }
 
 static int
@@ -2233,8 +2242,12 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         // optimization: defer task name formatting
         // store the task counter as PyLong in the name
         // for deferred formatting in get_name
-        FT_ATOMIC_ADD_UINT64(state->task_name_counter, 1);
-        name = PyLong_FromUnsignedLongLong(state->task_name_counter);
+#ifdef Py_GIL_DISABLED
+        unsigned long long counter = _Py_atomic_add_uint64(&state->task_name_counter, 1) + 1;
+#else
+        unsigned long long counter = ++state->task_name_counter;
+#endif
+        name = PyLong_FromUnsignedLongLong(counter);
     } else if (!PyUnicode_CheckExact(name)) {
         name = PyObject_Str(name);
     } else {
@@ -3968,7 +3981,6 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
-
     Py_SET_TYPE(&state->asyncio_tasks.tail, state->TaskType);
     _Py_SetImmortalUntracked((PyObject *)&state->asyncio_tasks.tail);
     state->asyncio_tasks.head = &state->asyncio_tasks.tail;
