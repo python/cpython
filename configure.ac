@@ -6983,6 +6983,19 @@ case "$ac_cv_computed_gotos" in yes*)
   [Define if the C compiler supports computed gotos.])
 esac
 
+AC_CACHE_CHECK([whether $CC supports __typeof__], [ac_cv_typeof],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+int i;
+__typeof__(i) *p = &i;
+]])],
+[ac_cv_typeof=yes],
+[ac_cv_typeof=no]))
+if test "$ac_cv_typeof" = yes
+then
+  AC_DEFINE([HAVE_TYPEOF], [1],
+  [Define if the C compiler supports  __typeof__(expr)])
+fi
+
 case $ac_sys_system in
 AIX*)
   AC_DEFINE([HAVE_BROKEN_PIPE_BUF], [1],

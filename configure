@@ -27661,6 +27661,36 @@ printf "%s\n" "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
 
 esac
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports __typeof__" >&5
+printf %s "checking whether $CC supports __typeof__... " >&6; }
+if test ${ac_cv_typeof+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int i;
+__typeof__(i) *p = &i;
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_typeof=yes
+else $as_nop
+  ac_cv_typeof=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_typeof" >&5
+printf "%s\n" "$ac_cv_typeof" >&6; }
+if test "$ac_cv_typeof" = yes
+then
+
+printf "%s\n" "#define HAVE_TYPEOF 1" >>confdefs.h
+
+fi
+
 case $ac_sys_system in
 AIX*)
 
