@@ -158,6 +158,10 @@ ASSERT_DICT_LOCKED(PyObject *op)
     if (!_PyInterpreterState_GET()->stoptheworld.world_stopped) {       \
         ASSERT_DICT_LOCKED(op);                                         \
     }
+#define ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(op)                         \
+    if (!_PyInterpreterState_GET()->stoptheworld.world_stopped) {      \
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);                 \
+    }
 
 #define IS_DICT_SHARED(mp) _PyObject_GC_IS_SHARED(mp)
 #define SET_DICT_SHARED(mp) _PyObject_GC_SET_SHARED(mp)
@@ -226,6 +230,7 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 
 #define ASSERT_DICT_LOCKED(op)
 #define ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(op)
+#define ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(op)
 #define LOCK_KEYS(keys)
 #define UNLOCK_KEYS(keys)
 #define ASSERT_KEYS_LOCKED(keys)
@@ -6673,10 +6678,10 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
     return res;
 }
 
-static PyDictObject *
-materialize_managed_dict_lock_held(PyObject *obj)
+PyDictObject *
+_PyObject_MaterializeManagedDict_LockHeld(PyObject *obj)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
 
     PyDictValues *values = _PyObject_InlineValues(obj);
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -6705,7 +6710,7 @@ _PyObject_MaterializeManagedDict(PyObject *obj)
         goto exit;
     }
 #endif
-    dict = materialize_managed_dict_lock_held(obj);
+    dict = _PyObject_MaterializeManagedDict_LockHeld(obj);
 
 #ifdef Py_GIL_DISABLED
 exit:
@@ -7138,7 +7143,7 @@ PyObject_ClearManagedDict(PyObject *obj)
 int
 _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
     assert(_PyObject_ManagedDictPointer(obj)->dict == mp);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
 
