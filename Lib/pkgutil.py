@@ -176,7 +176,15 @@ try:
     from zipimport import zipimporter
 
     def iter_zipimport_modules(importer, prefix=''):
-        dirlist = sorted(zipimport._zip_directory_cache[importer.archive])
+        """Iterate through the modules available within a zipfile
+
+        For each module found in the zipfile, a tuple containing the module's
+        name and boolean indicating whether the module is a package
+        gets yielded.
+
+        It is assumed that importer is an instance of zipimport.zipimporter.
+        """
+        dirlist = sorted(zipimporter(importer.archive)._get_files())
         _prefix = importer.prefix
         plen = len(_prefix)
         yielded = {}
