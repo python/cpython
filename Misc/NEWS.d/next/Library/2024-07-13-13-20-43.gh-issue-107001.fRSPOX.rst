@@ -1,2 +1,3 @@
 Add :func:`~typing.copy_kwargs` to :mod:`typing` that copies/applies the
-ParameterSpec from one function to another. Patch by Carli Freudenberg.
+:class:`~typing.ParamSpec` from one function to another.
+Patch by Carli Freudenberg.
