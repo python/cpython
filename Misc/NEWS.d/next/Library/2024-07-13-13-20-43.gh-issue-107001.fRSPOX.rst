@@ -1,1 +1,1 @@
-Add :func:`~typing.copy_kwargs` to *typing* that copies/applies the ParameterSpec from one function to another.
+Add :func:`~typing.copy_kwargs` to *typing* that copies/applies the ParameterSpec from one function to another. Patch by Carli Freudenberg.

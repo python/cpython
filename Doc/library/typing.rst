@@ -2867,32 +2867,32 @@ Functions and decorators
 
 .. decorator:: copy_kwargs(source_func)
 
-    Cast the decorated function's call signature to the *source_func*'s.
+   Cast the decorated function's call signature to the *source_func*'s.
 
-    Use this decorator enhancing an upstream function while keeping its
-    call signature.
-    Returns the original function with the *source_funcs* call signature.
+   Use this decorator enhancing an upstream function while keeping its
+   call signature.
+   Returns the original function with the *source_funcs* call signature.
 
-    Usage::
+   Usage::
 
-        from typing import copy_kwargs, Any
+      from typing import copy_kwargs, Any
 
-        def upstream_func(a: int, b: float, *, double: bool = False) -> float:
-            ...
+      def upstream_func(a: int, b: float, *, double: bool = False) -> float:
+         ...
 
-        @copy_kwargs(upstream_func)
-        def enhanced(
-            a: int, b: float, *args: Any, double: bool = False, **kwargs: Any
-        ) -> str:
-            ...
+      @copy_kwargs(upstream_func)
+      def enhanced(
+         a: int, b: float, *args: Any, double: bool = False, **kwargs: Any
+      ) -> str:
+         ...
 
-    .. note::
+   .. note::
 
-       Include ``*args`` and ``**kwargs`` in the signature of the decorated
-       function in order to avoid a :py:class:`TypeError` when the call signature of
-       *source_func* changes.
+    Include ``*args`` and ``**kwargs`` in the signature of the decorated
+    function in order to avoid a :py:class:`TypeError` when the call signature of
+    *source_func* changes.
 
-   .. versionadded 3.14
+   .. versionadded:: 3.14
 
 .. function:: assert_type(val, typ, /)
 

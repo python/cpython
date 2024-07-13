@@ -1084,6 +1084,9 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+typing
+------
+* Add :func:`~typing.copy_kwargs` to *typing* that copies/applies the ParameterSpec from one function to another.
 
 sys
 ---
