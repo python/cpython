@@ -2843,6 +2843,27 @@
             break;
         }
 
+        case _IMPORT_NAME: {
+            _PyStackRef fromlist;
+            _PyStackRef level;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            fromlist = stack_pointer[-1];
+            level = stack_pointer[-2];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
+                PyStackRef_AsPyObjectBorrow(fromlist),
+                PyStackRef_AsPyObjectBorrow(level));
+            PyStackRef_CLOSE(level);
+            PyStackRef_CLOSE(fromlist);
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 because it is replaced */
 
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is replaced */

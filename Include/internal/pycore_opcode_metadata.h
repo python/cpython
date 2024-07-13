@@ -1296,6 +1296,7 @@ _PyOpcode_macro_expansion[256] = {
     [GET_ITER] = { .nuops = 1, .uops = { { _GET_ITER, 0, 0 } } },
     [GET_LEN] = { .nuops = 1, .uops = { { _GET_LEN, 0, 0 } } },
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { _GET_YIELD_FROM_ITER, 0, 0 } } },
+    [IMPORT_NAME] = { .nuops = 1, .uops = { { _IMPORT_NAME, 0, 0 } } },
     [IS_OP] = { .nuops = 1, .uops = { { _IS_OP, 0, 0 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { _LIST_APPEND, 0, 0 } } },
     [LIST_EXTEND] = { .nuops = 1, .uops = { { _LIST_EXTEND, 0, 0 } } },

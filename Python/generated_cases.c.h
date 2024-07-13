@@ -3510,7 +3510,7 @@
             fromlist = stack_pointer[-1];
             level = stack_pointer[-2];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *res_o = import_name(tstate, frame, name,
+            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
                 PyStackRef_AsPyObjectBorrow(fromlist),
                 PyStackRef_AsPyObjectBorrow(level));
             PyStackRef_CLOSE(level);

@@ -2616,9 +2616,9 @@ dummy_func(
             b = res ? PyStackRef_True : PyStackRef_False;
         }
 
-         tier1 inst(IMPORT_NAME, (level, fromlist -- res)) {
+         inst(IMPORT_NAME, (level, fromlist -- res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *res_o = import_name(tstate, frame, name,
+            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
                               PyStackRef_AsPyObjectBorrow(fromlist),
                               PyStackRef_AsPyObjectBorrow(level));
             DECREF_INPUTS();

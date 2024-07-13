@@ -163,6 +163,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CONTAINS_OP_DICT] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_EG_MATCH] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_EXC_MATCH] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_IMPORT_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_IS_NONE] = 0,
     [_GET_LEN] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MATCH_CLASS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -382,6 +383,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
+    [_IMPORT_NAME] = "_IMPORT_NAME",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
     [_INIT_CALL_PY_EXACT_ARGS] = "_INIT_CALL_PY_EXACT_ARGS",
     [_INIT_CALL_PY_EXACT_ARGS_0] = "_INIT_CALL_PY_EXACT_ARGS_0",
@@ -803,6 +805,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_EG_MATCH:
             return 2;
         case _CHECK_EXC_MATCH:
+            return 2;
+        case _IMPORT_NAME:
             return 2;
         case _IS_NONE:
             return 1;
