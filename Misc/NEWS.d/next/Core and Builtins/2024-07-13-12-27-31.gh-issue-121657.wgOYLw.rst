@@ -1,1 +1,2 @@
-Show the correct ``SyntaxError`` if the user tries to use ``yield from`` outside a function
+Improve the :exc:`SyntaxError` message if the user tries to use
+:keyword:`yield from <yield>` outside a function.
