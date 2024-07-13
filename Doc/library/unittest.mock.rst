@@ -862,7 +862,9 @@ object::
 
 .. caution::
 
-    If an :exc:`AttributeError` is to be raised by :class:`PropertyMock`, it will be interpreted as a missing descriptor and following :meth:`__getattr__` call will be called on the parent mock. ::
+    If an :exc:`AttributeError` is raised by :class:`PropertyMock`,
+    it will be interpreted as a missing descriptor and
+    :meth:`~object.__getattr__` will be called on the parent mock::
 
         >>> m = MagicMock()
         >>> no_attribute = PropertyMock(side_effect=AttributeError)
