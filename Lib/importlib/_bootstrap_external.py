@@ -1379,8 +1379,11 @@ class _NamespacePath:
         parent_module_name, path_attr_name = self._find_parent_path_names()
         try:
             module = sys.modules[parent_module_name]
-        except KeyError:
-            return sys.path
+        except KeyError as e:
+            raise ModuleNotFoundError(
+                f"{parent_module_name} must be imported before finding {self._name}.",
+                name=parent_module_name,
+            ) from e
         return getattr(module, path_attr_name)
 
     def _recalculate(self):
