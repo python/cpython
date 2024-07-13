@@ -52,4 +52,9 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         CAN_USE_PYREPL = False
     if run_interactive is None:
         return sys._baserepl()
-    run_interactive(namespace)
+
+
+    console = InteractiveColoredConsole(
+        namespace, filename="<stdin>"
+    )
+    run_interactive(console=console)
