@@ -1518,11 +1518,11 @@ switch_to_main_interpreter(PyThreadState *tstate)
     if (_Py_IsMainInterpreter(tstate->interp)) {
         return tstate;
     }
-    PyThreadState *main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+    PyThreadState *main_tstate = _PyThreadState_NewBound(
+            _PyInterpreterState_Main(), _PyThreadState_WHENCE_EXEC);
     if (main_tstate == NULL) {
         return NULL;
     }
-    main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
 #ifndef NDEBUG
     PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
     assert(old_tstate == tstate);
@@ -1530,6 +1530,35 @@ switch_to_main_interpreter(PyThreadState *tstate)
     (void)PyThreadState_Swap(main_tstate);
 #endif
     return main_tstate;
+}
+
+static void
+switch_back_from_main_interpreter(PyThreadState *tstate,
+                                  PyThreadState *main_tstate,
+                                  PyObject *tempobj)
+{
+    assert(main_tstate == PyThreadState_GET());
+    assert(_Py_IsMainInterpreter(main_tstate->interp));
+    assert(tstate->interp != main_tstate->interp);
+
+    /* Handle any exceptions, which we cannot propagate directly
+     * to the subinterpreter. */
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            /* We trust it will be caught again soon. */
+            PyErr_Clear();
+        }
+        else {
+            /* Printing the exception should be sufficient. */
+            PyErr_PrintEx(0);
+        }
+    }
+
+    Py_XDECREF(tempobj);
+
+    PyThreadState_Clear(main_tstate);
+    (void)PyThreadState_Swap(tstate);
+    PyThreadState_Delete(main_tstate);
 }
 
 static PyObject *
@@ -1551,6 +1580,7 @@ get_core_module_dict(PyInterpreterState *interp,
     return NULL;
 }
 
+#ifndef NDEBUG
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
@@ -1568,7 +1598,6 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 
-#ifndef NDEBUG
 static _Py_ext_module_kind
 _get_extension_kind(PyModuleDef *def, bool check_size)
 {
@@ -1967,10 +1996,22 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
             /* Remember the filename as the __file__ attribute */
             if (info->filename != NULL) {
+                PyObject *filename = NULL;
+                if (switched) {
+                    // The original filename may be allocated by subinterpreter's
+                    // obmalloc, so we create a copy here.
+                    filename = _PyUnicode_Copy(info->filename);
+                    if (filename == NULL) {
+                        return NULL;
+                    }
+                } else {
+                    filename = Py_NewRef(info->filename);
+                }
                 // XXX There's a refleak somewhere with the filename.
-                // Until we can track it down, we intern it.
-                PyObject *filename = Py_NewRef(info->filename);
-                PyUnicode_InternInPlace(&filename);
+                // Until we can track it down, we immortalize it.
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternImmortal(interp, &filename);
+
                 if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
                     PyErr_Clear(); /* Not important enough to report */
                 }
@@ -2015,27 +2056,10 @@ main_finally:
     /* Switch back to the subinterpreter. */
     if (switched) {
         assert(main_tstate != tstate);
-
-        /* Handle any exceptions, which we cannot propagate directly
-         * to the subinterpreter. */
-        if (PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-                /* We trust it will be caught again soon. */
-                PyErr_Clear();
-            }
-            else {
-                /* Printing the exception should be sufficient. */
-                PyErr_PrintEx(0);
-            }
-        }
-
+        switch_back_from_main_interpreter(tstate, main_tstate, mod);
         /* Any module we got from the init function will have to be
          * reloaded in the subinterpreter. */
-        Py_CLEAR(mod);
-
-        PyThreadState_Clear(main_tstate);
-        (void)PyThreadState_Swap(tstate);
-        PyThreadState_Delete(main_tstate);
+        mod = NULL;
     }
 
     /*****************************************************************/
@@ -2129,8 +2153,20 @@ clear_singlephase_extension(PyInterpreterState *interp,
         }
     }
 
+    /* We must use the main interpreter to clean up the cache.
+     * See the note in import_run_extension(). */
+    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *main_tstate = switch_to_main_interpreter(tstate);
+    if (main_tstate == NULL) {
+        return -1;
+    }
+
     /* Clear the cached module def. */
     _extensions_cache_delete(path, name);
+
+    if (main_tstate != tstate) {
+        switch_back_from_main_interpreter(tstate, main_tstate, NULL);
+    }
 
     return 0;
 }

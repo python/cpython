@@ -1,0 +1,1 @@
+Fix pasting of characters containing unicode character joiners in the new REPL. Patch by Marta Gomez Macias
