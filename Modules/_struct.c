@@ -854,6 +854,24 @@ np_double_complex(_structmodulestate *state, char *p, PyObject *v,
     memcpy(p, (char *)&x, sizeof(x));
     return 0;
 }
+#else
+static int
+np_complex_stub(_structmodulestate *state, char *p, PyObject *v,
+                const formatdef *f)
+{
+    PyErr_Format(state->StructError,
+                 "'%c' format not supported on this system",
+                 f->format);
+    return -1;
+}
+static PyObject *
+nu_complex_stub(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    PyErr_Format(state->StructError,
+                 "'%c' format not supported on this system",
+                 f->format);
+    return NULL;
+}
 #endif
 
 static int
@@ -897,6 +915,9 @@ static const formatdef native_table[] = {
 #ifdef Py_HAVE_C_COMPLEX
     {'E',       sizeof(float complex), FLOAT_COMPLEX_ALIGN, nu_float_complex, np_float_complex},
     {'C',       sizeof(double complex), DOUBLE_COMPLEX_ALIGN, nu_double_complex, np_double_complex},
+#else
+    {'E',       1, 0, nu_complex_stub, np_complex_stub},
+    {'C',       1, 0, nu_complex_stub, np_complex_stub},
 #endif
     {'P',       sizeof(void *), VOID_P_ALIGN,   nu_void_p,      np_void_p},
     {0}
@@ -1236,6 +1257,9 @@ static formatdef bigendian_table[] = {
 #ifdef Py_HAVE_C_COMPLEX
     {'E',       8,              0,              bu_float_complex, bp_float_complex},
     {'C',       16,             0,              bu_double_complex, bp_double_complex},
+#else
+    {'E',       1,              0,              nu_complex_stub, np_complex_stub},
+    {'C',       1,              0,              nu_complex_stub, np_complex_stub},
 #endif
     {0}
 };
@@ -1559,6 +1583,9 @@ static formatdef lilendian_table[] = {
 #ifdef Py_HAVE_C_COMPLEX
     {'E',       8,              0,              lu_float_complex, lp_float_complex},
     {'C',       16,             0,              lu_double_complex, lp_double_complex},
+#else
+    {'E',       1,              0,              nu_complex_stub, np_complex_stub},
+    {'C',       1,              0,              nu_complex_stub, np_complex_stub},
 #endif
     {0}
 };
