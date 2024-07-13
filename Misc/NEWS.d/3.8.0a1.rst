@@ -2519,7 +2519,7 @@ non-Windows systems.
 .. nonce: dQS1ng
 .. section: Library
 
-Fix incorrect parsing of :class:`_io.IncrementalNewlineDecoder`'s
+Fix incorrect parsing of :class:`io.IncrementalNewlineDecoder`'s
 *translate* argument.
 
 ..
@@ -8051,7 +8051,7 @@ Update macOS 10.9+ installer to Tcl/Tk 8.6.8.
 .. nonce: K6jCVG
 .. section: macOS
 
-In :mod:`_scproxy`, drop the GIL when calling into ``SystemConfiguration``
+In :mod:`!_scproxy`, drop the GIL when calling into ``SystemConfiguration``
 to avoid deadlocks.
 
 ..
