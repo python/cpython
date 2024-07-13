@@ -330,24 +330,16 @@ fnmatch_translate_impl(PyObject *module, PyObject *pattern)
 
 // ==== Module specs ==========================================================
 
-/*[python input]
-import fnmatch
-import textwrap
-fmt = 'PyDoc_STRVAR(fnmatchmodule_doc,\n"%s");'
-print(fmt % '\\n\\\n'.join(fnmatch.__doc__.splitlines()))
-[python start generated code]*/
+// fmt: off
 PyDoc_STRVAR(fnmatchmodule_doc,
-"Filename matching with shell patterns.\n\
-\n\
-fnmatch(FILENAME, PATTERN) matches according to the local convention.\n\
-fnmatchcase(FILENAME, PATTERN) always takes case in account.\n\
-\n\
-The functions operate by translating the pattern into a regular\n\
-expression.  They cache the compiled regular expressions for speed.\n\
-\n\
-The function translate(PATTERN) returns a regular expression\n\
-corresponding to PATTERN.  (It does not compile it.)");
-/*[python end generated code: output=b5d0696157f04882 input=8dfe2add227b2686]*/
+"Filename matching with shell patterns.\n"
+"fnmatch(FILENAME, PATTERN) matches according to the local convention.\n"
+"fnmatchcase(FILENAME, PATTERN) always takes case in account.\n\n"
+"The functions operate by translating the pattern into a regular\n"
+"expression.  They cache the compiled regular expressions for speed.\n\n"
+"The function translate(PATTERN) returns a regular expression\n"
+"corresponding to PATTERN.  (It does not compile it.)");
+// fmt: on
 
 static PyMethodDef fnmatchmodule_methods[] = {
     FNMATCH_FILTER_METHODDEF
