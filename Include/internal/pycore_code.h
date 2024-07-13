@@ -30,6 +30,9 @@ typedef union {
     _Py_BackoffCounter counter;  // First cache entry of specializable op
 } _Py_CODEUNIT;
 
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
+
 
 /* These macros only remain defined for compatibility. */
 #define _Py_OPCODE(word) ((word).op.code)
