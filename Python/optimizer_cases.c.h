@@ -917,7 +917,14 @@
             break;
         }
 
-        /* _BUILD_SET is not a viable micro-op for tier 2 */
+        case _BUILD_SET: {
+            _Py_UopsSymbol *set;
+            set = sym_new_not_null(ctx);
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _BUILD_MAP: {
             _Py_UopsSymbol *map;

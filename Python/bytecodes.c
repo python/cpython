@@ -1822,7 +1822,8 @@ dummy_func(
         inst(BUILD_SET, (values[oparg] -- set)) {
             PyObject *set_o = PySet_New(NULL);
             if (set_o == NULL) {
-                ERROR_NO_POP();
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {

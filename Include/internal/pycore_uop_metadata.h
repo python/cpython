@@ -125,6 +125,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BUILD_LIST] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_LIST_EXTEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SET_UPDATE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BUILD_SET] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_MAP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SETUP_ANNOTATIONS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_CONST_KEY_MAP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -289,6 +290,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BUILD_CONST_KEY_MAP] = "_BUILD_CONST_KEY_MAP",
     [_BUILD_LIST] = "_BUILD_LIST",
     [_BUILD_MAP] = "_BUILD_MAP",
+    [_BUILD_SET] = "_BUILD_SET",
     [_BUILD_SLICE] = "_BUILD_SLICE",
     [_BUILD_STRING] = "_BUILD_STRING",
     [_BUILD_TUPLE] = "_BUILD_TUPLE",
@@ -732,6 +734,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2 + (oparg-1);
         case _SET_UPDATE:
             return 2 + (oparg-1);
+        case _BUILD_SET:
+            return oparg;
         case _BUILD_MAP:
             return oparg*2;
         case _SETUP_ANNOTATIONS:

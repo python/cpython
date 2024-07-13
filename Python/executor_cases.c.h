@@ -1919,7 +1919,36 @@
             break;
         }
 
-        /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _BUILD_SET: {
+            _PyStackRef *values;
+            _PyStackRef set;
+            oparg = CURRENT_OPARG();
+            values = &stack_pointer[-oparg];
+            PyObject *set_o = PySet_New(NULL);
+            if (set_o == NULL) {
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(values[_i]);
+                }
+                if (true) JUMP_TO_ERROR();
+            }
+            int err = 0;
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
+                if (err == 0) {
+                    err = PySet_Add(set_o, item);
+                }
+                Py_DECREF(item);
+            }
+            if (err != 0) {
+                Py_DECREF(set_o);
+                if (true) JUMP_TO_ERROR();
+            }
+            set = PyStackRef_FromPyObjectSteal(set_o);
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _BUILD_MAP: {
             _PyStackRef *values;

@@ -688,7 +688,10 @@
             values = &stack_pointer[-oparg];
             PyObject *set_o = PySet_New(NULL);
             if (set_o == NULL) {
-                goto error;
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(values[_i]);
+                }
+                if (true) { stack_pointer += -oparg; goto error; }
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
