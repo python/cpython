@@ -132,7 +132,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     // estimate the number of characters to be written to be the
     // same as the number of characters in the pattern.
     //
-    // TODO: (picnixz): should we limit the estimation?
+    // TODO(picnixz): should we limit the estimation?
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(n);
     if (writer == NULL) {
         return NULL;
