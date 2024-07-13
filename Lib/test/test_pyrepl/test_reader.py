@@ -138,6 +138,20 @@ class TestReader(TestCase):
         reader, _ = handle_all_events(events)
         self.assert_screen_equals(reader, "")
 
+    def test_help_toggles_instead_of_nesting(self):
+
+        events = [
+            Event(evt="key", data="f1", raw=bytearray(b"")),
+        ]
+
+        no_paste_reader = functools.partial(
+            prepare_reader,
+            paste_mode=False,
+            help_mode=True,
+        )
+        reader, _ = handle_all_events(events, prepare_reader=no_paste_reader)
+        self.assertFalse(reader.help_mode)
+
     def test_newline_within_block_trailing_whitespace(self):
         # fmt: off
         code = (

@@ -230,6 +230,7 @@ class Reader:
     dirty: bool = False
     finished: bool = False
     paste_mode: bool = False
+    help_mode: bool = False
     in_bracketed_paste: bool = False
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
@@ -646,7 +647,7 @@ class Reader:
             self.restore()
             yield
         finally:
-            for arg in ("msg", "ps1", "ps2", "ps3", "ps4", "paste_mode"):
+            for arg in ("msg", "ps1", "ps2", "ps3", "ps4", "paste_mode", "help_mode"):
                 setattr(self, arg, prev_state[arg])
             self.prepare()
 
