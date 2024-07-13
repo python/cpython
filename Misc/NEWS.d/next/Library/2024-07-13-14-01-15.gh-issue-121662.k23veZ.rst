@@ -1,0 +1,2 @@
+Fixed PyREPL on UNIX if stdin is non-blocking by handling BlockingIOError and checking stdin's blocking status.
+Now, UnixConsole.__read will return None in that case and reader will retry after 100ms sleep.
