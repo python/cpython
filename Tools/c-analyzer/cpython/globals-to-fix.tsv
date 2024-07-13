@@ -305,6 +305,11 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 Python/instrumentation.c	-	_PyInstrumentation_DISABLE	-
 Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 
+##-----------------------
+## other
+
+Objects/typeobject.c	-	static_type_defs	-
+
 
 ##################################
 ## global non-objects to fix in core code
