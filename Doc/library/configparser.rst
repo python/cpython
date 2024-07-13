@@ -988,8 +988,8 @@ ConfigParser Objects
    :class:`ConfigParser`, where the most recently added configuration has the
    highest priority. Any conflicting keys are taken from the more recent
    configuration while the previously existing keys are retained. The example
-   below reads in an `override.ini` file, which will override any conflicting
-   keys from the `example.ini` file.
+   below reads in an ``override.ini`` file, which will override any conflicting
+   keys from the ``example.ini`` file.
 
    .. code-block:: ini
 
