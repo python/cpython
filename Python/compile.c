@@ -5696,10 +5696,11 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(entry);
 
-    assert (!is_async_comprehension || type == COMP_GENEXP
-            || scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
-            || scope_type == COMPILER_SCOPE_COMPREHENSION
-            || is_top_level_await);
+    assert (!is_async_comprehension ||
+            type == COMP_GENEXP ||
+            scope_type == COMPILER_SCOPE_ASYNC_FUNCTION ||
+            scope_type == COMPILER_SCOPE_COMPREHENSION ||
+            is_top_level_await);
 
     if (type != COMP_GENEXP) {
         int op;

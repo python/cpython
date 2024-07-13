@@ -1661,10 +1661,10 @@ check_import_from(struct symtable *st, stmt_ty s)
 }
 
 static bool
-allows_top_level_await(struct symtable* st)
+allows_top_level_await(struct symtable *st)
 {
-    return (st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT)
-            && st->st_cur->ste_type == ModuleBlock;
+    return (st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+            st->st_cur->ste_type == ModuleBlock;
 }
 
 
@@ -2191,7 +2191,6 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
     return 1;
 }
 
-
 static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
@@ -2302,7 +2301,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
                                 "'await' outside async function");
                 SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
                 VISIT_QUIT(st, 0);
-
             }
         }
         VISIT(st, expr, e->v.Await.value);
@@ -2827,7 +2825,8 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (is_async &&
         !(st->st_cur->ste_type == FunctionBlock && st->st_cur->ste_coroutine) &&
         st->st_cur->ste_comprehension == NoComprehension &&
-        !allows_top_level_await(st)) {
+        !allows_top_level_await(st))
+    {
         PyErr_SetString(PyExc_SyntaxError, "asynchronous comprehension outside of "
                                            "an asynchronous function");
         SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
