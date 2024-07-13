@@ -75,6 +75,10 @@ New Features
 Other Language Changes
 ======================
 
+* Incorrect usage of :keyword:`await` and asynchronous comprehensions
+  is now detected even if the code is optimized away by the :option:`-O`
+  command line option. For example, ``python -O -c 'assert await 1'``
+  now produces a syntax error. (Contributed by Jelle Zijlstra in :gh:`121637`.)
 
 
 New Modules

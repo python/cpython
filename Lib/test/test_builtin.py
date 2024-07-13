@@ -413,7 +413,7 @@ class BuiltinTest(unittest.TestCase):
         "socket.accept is broken"
     )
     def test_compile_top_level_await(self):
-        """Test whether code some top level await can be compiled.
+        """Test whether code with top level await can be compiled.
 
         Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
         set, and make sure the generated code object has the CO_COROUTINE flag
@@ -445,53 +445,51 @@ class BuiltinTest(unittest.TestCase):
             # async code is optimized away
             '''assert not await asyncio.sleep(0); a = 1''',
             '''assert [x async for x in arange(1)]; a = 1''',
-            '''assert (x async for x in arange(1)); a = 1''',
             '''assert {x async for x in arange(1)}; a = 1''',
             '''assert {x: x async for x in arange(1)}; a = 1''',
             textwrap.dedent(
                 '''
-                if __debug__:
+                if (a := 1) and __debug__:
                     async with asyncio.Lock() as l:
                         pass
-                a = 1
                 '''
             ),
             textwrap.dedent(
                 '''
-                if __debug__:
+                if (a := 1) and __debug__:
                     async for x in arange(2):
                         pass
-                a = 1
                 '''
             ),
         ]
         policy = maybe_get_event_loop_policy()
         try:
             for mode, code_sample, optimize in product(modes, code_samples, optimizations):
-                source = dedent(code_sample)
-                with self.assertRaises(
-                        SyntaxError, msg=f"source={source} mode={mode}"):
-                    compile(source, '?', mode, optimize=optimize)
+                with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
+                    source = dedent(code_sample)
+                    with self.assertRaises(
+                            SyntaxError, msg=f"source={source} mode={mode}"):
+                        compile(source, '?', mode, optimize=optimize)
 
-                co = compile(source,
-                             '?',
-                             mode,
-                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
-                             optimize=optimize)
+                    co = compile(source,
+                                '?',
+                                mode,
+                                flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+                                optimize=optimize)
 
-                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                                 msg=f"source={source} mode={mode}")
+                    self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                    msg=f"source={source} mode={mode}")
 
-                # test we can create and  advance a function type
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                async_f = FunctionType(co, globals_)
-                asyncio.run(async_f())
-                self.assertEqual(globals_['a'], 1)
+                    # test we can create and  advance a function type
+                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                    async_f = FunctionType(co, globals_)
+                    asyncio.run(async_f())
+                    self.assertEqual(globals_['a'], 1)
 
-                # test we can await-eval,
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                asyncio.run(eval(co, globals_))
-                self.assertEqual(globals_['a'], 1)
+                    # test we can await-eval,
+                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                    asyncio.run(eval(co, globals_))
+                    self.assertEqual(globals_['a'], 1)
         finally:
             asyncio.set_event_loop_policy(policy)
 

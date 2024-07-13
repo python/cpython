@@ -5674,7 +5674,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         goto error;
     }
     int is_inlined = entry->ste_comp_inlined;
-    int is_async_generator = entry->ste_coroutine;
+    int is_async_comprehension = entry->ste_coroutine;
 
     location loc = LOC(e);
 
@@ -5696,15 +5696,10 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(entry);
 
-    if (is_async_generator && type != COMP_GENEXP &&
-        scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-        scope_type != COMPILER_SCOPE_COMPREHENSION &&
-        !is_top_level_await)
-    {
-        compiler_error(c, loc, "asynchronous comprehension outside of "
-                               "an asynchronous function");
-        goto error_in_scope;
-    }
+    assert (!is_async_comprehension || type == COMP_GENEXP
+            || scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
+            || scope_type == COMPILER_SCOPE_COMPREHENSION
+            || is_top_level_await);
 
     if (type != COMP_GENEXP) {
         int op;
@@ -5769,7 +5764,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     ADDOP_I(c, loc, CALL, 0);
 
-    if (is_async_generator && type != COMP_GENEXP) {
+    if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);

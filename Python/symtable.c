@@ -2824,6 +2824,15 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (!symtable_exit_block(st)) {
         return 0;
     }
+    if (is_async &&
+        !(st->st_cur->ste_type == FunctionBlock && st->st_cur->ste_coroutine) &&
+        st->st_cur->ste_comprehension == NoComprehension &&
+        !allows_top_level_await(st)) {
+        PyErr_SetString(PyExc_SyntaxError, "asynchronous comprehension outside of "
+                                           "an asynchronous function");
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
+        return 0;
+    }
     if (is_async) {
         st->st_cur->ste_coroutine = 1;
     }
