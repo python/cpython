@@ -129,12 +129,10 @@ def main(argv: list[str] | None = None) -> int:
     if not Path(args.compiler_output_file_path).is_file():
         print(f"Compiler output file does not exist: {args.compiler_output_file_path}")
         return 1
-
     # Check that the warning ignore file is a valid path
     if not Path(args.warning_ignore_file_path).is_file():
         print(f"Warning ignore file does not exist: {args.warning_ignore_file_path}")
         return 1
-
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
 
