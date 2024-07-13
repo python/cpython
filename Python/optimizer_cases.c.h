@@ -787,7 +787,14 @@
 
         /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 */
 
-        /* _LOAD_NAME is not a viable micro-op for tier 2 */
+        case _LOAD_NAME: {
+            _Py_UopsSymbol *v;
+            v = sym_new_not_null(ctx);
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LOAD_GLOBAL: {
             _Py_UopsSymbol *res;

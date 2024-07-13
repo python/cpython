@@ -107,6 +107,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_LOCALS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_LOAD_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_GLOBALS_VERSION] = HAS_DEOPT_FLAG,
     [_GUARD_BUILTINS_VERSION] = HAS_DEOPT_FLAG,
@@ -445,6 +446,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_GLOBAL_BUILTINS] = "_LOAD_GLOBAL_BUILTINS",
     [_LOAD_GLOBAL_MODULE] = "_LOAD_GLOBAL_MODULE",
     [_LOAD_LOCALS] = "_LOAD_LOCALS",
+    [_LOAD_NAME] = "_LOAD_NAME",
     [_LOAD_SPECIAL] = "_LOAD_SPECIAL",
     [_LOAD_SUPER_ATTR_ATTR] = "_LOAD_SUPER_ATTR_ATTR",
     [_LOAD_SUPER_ATTR_METHOD] = "_LOAD_SUPER_ATTR_METHOD",
@@ -693,6 +695,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DELETE_GLOBAL:
             return 0;
         case _LOAD_LOCALS:
+            return 0;
+        case _LOAD_NAME:
             return 0;
         case _LOAD_GLOBAL:
             return 0;

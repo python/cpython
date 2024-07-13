@@ -4983,22 +4983,16 @@
                 if (true) goto error;
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v_o) < 0) {
-                goto error;
-            }
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v_o) < 0) goto error;
             if (v_o == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) {
-                    goto error;
-                }
+                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) goto error;
                 if (v_o == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
-                        goto error;
-                    }
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) goto error;
                     if (v_o == NULL) {
                         _PyEval_FormatExcCheckArg(
                             tstate, PyExc_NameError,
                             NAME_ERROR_MSG, name);
-                        goto error;
+                        if (true) goto error;
                     }
                 }
             }

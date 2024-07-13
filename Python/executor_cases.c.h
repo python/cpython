@@ -1551,7 +1551,36 @@
 
         /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        /* _LOAD_NAME is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _LOAD_NAME: {
+            _PyStackRef v;
+            oparg = CURRENT_OPARG();
+            PyObject *v_o;
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) JUMP_TO_ERROR();
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v_o) < 0) JUMP_TO_ERROR();
+            if (v_o == NULL) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) JUMP_TO_ERROR();
+                if (v_o == NULL) {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) JUMP_TO_ERROR();
+                    if (v_o == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                            tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                        if (true) JUMP_TO_ERROR();
+                    }
+                }
+            }
+            v = PyStackRef_FromPyObjectSteal(v_o);
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LOAD_GLOBAL: {
             _PyStackRef res;
