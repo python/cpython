@@ -235,6 +235,22 @@ class MyIndexable(object):
     def __index__(self):
         return self.value
 
+class IndexableFloatLike:
+    def __init__(self, float_value, index_value):
+        self.float_value = float_value
+        self.index_value = index_value
+
+    def __float__(self):
+        if isinstance(self.float_value, BaseException):
+            raise self.float_value
+        return self.float_value
+
+    def __index__(self):
+        if isinstance(self.index_value, BaseException):
+            raise self.index_value
+        return self.index_value
+
+
 class BadDescr:
     def __get__(self, obj, objtype=None):
         raise ValueError
@@ -1230,6 +1246,10 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log(NAN)))
 
+        self.assertEqual(math.log(IndexableFloatLike(math.e, 10**1000)), 1.0)
+        self.assertAlmostEqual(math.log(IndexableFloatLike(OverflowError(), 10**1000)),
+                               2302.5850929940457)
+
     def testLog1p(self):
         self.assertRaises(TypeError, math.log1p)
         for n in [2, 2**90, 2**300]:
@@ -1264,6 +1284,9 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.log2, NINF)
         self.assertTrue(math.isnan(math.log2(NAN)))
 
+        self.assertEqual(math.log2(IndexableFloatLike(8.0, 2**2000)), 3.0)
+        self.assertEqual(math.log2(IndexableFloatLike(OverflowError(), 2**2000)), 2000.0)
+
     @requires_IEEE_754
     # log2() is not accurate enough on Mac OS X Tiger (10.4)
     @support.requires_mac_ver(10, 5)
@@ -1293,6 +1316,9 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.log10, NINF)
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
+
+        self.assertEqual(math.log10(IndexableFloatLike(100.0, 10**1000)), 2.0)
+        self.assertEqual(math.log10(IndexableFloatLike(OverflowError(), 10**1000)), 1000.0)
 
     def testSumProd(self):
         sumprod = math.sumprod
