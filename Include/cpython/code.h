@@ -194,9 +194,6 @@ Py_DEPRECATED(3.13) static inline int PyCode_GetFirstFree(PyCodeObject *op) {
     return PyUnstable_Code_GetFirstFree(op);
 }
 
-#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
-#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
-
 /* Unstable public interface */
 PyAPI_FUNC(PyCodeObject *) PyUnstable_Code_New(
         int, int, int, int, int, PyObject *, PyObject *,
