@@ -1602,7 +1602,6 @@ FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
 
-    // FutureIter is a heap type so any subclass must also be a heap type.
     assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
 
     PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
@@ -1613,8 +1612,6 @@ FutureIter_dealloc(futureiterobject *it)
 
     // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
     // already been cleared, which is also why we must check if ht_module != NULL.
-    // Due to this restriction, subclasses that belong to a different module
-    // will not be able to use the free list.
     if (module && _PyModule_GetDef(module) == &_asynciomodule) {
         state = get_asyncio_state(module);
     }

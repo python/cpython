@@ -5079,7 +5079,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     Py_ssize_t i, numfields = 0;
     int res = -1;
-    PyObject *key, *value, *fields, *remaining_fields = NULL;
+    PyObject *key, *value, *fields, *attributes = NULL, *remaining_fields = NULL;
     if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
@@ -5146,21 +5146,31 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto cleanup;
                 }
             }
-            else if (
-                PyUnicode_CompareWithASCIIString(key, "lineno") != 0 &&
-                PyUnicode_CompareWithASCIIString(key, "col_offset") != 0 &&
-                PyUnicode_CompareWithASCIIString(key, "end_lineno") != 0 &&
-                PyUnicode_CompareWithASCIIString(key, "end_col_offset") != 0
-            ) {
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ got an unexpected keyword argument '%U'. "
-                    "Support for arbitrary keyword arguments is deprecated "
-                    "and will be removed in Python 3.15.",
-                    Py_TYPE(self)->tp_name, key
-                ) < 0) {
+            else {
+                // Lazily initialize "attributes"
+                if (attributes == NULL) {
+                    attributes = PyObject_GetAttr((PyObject*)Py_TYPE(self), state->_attributes);
+                    if (attributes == NULL) {
+                        res = -1;
+                        goto cleanup;
+                    }
+                }
+                int contains = PySequence_Contains(attributes, key);
+                if (contains == -1) {
                     res = -1;
                     goto cleanup;
+                }
+                else if (contains == 0) {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                        "Support for arbitrary keyword arguments is deprecated "
+                        "and will be removed in Python 3.15.",
+                        Py_TYPE(self)->tp_name, key
+                    ) < 0) {
+                        res = -1;
+                        goto cleanup;
+                    }
                 }
             }
             res = PyObject_SetAttr(self, key, value);
@@ -5244,6 +5254,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         Py_DECREF(field_types);
     }
   cleanup:
+    Py_XDECREF(attributes);
     Py_XDECREF(fields);
     Py_XDECREF(remaining_fields);
     return res;

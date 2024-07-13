@@ -6792,6 +6792,13 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(dt_orig, dt_rt)
 
     def test_type_check_in_subinterp(self):
+        # iOS requires the use of the custom framework loader,
+        # not the ExtensionFileLoader.
+        if sys.platform == "ios":
+            extension_loader = "AppleFrameworkLoader"
+        else:
+            extension_loader = "ExtensionFileLoader"
+
         script = textwrap.dedent(f"""
             if {_interpreters is None}:
                 import _testcapi as module
@@ -6801,7 +6808,7 @@ class CapiTest(unittest.TestCase):
                 import importlib.util
                 fullname = '_testcapi_datetime'
                 origin = importlib.util.find_spec('_testcapi').origin
-                loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+                loader = importlib.machinery.{extension_loader}(fullname, origin)
                 spec = importlib.util.spec_from_loader(fullname, loader)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
