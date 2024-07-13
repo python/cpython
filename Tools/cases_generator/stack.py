@@ -28,14 +28,15 @@ def var_size(var: StackItem) -> str:
         if var.condition == "0":
             return "0"
         elif var.condition == "1":
-            return var.size
-        elif var.condition == "oparg & 1" and var.size == "1":
+            return var.get_size()
+        elif var.condition == "oparg & 1" and not var.size:
             return f"({var.condition})"
         else:
-            return f"(({var.condition}) ? {var.size} : 0)"
-    else:
+            return f"(({var.condition}) ? {var.get_size()} : 0)"
+    elif var.size:
         return var.size
-
+    else:
+        return "1"
 
 @dataclass
 class StackOffset:
@@ -125,7 +126,7 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem) -> str:
+    def pop(self, var: StackItem, extract_bits: bool = False) -> str:
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
@@ -155,8 +156,9 @@ class Stack:
         else:
             self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
+        bits = ".bits" if cast and not extract_bits else ""
         assign = (
-            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
+            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
         )
         if var.condition:
             if var.condition == "1":
@@ -178,11 +180,12 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
+    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
                 cast = f"({cast_type})" if var.type else ""
+                bits = ".bits" if cast and not extract_bits else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":
@@ -190,7 +193,7 @@ class Stack:
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
                     out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
+                        f"stack_pointer[{self.base_offset.to_c()}]{bits} = {cast}{var.name};\n"
                     )
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():

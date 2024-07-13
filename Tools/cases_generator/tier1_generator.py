@@ -13,12 +13,14 @@ from analyzer import (
     analyze_files,
     Skip,
     analysis_error,
+    StackItem,
 )
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
     emit_tokens,
+    type_and_null,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -37,20 +39,22 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         if isinstance(uop, Uop):
             for var in reversed(uop.stack.inputs):
                 if var.name not in variables:
-                    type = var.type if var.type else "PyObject *"
                     variables.add(var.name)
+                    type, null = type_and_null(var)
+                    space = " " if type[-1].isalnum() else ""
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{space}{var.name} = {null};\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        out.emit(f"{type}{space}{var.name};\n")
             for var in uop.stack.outputs:
                 if var.name not in variables:
                     variables.add(var.name)
-                    type = var.type if var.type else "PyObject *"
+                    type, null = type_and_null(var)
+                    space = " " if type[-1].isalnum() else ""
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{space}{var.name} = {null};\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        out.emit(f"{type}{space}{var.name};\n")
 
 
 def write_uop(

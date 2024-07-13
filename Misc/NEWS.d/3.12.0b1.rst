@@ -1828,7 +1828,7 @@ is relative.
 .. nonce: 511Tbh
 .. section: Library
 
-Convert private :meth:`_posixsubprocess.fork_exec` to use Argument Clinic.
+Convert private :meth:`!_posixsubprocess.fork_exec` to use Argument Clinic.
 
 ..
 
