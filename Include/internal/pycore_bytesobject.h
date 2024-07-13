@@ -82,9 +82,9 @@ typedef struct {
        This flag must be zero if use_bytearray is non-zero. */
     int overallocate;
 
-    /* Stack buffer */
+    /* Small buffer: smaller than pymalloc 512 bytes threshold */
     int use_small_buffer;
-    char small_buffer[512];
+    char small_buffer[256];
 } _PyBytesWriter;
 
 /* Initialize a bytes writer
