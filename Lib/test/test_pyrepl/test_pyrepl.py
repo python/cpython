@@ -846,8 +846,10 @@ class TestPasteEvent(TestCase):
 @skipUnless(pty, "requires pty")
 class TestMain(TestCase):
     def setUp(self):
+        # Cleanup from PYTHON* variables to isolate from local
+        # user settings, see #121359.  Such variables should be
+        # added later in test methods to patched os.environ.
         clean_env = os.environ.copy()
-        # cleanup from PYTHON* variables
         for k in clean_env.copy():
             if k.startswith("PYTHON"):
                 clean_env.pop(k)
