@@ -254,6 +254,7 @@ processes:
           p.join()
 
    Queues are thread and process safe.
+   Any object put into a :mod:`~multiprocessing` queue will be serialized.
 
 **Pipes**
 
@@ -281,6 +282,8 @@ processes:
    of corruption from processes using different ends of the pipe at the same
    time.
 
+   The :meth:`~Connection.send` method serializes the the object and
+   :meth:`~Connection.recv` re-creates the object.
 
 Synchronization between processes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -745,6 +748,11 @@ If you use :class:`JoinableQueue` then you **must** call
 semaphore used to count the number of unfinished tasks may eventually overflow,
 raising an exception.
 
+One difference from other Python queue implementations, is that :mod:`multiprocessing`
+queues serializes all objects that are put into them using :mod:`pickle`.
+The object return by the get method is a re-created object that does not share memory
+with the original object.
+
 Note that one can also create a shared queue by using a manager object -- see
 :ref:`multiprocessing-managers`.
 
@@ -811,6 +819,8 @@ For an example of the usage of queues for interprocess communication see
    used for receiving messages and ``conn2`` can only be used for sending
    messages.
 
+   The :meth:`~multiprocessing.Connection.send` method serializes the the object using
+   :mod:`pickle` and the :meth:`~multiprocessing.Connection.recv` re-creates the object.
 
 .. class:: Queue([maxsize])
 
