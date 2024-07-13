@@ -644,7 +644,12 @@
 
         /* _SEND is not a viable micro-op for tier 2 */
 
-        /* _SEND_GEN is not a viable micro-op for tier 2 */
+        case _SEND_GEN_FRAME: {
+            _PyInterpreterFrame *gen_frame;
+            gen_frame = sym_new_not_null(ctx);
+            stack_pointer[-1] = (_Py_UopsSymbol *)gen_frame;
+            break;
+        }
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 

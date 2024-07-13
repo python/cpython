@@ -91,6 +91,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_SEND_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
@@ -472,6 +473,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_RETURN_GENERATOR] = "_RETURN_GENERATOR",
     [_RETURN_VALUE] = "_RETURN_VALUE",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
+    [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
     [_SET_ADD] = "_SET_ADD",
     [_SET_FUNCTION_ATTRIBUTE] = "_SET_FUNCTION_ATTRIBUTE",
@@ -666,6 +668,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _GET_AWAITABLE:
             return 1;
+        case _SEND_GEN_FRAME:
+            return 2;
         case _YIELD_VALUE:
             return 1;
         case _POP_EXCEPT:
