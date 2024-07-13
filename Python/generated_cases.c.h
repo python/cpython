@@ -5768,7 +5768,9 @@
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
                 {
                     PyGenObject *gen = (PyGenObject *)receiver_o;
-                    _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
+                    _PyInterpreterFrame *gen_frame;
+                    Py_BEGIN_CRITICAL_SECTION(gen);
+                    gen_frame = &gen->gi_iframe;
                     STACK_SHRINK(1);
                     _PyFrame_StackPush(gen_frame, v);
                     gen->gi_frame_state = FRAME_EXECUTING;
@@ -5776,6 +5778,7 @@
                     tstate->exc_info = &gen->gi_exc_state;
                     assert(next_instr - this_instr + oparg <= UINT16_MAX);
                     frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
+                    Py_END_CRITICAL_SECTION();
                     DISPATCH_INLINED(gen_frame);
                 }
                 if (PyStackRef_Is(v, PyStackRef_None) && PyIter_Check(receiver_o)) {
