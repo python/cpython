@@ -600,7 +600,7 @@ default.
 .. nonce: sLULGQ
 .. section: Library
 
-Fix destructor :class:`_pyio.BytesIO` and :class:`_pyio.TextIOWrapper`:
+Fix destructor :class:`!_pyio.BytesIO` and :class:`!_pyio.TextIOWrapper`:
 initialize their ``_buffer`` attribute as soon as possible (in the class
 body), because it's used by ``__del__()`` which calls ``close()``.
 

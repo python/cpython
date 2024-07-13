@@ -3447,7 +3447,8 @@ tkinter.ttk now works when default root window is not set.
 .. nonce: FE_PII
 .. section: Library
 
-_tkinter.create() now creates tkapp object with wantobject=1 by default.
+``_tkinter.create()`` now creates ``tkapp`` object with ``wantobjects=1`` by
+default.
 
 ..
 

@@ -256,6 +256,9 @@ nitpick_ignore += [
     ('c:data', 'PyExc_UnicodeWarning'),
     ('c:data', 'PyExc_UserWarning'),
     ('c:data', 'PyExc_Warning'),
+    # Undocumented public C macros
+    ('c:macro', 'Py_BUILD_ASSERT'),
+    ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
     # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
