@@ -201,3 +201,52 @@ called with a non-bytes parameter.
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
+
+PyBytesWriter
+^^^^^^^^^^^^^
+
+The :c:type:`PyBytesWriter` API can be used to create a Python :class:`bytes`
+object.
+
+.. versionadded:: 3.14
+
+.. c:type:: PyBytesWriter
+
+   A bytes writer instance.
+
+   The instance must be destroyed by :c:func:`PyBytesWriter_Finish` on
+   success, or :c:func:`PyBytesWriter_Discard` on error.
+
+.. c:function:: PyBytesWriter* PyBytesWriter_Create(Py_ssize_t size, char **str)
+
+   Create a bytes writer instance.
+   Preallocate *size* bytes.
+
+   On success, set *\*str* and return a new writer.
+   On error, set an exception and return ``NULL``.
+
+.. c:function:: PyObject* PyBytesWriter_Finish(PyBytesWriter *writer, char *str)
+
+   Return the final Python :class:`bytes` object and destroy the writer
+   instance.
+
+   On success, return a bytes object.
+   On error, set an exception and return ``NULL``.
+
+.. c:function:: void PyBytesWriter_Discard(PyBytesWriter *writer)
+
+   Discard the internal bytes buffer and destroy the writer instance.
+
+.. c:function:: int PyBytesWriter_Prepare(PyBytesWriter *writer, char **str, Py_ssize_t size)
+
+   Allocate *size* bytes to prepare writing *size* bytes into *writer*.
+
+   On success, update *\*str* and return ``0``.
+   On error, set an exception and return ``-1``.
+
+.. c:function:: int PyBytesWriter_WriteBytes(PyBytesWriter *writer, char **str, const void *bytes, Py_ssize_t size)
+
+   Write a the bytes string *bytes* of *size* bytes into *writer*.
+
+   On success, update *\*str* and return ``0``.
+   On error, set an exception and return ``-1``.

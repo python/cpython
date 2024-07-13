@@ -3379,11 +3379,44 @@ _PyBytesWriter_Init(_PyBytesWriter *writer)
 #endif
 }
 
+
+PyBytesWriter* PyBytesWriter_Create(Py_ssize_t size, char **pstr)
+{
+    _PyBytesWriter *writer = PyMem_Malloc(sizeof(_PyBytesWriter));
+    if (writer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _PyBytesWriter_Init(writer);
+
+    char *str = _PyBytesWriter_Alloc(writer, size);
+    if (str == NULL) {
+        PyBytesWriter_Discard((PyBytesWriter*)writer);
+        return NULL;
+    }
+
+    // Always enable overallocation
+    writer->overallocate = 1;
+
+    *pstr = str;
+    return (PyBytesWriter*)writer;
+}
+
+
 void
 _PyBytesWriter_Dealloc(_PyBytesWriter *writer)
 {
     Py_CLEAR(writer->buffer);
 }
+
+
+void
+PyBytesWriter_Discard(PyBytesWriter *writer)
+{
+    _PyBytesWriter_Dealloc((_PyBytesWriter*)writer);
+    PyMem_Free(writer);
+}
+
 
 Py_LOCAL_INLINE(char*)
 _PyBytesWriter_AsString(_PyBytesWriter *writer)
@@ -3448,6 +3481,27 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
     return 1;
 }
 #endif
+
+
+static int
+PyBytesWriter_CheckPtr(PyBytesWriter *pub_writer, char *str)
+{
+    if (str == NULL) {
+        PyErr_SetString(PyExc_ValueError, "str is NULL");
+        return -1;
+    }
+
+    _PyBytesWriter *writer = (_PyBytesWriter*)pub_writer;
+    const char *start = _PyBytesWriter_AsString(writer);
+    const char *end = start + writer->allocated;
+
+    if (str < start || end < str) {
+        PyErr_SetString(PyExc_ValueError, "str is out of bounds");
+        return -1;
+    }
+    return 0;
+}
+
 
 void*
 _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
@@ -3546,6 +3600,27 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
     return str;
 }
 
+
+int
+PyBytesWriter_Prepare(PyBytesWriter *writer, char **str, Py_ssize_t size)
+{
+    if (PyBytesWriter_CheckPtr(writer, *str) < 0) {
+        return -1;
+    }
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be positive");
+        return -1;
+    }
+
+    char *str2 = _PyBytesWriter_Prepare((_PyBytesWriter*)writer, *str, size);
+    if (str2 == NULL) {
+        return -1;
+    }
+    *str = str2;
+    return 0;
+}
+
+
 /* Allocate the buffer to write size bytes.
    Return the pointer to the beginning of buffer data.
    Raise an exception and return NULL on error. */
@@ -3623,6 +3698,21 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
     return result;
 }
 
+
+PyObject *
+PyBytesWriter_Finish(PyBytesWriter *writer, char *str)
+{
+    if (PyBytesWriter_CheckPtr(writer, str) < 0) {
+        PyMem_Free(writer);
+        return NULL;
+    }
+
+    PyObject *res = _PyBytesWriter_Finish((_PyBytesWriter*)writer, str);
+    PyMem_Free(writer);
+    return res;
+}
+
+
 void*
 _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
                           const void *bytes, Py_ssize_t size)
@@ -3637,6 +3727,25 @@ _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
     str += size;
 
     return str;
+}
+
+
+int
+PyBytesWriter_WriteBytes(PyBytesWriter *writer, char **str,
+                         const void *bytes, Py_ssize_t size)
+{
+    if (PyBytesWriter_CheckPtr(writer, *str) < 0) {
+        return -1;
+    }
+
+    char *str2 = _PyBytesWriter_WriteBytes((_PyBytesWriter *)writer, *str,
+                                           bytes, size);
+    if (str2 == NULL) {
+        return -1;
+    }
+
+    *str = str2;
+    return 0;
 }
 
 

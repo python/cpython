@@ -35,3 +35,25 @@ static inline Py_ssize_t PyBytes_GET_SIZE(PyObject *op) {
 /* _PyBytes_Join(sep, x) is like sep.join(x).  sep must be PyBytesObject*,
    x must be an iterable object. */
 PyAPI_FUNC(PyObject*) _PyBytes_Join(PyObject *sep, PyObject *x);
+
+/* --- PyBytesWriter ------------------------------------------------------ */
+
+typedef struct PyBytesWriter PyBytesWriter;
+
+PyAPI_FUNC(PyBytesWriter*) PyBytesWriter_Create(
+    Py_ssize_t size,
+    char **str);
+PyAPI_FUNC(PyObject *) PyBytesWriter_Finish(
+    PyBytesWriter *writer,
+    char *str);
+PyAPI_FUNC(void) PyBytesWriter_Discard(PyBytesWriter *writer);
+
+PyAPI_FUNC(int) PyBytesWriter_Prepare(
+    PyBytesWriter *writer,
+    char **str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyBytesWriter_WriteBytes(
+    PyBytesWriter *writer,
+    char **str,
+    const void *bytes,
+    Py_ssize_t size);

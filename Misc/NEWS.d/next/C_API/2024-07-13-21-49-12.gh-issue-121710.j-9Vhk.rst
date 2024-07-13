@@ -1,0 +1,10 @@
+Add a new :c:type:`PyBytesWriter` API to create a Python :class:`bytes`
+object:
+
+* :c:func:`PyBytesWriter_Create`;
+* :c:func:`PyBytesWriter_Finish`;
+* :c:func:`PyBytesWriter_Discard`;
+* :c:func:`PyBytesWriter_Prepare`;
+* :c:func:`PyBytesWriter_WriteBytes`.
+
+Patch by Victor Stinner.

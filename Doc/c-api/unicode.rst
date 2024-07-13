@@ -1546,6 +1546,7 @@ object.
 .. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
 
    Create a Unicode writer instance.
+   Preallocate *length* characters.
 
    Set an exception and return ``NULL`` on error.
 
