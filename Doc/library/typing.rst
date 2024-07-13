@@ -2869,7 +2869,7 @@ Functions and decorators
 
     Cast the decorated function's call signature to the *source_func*'s.
 
-    Use this decorator enhancing an upstream function while keeping it's
+    Use this decorator enhancing an upstream function while keeping its
     call signature.
     Returns the original function with the *source_funcs* call signature.
 
