@@ -236,7 +236,7 @@ except ImportError:
 
 _initial_missing = object()
 
-def reduce(function, sequence, initial=_initial_missing):
+def reduce(function, sequence, initial=_initial_missing, /):
     """
     reduce(function, iterable[, initial], /) -> value
 

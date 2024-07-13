@@ -1,0 +1,3 @@
+Fix the Python implementation of the :meth:`functools.reduce`.
+Now it accepts only positional-only arguments, as well as the C implementtaion.
+
