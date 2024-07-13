@@ -1700,6 +1700,8 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
+    /* Don't clear asyncio_cached_running_loop, it's borrowed. */
+
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 

@@ -164,6 +164,9 @@ struct _ts {
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 
+    PyObject *asyncio_cached_running_loop; // Borrowed reference
+    volatile uint64_t asyncio_cached_running_loop_tsid;
+
     PyObject *context;
     uint64_t context_ver;
 
