@@ -149,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
 
     status = get_unexpected_improvements(warnings, files_with_expected_warnings)
     if args.fail_on_improvement: exit_code |= status
-    
+
     return exit_code
 
 if __name__ == "__main__":
