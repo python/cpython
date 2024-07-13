@@ -815,6 +815,8 @@ _PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finaliza
     _PyDict_ClearFreeList(freelists, is_finalization);
     _PyContext_ClearFreeList(freelists, is_finalization);
     _PyAsyncGen_ClearFreeLists(freelists, is_finalization);
+    _PyAsyncModule_ClearFreeLists(freelists, is_finalization);
+
     // Only be cleared if is_finalization is true.
     _PyObjectStackChunk_ClearFreeList(freelists, is_finalization);
     _PySlice_ClearFreeList(freelists, is_finalization);

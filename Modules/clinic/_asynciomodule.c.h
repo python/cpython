@@ -940,6 +940,27 @@ PyDoc_STRVAR(_asyncio_Task_set_name__doc__,
 #define _ASYNCIO_TASK_SET_NAME_METHODDEF    \
     {"set_name", (PyCFunction)_asyncio_Task_set_name, METH_O, _asyncio_Task_set_name__doc__},
 
+PyDoc_STRVAR(_asyncio__clear_freelist__doc__,
+"_clear_freelist($module, /)\n"
+"--\n"
+"\n"
+"Clears the asyncio freelist.\n"
+"\n"
+"Internal CPython implementation detail. Do not depend on this or use it!\n"
+"This function is thread-specific.");
+
+#define _ASYNCIO__CLEAR_FREELIST_METHODDEF    \
+    {"_clear_freelist", (PyCFunction)_asyncio__clear_freelist, METH_NOARGS, _asyncio__clear_freelist__doc__},
+
+static PyObject *
+_asyncio__clear_freelist_impl(PyObject *module);
+
+static PyObject *
+_asyncio__clear_freelist(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio__clear_freelist_impl(module);
+}
+
 PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
 "_get_running_loop($module, /)\n"
 "--\n"
@@ -1547,4 +1568,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ffe9b71bc65888b3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e7f57f7c23221c9 input=a9049054013a1b77]*/
