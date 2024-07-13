@@ -2317,7 +2317,7 @@ Loading and running tests
    otherwise it will be set to ``'default'``.
 
    Calling ``main`` returns an object with the ``result`` attribute that contains
-   the result of the tests run.
+   the result of the tests run as a :class:`unittest.TestResult`.
 
    .. versionchanged:: 3.1
       The *exit* parameter was added.
