@@ -1,0 +1,10 @@
+Remove the following unstable functions:
+
+* ``PyUnstable_Replace_Executor()``
+* ``PyUnstable_SetOptimizer()``
+* ``PyUnstable_GetOptimizer()``
+* ``PyUnstable_GetExecutor()``
+* ``PyUnstable_Optimizer_NewCounter()``
+* ``PyUnstable_Optimizer_NewUOpOptimizer()``
+
+Patch by Victor Stinner.

@@ -88,6 +88,7 @@ Select Customize to review current options.</String>
   <String Id="InstallAllUsersLabel">Install Python [ShortVersion] for &amp;all users</String>
   <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires admin privileges)</String>
   <String Id="ShortInstallLauncherAllUsersLabel">Use admin privi&amp;leges when installing py.exe</String>
+  <String Id="ShortInstallLauncherBlockedLabel">Python Launcher is already installed</String>
   <String Id="PrecompileLabel">&amp;Precompile standard library</String>
   <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
   <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2017 or later)</String>

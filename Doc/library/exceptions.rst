@@ -335,9 +335,9 @@ The following exceptions are the exceptions that are usually raised.
 
    .. note::
 
-      ``NotImplementedError`` and ``NotImplemented`` are not interchangeable,
+      ``NotImplementedError`` and :data:`NotImplemented` are not interchangeable,
       even though they have similar names and purposes.  See
-      :data:`NotImplemented` for details on when to use it.
+      :data:`!NotImplemented` for details on when to use it.
 
 .. exception:: OSError([arg])
                OSError(errno, strerror[, filename[, winerror[, filename2]]])
@@ -989,7 +989,8 @@ their subgroups based on the types of the contained exceptions.
       Returns an exception group with the same :attr:`message`, but which
       wraps the exceptions in ``excs``.
 
-      This method is used by :meth:`subgroup` and :meth:`split`. A
+      This method is used by :meth:`subgroup` and :meth:`split`, which
+      are used in various contexts to break up an exception group. A
       subclass needs to override it in order to make :meth:`subgroup`
       and :meth:`split` return instances of the subclass rather
       than :exc:`ExceptionGroup`.

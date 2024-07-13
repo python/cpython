@@ -1,5 +1,5 @@
-:mod:`configparser` --- Configuration file parser
-=================================================
+:mod:`!configparser` --- Configuration file parser
+==================================================
 
 .. module:: configparser
    :synopsis: Configuration file parser.
@@ -147,23 +147,28 @@ case-insensitive and stored in lowercase [1]_.
 It is possible to read several configurations into a single
 :class:`ConfigParser`, where the most recently added configuration has the
 highest priority. Any conflicting keys are taken from the more recent
-configuration while the previously existing keys are retained.
+configuration while the previously existing keys are retained. The example
+below reads in an ``override.ini`` file, which will override any conflicting
+keys from the ``example.ini`` file.
+
+.. code-block:: ini
+
+   [DEFAULT]
+   ServerAliveInterval = -1
 
 .. doctest::
 
-   >>> another_config = configparser.ConfigParser()
-   >>> another_config.read('example.ini')
-   ['example.ini']
-   >>> another_config['topsecret.server.example']['Port']
-   '50022'
-   >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
-   >>> another_config['topsecret.server.example']['Port']
-   '48484'
-   >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
-   >>> another_config['topsecret.server.example']['Port']
-   '21212'
-   >>> another_config['topsecret.server.example']['ForwardX11']
-   'no'
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
+   >>> with open('override.ini', 'w') as configfile:
+   ...     config_override.write(configfile)
+   ...
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override.read(['example.ini', 'override.ini'])
+   ['example.ini', 'override.ini']
+   >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
+   -1
+
 
 This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
 files passed to the *filenames* parameter.
@@ -274,6 +279,11 @@ may be treated as parts of multiline values or ignored.
 By default, a valid section name can be any string that does not contain '\\n'.
 To change this, see :attr:`ConfigParser.SECTCRE`.
 
+The first section name may be omitted if the parser is configured to allow an
+unnamed top level section with ``allow_unnamed_section=True``. In this case,
+the keys/values may be retrieved by :const:`UNNAMED_SECTION` as in
+``config[UNNAMED_SECTION]``.
+
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
 their own on an otherwise empty line, possibly indented. [1]_
@@ -324,6 +334,27 @@ For example:
                of a value
            # Did I mention we can indent comments, too?
 
+
+.. _unnamed-sections:
+
+Unnamed Sections
+----------------
+
+The name of the first section (or unique) may be omitted and values
+retrieved by the :const:`UNNAMED_SECTION` attribute.
+
+.. doctest::
+
+   >>> config = """
+   ... option = value
+   ...
+   ... [  Section 2  ]
+   ... another = val
+   ... """
+   >>> unnamed = configparser.ConfigParser(allow_unnamed_section=True)
+   >>> unnamed.read_string(config)
+   >>> unnamed.get(configparser.UNNAMED_SECTION, 'option')
+   'value'
 
 Interpolation of values
 -----------------------
@@ -958,6 +989,31 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`!get*()` method on the parser
    object and section proxies.
 
+   It is possible to read several configurations into a single
+   :class:`ConfigParser`, where the most recently added configuration has the
+   highest priority. Any conflicting keys are taken from the more recent
+   configuration while the previously existing keys are retained. The example
+   below reads in an ``override.ini`` file, which will override any conflicting
+   keys from the ``example.ini`` file.
+
+   .. code-block:: ini
+
+      [DEFAULT]
+      ServerAliveInterval = -1
+
+   .. doctest::
+
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
+      >>> with open('override.ini', 'w') as configfile:
+      ...     config_override.write(configfile)
+      ...
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override.read(['example.ini', 'override.ini'])
+      ['example.ini', 'override.ini']
+      >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
+      -1
+
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
@@ -977,6 +1033,10 @@ ConfigParser Objects
    .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
+
+   .. versionchanged:: 3.13
+      Raise a :exc:`MultilineContinuationError` when *allow_no_value* is
+      ``True``, and a key without a value is continued with an indented line.
 
    .. method:: defaults()
 
@@ -1212,6 +1272,11 @@ ConfigParser Objects
       names is stripped before :meth:`optionxform` is called.
 
 
+.. data:: UNNAMED_SECTION
+
+   A special object representing a section name used to reference the unnamed section (see :ref:`unnamed-sections`).
+
+
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`~configparser.ConfigParser.get` when the *raw*
@@ -1348,6 +1413,13 @@ Exceptions
    .. versionchanged:: 3.12
       The ``filename`` attribute and :meth:`!__init__` constructor argument were
       removed.  They have been available using the name ``source`` since 3.2.
+
+.. exception:: MultilineContinuationError
+
+   Exception raised when a key without a corresponding value is continued with
+   an indented line.
+
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 

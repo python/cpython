@@ -1,5 +1,5 @@
-:mod:`ssl` --- TLS/SSL wrapper for socket objects
-=================================================
+:mod:`!ssl` --- TLS/SSL wrapper for socket objects
+==================================================
 
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
@@ -151,6 +151,12 @@ purposes.
    variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
    enables key logging.
 
+   The default settings for this context include
+   :data:`VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`.
+   These make the underlying OpenSSL implementation behave more like
+   a conforming implementation of :rfc:`5280`, in exchange for a small
+   amount of incompatibility with older X.509 certificates.
+
    .. note::
       The protocol, options, cipher and other settings may change to more
       restrictive values anytime without prior deprecation.  The values
@@ -171,6 +177,15 @@ purposes.
 
          ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
          ctx.options &= ~ssl.OP_NO_SSLv3
+
+   .. note::
+      This context enables :data:`VERIFY_X509_STRICT` by default, which
+      may reject pre-:rfc:`5280` or malformed certificates that the
+      underlying OpenSSL implementation otherwise would accept. While disabling
+      this is not recommended, you can do so using::
+
+         ctx = ssl.create_default_context()
+         ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
 
    .. versionadded:: 3.4
 
@@ -193,6 +208,11 @@ purposes.
       The context now uses :data:`PROTOCOL_TLS_CLIENT` or
       :data:`PROTOCOL_TLS_SERVER` protocol instead of generic
       :data:`PROTOCOL_TLS`.
+
+   .. versionchanged:: 3.13
+
+      The context now uses :data:`VERIFY_X509_PARTIAL_CHAIN` and
+      :data:`VERIFY_X509_STRICT` in its default verify flags.
 
 
 Exceptions
@@ -737,11 +757,11 @@ Constants
    When Python has been compiled against an older version of OpenSSL, the
    flag defaults to *0*.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.6.3
 
    .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
-      3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
+      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15 and
+      3.6.3 for backwards compatibility with OpenSSL 1.0.2.
 
 .. data:: OP_NO_RENEGOTIATION
 
@@ -761,7 +781,7 @@ Constants
 
 .. data:: OP_SINGLE_DH_USE
 
-   Prevents re-use of the same DH key for distinct SSL sessions.  This
+   Prevents reuse of the same DH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -769,7 +789,7 @@ Constants
 
 .. data:: OP_SINGLE_ECDH_USE
 
-   Prevents re-use of the same ECDH key for distinct SSL sessions.  This
+   Prevents reuse of the same ECDH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -1452,6 +1472,19 @@ to speed up repeated connections from the same clients.
       :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
       :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
+   .. note::
+
+      :class:`SSLContext` only supports limited mutation once it has been used
+      by a connection. Adding new certificates to the internal trust store is
+      allowed, but changing ciphers, verification settings, or mTLS
+      certificates may result in surprising behavior.
+
+   .. note::
+
+      :class:`SSLContext` is designed to be shared and used by multiple
+      connections.
+      Thus, it is thread-safe as long as it is not reconfigured after being
+      used by a connection.
 
 :class:`SSLContext` objects have the following methods and attributes:
 
@@ -1790,6 +1823,9 @@ to speed up repeated connections from the same clients.
 
    *session*, see :attr:`~SSLSocket.session`.
 
+   To wrap an :class:`SSLSocket` in another :class:`SSLSocket`, use
+   :meth:`SSLContext.wrap_bio`.
+
    .. versionchanged:: 3.5
       Always allow a server_hostname to be passed, even if OpenSSL does not
       have SNI.
@@ -1797,7 +1833,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       *session* argument was added.
 
-    .. versionchanged:: 3.7
+   .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 

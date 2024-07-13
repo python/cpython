@@ -4,8 +4,9 @@ import test.support as support
 
 from test.support import import_helper
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi and _testlimitedcapi modules isn't available.
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
 
@@ -56,7 +57,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_check(self):
         # Test PyLong_Check()
-        check = _testcapi.pylong_check
+        check = _testlimitedcapi.pylong_check
         self.assertTrue(check(1))
         self.assertTrue(check(123456789012345678901234567890))
         self.assertTrue(check(-1))
@@ -68,7 +69,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_checkexact(self):
         # Test PyLong_CheckExact()
-        check = _testcapi.pylong_checkexact
+        check = _testlimitedcapi.pylong_checkexact
         self.assertTrue(check(1))
         self.assertTrue(check(123456789012345678901234567890))
         self.assertTrue(check(-1))
@@ -80,7 +81,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_fromdouble(self):
         # Test PyLong_FromDouble()
-        fromdouble = _testcapi.pylong_fromdouble
+        fromdouble = _testlimitedcapi.pylong_fromdouble
         float_max = sys.float_info.max
         for value in (5.0, 5.1, 5.9, -5.1, -5.9, 0.0, -0.0, float_max, -float_max):
             with self.subTest(value=value):
@@ -91,7 +92,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_fromvoidptr(self):
         # Test PyLong_FromVoidPtr()
-        fromvoidptr = _testcapi.pylong_fromvoidptr
+        fromvoidptr = _testlimitedcapi.pylong_fromvoidptr
         obj = object()
         x = fromvoidptr(obj)
         y = fromvoidptr(NULL)
@@ -103,7 +104,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_fromstring(self):
         # Test PyLong_FromString()
-        fromstring = _testcapi.pylong_fromstring
+        fromstring = _testlimitedcapi.pylong_fromstring
         self.assertEqual(fromstring(b'123', 10), (123, 3))
         self.assertEqual(fromstring(b'cafe', 16), (0xcafe, 4))
         self.assertEqual(fromstring(b'xyz', 36), (44027, 3))
@@ -163,7 +164,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asint(self):
         # Test PyLong_AsInt()
-        PyLong_AsInt = _testcapi.PyLong_AsInt
+        PyLong_AsInt = _testlimitedcapi.PyLong_AsInt
         from _testcapi import INT_MIN, INT_MAX
 
         # round trip (object -> int -> object)
@@ -186,7 +187,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslong(self):
         # Test PyLong_AsLong() and PyLong_FromLong()
-        aslong = _testcapi.pylong_aslong
+        aslong = _testlimitedcapi.pylong_aslong
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
         for value in (LONG_MIN, LONG_MAX, -1, 0, 1, 1234):
@@ -206,7 +207,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslongandoverflow(self):
         # Test PyLong_AsLongAndOverflow()
-        aslongandoverflow = _testcapi.pylong_aslongandoverflow
+        aslongandoverflow = _testlimitedcapi.pylong_aslongandoverflow
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
         for value in (LONG_MIN, LONG_MAX, -1, 0, 1, 1234):
@@ -224,7 +225,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlong(self):
         # Test PyLong_AsUnsignedLong() and PyLong_FromUnsignedLong()
-        asunsignedlong = _testcapi.pylong_asunsignedlong
+        asunsignedlong = _testlimitedcapi.pylong_asunsignedlong
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
         for value in (ULONG_MAX, 0, 1, 1234):
@@ -244,7 +245,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlongmask(self):
         # Test PyLong_AsUnsignedLongMask()
-        asunsignedlongmask = _testcapi.pylong_asunsignedlongmask
+        asunsignedlongmask = _testlimitedcapi.pylong_asunsignedlongmask
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
         for value in (ULONG_MAX, 0, 1, 1234):
@@ -264,7 +265,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslonglong(self):
         # Test PyLong_AsLongLong() and PyLong_FromLongLong()
-        aslonglong = _testcapi.pylong_aslonglong
+        aslonglong = _testlimitedcapi.pylong_aslonglong
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
         for value in (LLONG_MIN, LLONG_MAX, -1, 0, 1, 1234):
@@ -284,7 +285,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslonglongandoverflow(self):
         # Test PyLong_AsLongLongAndOverflow()
-        aslonglongandoverflow = _testcapi.pylong_aslonglongandoverflow
+        aslonglongandoverflow = _testlimitedcapi.pylong_aslonglongandoverflow
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
         for value in (LLONG_MIN, LLONG_MAX, -1, 0, 1, 1234):
@@ -302,7 +303,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlonglong(self):
         # Test PyLong_AsUnsignedLongLong() and PyLong_FromUnsignedLongLong()
-        asunsignedlonglong = _testcapi.pylong_asunsignedlonglong
+        asunsignedlonglong = _testlimitedcapi.pylong_asunsignedlonglong
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
         for value in (ULLONG_MAX, 0, 1, 1234):
@@ -322,7 +323,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlonglongmask(self):
         # Test PyLong_AsUnsignedLongLongMask()
-        asunsignedlonglongmask = _testcapi.pylong_asunsignedlonglongmask
+        asunsignedlonglongmask = _testlimitedcapi.pylong_asunsignedlonglongmask
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
         for value in (ULLONG_MAX, 0, 1, 1234):
@@ -342,7 +343,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_as_ssize_t(self):
         # Test PyLong_AsSsize_t() and PyLong_FromSsize_t()
-        as_ssize_t = _testcapi.pylong_as_ssize_t
+        as_ssize_t = _testlimitedcapi.pylong_as_ssize_t
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
         # round trip (object -> Py_ssize_t -> object)
         for value in (PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, -1, 0, 1, 1234):
@@ -362,7 +363,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_as_size_t(self):
         # Test PyLong_AsSize_t() and PyLong_FromSize_t()
-        as_size_t = _testcapi.pylong_as_size_t
+        as_size_t = _testlimitedcapi.pylong_as_size_t
         from _testcapi import SIZE_MAX
         # round trip (object -> size_t -> object)
         for value in (SIZE_MAX, 0, 1, 1234):
@@ -382,7 +383,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asdouble(self):
         # Test PyLong_AsDouble()
-        asdouble = _testcapi.pylong_asdouble
+        asdouble = _testlimitedcapi.pylong_asdouble
         MAX = int(sys.float_info.max)
         for value in (-MAX, MAX, -1, 0, 1, 1234):
             with self.subTest(value=value):
@@ -402,8 +403,8 @@ class LongTests(unittest.TestCase):
 
     def test_long_asvoidptr(self):
         # Test PyLong_AsVoidPtr()
-        fromvoidptr = _testcapi.pylong_fromvoidptr
-        asvoidptr = _testcapi.pylong_asvoidptr
+        fromvoidptr = _testlimitedcapi.pylong_fromvoidptr
+        asvoidptr = _testlimitedcapi.pylong_asvoidptr
         obj = object()
         x = fromvoidptr(obj)
         y = fromvoidptr(NULL)
@@ -423,6 +424,34 @@ class LongTests(unittest.TestCase):
         self.assertRaises(OverflowError, asvoidptr, 2**1000)
         self.assertRaises(OverflowError, asvoidptr, -2**1000)
         # CRASHES asvoidptr(NULL)
+
+    def _test_long_aspid(self, aspid):
+        # Test PyLong_AsPid()
+        from _testcapi import SIZEOF_PID_T
+        bits = 8 * SIZEOF_PID_T
+        PID_T_MIN = -2**(bits-1)
+        PID_T_MAX = 2**(bits-1) - 1
+        # round trip (object -> long -> object)
+        for value in (PID_T_MIN, PID_T_MAX, -1, 0, 1, 1234):
+            with self.subTest(value=value):
+                self.assertEqual(aspid(value), value)
+
+        self.assertEqual(aspid(IntSubclass(42)), 42)
+        self.assertEqual(aspid(Index(42)), 42)
+        self.assertEqual(aspid(MyIndexAndInt()), 10)
+
+        self.assertRaises(OverflowError, aspid, PID_T_MIN - 1)
+        self.assertRaises(OverflowError, aspid, PID_T_MAX + 1)
+        self.assertRaises(TypeError, aspid, 1.0)
+        self.assertRaises(TypeError, aspid, b'2')
+        self.assertRaises(TypeError, aspid, '3')
+        self.assertRaises(SystemError, aspid, NULL)
+
+    def test_long_aspid(self):
+        self._test_long_aspid(_testcapi.pylong_aspid)
+
+    def test_long_aspid_limited(self):
+        self._test_long_aspid(_testlimitedcapi.pylong_aspid)
 
     def test_long_asnativebytes(self):
         import math
@@ -454,8 +483,12 @@ class LongTests(unittest.TestCase):
             (-MAX_USIZE, SZ + 1),
             (2**255-1, 32),
             (-(2**255-1), 32),
+            (2**255, 33),
+            (-(2**255), 33), # if you ask, we'll say 33, but 32 would do
             (2**256-1, 33),
             (-(2**256-1), 33),
+            (2**256, 33),
+            (-(2**256), 33),
         ]:
             with self.subTest(f"sizeof-{v:X}"):
                 buffer = bytearray(b"\x5a")
@@ -463,8 +496,9 @@ class LongTests(unittest.TestCase):
                     "PyLong_AsNativeBytes(v, <unknown>, 0, -1)")
                 self.assertEqual(buffer, b"\x5a",
                     "buffer overwritten when it should not have been")
-                # Also check via the __index__ path
-                self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, -1),
+                # Also check via the __index__ path.
+                # We pass Py_ASNATIVEBYTES_NATIVE_ENDIAN | ALLOW_INDEX
+                self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, 3 | 16),
                     "PyLong_AsNativeBytes(Index(v), <unknown>, 0, -1)")
                 self.assertEqual(buffer, b"\x5a",
                     "buffer overwritten when it should not have been")
@@ -494,15 +528,17 @@ class LongTests(unittest.TestCase):
             (-1,        b'\xff' * 10,           min(11, SZ)),
             (-42,       b'\xd6',                1),
             (-42,       b'\xff' * 10 + b'\xd6', min(11, SZ)),
-            # Extracts 255 into a single byte, but requests sizeof(Py_ssize_t)
-            (255,       b'\xff',                SZ),
+            # Extracts 255 into a single byte, but requests 2
+            # (this is currently a special case, and "should" request SZ)
+            (255,       b'\xff',                2),
             (255,       b'\x00\xff',            2),
             (256,       b'\x01\x00',            2),
+            (0x80,      b'\x00' * 7 + b'\x80',  min(8, SZ)),
             # Extracts successfully (unsigned), but requests 9 bytes
             (2**63,     b'\x80' + b'\x00' * 7,  9),
-            # "Extracts", but requests 9 bytes
-            (-2**63,    b'\x80' + b'\x00' * 7,  9),
             (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
+            # Extracts into 8 bytes, but if you provide 9 we'll say 9
+            (-2**63,    b'\x80' + b'\x00' * 7,  8),
             (-2**63,    b'\xff\x80' + b'\x00' * 7, 9),
 
             (2**255-1,      b'\x7f' + b'\xff' * 31,                 32),
@@ -519,10 +555,15 @@ class LongTests(unittest.TestCase):
             (-(2**256-1),   b'\x00' * 31 + b'\x01',                 33),
             (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       33),
             (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   33),
+            # However, -2**255 precisely will extract into 32 bytes and return
+            # success. For bigger buffers, it will still succeed, but will
+            # return 33
+            (-(2**255),     b'\x80' + b'\x00' * 31,                 32),
+            (-(2**255),     b'\xff\x80' + b'\x00' * 31,             33),
 
             # The classic "Windows HRESULT as negative number" case
             #   HRESULT hr;
-            #   PyLong_CopyBits(<-2147467259>, &hr, sizeof(HRESULT))
+            #   PyLong_AsNativeBytes(<-2147467259>, &hr, sizeof(HRESULT), -1)
             #   assert(hr == E_FAIL)
             (-2147467259, b'\x80\x00\x40\x05', 4),
         ]:
@@ -540,13 +581,107 @@ class LongTests(unittest.TestCase):
                     f"PyLong_AsNativeBytes(v, buffer, {n}, <little>)")
                 self.assertEqual(expect_le, buffer[:n], "<little>")
 
+        # Test cases that do not request size for a sign bit when we pass the
+        # Py_ASNATIVEBYTES_UNSIGNED_BUFFER flag
+        for v, expect_be, expect_n in [
+            (255,       b'\xff',                1),
+            # We pass a 2 byte buffer so it just uses the whole thing
+            (255,       b'\x00\xff',            2),
+
+            (2**63,     b'\x80' + b'\x00' * 7,  8),
+            # We pass a 9 byte buffer so it uses the whole thing
+            (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
+
+            (2**256-1,  b'\xff' * 32,           32),
+            # We pass a 33 byte buffer so it uses the whole thing
+            (2**256-1,  b'\x00' + b'\xff' * 32, 33),
+        ]:
+            with self.subTest(f"{v:X}-{len(expect_be)}bytes-unsigned"):
+                n = len(expect_be)
+                buffer = bytearray(b"\xa5"*n)
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 4),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <big|unsigned>)")
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 5),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <little|unsigned>)")
+
+        # Ensure Py_ASNATIVEBYTES_REJECT_NEGATIVE raises on negative value
+        with self.assertRaises(ValueError):
+            asnativebytes(-1, buffer, 0, 8)
+
+        # Ensure omitting Py_ASNATIVEBYTES_ALLOW_INDEX raises on __index__ value
+        with self.assertRaises(TypeError):
+            asnativebytes(Index(1), buffer, 0, -1)
+        with self.assertRaises(TypeError):
+            asnativebytes(Index(1), buffer, 0, 3)
+
         # Check a few error conditions. These are validated in code, but are
         # unspecified in docs, so if we make changes to the implementation, it's
         # fine to just update these tests rather than preserve the behaviour.
-        with self.assertRaises(SystemError):
-            asnativebytes(1, buffer, 0, 2)
         with self.assertRaises(TypeError):
             asnativebytes('not a number', buffer, 0, -1)
+
+    def test_long_asnativebytes_fuzz(self):
+        import math
+        from random import Random
+        from _testcapi import (
+            pylong_asnativebytes as asnativebytes,
+            SIZE_MAX,
+        )
+
+        # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
+        SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
+
+        rng = Random()
+        # Allocate bigger buffer than actual values are going to be
+        buffer = bytearray(260)
+
+        for _ in range(1000):
+            n = rng.randrange(1, 256)
+            bytes_be = bytes([
+                # Ensure the most significant byte is nonzero
+                rng.randrange(1, 256),
+                *[rng.randrange(256) for _ in range(n - 1)]
+            ])
+            bytes_le = bytes_be[::-1]
+            v = int.from_bytes(bytes_le, 'little')
+
+            expect_1 = expect_2 = (SZ, n)
+            if bytes_be[0] & 0x80:
+                # All values are positive, so if MSB is set, expect extra bit
+                # when we request the size or have a large enough buffer
+                expect_1 = (SZ, n + 1)
+                # When passing Py_ASNATIVEBYTES_UNSIGNED_BUFFER, we expect the
+                # return to be exactly the right size.
+                expect_2 = (n,)
+
+            try:
+                actual = asnativebytes(v, buffer, 0, -1)
+                self.assertIn(actual, expect_1)
+
+                actual = asnativebytes(v, buffer, len(buffer), 0)
+                self.assertIn(actual, expect_1)
+                self.assertEqual(bytes_be, buffer[-n:])
+
+                actual = asnativebytes(v, buffer, len(buffer), 1)
+                self.assertIn(actual, expect_1)
+                self.assertEqual(bytes_le, buffer[:n])
+
+                actual = asnativebytes(v, buffer, n, 4)
+                self.assertIn(actual, expect_2, bytes_be.hex())
+                actual = asnativebytes(v, buffer, n, 5)
+                self.assertIn(actual, expect_2, bytes_be.hex())
+            except AssertionError as ex:
+                value_hex = ''.join(reversed([
+                    f'{b:02X}{"" if i % 8 else "_"}'
+                    for i, b in enumerate(bytes_le, start=1)
+                ])).strip('_')
+                if support.verbose:
+                    print()
+                    print(n, 'bytes')
+                    print('hex =', value_hex)
+                    print('int =', v)
+                    raise
+                raise AssertionError(f"Value: 0x{value_hex}") from ex
 
     def test_long_fromnativebytes(self):
         import math
@@ -587,6 +722,27 @@ class LongTests(unittest.TestCase):
                         f"PyLong_FromNativeBytes(buffer, {n}, <native>)")
                     self.assertEqual(expect_u, fromnativebytes(v_be, n, -1, 0),
                         f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <native>)")
+
+                # Swap the unsigned request for tests and use the
+                # Py_ASNATIVEBYTES_UNSIGNED_BUFFER flag instead
+                self.assertEqual(expect_u, fromnativebytes(v_be, n, 4, 1),
+                    f"PyLong_FromNativeBytes(buffer, {n}, <big|unsigned>)")
+
+    def test_long_getsign(self):
+        # Test PyLong_GetSign()
+        getsign = _testcapi.pylong_getsign
+        self.assertEqual(getsign(1), 1)
+        self.assertEqual(getsign(123456), 1)
+        self.assertEqual(getsign(-2), -1)
+        self.assertEqual(getsign(0), 0)
+        self.assertEqual(getsign(True), 1)
+        self.assertEqual(getsign(IntSubclass(-11)), -1)
+        self.assertEqual(getsign(False), 0)
+
+        self.assertRaises(TypeError, getsign, 1.0)
+        self.assertRaises(TypeError, getsign, Index(123))
+
+        # CRASHES getsign(NULL)
 
 
 if __name__ == "__main__":

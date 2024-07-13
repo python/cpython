@@ -134,6 +134,12 @@ PyAPI_FUNC(PyObject *) PyModule_FromDefAndSpec2(PyModuleDef *def,
 
 #endif /* New in 3.5 */
 
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_MODSUPPORT_H
+#  include "cpython/modsupport.h"
+#  undef Py_CPYTHON_MODSUPPORT_H
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -429,7 +429,7 @@ Several non-character keys move the cursor and possibly
 delete characters.  Deletion does not puts text on the clipboard,
 but IDLE has an undo list.  Wherever this doc discusses keys,
 'C' refers to the :kbd:`Control` key on Windows and
-Unix and the :kbd:`Command` key on macOS.  (And all such dicussions
+Unix and the :kbd:`Command` key on macOS.  (And all such discussions
 assume that the keys have not been re-bound to something else.)
 
 * Arrow keys move the cursor one character or line.
@@ -604,7 +604,7 @@ in an editor window.
 The editing features described in previous subsections work when entering
 code interactively.  IDLE's Shell window also responds to the following:
 
-* :kbd:`C-c` attemps to interrupt statement execution (but may fail).
+* :kbd:`C-c` attempts to interrupt statement execution (but may fail).
 
 * :kbd:`C-d` closes Shell if typed at a ``>>>`` prompt.
 

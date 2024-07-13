@@ -1,5 +1,5 @@
-:mod:`pickle` --- Python object serialization
-=============================================
+:mod:`!pickle` --- Python object serialization
+==============================================
 
 .. module:: pickle
    :synopsis: Convert Python objects to streams of bytes and back.
@@ -314,16 +314,16 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
    map the new Python 3 names to the old module names used in Python 2, so
    that the pickle data stream is readable with Python 2.
 
-   If *buffer_callback* is None (the default), buffer views are
+   If *buffer_callback* is ``None`` (the default), buffer views are
    serialized into *file* as part of the pickle stream.
 
-   If *buffer_callback* is not None, then it can be called any number
+   If *buffer_callback* is not ``None``, then it can be called any number
    of times with a buffer view.  If the callback returns a false value
-   (such as None), the given buffer is :ref:`out-of-band <pickle-oob>`;
+   (such as ``None``), the given buffer is :ref:`out-of-band <pickle-oob>`;
    otherwise the buffer is serialized in-band, i.e. inside the pickle stream.
 
-   It is an error if *buffer_callback* is not None and *protocol* is
-   None or smaller than 5.
+   It is an error if *buffer_callback* is not ``None`` and *protocol* is
+   ``None`` or smaller than 5.
 
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
@@ -377,7 +377,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       Special reducer that can be defined in :class:`Pickler` subclasses. This
       method has priority over any reducer in the :attr:`dispatch_table`.  It
       should conform to the same interface as a :meth:`~object.__reduce__` method, and
-      can optionally return ``NotImplemented`` to fallback on
+      can optionally return :data:`NotImplemented` to fallback on
       :attr:`dispatch_table`-registered reducers to pickle ``obj``.
 
       For a detailed example, see :ref:`reducer_override`.
@@ -420,12 +420,12 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
    instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
    :class:`~datetime.time` pickled by Python 2.
 
-   If *buffers* is None (the default), then all data necessary for
+   If *buffers* is ``None`` (the default), then all data necessary for
    deserialization must be contained in the pickle stream.  This means
-   that the *buffer_callback* argument was None when a :class:`Pickler`
+   that the *buffer_callback* argument was ``None`` when a :class:`Pickler`
    was instantiated (or when :func:`dump` or :func:`dumps` was called).
 
-   If *buffers* is not None, it should be an iterable of buffer-enabled
+   If *buffers* is not ``None``, it should be an iterable of buffer-enabled
    objects that is consumed each time the pickle stream references
    an :ref:`out-of-band <pickle-oob>` buffer view.  Such buffers have been
    given in order to the *buffer_callback* of a Pickler object.
@@ -503,7 +503,7 @@ What can be pickled and unpickled?
 The following types can be pickled:
 
 * built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
-  ``NotImplemented``);
+  :data:`NotImplemented`);
 
 * integers, floating-point numbers, complex numbers;
 
@@ -905,7 +905,7 @@ functions and classes.
 For those cases, it is possible to subclass from the :class:`Pickler` class and
 implement a :meth:`~Pickler.reducer_override` method. This method can return an
 arbitrary reduction tuple (see :meth:`~object.__reduce__`). It can alternatively return
-``NotImplemented`` to fallback to the traditional behavior.
+:data:`NotImplemented` to fallback to the traditional behavior.
 
 If both the :attr:`~Pickler.dispatch_table` and
 :meth:`~Pickler.reducer_override` are defined, then

@@ -1,0 +1,3 @@
+Fixed handling in :meth:`inspect.Signature.bind` of keyword arguments having
+the same name as positional-only arguments when a variadic keyword argument
+(e.g. ``**kwargs``) is present.

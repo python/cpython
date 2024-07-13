@@ -1130,7 +1130,7 @@ changes, or look through the Subversion logs for all the details.
   (Added by Raymond Hettinger; :issue:`1818`.)
 
   Finally, the :class:`~collections.abc.Mapping` abstract base class now
-  returns :const:`NotImplemented` if a mapping is compared to
+  returns :data:`NotImplemented` if a mapping is compared to
   another type that isn't a :class:`Mapping`.
   (Fixed by Daniel Stutzbach; :issue:`8729`.)
 
@@ -1738,7 +1738,7 @@ New module: importlib
 
 Python 3.1 includes the :mod:`importlib` package, a re-implementation
 of the logic underlying Python's :keyword:`import` statement.
-:mod:`importlib` is useful for implementors of Python interpreters and
+:mod:`importlib` is useful for implementers of Python interpreters and
 to users who wish to write new importers that can participate in the
 import process.  Python 2.7 doesn't contain the complete
 :mod:`importlib` package, but instead has a tiny subset that contains
@@ -1831,8 +1831,7 @@ The :mod:`unittest` module was greatly enhanced; many
 new features were added.  Most of these features were implemented
 by Michael Foord, unless otherwise noted.  The enhanced version of
 the module is downloadable separately for use with Python versions 2.4 to 2.6,
-packaged as the :mod:`!unittest2` package, from
-https://pypi.org/project/unittest2.
+packaged as the :mod:`!unittest2` package, from :pypi:`unittest2`.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <https://pytest.org>`__ or
@@ -2178,8 +2177,7 @@ Changes to Python's build process and to the C API include:
   whether the application should be using :c:func:`!PySys_SetArgvEx`
   with *updatepath* set to false.
 
-  Security issue reported as `CVE-2008-5983
-  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_;
+  Security issue reported as :cve:`2008-5983`;
   discussed in :issue:`5753`, and fixed by Antoine Pitrou.
 
 * New macros: the Python header files now define the following macros:
@@ -2626,7 +2624,7 @@ with the first of those changes appearing in the Python 2.7.7 release.
   2 applications. (Contributed by Alex Gaynor; :issue:`21304`.)
 
 * OpenSSL 1.0.1h was upgraded for the official Windows installers published on
-  python.org. (contributed by Zachary Ware in :issue:`21671` for CVE-2014-0224)
+  python.org. (Contributed by Zachary Ware in :issue:`21671` for :cve:`2014-0224`.)
 
 :pep:`466` related features added in Python 2.7.9:
 

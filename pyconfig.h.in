@@ -157,6 +157,9 @@
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
 
+/* Define to 1 if the system has the type `clock_t'. */
+#undef HAVE_CLOCK_T
+
 /* Define to 1 if you have the `closefrom' function. */
 #undef HAVE_CLOSEFROM
 
@@ -826,11 +829,32 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
-/* Define to 1 if you have the `ncursesw' library. */
+/* Define if you have the 'ncurses' library */
+#undef HAVE_NCURSES
+
+/* Define if you have the 'ncursesw' library */
 #undef HAVE_NCURSESW
+
+/* Define to 1 if you have the <ncursesw/curses.h> header file. */
+#undef HAVE_NCURSESW_CURSES_H
+
+/* Define to 1 if you have the <ncursesw/ncurses.h> header file. */
+#undef HAVE_NCURSESW_NCURSES_H
+
+/* Define to 1 if you have the <ncursesw/panel.h> header file. */
+#undef HAVE_NCURSESW_PANEL_H
+
+/* Define to 1 if you have the <ncurses/curses.h> header file. */
+#undef HAVE_NCURSES_CURSES_H
 
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/ncurses.h> header file. */
+#undef HAVE_NCURSES_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/panel.h> header file. */
+#undef HAVE_NCURSES_PANEL_H
 
 /* Define to 1 if you have the <ndbm.h> header file. */
 #undef HAVE_NDBM_H
@@ -874,6 +898,12 @@
 
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
+
+/* Define if you have the 'panel' library */
+#undef HAVE_PANEL
+
+/* Define if you have the 'panelw' library */
+#undef HAVE_PANELW
 
 /* Define to 1 if you have the <panel.h> header file. */
 #undef HAVE_PANEL_H
@@ -932,6 +962,9 @@
 
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
+
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
@@ -1653,6 +1686,15 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Defined if _Complex C type is available. */
+#undef Py_HAVE_C_COMPLEX
+
+/* Define if year with century should be normalized for strftime. */
+#undef Py_NORMALIZE_CENTURY
+
+/* Define if rl_startup_hook takes arguments */
+#undef Py_RL_STARTUP_HOOK_TAKES_ARGS
+
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
@@ -1938,7 +1980,7 @@
 /* Define on FreeBSD to activate all library features */
 #undef __BSD_VISIBLE
 
-/* Define to 'long' if <time.h> doesn't define. */
+/* Define to 'long' if <time.h> does not define clock_t. */
 #undef clock_t
 
 /* Define to empty if `const' does not conform to ANSI C. */

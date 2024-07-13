@@ -116,7 +116,7 @@ exit:
 }
 
 PyDoc_STRVAR(int___round____doc__,
-"__round__($self, ndigits=<unrepresentable>, /)\n"
+"__round__($self, ndigits=None, /)\n"
 "--\n"
 "\n"
 "Rounding an Integral returns itself.\n"
@@ -133,7 +133,7 @@ static PyObject *
 int___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
     if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
@@ -267,7 +267,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the integer.\n"
 "    If signed is False and a negative integer is given, an OverflowError\n"
@@ -380,7 +380,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the integer.");
 
@@ -476,4 +476,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=7e6e57246e55911f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a53f5ba9a6c16737 input=a9049054013a1b77]*/

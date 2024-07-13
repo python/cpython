@@ -33,7 +33,7 @@ with test_tools.imports_under_tool("cases_generator"):
     import parser
     from stack import Stack
     import tier1_generator
-    import tier2_abstract_generator
+    import optimizer_generator
 
 
 def handle_stderr():
@@ -147,10 +147,11 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *value;
+            _PyStackRef value;
             value = stack_pointer[-1];
             spam();
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -167,10 +168,11 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *res;
+            _PyStackRef res;
             spam();
             stack_pointer[0] = res;
             stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -187,8 +189,8 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *value;
-            PyObject *res;
+            _PyStackRef value;
+            _PyStackRef res;
             value = stack_pointer[-1];
             spam();
             stack_pointer[-1] = res;
@@ -208,14 +210,15 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             spam();
             stack_pointer[-2] = res;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -232,9 +235,9 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *right;
-            PyObject *left;
-            PyObject *result;
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef result;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             spam();
@@ -260,8 +263,8 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
             PREDICTED(OP1);
-            PyObject *arg;
-            PyObject *rest;
+            _PyStackRef arg;
+            _PyStackRef rest;
             arg = stack_pointer[-1];
             stack_pointer[-1] = rest;
             DISPATCH();
@@ -272,8 +275,8 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP3);
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
-            PyObject *arg;
-            PyObject *res;
+            _PyStackRef arg;
+            _PyStackRef res;
             arg = stack_pointer[-1];
             DEOPT_IF(xxx, OP1);
             stack_pointer[-1] = res;
@@ -329,14 +332,15 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (cond) goto pop_2_label;
             stack_pointer[-2] = res;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -350,13 +354,17 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         TARGET(OP) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
-            PyObject *value;
+            _PyStackRef value;
             value = stack_pointer[-1];
             uint16_t counter = read_u16(&this_instr[1].cache);
+            (void)counter;
             uint32_t extra = read_u32(&this_instr[2].cache);
+            (void)extra;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -399,15 +407,17 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             PREDICTED(OP);
             _Py_CODEUNIT *this_instr = next_instr - 6;
-            PyObject *right;
-            PyObject *left;
-            PyObject *arg2;
-            PyObject *res;
+            (void)this_instr;
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef arg2;
+            _PyStackRef res;
             // _OP1
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 op1(left, right);
             }
             /* Skip 2 cache entries */
@@ -415,22 +425,26 @@ class TestGeneratedCases(unittest.TestCase):
             arg2 = stack_pointer[-3];
             {
                 uint32_t extra = read_u32(&this_instr[4].cache);
+                (void)extra;
                 res = op2(arg2, left, right);
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
         TARGET(OP1) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
-            PyObject *right;
-            PyObject *left;
+            _PyStackRef right;
+            _PyStackRef left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t counter = read_u16(&this_instr[1].cache);
+            (void)counter;
             op1(left, right);
             DISPATCH();
         }
@@ -440,10 +454,10 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 6;
             INSTRUCTION_STATS(OP3);
             static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
-            PyObject *right;
-            PyObject *left;
-            PyObject *arg2;
-            PyObject *res;
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef arg2;
+            _PyStackRef res;
             /* Skip 5 cache entries */
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -451,6 +465,7 @@ class TestGeneratedCases(unittest.TestCase):
             res = op3(arg2, left, right);
             stack_pointer[-3] = res;
             stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -477,7 +492,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_no_flags(self):
         input = """
-        pseudo(OP) = {
+        pseudo(OP, (in -- out1, out2)) = {
             OP1,
         };
 
@@ -496,7 +511,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_with_flags(self):
         input = """
-        pseudo(OP, (HAS_ARG, HAS_JUMP)) = {
+        pseudo(OP, (in1, in2 --), (HAS_ARG, HAS_JUMP)) = {
             OP1,
         };
 
@@ -524,14 +539,15 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *above;
-            PyObject **values;
-            PyObject *below;
+            _PyStackRef above;
+            _PyStackRef *values;
+            _PyStackRef below;
             above = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg*2];
             below = stack_pointer[-2 - oparg*2];
             spam();
             stack_pointer += -2 - oparg*2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -548,14 +564,15 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *below;
-            PyObject **values;
-            PyObject *above;
+            _PyStackRef below;
+            _PyStackRef *values;
+            _PyStackRef above;
             values = &stack_pointer[-1];
             spam(values, oparg);
             stack_pointer[-2] = below;
             stack_pointer[-1 + oparg*3] = above;
             stack_pointer += oparg*3;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -572,12 +589,13 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject **values;
-            PyObject *above;
+            _PyStackRef *values;
+            _PyStackRef above;
             values = &stack_pointer[-oparg];
             spam(values, oparg);
             stack_pointer[0] = above;
             stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -594,12 +612,13 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject **values;
-            PyObject *extra;
+            _PyStackRef *values;
+            _PyStackRef extra;
             values = &stack_pointer[-oparg];
             extra = stack_pointer[-1 - oparg];
             if (oparg == 0) { stack_pointer += -1 - oparg; goto somewhere; }
             stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -616,12 +635,12 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            PyObject *cc;
-            PyObject *input = NULL;
-            PyObject *aa;
-            PyObject *xx;
-            PyObject *output = NULL;
-            PyObject *zz;
+            _PyStackRef cc;
+            _PyStackRef input = PyStackRef_NULL;
+            _PyStackRef aa;
+            _PyStackRef xx;
+            _PyStackRef output = PyStackRef_NULL;
+            _PyStackRef zz;
             cc = stack_pointer[-1];
             if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
             aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
@@ -630,6 +649,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
             stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
             stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -650,12 +670,12 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
-            PyObject *right;
-            PyObject *middle;
-            PyObject *left;
-            PyObject *deep;
-            PyObject *extra = NULL;
-            PyObject *res;
+            _PyStackRef right;
+            _PyStackRef middle;
+            _PyStackRef left;
+            _PyStackRef deep;
+            _PyStackRef extra = PyStackRef_NULL;
+            _PyStackRef res;
             // A
             right = stack_pointer[-1];
             middle = stack_pointer[-2];
@@ -671,6 +691,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (oparg) stack_pointer[-2] = extra;
             stack_pointer[-2 + ((oparg) ? 1 : 0)] = res;
             stack_pointer += -1 + ((oparg) ? 1 : 0);
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -691,8 +712,8 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
-            PyObject *val1;
-            PyObject *val2;
+            _PyStackRef val1;
+            _PyStackRef val2;
             // A
             {
                 val1 = spam();
@@ -704,6 +725,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer[0] = val1;
             stack_pointer[1] = val2;
             stack_pointer += 2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
         """
@@ -793,7 +815,6 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-
     def test_deopt_and_exit(self):
         input = """
         pure op(OP, (arg1 -- out)) {
@@ -804,6 +825,49 @@ class TestGeneratedCases(unittest.TestCase):
         output = ""
         with self.assertRaises(Exception):
             self.run_cases_test(input, output)
+
+    def test_array_of_one(self):
+        input = """
+        inst(OP, (arg[1] -- out[1])) {
+            out[0] = arg[0];
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef *arg;
+            _PyStackRef *out;
+            arg = &stack_pointer[-1];
+            out = &stack_pointer[-1];
+            out[0] = arg[0];
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_pointer_to_stackref(self):
+        input = """
+        inst(OP, (arg: _PyStackRef * -- out)) {
+            out = *arg;
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef *arg;
+            _PyStackRef out;
+            arg = (_PyStackRef *)stack_pointer[-1].bits;
+            out = *arg;
+            stack_pointer[-1] = out;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
@@ -841,7 +905,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             temp_input.flush()
 
         with handle_stderr():
-            tier2_abstract_generator.generate_tier2_abstract_from_files(
+            optimizer_generator.generate_tier2_abstract_from_files(
                 [self.temp_input_filename, self.temp_input2_filename],
                 self.temp_output_filename
             )
@@ -890,8 +954,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UOpsSymType *arg1;
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *arg1;
+            _Py_UopsSymbol *out;
             arg1 = stack_pointer[-1];
             eggs();
             stack_pointer[-1] = out;
@@ -899,9 +963,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            _Py_UOpsSymType *out;
-            out = sym_new_unknown(ctx);
-            if (out == NULL) goto out_of_space;
+            _Py_UopsSymbol *out;
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
@@ -924,16 +987,15 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UOpsSymType *out;
-            out = sym_new_unknown(ctx);
-            if (out == NULL) goto out_of_space;
+            _Py_UopsSymbol *out;
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
 
         case OP2: {
-            _Py_UOpsSymType *arg1;
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *arg1;
+            _Py_UopsSymbol *out;
             arg1 = stack_pointer[-1];
             stack_pointer[-1] = out;
             break;
