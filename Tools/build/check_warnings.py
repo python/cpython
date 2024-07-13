@@ -15,7 +15,6 @@ def extract_warnings_from_compiler_output(compiler_output: str) -> list[dict]:
     Compiler output as a whole is not a valid json document, but includes many json
     objects and may include other output that is not json.
     """
-    # Extract JSON objects from the raw compiler output
     compiler_output_json_objects = []
     stack = []
     start_index = None
