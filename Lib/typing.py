@@ -3752,6 +3752,44 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
     return frozenset(tp.__protocol_attrs__)
 
 
+_P = ParamSpec("_P")
+
+
+def copy_kwargs(
+    source_func: Callable[_P, Any]
+) -> Callable[[Callable[..., T]], Callable[_P, T]]:
+    """Cast the decorated function's call signature to the source_func's.
+
+    Use this decorator enhancing an upstream function while keeping it's
+    call signature.
+    Returns the original function with the *source_funcs* call signature.
+
+    Usage::
+
+        from typing import copy_kwargs, Any
+
+        def upstream_func(a: int, b: float, *, double: bool = False) -> float:
+            ...
+
+        @copy_kwargs(upstream_func)
+        def enhanced(
+            a: int, b: float, *args: Any, double: bool = False, **kwargs: Any
+        ) -> str:
+            ...
+
+    .. note::
+
+       Include ``*args`` and ``**kwargs`` in the signature of the decorated
+       function in order to avoid TypeErrors when the call signature of
+       *source_func* changes.
+    """
+
+    def return_func(func: Callable[..., T]) -> Callable[_P, T]:
+        return cast(Callable[_P, T], func)
+
+    return return_func
+
+
 def __getattr__(attr):
     """Improve the import time of the typing module.
 
