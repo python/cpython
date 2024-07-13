@@ -1366,6 +1366,12 @@ Module(
         node = ast.parse('async def foo():\n  """spam\n  ham"""')
         self.assertEqual(ast.get_docstring(node.body[0]), 'spam\nham')
 
+        node = ast.parse('async def foo():\n  """spam\n  ham"""')
+        self.assertEqual(ast.get_docstring(node.body[0], clean=False), 'spam\n  ham')
+
+        node = ast.parse('x')
+        self.assertRaises(TypeError, ast.get_docstring, node.body[0])
+
     def test_get_docstring_none(self):
         self.assertIsNone(ast.get_docstring(ast.parse('')))
         node = ast.parse('x = "not docstring"')
@@ -1388,6 +1394,9 @@ Module(
         node = ast.parse('async def foo():\n  pass')
         self.assertIsNone(ast.get_docstring(node.body[0]))
         node = ast.parse('async def foo():\n  x = "not docstring"')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+
+        node = ast.parse('async def foo():\n  42')
         self.assertIsNone(ast.get_docstring(node.body[0]))
 
     def test_multi_line_docstring_col_offset_and_lineno_issue16806(self):
