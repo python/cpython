@@ -1,12 +1,24 @@
 """Test the interactive interpreter."""
 
+from io import BytesIO
 import os
+from re import sub
 import subprocess
+import tempfile
 import sys
 import unittest
 from textwrap import dedent
 from test import support
-from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
+from test.support import (
+    cpython_only,
+    has_subprocess_support,
+    is_android,
+    is_apple_mobile,
+    is_emscripten,
+    is_wasi,
+    SuppressCrashReport,
+    reap_children,
+)
 from test.support.script_helper import assert_python_failure, kill_python, assert_python_ok
 from test.support.import_helper import import_module
 
@@ -198,6 +210,55 @@ class TestInteractiveInterpreter(unittest.TestCase):
     def test_asyncio_repl_no_tty_fails(self):
         assert assert_python_failure("-m", "asyncio")
 
+    def test_asyncio_repl_reaches_python_startup_script(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            script = os.path.join(tmpdir, "script.py")
+            with open(script, "w") as f:
+                f.write("exit(0)")
+
+            subprocess.check_call(
+                [sys.executable, "-m", "asyncio"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={"PYTHONSTARTUP": script}
+            )
+
+    def test_asyncio_repl_is_ok(self):
+        # The REPL expects a tty to go into the interactive mode, so let's
+        # simulate one. This test is limited to Linux since
+        # it uses the pty module.
+        try:
+            import_module('termios')
+            if is_android or is_apple_mobile or is_emscripten or is_wasi:
+                raise unittest.SkipTest("pty is not available on this platform")
+
+            import pty
+
+            m, s = pty.openpty()
+            try:
+                with open(s, "rb") as proc_file, open(m, "w") as input_file:
+                    proc = subprocess.Popen(
+                        [
+                            sys.executable,
+                            "-m",
+                            "asyncio",
+                        ],
+                        stdin=proc_file,
+                        stdout=proc_file,
+                        stderr=proc_file,
+                    )
+                    input_file.write("exit()\n")
+                    proc.wait()
+            finally:
+                for fd in [m, s]:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+
+            self.assertEqual(proc.returncode, 0)
+        finally:
+            reap_children()
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
