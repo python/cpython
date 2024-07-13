@@ -1,0 +1,1 @@
+Show the correct ``SyntaxError`` if the user tries to use ``yield from`` outside a function
