@@ -981,20 +981,23 @@ class TestMain(TestCase):
             text=True,
             close_fds=True,
             env=env if env else os.environ,
-       )
+        )
+        os.close(slave_fd)
         if isinstance(repl_input, list):
             repl_input = "\n".join(repl_input) + "\n"
         os.write(master_fd, repl_input.encode("utf-8"))
 
         output = []
-        while select.select([master_fd], [], [], 0.5)[0]:
-            data = os.read(master_fd, 1024).decode("utf-8")
-            if not data:
+        while select.select([master_fd], [], [], SHORT_TIMEOUT)[0]:
+            try:
+                data = os.read(master_fd, 1024).decode("utf-8")
+                if not data:
+                    break
+            except OSError:
                 break
             output.append(data)
 
         os.close(master_fd)
-        os.close(slave_fd)
         try:
             exit_code = process.wait(timeout=SHORT_TIMEOUT)
         except subprocess.TimeoutExpired:
