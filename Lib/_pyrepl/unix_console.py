@@ -24,6 +24,7 @@ from __future__ import annotations
 import errno
 import os
 import re
+import sys
 import select
 import signal
 import struct
@@ -388,7 +389,15 @@ class UnixConsole(Console):
         while self.event_queue.empty():
             while True:
                 try:
-                    self.push_char(self.__read(1))
+                    char = self.__read(1)
+                except BlockingIOError:
+
+                    if not os.get_blocking(sys.stdin.fileno()):
+                        return None
+                    else:
+                        raise
+                try:
+                    self.push_char(char)
                 except OSError as err:
                     if err.errno == errno.EINTR:
                         if not self.event_queue.empty():

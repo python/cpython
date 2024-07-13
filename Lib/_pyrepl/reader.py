@@ -770,7 +770,9 @@ class Reader:
                 startup_hook()
             self.refresh()
             while not self.finished:
-                self.handle1()
+                if not self.handle1():
+                    # no event, wait before retrying
+                    self.console.wait(100)
             return self.get_unicode()
 
         finally:
