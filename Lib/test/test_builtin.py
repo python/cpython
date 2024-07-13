@@ -16,6 +16,7 @@ import platform
 import random
 import re
 import sys
+import textwrap
 import traceback
 import types
 import typing
@@ -440,7 +441,29 @@ class BuiltinTest(unittest.TestCase):
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
             '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]''',
+            # gh-121637: Make sure we correctly handle the case where the
+            # async code is optimized away
             '''assert not await asyncio.sleep(0); a = 1''',
+            '''assert [x async for x in arange(1)]; a = 1''',
+            '''assert (x async for x in arange(1)); a = 1''',
+            '''assert {x async for x in arange(1)}; a = 1''',
+            '''assert {x: x async for x in arange(1)}; a = 1''',
+            textwrap.dedent(
+                '''
+                if __debug__:
+                    async with asyncio.Lock() as l:
+                        pass
+                a = 1
+                '''
+            ),
+            textwrap.dedent(
+                '''
+                if __debug__:
+                    async for x in arange(2):
+                        pass
+                a = 1
+                '''
+            ),
         ]
         policy = maybe_get_event_loop_policy()
         try:
