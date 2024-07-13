@@ -6130,16 +6130,10 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        if (!IS_TOP_LEVEL_AWAIT(c)){
-            if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
-                return compiler_error(c, loc, "'await' outside function");
-            }
-
-            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-                    c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION) {
-                return compiler_error(c, loc, "'await' outside async function");
-            }
-        }
+        assert(IS_TOP_LEVEL_AWAIT(c) || (_PyST_IsFunctionLike(SYMTABLE_ENTRY(c)) && (
+            c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION ||
+            c->u->u_scope_type == COMPILER_SCOPE_COMPREHENSION
+        )));
 
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);

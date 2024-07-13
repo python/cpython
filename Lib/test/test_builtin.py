@@ -426,6 +426,7 @@ class BuiltinTest(unittest.TestCase):
                 yield i
 
         modes = ('single', 'exec')
+        optimizations = (-1, 0, 1, 2)
         code_samples = [
             '''a = await asyncio.sleep(0, result=1)''',
             '''async for i in arange(1):
@@ -438,20 +439,22 @@ class BuiltinTest(unittest.TestCase):
             '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
-            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]'''
+            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]''',
+            '''assert not await asyncio.sleep(0); a = 1''',
         ]
         policy = maybe_get_event_loop_policy()
         try:
-            for mode, code_sample in product(modes, code_samples):
+            for mode, code_sample, optimize in product(modes, code_samples, optimizations):
                 source = dedent(code_sample)
                 with self.assertRaises(
                         SyntaxError, msg=f"source={source} mode={mode}"):
-                    compile(source, '?', mode)
+                    compile(source, '?', mode, optimize=optimize)
 
                 co = compile(source,
                              '?',
                              mode,
-                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+                             optimize=optimize)
 
                 self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
                                  msg=f"source={source} mode={mode}")
