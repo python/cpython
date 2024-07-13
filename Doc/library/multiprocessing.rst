@@ -253,7 +253,8 @@ processes:
           print(q.get())    # prints "[42, None, 'hello']"
           p.join()
 
-   Queues are thread and process safe. Any object put into a Multiprocessing queue will be pickled.
+   Queues are thread and process safe.
+   Any object put into a :mod:`~multiprocessing` queue will be serialized.
 
 **Pipes**
 
@@ -281,9 +282,8 @@ processes:
    of corruption from processes using different ends of the pipe at the same
    time.
 
-   The pipe can either transport messages as pickled objects or as byte-like objects
-   depending on what method that is called on the
-   :class:`~multiprocessing.connection.Connection` object.
+   The :meth:`~Connection.send` method serializes the the object and
+   :meth:`~Connection.recv` re-creates the object.
 
 Synchronization between processes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -748,8 +748,10 @@ If you use :class:`JoinableQueue` then you **must** call
 semaphore used to count the number of unfinished tasks may eventually overflow,
 raising an exception.
 
-One difference from other Python queue implementations, is that Multiprocessing queues
-pickles all objects that are put into them.
+One difference from other Python queue implementations, is that :mod:`multiprocessing`
+queues serializes all objects that are put into them using :mod:`pickle`.
+The object return by the get method is a re-created object that does not share memory
+with the original object.
 
 Note that one can also create a shared queue by using a manager object -- see
 :ref:`multiprocessing-managers`.
@@ -779,9 +781,6 @@ Note that one can also create a shared queue by using a manager object -- see
        the objects to be received at the other end out-of-order.
        However, objects enqueued by the same process will always be in
        the expected order with respect to each other.
-
-   (3) The received object will have a different id than the object that
-       was put to the queue.
 
 .. warning::
 
@@ -820,8 +819,8 @@ For an example of the usage of queues for interprocess communication see
    used for receiving messages and ``conn2`` can only be used for sending
    messages.
 
-   Multiprocessing pipes can transfer messages as pickled objects or
-   :term:`bytes-like object`.
+   The :meth:`~multiprocessing.Connection.send` method serializes the the object using
+   :mod:`pickle` and the :meth:`~multiprocessing.Connection.recv` re-creates the object.
 
 .. class:: Queue([maxsize])
 
