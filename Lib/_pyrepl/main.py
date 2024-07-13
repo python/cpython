@@ -21,7 +21,6 @@ except Exception as e:
 
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
-    global CAN_USE_PYREPL, FAIL_MSG
     if not CAN_USE_PYREPL:
         if not os.environ.get('PYTHON_BASIC_REPL', None):
             from .trace import trace
