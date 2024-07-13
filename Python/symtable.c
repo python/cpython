@@ -70,10 +70,10 @@
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
-#define ASYNC_WITH_OUTISDE_ASYNC_FUNC \
+#define ASYNC_WITH_OUTSIDE_ASYNC_FUNC \
 "'async with' outside async function"
 
-#define ASYNC_FOR_OUTISDE_ASYNC_FUNC \
+#define ASYNC_FOR_OUTSIDE_ASYNC_FUNC \
 "'async for' outside async function"
 
 #define LOCATION(x) SRC_LOCATION_FROM_AST(x)
@@ -2060,7 +2060,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     case AsyncWith_kind:
         maybe_set_ste_coroutine_for_module(st, s);
-        if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             VISIT_QUIT(st, 0);
         }
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
@@ -2068,7 +2068,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case AsyncFor_kind:
         maybe_set_ste_coroutine_for_module(st, s);
-        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             VISIT_QUIT(st, 0);
         }
         VISIT(st, expr, s->v.AsyncFor.target);
