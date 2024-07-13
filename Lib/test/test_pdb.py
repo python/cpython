@@ -3391,9 +3391,9 @@ def bœr():
             resources.enter_context(patch('sys.stdout', stdout))
             # patch pdb.Pdb.set_trace() to avoid entering the debugger
             resources.enter_context(patch.object(pdb.Pdb, 'set_trace'))
-            # Because pdb.Pdb.set_trace() is patched, we need to manually
-            # clear _last_pdb_instance so a new instance with stdout redirected
-            # could be created when pdb.set_trace() is called.
+            # We need to manually clear pdb.Pdb._last_pdb_instance so a
+            # new instance with stdout redirected could be created when
+            # pdb.set_trace() is called.
             pdb.Pdb._last_pdb_instance = None
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
