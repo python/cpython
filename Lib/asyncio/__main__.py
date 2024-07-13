@@ -106,7 +106,8 @@ class REPLThread(threading.Thread):
                 if os.getenv("PYTHON_BASIC_REPL"):
                     raise RuntimeError("user environment requested basic REPL")
                 if not os.isatty(sys.stdin.fileno()):
-                    raise OSError(errno.ENOTTY, "tty required", "stdin")
+                    return_code = errno.ENOTTY
+                    raise OSError(return_code, "tty required", "stdin")
 
                 # This import will fail on operating systems with no termios.
                 from _pyrepl.simple_interact import (
