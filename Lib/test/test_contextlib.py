@@ -586,7 +586,7 @@ class TestContextDecorator(unittest.TestCase):
     def test_decorating_method(self):
         context = mycontext()
 
-        class Test(object):
+        class Test:
 
             @context
             def method(self, a, b, c=None):

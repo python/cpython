@@ -9,7 +9,7 @@ from test.test_unittest.support import LoggingResult, TestEquality
 ### Support code for Test_TestSuite
 ################################################################
 
-class Test(object):
+class Test:
     class Foo(unittest.TestCase):
         def test_1(self): pass
         def test_2(self): pass
@@ -395,7 +395,7 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
                 pass
             def testFail(self):
                 fail
-        class Module(object):
+        class Module:
             wasSetUp = False
             wasTornDown = False
             @staticmethod

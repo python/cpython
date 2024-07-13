@@ -27,7 +27,7 @@ log_foobar = logging.getLogger('foo.bar')
 log_quux = logging.getLogger('quux')
 
 
-class Test(object):
+class Test:
     "Keep these TestCase classes out of the main namespace"
 
     class Foo(unittest.TestCase):
@@ -674,7 +674,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             'Tests shortDescription() whitespace is trimmed, so that the first')
 
     def testAddTypeEqualityFunc(self):
-        class SadSnake(object):
+        class SadSnake:
             """Dummy class for test_addTypeEqualityFunc."""
         s1, s2 = SadSnake(), SadSnake()
         self.assertFalse(s1 == s2)

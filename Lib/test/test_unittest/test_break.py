@@ -217,7 +217,7 @@ class TestBreak(unittest.TestCase):
         result = object()
         default_handler = signal.getsignal(signal.SIGINT)
 
-        class FakeRunner(object):
+        class FakeRunner:
             initArgs = []
             runArgs = []
             def __init__(self, *args, **kwargs):

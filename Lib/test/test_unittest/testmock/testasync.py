@@ -39,7 +39,7 @@ async def async_func_args(a, b, *, c): pass
 
 def normal_func(): pass
 
-class NormalClass(object):
+class NormalClass:
     def a(self): pass
 
 
@@ -724,7 +724,7 @@ class AsyncContextManagerTest(unittest.TestCase):
 
 
 class AsyncIteratorTest(unittest.TestCase):
-    class WithAsyncIterator(object):
+    class WithAsyncIterator:
         def __init__(self):
             self.items = ["foo", "NormalFoo", "baz"]
 

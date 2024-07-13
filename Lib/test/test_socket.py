@@ -5324,7 +5324,7 @@ class UnicodeReadWriteFileObjectClassTestCase(FileObjectClassTestCase):
     newline = ''
 
 
-class NetworkConnectionTest(object):
+class NetworkConnectionTest:
     """Prove network connection."""
 
     def clientSetUp(self):

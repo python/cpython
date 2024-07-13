@@ -408,7 +408,7 @@ class AsyncContextManagerTestCase(unittest.IsolatedAsyncioTestCase):
             yield
 
 
-        class Test(object):
+        class Test:
 
             @context()
             async def method(self, a, b, c=None):

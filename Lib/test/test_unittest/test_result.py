@@ -10,7 +10,7 @@ from unittest.util import strclass
 from test.test_unittest.support import BufferedWriter
 
 
-class MockTraceback(object):
+class MockTraceback:
     class TracebackException:
         def __init__(self, *args, **kwargs):
             self.capture_locals = kwargs.get('capture_locals', False)
@@ -418,8 +418,8 @@ class Test_TestResult(unittest.TestCase):
         self.assertIn("some recognizable failure", formatted_exc)
 
     def testStackFrameTrimming(self):
-        class Frame(object):
-            class tb_frame(object):
+        class Frame:
+            class tb_frame:
                 f_globals = {}
         result = unittest.TestResult()
         self.assertFalse(result._is_relevant_tb_level(Frame))
@@ -1210,7 +1210,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Foo(unittest.TestCase):
             def test_foo(self):
                 pass
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 print('set up module')
@@ -1238,7 +1238,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Foo(unittest.TestCase):
             def test_foo(self):
                 pass
-        class Module(object):
+        class Module:
             @staticmethod
             def tearDownModule():
                 print('tear down module')
@@ -1266,7 +1266,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Foo(unittest.TestCase):
             def test_foo(self):
                 pass
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 print('set up module')
@@ -1296,7 +1296,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Foo(unittest.TestCase):
             def test_foo(self):
                 pass
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 print('set up module')
@@ -1335,7 +1335,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Foo(unittest.TestCase):
             def test_foo(self):
                 pass
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 print('set up module')

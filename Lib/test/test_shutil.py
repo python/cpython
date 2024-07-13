@@ -3082,7 +3082,7 @@ class TestCopyFileObj(unittest.TestCase):
         self.assert_files_eq(fname, TESTFN2)
 
 
-class _ZeroCopyFileTest(object):
+class _ZeroCopyFileTest:
     """Tests common to all zero-copy APIs."""
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     FILEDATA = b""

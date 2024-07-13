@@ -138,7 +138,7 @@ class FrFRCookedTest(BaseCookedTest):
     }
 
 
-class BaseFormattingTest(object):
+class BaseFormattingTest:
     #
     # Utility functions for formatting tests
     #

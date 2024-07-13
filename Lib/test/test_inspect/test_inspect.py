@@ -1963,7 +1963,7 @@ class TestIsDataDescriptor(unittest.TestCase):
                         'a property is a data descriptor')
 
     def test_functions(self):
-        class Test(object):
+        class Test:
             def instance_method(self): pass
             @classmethod
             def class_method(cls): pass
