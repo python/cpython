@@ -4272,7 +4272,7 @@
                     start--;
                 }
                 _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, true);
                 if (optimized < 0) goto error;
                 if (optimized) {
                     assert(tstate->previous_executor == NULL);
