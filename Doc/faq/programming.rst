@@ -1758,10 +1758,9 @@ the class, the mangled name must be used:
 
    four = 4 * A()._A__one()
 
-This doesn't guarantee privacy: an outside user can still deliberately access
-the "_classname__spam" attribute, and private values are visible in the object's
-``__dict__``.  Many Python programmers never bother to use private variable
-names at all.
+In particular, this does not guarantee privacy since an outside user can still
+deliberately access the private attribute; many Python programmers never bother
+to use private variable names at all.
 
 .. seealso::
 
