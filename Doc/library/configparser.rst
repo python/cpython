@@ -999,8 +999,15 @@ ConfigParser Objects
    .. doctest::
 
       >>> config = configparser.ConfigParser()
+      >>> config['DEFAULT'] = {'ServerAliveInterval': '-1'}
+      >>> with open('override.ini', 'w') as configfile:
+      ...     config.write(configfile)
+      ...
+      >>> config = configparser.ConfigParser()
       >>> config.read(['example.ini','override.ini'])
-      >>> print(config.get('DEFAULT', 'ServerAliveInterval')) # 45 -> -1
+      ['example.ini', 'override.ini']
+      >>> print(config.get('DEFAULT', 'ServerAliveInterval'))
+      -1
 
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
