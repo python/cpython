@@ -1,0 +1,1 @@
+Add :func:`copy_kwargs` to *typing* that copies/applies the ParameterSpec from one function to another.
