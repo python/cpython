@@ -31,14 +31,6 @@ try:
 except ImportError:
     pty = None
 
-
-clean_env = os.environ.copy()
-# cleanup from PYTHON* variables
-for k in clean_env.copy():
-    if k.startswith("PYTHON"):
-        clean_env.pop(k)
-
-
 class TestCursorPosition(TestCase):
     def prepare_reader(self, events):
         console = FakeConsole(events)
@@ -853,6 +845,17 @@ class TestPasteEvent(TestCase):
 
 @skipUnless(pty, "requires pty")
 class TestMain(TestCase):
+    def setUp(self):
+        clean_env = os.environ.copy()
+        # cleanup from PYTHON* variables
+        for k in clean_env.copy():
+            if k.startswith("PYTHON"):
+                clean_env.pop(k)
+
+        patcher = patch('os.environ', new=clean_env)
+        self.addCleanup(patcher.stop)
+        self.mock_foo = patcher.start()
+
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
         pre = "['__annotations__', '__builtins__'"
@@ -877,7 +880,7 @@ class TestMain(TestCase):
         self.assertTrue(case1 or case2 or case3 or case4, output)
 
     def test_dumb_terminal_exits_cleanly(self):
-        env = clean_env.copy()
+        env = os.environ.copy()
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
@@ -887,7 +890,7 @@ class TestMain(TestCase):
 
     @force_not_colorized
     def test_python_basic_repl(self):
-        env = clean_env.copy()
+        env = os.environ.copy()
         commands = ("from test.support import initialized_with_pyrepl\n"
                     "initialized_with_pyrepl()\n"
                     "exit()\n")
@@ -916,7 +919,7 @@ class TestMain(TestCase):
 
         hfile = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(unlink, hfile.name)
-        env = clean_env.copy()
+        env = os.environ.copy()
         env["PYTHON_HISTORY"] = hfile.name
         commands = "123\nspam\nexit()\n"
 
