@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 import argparse
 import json
+import re
 
 def extract_warnings_from_compiler_output(compiler_output: str) -> list[dict]:
     """
@@ -15,26 +16,17 @@ def extract_warnings_from_compiler_output(compiler_output: str) -> list[dict]:
     Compiler output as a whole is not a valid json document, but includes many json
     objects and may include other output that is not json.
     """
-    compiler_output_json_objects = []
-    stack = []
-    start_index = None
-    for index, char in enumerate(compiler_output):
-        if char == '[':
-            if len(stack) == 0:
-                start_index = index  # Start of a new JSON array
-            stack.append(char)
-        elif char == ']':
-            if len(stack) > 0:
-                stack.pop()
-            if len(stack) == 0 and start_index is not None:
-                try:
-                    json_data = json.loads(compiler_output[start_index:index+1])
-                    compiler_output_json_objects.extend(json_data)
-                    start_index = None
-                except json.JSONDecodeError:
-                    continue  # Skip malformed JSON
 
-    compiler_warnings = [entry for entry in compiler_output_json_objects if entry.get('kind') == 'warning']
+    # Regex to find json arrays at the top level of the file in the compiler output
+    json_arrays = re.findall(r'\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\]', compiler_output)
+    compiler_warnings = []
+    for array in json_arrays:
+        try:
+            json_data = json.loads(array)
+            json_objects_in_array = [entry for entry in json_data]
+            compiler_warnings.extend([entry for entry in json_objects_in_array if entry.get('kind') == 'warning'])
+        except json.JSONDecodeError:
+            continue  # Skip malformed JSON
 
     return compiler_warnings
 
@@ -52,8 +44,9 @@ def get_unexpected_warnings(
         for location in locations:
             for key in ['caret', 'start', 'end']:
                 if key in location:
-                    filename = location[key]['file']
-                    if filename not in files_with_expected_warnings:
+                    file = location[key]['file']
+                    file = file.lstrip('./') # Remove leading curdir if present
+                    if file not in files_with_expected_warnings:
                         unexpected_warnings.append(warning)
 
     if unexpected_warnings:
@@ -81,18 +74,19 @@ def get_unexpected_improvements(
         for location in locations:
             for key in ['caret', 'start', 'end']:
                 if key in location:
-                    filename = location[key]['file']
-                    files_with_warnings.add(filename)
+                    file = location[key]['file']
+                    file = file.lstrip('./') # Remove leading curdir if present
+                    files_with_warnings.add(file)
 
     unexpected_improvements = []
-    for filename in files_with_expected_warnings:
-        if filename not in files_with_warnings:
-            unexpected_improvements.append(filename)
+    for file in files_with_expected_warnings:
+        if file not in files_with_warnings:
+            unexpected_improvements.append(file)
 
     if unexpected_improvements:
         print("Unexpected improvements:")
-        for filename in unexpected_improvements:
-            print(filename)
+        for file in unexpected_improvements:
+            print(file)
         return 1
 
     return 0
@@ -143,12 +137,10 @@ def main(argv: list[str] | None = None) -> int:
 
     with Path(args.warning_ignore_file_path).open(encoding="UTF-8") as clean_files:
         files_with_expected_warnings = {
-            filename.strip()
-            for filename in clean_files
-            if filename.strip() and not filename.startswith("#")
+            file.strip()
+            for file in clean_files
+            if file.strip() and not file.startswith("#")
         }
-
-    if not len(compiler_output_file_contents) > 0:exit_code = 1
 
     warnings = extract_warnings_from_compiler_output(compiler_output_file_contents)
 
@@ -157,8 +149,7 @@ def main(argv: list[str] | None = None) -> int:
 
     status = get_unexpected_improvements(warnings, files_with_expected_warnings)
     if args.fail_on_improvement: exit_code |= status
-
-    print("Returning exit code: ", exit_code)
+    
     return exit_code
 
 if __name__ == "__main__":
