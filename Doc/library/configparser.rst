@@ -147,23 +147,28 @@ case-insensitive and stored in lowercase [1]_.
 It is possible to read several configurations into a single
 :class:`ConfigParser`, where the most recently added configuration has the
 highest priority. Any conflicting keys are taken from the more recent
-configuration while the previously existing keys are retained.
+configuration while the previously existing keys are retained. The example
+below reads in an ``override.ini`` file, which will override any conflicting
+keys from the ``example.ini`` file.
+
+.. code-block:: ini
+
+   [DEFAULT]
+   ServerAliveInterval = -1
 
 .. doctest::
 
-   >>> another_config = configparser.ConfigParser()
-   >>> another_config.read('example.ini')
-   ['example.ini']
-   >>> another_config['topsecret.server.example']['Port']
-   '50022'
-   >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
-   >>> another_config['topsecret.server.example']['Port']
-   '48484'
-   >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
-   >>> another_config['topsecret.server.example']['Port']
-   '21212'
-   >>> another_config['topsecret.server.example']['ForwardX11']
-   'no'
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
+   >>> with open('override.ini', 'w') as configfile:
+   ...     config_override.write(configfile)
+   ...
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override.read(['example.ini', 'override.ini'])
+   ['example.ini', 'override.ini']
+   >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
+   -1
+
 
 This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
 files passed to the *filenames* parameter.
@@ -957,6 +962,31 @@ ConfigParser Objects
    implementing the conversion from string to the desired datatype.  Every
    converter gets its own corresponding :meth:`!get*()` method on the parser
    object and section proxies.
+
+   It is possible to read several configurations into a single
+   :class:`ConfigParser`, where the most recently added configuration has the
+   highest priority. Any conflicting keys are taken from the more recent
+   configuration while the previously existing keys are retained. The example
+   below reads in an ``override.ini`` file, which will override any conflicting
+   keys from the ``example.ini`` file.
+
+   .. code-block:: ini
+
+      [DEFAULT]
+      ServerAliveInterval = -1
+
+   .. doctest::
+
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
+      >>> with open('override.ini', 'w') as configfile:
+      ...     config_override.write(configfile)
+      ...
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override.read(['example.ini', 'override.ini'])
+      ['example.ini', 'override.ini']
+      >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
+      -1
 
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
