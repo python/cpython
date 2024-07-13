@@ -886,6 +886,11 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+
+        if (opcode == CALL_LIST_APPEND) {
+            assert(instr->op.code == POP_TOP);
+            instr++;
+        }
     }  // End for (;;)
 
 done:

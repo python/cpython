@@ -4256,6 +4256,42 @@
             break;
         }
 
+        case _CALL_LIST_APPEND: {
+            _PyStackRef arg;
+            _PyStackRef self;
+            _PyStackRef callable;
+            oparg = CURRENT_OPARG();
+            arg = stack_pointer[-1];
+            self = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            assert(oparg == 1);
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
+            PyInterpreterState *interp = tstate->interp;
+            if (callable_o != interp->callable_cache.list_append) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(self_o != NULL);
+            if (!PyList_Check(self_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(CALL, hit);
+            int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            PyStackRef_CLOSE(self);
+            PyStackRef_CLOSE(callable);
+            if (err) JUMP_TO_ERROR();
+            #if TIER_ONE
+            // Skip POP_TOP
+            assert(next_instr->op.code == POP_TOP);
+            SKIP_OVER(1);
+            #endif
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_O: {
             _PyStackRef *args;
             _PyStackRef self_or_null;

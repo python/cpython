@@ -1744,15 +1744,17 @@
             assert(self_o != NULL);
             DEOPT_IF(!PyList_Check(self_o), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg)) < 0) {
-                goto pop_1_error;  // Since arg is DECREF'ed already
-            }
+            int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             PyStackRef_CLOSE(self);
             PyStackRef_CLOSE(callable);
-            STACK_SHRINK(3);
+            if (err) goto pop_3_error;
+            #if TIER_ONE
             // Skip POP_TOP
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
+            #endif
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 

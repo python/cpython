@@ -3945,7 +3945,7 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- unused)) {
+        inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- )) {
             assert(oparg == 1);
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
@@ -3955,16 +3955,15 @@ dummy_func(
             assert(self_o != NULL);
             DEOPT_IF(!PyList_Check(self_o));
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg)) < 0) {
-                goto pop_1_error;  // Since arg is DECREF'ed already
-            }
+            int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             PyStackRef_CLOSE(self);
             PyStackRef_CLOSE(callable);
-            STACK_SHRINK(3);
+            ERROR_IF(err, error);
+        #if TIER_ONE
             // Skip POP_TOP
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
-            DISPATCH();
+        #endif
         }
 
          op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
