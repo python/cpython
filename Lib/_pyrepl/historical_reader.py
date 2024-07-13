@@ -264,6 +264,7 @@ class HistoricalReader(Reader):
         self.historyi = i
         self.pos = len(self.buffer)
         self.dirty = True
+        self.last_refresh_cache.invalidated = True
 
     def get_item(self, i: int) -> str:
         if i != len(self.history):
