@@ -756,10 +756,6 @@ class Reader:
             self.do_cmd(cmd)
             return True
 
-    def push_char(self, char: int | bytes) -> None:
-        self.console.push_char(char)
-        self.handle1(block=False)
-
     def readline(self, startup_hook: Callback | None = None) -> str:
         """Read a line.  The implementation of this method also shows
         how to drive Reader if you want more control over the event
