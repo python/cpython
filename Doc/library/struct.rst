@@ -267,8 +267,8 @@ platform-dependent.
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is
-supported, the following format characters are available:
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G of the
+C11 standard) is supported, the following format characters are available:
 
 +--------+--------------------------+--------------------+----------------+------------+
 | Format | C Type                   | Python type        | Standard size  | Notes      |
