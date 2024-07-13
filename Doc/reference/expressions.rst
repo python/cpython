@@ -83,18 +83,47 @@ exception.
    pair: name; mangling
    pair: private; names
 
-**Private name mangling:** When an identifier that textually occurs in a class
-definition begins with two or more underscore characters and does not end in two
-or more underscores, it is considered a :dfn:`private name` of that class.
-Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name, with leading underscores
-removed and a single underscore inserted, in front of the name.  For example,
-the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
-to ``_Ham__spam``.  This transformation is independent of the syntactical
-context in which the identifier is used.  If the transformed name is extremely
-long (longer than 255 characters), implementation defined truncation may happen.
-If the class name consists only of underscores, no transformation is done.
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
 
+When an identifier that textually occurs in a class definition begins with two
+or more underscore characters and does not end in two or more underscores, it
+is considered a :dfn:`private name` of that class.
+
+.. seealso::
+
+   The :ref:`class specifications <class>`.
+
+More precisely, private names are transformed to a longer form before code is
+generated for them.  If the transformed name is longer than 255 characters,
+implementation-defined truncation may happen.
+
+The transformation is independent of the syntactical context in which the
+identifier is used but only the following private identifiers are mangled:
+
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The ``__name__`` attribute of nested functions, classes, and type aliases
+  is however not mangled.
+
+- The name of imported modules, e.g., ``__spam`` in ``import __spam``.
+  If the module is part of a package (i.e., its name contains a dot),
+  the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
+  is not mangled.
+
+- The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
+
+The transformation rule is defined as follows:
+
+- The class name, with leading underscores removed and a single leading
+  underscore inserted, is inserted in front of the identifier, e.g., the
+  identifier ``__spam`` occurring in a class named ``Foo``, ``_Foo`` or
+  ``__Foo`` is transformed to ``_Foo__spam``.
+
+- If the class name consists only of underscores, the transformation is the
+  identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
+  or ``__`` is left as is.
 
 .. _atom-literals:
 
