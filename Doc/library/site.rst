@@ -181,7 +181,8 @@ Module contents
    was disabled by user request (with :option:`-s` or
    :envvar:`PYTHONNOUSERSITE`).  ``None`` means it was disabled for security
    reasons (mismatch between user or group id and effective id) or by an
-   administrator.
+   administrator. This no longer disables user site-packages even if it's set to
+   ``False``.
 
 
 .. data:: USER_SITE
