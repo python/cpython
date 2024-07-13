@@ -285,7 +285,7 @@ C11 standard) is supported, the following format characters are available:
    Added support for the ``'e'`` format.
 
 .. versionchanged:: 3.14
-   Added support for ``'E'`` and ``'C'`` formats.
+   Added support for the ``'E'`` and ``'C'`` formats.
 
 
 Notes:
@@ -364,7 +364,7 @@ Notes:
    ``'0c'`` means 0 characters).
 
 (10)
-   For the ``'E'`` and ``'C'`` conversion codes, the packed representation uses
+   For the ``'E'`` and ``'C'`` format characters, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
 
