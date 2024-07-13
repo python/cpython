@@ -58,7 +58,6 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
         elif unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
             s.append(c)
-            b.append(str_width(c))
             b.extend([0] * (len(c) - 1))
         else:
             s.append(c)
