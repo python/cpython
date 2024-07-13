@@ -158,15 +158,15 @@ keys from the ``example.ini`` file.
 
 .. doctest::
 
-   >>> config = configparser.ConfigParser()
-   >>> config['DEFAULT'] = {'ServerAliveInterval': '-1'}
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
    >>> with open('override.ini', 'w') as configfile:
-   ...     config.write(configfile)
+   ...     config_override.write(configfile)
    ...
-   >>> config = configparser.ConfigParser()
-   >>> config.read(['example.ini','override.ini'])
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override.read(['example.ini','override.ini'])
    ['example.ini', 'override.ini']
-   >>> print(config.get('DEFAULT', 'ServerAliveInterval'))
+   >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
    -1
 
 
@@ -1003,15 +1003,15 @@ ConfigParser Objects
 
    .. doctest::
 
-      >>> config = configparser.ConfigParser()
-      >>> config['DEFAULT'] = {'ServerAliveInterval': '-1'}
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
       >>> with open('override.ini', 'w') as configfile:
-      ...     config.write(configfile)
+      ...     config_override.write(configfile)
       ...
-      >>> config = configparser.ConfigParser()
-      >>> config.read(['example.ini','override.ini'])
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override.read(['example.ini','override.ini'])
       ['example.ini', 'override.ini']
-      >>> print(config.get('DEFAULT', 'ServerAliveInterval'))
+      >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
       -1
 
    .. versionchanged:: 3.1
