@@ -812,20 +812,8 @@ class StructTest(unittest.TestCase):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
 
+    @unittest.skipUnless(have_c_complex, "requires C11 complex type")
     def test_c_complex_round_trip(self):
-        if not have_c_complex:
-            msg1 = "'E' format not supported on this system"
-            msg2 = "'C' format not supported on this system"
-            with self.assertRaisesRegex(struct.error, msg1):
-                struct.pack('E', 1j)
-            with self.assertRaisesRegex(struct.error, msg1):
-                struct.unpack('E', b'1')
-            with self.assertRaisesRegex(struct.error, msg2):
-                struct.pack('C', 1j)
-            with self.assertRaisesRegex(struct.error, msg2):
-                struct.unpack('C', b'1')
-            return
-
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
         for z in values:
@@ -833,6 +821,19 @@ class StructTest(unittest.TestCase):
                 with self.subTest(z=z, format=f):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
+
+    @unittest.skipIf(have_c_complex, "requires no C11 complex type")
+    def test_c_complex_error(self):
+        msg1 = "'E' format not supported on this system"
+        msg2 = "'C' format not supported on this system"
+        with self.assertRaisesRegex(struct.error, msg1):
+            struct.pack('E', 1j)
+        with self.assertRaisesRegex(struct.error, msg1):
+            struct.unpack('E', b'1')
+        with self.assertRaisesRegex(struct.error, msg2):
+            struct.pack('C', 1j)
+        with self.assertRaisesRegex(struct.error, msg2):
+            struct.unpack('C', b'1')
 
 
 class UnpackIteratorTest(unittest.TestCase):
