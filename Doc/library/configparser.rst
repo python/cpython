@@ -984,6 +984,24 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`!get*()` method on the parser
    object and section proxies.
 
+   It is possible to read several configurations into a single
+   :class:`ConfigParser`, where the most recently added configuration has the
+   highest priority. Any conflicting keys are taken from the more recent
+   configuration while the previously existing keys are retained. The example
+   below reads in an `override.ini` file, which will override any conflicting
+   keys from the `example.ini` file.
+
+   .. code-block:: ini
+
+      [DEFAULT]
+      ServerAliveInterval = -1
+
+   .. doctest::
+
+      >>> config = configparser.ConfigParser()
+      >>> config.read(['example.ini','override.ini'])
+      >>> print(config.get('DEFAULT', 'ServerAliveInterval')) # 45 -> -1
+
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
