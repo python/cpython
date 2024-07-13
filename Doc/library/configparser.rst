@@ -164,7 +164,7 @@ keys from the ``example.ini`` file.
    ...     config_override.write(configfile)
    ...
    >>> config_override = configparser.ConfigParser()
-   >>> config_override.read(['example.ini','override.ini'])
+   >>> config_override.read(['example.ini', 'override.ini'])
    ['example.ini', 'override.ini']
    >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
    -1
@@ -1009,7 +1009,7 @@ ConfigParser Objects
       ...     config_override.write(configfile)
       ...
       >>> config_override = configparser.ConfigParser()
-      >>> config_override.read(['example.ini','override.ini'])
+      >>> config_override.read(['example.ini', 'override.ini'])
       ['example.ini', 'override.ini']
       >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
       -1
