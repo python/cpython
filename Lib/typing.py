@@ -3763,7 +3763,7 @@ def copy_kwargs(
 
     Use this decorator enhancing an upstream function while keeping its
     call signature.
-    Returns the original function with the *source_funcs* call signature.
+    Returns the original function with the source_func's call signature.
 
     Usage::
 
