@@ -324,6 +324,10 @@ def quote(s):
     """Return a shell-escaped version of the string *s*."""
     if not s:
         return "''"
+    
+    if isinstance(s, bytes):
+        s = s.decode('utf-8')
+        
     if _find_unsafe(s) is None:
         return s
 
