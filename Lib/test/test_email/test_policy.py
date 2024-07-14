@@ -398,6 +398,9 @@ class TestConcretePolicies(unittest.TestCase):
                           instance.header_store_parse,
                           'From', 'spam\negg@foo.py')
 
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Subject', 'te\nst')
 
 if __name__ == '__main__':
     unittest.main()
