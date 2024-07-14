@@ -1502,3 +1502,125 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    :c:func:`PyUnicode_InternInPlace`, returning either a new Unicode string
    object that has been interned, or a new ("owned") reference to an earlier
    interned string object with the same value.
+
+PyUnicodeWriter
+^^^^^^^^^^^^^^^
+
+The :c:type:`PyUnicodeWriter` API can be used to create a Python :class:`str`
+object.
+
+.. versionadded:: 3.14
+
+.. c:type:: PyUnicodeWriter
+
+   A Unicode writer instance.
+
+   The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
+   success, or :c:func:`PyUnicodeWriter_Discard` on error.
+
+.. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
+
+   Create a Unicode writer instance.
+
+   Set an exception and return ``NULL`` on error.
+
+.. c:function:: PyObject* PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
+
+   Return the final Python :class:`str` object and destroy the writer instance.
+
+   Set an exception and return ``NULL`` on error.
+
+.. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
+
+   Discard the internal Unicode buffer and destroy the writer instance.
+
+.. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
+
+   Write the single Unicode character *ch* into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
+
+   Decode the string *str* from UTF-8 in strict mode and write the output into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
+
+.. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
+
+   Writer the wide string *str* into *writer*.
+
+   *size* is a number of wide characters. If *size* is equal to ``-1``, call
+   ``wcslen(str)`` to get the string length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+
+   Writer the UCS4 string *str* into *writer*.
+
+   *size* is a number of UCS4 characters.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
+
+   Call :c:func:`PyObject_Str` on *obj* and write the output into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
+
+   Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
+
+   Write the substring ``str[start:end]`` into *writer*.
+
+   *str* must be Python :class:`str` object. *start* must be greater than or
+   equal to 0, and less than or equal to *end*. *end* must be less than or
+   equal to *str* length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
+
+   Similar to :c:func:`PyUnicode_FromFormat`, but write the output directly into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer, const char *string, Py_ssize_t length, const char *errors, Py_ssize_t *consumed)
+
+   Decode the string *str* from UTF-8 with *errors* error handler and write the
+   output into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   *errors* is an error handler name, such as ``"replace"``. If *errors* is
+   ``NULL``, use the strict error handler.
+
+   If *consumed* is not ``NULL``, set *\*consumed* to the number of decoded
+   bytes on success.
+   If *consumed* is ``NULL``, treat trailing incomplete UTF-8 byte sequences
+   as an error.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   See also :c:func:`PyUnicodeWriter_WriteUTF8`.

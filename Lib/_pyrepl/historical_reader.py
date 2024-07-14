@@ -27,7 +27,7 @@ from .reader import Reader
 
 
 if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+    from .types import SimpleContextManager, KeySpec, CommandName
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
@@ -264,6 +264,7 @@ class HistoricalReader(Reader):
         self.historyi = i
         self.pos = len(self.buffer)
         self.dirty = True
+        self.last_refresh_cache.invalidated = True
 
     def get_item(self, i: int) -> str:
         if i != len(self.history):

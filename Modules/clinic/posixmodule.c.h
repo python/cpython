@@ -2117,7 +2117,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(s), },
+        .ob_item = { _Py_LATIN1_CHR('s'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -12152,6 +12152,24 @@ os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os__is_inputhook_installed_impl(module);
 }
 
+PyDoc_STRVAR(os__create_environ__doc__,
+"_create_environ($module, /)\n"
+"--\n"
+"\n"
+"Create the environment dictionary.");
+
+#define OS__CREATE_ENVIRON_METHODDEF    \
+    {"_create_environ", (PyCFunction)os__create_environ, METH_NOARGS, os__create_environ__doc__},
+
+static PyObject *
+os__create_environ_impl(PyObject *module);
+
+static PyObject *
+os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__create_environ_impl(module);
+}
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -12819,4 +12837,4 @@ os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=faaa5e5ffb7b165d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31dc3bb3cba924d0 input=a9049054013a1b77]*/

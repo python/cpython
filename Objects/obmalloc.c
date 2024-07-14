@@ -386,8 +386,16 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 )
 {
 #ifdef MS_WINDOWS
+    /* Unlike free(), VirtualFree() does not special-case NULL to noop. */
+    if (ptr == NULL) {
+        return;
+    }
     VirtualFree(ptr, 0, MEM_RELEASE);
 #elif defined(ARENAS_USE_MMAP)
+    /* Unlike free(), munmap() does not special-case NULL to noop. */
+    if (ptr == NULL) {
+        return;
+    }
     munmap(ptr, size);
 #else
     free(ptr);
@@ -1346,7 +1354,7 @@ static int running_on_valgrind = -1;
 typedef struct _obmalloc_state OMState;
 
 /* obmalloc state for main interpreter and shared by all interpreters without
- * their own obmalloc state.  By not explicitly initalizing this structure, it
+ * their own obmalloc state.  By not explicitly initializing this structure, it
  * will be allocated in the BSS which is a small performance win.  The radix
  * tree arrays are fairly large but are sparsely used.  */
 static struct _obmalloc_state obmalloc_state_main;

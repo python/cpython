@@ -16,7 +16,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
-#include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -627,10 +626,7 @@ PyOS_AfterFork_Parent(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyImport_ReleaseLock(interp) <= 0) {
-        Py_FatalError("failed releasing import lock after fork");
-    }
-
+    _PyImport_ReleaseLock(interp);
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
@@ -675,10 +671,7 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
-    status = _PyImport_ReInitLock(tstate->interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto fatal_error;
-    }
+    _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
 
@@ -7880,6 +7873,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 }
 #endif /* HAVE_FORK */
 
+#if defined(HAVE_FORK1) || defined(HAVE_FORKPTY) || defined(HAVE_FORK)
 // Common code to raise a warning if we detect there is more than one thread
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
@@ -7983,6 +7977,7 @@ warn_about_fork_with_threads(const char* name)
         PyErr_Clear();
     }
 }
+#endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
 /*[clinic input]
@@ -12548,6 +12543,7 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 #endif /* defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV) */
 
 
+#ifdef HAVE_DEVICE_MACROS
 static PyObject *
 major_minor_conv(unsigned int value)
 {
@@ -12570,7 +12566,6 @@ major_minor_check(dev_t value)
     return (dev_t)(unsigned int)value == value;
 }
 
-#ifdef HAVE_DEVICE_MACROS
 /*[clinic input]
 os.major
 
@@ -16816,6 +16811,20 @@ os__is_inputhook_installed_impl(PyObject *module)
     return PyBool_FromLong(PyOS_InputHook != NULL);
 }
 
+/*[clinic input]
+os._create_environ
+
+Create the environment dictionary.
+[clinic start generated code]*/
+
+static PyObject *
+os__create_environ_impl(PyObject *module)
+/*[clinic end generated code: output=19d9039ab14f8ad4 input=a4c05686b34635e8]*/
+{
+    return convertenviron();
+}
+
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -17030,6 +17039,7 @@ static PyMethodDef posix_methods[] = {
     OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     OS__INPUTHOOK_METHODDEF
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
+    OS__CREATE_ENVIRON_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

@@ -1307,6 +1307,9 @@ PEP 594: dead batteries (and other module removals)
 
   * :mod:`!imghdr`: use the projects :pypi:`filetype`,
     :pypi:`puremagic`, or :pypi:`python-magic` instead.
+    The ``puremagic.what()`` function can be used to replace
+    the ``imghdr.what()`` function for all file formats that
+    were supported by ``imghdr``.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!mailcap`.
@@ -1728,11 +1731,6 @@ Pending Removal in Python 3.14
   public API.
   (Contributed by Gregory P. Smith in :gh:`88168`.)
 
-* :mod:`xml.etree.ElementTree`: Testing the truth value of an
-  :class:`~xml.etree.ElementTree.Element` is deprecated and will raise an
-  exception in Python 3.14.
-
-
 Pending Removal in Python 3.15
 ------------------------------
 
@@ -1936,6 +1934,11 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
   writes.
+
+* :mod:`xml.etree.ElementTree`: Testing the truth value of an
+  :class:`~xml.etree.ElementTree.Element` is deprecated. In a future release it
+  it will always return ``True``. Prefer explicit ``len(elem)`` or
+  ``elem is not None`` tests instead.
 
 * :meth:`zipimport.zipimporter.load_module` is deprecated:
   use :meth:`~zipimport.zipimporter.exec_module` instead.
@@ -2172,6 +2175,11 @@ New Features
   :c:func:`PyEval_GetLocals` return :term:`strong references <strong reference>`
   rather than borrowed references. (Added as part of :pep:`667`.)
 
+* Add :c:type:`PyMutex` API, a lightweight mutex that occupies a single byte.
+  The :c:func:`PyMutex_Lock` function will release the GIL (if currently held)
+  if the operation needs to block.
+  (Contributed by Sam Gross in :gh:`108724`.)
+
 Build Changes
 =============
 
@@ -2253,6 +2261,12 @@ Changes in the Python API
   The value of the :attr:`!mode` attribute of the readable file-like object
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
+* :class:`functools.partial` now emits a :exc:`FutureWarning` when it is
+  used as a method.
+  Its behavior will be changed in future Python versions.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`121027`.)
 
 .. _pep667-porting-notes-py:
 

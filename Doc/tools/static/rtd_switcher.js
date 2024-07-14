@@ -6,42 +6,9 @@
 
  document.addEventListener("readthedocs-addons-data-ready", function(event) {
    const config = event.detail.data()
-
-   // Add some mocked hardcoded versions pointing to the official
-   // documentation while migrating to Read the Docs.
-   // These are only for testing purposes.
-   // TODO: remove them when managing all the versions on Read the Docs,
-   // since all the "active, built and not hidden" versions will be shown automatically.
-   let versions = config.versions.active.concat([
-       {
-           slug: "dev (3.14)",
-           urls: {
-               documentation: "https://docs.python.org/3.14/",
-           }
-       },
-       {
-           slug: "dev (3.13)",
-           urls: {
-               documentation: "https://docs.python.org/3.13/",
-           }
-       },
-       {
-           slug: "3.12",
-           urls: {
-               documentation: "https://docs.python.org/3.12/",
-           }
-       },
-       {
-           slug: "3.11",
-           urls: {
-               documentation: "https://docs.python.org/3.11/",
-           }
-       },
-   ]);
-
    const versionSelect = `
    <select id="version_select">
-   ${ versions.map(
+   ${ config.versions.active.map(
        (version) => `
        <option
            value="${ version.slug }"
