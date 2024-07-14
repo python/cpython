@@ -410,7 +410,7 @@ def ast_repr_get_test_cases() -> list[str]:
     return exec_tests + eval_tests
 
 
-def ast_repr_update_snaphots() -> None:
+def ast_repr_update_snapshots() -> None:
     data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
     ast_repr_data_file.write_text("\n".join(data))
 
@@ -3429,7 +3429,7 @@ def main():
         print("main()")
         raise SystemExit
     elif sys.argv[1] == '--snapshot-update':
-        ast_repr_update_snaphots()
+        ast_repr_update_snapshots()
         sys.exit(0)
     unittest.main()
 
