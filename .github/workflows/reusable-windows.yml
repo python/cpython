@@ -2,6 +2,7 @@ on:
   workflow_call:
     inputs:
       free-threading:
+        description: Whether to use no-GIL mode
         required: false
         type: boolean
         default: false
