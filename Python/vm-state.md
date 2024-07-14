@@ -9,7 +9,7 @@
 
 # Frame state
 
-Almost all interpreter state is nominally stored in the frame structure.
+Almost all interpreter state is typically stored in the frame structure.
 A pointer to the current frame is held in `frame`. It contains:
 
 - **local variables** (a.k.a. "fast locals")
@@ -20,7 +20,7 @@ A pointer to the current frame is held in `frame`. It contains:
 - **return offset**, only relevant during calls, telling the interpreter where to return
 
 There are some other fields in the frame structure of less importance; notably frames are linked together in a singly-linked list via the `previous` pointer, pointing from callee to caller.
-The frame also holds a pointer to the current function, globals, builtins, and the locals converted to dict (used to support the `locals()` built-in).
+The frame also holds a pointer to the current function, globals, builtins, and the locals converted to a dict (used to support the `locals()` built-in).
 
 ## Fast locals and evaluation stack
 
