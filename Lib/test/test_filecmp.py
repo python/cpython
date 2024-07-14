@@ -1,5 +1,6 @@
 import filecmp
 import os
+import re
 import shutil
 import tempfile
 import unittest
@@ -276,6 +277,17 @@ class DirCompareTestCase(unittest.TestCase):
             "Common subdirectories : ['subdir']",
         ]
         self._assert_report(d.report, expected_report)
+
+    def test_dircmp_shallow_is_keyword_only(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            re.escape("dircmp.__init__() takes from 3 to 5 positional arguments but 6 were given"),
+        ):
+            filecmp.dircmp(self.dir, self.dir_same, None, None, True)
+        self.assertIsInstance(
+            filecmp.dircmp(self.dir, self.dir_same, None, None, shallow=True),
+            filecmp.dircmp,
+        )
 
     def test_dircmp_subdirs_type(self):
         """Check that dircmp.subdirs respects subclassing."""

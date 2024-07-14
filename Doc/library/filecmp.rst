@@ -70,7 +70,7 @@ The :mod:`filecmp` module defines the following functions:
 The :class:`dircmp` class
 -------------------------
 
-.. class:: dircmp(a, b, ignore=None, hide=None, shallow=True)
+.. class:: dircmp(a, b, ignore=None, hide=None, *, shallow=True)
 
    Construct a new directory comparison object, to compare the directories *a*
    and *b*.  *ignore* is a list of names to ignore, and defaults to

@@ -88,7 +88,7 @@ def _do_cmp(f1, f2):
 class dircmp:
     """A class that manages the comparison of 2 directories.
 
-    dircmp(a, b, ignore=None, hide=None, shallow=True)
+    dircmp(a, b, ignore=None, hide=None, *, shallow=True)
       A and B are directories.
       IGNORE is a list of names to ignore,
         defaults to DEFAULT_IGNORES.
@@ -124,7 +124,7 @@ class dircmp:
        in common_dirs.
      """
 
-    def __init__(self, a, b, ignore=None, hide=None, shallow=True): # Initialize
+    def __init__(self, a, b, ignore=None, hide=None, *, shallow=True): # Initialize
         self.left = a
         self.right = b
         if hide is None:
@@ -201,7 +201,7 @@ class dircmp:
             a_x = os.path.join(self.left, x)
             b_x = os.path.join(self.right, x)
             self.subdirs[x]  = self.__class__(a_x, b_x, self.ignore, self.hide,
-                                              self.shallow)
+                                              shallow=self.shallow)
 
     def phase4_closure(self): # Recursively call phase4() on subdirectories
         self.phase4()
