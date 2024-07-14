@@ -733,13 +733,7 @@ PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
  * Third party code unintentionally rely on problematic fpcasts. The call
  * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
  */
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    _PyCFunctionWithKeywords_TrampolineCall( \
-        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
-extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
-    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
-#else
+#if !(defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE))
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     (meth)((self), (args))
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
