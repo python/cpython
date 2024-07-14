@@ -181,13 +181,13 @@ jobs:
   build_windows:
     name: 'Windows'
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    if: fromJSON(needs.check_source.outputs.run_tests)
     uses: ./.github/workflows/reusable-windows.yml
 
   build_windows_free_threading:
     name: 'Windows (free-threading)'
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    if: fromJSON(needs.check_source.outputs.run_tests)
     uses: ./.github/workflows/reusable-windows.yml
     with:
       free-threading: true
