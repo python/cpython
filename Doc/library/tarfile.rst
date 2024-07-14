@@ -1346,7 +1346,7 @@ parameter in :meth:`TarFile.add`::
     tar.add("foo", filter=reset)
     tar.close()
 
-How to create and write the archive to stdout using 
+How to create and write the archive to stdout using
 :data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
 in :meth:`TarFile.add`::
 
