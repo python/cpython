@@ -34,6 +34,8 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 /* Forward declaration */
 Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
                                                    char *str);
+static void* _PyBytesWriter_Resize(_PyBytesWriter *writer,
+                                   void *str, Py_ssize_t size);
 
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
@@ -3505,7 +3507,18 @@ PyBytesWriter_CheckPtr(PyBytesWriter *pub_writer, char *str)
 }
 
 
-void*
+/* Resize the buffer to make it larger.
+   The new buffer may be larger than size bytes because of overallocation.
+   Return the updated current pointer inside the buffer.
+   Raise an exception and return NULL on error.
+
+   Note: size must be greater than the number of allocated bytes in the writer.
+
+   This function doesn't use the writer minimum size (min_size attribute).
+
+   See also _PyBytesWriter_Prepare().
+*/
+static void*
 _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 {
     assert(_PyBytesWriter_CheckConsistency(writer, str));

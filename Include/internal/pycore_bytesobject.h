@@ -120,21 +120,6 @@ PyAPI_FUNC(void*) _PyBytesWriter_Prepare(_PyBytesWriter *writer,
     void *str,
     Py_ssize_t size);
 
-/* Resize the buffer to make it larger.
-   The new buffer may be larger than size bytes because of overallocation.
-   Return the updated current pointer inside the buffer.
-   Raise an exception and return NULL on error.
-
-   Note: size must be greater than the number of allocated bytes in the writer.
-
-   This function doesn't use the writer minimum size (min_size attribute).
-
-   See also _PyBytesWriter_Prepare().
-   */
-PyAPI_FUNC(void*) _PyBytesWriter_Resize(_PyBytesWriter *writer,
-    void *str,
-    Py_ssize_t size);
-
 /* Write bytes.
    Raise an exception and return NULL on error. */
 PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
