@@ -6,7 +6,7 @@ import os
 from io import BytesIO
 from pydoc import locate
 
-from test.support import os_helper
+from test.support import os_helper, import_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
@@ -178,7 +178,9 @@ class TestCase(unittest.TestCase):
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+        with shelve.open(self.fn,
+                         serializer=serializer,
+                         deserializer=deserializer) as s:
             num = 1
             s['number'] = num
             self.assertEqual(s['number'], type(num))
@@ -190,7 +192,9 @@ class TestCase(unittest.TestCase):
             def deserializer(data):
                 pass
 
-            with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+            with shelve.open(self.fn,
+                             serializer=serializer,
+                             deserializer=deserializer) as s:
                 s['number'] = 100
                 self.assertEqual(s['number'], 100)
 
@@ -201,23 +205,84 @@ class TestCase(unittest.TestCase):
             def deserializer(data):
                 return BytesIO(data).read().decode("utf-8")
 
-            with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+            with shelve.open(self.fn,
+                             serializer=serializer,
+                             deserializer=deserializer) as s:
                 s['number'] = 100
                 self.assertEqual(s['number'], 100)
+
+    def test_custom_serializer_and_deserializer_bsd_db_shelf(self):
+        berkeleydb = import_helper.import_module('berkeleydb')
+
+        def serializer(obj, protocol=None):
+            return bytes(f"{type(obj).__name__}", 'utf-8')
+
+        def deserializer(data):
+            value = BytesIO(data).read()
+            return locate(value.decode("utf-8"))
+
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        with shelve.BsdDbShelf(berkeleydb.hashopen(self.fn),
+                               serializer=serializer,
+                               deserializer=deserializer) as s:
+            num = 1
+            s['number'] = num
+            self.assertEqual(s['number'], type(num))
+
+        with self.assertRaises(AssertionError):
+            def serializer(obj, protocol=None):
+                return bytes(f"{type(obj).__name__}", 'utf-8')
+
+            def deserializer(data):
+                pass
+
+            with shelve.BsdDbShelf(berkeleydb.hashopen(self.fn),
+                                   serializer=serializer,
+                                   deserializer=deserializer) as s:
+                s['number'] = 100
+                self.assertEqual(s['number'], 100)
+
+        def serializer(obj, protocol=None):
+            pass
+
+        def deserializer(data):
+            return BytesIO(data).read().decode("utf-8")
+
+        with shelve.BsdDbShelf(berkeleydb.hashopen(self.fn),
+                               serializer=serializer,
+                               deserializer=deserializer) as s:
+            s['number'] = 100
+            self.assertNotEqual(s['number'], 100)
+            self.assertEqual(s['number'], "")
 
     def test_missing_custom_deserializer(self):
         def serializer(obj, protocol=None):
             pass
 
         with self.assertRaises(shelve.ShelveError):
-            shelve.Shelf({}, protocol=2, writeback=False, serializer=serializer)
+            shelve.Shelf({},
+                         protocol=2, writeback=False, serializer=serializer)
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.BsdDbShelf({},
+                              protocol=2,
+                              writeback=False, serializer=serializer)
 
     def test_missing_custom_serializer(self):
         def deserializer(data):
             pass
 
         with self.assertRaises(shelve.ShelveError):
-            shelve.Shelf({}, protocol=2, writeback=False, deserializer=deserializer)
+            shelve.Shelf({},
+                         protocol=2,
+                         writeback=False, deserializer=deserializer)
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.BsdDbShelf({},
+                              protocol=2,
+                              writeback=False, deserializer=deserializer)
 
 
 class TestShelveBase:
