@@ -21,6 +21,7 @@ from .support import (
     more_lines,
     multiline_input,
     code_to_events,
+    clean_screen
 )
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
@@ -483,6 +484,7 @@ class TestPyReplOutput(TestCase):
         console = FakeConsole(events)
         config = ReadlineConfig(readline_completer=None)
         reader = ReadlineAlikeReader(console=console, config=config)
+        reader.can_colorize = False
         return reader
 
     def test_basic(self):
@@ -490,6 +492,7 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
 
     def test_multiline_edit(self):
         events = itertools.chain(
@@ -519,8 +522,10 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "def f():\n    ...\n    ")
+        self.assertEqual(clean_screen(reader.screen), "def f():\n    ...")
         output = multiline_input(reader)
         self.assertEqual(output, "def g():\n    pass\n    ")
+        self.assertEqual(clean_screen(reader.screen), "def g():\n    pass")
 
     def test_history_navigation_with_up_arrow(self):
         events = itertools.chain(
@@ -539,12 +544,40 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assertEqual(clean_screen(reader.screen), "2+2")
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assertEqual(clean_screen(reader.screen), "2+2")
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
+
+    def test_history_with_multiline_entries(self):
+        code = "def foo():\nx = 1\ny = 2\nz = 3\n\ndef bar():\nreturn 42\n\n"
+        events = list(itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ]
+        ))
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        output = multiline_input(reader)
+        output = multiline_input(reader)
+        self.assertEqual(
+            clean_screen(reader.screen),
+            'def foo():\n    x = 1\n    y = 2\n    z = 3'
+        )
+        self.assertEqual(output, "def foo():\n    x = 1\n    y = 2\n    z = 3\n    ")
+
 
     def test_history_navigation_with_down_arrow(self):
         events = itertools.chain(
@@ -562,6 +595,7 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
 
     def test_history_search(self):
         events = itertools.chain(
@@ -578,18 +612,23 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assertEqual(clean_screen(reader.screen), "2+2")
         output = multiline_input(reader)
         self.assertEqual(output, "3+3")
+        self.assertEqual(clean_screen(reader.screen), "3+3")
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
 
     def test_control_character(self):
         events = code_to_events("c\x1d\n")
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, "c\x1d")
+        self.assertEqual(clean_screen(reader.screen), "c")
 
 
 class TestPyReplCompleter(TestCase):
@@ -942,20 +981,23 @@ class TestMain(TestCase):
             text=True,
             close_fds=True,
             env=env if env else os.environ,
-       )
+        )
+        os.close(slave_fd)
         if isinstance(repl_input, list):
             repl_input = "\n".join(repl_input) + "\n"
         os.write(master_fd, repl_input.encode("utf-8"))
 
         output = []
-        while select.select([master_fd], [], [], 0.5)[0]:
-            data = os.read(master_fd, 1024).decode("utf-8")
-            if not data:
+        while select.select([master_fd], [], [], SHORT_TIMEOUT)[0]:
+            try:
+                data = os.read(master_fd, 1024).decode("utf-8")
+                if not data:
+                    break
+            except OSError:
                 break
             output.append(data)
 
         os.close(master_fd)
-        os.close(slave_fd)
         try:
             exit_code = process.wait(timeout=SHORT_TIMEOUT)
         except subprocess.TimeoutExpired:

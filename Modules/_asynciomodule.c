@@ -1666,7 +1666,6 @@ FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
 
-    // FutureIter is a heap type so any subclass must also be a heap type.
     assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
 
     PyObject_GC_UnTrack(it);
@@ -2055,14 +2054,16 @@ register_eager_task(asyncio_state *state, PyObject *task)
 }
 
 static void
-unregister_task_lock_held(asyncio_state *state, TaskObj *task)
+unregister_task(asyncio_state *state, TaskObj *task)
 {
+    ASYNCIO_STATE_LOCK(state);
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
     if (task->next == NULL) {
         // not registered
         assert(task->prev == NULL);
         assert(state->asyncio_tasks.head != task);
+        ASYNCIO_STATE_UNLOCK(state);
         return;
     }
     task->next->prev = task->prev;
@@ -2075,13 +2076,6 @@ unregister_task_lock_held(asyncio_state *state, TaskObj *task)
     task->next = NULL;
     task->prev = NULL;
     assert(state->asyncio_tasks.head != task);
-}
-
-static void
-unregister_task(asyncio_state *state, TaskObj *task)
-{
-    ASYNCIO_STATE_LOCK(state);
-    unregister_task_lock_held(state, task);
     ASYNCIO_STATE_UNLOCK(state);
 }
 
