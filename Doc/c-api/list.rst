@@ -43,7 +43,7 @@ List Objects
       setting all items to a real object with :c:func:`PyList_SetItem` or
       :c:func:`PyList_SET_ITEM()`. The following APIs are safe APIs before
       the list is fully initialized.
-      - :c:func:`PyList_SetItem`
+      - :c:func:`PyList_SetItem()`
       - :c:func:`PyList_SET_ITEM()`
 
 
