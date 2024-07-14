@@ -388,7 +388,7 @@ jobs:
         path: ./hypothesis
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
         restore-keys: |
-          - hypothesis-database-
+          hypothesis-database-
     - name: "Run tests"
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
