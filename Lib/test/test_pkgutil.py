@@ -550,8 +550,6 @@ class ExtendPathTests(unittest.TestCase):
                 '#comment'
             ]))
 
-        # A *.pkg file is trusted at face value. Apart from checking for duplicates, all entries found in a *.pkg
-        # file are added as-is to the resulting paths, regardless of whether they exist on the filesystem.
         extended_paths = pkgutil.extend_path(sys.path, 'bar')
 
         self.assertEqual(extended_paths[:-2], sys.path)
