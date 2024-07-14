@@ -5,7 +5,8 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
+from pathlib._os import UnsupportedOperation
+from pathlib._abc import ParserBase, PurePathBase, PathBase
 import posixpath
 
 from test.support import is_wasi
@@ -50,6 +51,7 @@ class ParserBaseTest(unittest.TestCase):
         self.assertRaises(e, m.join, 'foo')
         self.assertRaises(e, m.split, 'foo')
         self.assertRaises(e, m.splitdrive, 'foo')
+        self.assertRaises(e, m.splitext, 'foo')
         self.assertRaises(e, m.normcase, 'foo')
         self.assertRaises(e, m.isabs, 'foo')
 
@@ -789,8 +791,12 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/.hg.rc').suffix, '.rc')
         self.assertEqual(P('a/b.tar.gz').suffix, '.gz')
         self.assertEqual(P('/a/b.tar.gz').suffix, '.gz')
-        self.assertEqual(P('a/Some name. Ending with a dot.').suffix, '')
-        self.assertEqual(P('/a/Some name. Ending with a dot.').suffix, '')
+        self.assertEqual(P('a/trailing.dot.').suffix, '.')
+        self.assertEqual(P('/a/trailing.dot.').suffix, '.')
+        self.assertEqual(P('a/..d.o.t..').suffix, '.')
+        self.assertEqual(P('a/inn.er..dots').suffix, '.dots')
+        self.assertEqual(P('photo').suffix, '')
+        self.assertEqual(P('photo.jpg').suffix, '.jpg')
 
     @needs_windows
     def test_suffix_windows(self):
@@ -807,8 +813,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('c:/a/.hg.rc').suffix, '.rc')
         self.assertEqual(P('c:a/b.tar.gz').suffix, '.gz')
         self.assertEqual(P('c:/a/b.tar.gz').suffix, '.gz')
-        self.assertEqual(P('c:a/Some name. Ending with a dot.').suffix, '')
-        self.assertEqual(P('c:/a/Some name. Ending with a dot.').suffix, '')
+        self.assertEqual(P('c:a/trailing.dot.').suffix, '.')
+        self.assertEqual(P('c:/a/trailing.dot.').suffix, '.')
         self.assertEqual(P('//My.py/Share.php').suffix, '')
         self.assertEqual(P('//My.py/Share.php/a/b').suffix, '')
 
@@ -828,8 +834,12 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/.hg.rc').suffixes, ['.rc'])
         self.assertEqual(P('a/b.tar.gz').suffixes, ['.tar', '.gz'])
         self.assertEqual(P('/a/b.tar.gz').suffixes, ['.tar', '.gz'])
-        self.assertEqual(P('a/Some name. Ending with a dot.').suffixes, [])
-        self.assertEqual(P('/a/Some name. Ending with a dot.').suffixes, [])
+        self.assertEqual(P('a/trailing.dot.').suffixes, ['.dot', '.'])
+        self.assertEqual(P('/a/trailing.dot.').suffixes, ['.dot', '.'])
+        self.assertEqual(P('a/..d.o.t..').suffixes, ['.o', '.t', '.', '.'])
+        self.assertEqual(P('a/inn.er..dots').suffixes, ['.er', '.', '.dots'])
+        self.assertEqual(P('photo').suffixes, [])
+        self.assertEqual(P('photo.jpg').suffixes, ['.jpg'])
 
     @needs_windows
     def test_suffixes_windows(self):
@@ -848,8 +858,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('c:/a/b.tar.gz').suffixes, ['.tar', '.gz'])
         self.assertEqual(P('//My.py/Share.php').suffixes, [])
         self.assertEqual(P('//My.py/Share.php/a/b').suffixes, [])
-        self.assertEqual(P('c:a/Some name. Ending with a dot.').suffixes, [])
-        self.assertEqual(P('c:/a/Some name. Ending with a dot.').suffixes, [])
+        self.assertEqual(P('c:a/trailing.dot.').suffixes, ['.dot', '.'])
+        self.assertEqual(P('c:/a/trailing.dot.').suffixes, ['.dot', '.'])
 
     def test_stem_empty(self):
         P = self.cls
@@ -865,8 +875,11 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('a/.hgrc').stem, '.hgrc')
         self.assertEqual(P('a/.hg.rc').stem, '.hg')
         self.assertEqual(P('a/b.tar.gz').stem, 'b.tar')
-        self.assertEqual(P('a/Some name. Ending with a dot.').stem,
-                         'Some name. Ending with a dot.')
+        self.assertEqual(P('a/trailing.dot.').stem, 'trailing.dot')
+        self.assertEqual(P('a/..d.o.t..').stem, '..d.o.t.')
+        self.assertEqual(P('a/inn.er..dots').stem, 'inn.er.')
+        self.assertEqual(P('photo').stem, 'photo')
+        self.assertEqual(P('photo.jpg').stem, 'photo')
 
     @needs_windows
     def test_stem_windows(self):
@@ -880,8 +893,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('c:a/.hgrc').stem, '.hgrc')
         self.assertEqual(P('c:a/.hg.rc').stem, '.hg')
         self.assertEqual(P('c:a/b.tar.gz').stem, 'b.tar')
-        self.assertEqual(P('c:a/Some name. Ending with a dot.').stem,
-                         'Some name. Ending with a dot.')
+        self.assertEqual(P('c:a/trailing.dot.').stem, 'trailing.dot')
+
     def test_with_name_common(self):
         P = self.cls
         self.assertEqual(P('a/b').with_name('d.xml'), P('a/d.xml'))
@@ -929,16 +942,16 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('a/b.py').with_stem('d'), P('a/d.py'))
         self.assertEqual(P('/a/b.py').with_stem('d'), P('/a/d.py'))
         self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
-        self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d'))
-        self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d'))
+        self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d.'))
+        self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d.'))
 
     @needs_windows
     def test_with_stem_windows(self):
         P = self.cls
         self.assertEqual(P('c:a/b').with_stem('d'), P('c:a/d'))
         self.assertEqual(P('c:/a/b').with_stem('d'), P('c:/a/d'))
-        self.assertEqual(P('c:a/Dot ending.').with_stem('d'), P('c:a/d'))
-        self.assertEqual(P('c:/a/Dot ending.').with_stem('d'), P('c:/a/d'))
+        self.assertEqual(P('c:a/Dot ending.').with_stem('d'), P('c:a/d.'))
+        self.assertEqual(P('c:/a/Dot ending.').with_stem('d'), P('c:/a/d.'))
         self.assertRaises(ValueError, P('c:').with_stem, 'd')
         self.assertRaises(ValueError, P('c:/').with_stem, 'd')
         self.assertRaises(ValueError, P('//My/Share').with_stem, 'd')
@@ -974,6 +987,11 @@ class DummyPurePathTest(unittest.TestCase):
         # Stripping suffix.
         self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
         self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
+        # Single dot
+        self.assertEqual(P('a/b').with_suffix('.'), P('a/b.'))
+        self.assertEqual(P('/a/b').with_suffix('.'), P('/a/b.'))
+        self.assertEqual(P('a/b.py').with_suffix('.'), P('a/b.'))
+        self.assertEqual(P('/a/b.py').with_suffix('.'), P('/a/b.'))
 
     @needs_windows
     def test_with_suffix_windows(self):
@@ -1012,7 +1030,6 @@ class DummyPurePathTest(unittest.TestCase):
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
-        self.assertRaises(ValueError, P('a/b').with_suffix, '.')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/.gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, 'c/d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
@@ -1480,7 +1497,7 @@ class DummyPath(PathBase):
         if path in self._files:
             raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
         elif path in self._directories:
-            return (self / name for name in self._directories[path])
+            return iter([self / name for name in self._directories[path]])
         else:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
@@ -1500,6 +1517,37 @@ class DummyPath(PathBase):
                 raise FileNotFoundError(errno.ENOENT, "File not found", str(self.parent)) from None
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
+
+    def unlink(self, missing_ok=False):
+        path_obj = self.parent.resolve(strict=True) / self.name
+        path = str(path_obj)
+        name = path_obj.name
+        parent = str(path_obj.parent)
+        if path in self._directories:
+            raise IsADirectoryError(errno.EISDIR, "Is a directory", path)
+        elif path in self._files:
+            self._directories[parent].remove(name)
+            del self._files[path]
+        elif path in self._symlinks:
+            self._directories[parent].remove(name)
+            del self._symlinks[path]
+        elif not missing_ok:
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+
+    def rmdir(self):
+        path_obj = self.parent.resolve(strict=True) / self.name
+        path = str(path_obj)
+        if path in self._files or path in self._symlinks:
+            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
+        elif path not in self._directories:
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+        elif self._directories[path]:
+            raise OSError(errno.ENOTEMPTY, "Directory not empty", path)
+        else:
+            name = path_obj.name
+            parent = str(path_obj.parent)
+            self._directories[parent].remove(name)
+            del self._directories[path]
 
 
 class DummyPathTest(DummyPurePathTest):
@@ -1679,6 +1727,258 @@ class DummyPathTest(DummyPurePathTest):
         (p / 'fileA').write_text('abcde\nfghlk\n\rmnopq')
         self.assertEqual((p / 'fileA').read_bytes(),
                           b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
+
+    def test_copy_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertEqual(source.read_text(), target.read_text())
+
+    def test_copy_directory(self):
+        base = self.cls(self.base)
+        source = base / 'dirA'
+        target = base / 'copyA'
+        with self.assertRaises(OSError):
+            source.copy(target)
+
+    @needs_symlinks
+    def test_copy_symlink_follow_symlinks_true(self):
+        base = self.cls(self.base)
+        source = base / 'linkA'
+        target = base / 'copyA'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertFalse(target.is_symlink())
+        self.assertEqual(source.read_text(), target.read_text())
+
+    @needs_symlinks
+    def test_copy_symlink_follow_symlinks_false(self):
+        base = self.cls(self.base)
+        source = base / 'linkA'
+        target = base / 'copyA'
+        source.copy(target, follow_symlinks=False)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(source.readlink(), target.readlink())
+
+    @needs_symlinks
+    def test_copy_directory_symlink_follow_symlinks_false(self):
+        base = self.cls(self.base)
+        source = base / 'linkB'
+        target = base / 'copyA'
+        source.copy(target, follow_symlinks=False)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(source.readlink(), target.readlink())
+
+    def test_copy_to_existing_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'dirB' / 'fileB'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertEqual(source.read_text(), target.read_text())
+
+    def test_copy_to_existing_directory(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'dirA'
+        with self.assertRaises(OSError):
+            source.copy(target)
+
+    @needs_symlinks
+    def test_copy_to_existing_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'dirB' / 'fileB'
+        target = base / 'linkA'
+        real_target = base / 'fileA'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertTrue(real_target.exists())
+        self.assertFalse(real_target.is_symlink())
+        self.assertEqual(source.read_text(), real_target.read_text())
+
+    @needs_symlinks
+    def test_copy_to_existing_symlink_follow_symlinks_false(self):
+        base = self.cls(self.base)
+        source = base / 'dirB' / 'fileB'
+        target = base / 'linkA'
+        real_target = base / 'fileA'
+        source.copy(target, follow_symlinks=False)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertTrue(real_target.exists())
+        self.assertFalse(real_target.is_symlink())
+        self.assertEqual(source.read_text(), real_target.read_text())
+
+    def test_copy_empty(self):
+        base = self.cls(self.base)
+        source = base / 'empty'
+        target = base / 'copyA'
+        source.write_bytes(b'')
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertEqual(target.read_bytes(), b'')
+
+    def test_copytree_simple(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        source.copytree(target)
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
+
+    def test_copytree_complex(self, follow_symlinks=True):
+        def ordered_walk(path):
+            for dirpath, dirnames, filenames in path.walk(follow_symlinks=follow_symlinks):
+                dirnames.sort()
+                filenames.sort()
+                yield dirpath, dirnames, filenames
+        base = self.cls(self.base)
+        source = base / 'dirC'
+
+        if self.can_symlink:
+            # Add some symlinks
+            source.joinpath('linkC').symlink_to('fileC')
+            source.joinpath('linkD').symlink_to('dirD')
+
+        # Perform the copy
+        target = base / 'copyC'
+        source.copytree(target, follow_symlinks=follow_symlinks)
+
+        # Compare the source and target trees
+        source_walk = ordered_walk(source)
+        target_walk = ordered_walk(target)
+        for source_item, target_item in zip(source_walk, target_walk, strict=True):
+            self.assertEqual(source_item[0].relative_to(source),
+                             target_item[0].relative_to(target))  # dirpath
+            self.assertEqual(source_item[1], target_item[1])  # dirnames
+            self.assertEqual(source_item[2], target_item[2])  # filenames
+            # Compare files and symlinks
+            for filename in source_item[2]:
+                source_file = source_item[0].joinpath(filename)
+                target_file = target_item[0].joinpath(filename)
+                if follow_symlinks or not source_file.is_symlink():
+                    # Regular file.
+                    self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
+                elif source_file.is_dir():
+                    # Symlink to directory.
+                    self.assertTrue(target_file.is_dir())
+                    self.assertEqual(source_file.readlink(), target_file.readlink())
+                else:
+                    # Symlink to file.
+                    self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
+                    self.assertEqual(source_file.readlink(), target_file.readlink())
+
+    def test_copytree_complex_follow_symlinks_false(self):
+        self.test_copytree_complex(follow_symlinks=False)
+
+    def test_copytree_to_existing_directory(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        target.mkdir()
+        target.joinpath('dirD').mkdir()
+        self.assertRaises(FileExistsError, source.copytree, target)
+
+    def test_copytree_to_existing_directory_dirs_exist_ok(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        target.mkdir()
+        target.joinpath('dirD').mkdir()
+        source.copytree(target, dirs_exist_ok=True)
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
+
+    def test_copytree_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        self.assertRaises(NotADirectoryError, source.copytree, target)
+
+    def test_copytree_file_on_error(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        errors = []
+        source.copytree(target, on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], NotADirectoryError)
+
+    def test_copytree_ignore_false(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        ignores = []
+        def ignore_false(path):
+            ignores.append(path)
+            return False
+        source.copytree(target, ignore=ignore_false)
+        self.assertEqual(set(ignores), {
+            source / 'dirD',
+            source / 'dirD' / 'fileD',
+            source / 'fileC',
+            source / 'novel.txt',
+        })
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
+
+    def test_copytree_ignore_true(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        ignores = []
+        def ignore_true(path):
+            ignores.append(path)
+            return True
+        source.copytree(target, ignore=ignore_true)
+        self.assertEqual(set(ignores), {
+            source / 'dirD',
+            source / 'fileC',
+            source / 'novel.txt',
+        })
+        self.assertTrue(target.is_dir())
+        self.assertFalse(target.joinpath('dirD').exists())
+        self.assertFalse(target.joinpath('fileC').exists())
+        self.assertFalse(target.joinpath('novel.txt').exists())
+
+    @needs_symlinks
+    def test_copytree_dangling_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'source'
+        target = base / 'target'
+
+        source.mkdir()
+        source.joinpath('link').symlink_to('nonexistent')
+
+        self.assertRaises(FileNotFoundError, source.copytree, target)
+
+        target2 = base / 'target2'
+        source.copytree(target2, follow_symlinks=False)
+        self.assertTrue(target2.joinpath('link').is_symlink())
+        self.assertEqual(target2.joinpath('link').readlink(), self.cls('nonexistent'))
 
     def test_iterdir(self):
         P = self.cls
@@ -2321,6 +2621,25 @@ class DummyPathTest(DummyPurePathTest):
     @needs_symlinks
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(self.parser.join('dirA', '..'))
+
+    def test_unlink(self):
+        p = self.cls(self.base) / 'fileA'
+        p.unlink()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
+
+    def test_unlink_missing_ok(self):
+        p = self.cls(self.base) / 'fileAAA'
+        self.assertFileNotFound(p.unlink)
+        p.unlink(missing_ok=True)
+
+    def test_rmdir(self):
+        p = self.cls(self.base) / 'dirA'
+        for q in p.iterdir():
+            q.unlink()
+        p.rmdir()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
 
     def setUpWalk(self):
         # Build:

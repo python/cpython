@@ -454,20 +454,17 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            Py_VISIT(info->proto);
-            Py_VISIT(info->argtypes);
-            Py_VISIT(info->converters);
-            Py_VISIT(info->restype);
-            Py_VISIT(info->checker);
-            Py_VISIT(info->module);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        Py_VISIT(info->proto);
+        Py_VISIT(info->argtypes);
+        Py_VISIT(info->converters);
+        Py_VISIT(info->restype);
+        Py_VISIT(info->checker);
+        Py_VISIT(info->module);
     }
     Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse(self, visit, arg);
@@ -488,15 +485,12 @@ ctype_clear_stginfo(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        ctype_clear_stginfo(info);
     }
     return PyType_Type.tp_clear(self);
 }
@@ -504,22 +498,20 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            PyMem_Free(info->ffi_type_pointer.elements);
-            info->ffi_type_pointer.elements = NULL;
-            PyMem_Free(info->format);
-            info->format = NULL;
-            PyMem_Free(info->shape);
-            info->shape = NULL;
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
     }
+    if (info) {
+        PyMem_Free(info->ffi_type_pointer.elements);
+        info->ffi_type_pointer.elements = NULL;
+        PyMem_Free(info->format);
+        info->format = NULL;
+        PyMem_Free(info->shape);
+        info->shape = NULL;
+        ctype_clear_stginfo(info);
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     PyType_Type.tp_dealloc(self);
     Py_DECREF(tp);
@@ -1614,7 +1606,7 @@ PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (_PyLong_Sign(length_attr) == -1) {
+    if (_PyLong_IsNegative((PyLongObject *)length_attr)) {
         Py_DECREF(length_attr);
         PyErr_SetString(PyExc_ValueError,
                         "The '_length_' attribute must not be negative");
@@ -1758,7 +1750,11 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCEFfuzZqQPXOv?g";
+#else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
+#endif
 
 /*[clinic input]
 _ctypes.c_wchar_p.from_param as c_wchar_p_from_param
@@ -2234,7 +2230,18 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stginfo->ffi_type_pointer = *fmt->pffi_type;
+    if (!fmt->pffi_type->elements) {
+        stginfo->ffi_type_pointer = *fmt->pffi_type;
+    }
+    else {
+        const size_t els_size = sizeof(fmt->pffi_type->elements);
+        stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
+        stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
+        stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
+        stginfo->ffi_type_pointer.elements = PyMem_Malloc(els_size);
+        memcpy(stginfo->ffi_type_pointer.elements,
+               fmt->pffi_type->elements, els_size);
+    }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
@@ -4082,7 +4089,7 @@ _build_callargs(ctypes_state *st, PyCFuncPtrObject *self, PyObject *argtypes,
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
             *pinoutmask |= (1 << i); /* mark as inout arg */
             (*pnumretvals)++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 0:
         case PARAMFLAG_FIN:
             /* 'in' parameter.  Copy it from inargs. */
@@ -5947,7 +5954,7 @@ module_free(void *module)
 
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _ctypes_mod_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };

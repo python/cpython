@@ -38,8 +38,22 @@ def code_to_events(code: str):
         yield Event(evt="key", data=c, raw=bytearray(c.encode("utf-8")))
 
 
+def clean_screen(screen: Iterable[str]):
+    """Cleans color and console characters out of a screen output.
+
+    This is useful for screen testing, it increases the test readability since
+    it strips out all the unreadable side of the screen.
+    """
+    output = []
+    for line in screen:
+        if line.startswith(">>>") or line.startswith("..."):
+            line = line[3:]
+        output.append(line)
+    return "\n".join(output).strip()
+
+
 def prepare_reader(console: Console, **kwargs):
-    config = ReadlineConfig(readline_completer=None)
+    config = ReadlineConfig(readline_completer=kwargs.pop("readline_completer", None))
     reader = ReadlineAlikeReader(console=console, config=config)
     reader.more_lines = partial(more_lines, namespace=None)
     reader.paste_mode = True  # Avoid extra indents
@@ -55,7 +69,7 @@ def prepare_reader(console: Console, **kwargs):
     return reader
 
 
-def prepare_console(events: Iterable[Event], **kwargs):
+def prepare_console(events: Iterable[Event], **kwargs) -> MagicMock | Console:
     console = MagicMock()
     console.get_event.side_effect = events
     console.height = 100
@@ -74,6 +88,8 @@ def handle_all_events(
         while True:
             reader.handle1()
     except StopIteration:
+        pass
+    except KeyboardInterrupt:
         pass
     return reader, console
 

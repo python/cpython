@@ -303,8 +303,8 @@ modules in your app, some additional steps will be required:
 * You need to ensure that any folders containing third-party binaries are
   either associated with the app target, or copied in as part of step 8. Step 8
   should also purge any binaries that are not appropriate for the platform a
-  specific build is targetting (i.e., delete any device binaries if you're
-  building app app targeting the simulator).
+  specific build is targeting (i.e., delete any device binaries if you're
+  building an app targeting the simulator).
 
 * Any folders that contain third-party binaries must be processed into
   framework form by step 9. The invocation of ``install_dylib`` that processes
@@ -312,3 +312,21 @@ modules in your app, some additional steps will be required:
 
 * If you're using a separate folder for third-party packages, ensure that folder
   is included as part of the ``PYTHONPATH`` configuration in step 10.
+
+App Store Compliance
+====================
+
+The only mechanism for distributing apps to third-party iOS devices is to
+submit the app to the iOS App Store; apps submitted for distribution must pass
+Apple's app review process. This process includes a set of automated validation
+rules that inspect the submitted application bundle for problematic code.
+
+The Python standard library contains some code that is known to violate these
+automated rules. While these violations appear to be false positives, Apple's
+review rules cannot be challenged; so, it is necessary to modify the Python
+standard library for an app to pass App Store review.
+
+The Python source tree contains
+:source:`a patch file <Mac/Resources/app-store-compliance.patch>` that will remove
+all code that is known to cause issues with the App Store review process. This
+patch is applied automatically when building for iOS.

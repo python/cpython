@@ -781,7 +781,7 @@ Constants
 
 .. data:: OP_SINGLE_DH_USE
 
-   Prevents re-use of the same DH key for distinct SSL sessions.  This
+   Prevents reuse of the same DH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -789,7 +789,7 @@ Constants
 
 .. data:: OP_SINGLE_ECDH_USE
 
-   Prevents re-use of the same ECDH key for distinct SSL sessions.  This
+   Prevents reuse of the same ECDH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -1472,6 +1472,19 @@ to speed up repeated connections from the same clients.
       :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
       :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
+   .. note::
+
+      :class:`SSLContext` only supports limited mutation once it has been used
+      by a connection. Adding new certificates to the internal trust store is
+      allowed, but changing ciphers, verification settings, or mTLS
+      certificates may result in surprising behavior.
+
+   .. note::
+
+      :class:`SSLContext` is designed to be shared and used by multiple
+      connections.
+      Thus, it is thread-safe as long as it is not reconfigured after being
+      used by a connection.
 
 :class:`SSLContext` objects have the following methods and attributes:
 

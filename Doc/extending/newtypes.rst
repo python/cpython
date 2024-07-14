@@ -545,7 +545,7 @@ performance-critical objects (such as numbers).
 .. seealso::
    Documentation for the :mod:`weakref` module.
 
-For an object to be weakly referencable, the extension type must set the
+For an object to be weakly referenceable, the extension type must set the
 ``Py_TPFLAGS_MANAGED_WEAKREF`` bit of the :c:member:`~PyTypeObject.tp_flags`
 field. The legacy :c:member:`~PyTypeObject.tp_weaklistoffset` field should
 be left as zero.

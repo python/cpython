@@ -1,3 +1,4 @@
+import inspect
 import os
 import posixpath
 import sys
@@ -5,7 +6,7 @@ import unittest
 from posixpath import realpath, abspath, dirname, basename
 from test import test_genericpath
 from test.support import import_helper
-from test.support import os_helper
+from test.support import cpython_only, os_helper
 from test.support.os_helper import FakePath
 from unittest import mock
 
@@ -283,6 +284,16 @@ class PosixPathTest(unittest.TestCase):
     def test_isjunction(self):
         self.assertFalse(posixpath.isjunction(ABSTFN))
 
+    @unittest.skipIf(sys.platform == 'win32', "Fast paths are not for win32")
+    @cpython_only
+    def test_fast_paths_in_use(self):
+        # There are fast paths of these functions implemented in posixmodule.c.
+        # Confirm that they are being used, and not the Python fallbacks
+        self.assertTrue(os.path.splitroot is posix._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
+        self.assertTrue(os.path.normpath is posix._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
+
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
         self.assertEqual(posixpath.expanduser(b"foo"), b"foo")
@@ -348,13 +359,19 @@ class PosixPathTest(unittest.TestCase):
                      "no home directory on VxWorks")
     def test_expanduser_pwd2(self):
         pwd = import_helper.import_module('pwd')
-        for e in pwd.getpwall():
-            name = e.pw_name
-            home = e.pw_dir
+        for all_entry in pwd.getpwall():
+            name = all_entry.pw_name
+
+            # gh-121200: pw_dir can be different between getpwall() and
+            # getpwnam(), so use getpwnam() pw_dir as expanduser() does.
+            entry = pwd.getpwnam(name)
+            home = entry.pw_dir
             home = home.rstrip('/') or '/'
-            self.assertEqual(posixpath.expanduser('~' + name), home)
-            self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
-                             os.fsencode(home))
+
+            with self.subTest(all_entry=all_entry, entry=entry):
+                self.assertEqual(posixpath.expanduser('~' + name), home)
+                self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
+                                 os.fsencode(home))
 
     NORMPATH_CASES = [
         ("", "."),

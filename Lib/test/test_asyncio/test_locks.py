@@ -39,7 +39,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "object Lock can't be used in 'await' expression"
+            "'Lock' object can't be awaited"
         ):
             await lock
 
@@ -77,7 +77,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(lock.locked())
             with self.assertRaisesRegex(
                 TypeError,
-                r"object \w+ can't be used in 'await' expression"
+                r"'\w+' object can't be awaited"
             ):
                 with await lock:
                     pass
@@ -941,7 +941,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "object Semaphore can't be used in 'await' expression",
+            "'Semaphore' object can't be awaited",
         ):
             await sem
 
@@ -1270,7 +1270,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("filling", repr(barrier))
         with self.assertRaisesRegex(
             TypeError,
-            "object Barrier can't be used in 'await' expression",
+            "'Barrier' object can't be awaited",
         ):
             await barrier
 
@@ -1481,7 +1481,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # wait again only for rewait tasks
                 await barrier.wait()
             else:
-                # wait for end of draining state`
+                # wait for end of draining state
                 await barrier_nowaiting.wait()
                 # wait for other waiting tasks
                 await barrier.wait()
@@ -1780,7 +1780,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
 
     async def test_abort_barrier_when_exception_then_resetting(self):
-        # test from threading.Barrier: see `lock_tests.test_abort_and_reset``
+        # test from threading.Barrier: see `lock_tests.test_abort_and_reset`
         barrier1 = asyncio.Barrier(self.N)
         barrier2 = asyncio.Barrier(self.N)
         results1 = []

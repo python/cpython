@@ -6,7 +6,7 @@ from textwrap import dedent
 
 from test.support import force_not_colorized
 
-from _pyrepl.simple_interact import InteractiveColoredConsole
+from _pyrepl.console import InteractiveColoredConsole
 
 
 class TestSimpleInteract(unittest.TestCase):
@@ -27,9 +27,11 @@ class TestSimpleInteract(unittest.TestCase):
         a
         """)
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        f = io.StringIO()
         with (
             patch.object(InteractiveColoredConsole, "showsyntaxerror") as showsyntaxerror,
             patch.object(InteractiveColoredConsole, "runsource", wraps=console.runsource) as runsource,
+            contextlib.redirect_stdout(f),
         ):
             more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
         self.assertFalse(more)
@@ -71,7 +73,9 @@ class TestSimpleInteract(unittest.TestCase):
     def test_runsource_returns_false_for_successful_compilation(self):
         console = InteractiveColoredConsole()
         source = "print('Hello, world!')"
-        result = console.runsource(source)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource(source)
         self.assertFalse(result)
 
     @force_not_colorized
@@ -90,3 +94,20 @@ class TestSimpleInteract(unittest.TestCase):
         with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
+        source = dedent("""\
+        match 1:
+            case {0: _, 0j: _}:
+                pass
+        """)
+        with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
+            console.runsource(source)
+            mock_showsyntaxerror.assert_called_once()
+
+    def test_no_active_future(self):
+        console = InteractiveColoredConsole()
+        source = "x: int = 1; print(__annotate__(1))"
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertEqual(f.getvalue(), "{'x': <class 'int'>}\n")
