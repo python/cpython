@@ -492,7 +492,7 @@ state:
 
    On success, return ``0``. On error, raise an exception and return ``-1``.
 
-   Return ``NULL`` if *value* is ``NULL``. It must be called with an exception
+   Return ``-1`` if *value* is ``NULL``. It must be called with an exception
    raised in this case.
 
    Example usage::
