@@ -912,6 +912,14 @@ _Py_atomic_load_int_acquire(const int *obj)
 }
 
 static inline void
+_Py_atomic_store_uint8_release(uint8_t *obj, uint8_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(uint8_t)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
 _Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value)
 {
     _Py_USING_STD;

@@ -2360,10 +2360,10 @@ new_reference(PyObject *op)
 #if !defined(Py_GIL_DISABLED)
     op->ob_refcnt = 1;
 #else
-    op->ob_tid = _Py_ThreadId();
+    _Py_atomic_store_uintptr_release(&op->ob_tid, _Py_ThreadId());
     op->_padding = 0;
     op->ob_mutex = (PyMutex){ 0 };
-    op->ob_gc_bits = 0;
+    _Py_atomic_store_uint8_release(&op->ob_gc_bits, 0);
     _Py_atomic_store_uint32_release(&op->ob_ref_local, 1);
     _Py_atomic_store_ssize_release(&op->ob_ref_shared, 0);
 #endif
