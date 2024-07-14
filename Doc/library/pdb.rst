@@ -159,12 +159,15 @@ slightly different way:
    is entered.
 
 
-.. function:: set_trace(*, header=None)
+.. function:: set_trace(*, header=None, commands=None)
 
    Enter the debugger at the calling stack frame.  This is useful to hard-code
    a breakpoint at a given point in a program, even if the code is not
    otherwise being debugged (e.g. when an assertion fails).  If given,
    *header* is printed to the console just before debugging begins.
+   The *commands* argument, if given, is a list of commands to execute
+   when the debugger starts.
+
 
    .. versionchanged:: 3.7
       The keyword-only argument *header*.
@@ -172,6 +175,9 @@ slightly different way:
    .. versionchanged:: 3.13
       :func:`set_trace` will enter the debugger immediately, rather than
       on the next line of code to be executed.
+
+   .. versionadded:: 3.14
+      The *commands* argument.
 
 .. function:: post_mortem(traceback=None)
 
@@ -192,7 +198,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True, commands=None)
+               nosigint=False, readrc=True)
 
    :class:`Pdb` is the debugger class.
 
@@ -210,9 +216,6 @@ access further features, you have to do this yourself:
 
    The *readrc* argument defaults to true and controls whether Pdb will load
    .pdbrc files from the filesystem.
-
-   The *commands* argument, if given, would be a list of commands to execute
-   when the debugger starts. It has similar effects to the :file:`.pdbrc` file.
 
    Example call to enable tracing with *skip*::
 

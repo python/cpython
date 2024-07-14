@@ -309,7 +309,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True, commands=None):
+                 nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -348,9 +348,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except OSError:
                 pass
 
-        if commands is not None:
-            self.rcLines.extend(commands)
-
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_doprompt = {} # for each bp num, tells if the prompt
                                     # must be disp. after execing the cmd list
@@ -364,10 +361,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
 
-    def set_trace(self, frame=None):
+    def set_trace(self, frame=None, *, commands=None):
         Pdb._last_pdb_instance = self
         if frame is None:
             frame = sys._getframe().f_back
+
+        if commands is not None:
+            self.rcLines.extend(commands)
+
         super().set_trace(frame)
 
     def sigint_handler(self, signum, frame):
@@ -2353,13 +2354,14 @@ def runcall(*args, **kwds):
     """
     return Pdb().runcall(*args, **kwds)
 
-def set_trace(*, header=None):
+def set_trace(*, header=None, commands=None):
     """Enter the debugger at the calling stack frame.
 
     This is useful to hard-code a breakpoint at a given point in a
     program, even if the code is not otherwise being debugged (e.g. when
     an assertion fails). If given, *header* is printed to the console
-    just before debugging begins.
+    just before debugging begins. *commands* is an optional list of
+    pdb commands to run when the debugger starts.
     """
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
@@ -2367,7 +2369,7 @@ def set_trace(*, header=None):
         pdb = Pdb()
     if header is not None:
         pdb.message(header)
-    pdb.set_trace(sys._getframe().f_back)
+    pdb.set_trace(sys._getframe().f_back, commands=commands)
 
 # Post-Mortem interface
 
