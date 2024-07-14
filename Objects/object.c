@@ -2364,8 +2364,8 @@ new_reference(PyObject *op)
     op->_padding = 0;
     op->ob_mutex = (PyMutex){ 0 };
     op->ob_gc_bits = 0;
-    op->ob_ref_local = 1;
-    op->ob_ref_shared = 0;
+    _Py_atomic_store_uint32_release(&op->ob_ref_local, 1);
+    _Py_atomic_store_ssize_release(&op->ob_ref_shared, 0);
 #endif
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
