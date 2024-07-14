@@ -1037,6 +1037,10 @@ class SourceLoader(_LoaderBasics):
 
         Raises OSError when the path cannot be handled.
         """
+        _warnings.warn(
+            f"SourcelessFileLoader is deprecated.",
+            DeprecationWarning,
+            stacklevel=2)
         raise OSError
 
     def path_stats(self, path):
@@ -1272,6 +1276,13 @@ class SourceFileLoader(FileLoader, SourceLoader):
 class SourcelessFileLoader(FileLoader, _LoaderBasics):
 
     """Loader which handles sourceless file imports."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _warnings.warn(
+            f"SourcelessFileLoader is deprecated.",
+            DeprecationWarning,
+            stacklevel=2
+        )
 
     def get_code(self, fullname):
         path = self.get_filename(fullname)
