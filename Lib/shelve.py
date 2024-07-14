@@ -209,13 +209,11 @@ class BsdDbShelf(Shelf):
 
     def next(self):
         (key, value) = next(self.dict)
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def previous(self):
         (key, value) = self.dict.previous()
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def first(self):
         (key, value) = self.dict.first()

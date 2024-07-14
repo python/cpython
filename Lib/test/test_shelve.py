@@ -233,8 +233,16 @@ class TestCase(unittest.TestCase):
             s['number2'] = num2
             self.assertEqual(s['number'], type(num))
 
+            key, value = s.previous()
+            self.assertEqual("number2", key)
+            self.assertEqual(value, type(num))
+
             key, value = s.set_location(b'number')
             self.assertEqual("number", key)
+            self.assertEqual(value, type(num))
+
+            key, value = s.next()
+            self.assertEqual("number2", key)
             self.assertEqual(value, type(num))
 
             key, value = s.first()
