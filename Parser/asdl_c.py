@@ -1485,7 +1485,7 @@ ast_repr_list(PyObject *list, int depth)
             goto error;
         }
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
@@ -1494,7 +1494,7 @@ ast_repr_list(PyObject *list, int depth)
             goto error;
         }
         if (i == 0 && length > 2) {
-            if (_PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)writer, ", ...", 5) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
                 Py_DECREF(item_repr);
                 goto error;
             }
@@ -1561,7 +1561,7 @@ ast_repr_max_depth(AST_object *self, int depth)
     if (writer == NULL) {
         return NULL;
     }
-    _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)writer, tp_name, strlen(tp_name));
+    PyUnicodeWriter_WriteUTF8(writer, tp_name, strlen(tp_name));
     PyUnicodeWriter_WriteChar(writer, '(');
     for (Py_ssize_t i = 0; i < numfields; i++) {
         PyObject *name = PySequence_GetItem(fields, i);
@@ -1593,7 +1593,7 @@ ast_repr_max_depth(AST_object *self, int depth)
         }
 
         if (i > 0) {
-            _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)writer, ", ", 2);
+            PyUnicodeWriter_WriteUTF8(writer, ", ", 2);
         }
         PyUnicodeWriter_WriteStr(writer, name);
         PyUnicodeWriter_WriteChar(writer, '=');
