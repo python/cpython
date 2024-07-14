@@ -1,0 +1,2 @@
+Do not add additional space within encoded word when folding
+:class:`email.message.EmailMessage`.
