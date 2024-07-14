@@ -352,7 +352,7 @@ get_running_loop(asyncio_state *state, PyObject **loop)
             }
         }
 
-        // TODO GH-121621: The should be moved to PyThreadState
+        // TODO GH-121621: This should be moved to PyThreadState
         // for easier and quicker access.
         state->cached_running_loop = rl;
         state->cached_running_loop_tsid = ts_id;
@@ -398,7 +398,7 @@ set_running_loop(asyncio_state *state, PyObject *loop)
     }
 
 
-    // TODO GH-121621: The should be moved to PyThreadState
+    // TODO GH-121621: This should be moved to PyThreadState
     // for easier and quicker access.
     state->cached_running_loop = loop; // borrowed, kept alive by ts_dict
     state->cached_running_loop_tsid = PyThreadState_GetID(tstate);
