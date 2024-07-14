@@ -236,10 +236,24 @@ jobs:
         run: make check-c-globals
 
   build_windows:
-    name: 'Windows'
+    name: >-
+      Windows
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    if: fromJSON(needs.check_source.outputs.run_tests)
+    strategy:
+      matrix:
+        arch:
+        - Win32
+        - x64
+        - arm64
+        free-threading:
+        - false
+        # - true
     uses: ./.github/workflows/reusable-windows.yml
+    with:
+      arch: ${{ matrix.arch }}
+      free-threading: ${{ matrix.free-threading }}
 
   build_macos:
     name: 'macOS'
