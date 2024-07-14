@@ -58,7 +58,6 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
         elif unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
             s.append(c)
-            b.append(str_width(c))
             b.extend([0] * (len(c) - 1))
         else:
             s.append(c)
@@ -254,6 +253,7 @@ class Reader:
         pos: int = field(init=False)
         cxy: tuple[int, int] = field(init=False)
         dimensions: tuple[int, int] = field(init=False)
+        invalidated: bool = False
 
         def update_cache(self,
                          reader: Reader,
@@ -266,14 +266,19 @@ class Reader:
             self.pos = reader.pos
             self.cxy = reader.cxy
             self.dimensions = reader.console.width, reader.console.height
+            self.invalidated = False
 
         def valid(self, reader: Reader) -> bool:
+            if self.invalidated:
+                return False
             dimensions = reader.console.width, reader.console.height
             dimensions_changed = dimensions != self.dimensions
             paste_changed = reader.in_bracketed_paste != self.in_bracketed_paste
             return not (dimensions_changed or paste_changed)
 
         def get_cached_location(self, reader: Reader) -> tuple[int, int]:
+            if self.invalidated:
+                raise ValueError("Cache is invalidated")
             offset = 0
             earliest_common_pos = min(reader.pos, self.pos)
             num_common_lines = len(self.line_end_offsets)

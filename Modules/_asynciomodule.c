@@ -6,6 +6,7 @@
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _Py_SetImmortalUntracked
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -76,10 +77,21 @@ typedef struct {
 
 #define FI_FREELIST_MAXLEN 255
 
+#ifdef Py_GIL_DISABLED
+#   define ASYNCIO_STATE_LOCK(state) PyMutex_Lock(&state->mutex)
+#   define ASYNCIO_STATE_UNLOCK(state) PyMutex_Unlock(&state->mutex)
+#else
+#   define ASYNCIO_STATE_LOCK(state) ((void)state)
+#   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
+#endif
+
 typedef struct futureiterobject futureiterobject;
 
 /* State of the _asyncio module */
 typedef struct {
+#ifdef Py_GIL_DISABLED
+    PyMutex mutex;
+#endif
     PyTypeObject *FutureIterType;
     PyTypeObject *TaskStepMethWrapper_Type;
     PyTypeObject *FutureType;
@@ -340,6 +352,8 @@ get_running_loop(asyncio_state *state, PyObject **loop)
             }
         }
 
+        // TODO GH-121621: This should be moved to PyThreadState
+        // for easier and quicker access.
         state->cached_running_loop = rl;
         state->cached_running_loop_tsid = ts_id;
     }
@@ -383,6 +397,9 @@ set_running_loop(asyncio_state *state, PyObject *loop)
         return -1;
     }
 
+
+    // TODO GH-121621: This should be moved to PyThreadState
+    // for easier and quicker access.
     state->cached_running_loop = loop; // borrowed, kept alive by ts_dict
     state->cached_running_loop_tsid = PyThreadState_GetID(tstate);
 
@@ -1649,7 +1666,6 @@ FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
 
-    // FutureIter is a heap type so any subclass must also be a heap type.
     assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
 
     PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
@@ -1660,12 +1676,11 @@ FutureIter_dealloc(futureiterobject *it)
 
     // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
     // already been cleared, which is also why we must check if ht_module != NULL.
-    // Due to this restriction, subclasses that belong to a different module
-    // will not be able to use the free list.
     if (module && _PyModule_GetDef(module) == &_asynciomodule) {
         state = get_asyncio_state(module);
     }
 
+    // TODO GH-121621: This should be moved to thread state as well.
     if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
@@ -2017,10 +2032,12 @@ static  PyMethodDef TaskWakeupDef = {
 static void
 register_task(asyncio_state *state, TaskObj *task)
 {
+    ASYNCIO_STATE_LOCK(state);
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
     if (task->next != NULL) {
         // already registered
+        ASYNCIO_STATE_UNLOCK(state);
         return;
     }
     assert(task->prev == NULL);
@@ -2029,6 +2046,7 @@ register_task(asyncio_state *state, TaskObj *task)
     task->next = state->asyncio_tasks.head;
     state->asyncio_tasks.head->prev = task;
     state->asyncio_tasks.head = task;
+    ASYNCIO_STATE_UNLOCK(state);
 }
 
 static int
@@ -2040,12 +2058,14 @@ register_eager_task(asyncio_state *state, PyObject *task)
 static void
 unregister_task(asyncio_state *state, TaskObj *task)
 {
+    ASYNCIO_STATE_LOCK(state);
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
     if (task->next == NULL) {
         // not registered
         assert(task->prev == NULL);
         assert(state->asyncio_tasks.head != task);
+        ASYNCIO_STATE_UNLOCK(state);
         return;
     }
     task->next->prev = task->prev;
@@ -2058,6 +2078,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
     task->next = NULL;
     task->prev = NULL;
     assert(state->asyncio_tasks.head != task);
+    ASYNCIO_STATE_UNLOCK(state);
 }
 
 static int
@@ -2212,7 +2233,12 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         // optimization: defer task name formatting
         // store the task counter as PyLong in the name
         // for deferred formatting in get_name
-        name = PyLong_FromUnsignedLongLong(++state->task_name_counter);
+#ifdef Py_GIL_DISABLED
+        unsigned long long counter = _Py_atomic_add_uint64(&state->task_name_counter, 1) + 1;
+#else
+        unsigned long long counter = ++state->task_name_counter;
+#endif
+        name = PyLong_FromUnsignedLongLong(counter);
     } else if (!PyUnicode_CheckExact(name)) {
         name = PyObject_Str(name);
     } else {
@@ -3706,6 +3732,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     Py_DECREF(eager_iter);
     TaskObj *head = state->asyncio_tasks.head;
+    Py_INCREF(head);
     assert(head != NULL);
     assert(head->prev == NULL);
     TaskObj *tail = &state->asyncio_tasks.tail;
@@ -3714,10 +3741,11 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         if (add_one_task(state, tasks, (PyObject *)head, loop) < 0) {
             Py_DECREF(tasks);
             Py_DECREF(loop);
+            Py_DECREF(head);
             return NULL;
         }
-        head = head->next;
-        assert(head != NULL);
+        Py_INCREF(head->next);
+        Py_SETREF(head, head->next);
     }
     PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
     if (scheduled_iter == NULL) {
@@ -3944,6 +3972,8 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
+    Py_SET_TYPE(&state->asyncio_tasks.tail, state->TaskType);
+    _Py_SetImmortalUntracked((PyObject *)&state->asyncio_tasks.tail);
     state->asyncio_tasks.head = &state->asyncio_tasks.tail;
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \

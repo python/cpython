@@ -36,13 +36,21 @@
 #define NCURSES_OPAQUE 0
 #endif
 
-#ifdef HAVE_NCURSES_H
-#include <ncurses.h>
-#else
-#include <curses.h>
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
 #endif
 
-#ifdef HAVE_NCURSES_H
+#ifdef NCURSES_VERSION
 /* configure was checking <curses.h>, but we will
    use <ncurses.h>, which has some or all these features. */
 #if !defined(WINDOW_HAS_FLAGS) && \
