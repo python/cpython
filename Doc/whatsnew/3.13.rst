@@ -1184,12 +1184,6 @@ unicodedata
 * The Unicode database has been updated to version 15.1.0. (Contributed by
   James Gerity in :gh:`109559`.)
 
-unittest
---------
-
-* The new ``TextTestResult.getName()`` method allows customizing test names in
-  test results.
-
 venv
 ----
 
