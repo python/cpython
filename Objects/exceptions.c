@@ -308,7 +308,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
 }
 
 static PyObject *
-BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+BaseException_get_tb_lock_held(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->traceback == NULL) {
         Py_RETURN_NONE;
@@ -316,8 +316,18 @@ BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     return Py_NewRef(self->traceback);
 }
 
+static PyObject *
+BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = BaseException_get_tb_lock_held(self, NULL);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static int
-BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
+BaseException_set_tb_lock_held(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
 {
     if (tb == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
@@ -335,6 +345,16 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(
         return -1;
     }
     return 0;
+}
+
+static int
+BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = BaseException_set_tb_lock_held(self, tb, NULL);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
