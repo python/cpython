@@ -77,10 +77,21 @@ typedef struct {
 
 #define FI_FREELIST_MAXLEN 255
 
+#ifdef Py_GIL_DISABLED
+#   define ASYNCIO_STATE_LOCK(state) PyMutex_Lock(&state->mutex)
+#   define ASYNCIO_STATE_UNLOCK(state) PyMutex_Unlock(&state->mutex)
+#else
+#   define ASYNCIO_STATE_LOCK(state) ((void)state)
+#   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
+#endif
+
 typedef struct futureiterobject futureiterobject;
 
 /* State of the _asyncio module */
 typedef struct {
+#ifdef Py_GIL_DISABLED
+    PyMutex mutex;
+#endif
     PyTypeObject *FutureIterType;
     PyTypeObject *TaskStepMethWrapper_Type;
     PyTypeObject *FutureType;
@@ -341,6 +352,8 @@ get_running_loop(asyncio_state *state, PyObject **loop)
             }
         }
 
+        // TODO GH-121621: This should be moved to PyThreadState
+        // for easier and quicker access.
         state->cached_running_loop = rl;
         state->cached_running_loop_tsid = ts_id;
     }
@@ -384,6 +397,9 @@ set_running_loop(asyncio_state *state, PyObject *loop)
         return -1;
     }
 
+
+    // TODO GH-121621: This should be moved to PyThreadState
+    // for easier and quicker access.
     state->cached_running_loop = loop; // borrowed, kept alive by ts_dict
     state->cached_running_loop_tsid = PyThreadState_GetID(tstate);
 
@@ -1664,6 +1680,7 @@ FutureIter_dealloc(futureiterobject *it)
         state = get_asyncio_state(module);
     }
 
+    // TODO GH-121621: This should be moved to thread state as well.
     if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
@@ -2015,10 +2032,12 @@ static  PyMethodDef TaskWakeupDef = {
 static void
 register_task(asyncio_state *state, TaskObj *task)
 {
+    ASYNCIO_STATE_LOCK(state);
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
     if (task->next != NULL) {
         // already registered
+        ASYNCIO_STATE_UNLOCK(state);
         return;
     }
     assert(task->prev == NULL);
@@ -2027,6 +2046,7 @@ register_task(asyncio_state *state, TaskObj *task)
     task->next = state->asyncio_tasks.head;
     state->asyncio_tasks.head->prev = task;
     state->asyncio_tasks.head = task;
+    ASYNCIO_STATE_UNLOCK(state);
 }
 
 static int
@@ -2038,12 +2058,14 @@ register_eager_task(asyncio_state *state, PyObject *task)
 static void
 unregister_task(asyncio_state *state, TaskObj *task)
 {
+    ASYNCIO_STATE_LOCK(state);
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
     if (task->next == NULL) {
         // not registered
         assert(task->prev == NULL);
         assert(state->asyncio_tasks.head != task);
+        ASYNCIO_STATE_UNLOCK(state);
         return;
     }
     task->next->prev = task->prev;
@@ -2056,6 +2078,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
     task->next = NULL;
     task->prev = NULL;
     assert(state->asyncio_tasks.head != task);
+    ASYNCIO_STATE_UNLOCK(state);
 }
 
 static int
@@ -2210,7 +2233,12 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         // optimization: defer task name formatting
         // store the task counter as PyLong in the name
         // for deferred formatting in get_name
-        name = PyLong_FromUnsignedLongLong(++state->task_name_counter);
+#ifdef Py_GIL_DISABLED
+        unsigned long long counter = _Py_atomic_add_uint64(&state->task_name_counter, 1) + 1;
+#else
+        unsigned long long counter = ++state->task_name_counter;
+#endif
+        name = PyLong_FromUnsignedLongLong(counter);
     } else if (!PyUnicode_CheckExact(name)) {
         name = PyObject_Str(name);
     } else {
