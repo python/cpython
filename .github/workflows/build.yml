@@ -182,14 +182,29 @@ jobs:
     name: 'Windows'
     needs: check_source
     if: fromJSON(needs.check_source.outputs.run_tests)
+    strategy:
+      matrix:
+        arch:
+        - Win32
+        - x64
+        - arm64
     uses: ./.github/workflows/reusable-windows.yml
+    with:
+      arch: ${{ matrix.arch }}
 
   build_windows_free_threading:
     name: 'Windows (free-threading)'
     needs: check_source
     if: fromJSON(needs.check_source.outputs.run_tests)
+    strategy:
+      matrix:
+        arch:
+        - Win32
+        - x64
+        - arm64
     uses: ./.github/workflows/reusable-windows.yml
     with:
+      arch: ${{ matrix.arch }}
       free-threading: true
 
   build_macos:
