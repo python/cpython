@@ -847,6 +847,8 @@ For an example of the usage of queues for interprocess communication see
       Return ``True`` if the queue is empty, ``False`` otherwise.  Because of
       multithreading/multiprocessing semantics, this is not reliable.
 
+      May raise an :exc:`OSError` on closed queues. (not guaranteed)
+
    .. method:: full()
 
       Return ``True`` if the queue is full, ``False`` otherwise.  Because of
@@ -949,6 +951,8 @@ For an example of the usage of queues for interprocess communication see
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
+
+      Always raises an :exc:`OSError` if the SimpleQueue is closed.
 
    .. method:: get()
 
