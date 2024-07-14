@@ -198,6 +198,16 @@ class TestInteractiveInterpreter(unittest.TestCase):
     def test_asyncio_repl_no_tty_fails(self):
         assert assert_python_failure("-m", "asyncio")
 
+    def test_asyncio_repl_non_blocking_does_not_fail(self):
+        import os, sys
+        from _pyrepl.unix_console import UnixConsole
+
+        os.set_blocking(sys.stdin.fileno(), False)
+        console = UnixConsole()
+
+        # get_event would throw a BlockingIOError before fixing gh-121662 in this scenario
+        assert console.get_event(block=False) is None
+
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
