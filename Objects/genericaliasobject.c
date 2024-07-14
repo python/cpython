@@ -563,6 +563,10 @@ ga_getitem(PyObject *self, PyObject *item)
     }
 
     PyObject *res = Py_GenericAlias(alias->origin, newargs);
+    if (res == NULL) {
+        Py_DECREF(newargs);
+        return NULL;
+    }
     ((gaobject *)res)->starred = alias->starred;
 
     Py_DECREF(newargs);
