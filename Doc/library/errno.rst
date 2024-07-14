@@ -1,5 +1,5 @@
-:mod:`errno` --- Standard errno system symbols
-==============================================
+:mod:`!errno` --- Standard errno system symbols
+===============================================
 
 .. module:: errno
    :synopsis: Standard errno system symbols.

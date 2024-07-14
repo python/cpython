@@ -1,5 +1,5 @@
-:mod:`logging` --- Logging facility for Python
-==============================================
+:mod:`!logging` --- Logging facility for Python
+===============================================
 
 .. module:: logging
    :synopsis: Flexible event logging system for applications.
@@ -63,12 +63,13 @@ If you run *myapp.py*, you should see this in *myapp.log*:
    INFO:mylib:Doing something
    INFO:__main__:Finished
 
-The key features of this idiomatic usage is that the majority of code is simply
+The key feature of this idiomatic usage is that the majority of code is simply
 creating a module level logger with ``getLogger(__name__)``, and using that
-logger to do any needed logging. This is concise while allowing downstream code
-fine grained control if needed. Logged messages to the module-level logger get
-forwarded up to handlers of loggers in higher-level modules, all the way up to
-the root logger; for this reason this approach is known as hierarchical logging.
+logger to do any needed logging. This is concise, while allowing downstream
+code fine-grained control if needed. Logged messages to the module-level logger
+get forwarded to handlers of loggers in higher-level modules, all the way up to
+the highest-level logger known as the root logger; this approach is known as
+hierarchical logging.
 
 For logging to be useful, it needs to be configured: setting the levels and
 destinations for each logger, potentially changing how specific modules log,
@@ -82,8 +83,8 @@ The module provides a lot of functionality and flexibility.  If you are
 unfamiliar with logging, the best way to get to grips with it is to view the
 tutorials (**see the links above and on the right**).
 
-The basic classes defined by the module, together with their functions, are
-listed below.
+The basic classes defined by the module, together with their attributes and
+methods, are listed in the sections below.
 
 * Loggers expose the interface that application code directly uses.
 * Handlers send the log records (created by loggers) to the appropriate
@@ -108,11 +109,11 @@ The ``name`` is potentially a period-separated hierarchical value, like
 Loggers that are further down in the hierarchical list are children of loggers
 higher up in the list.  For example, given a logger with a name of ``foo``,
 loggers with names of ``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all
-descendants of ``foo``.  The logger name hierarchy is analogous to the Python
-package hierarchy, and identical to it if you organise your loggers on a
-per-module basis using the recommended construction
-``logging.getLogger(__name__)``.  That's because in a module, ``__name__``
-is the module's name in the Python package namespace.
+descendants of ``foo``.  In addition, all loggers are descendants of the root
+logger. The logger name hierarchy is analogous to the Python package hierarchy,
+and identical to it if you organise your loggers on a per-module basis using
+the recommended construction ``logging.getLogger(__name__)``.  That's because
+in a module, ``__name__`` is the module's name in the Python package namespace.
 
 
 .. class:: Logger
@@ -1002,7 +1003,7 @@ the options available to you.
 |                |                         | portion of the time).                         |
 +----------------+-------------------------+-----------------------------------------------+
 | created        | ``%(created)f``         | Time when the :class:`LogRecord` was created  |
-|                |                         | (as returned by :func:`time.time`).           |
+|                |                         | (as returned by :func:`time.time_ns` / 1e9).  |
 +----------------+-------------------------+-----------------------------------------------+
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
 |                | format this yourself.   | if no exception has occurred, ``None``.       |
@@ -1156,10 +1157,12 @@ functions.
 
 .. function:: getLogger(name=None)
 
-   Return a logger with the specified name or, if name is ``None``, return a
-   logger which is the root logger of the hierarchy. If specified, the name is
-   typically a dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*.
-   Choice of these names is entirely up to the developer who is using logging.
+   Return a logger with the specified name or, if name is ``None``, return the
+   root logger of the hierarchy. If specified, the name is typically a
+   dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*. Choice
+   of these names is entirely up to the developer who is using logging, though
+   it is recommended that ``__name__`` be used unless you have a specific
+   reason for not doing that, as mentioned in :ref:`logger`.
 
    All calls to this function with a given name return the same logger instance.
    This means that logger instances never need to be passed between different parts
@@ -1203,7 +1206,7 @@ functions.
    most programs will want to carefully and explicitly control the logging
    configuration, and should therefore prefer creating a module-level logger and
    calling :meth:`Logger.debug` (or other level-specific methods) on it, as
-   described at the beginnning of this documentation.
+   described at the beginning of this documentation.
 
 
 .. function:: info(msg, *args, **kwargs)

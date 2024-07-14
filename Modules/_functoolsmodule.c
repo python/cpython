@@ -79,12 +79,19 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    _functools_state *state = get_functools_state_by_type(type);
+    if (state == NULL) {
+        return NULL;
+    }
+
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func)->tp_call == (ternaryfunc)partial_call) {
-        // The type of "func" might not be exactly the same type object
-        // as "type", but if it is called using partial_call, it must have the
-        // same memory layout (fn, args and kw members).
+
+    int res = PyObject_TypeCheck(func, state->partial_type);
+    if (res == -1) {
+        return NULL;
+    }
+    if (res == 1) {
         // We can use its underlying function directly and merge the arguments.
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
@@ -190,6 +197,14 @@ partial_dealloc(partialobject *pto)
     Py_DECREF(tp);
 }
 
+static PyObject *
+partial_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    if (obj == Py_None || obj == NULL) {
+        return Py_NewRef(self);
+    }
+    return PyMethod_New(self, obj);
+}
 
 /* Merging keyword arguments using the vectorcall convention is messy, so
  * if we would need to do that, we stop using vectorcall and fall back
@@ -335,8 +350,9 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(partial_doc,
-"partial(func, *args, **keywords) - new function with partial application\n\
-    of the given arguments and keywords.\n");
+"partial(func, /, *args, **keywords)\n--\n\n\
+Create a new function with partial application of the given arguments\n\
+and keywords.");
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
@@ -506,6 +522,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
+    {Py_tp_descr_get, (descrgetfunc)partial_descr_get},
     {Py_tp_new, partial_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0}
@@ -564,6 +581,17 @@ static PyMemberDef keyobject_members[] = {
 };
 
 static PyObject *
+keyobject_text_signature(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("(obj)");
+}
+
+static PyGetSetDef keyobject_getset[] = {
+    {"__text_signature__", keyobject_text_signature, (setter)NULL},
+    {NULL}
+};
+
+static PyObject *
 keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds);
 
 static PyObject *
@@ -577,6 +605,7 @@ static PyType_Slot keyobject_type_slots[] = {
     {Py_tp_clear, keyobject_clear},
     {Py_tp_richcompare, keyobject_richcompare},
     {Py_tp_members, keyobject_members},
+    {Py_tp_getset, keyobject_getset},
     {0, 0}
 };
 
@@ -1539,6 +1568,7 @@ _functools_free(void *module)
 static struct PyModuleDef_Slot _functools_slots[] = {
     {Py_mod_exec, _functools_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

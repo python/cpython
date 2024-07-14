@@ -21,15 +21,16 @@ __all__ = [
 
 # Keys for get_config_var() that are never converted to Python integers.
 _ALWAYS_STR = {
+    'IPHONEOS_DEPLOYMENT_TARGET',
     'MACOSX_DEPLOYMENT_TARGET',
 }
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
         'include':
             '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
@@ -57,6 +58,7 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
+
     # Downstream distributors can overwrite the default install scheme.
     # This is done to support downstream modifications where distributors change
     # the installation layout (eg. different site-packages directory).
@@ -75,10 +77,10 @@ _INSTALL_SCHEMES = {
     # Downstream distributors who patch posix_prefix/nt scheme are encouraged to
     # leave the following schemes unchanged
     'posix_venv': {
-        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
         'include':
             '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
@@ -114,8 +116,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # Emscripten, VxWorks, and WASI have no home directories
-    if sys.platform in {"emscripten", "vxworks", "wasi"}:
+    # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories
+    if sys.platform in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
     def joinuser(*args):
@@ -146,11 +148,11 @@ if _HAS_USER_BASE:
             'data': '{userbase}',
             },
         'posix_user': {
-            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
-            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
-            'include': '{userbase}/include/{implementation_lower}{py_version_short}',
+            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+            'include': '{userbase}/include/{implementation_lower}{py_version_short}{abi_thread}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
@@ -290,6 +292,7 @@ def _get_preferred_schemes():
             'home': 'posix_home',
             'user': 'osx_framework_user',
         }
+
     return {
         'prefix': 'posix_prefix',
         'home': 'posix_home',
@@ -484,6 +487,9 @@ def _init_config_vars():
         # the init-function.
         _CONFIG_VARS['userbase'] = _getuserbase()
 
+    # e.g., 't' for free-threaded or '' for default build
+    _CONFIG_VARS['abi_thread'] = 't' if _CONFIG_VARS.get('Py_GIL_DISABLED') else ''
+
     # Always convert srcdir to an absolute path
     srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
     if os.name == 'posix':
@@ -598,10 +604,22 @@ def get_platform():
     machine = machine.replace('/', '-')
 
     if osname[:5] == "linux":
-        # At least on Linux/Intel, 'machine' is the processor --
-        # i386, etc.
-        # XXX what about Alpha, SPARC, etc?
-        return  f"{osname}-{machine}"
+        if sys.platform == "android":
+            osname = "android"
+            release = get_config_var("ANDROID_API_LEVEL")
+
+            # Wheel tags use the ABI names from Android's own tools.
+            machine = {
+                "x86_64": "x86_64",
+                "i686": "x86",
+                "aarch64": "arm64_v8a",
+                "armv7l": "armeabi_v7a",
+            }[machine]
+        else:
+            # At least on Linux/Intel, 'machine' is the processor --
+            # i386, etc.
+            # XXX what about Alpha, SPARC, etc?
+            return  f"{osname}-{machine}"
     elif osname[:5] == "sunos":
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"
@@ -623,16 +641,25 @@ def get_platform():
         if m:
             release = m.group()
     elif osname[:6] == "darwin":
-        import _osx_support
-        osname, release, machine = _osx_support.get_platform_osx(
-                                            get_config_vars(),
-                                            osname, release, machine)
+        if sys.platform == "ios":
+            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "12.0")
+            osname = sys.platform
+            machine = sys.implementation._multiarch
+        else:
+            import _osx_support
+            osname, release, machine = _osx_support.get_platform_osx(
+                                                get_config_vars(),
+                                                osname, release, machine)
 
     return f"{osname}-{release}-{machine}"
 
 
 def get_python_version():
     return _PY_VERSION_SHORT
+
+
+def _get_python_version_abi():
+    return _PY_VERSION_SHORT + get_config_var("abi_thread")
 
 
 def expand_makefile_vars(s, vars):

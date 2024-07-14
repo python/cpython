@@ -7,7 +7,7 @@ import time
 
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
-_channels = import_helper.import_module('_xxinterpchannels')
+_channels = import_helper.import_module('_interpchannels')
 from test.support import interpreters
 from test.support.interpreters import channels
 from .utils import _run_output, TestBase
@@ -22,7 +22,7 @@ class LowLevelTests(TestBase):
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.
 
-    # Additional tests are found in Lib/test/test__xxinterpchannels.py.
+    # Additional tests are found in Lib/test/test__interpchannels.py.
     # XXX Those should be either moved to LowLevelTests or eliminated
     # in favor of high-level tests in this file.
 
@@ -48,6 +48,7 @@ class TestChannels(TestBase):
         self.assertEqual(after, created)
 
     def test_shareable(self):
+        interp = interpreters.create()
         rch, sch = channels.create()
 
         self.assertTrue(
@@ -60,8 +61,25 @@ class TestChannels(TestBase):
         rch2 = rch.recv()
         sch2 = rch.recv()
 
+        interp.prepare_main(rch=rch, sch=sch)
+        sch.send_nowait(rch)
+        sch.send_nowait(sch)
+        interp.exec(dedent("""
+            rch2 = rch.recv()
+            sch2 = rch.recv()
+            assert rch2 == rch
+            assert sch2 == sch
+
+            sch.send_nowait(rch2)
+            sch.send_nowait(sch2)
+            """))
+        rch3 = rch.recv()
+        sch3 = rch.recv()
+
         self.assertEqual(rch2, rch)
         self.assertEqual(sch2, sch)
+        self.assertEqual(rch3, rch)
+        self.assertEqual(sch3, sch)
 
     def test_is_closed(self):
         rch, sch = channels.create()

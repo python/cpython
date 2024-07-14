@@ -60,6 +60,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from unittest.mock import patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -656,15 +657,15 @@ class HandlerTest(BaseTest):
         self.assertFalse(h.shouldFlush(r))
         h.close()
 
-    def test_path_objects(self):
+    def test_pathlike_objects(self):
         """
-        Test that Path objects are accepted as filename arguments to handlers.
+        Test that path-like objects are accepted as filename arguments to handlers.
 
         See Issue #27493.
         """
         fn = make_temp_file()
         os.unlink(fn)
-        pfn = pathlib.Path(fn)
+        pfn = os_helper.FakePath(fn)
         cases = (
                     (logging.FileHandler, (pfn, 'w')),
                     (logging.handlers.RotatingFileHandler, (pfn, 'a')),
@@ -1037,6 +1038,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
+    allow_reuse_port = True
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
@@ -2191,7 +2193,8 @@ class HTTPHandlerTest(BaseTest):
                 self.handled.clear()
                 msg = "sp\xe4m"
                 logger.error(msg)
-                self.handled.wait()
+                handled = self.handled.wait(support.SHORT_TIMEOUT)
+                self.assertTrue(handled, "HTTP request timed out")
                 self.assertEqual(self.log_data.path, '/frob')
                 self.assertEqual(self.command, method)
                 if method == 'GET':
@@ -3034,6 +3037,30 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    config18  = {
+        "version": 1,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "level": "DEBUG",
+            },
+            "buffering": {
+                "class": "logging.handlers.MemoryHandler",
+                "capacity": 5,
+                "target": "console",
+                "level": "DEBUG",
+                "flushLevel": "ERROR"
+            }
+        },
+        "loggers": {
+            "mymodule": {
+                "level": "DEBUG",
+                "handlers": ["buffering"],
+                "propagate": "true"
+            }
+        }
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3520,6 +3547,11 @@ class ConfigDictTest(BaseTest):
         h = logging._handlers['hand1']
         self.assertEqual(h.formatter.custom_property, 'value')
 
+    def test_config18_ok(self):
+        self.apply_config(self.config18)
+        handler = logging.getLogger('mymodule').handlers[0]
+        self.assertEqual(handler.flushLevel, logging.ERROR)
+
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
@@ -3867,6 +3899,7 @@ class ConfigDictTest(BaseTest):
                 self.addCleanup(os.remove, fn)
 
     @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
     def test_config_queue_handler(self):
         q = CustomQueue()
         dq = {
@@ -3894,6 +3927,78 @@ class ConfigDictTest(BaseTest):
                 self.do_queuehandler_configuration(qspec, lspec)
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
+
+    @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868
+
+        from multiprocessing import Queue as MQ
+
+        q1 = {"()": "queue.Queue", "maxsize": -1}
+        q2 = MQ()
+        q3 = queue.Queue()
+
+        for qspec in (q1, q2, q3):
+            self.apply_config(
+                {
+                    "version": 1,
+                    "handlers": {
+                        "queue_listener": {
+                            "class": "logging.handlers.QueueHandler",
+                            "queue": qspec,
+                        },
+                    },
+                }
+            )
+            manager.assert_not_called()
+
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868
+
+        with self.assertRaises(ValueError):
+            self.apply_config(
+                {
+                    "version": 1,
+                    "handlers": {
+                        "queue_listener": {
+                            "class": "logging.handlers.QueueHandler",
+                            "queue": object(),
+                        },
+                    },
+                }
+            )
+        manager.assert_not_called()
+
+    @support.requires_subprocess()
+    def test_multiprocessing_queues(self):
+        # See gh-119819
+
+        cd = copy.deepcopy(self.config_queue_handler)
+        from multiprocessing import Queue as MQ, Manager as MM
+        q1 = MQ()  # this can't be pickled
+        q2 = MM().Queue()  # a proxy queue for use when pickling is needed
+        q3 = MM().JoinableQueue()  # a joinable proxy queue
+        for qspec in (q1, q2, q3):
+            fn = make_temp_file('.log', 'test_logging-cmpqh-')
+            cd['handlers']['h1']['filename'] = fn
+            cd['handlers']['ah']['queue'] = qspec
+            qh = None
+            try:
+                self.apply_config(cd)
+                qh = logging.getHandlerByName('ah')
+                self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
+                self.assertIsNotNone(qh.listener)
+                self.assertIs(qh.queue, qspec)
+                self.assertIs(qh.listener.queue, qspec)
+            finally:
+                h = logging.getHandlerByName('h1')
+                if h:
+                    self.addCleanup(closeFileHandler, h, fn)
+                else:
+                    self.addCleanup(os.remove, fn)
 
     def test_90195(self):
         # See gh-90195
@@ -3944,6 +4049,35 @@ class ConfigDictTest(BaseTest):
             },
         }
         logging.config.dictConfig(config)
+
+    # gh-118868: check if kwargs are passed to logging QueueHandler
+    def test_kwargs_passing(self):
+        class CustomQueueHandler(logging.handlers.QueueHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(queue.Queue())
+                self.custom_kwargs = kwargs
+
+        custom_kwargs = {'foo': 'bar'}
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'custom': {
+                    'class': CustomQueueHandler,
+                    **custom_kwargs
+                },
+            },
+            'root': {
+                'level': 'DEBUG',
+                'handlers': ['custom']
+            }
+        }
+
+        logging.config.dictConfig(config)
+
+        handler = logging.getHandlerByName('custom')
+        self.assertEqual(handler.custom_kwargs, custom_kwargs)
+
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -4550,6 +4684,77 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             r = logging.makeLogRecord({'msg': 'Message %d' % (i + 1)})
             s = f.format(r)
             self.assertNotIn('.1000', s)
+
+    def test_msecs_has_no_floating_point_precision_loss(self):
+        # See issue gh-102402
+        tests = (
+            # time_ns is approx. 2023-03-04 04:25:20 UTC
+            # (time_ns, expected_msecs_value)
+            (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
+            (1_677_903_920_999_998_503, 999.0),  # check truncating doesn't round
+            (1_677_903_920_000_998_503, 0.0),  # check truncating doesn't round
+            (1_677_903_920_999_999_900, 0.0), # check rounding up
+        )
+        for ns, want in tests:
+            with patch('time.time_ns') as patched_ns:
+                patched_ns.return_value = ns
+                record = logging.makeLogRecord({'msg': 'test'})
+            with self.subTest(ns):
+                self.assertEqual(record.msecs, want)
+                self.assertEqual(record.created, ns / 1e9)
+                self.assertAlmostEqual(record.created - int(record.created),
+                                       record.msecs / 1e3,
+                                       delta=1e-3)
+
+    def test_relativeCreated_has_higher_precision(self):
+        # See issue gh-102402.
+        # Run the code in the subprocess, because the time module should
+        # be patched before the first import of the logging package.
+        # Temporary unloading and re-importing the logging package has
+        # side effects (including registering the atexit callback and
+        # references leak).
+        start_ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
+        offsets_ns = (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456)
+        code = textwrap.dedent(f"""
+            start_ns = {start_ns!r}
+            offsets_ns = {offsets_ns!r}
+            start_monotonic_ns = start_ns - 1
+
+            import time
+            # Only time.time_ns needs to be patched for the current
+            # implementation, but patch also other functions to make
+            # the test less implementation depending.
+            old_time_ns = time.time_ns
+            old_time = time.time
+            old_monotonic_ns = time.monotonic_ns
+            old_monotonic = time.monotonic
+            time_ns_result = start_ns
+            time.time_ns = lambda: time_ns_result
+            time.time = lambda: time.time_ns()/1e9
+            time.monotonic_ns = lambda: time_ns_result - start_monotonic_ns
+            time.monotonic = lambda: time.monotonic_ns()/1e9
+            try:
+                import logging
+
+                for offset_ns in offsets_ns:
+                    # mock for log record creation
+                    time_ns_result = start_ns + offset_ns
+                    record = logging.makeLogRecord({{'msg': 'test'}})
+                    print(record.created, record.relativeCreated)
+            finally:
+                time.time_ns = old_time_ns
+                time.time = old_time
+                time.monotonic_ns = old_monotonic_ns
+                time.monotonic = old_monotonic
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        out = out.decode()
+        for offset_ns, line in zip(offsets_ns, out.splitlines(), strict=True):
+            with self.subTest(offset_ns=offset_ns):
+                created, relativeCreated = map(float, line.split())
+                self.assertAlmostEqual(created, (start_ns + offset_ns) / 1e9, places=6)
+                # After PR gh-102412, precision (places) increases from 3 to 7
+                self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):

@@ -77,7 +77,10 @@ _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
             interp == &_PyRuntime._main_interpreter);
 }
 
-// Export for _xxsubinterpreters module.
+// Export for _interpreters module.
+PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
+
+// Export for _interpreters module.
 PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
@@ -214,10 +217,14 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-extern PyThreadState * _PyThreadState_New(
+// Export for _testinternalcapi
+PyAPI_FUNC(PyThreadState *) _PyThreadState_New(
     PyInterpreterState *interp,
     int whence);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
+PyAPI_FUNC(PyThreadState *) _PyThreadState_NewBound(
+    PyInterpreterState *interp,
+    int whence);
 extern PyThreadState * _PyThreadState_RemoveExcept(PyThreadState *tstate);
 extern void _PyThreadState_DeleteList(PyThreadState *list);
 extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);

@@ -14,9 +14,87 @@ extern "C" {
 
 extern const char *_PyImport_DynLoadFiletab[];
 
-extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
 
+typedef enum ext_module_kind {
+    _Py_ext_module_kind_UNKNOWN = 0,
+    _Py_ext_module_kind_SINGLEPHASE = 1,
+    _Py_ext_module_kind_MULTIPHASE = 2,
+    _Py_ext_module_kind_INVALID = 3,
+} _Py_ext_module_kind;
+
+typedef enum ext_module_origin {
+    _Py_ext_module_origin_CORE = 1,
+    _Py_ext_module_origin_BUILTIN = 2,
+    _Py_ext_module_origin_DYNAMIC = 3,
+} _Py_ext_module_origin;
+
+/* Input for loading an extension module. */
+struct _Py_ext_module_loader_info {
+    PyObject *filename;
+#ifndef MS_WINDOWS
+    PyObject *filename_encoded;
+#endif
+    PyObject *name;
+    PyObject *name_encoded;
+    /* path is always a borrowed ref of name or filename,
+     * depending on if it's builtin or not. */
+    PyObject *path;
+    _Py_ext_module_origin origin;
+    const char *hook_prefix;
+    const char *newcontext;
+};
+extern void _Py_ext_module_loader_info_clear(
+    struct _Py_ext_module_loader_info *info);
+extern int _Py_ext_module_loader_info_init(
+    struct _Py_ext_module_loader_info *info,
+    PyObject *name,
+    PyObject *filename,
+    _Py_ext_module_origin origin);
+extern int _Py_ext_module_loader_info_init_for_core(
+    struct _Py_ext_module_loader_info *p_info,
+    PyObject *name);
+extern int _Py_ext_module_loader_info_init_for_builtin(
+    struct _Py_ext_module_loader_info *p_info,
+    PyObject *name);
+extern int _Py_ext_module_loader_info_init_from_spec(
+    struct _Py_ext_module_loader_info *info,
+    PyObject *spec);
+
+/* The result from running an extension module's init function. */
+struct _Py_ext_module_loader_result {
+    PyModuleDef *def;
+    PyObject *module;
+    _Py_ext_module_kind kind;
+    struct _Py_ext_module_loader_result_error *err;
+    struct _Py_ext_module_loader_result_error {
+        enum _Py_ext_module_loader_result_error_kind {
+            _Py_ext_module_loader_result_EXCEPTION = 0,
+            _Py_ext_module_loader_result_ERR_MISSING = 1,
+            _Py_ext_module_loader_result_ERR_UNREPORTED_EXC = 2,
+            _Py_ext_module_loader_result_ERR_UNINITIALIZED = 3,
+            _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE = 4,
+            _Py_ext_module_loader_result_ERR_NOT_MODULE = 5,
+            _Py_ext_module_loader_result_ERR_MISSING_DEF = 6,
+        } kind;
+        PyObject *exc;
+    } _err;
+};
+extern void _Py_ext_module_loader_result_clear(
+    struct _Py_ext_module_loader_result *res);
+extern void _Py_ext_module_loader_result_apply_error(
+    struct _Py_ext_module_loader_result *res,
+    const char *name);
+
+/* The module init function. */
 typedef PyObject *(*PyModInitFunction)(void);
+extern PyModInitFunction _PyImport_GetModInitFunc(
+    struct _Py_ext_module_loader_info *info,
+    FILE *fp);
+extern int _PyImport_RunModInitFunc(
+    PyModInitFunction p0,
+    struct _Py_ext_module_loader_info *info,
+    struct _Py_ext_module_loader_result *p_res);
+
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12

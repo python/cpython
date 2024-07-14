@@ -796,7 +796,7 @@ Creating network servers
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths
    are supported.
 
-   If *cleanup_socket* is True then the Unix socket will automatically
+   If *cleanup_socket* is true then the Unix socket will automatically
    be removed from the filesystem when the server is closed, unless the
    socket has been replaced after the server has been created.
 
@@ -1155,6 +1155,14 @@ DNS
 
    Asynchronous version of :meth:`socket.getnameinfo`.
 
+.. note::
+   Both *getaddrinfo* and *getnameinfo* internally utilize their synchronous
+   versions through the loop's default thread pool executor.
+   When this executor is saturated, these methods may experience delays,
+   which higher-level networking libraries may report as increased timeouts.
+   To mitigate this, consider using a custom executor for other user tasks,
+   or setting a default executor with a larger number of workers.
+
 .. versionchanged:: 3.7
    Both *getaddrinfo* and *getnameinfo* methods were always documented
    to return a coroutine, but prior to Python 3.7 they were, in fact,
@@ -1254,6 +1262,9 @@ Executing code in thread or process pools
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
+   The default executor can be set by :meth:`loop.set_default_executor`,
+   otherwise, a :class:`concurrent.futures.ThreadPoolExecutor` will be
+   lazy-initialized and used by :func:`run_in_executor` if needed.
 
    Example::
 

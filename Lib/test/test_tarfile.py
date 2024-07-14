@@ -386,7 +386,7 @@ class CommonReadTest(ReadTest):
         self.assertFalse(tarfile.is_tarfile(tmpname))
 
         # is_tarfile works on path-like objects
-        self.assertFalse(tarfile.is_tarfile(pathlib.Path(tmpname)))
+        self.assertFalse(tarfile.is_tarfile(os_helper.FakePath(tmpname)))
 
         # is_tarfile works on file objects
         with open(tmpname, "rb") as fobj:
@@ -400,7 +400,7 @@ class CommonReadTest(ReadTest):
         self.assertTrue(tarfile.is_tarfile(self.tarname))
 
         # is_tarfile works on path-like objects
-        self.assertTrue(tarfile.is_tarfile(pathlib.Path(self.tarname)))
+        self.assertTrue(tarfile.is_tarfile(os_helper.FakePath(self.tarname)))
 
         # is_tarfile works on file objects
         with open(self.tarname, "rb") as fobj:
@@ -513,6 +513,7 @@ class CommonReadTest(ReadTest):
         with self.tar.extractfile(file) as fobj:
             self.assertEqual(fobj.name, 'ustar/regtype')
             self.assertRaises(AttributeError, fobj.fileno)
+            self.assertEqual(fobj.mode, 'rb')
             self.assertIs(fobj.readable(), True)
             self.assertIs(fobj.writable(), False)
             if self.is_stream:
@@ -523,6 +524,7 @@ class CommonReadTest(ReadTest):
         self.assertIs(fobj.closed, True)
         self.assertEqual(fobj.name, 'ustar/regtype')
         self.assertRaises(AttributeError, fobj.fileno)
+        self.assertEqual(fobj.mode, 'rb')
         self.assertIs(fobj.readable(), True)
         self.assertIs(fobj.writable(), False)
         if self.is_stream:
@@ -533,11 +535,8 @@ class CommonReadTest(ReadTest):
 
 class MiscReadTestBase(CommonReadTest):
     is_stream = False
-    def requires_name_attribute(self):
-        pass
 
     def test_no_name_argument(self):
-        self.requires_name_attribute()
         with open(self.tarname, "rb") as fobj:
             self.assertIsInstance(fobj.name, str)
             with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
@@ -570,7 +569,6 @@ class MiscReadTestBase(CommonReadTest):
                 self.assertIsNone(tar.name)
 
     def test_bytes_name_attribute(self):
-        self.requires_name_attribute()
         tarname = os.fsencode(self.tarname)
         with open(tarname, 'rb') as fobj:
             self.assertIsInstance(fobj.name, bytes)
@@ -578,21 +576,23 @@ class MiscReadTestBase(CommonReadTest):
                 self.assertIsInstance(tar.name, bytes)
                 self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
-    def test_pathlike_name(self):
-        tarname = pathlib.Path(self.tarname)
+    def test_pathlike_name(self, tarname=None):
+        if tarname is None:
+            tarname = self.tarname
+        expected = os.path.abspath(tarname)
+        tarname = os_helper.FakePath(tarname)
         with tarfile.open(tarname, mode=self.mode) as tar:
-            self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+            self.assertEqual(tar.name, expected)
         with self.taropen(tarname) as tar:
-            self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+            self.assertEqual(tar.name, expected)
         with tarfile.TarFile.open(tarname, mode=self.mode) as tar:
-            self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+            self.assertEqual(tar.name, expected)
         if self.suffix == '':
             with tarfile.TarFile(tarname, mode='r') as tar:
-                self.assertIsInstance(tar.name, str)
-                self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+                self.assertEqual(tar.name, expected)
+
+    def test_pathlike_bytes_name(self):
+        self.test_pathlike_name(os.fsencode(self.tarname))
 
     def test_illegal_mode_arg(self):
         with open(tmpname, 'wb'):
@@ -738,24 +738,49 @@ class MiscReadTestBase(CommonReadTest):
         finally:
             os_helper.rmtree(DIR)
 
-    def test_extractall_pathlike_name(self):
+    def test_deprecation_if_no_filter_passed_to_extractall(self):
         DIR = pathlib.Path(TEMPDIR) / "extractall"
+        with (
+            os_helper.temp_dir(DIR),
+            tarfile.open(tarname, encoding="iso8859-1") as tar
+        ):
+            directories = [t for t in tar if t.isdir()]
+            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
+                tar.extractall(DIR, directories)
+            # check that the stacklevel of the deprecation warning is correct:
+            self.assertEqual(cm.filename, __file__)
+
+    def test_deprecation_if_no_filter_passed_to_extract(self):
+        dirtype = "ustar/dirtype"
+        DIR = pathlib.Path(TEMPDIR) / "extractall"
+        with (
+            os_helper.temp_dir(DIR),
+            tarfile.open(tarname, encoding="iso8859-1") as tar
+        ):
+            tarinfo = tar.getmember(dirtype)
+            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
+                tar.extract(tarinfo, path=DIR)
+            # check that the stacklevel of the deprecation warning is correct:
+            self.assertEqual(cm.filename, __file__)
+
+    def test_extractall_pathlike_dir(self):
+        DIR = os.path.join(TEMPDIR, "extractall")
         with os_helper.temp_dir(DIR), \
              tarfile.open(tarname, encoding="iso8859-1") as tar:
             directories = [t for t in tar if t.isdir()]
-            tar.extractall(DIR, directories, filter='fully_trusted')
+            tar.extractall(os_helper.FakePath(DIR), directories, filter='fully_trusted')
             for tarinfo in directories:
-                path = DIR / tarinfo.name
+                path = os.path.join(DIR, tarinfo.name)
                 self.assertEqual(os.path.getmtime(path), tarinfo.mtime)
 
-    def test_extract_pathlike_name(self):
+    def test_extract_pathlike_dir(self):
         dirtype = "ustar/dirtype"
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
+        DIR = os.path.join(TEMPDIR, "extractall")
         with os_helper.temp_dir(DIR), \
              tarfile.open(tarname, encoding="iso8859-1") as tar:
             tarinfo = tar.getmember(dirtype)
-            tar.extract(tarinfo, path=DIR, filter='fully_trusted')
-            extracted = DIR / dirtype
+            tar.extract(tarinfo, path=os_helper.FakePath(DIR), filter='fully_trusted')
+            extracted = os.path.join(DIR, dirtype)
             self.assertEqual(os.path.getmtime(extracted), tarinfo.mtime)
 
     def test_init_close_fobj(self):
@@ -814,12 +839,10 @@ class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase):
     pass
 
 class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
-    def requires_name_attribute(self):
-        self.skipTest("BZ2File have no name attribute")
+    pass
 
 class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase):
-    def requires_name_attribute(self):
-        self.skipTest("LZMAFile have no name attribute")
+    pass
 
 
 class StreamReadTest(CommonReadTest, unittest.TestCase):
@@ -1369,11 +1392,11 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     def test_gettarinfo_pathlike_name(self):
         with tarfile.open(tmpname, self.mode) as tar:
-            path = pathlib.Path(TEMPDIR) / "file"
+            path = os.path.join(TEMPDIR, "file")
             with open(path, "wb") as fobj:
                 fobj.write(b"aaa")
-            tarinfo = tar.gettarinfo(path)
-            tarinfo2 = tar.gettarinfo(os.fspath(path))
+            tarinfo = tar.gettarinfo(os_helper.FakePath(path))
+            tarinfo2 = tar.gettarinfo(path)
             self.assertIsInstance(tarinfo.name, str)
             self.assertEqual(tarinfo.name, tarinfo2.name)
             self.assertEqual(tarinfo.size, 3)
@@ -1586,6 +1609,12 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                                    format=tarfile.PAX_FORMAT,
                                    pax_headers={'non': 'empty'})
             self.assertFalse(f.closed)
+
+    def test_missing_fileobj(self):
+        with tarfile.open(tmpname, self.mode) as tar:
+            tarinfo = tar.gettarinfo(tarname)
+            with self.assertRaises(ValueError):
+                tar.addfile(tarinfo)
 
 
 class GzipWriteTest(GzipTest, WriteTest):
@@ -1920,10 +1949,10 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertIn("spameggs42", names[0])
 
     def test_create_pathlike_name(self):
-        with tarfile.open(pathlib.Path(tmpname), self.mode) as tobj:
+        with tarfile.open(os_helper.FakePath(tmpname), self.mode) as tobj:
             self.assertIsInstance(tobj.name, str)
             self.assertEqual(tobj.name, os.path.abspath(tmpname))
-            tobj.add(pathlib.Path(self.file_path))
+            tobj.add(os_helper.FakePath(self.file_path))
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
@@ -1934,10 +1963,10 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertIn('spameggs42', names[0])
 
     def test_create_taropen_pathlike_name(self):
-        with self.taropen(pathlib.Path(tmpname), "x") as tobj:
+        with self.taropen(os_helper.FakePath(tmpname), "x") as tobj:
             self.assertIsInstance(tobj.name, str)
             self.assertEqual(tobj.name, os.path.abspath(tmpname))
-            tobj.add(pathlib.Path(self.file_path))
+            tobj.add(os_helper.FakePath(self.file_path))
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
@@ -3258,7 +3287,8 @@ class NoneInfoTests_Misc(unittest.TestCase):
                 tar = tarfile.open(fileobj=bio, mode='w', format=tarformat)
                 tarinfo = tar.gettarinfo(tarname)
                 try:
-                    tar.addfile(tarinfo)
+                    with open(tarname, 'rb') as f:
+                        tar.addfile(tarinfo, f)
                 except Exception:
                     if tarformat == tarfile.USTAR_FORMAT:
                         # In the old, limited format, adding might fail for
@@ -3273,7 +3303,8 @@ class NoneInfoTests_Misc(unittest.TestCase):
                             replaced = tarinfo.replace(**{attr_name: None})
                             with self.assertRaisesRegex(ValueError,
                                                         f"{attr_name}"):
-                                tar.addfile(replaced)
+                                with open(tarname, 'rb') as f:
+                                    tar.addfile(replaced, f)
 
     def test_list(self):
         # Change some metadata to None, then compare list() output

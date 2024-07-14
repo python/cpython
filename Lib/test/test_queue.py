@@ -2,7 +2,6 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
-import sys
 import threading
 import time
 import unittest
@@ -635,6 +634,23 @@ class BaseQueueTestMixin(BlockingTestMixin):
             t.join()
 
         self.assertEqual(results, [True]*len(thrds))
+
+    def test_shutdown_pending_get(self):
+        def get():
+            try:
+                results.append(q.get())
+            except Exception as e:
+                results.append(e)
+
+        q = self.type2test()
+        results = []
+        get_thread = threading.Thread(target=get)
+        get_thread.start()
+        q.shutdown(immediate=False)
+        get_thread.join(timeout=10.0)
+        self.assertFalse(get_thread.is_alive())
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], self.queue.ShutDown)
 
 
 class QueueTest(BaseQueueTestMixin):

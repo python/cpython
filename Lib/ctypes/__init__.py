@@ -205,6 +205,16 @@ class c_longdouble(_SimpleCData):
 if sizeof(c_longdouble) == sizeof(c_double):
     c_longdouble = c_double
 
+try:
+    class c_double_complex(_SimpleCData):
+        _type_ = "C"
+    class c_float_complex(_SimpleCData):
+        _type_ = "E"
+    class c_longdouble_complex(_SimpleCData):
+        _type_ = "F"
+except AttributeError:
+    pass
+
 if _calcsize("l") == _calcsize("q"):
     # if long and long long have the same size, make c_longlong an alias for c_long
     c_longlong = c_long
@@ -534,9 +544,9 @@ def cast(obj, typ):
 
 _string_at = PYFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
 def string_at(ptr, size=-1):
-    """string_at(addr[, size]) -> string
+    """string_at(ptr[, size]) -> string
 
-    Return the string at addr."""
+    Return the byte string at void *ptr."""
     return _string_at(ptr, size)
 
 try:
@@ -546,9 +556,9 @@ except ImportError:
 else:
     _wstring_at = PYFUNCTYPE(py_object, c_void_p, c_int)(_wstring_at_addr)
     def wstring_at(ptr, size=-1):
-        """wstring_at(addr[, size]) -> string
+        """wstring_at(ptr[, size]) -> string
 
-        Return the string at addr."""
+        Return the wide-character string at void *ptr."""
         return _wstring_at(ptr, size)
 
 
