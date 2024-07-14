@@ -10,7 +10,6 @@
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
-#include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -32,6 +31,7 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 
 #include "opcode.h"
 
@@ -69,7 +69,11 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
+#ifdef __ANDROID__
+static PyStatus init_android_streams(PyThreadState *tstate);
+#endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
+static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
 /* The following places the `_PyRuntime` structure in a location that can be
@@ -475,6 +479,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(interp->_ready);
 
     status = _PyConfig_Write(config, runtime);
     if (_PyStatus_EXCEPTION(status)) {
@@ -556,6 +561,15 @@ init_interp_settings(PyInterpreterState *interp,
         return _PyStatus_ERR("per-interpreter obmalloc does not support "
                              "single-phase init extension modules");
     }
+#ifdef Py_GIL_DISABLED
+    if (!_Py_IsMainInterpreter(interp) &&
+        !config->check_multi_interp_extensions)
+    {
+        return _PyStatus_ERR("The free-threaded build does not support "
+                             "single-phase init extension modules in "
+                             "subinterpreters");
+    }
+#endif
 
     if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
@@ -605,6 +619,18 @@ init_interp_create_gil(PyThreadState *tstate, int gil)
     _PyEval_InitGIL(tstate, own_gil);
 }
 
+static int
+builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef _Py_TIER2
+    if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+        _Py_Executors_InvalidateAll(interp, 1);
+    }
+#endif
+    RARE_EVENT_INTERP_INC(interp, builtin_dict);
+    return 0;
+}
 
 static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
@@ -619,6 +645,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     assert(interp != NULL);
     assert(_Py_IsMainInterpreter(interp));
+    _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_RUNTIME);
+    interp->_ready = 1;
 
     status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -632,18 +660,28 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    // The main interpreter always has its own GIL.
+    // The main interpreter always has its own GIL and supports single-phase
+    // init extensions.
     config.gil = PyInterpreterConfig_OWN_GIL;
+    config.check_multi_interp_extensions = 0;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (_PyMem_init_obmalloc(interp) < 0) {
+        return  _PyStatus_NO_MEMORY();
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp,
-                                               _PyThreadState_WHENCE_INTERP);
+                                               _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
+    runtime->main_tstate = tstate;
     _PyThreadState_Bind(tstate);
 
     init_interp_create_gil(tstate, config.gil);
@@ -666,6 +704,10 @@ pycore_init_global_objects(PyInterpreterState *interp)
     }
 
     _PyUnicode_InitState(interp);
+
+    if (_Py_IsMainInterpreter(interp)) {
+        _Py_GetConstant_Init();
+    }
 
     return _PyStatus_OK();
 }
@@ -739,7 +781,7 @@ pycore_init_builtins(PyThreadState *tstate)
     }
 
     PyObject *modules = _PyImport_GetModules(interp);
-    if (_PyImport_FixupBuiltin(bimod, "builtins", modules) < 0) {
+    if (_PyImport_FixupBuiltin(tstate, bimod, "builtins", modules) < 0) {
         goto error;
     }
 
@@ -807,6 +849,11 @@ pycore_interp_init(PyThreadState *tstate)
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
     // and the empty tuple singletons (tp_bases).
     status = pycore_init_global_objects(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyCode_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1090,7 +1137,6 @@ run_presite(PyThreadState *tstate)
     );
     if (presite_modname == NULL) {
         fprintf(stderr, "Could not convert pre-site module name to unicode\n");
-        Py_DECREF(presite_modname);
     }
     else {
         PyObject *presite = PyImport_Import(presite_modname);
@@ -1168,7 +1214,14 @@ init_interp_main(PyThreadState *tstate)
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
         if (config->perf_profiling) {
-            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ||
+            _PyPerf_Callbacks *cur_cb;
+            if (config->perf_profiling == 1) {
+                cur_cb = &_Py_perfmap_callbacks;
+            }
+            else {
+                cur_cb = &_Py_perfmap_jit_callbacks;
+            }
+            if (_PyPerfTrampoline_SetCallbacks(cur_cb) < 0 ||
                     _PyPerfTrampoline_Init(config->perf_profiling) < 0) {
                 return _PyStatus_ERR("can't initialize the perf trampoline");
             }
@@ -1185,6 +1238,13 @@ init_interp_main(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef __ANDROID__
+    status = init_android_streams(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
 #ifdef Py_DEBUG
     run_presite(tstate);
@@ -1225,21 +1285,30 @@ init_interp_main(PyThreadState *tstate)
     }
 
     // Turn on experimental tier 2 (uops-based) optimizer
+    // This is also needed when the JIT is enabled
+#ifdef _Py_TIER2
     if (is_main_interp) {
-        char *envvar = Py_GETENV("PYTHON_UOPS");
-        int enabled = envvar != NULL && *envvar > '0';
-        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
-            enabled = 1;
+        int enabled = 1;
+#if _Py_TIER2 & 2
+        enabled = 0;
+#endif
+        char *env = Py_GETENV("PYTHON_JIT");
+        if (env && *env != '\0') {
+            // PYTHON_JIT=0|1 overrides the default
+            enabled = *env != '0';
         }
         if (enabled) {
-            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+            PyObject *opt = _PyOptimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
-            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+            if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
+                return _PyStatus_ERR("can't install optimizer");
+            }
             Py_DECREF(opt);
         }
     }
+#endif
 
     if (!is_main_interp) {
         // The main interpreter is handled in Py_Main(), for now.
@@ -1264,6 +1333,12 @@ init_interp_main(PyThreadState *tstate)
                 return _PyStatus_ERR("can't initialize sys.path[0]");
             }
         }
+    }
+
+
+    interp->dict_state.watchers[0] = &builtins_dict_watcher;
+    if (PyDict_Watch(0, interp->builtins) != 0) {
+        return _PyStatus_ERR("failed to set builtin dict watcher");
     }
 
     assert(!_PyErr_Occurred(tstate));
@@ -1592,6 +1667,17 @@ static void
 finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
+
+#ifdef _Py_TIER2
+    // Invalidate all executors and turn off tier 2 optimizer
+    _Py_Executors_InvalidateAll(interp, 0);
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_XDECREF(old);
+#endif
+
+    // Stop watching __builtin__ modifications
+    PyDict_Unwatch(0, interp->builtins);
+
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
@@ -1731,12 +1817,11 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyTypes_FiniExtTypes(interp);
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
     _PyXI_FiniTypes(interp);
     _PyExc_Fini(interp);
-    _PyAsyncGen_Fini(interp);
-    _PyContext_Fini(interp);
     _PyFloat_FiniType(interp);
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
@@ -1747,18 +1832,21 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyTypes_Fini(interp);
 
+    _PyCode_Fini(interp);
+
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
 
-    _PyDict_Fini(interp);
-    _PyList_Fini(interp);
-    _PyTuple_Fini(interp);
-
-    _PySlice_Fini(interp);
-
     _PyUnicode_Fini(interp);
-    _PyFloat_Fini(interp);
+
+#ifndef Py_GIL_DISABLED
+    // With Py_GIL_DISABLED:
+    // the freelists for the current thread state have already been cleared.
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
+#endif
+
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);
 #endif
@@ -1794,6 +1882,13 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Free any delayed free requests immediately */
+    _PyMem_FiniDelayed(tstate->interp);
+
+    /* finalize_interp_types may allocate Python objects so we may need to
+       abandon mimalloc segments again */
+    _PyThreadState_ClearMimallocHeaps(tstate);
 }
 
 
@@ -1813,20 +1908,73 @@ finalize_interp_delete(PyInterpreterState *interp)
 }
 
 
-int
-Py_FinalizeEx(void)
+/* Conceptually, there isn't a good reason for Py_Finalize()
+   to be called in any other thread than the one where Py_Initialize()
+   was called.  Consequently, it would make sense to fail if the thread
+   or thread state (or interpreter) don't match.  However, such
+   constraints have never been enforced, and, as unlikely as it may be,
+   there may be users relying on the unconstrained behavior.  Thus,
+   we do our best here to accommodate that possibility. */
+
+static PyThreadState *
+resolve_final_tstate(_PyRuntimeState *runtime)
+{
+    PyThreadState *main_tstate = runtime->main_tstate;
+    assert(main_tstate != NULL);
+    assert(main_tstate->thread_id == runtime->main_thread);
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    assert(main_tstate->interp == main_interp);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_Py_IsMainThread()) {
+        if (tstate != main_tstate) {
+            /* This implies that Py_Finalize() was called while
+               a non-main interpreter was active or while the main
+               tstate was temporarily swapped out with another.
+               Neither case should be allowed, but, until we get around
+               to fixing that (and Py_Exit()), we're letting it go. */
+            (void)PyThreadState_Swap(main_tstate);
+        }
+    }
+    else {
+        /* This is another unfortunate case where Py_Finalize() was
+           called when it shouldn't have been.  We can't simply switch
+           over to the main thread.  At the least, however, we can make
+           sure the main interpreter is active. */
+        if (!_Py_IsMainInterpreter(tstate->interp)) {
+            /* We don't go to the trouble of updating runtime->main_tstate
+               since it will be dead soon anyway. */
+            main_tstate =
+                _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
+            if (main_tstate != NULL) {
+                _PyThreadState_Bind(main_tstate);
+                (void)PyThreadState_Swap(main_tstate);
+            }
+            else {
+                /* Fall back to the current tstate.  It's better than nothing. */
+                main_tstate = tstate;
+            }
+        }
+    }
+    assert(main_tstate != NULL);
+
+    /* We might want to warn if main_tstate->current_frame != NULL. */
+
+    return main_tstate;
+}
+
+static int
+_Py_Finalize(_PyRuntimeState *runtime)
 {
     int status = 0;
 
-    _PyRuntimeState *runtime = &_PyRuntime;
+    /* Bail out early if already finalized (or never initialized). */
     if (!runtime->initialized) {
         return status;
     }
 
-    /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = _PyThreadState_GET();
-    // XXX assert(_Py_IsMainInterpreter(tstate->interp));
-    // XXX assert(_Py_IsMainThread());
+    /* Get final thread state pointer. */
+    PyThreadState *tstate = resolve_final_tstate(runtime);
 
     // Block some operations.
     tstate->interp->finalizing = 1;
@@ -1849,6 +1997,8 @@ Py_FinalizeEx(void)
 
     _PyAtExit_Call(tstate->interp);
 
+    assert(_PyThreadState_GET() == tstate);
+
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
@@ -1861,6 +2011,9 @@ Py_FinalizeEx(void)
 #ifdef WITH_PYMALLOC
     int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
+
+    /* Ensure that remaining threads are detached */
+    _PyEval_StopTheWorldAll(runtime);
 
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
@@ -1878,8 +2031,11 @@ Py_FinalizeEx(void)
        will be called in the current Python thread. Since
        _PyRuntimeState_SetFinalizing() has been called, no other Python thread
        can take the GIL at this point: if they try, they will exit
-       immediately. */
-    _PyThreadState_DeleteExcept(tstate);
+       immediately. We start the world once we are the only thread state left,
+       before we call destructors. */
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    _PyEval_StartTheWorldAll(runtime);
+    _PyThreadState_DeleteList(list);
 
     /* At this point no Python code should be running at all.
        The only thread state left should be the main thread of the main
@@ -1922,6 +2078,9 @@ Py_FinalizeEx(void)
     /* Destroy all modules */
     _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
+
+    /* Clean up any lingering subinterpreters. */
+    finalize_subinterpreters();
 
     /* Print debug stats if any */
     _PyEval_Fini();
@@ -2018,6 +2177,12 @@ Py_FinalizeEx(void)
     }
 #endif /* Py_TRACE_REFS */
 
+#ifdef WITH_PYMALLOC
+    if (malloc_stats) {
+        _PyObject_DebugMallocStats(stderr);
+    }
+#endif
+
     finalize_interp_delete(tstate->interp);
 
 #ifdef Py_REF_DEBUG
@@ -2028,22 +2193,22 @@ Py_FinalizeEx(void)
 #endif
     _Py_FinalizeAllocatedBlocks(runtime);
 
-#ifdef WITH_PYMALLOC
-    if (malloc_stats) {
-        _PyObject_DebugMallocStats(stderr);
-    }
-#endif
-
     call_ll_exitfuncs(runtime);
 
     _PyRuntime_Finalize();
     return status;
 }
 
+int
+Py_FinalizeEx(void)
+{
+    return _Py_Finalize(&_PyRuntime);
+}
+
 void
 Py_Finalize(void)
 {
-    Py_FinalizeEx();
+    (void)_Py_Finalize(&_PyRuntime);
 }
 
 
@@ -2061,7 +2226,8 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
+new_interpreter(PyThreadState **tstate_p,
+                const PyInterpreterConfig *config, long whence)
 {
     PyStatus status;
 
@@ -2084,6 +2250,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         *tstate_p = NULL;
         return _PyStatus_OK();
     }
+    _PyInterpreterState_SetWhence(interp, whence);
+    interp->_ready = 1;
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
@@ -2121,7 +2289,15 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         goto error;
     }
 
-    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INTERP);
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (_PyMem_init_obmalloc(interp) < 0) {
+        status = _PyStatus_NO_MEMORY();
+        goto error;
+    }
+
+    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         status = _PyStatus_NO_MEMORY();
         goto error;
@@ -2164,15 +2340,17 @@ PyStatus
 Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
                             const PyInterpreterConfig *config)
 {
-    return new_interpreter(tstate_p, config);
+    long whence = _PyInterpreterState_WHENCE_CAPI;
+    return new_interpreter(tstate_p, config, whence);
 }
 
 PyThreadState *
 Py_NewInterpreter(void)
 {
     PyThreadState *tstate = NULL;
+    long whence = _PyInterpreterState_WHENCE_LEGACY_CAPI;
     const PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    PyStatus status = new_interpreter(&tstate, &config);
+    PyStatus status = new_interpreter(&tstate, &config, whence);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
@@ -2242,13 +2420,86 @@ _Py_IsInterpreterFinalizing(PyInterpreterState *interp)
     return finalizing != NULL;
 }
 
+static void
+finalize_subinterpreters(void)
+{
+    PyThreadState *final_tstate = _PyThreadState_GET();
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    assert(final_tstate->interp == main_interp);
+    _PyRuntimeState *runtime = main_interp->runtime;
+    struct pyinterpreters *interpreters = &runtime->interpreters;
+
+    /* Get the first interpreter in the list. */
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = interpreters->head;
+    if (interp == main_interp) {
+        interp = interp->next;
+    }
+    HEAD_UNLOCK(runtime);
+
+    /* Bail out if there are no subinterpreters left. */
+    if (interp == NULL) {
+        return;
+    }
+
+    /* Warn the user if they forgot to clean up subinterpreters. */
+    (void)PyErr_WarnEx(
+            PyExc_RuntimeWarning,
+            "remaining subinterpreters; "
+            "destroy them with _interpreters.destroy()",
+            0);
+
+    /* Swap out the current tstate, which we know must belong
+       to the main interpreter. */
+    _PyThreadState_Detach(final_tstate);
+
+    /* Clean up all remaining subinterpreters. */
+    while (interp != NULL) {
+        assert(!_PyInterpreterState_IsRunningMain(interp));
+
+        /* Find the tstate to use for fini.  We assume the interpreter
+           will have at most one tstate at this point. */
+        PyThreadState *tstate = interp->threads.head;
+        if (tstate != NULL) {
+            /* Ideally we would be able to use tstate as-is, and rely
+               on it being in a ready state: no exception set, not
+               running anything (tstate->current_frame), matching the
+               current thread ID (tstate->thread_id).  To play it safe,
+               we always delete it and use a fresh tstate instead. */
+            assert(tstate != final_tstate);
+            _PyThreadState_Attach(tstate);
+            PyThreadState_Clear(tstate);
+            _PyThreadState_Detach(tstate);
+            PyThreadState_Delete(tstate);
+        }
+        tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+
+        /* Destroy the subinterpreter. */
+        _PyThreadState_Attach(tstate);
+        Py_EndInterpreter(tstate);
+        assert(_PyThreadState_GET() == NULL);
+
+        /* Advance to the next interpreter. */
+        HEAD_LOCK(runtime);
+        interp = interpreters->head;
+        if (interp == main_interp) {
+            interp = interp->next;
+        }
+        HEAD_UNLOCK(runtime);
+    }
+
+    /* Switch back to the main interpreter. */
+    _PyThreadState_Attach(final_tstate);
+}
+
+
 /* Add the __main__ module */
 
 static PyStatus
 add_main_module(PyInterpreterState *interp)
 {
     PyObject *m, *d, *ann_dict;
-    m = PyImport_AddModule("__main__");
+    m = PyImport_AddModuleObject(&_Py_ID(__main__));
     if (m == NULL)
         return _PyStatus_ERR("can't create __main__ module");
 
@@ -2314,54 +2565,6 @@ init_import_site(void)
     return _PyStatus_OK();
 }
 
-/* Check if a file descriptor is valid or not.
-   Return 0 if the file descriptor is invalid, return non-zero otherwise. */
-static int
-is_valid_fd(int fd)
-{
-/* dup() is faster than fstat(): fstat() can require input/output operations,
-   whereas dup() doesn't. There is a low risk of EMFILE/ENFILE at Python
-   startup. Problem: dup() doesn't check if the file descriptor is valid on
-   some platforms.
-
-   fcntl(fd, F_GETFD) is even faster, because it only checks the process table.
-   It is preferred over dup() when available, since it cannot fail with the
-   "too many open files" error (EMFILE).
-
-   bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
-   side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
-   EBADF. FreeBSD has similar issue (bpo-32849).
-
-   Only use dup() on Linux where dup() is enough to detect invalid FD
-   (bpo-32849).
-*/
-    if (fd < 0) {
-        return 0;
-    }
-#if defined(F_GETFD) && ( \
-        defined(__linux__) || \
-        defined(__APPLE__) || \
-        defined(__wasm__))
-    return fcntl(fd, F_GETFD) >= 0;
-#elif defined(__linux__)
-    int fd2 = dup(fd);
-    if (fd2 >= 0) {
-        close(fd2);
-    }
-    return (fd2 >= 0);
-#elif defined(MS_WINDOWS)
-    HANDLE hfile;
-    _Py_BEGIN_SUPPRESS_IPH
-    hfile = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
-    return (hfile != INVALID_HANDLE_VALUE
-            && GetFileType(hfile) != FILE_TYPE_UNKNOWN);
-#else
-    struct stat st;
-    return (fstat(fd, &st) == 0);
-#endif
-}
-
 /* returns Py_None if the fd is not valid */
 static PyObject*
 create_stdio(const PyConfig *config, PyObject* io,
@@ -2375,8 +2578,9 @@ create_stdio(const PyConfig *config, PyObject* io,
     int buffering, isatty;
     const int buffered_stdio = config->buffered_stdio;
 
-    if (!is_valid_fd(fd))
+    if (!_Py_IsValidFD(fd)) {
         Py_RETURN_NONE;
+    }
 
     /* stdin is always opened in buffered mode, first because it shouldn't
        make a difference in common use cases, second because TextIOWrapper
@@ -2492,9 +2696,9 @@ error:
     Py_XDECREF(text);
     Py_XDECREF(raw);
 
-    if (PyErr_ExceptionMatches(PyExc_OSError) && !is_valid_fd(fd)) {
+    if (PyErr_ExceptionMatches(PyExc_OSError) && !_Py_IsValidFD(fd)) {
         /* Issue #24891: the file descriptor was closed after the first
-           is_valid_fd() check was called. Ignore the OSError and set the
+           _Py_IsValidFD() check was called. Ignore the OSError and set the
            stream to None. */
         PyErr_Clear();
         Py_RETURN_NONE;
@@ -2633,6 +2837,73 @@ done:
 }
 
 
+#ifdef __ANDROID__
+#include <android/log.h>
+
+static PyObject *
+android_log_write_impl(PyObject *self, PyObject *args)
+{
+    int prio = 0;
+    const char *tag = NULL;
+    const char *text = NULL;
+    if (!PyArg_ParseTuple(args, "isy", &prio, &tag, &text)) {
+        return NULL;
+    }
+
+    // Despite its name, this function is part of the public API
+    // (https://developer.android.com/ndk/reference/group/logging).
+    __android_log_write(prio, tag, text);
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef android_log_write_method = {
+    "android_log_write", android_log_write_impl, METH_VARARGS
+};
+
+
+static PyStatus
+init_android_streams(PyThreadState *tstate)
+{
+    PyStatus status = _PyStatus_OK();
+    PyObject *_android_support = NULL;
+    PyObject *android_log_write = NULL;
+    PyObject *result = NULL;
+
+    _android_support = PyImport_ImportModule("_android_support");
+    if (_android_support == NULL) {
+        goto error;
+    }
+
+    android_log_write = PyCFunction_New(&android_log_write_method, NULL);
+    if (android_log_write == NULL) {
+        goto error;
+    }
+
+    // These log priorities match those used by Java's System.out and System.err.
+    result = PyObject_CallMethod(
+        _android_support, "init_streams", "Oii",
+        android_log_write, ANDROID_LOG_INFO, ANDROID_LOG_WARN);
+    if (result == NULL) {
+        goto error;
+    }
+
+    goto done;
+
+error:
+    _PyErr_Print(tstate);
+    status = _PyStatus_ERR("failed to initialize Android streams");
+
+done:
+    Py_XDECREF(result);
+    Py_XDECREF(android_log_write);
+    Py_XDECREF(_android_support);
+    return status;
+}
+
+#endif  // __ANDROID__
+
+
 static void
 _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
                               PyThreadState *tstate)
@@ -2764,6 +3035,30 @@ fatal_error_exit(int status)
     }
 }
 
+static inline int
+acquire_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    if (_PyMutex_LockTimed(mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+        return 1;
+    }
+    return 0;
+#else
+    return 1;
+#endif
+}
+
+static inline void
+release_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    // We can not call PyMutex_Unlock because it's not async-signal-safe.
+    // So not to wake up other threads, we just use a simple atomic store in here.
+    _Py_atomic_store_uint8(&mutex->_bits, _Py_UNLOCKED);
+#endif
+}
 
 // Dump the list of extension modules of sys.modules, excluding stdlib modules
 // (sys.stdlib_module_names), into fd file descriptor.
@@ -2791,13 +3086,18 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     PyObject *stdlib_module_names = NULL;
     if (interp->sysdict != NULL) {
         pos = 0;
-        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+        if (!acquire_dict_lock_for_dump(interp->sysdict)) {
+            // If we cannot acquire the lock, just don't dump the list of extension modules.
+            return;
+        }
+        while (_PyDict_Next(interp->sysdict, &pos, &key, &value, NULL)) {
             if (PyUnicode_Check(key)
                && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
                 stdlib_module_names = value;
                 break;
             }
         }
+        release_dict_lock_for_dump(interp->sysdict);
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,
     // don't exclude stdlib modules.
@@ -2809,7 +3109,11 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     int header = 1;
     Py_ssize_t count = 0;
     pos = 0;
-    while (PyDict_Next(modules, &pos, &key, &value)) {
+    if (!acquire_dict_lock_for_dump(modules)) {
+        // If we cannot acquire the lock, just don't dump the list of extension modules.
+        return;
+    }
+    while (_PyDict_Next(modules, &pos, &key, &value, NULL)) {
         if (!PyUnicode_Check(key)) {
             continue;
         }
@@ -2824,6 +3128,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
             Py_ssize_t i = 0;
             PyObject *item;
             Py_hash_t hash;
+            // if stdlib_module_names is not NULL, it is always a frozenset.
             while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
                 if (PyUnicode_Check(item)
                     && PyUnicode_Compare(key, item) == 0)
@@ -2849,6 +3154,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         _Py_DumpASCII(fd, key);
         count++;
     }
+    release_dict_lock_for_dump(modules);
 
     if (count) {
         PUTS(fd, " (total: ");
@@ -3078,7 +3384,11 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
 void _Py_NO_RETURN
 Py_Exit(int sts)
 {
-    if (Py_FinalizeEx() < 0) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
+        _PyInterpreterState_SetNotRunningMain(tstate->interp);
+    }
+    if (_Py_Finalize(&_PyRuntime) < 0) {
         sts = 120;
     }
 

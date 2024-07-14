@@ -22,7 +22,7 @@
 #endif
 
 /* Reference the precompiled getpath.py */
-#include "../Python/frozen_modules/getpath.h"
+#include "Python/frozen_modules/getpath.h"
 
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
         || !defined(VERSION) || !defined(VPATH) \
@@ -262,6 +262,10 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
+    if (parts == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     memset(parts, 0, n * sizeof(wchar_t *));
     Py_ssize_t cchFinal = 0;
     Py_ssize_t first = 0;
@@ -947,6 +951,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         !wchar_to_dict(dict, "executable_dir", NULL) ||
         !wchar_to_dict(dict, "py_setpath", _PyPathConfig_GetGlobalModuleSearchPath()) ||
         !funcs_to_dict(dict, config->pathconfig_warnings) ||
+#ifdef Py_GIL_DISABLED
+        !decode_to_dict(dict, "ABI_THREAD", "t") ||
+#else
+        !decode_to_dict(dict, "ABI_THREAD", "") ||
+#endif
 #ifndef MS_WINDOWS
         PyDict_SetItemString(dict, "winreg", Py_None) < 0 ||
 #endif

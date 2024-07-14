@@ -31,10 +31,6 @@ c_functools = import_helper.import_fresh_module('functools',
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
-_partial_types = [py_functools.partial]
-if c_functools:
-    _partial_types.append(c_functools.partial)
-
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -189,6 +185,19 @@ class TestPartial:
         flat = partial(signature, 'asdf', bar=True)
         self.assertEqual(signature(nested), signature(flat))
 
+    def test_nested_optimization_bug(self):
+        partial = self.partial
+        class Builder:
+            def __call__(self, tag, *children, **attrib):
+                return (tag, children, attrib)
+
+            def __getattr__(self, tag):
+                return partial(self, tag)
+
+        B = Builder()
+        m = B.m
+        assert m(1, 2, a=2) == ('m', (1, 2), dict(a=2))
+
     def test_nested_partial_with_attribute(self):
         # see issue 25137
         partial = self.partial
@@ -207,10 +216,7 @@ class TestPartial:
         kwargs = {'a': object(), 'b': object()}
         kwargs_reprs = ['a={a!r}, b={b!r}'.format_map(kwargs),
                         'b={b!r}, a={a!r}'.format_map(kwargs)]
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         self.assertEqual(f'{name}({capture!r})', repr(f))
@@ -229,10 +235,7 @@ class TestPartial:
                        for kwargs_repr in kwargs_reprs])
 
     def test_recursive_repr(self):
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         f.__setstate__((f, (), {}, {}))
@@ -344,8 +347,10 @@ class TestPartial:
             f.__setstate__((f, (), {}, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    with self.assertRaises(RecursionError):
-                        pickle.dumps(f, proto)
+                    # gh-117008: Small limit since pickle uses C stack memory
+                    with support.infinite_recursion(100):
+                        with self.assertRaises(RecursionError):
+                            pickle.dumps(f, proto)
             finally:
                 f.__setstate__((capture, (), {}, {}))
 
@@ -389,6 +394,21 @@ class TestPartial:
 
         f = self.partial(object)
         self.assertRaises(TypeError, f.__setstate__, BadSequence())
+
+    def test_partial_as_method(self):
+        class A:
+            meth = self.partial(capture, 1, a=2)
+            cmeth = classmethod(self.partial(capture, 1, a=2))
+            smeth = staticmethod(self.partial(capture, 1, a=2))
+
+        a = A()
+        self.assertEqual(A.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(A.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(A.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(a.meth(3, b=4), ((1, a, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(a.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(a.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
@@ -564,6 +584,14 @@ class TestPartialMethod(unittest.TestCase):
                 method = functools.partialmethod(func=capture, a=1)
 
     def test_repr(self):
+        self.assertEqual(repr(vars(self.A)['nothing']),
+                         'functools.partialmethod({})'.format(capture))
+        self.assertEqual(repr(vars(self.A)['positional']),
+                         'functools.partialmethod({}, 1)'.format(capture))
+        self.assertEqual(repr(vars(self.A)['keywords']),
+                         'functools.partialmethod({}, a=2)'.format(capture))
+        self.assertEqual(repr(vars(self.A)['spec_keywords']),
+                         'functools.partialmethod({}, self=1, func=2)'.format(capture))
         self.assertEqual(repr(vars(self.A)['both']),
                          'functools.partialmethod({}, 3, b=4)'.format(capture))
 
@@ -704,6 +732,14 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'max')
         self.assertTrue(wrapper.__doc__.startswith('max('))
         self.assertEqual(wrapper.__annotations__, {})
+
+    def test_update_type_wrapper(self):
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, type)
+        self.assertEqual(wrapper.__name__, 'type')
+        self.assertEqual(wrapper.__annotations__, {})
+        self.assertEqual(wrapper.__type_params__, ())
 
 
 class TestWraps(TestUpdateWrapper):
@@ -939,9 +975,16 @@ class TestCmpToKey:
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
 
+    @unittest.skipIf(support.MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_cmp_to_signature(self):
-        self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
-                         '(mycmp)')
+        sig = Signature.from_callable(self.cmp_to_key)
+        self.assertEqual(str(sig), '(mycmp)')
+        def mycmp(x, y):
+            return y - x
+        sig = Signature.from_callable(self.cmp_to_key(mycmp))
+        self.assertEqual(str(sig), '(obj)')
+
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1826,6 +1869,7 @@ class TestLRU:
             return 1
         self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
+    @support.suppress_immortalization()
     def test_lru_cache_weakrefable(self):
         @self.module.lru_cache
         def test_function(x):
@@ -1856,11 +1900,32 @@ class TestLRU:
             self.assertIsNone(ref())
 
     def test_common_signatures(self):
-        def orig(): ...
+        def orig(a, /, b, c=True): ...
         lru = self.module.lru_cache(1)(orig)
 
+        self.assertEqual(str(Signature.from_callable(lru)), '(a, /, b, c=True)')
         self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
+
+    @support.skip_on_s390x
+    @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
+    def test_lru_recursion(self):
+
+        @self.module.lru_cache
+        def fib(n):
+            if n <= 1:
+                return n
+            return fib(n-1) + fib(n-2)
+
+        if not support.Py_DEBUG:
+            depth = support.get_c_recursion_limit()*2//7
+            with support.infinite_recursion():
+                fib(depth)
+        if self.module == c_functools:
+            fib.cache_clear()
+            with support.infinite_recursion():
+                with self.assertRaises(RecursionError):
+                    fib(10000)
 
 
 @py_functools.lru_cache()
@@ -2684,7 +2749,10 @@ class TestSingleDispatch(unittest.TestCase):
             A().static_func
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(A.func.__name__, 'func')
@@ -2773,7 +2841,10 @@ class TestSingleDispatch(unittest.TestCase):
             WithSingleDispatch().decorated_classmethod
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(
@@ -2845,11 +2916,26 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
-        def f(*args):
+        def f(*args, **kwargs):
             pass
         msg = 'f requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             f()
+        msg = 'f requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            f(a=1)
+
+    def test_invalid_positional_argument_singledispatchmethod(self):
+        class A:
+            @functools.singledispatchmethod
+            def t(self, *args, **kwargs):
+                pass
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t()
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t(a=1)
 
     def test_union(self):
         @functools.singledispatch
@@ -3101,7 +3187,10 @@ class TestCachedProperty(unittest.TestCase):
         self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
 
     def test_doc(self):
-        self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+        self.assertEqual(CachedCostItem.cost.__doc__,
+                         ("The cost of the item."
+                          if support.HAVE_DOCSTRINGS
+                          else None))
 
     def test_module(self):
         self.assertEqual(CachedCostItem.cost.__module__, CachedCostItem.__module__)

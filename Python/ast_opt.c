@@ -273,10 +273,9 @@ parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
     PyObject *str = PyUnicode_Substring(fmt, start, pos);
     /* str = str.replace('%%', '%') */
     if (str && has_percents) {
-        _Py_DECLARE_STR(percent, "%");
         _Py_DECLARE_STR(dbl_percent, "%%");
         Py_SETREF(str, PyUnicode_Replace(str, &_Py_STR(dbl_percent),
-                                         &_Py_STR(percent), -1));
+                                         _Py_LATIN1_CHR('%'), -1));
     }
     if (!str) {
         return NULL;
@@ -522,7 +521,7 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 static PyObject*
 make_const_tuple(asdl_expr_seq *elts)
 {
-    for (int i = 0; i < asdl_seq_LEN(elts); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         if (e->kind != Constant_kind) {
             return NULL;
@@ -534,7 +533,7 @@ make_const_tuple(asdl_expr_seq *elts)
         return NULL;
     }
 
-    for (int i = 0; i < asdl_seq_LEN(elts); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         PyObject *v = e->v.Constant.value;
         PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
@@ -651,7 +650,7 @@ static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimize
         return 0;
 
 #define CALL_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
+    Py_ssize_t i; \
     asdl_ ## TYPE ## _seq *seq = (ARG); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
@@ -1100,9 +1099,6 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_OPT
 #undef CALL_SEQ
 
-/* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 2
-
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
 {
@@ -1120,9 +1116,9 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
     }
     /* Be careful here to prevent overflow. */
     int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
+    starting_recursion_depth = recursion_depth;
     state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    state.recursion_limit = Py_C_RECURSION_LIMIT;
 
     int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());

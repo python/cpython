@@ -5,6 +5,7 @@ import math
 import os.path
 import platform
 import random
+import re
 import shlex
 import signal
 import subprocess
@@ -263,6 +264,12 @@ def clear_caches():
         for f in typing._cleanups:
             f()
 
+        import inspect
+        abs_classes = filter(inspect.isabstract, typing.__dict__.values())
+        for abc in abs_classes:
+            for obj in abc.__subclasses__() + [abc]:
+                obj._abc_caches_clear()
+
     try:
         fractions = sys.modules['fractions']
     except KeyError:
@@ -275,7 +282,16 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        inspect._shadowed_dict_from_mro_tuple.cache_clear()
+        inspect._shadowed_dict_from_weakref_mro_tuple.cache_clear()
+        inspect._filesbymodname.clear()
+        inspect.modulesbyfile.clear()
+
+    try:
+        importlib_metadata = sys.modules['importlib.metadata']
+    except KeyError:
+        pass
+    else:
+        importlib_metadata.FastPath.__new__.cache_clear()
 
 
 def get_build_info():
@@ -340,6 +356,9 @@ def get_build_info():
     # --with-undefined-behavior-sanitizer
     if support.check_sanitizer(ub=True):
         sanitizers.append("UBSAN")
+    # --with-thread-sanitizer
+    if support.check_sanitizer(thread=True):
+        sanitizers.append("TSAN")
     if sanitizers:
         build.append('+'.join(sanitizers))
 
@@ -419,7 +438,7 @@ def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
-    # milisecond clock resolution. Use randint() instead.
+    # millisecond clock resolution. Use randint() instead.
     if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
@@ -634,6 +653,7 @@ def display_header(use_resources: tuple[str, ...],
     asan = support.check_sanitizer(address=True)
     msan = support.check_sanitizer(memory=True)
     ubsan = support.check_sanitizer(ub=True)
+    tsan = support.check_sanitizer(thread=True)
     sanitizers = []
     if asan:
         sanitizers.append("address")
@@ -641,12 +661,15 @@ def display_header(use_resources: tuple[str, ...],
         sanitizers.append("memory")
     if ubsan:
         sanitizers.append("undefined behavior")
+    if tsan:
+        sanitizers.append("thread")
     if sanitizers:
         print(f"== sanitizers: {', '.join(sanitizers)}")
         for sanitizer, env_var in (
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
             (ubsan, "UBSAN_OPTIONS"),
+            (tsan, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)
             if sanitizer and options is not None:
@@ -668,23 +691,23 @@ def cleanup_temp_dir(tmp_dir: StrPath):
             print("Remove file: %s" % name)
             os_helper.unlink(name)
 
-WINDOWS_STATUS = {
-    0xC0000005: "STATUS_ACCESS_VIOLATION",
-    0xC00000FD: "STATUS_STACK_OVERFLOW",
-    0xC000013A: "STATUS_CONTROL_C_EXIT",
-}
 
-def get_signal_name(exitcode):
-    if exitcode < 0:
-        signum = -exitcode
-        try:
-            return signal.Signals(signum).name
-        except ValueError:
-            pass
+ILLEGAL_XML_CHARS_RE = re.compile(
+    '['
+    # Control characters; newline (\x0A and \x0D) and TAB (\x09) are legal
+    '\x00-\x08\x0B\x0C\x0E-\x1F'
+    # Surrogate characters
+    '\uD800-\uDFFF'
+    # Special Unicode characters
+    '\uFFFE'
+    '\uFFFF'
+    # Match multiple sequential invalid characters for better effiency
+    ']+')
 
-    try:
-        return WINDOWS_STATUS[exitcode]
-    except KeyError:
-        pass
+def _sanitize_xml_replace(regs):
+    text = regs[0]
+    return ''.join(f'\\x{ord(ch):02x}' if ch <= '\xff' else ascii(ch)[1:-1]
+                   for ch in text)
 
-    return None
+def sanitize_xml(text):
+    return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)

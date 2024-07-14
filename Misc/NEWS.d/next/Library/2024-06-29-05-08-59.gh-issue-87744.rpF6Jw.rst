@@ -1,0 +1,1 @@
+Fix waitpid race while calling :meth:`~asyncio.subprocess.Process.send_signal` in asyncio. Patch by Kumar Aditya.

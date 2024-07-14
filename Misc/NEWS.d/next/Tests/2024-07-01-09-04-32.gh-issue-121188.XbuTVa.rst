@@ -1,0 +1,3 @@
+When creating the JUnit XML file, regrtest now escapes characters which are
+invalid in XML, such as the chr(27) control character used in ANSI escape
+sequences. Patch by Victor Stinner.

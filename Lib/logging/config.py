@@ -1,4 +1,4 @@
-# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2023 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -667,10 +667,9 @@ class DictConfigurator(BaseConfigurator):
             except TypeError as te:
                 if "'format'" not in str(te):
                     raise
-                #Name of parameter changed from fmt to format.
-                #Retry with old name.
-                #This is so that code can be used with older Python versions
-                #(e.g. by Django)
+                # logging.Formatter and its subclasses expect the `fmt`
+                # parameter instead of `format`. Retry passing configuration
+                # with `fmt`.
                 config['fmt'] = config.pop('format')
                 config['()'] = factory
                 result = self.configure_custom(config)
@@ -726,16 +725,16 @@ class DictConfigurator(BaseConfigurator):
 
     def _configure_queue_handler(self, klass, **kwargs):
         if 'queue' in kwargs:
-            q = kwargs['queue']
+            q = kwargs.pop('queue')
         else:
             q = queue.Queue()  # unbounded
-        rhl = kwargs.get('respect_handler_level', False)
-        if 'listener' in kwargs:
-            lklass = kwargs['listener']
-        else:
-            lklass = logging.handlers.QueueListener
-        listener = lklass(q, *kwargs['handlers'], respect_handler_level=rhl)
-        handler = klass(q)
+
+        rhl = kwargs.pop('respect_handler_level', False)
+        lklass = kwargs.pop('listener', logging.handlers.QueueListener)
+        handlers = kwargs.pop('handlers', [])
+
+        listener = lklass(q, *handlers, respect_handler_level=rhl)
+        handler = klass(q, **kwargs)
         handler.listener = listener
         return handler
 
@@ -762,37 +761,63 @@ class DictConfigurator(BaseConfigurator):
                 klass = cname
             else:
                 klass = self.resolve(cname)
-            if issubclass(klass, logging.handlers.MemoryHandler) and\
-                'target' in config:
-                # Special case for handler which refers to another handler
-                try:
-                    tn = config['target']
-                    th = self.config['handlers'][tn]
-                    if not isinstance(th, logging.Handler):
-                        config.update(config_copy)  # restore for deferred cfg
-                        raise TypeError('target not configured yet')
-                    config['target'] = th
-                except Exception as e:
-                    raise ValueError('Unable to set target handler %r' % tn) from e
+            if issubclass(klass, logging.handlers.MemoryHandler):
+                if 'flushLevel' in config:
+                    config['flushLevel'] = logging._checkLevel(config['flushLevel'])
+                if 'target' in config:
+                    # Special case for handler which refers to another handler
+                    try:
+                        tn = config['target']
+                        th = self.config['handlers'][tn]
+                        if not isinstance(th, logging.Handler):
+                            config.update(config_copy)  # restore for deferred cfg
+                            raise TypeError('target not configured yet')
+                        config['target'] = th
+                    except Exception as e:
+                        raise ValueError('Unable to set target handler %r' % tn) from e
             elif issubclass(klass, logging.handlers.QueueHandler):
                 # Another special case for handler which refers to other handlers
-                if 'handlers' not in config:
-                    raise ValueError('No handlers specified for a QueueHandler')
+                # if 'handlers' not in config:
+                    # raise ValueError('No handlers specified for a QueueHandler')
                 if 'queue' in config:
                     qspec = config['queue']
-                    if not isinstance(qspec, queue.Queue):
-                        if isinstance(qspec, str):
-                            q = self.resolve(qspec)
-                            if not callable(q):
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = q()
-                        elif isinstance(qspec, dict):
-                            if '()' not in qspec:
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = self.configure_custom(dict(qspec))
-                        else:
+
+                    if isinstance(qspec, str):
+                        q = self.resolve(qspec)
+                        if not callable(q):
                             raise TypeError('Invalid queue specifier %r' % qspec)
-                        config['queue'] = q
+                        config['queue'] = q()
+                    elif isinstance(qspec, dict):
+                        if '()' not in qspec:
+                            raise TypeError('Invalid queue specifier %r' % qspec)
+                        config['queue'] = self.configure_custom(dict(qspec))
+                    else:
+                        from multiprocessing.queues import Queue as MPQueue
+
+                        if not isinstance(qspec, (queue.Queue, MPQueue)):
+                            # Safely check if 'qspec' is an instance of Manager.Queue
+                            # / Manager.JoinableQueue
+
+                            from multiprocessing import Manager as MM
+                            from multiprocessing.managers import BaseProxy
+
+                            # if it's not an instance of BaseProxy, it also can't be
+                            # an instance of Manager.Queue / Manager.JoinableQueue
+                            if isinstance(qspec, BaseProxy):
+                                # Sometimes manager or queue creation might fail
+                                # (e.g. see issue gh-120868). In that case, any
+                                # exception during the creation of these queues will
+                                # propagate up to the caller and be wrapped in a
+                                # `ValueError`, whose cause will indicate the details of
+                                # the failure.
+                                mm = MM()
+                                proxy_queue = mm.Queue()
+                                proxy_joinable_queue = mm.JoinableQueue()
+                                if not isinstance(qspec, (type(proxy_queue), type(proxy_joinable_queue))):
+                                    raise TypeError('Invalid queue specifier %r' % qspec)
+                            else:
+                                raise TypeError('Invalid queue specifier %r' % qspec)
+
                 if 'listener' in config:
                     lspec = config['listener']
                     if isinstance(lspec, type):
@@ -813,18 +838,19 @@ class DictConfigurator(BaseConfigurator):
                         if not callable(listener):
                             raise TypeError('Invalid listener specifier %r' % lspec)
                         config['listener'] = listener
-                hlist = []
-                try:
-                    for hn in config['handlers']:
-                        h = self.config['handlers'][hn]
-                        if not isinstance(h, logging.Handler):
-                            config.update(config_copy)  # restore for deferred cfg
-                            raise TypeError('Required handler %r '
-                                            'is not configured yet' % hn)
-                        hlist.append(h)
-                except Exception as e:
-                    raise ValueError('Unable to set required handler %r' % hn) from e
-                config['handlers'] = hlist
+                if 'handlers' in config:
+                    hlist = []
+                    try:
+                        for hn in config['handlers']:
+                            h = self.config['handlers'][hn]
+                            if not isinstance(h, logging.Handler):
+                                config.update(config_copy)  # restore for deferred cfg
+                                raise TypeError('Required handler %r '
+                                                'is not configured yet' % hn)
+                            hlist.append(h)
+                    except Exception as e:
+                        raise ValueError('Unable to set required handler %r' % hn) from e
+                    config['handlers'] = hlist
             elif issubclass(klass, logging.handlers.SMTPHandler) and\
                 'mailhost' in config:
                 config['mailhost'] = self.as_tuple(config['mailhost'])
@@ -977,7 +1003,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         A simple TCP socket-based logging config receiver.
         """
 
-        allow_reuse_address = 1
+        allow_reuse_address = True
+        allow_reuse_port = True
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):

@@ -1,1 +1,0 @@
-Fix None.__ne__(None) returning NotImplemented instead of False

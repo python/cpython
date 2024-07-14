@@ -1,7 +1,7 @@
 "Test posix functions"
 
 from test import support
-from test.support import import_helper
+from test.support import is_apple
 from test.support import os_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
@@ -564,6 +564,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'confstr'),
                          'test needs posix.confstr()')
+    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_confstr(self):
         self.assertRaises(ValueError, posix.confstr, "CS_garbage")
         self.assertEqual(len(posix.confstr("CS_PATH")) > 0, True)
@@ -703,7 +704,8 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(posix.major(dev), major)
         self.assertRaises(TypeError, posix.major, float(dev))
         self.assertRaises(TypeError, posix.major)
-        self.assertRaises((ValueError, OverflowError), posix.major, -1)
+        for x in -2, 2**64, -2**63-1:
+            self.assertRaises((ValueError, OverflowError), posix.major, x)
 
         minor = posix.minor(dev)
         self.assertIsInstance(minor, int)
@@ -711,13 +713,23 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(posix.minor(dev), minor)
         self.assertRaises(TypeError, posix.minor, float(dev))
         self.assertRaises(TypeError, posix.minor)
-        self.assertRaises((ValueError, OverflowError), posix.minor, -1)
+        for x in -2, 2**64, -2**63-1:
+            self.assertRaises((ValueError, OverflowError), posix.minor, x)
 
         self.assertEqual(posix.makedev(major, minor), dev)
         self.assertRaises(TypeError, posix.makedev, float(major), minor)
         self.assertRaises(TypeError, posix.makedev, major, float(minor))
         self.assertRaises(TypeError, posix.makedev, major)
         self.assertRaises(TypeError, posix.makedev)
+        for x in -2, 2**32, 2**64, -2**63-1:
+            self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
+            self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
+
+        if sys.platform == 'linux':
+            NODEV = -1
+            self.assertEqual(posix.major(NODEV), NODEV)
+            self.assertEqual(posix.minor(NODEV), NODEV)
+            self.assertEqual(posix.makedev(NODEV, NODEV), NODEV)
 
     def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""
@@ -781,9 +793,10 @@ class PosixTester(unittest.TestCase):
             check_stat(uid, gid)
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
             check_stat(uid, gid)
-            if 0 not in os.getgroups():
-                self.assertRaises(OSError, chown_func, first_param, -1, 0)
-                check_stat(uid, gid)
+            if hasattr(os, 'getgroups'):
+                if 0 not in os.getgroups():
+                    self.assertRaises(OSError, chown_func, first_param, -1, 0)
+                    check_stat(uid, gid)
         # test illegal types
         for t in str, float:
             self.assertRaises(TypeError, chown_func, first_param, t(uid), gid)
@@ -936,6 +949,7 @@ class PosixTester(unittest.TestCase):
         posix.utime(os_helper.TESTFN, (now, now))
 
     def check_chmod(self, chmod_func, target, **kwargs):
+        closefd = not isinstance(target, int)
         mode = os.stat(target).st_mode
         try:
             new_mode = mode & ~(stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
@@ -943,7 +957,7 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(os.stat(target).st_mode, new_mode)
             if stat.S_ISREG(mode):
                 try:
-                    with open(target, 'wb+'):
+                    with open(target, 'wb+', closefd=closefd):
                         pass
                 except PermissionError:
                     pass
@@ -951,10 +965,10 @@ class PosixTester(unittest.TestCase):
             chmod_func(target, new_mode, **kwargs)
             self.assertEqual(os.stat(target).st_mode, new_mode)
             if stat.S_ISREG(mode):
-                with open(target, 'wb+'):
+                with open(target, 'wb+', closefd=closefd):
                     pass
         finally:
-            posix.chmod(target, mode)
+            chmod_func(target, mode)
 
     @os_helper.skip_unless_working_chmod
     def test_chmod_file(self):
@@ -970,6 +984,12 @@ class PosixTester(unittest.TestCase):
     def test_chmod_dir(self):
         target = self.tempdir()
         self.check_chmod(posix.chmod, target)
+
+    @os_helper.skip_unless_working_chmod
+    def test_fchmod_file(self):
+        with open(os_helper.TESTFN, 'wb+') as f:
+            self.check_chmod(posix.fchmod, f.fileno())
+            self.check_chmod(posix.chmod, f.fileno())
 
     @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
     def test_lchmod_file(self):
@@ -1249,8 +1269,8 @@ class PosixTester(unittest.TestCase):
         self.assertIsInstance(lo, int)
         self.assertIsInstance(hi, int)
         self.assertGreaterEqual(hi, lo)
-        # OSX evidently just returns 15 without checking the argument.
-        if sys.platform != "darwin":
+        # Apple plaforms return 15 without checking the argument.
+        if not is_apple:
             self.assertRaises(OSError, posix.sched_get_priority_min, -23)
             self.assertRaises(OSError, posix.sched_get_priority_max, -23)
 
@@ -1262,9 +1282,10 @@ class PosixTester(unittest.TestCase):
         self.assertIn(mine, possible_schedulers)
         try:
             parent = posix.sched_getscheduler(os.getppid())
-        except OSError as e:
-            if e.errno != errno.EPERM:
-                raise
+        except PermissionError:
+            # POSIX specifies EPERM, but Android returns EACCES. Both errno
+            # values are mapped to PermissionError.
+            pass
         else:
             self.assertIn(parent, possible_schedulers)
         self.assertRaises(OSError, posix.sched_getscheduler, -1)
@@ -1279,9 +1300,8 @@ class PosixTester(unittest.TestCase):
             try:
                 posix.sched_setscheduler(0, mine, param)
                 posix.sched_setparam(0, param)
-            except OSError as e:
-                if e.errno != errno.EPERM:
-                    raise
+            except PermissionError:
+                pass
             self.assertRaises(OSError, posix.sched_setparam, -1, param)
 
         self.assertRaises(OSError, posix.sched_setscheduler, -1, mine, param)
@@ -1327,12 +1347,21 @@ class PosixTester(unittest.TestCase):
     def test_sched_setaffinity(self):
         mask = posix.sched_getaffinity(0)
         self.addCleanup(posix.sched_setaffinity, 0, list(mask))
+
         if len(mask) > 1:
             # Empty masks are forbidden
             mask.pop()
         posix.sched_setaffinity(0, mask)
         self.assertEqual(posix.sched_getaffinity(0), mask)
-        self.assertRaises(OSError, posix.sched_setaffinity, 0, [])
+
+        try:
+            posix.sched_setaffinity(0, [])
+            # gh-117061: On RHEL9, sched_setaffinity(0, []) does not fail
+        except OSError:
+            # sched_setaffinity() manual page documents EINVAL error
+            # when the mask is empty.
+            pass
+
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
@@ -1505,6 +1534,13 @@ class TestPosixDirFd(unittest.TestCase):
                     posix.stat, name, dir_fd=float(dir_fd))
             self.assertRaises(OverflowError,
                     posix.stat, name, dir_fd=10**20)
+
+            for fd in False, True:
+                with self.assertWarnsRegex(RuntimeWarning,
+                        'bool is used as a file descriptor') as cm:
+                    with self.assertRaises(OSError):
+                        posix.stat('nonexisting', dir_fd=fd)
+                self.assertEqual(cm.filename, __file__)
 
     @unittest.skipUnless(os.utime in os.supports_dir_fd, "test needs dir_fd support in os.utime()")
     def test_utime_dir_fd(self):
@@ -2021,11 +2057,13 @@ class _PosixSpawnMixin:
 
 
 @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
+@support.requires_subprocess()
 class TestPosixSpawn(unittest.TestCase, _PosixSpawnMixin):
     spawn_func = getattr(posix, 'posix_spawn', None)
 
 
 @unittest.skipUnless(hasattr(os, 'posix_spawnp'), "test needs os.posix_spawnp")
+@support.requires_subprocess()
 class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
     spawn_func = getattr(posix, 'posix_spawnp', None)
 
