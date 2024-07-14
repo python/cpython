@@ -27,6 +27,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include <sys/mman.h>  // mmap
 #include <unistd.h>    // sysconf
+#include <fcntl.h>     // open, close, read, access
 
 #if defined(__linux__)
   #include <features.h>
