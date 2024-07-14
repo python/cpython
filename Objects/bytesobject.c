@@ -3487,26 +3487,6 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 #endif
 
 
-static int
-PyBytesWriter_CheckPtr(PyBytesWriter *pub_writer, char *str)
-{
-    if (str == NULL) {
-        PyErr_SetString(PyExc_ValueError, "str is NULL");
-        return -1;
-    }
-
-    _PyBytesWriter *writer = (_PyBytesWriter*)pub_writer;
-    const char *start = _PyBytesWriter_AsString(writer);
-    const char *end = start + writer->allocated;
-
-    if (str < start || end < str) {
-        PyErr_SetString(PyExc_ValueError, "str is out of bounds");
-        return -1;
-    }
-    return 0;
-}
-
-
 /* Resize the buffer to make it larger.
    The new buffer may be larger than size bytes because of overallocation.
    Return the updated current pointer inside the buffer.
@@ -3617,9 +3597,6 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 int
 PyBytesWriter_Prepare(PyBytesWriter *writer, char **str, Py_ssize_t size)
 {
-    if (PyBytesWriter_CheckPtr(writer, *str) < 0) {
-        return -1;
-    }
     if (size < 0) {
         PyErr_SetString(PyExc_ValueError, "size must be positive");
         return -1;
@@ -3715,11 +3692,6 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
 PyObject *
 PyBytesWriter_Finish(PyBytesWriter *writer, char *str)
 {
-    if (PyBytesWriter_CheckPtr(writer, str) < 0) {
-        PyMem_Free(writer);
-        return NULL;
-    }
-
     PyObject *res = _PyBytesWriter_Finish((_PyBytesWriter*)writer, str);
     PyMem_Free(writer);
     return res;
@@ -3747,10 +3719,6 @@ int
 PyBytesWriter_WriteBytes(PyBytesWriter *writer, char **str,
                          const void *bytes, Py_ssize_t size)
 {
-    if (PyBytesWriter_CheckPtr(writer, *str) < 0) {
-        return -1;
-    }
-
     char *str2 = _PyBytesWriter_WriteBytes((_PyBytesWriter *)writer, *str,
                                            bytes, size);
     if (str2 == NULL) {
