@@ -64,6 +64,10 @@ are not normal Python classes.  See
 Module Contents
 ---------------
 
+   :class:`EnumDict`
+
+      An enum class :class:`dict` that tracks order and enforces unique member names.
+
    :class:`EnumType`
 
       The ``type`` for Enum and its subclasses.
@@ -159,7 +163,21 @@ Data Types
 ----------
 
 
-.. class:: EnumType
+.. class:: EnumDict
+
+   *EnumDict* is used by *EnumType* to keep track of the enum member orders and prevent reusing the member names.
+
+   .. attribute:: EnumDict.member_names
+
+      Return list of member names.
+
+   .. method:: EnumDict.__setitem__(self, key, value)
+
+      Set any item as an enum member that is not dundered and not a descriptor.
+
+   .. method:: EnumDict.update(self, members, **more_members)
+
+      Update the dictionary from the given iterable or dictionary members and more_members.
 
    *EnumType* is the :term:`metaclass` for *enum* enumerations.  It is possible
    to subclass *EnumType* -- see :ref:`Subclassing EnumType <enumtype-examples>`
