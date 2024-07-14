@@ -148,7 +148,7 @@ class TestMoreLines(unittest.TestCase):
         code = dedent("""\
         def foo():
             '''docs'''
-        
+
             return 1""")
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertTrue(_more_lines(console, code))
@@ -163,7 +163,7 @@ class TestMoreLines(unittest.TestCase):
         namespace = {}
         code = dedent("""\
         import time
-        
+
         foo = 1""")
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertTrue(_more_lines(console, code))
@@ -172,7 +172,7 @@ class TestMoreLines(unittest.TestCase):
         namespace = {}
         code = dedent("""\
         from dataclasses import dataclass
-        
+
         @dataclass
         class Point:
             x: float
@@ -184,7 +184,7 @@ class TestMoreLines(unittest.TestCase):
         namespace = {}
         code = dedent("""\
         from dataclasses import dataclass
-        
+
         @dataclass
         class Point:
             x: float
