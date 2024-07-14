@@ -1667,7 +1667,7 @@ _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
         }
         FT_ATOMIC_STORE_SSIZE_RELAXED(module_state->field_limit, new_limit_value);
     }
-    return PyLong_FromLong(old_limit);
+    return PyLong_FromSsize_t(old_limit);
 }
 
 static PyType_Slot error_slots[] = {
