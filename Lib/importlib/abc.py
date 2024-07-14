@@ -24,7 +24,7 @@ __all__ = [
 
 
 def __getattr__(name):
-    if name in ('ResourceLoader' ):
+    if name == 'ResourceLoader':
         warnings.warn(f"The '{name}' attribute is deprecated.",
                       DeprecationWarning, stacklevel=2)
 
@@ -76,7 +76,7 @@ class ResourceLoader(Loader):
 
     """
     warnings.warn(f"The Resource Loader class is deprecated.",
-                    DeprecationWarning, stacklevel=2)
+                  DeprecationWarning, stacklevel=2)
 
     @abc.abstractmethod
     def get_data(self, path):
@@ -94,7 +94,7 @@ class InspectLoader(Loader):
 
     """
     warnings.warn(f"The InspectLoader class is deprecated.",
-                    DeprecationWarning, stacklevel=2)
+                  DeprecationWarning, stacklevel=2)
 
     def is_package(self, fullname):
         """Optional method which when implemented should return whether the
@@ -210,7 +210,7 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
     def path_mtime(self, path):
         """Deprecated"""
         warnings.warn(f"The path_mtime function is deprecated.",
-                    DeprecationWarning, stacklevel=2)
+                      DeprecationWarning, stacklevel=2)
         """Return the (int) modification time for the path (str)."""
         if self.path_stats.__func__ is SourceLoader.path_stats:
             raise OSError

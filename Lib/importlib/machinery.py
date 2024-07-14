@@ -30,7 +30,7 @@ __all__ = ['AppleFrameworkLoader', 'BYTECODE_SUFFIXES', 'BuiltinImporter',
 
 
 def __getattr__(name):
-    if name in ('DEBUG_BYTECODE_SUFFIXES','OPTIMIZED_BYTECODE_SUFFIXES', 'WindowsRegistryFinder' ):
+    if name in ('DEBUG_BYTECODE_SUFFIXES', 'OPTIMIZED_BYTECODE_SUFFIXES', 'WindowsRegistryFinder'):
         warnings.warn(f"The '{name}' module suffix is deprecated.",
                       DeprecationWarning, stacklevel=2)
         if name == 'DEBUG_BYTECODE_SUFFIXES':
