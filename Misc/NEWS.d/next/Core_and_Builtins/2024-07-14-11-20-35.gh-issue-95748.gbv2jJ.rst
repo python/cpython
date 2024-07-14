@@ -1,3 +1,4 @@
-Make sure warning.showwarning and warning.formatwarning display the log
-traceback, where the object has been allocated. .. code-block:: python
+Make sure warning.showwarning and warning.formatwarning display the log traceback, where the object has been allocated.
+
+.. code-block:: python
 logging.captureWarnings(True) to show object allocation
