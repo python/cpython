@@ -1,1 +1,1 @@
-Improve documentation for :func:`unittest.mock.patch_dict`
+Improve documentation for :func:`unittest.mock.patch.dict`
