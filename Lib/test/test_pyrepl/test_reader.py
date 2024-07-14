@@ -89,6 +89,12 @@ class TestReader(TestCase):
         reader.setpos_from_xy(0, 0)
         self.assertEqual(reader.pos, 0)
 
+    def test_control_characters(self):
+        code = 'flag = "🏳️‍🌈"'
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, 'flag = "🏳️\\u200d🌈"')
+
     def test_setpos_from_xy_multiple_lines(self):
         # fmt: off
         code = (
