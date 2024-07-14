@@ -233,9 +233,6 @@ access further features, you have to do this yourself:
    .. versionchanged:: 3.6
       The *readrc* argument.
 
-   .. versionadded:: 3.14
-      The *commands* argument.
-
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
                runcall(function, *args, **kwds)
