@@ -224,12 +224,26 @@ class TestCase(unittest.TestCase):
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with shelve.BsdDbShelf(berkeleydb.hashopen(self.fn),
+        with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
                                serializer=serializer,
                                deserializer=deserializer) as s:
             num = 1
             s['number'] = num
+            num2 = 2
+            s['number2'] = num2
             self.assertEqual(s['number'], type(num))
+
+            key, value = s.set_location(b'number')
+            self.assertEqual("number", key)
+            self.assertEqual(value, type(num))
+
+            key, value = s.first()
+            self.assertEqual("number", key)
+            self.assertEqual(s['number'], value)
+
+            key, value = s.last()
+            self.assertEqual("number2", key)
+            self.assertEqual(s['number2'], value)
 
         with self.assertRaises(AssertionError):
             def serializer(obj, protocol=None):
@@ -238,7 +252,7 @@ class TestCase(unittest.TestCase):
             def deserializer(data):
                 pass
 
-            with shelve.BsdDbShelf(berkeleydb.hashopen(self.fn),
+            with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
                                    serializer=serializer,
                                    deserializer=deserializer) as s:
                 s['number'] = 100
@@ -250,7 +264,7 @@ class TestCase(unittest.TestCase):
         def deserializer(data):
             return BytesIO(data).read().decode("utf-8")
 
-        with shelve.BsdDbShelf(berkeleydb.hashopen(self.fn),
+        with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
                                serializer=serializer,
                                deserializer=deserializer) as s:
             s['number'] = 100

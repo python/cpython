@@ -205,8 +205,7 @@ class BsdDbShelf(Shelf):
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def next(self):
         (key, value) = next(self.dict)
@@ -220,13 +219,11 @@ class BsdDbShelf(Shelf):
 
     def first(self):
         (key, value) = self.dict.first()
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def last(self):
         (key, value) = self.dict.last()
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
 
 class DbfilenameShelf(Shelf):
