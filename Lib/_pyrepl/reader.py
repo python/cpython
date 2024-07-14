@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 import unicodedata
@@ -765,8 +767,10 @@ class Reader:
             if startup_hook is not None:
                 startup_hook()
             self.refresh()
+            block = os.get_blocking(sys.stdin.fileno())
+
             while not self.finished:
-                if not self.handle1():
+                if not self.handle1(block=block):
                     # no event, wait before retrying
                     self.console.wait(100)
             return self.get_unicode()
