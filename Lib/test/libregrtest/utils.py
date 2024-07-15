@@ -294,7 +294,6 @@ def clear_caches():
         importlib_metadata.FastPath.__new__.cache_clear()
 
 
-
 def get_build_info():
     # Get most important configure and build options as a list of strings.
     # Example: ['debug', 'ASAN+MSAN'] or ['release', 'LTO+PGO'].

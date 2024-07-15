@@ -1819,6 +1819,7 @@ future_new_iter(PyObject *fut)
 
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
     ENSURE_FUTURE_ALIVE(state, fut)
+
     if (state->fi_freelist_len) {
         state->fi_freelist_len--;
         it = state->fi_freelist;
