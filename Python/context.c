@@ -203,6 +203,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
         goto not_found;
     }
 
+#ifndef Py_GIL_DISABLED
     if (var->var_cached != NULL &&
             var->var_cached_tsid == ts->id &&
             var->var_cached_tsver == ts->context_ver)
@@ -210,6 +211,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
         *val = var->var_cached;
         goto found;
     }
+#endif
 
     assert(PyContext_CheckExact(ts->context));
     PyHamtObject *vars = ((PyContext *)ts->context)->ctx_vars;
@@ -221,9 +223,11 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
     }
     if (res == 1) {
         assert(found != NULL);
+#ifndef Py_GIL_DISABLED
         var->var_cached = found;  /* borrow */
         var->var_cached_tsid = ts->id;
         var->var_cached_tsver = ts->context_ver;
+#endif
 
         *val = found;
         goto found;
@@ -723,8 +727,10 @@ PyTypeObject PyContext_Type = {
 static int
 contextvar_set(PyContextVar *var, PyObject *val)
 {
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
     PyThreadState *ts = _PyThreadState_GET();
+#endif
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -739,16 +745,20 @@ contextvar_set(PyContextVar *var, PyObject *val)
 
     Py_SETREF(ctx->ctx_vars, new_vars);
 
+#ifndef Py_GIL_DISABLED
     var->var_cached = val;  /* borrow */
     var->var_cached_tsid = ts->id;
     var->var_cached_tsver = ts->context_ver;
+#endif
     return 0;
 }
 
 static int
 contextvar_del(PyContextVar *var)
 {
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
+#endif
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -823,9 +833,11 @@ contextvar_new(PyObject *name, PyObject *def)
 
     var->var_default = Py_XNewRef(def);
 
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
+#endif
 
     if (_PyObject_GC_MAY_BE_TRACKED(name) ||
             (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))
@@ -863,9 +875,11 @@ contextvar_tp_clear(PyContextVar *self)
 {
     Py_CLEAR(self->var_name);
     Py_CLEAR(self->var_default);
+#ifndef Py_GIL_DISABLED
     self->var_cached = NULL;
     self->var_cached_tsid = 0;
     self->var_cached_tsver = 0;
+#endif
     return 0;
 }
 
