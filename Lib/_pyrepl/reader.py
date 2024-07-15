@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 import unicodedata
@@ -756,10 +758,6 @@ class Reader:
             self.do_cmd(cmd)
             return True
 
-    def push_char(self, char: int | bytes) -> None:
-        self.console.push_char(char)
-        self.handle1(block=False)
-
     def readline(self, startup_hook: Callback | None = None) -> str:
         """Read a line.  The implementation of this method also shows
         how to drive Reader if you want more control over the event
@@ -769,8 +767,12 @@ class Reader:
             if startup_hook is not None:
                 startup_hook()
             self.refresh()
+            block = os.get_blocking(sys.stdin.fileno())
+
             while not self.finished:
-                self.handle1()
+                if not self.handle1(block=block):
+                    # no event, wait before retrying
+                    self.console.wait(100)
             return self.get_unicode()
 
         finally:

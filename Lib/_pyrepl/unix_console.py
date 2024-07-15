@@ -24,6 +24,7 @@ from __future__ import annotations
 import errno
 import os
 import re
+import sys
 import select
 import signal
 import struct
@@ -395,6 +396,8 @@ class UnixConsole(Console):
                             return self.event_queue.get()
                         else:
                             continue
+                    elif isinstance(err, BlockingIOError) and not block:
+                        return None
                     else:
                         raise
                 else:
