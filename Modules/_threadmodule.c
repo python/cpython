@@ -1459,8 +1459,8 @@ create_sentinel_wr(localobject *self)
         Py_DECREF(self_wr);
         return NULL;
     }
-    PyTuple_SetItem(args, 0, self_wr);
-    PyTuple_SetItem(args, 1, Py_NewRef(tstate->threading_local_key));
+    PyTuple_SET_ITEM(args, 0, self_wr);
+    PyTuple_SET_ITEM(args, 1, Py_NewRef(tstate->threading_local_key));
 
     PyObject *cb = PyCFunction_New(&wr_callback_def, args);
     Py_DECREF(args);
