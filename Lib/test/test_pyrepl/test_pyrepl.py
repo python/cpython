@@ -901,7 +901,7 @@ class TestMain(TestCase):
     def test_exposed_globals_in_repl(self):
         pre = "['__annotations__', '__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
         if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
