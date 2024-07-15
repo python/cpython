@@ -1,9 +1,6 @@
 """Test the interactive interpreter."""
 
-from io import BytesIO
 import os
-from re import sub
-import tempfile
 import select
 import subprocess
 import sys
@@ -13,10 +10,11 @@ from test import support
 from test.support import (
     cpython_only,
     has_subprocess_support,
+    os_helper,
     SuppressCrashReport,
     SHORT_TIMEOUT,
 )
-from test.support.script_helper import assert_python_failure, kill_python, assert_python_ok
+from test.support.script_helper import kill_python
 from test.support.import_helper import import_module
 
 try:
@@ -210,16 +208,20 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertIn(expected, output, expected)
 
     def test_asyncio_repl_reaches_python_startup_script(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            script = os.path.join(tmpdir, "script.py")
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
             with open(script, "w") as f:
-                f.write("exit(0)")
+                f.write("print('pythonstartup done!')" + os.linesep)
+                f.write("exit(0)" + os.linesep)
 
+            env = os.environ.copy()
+            env["PYTHONSTARTUP"] = script
             subprocess.check_call(
                 [sys.executable, "-m", "asyncio"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                env={"PYTHONSTARTUP": script}
+                env=env,
+                timeout=SHORT_TIMEOUT,
             )
 
     @unittest.skipUnless(pty, "requires pty")
