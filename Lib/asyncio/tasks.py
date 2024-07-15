@@ -281,7 +281,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def __step(self, exc=None):
         if self.done():
             raise exceptions.InvalidStateError(
-                f'_step(): already done: {self!r}, {exc!r}')
+                f'__step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()
@@ -379,7 +379,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             # Don't pass the value of `future.result()` explicitly,
             # as `Future.__iter__` and `Future.__await__` don't need it.
-            # If we call `_step(value, None)` instead of `_step()`,
+            # If we call `__step(value, None)` instead of `__step()`,
             # Python eval loop would use `.send(value)` method call,
             # instead of `__next__()`, which is slower for futures
             # that return non-generator iterators from their `__iter__`.

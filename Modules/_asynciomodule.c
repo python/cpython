@@ -2892,7 +2892,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 
     if (task->task_state != STATE_PENDING) {
         PyErr_Format(state->asyncio_InvalidStateError,
-                     "_step(): already done: %R %R",
+                     "__step(): already done: %R %R",
                      task,
                      exc ? exc : Py_None);
         goto fail;
