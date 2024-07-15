@@ -236,7 +236,7 @@ except ImportError:
 
 _initial_missing = object()
 
-def reduce(function, sequence, initial=_initial_missing, /):
+def reduce(function, sequence, initial=_initial_missing):
     """
     reduce(function, iterable[, initial], /) -> value
 
@@ -1042,3 +1042,19 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
+
+def _warn_kwargs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if kwargs:
+            import os
+            import warnings
+            warnings.warn("""\
+Calling functools.reduce with keyword arguments is deprecated
+in Python 3.13 and will be forbidden in Python 3.15.""",
+                         DeprecationWarning,
+                         skip_file_prefixes=(os.path.dirname(__file__),))
+            return func(*args, **kwargs)
+    return wrapper
+
+reduce = _warn_kwargs(reduce)

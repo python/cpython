@@ -1,3 +1,4 @@
-Fix the Python implementation of the :meth:`functools.reduce`.
-Now it accepts only positional-only arguments, as well as the C implementtaion.
+Now calling the Python implementation of the :meth:`functools.reduce` with a
+:term:`keyword argument` is raises a :exc:`DeprecationWarning`.
+This will be forbidden in Python 3.15 in order to match the C implementation.
 
