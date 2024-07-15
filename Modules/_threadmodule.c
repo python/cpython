@@ -1568,7 +1568,7 @@ local_dealloc(localobject *self)
 static PyObject *
 _ldict(localobject *self, thread_module_state *state)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
 
     /* Create the TLS key and sentinel if they don't exist */
     if (tstate->threading_local_key == NULL) {
