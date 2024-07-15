@@ -1,0 +1,2 @@
+Fixes newlines (and carriage returns) in email headers, both at the end of
+the header, and encoded entities that are resolved to newlines and returns

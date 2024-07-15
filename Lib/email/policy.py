@@ -140,11 +140,11 @@ class EmailPolicy(Policy):
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
-        if isinstance(value, str) and linesep_splitter.search(value):
-            # XXX this error message isn't quite right when we use splitlines
-            # (see issue 22233), but I'm not sure what should happen here.
+        if (isinstance(value, str) and
+            linesep_splitter.search(self.header_factory(name, value))
+        ):
             raise ValueError("Header values may not contain linefeed "
-                             "or carriage return characters")
+                         "or carriage return characters")
         return (name, self.header_factory(name, value))
 
     def header_fetch_parse(self, name, value):

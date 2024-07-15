@@ -402,5 +402,9 @@ class TestConcretePolicies(unittest.TestCase):
                           instance.header_store_parse,
                           'Subject', 'te\nst')
 
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Subject', 'A 💩 subject=?UTF-8?Q?=0A?=Bcc: injected@example.com')
+
 if __name__ == '__main__':
     unittest.main()
