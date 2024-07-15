@@ -761,8 +761,11 @@ static Py_hash_t
 set_hash(PyObject *self)
 {
     PySetObject *so = (PySetObject *)self;
-    Py_uhash_t hash = frozenset_hash(self);
+    Py_uhash_t hash;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    hash = frozenset_hash(self);
     so->hash = (Py_hash_t)-1;
+    Py_END_CRITICAL_SECTION();
     return hash;
 }
 
