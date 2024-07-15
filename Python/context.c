@@ -729,8 +729,8 @@ contextvar_set(PyContextVar *var, PyObject *val)
 {
 #ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
-#endif
     PyThreadState *ts = _PyThreadState_GET();
+#endif
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
