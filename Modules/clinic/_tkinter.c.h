@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
+
 PyDoc_STRVAR(_tkinter_tkapp_eval__doc__,
 "eval($self, script, /)\n"
 "--\n"
@@ -620,6 +622,33 @@ _tkinter_tkapp_loadtk(TkappObject *self, PyObject *Py_UNUSED(ignored))
     return _tkinter_tkapp_loadtk_impl(self);
 }
 
+PyDoc_STRVAR(_tkinter_tkapp_settrace__doc__,
+"settrace($self, func, /)\n"
+"--\n"
+"\n"
+"Set the tracing function.");
+
+#define _TKINTER_TKAPP_SETTRACE_METHODDEF    \
+    {"settrace", (PyCFunction)_tkinter_tkapp_settrace, METH_O, _tkinter_tkapp_settrace__doc__},
+
+PyDoc_STRVAR(_tkinter_tkapp_gettrace__doc__,
+"gettrace($self, /)\n"
+"--\n"
+"\n"
+"Get the tracing function.");
+
+#define _TKINTER_TKAPP_GETTRACE_METHODDEF    \
+    {"gettrace", (PyCFunction)_tkinter_tkapp_gettrace, METH_NOARGS, _tkinter_tkapp_gettrace__doc__},
+
+static PyObject *
+_tkinter_tkapp_gettrace_impl(TkappObject *self);
+
+static PyObject *
+_tkinter_tkapp_gettrace(TkappObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _tkinter_tkapp_gettrace_impl(self);
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_willdispatch__doc__,
 "willdispatch($self, /)\n"
 "--\n"
@@ -647,7 +676,7 @@ PyDoc_STRVAR(_tkinter__flatten__doc__,
 
 PyDoc_STRVAR(_tkinter_create__doc__,
 "create($module, screenName=None, baseName=\'\', className=\'Tk\',\n"
-"       interactive=False, wantobjects=False, wantTk=True, sync=False,\n"
+"       interactive=False, wantobjects=0, wantTk=True, sync=False,\n"
 "       use=None, /)\n"
 "--\n"
 "\n"
@@ -748,8 +777,8 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    wantobjects = PyObject_IsTrue(args[4]);
-    if (wantobjects < 0) {
+    wantobjects = PyLong_AsInt(args[4]);
+    if (wantobjects == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 6) {
@@ -859,4 +888,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=bcd9cdc8f6bdcfae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d90c1a9850c63249 input=a9049054013a1b77]*/

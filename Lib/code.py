@@ -5,6 +5,7 @@
 # Inspired by similar code by Jeff Epler and Fredrik Lundh.
 
 
+import builtins
 import sys
 import traceback
 from codeop import CommandCompiler, compile_command
@@ -24,10 +25,10 @@ class InteractiveInterpreter:
     def __init__(self, locals=None):
         """Constructor.
 
-        The optional 'locals' argument specifies the dictionary in
-        which code will be executed; it defaults to a newly created
-        dictionary with key "__name__" set to "__console__" and key
-        "__doc__" set to None.
+        The optional 'locals' argument specifies a mapping to use as the
+        namespace in which code will be executed; it defaults to a newly
+        created dictionary with key "__name__" set to "__console__" and
+        key "__doc__" set to None.
 
         """
         if locals is None:
@@ -93,7 +94,7 @@ class InteractiveInterpreter:
         except:
             self.showtraceback()
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Display the syntax error that just occurred.
 
         This doesn't display a stack trace because there isn't one.
@@ -105,6 +106,7 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
+        colorize = kwargs.pop('colorize', False)
         type, value, tb = sys.exc_info()
         sys.last_exc = value
         sys.last_type = type
@@ -122,14 +124,14 @@ class InteractiveInterpreter:
                 value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
-            lines = traceback.format_exception_only(type, value)
+            lines = traceback.format_exception_only(type, value, colorize=colorize)
             self.write(''.join(lines))
         else:
             # If someone has set sys.excepthook, we let that take precedence
             # over self.write
             sys.excepthook(type, value, tb)
 
-    def showtraceback(self):
+    def showtraceback(self, **kwargs):
         """Display the exception that just occurred.
 
         We remove the first stack item because it is our own code.
@@ -137,11 +139,12 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
+        colorize = kwargs.pop('colorize', False)
         sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
         sys.last_traceback = last_tb
         sys.last_exc = ei[1]
         try:
-            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next)
+            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next, colorize=colorize)
             if sys.excepthook is sys.__excepthook__:
                 self.write(''.join(lines))
             else:
@@ -169,7 +172,7 @@ class InteractiveConsole(InteractiveInterpreter):
 
     """
 
-    def __init__(self, locals=None, filename="<console>"):
+    def __init__(self, locals=None, filename="<console>", *, local_exit=False):
         """Constructor.
 
         The optional locals argument will be passed to the
@@ -181,6 +184,7 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         InteractiveInterpreter.__init__(self, locals)
         self.filename = filename
+        self.local_exit = local_exit
         self.resetbuffer()
 
     def resetbuffer(self):
@@ -219,29 +223,66 @@ class InteractiveConsole(InteractiveInterpreter):
         elif banner:
             self.write("%s\n" % str(banner))
         more = 0
-        while 1:
-            try:
-                if more:
-                    prompt = sys.ps2
-                else:
-                    prompt = sys.ps1
-                try:
-                    line = self.raw_input(prompt)
-                except EOFError:
-                    self.write("\n")
-                    break
-                else:
-                    more = self.push(line)
-            except KeyboardInterrupt:
-                self.write("\nKeyboardInterrupt\n")
-                self.resetbuffer()
-                more = 0
-        if exitmsg is None:
-            self.write('now exiting %s...\n' % self.__class__.__name__)
-        elif exitmsg != '':
-            self.write('%s\n' % exitmsg)
 
-    def push(self, line):
+        # When the user uses exit() or quit() in their interactive shell
+        # they probably just want to exit the created shell, not the whole
+        # process. exit and quit in builtins closes sys.stdin which makes
+        # it super difficult to restore
+        #
+        # When self.local_exit is True, we overwrite the builtins so
+        # exit() and quit() only raises SystemExit and we can catch that
+        # to only exit the interactive shell
+
+        _exit = None
+        _quit = None
+
+        if self.local_exit:
+            if hasattr(builtins, "exit"):
+                _exit = builtins.exit
+                builtins.exit = Quitter("exit")
+
+            if hasattr(builtins, "quit"):
+                _quit = builtins.quit
+                builtins.quit = Quitter("quit")
+
+        try:
+            while True:
+                try:
+                    if more:
+                        prompt = sys.ps2
+                    else:
+                        prompt = sys.ps1
+                    try:
+                        line = self.raw_input(prompt)
+                    except EOFError:
+                        self.write("\n")
+                        break
+                    else:
+                        more = self.push(line)
+                except KeyboardInterrupt:
+                    self.write("\nKeyboardInterrupt\n")
+                    self.resetbuffer()
+                    more = 0
+                except SystemExit as e:
+                    if self.local_exit:
+                        self.write("\n")
+                        break
+                    else:
+                        raise e
+        finally:
+            # restore exit and quit in builtins if they were modified
+            if _exit is not None:
+                builtins.exit = _exit
+
+            if _quit is not None:
+                builtins.quit = _quit
+
+            if exitmsg is None:
+                self.write('now exiting %s...\n' % self.__class__.__name__)
+            elif exitmsg != '':
+                self.write('%s\n' % exitmsg)
+
+    def push(self, line, filename=None, _symbol="single"):
         """Push a line to the interpreter.
 
         The line should not have a trailing newline; it may have
@@ -257,7 +298,9 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         self.buffer.append(line)
         source = "\n".join(self.buffer)
-        more = self.runsource(source, self.filename)
+        if filename is None:
+            filename = self.filename
+        more = self.runsource(source, filename, symbol=_symbol)
         if not more:
             self.resetbuffer()
         return more
@@ -276,8 +319,22 @@ class InteractiveConsole(InteractiveInterpreter):
         return input(prompt)
 
 
+class Quitter:
+    def __init__(self, name):
+        self.name = name
+        if sys.platform == "win32":
+            self.eof = 'Ctrl-Z plus Return'
+        else:
+            self.eof = 'Ctrl-D (i.e. EOF)'
 
-def interact(banner=None, readfunc=None, local=None, exitmsg=None):
+    def __repr__(self):
+        return f'Use {self.name} or {self.eof} to exit'
+
+    def __call__(self, code=None):
+        raise SystemExit(code)
+
+
+def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False):
     """Closely emulate the interactive Python interpreter.
 
     This is a backwards compatible interface to the InteractiveConsole
@@ -290,14 +347,15 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None):
     readfunc -- if not None, replaces InteractiveConsole.raw_input()
     local -- passed to InteractiveInterpreter.__init__()
     exitmsg -- passed to InteractiveConsole.interact()
+    local_exit -- passed to InteractiveConsole.__init__()
 
     """
-    console = InteractiveConsole(local)
+    console = InteractiveConsole(local, local_exit=local_exit)
     if readfunc is not None:
         console.raw_input = readfunc
     else:
         try:
-            import readline
+            import readline  # noqa: F401
         except ImportError:
             pass
     console.interact(banner, exitmsg)

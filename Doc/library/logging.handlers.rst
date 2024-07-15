@@ -1,5 +1,5 @@
-:mod:`logging.handlers` --- Logging handlers
-============================================
+:mod:`!logging.handlers` --- Logging handlers
+=============================================
 
 .. module:: logging.handlers
    :synopsis: Handlers for the logging module.
@@ -66,7 +66,7 @@ and :meth:`flush` methods).
 
       :param stream: The stream that the handler should use.
 
-      :return: the old stream, if the stream was changed, or *None* if it wasn't.
+      :return: the old stream, if the stream was changed, or ``None`` if it wasn't.
 
       .. versionadded:: 3.7
 
@@ -656,9 +656,7 @@ supports sending logging messages to a remote or local Unix syslog.
       to the other end. This method is called during handler initialization,
       but it's not regarded as an error if the other end isn't listening at
       this point - the method will be called again when emitting an event, if
-      but it's not regarded as an error if the other end isn't listening yet
-      --- the method will be called again when emitting an event,
-      if there is no socket at that point.
+      there is no socket at that point.
 
       .. versionadded:: 3.11
 
@@ -873,8 +871,8 @@ supports sending logging messages to an email address via SMTP.
    A timeout can be specified for communication with the SMTP server using the
    *timeout* argument.
 
-   .. versionadded:: 3.3
-      The *timeout* argument was added.
+   .. versionchanged:: 3.3
+      Added the *timeout* parameter.
 
    .. method:: emit(record)
 

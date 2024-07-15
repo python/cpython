@@ -10,25 +10,28 @@
 #undef NDEBUG
 
 #include "Python.h"
+#include "pycore_backoff.h"       // JUMP_BACKWARD_INITIAL_VALUE
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_ceval.h"         // _PyEval_AddPendingCall()
 #include "pycore_compile.h"       // _PyCompile_CodeGen()
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
-#include "pycore_dict.h"          // _PyDictOrValues_GetValues()
+#include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
 #include "pycore_fileutils.h"     // _Py_normpath()
+#include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
+#include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-
-#include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
 #include "clinic/_testinternalcapi.c.h"
 
@@ -106,6 +109,14 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
 
     return PyLong_FromLong(tstate->py_recursion_limit - tstate->py_recursion_remaining);
+}
+
+
+static PyObject*
+get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return PyLong_FromLong(tstate->c_recursion_remaining);
 }
 
 
@@ -714,6 +725,19 @@ _testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc)
     return _PyCompile_CleanDoc(doc);
 }
 
+/*[clinic input]
+
+_testinternalcapi.new_instruction_sequence -> object
+
+Return a new, empty InstructionSequence.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence_impl(PyObject *module)
+/*[clinic end generated code: output=ea4243fddb9057fd input=1dec2591b173be83]*/
+{
+    return _PyInstructionSequence_New();
+}
 
 /*[clinic input]
 
@@ -822,6 +846,7 @@ _testinternalcapi_assemble_code_object_impl(PyObject *module,
 }
 
 
+// Maybe this could be replaced by get_interpreter_config()?
 static PyObject *
 get_interp_settings(PyObject *self, PyObject *args)
 {
@@ -951,15 +976,28 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
-get_counter_optimizer(PyObject *self, PyObject *arg)
+get_co_framesize(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewCounter();
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)arg;
+    return PyLong_FromLong(code->co_framesize);
+}
+
+#ifdef _Py_TIER2
+
+static PyObject *
+new_counter_optimizer(PyObject *self, PyObject *arg)
+{
+    return _PyOptimizer_NewCounter();
 }
 
 static PyObject *
-get_uop_optimizer(PyObject *self, PyObject *arg)
+new_uop_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewUOpOptimizer();
+    return _PyOptimizer_NewUOpOptimizer();
 }
 
 static PyObject *
@@ -968,14 +1006,19 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    PyUnstable_SetOptimizer((_PyOptimizerObject*)opt);
+    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
 static PyObject *
 get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *opt = (PyObject *)PyUnstable_GetOptimizer();
+    PyObject *opt = NULL;
+#ifdef _Py_TIER2
+    opt = (PyObject *)_Py_GetOptimizer();
+#endif
     if (opt == NULL) {
         Py_RETURN_NONE;
     }
@@ -983,24 +1026,32 @@ get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-get_executor(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+add_executor_dependency(PyObject *self, PyObject *args)
 {
-
-    if (!_PyArg_CheckPositional("get_executor", nargs, 2, 2)) {
+    PyObject *exec;
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
         return NULL;
     }
-    PyObject *code = args[0];
-    PyObject *offset = args[1];
-    long ioffset = PyLong_AsLong(offset);
-    if (ioffset == -1 && PyErr_Occurred()) {
+    /* No way to tell in general if exec is an executor, so we only accept
+     * counting_executor */
+    if (strcmp(Py_TYPE(exec)->tp_name, "counting_executor")) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a counting_executor");
         return NULL;
     }
-    if (!PyCode_Check(code)) {
-         PyErr_SetString(PyExc_TypeError, "first argument must be a code object");
-        return NULL;
-    }
-    return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, ioffset);
+    _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
+    Py_RETURN_NONE;
 }
+
+static PyObject *
+invalidate_executors(PyObject *self, PyObject *obj)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _Py_Executors_InvalidateDependency(interp, obj, 1);
+    Py_RETURN_NONE;
+}
+
+#endif
 
 static int _pending_callback(void *arg)
 {
@@ -1019,37 +1070,56 @@ static PyObject *
 pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *callable;
+    unsigned int num = 1;
+    int blocking = 0;
     int ensure_added = 0;
-    static char *kwlist[] = {"", "ensure_added", NULL};
+    static char *kwlist[] = {"callback", "num",
+                             "blocking", "ensure_added", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O|$p:pending_threadfunc", kwlist,
-                                     &callable, &ensure_added))
+                                     "O|I$pp:pending_threadfunc", kwlist,
+                                     &callable, &num, &blocking, &ensure_added))
     {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* create the reference for the callbackwhile we hold the lock */
-    Py_INCREF(callable);
-
-    int r;
-    Py_BEGIN_ALLOW_THREADS
-    r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-    Py_END_ALLOW_THREADS
-    if (r < 0) {
-        /* unsuccessful add */
-        if (!ensure_added) {
-            Py_DECREF(callable);
-            Py_RETURN_FALSE;
-        }
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-            Py_END_ALLOW_THREADS
-        } while (r < 0);
+    for (unsigned int i = 0; i < num; i++) {
+        Py_INCREF(callable);
     }
 
-    Py_RETURN_TRUE;
+    PyThreadState *save_tstate = NULL;
+    if (!blocking) {
+        save_tstate = PyEval_SaveThread();
+    }
+
+    unsigned int num_added = 0;
+    for (; num_added < num; num_added++) {
+        if (ensure_added) {
+            _Py_add_pending_call_result r;
+            do {
+                r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+                assert(r == _Py_ADD_PENDING_SUCCESS
+                       || r == _Py_ADD_PENDING_FULL);
+            } while (r == _Py_ADD_PENDING_FULL);
+        }
+        else {
+            if (_PyEval_AddPendingCall(interp, &_pending_callback, callable, 0) < 0) {
+                break;
+            }
+        }
+    }
+
+    if (!blocking) {
+        PyEval_RestoreThread(save_tstate);
+    }
+
+    for (unsigned int i = num_added; i < num; i++) {
+        Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
+    }
+
+    /* The callable is decref'ed in _pending_callback() above. */
+    return PyLong_FromUnsignedLong((unsigned long)num_added);
 }
 
 
@@ -1075,7 +1145,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1092,14 +1162,16 @@ pending_identify(PyObject *self, PyObject *args)
     PyThread_acquire_lock(mutex, WAIT_LOCK);
     /* It gets released in _pending_identify_callback(). */
 
-    int r;
+    _Py_add_pending_call_result r;
     do {
         Py_BEGIN_ALLOW_THREADS
         r = _PyEval_AddPendingCall(interp,
                                    &_pending_identify_callback, (void *)mutex,
                                    0);
         Py_END_ALLOW_THREADS
-    } while (r < 0);
+        assert(r == _Py_ADD_PENDING_SUCCESS
+               || r == _Py_ADD_PENDING_FULL);
+    } while (r == _Py_ADD_PENDING_FULL);
 
     /* Wait for the pending call to complete. */
     PyThread_acquire_lock(mutex, WAIT_LOCK);
@@ -1250,8 +1322,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* This test would fail if run with the address sanitizer */
-#ifdef _Py_ADDRESS_SANITIZER
+    /* ASan or TSan would report an use-after-free error */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
@@ -1282,14 +1354,13 @@ static PyObject *
 get_object_dict_values(PyObject *self, PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES)) {
         Py_RETURN_NONE;
     }
-    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
-    if (!_PyDictOrValues_IsValues(dorv)) {
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (!values->valid) {
         Py_RETURN_NONE;
     }
-    PyDictValues *values = _PyDictOrValues_GetValues(dorv);
     PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
     assert(keys != NULL);
     int size = (int)keys->dk_nentries;
@@ -1341,133 +1412,426 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
-/* To run some code in a sub-interpreter. */
+static int
+_init_interp_config_from_object(PyInterpreterConfig *config, PyObject *obj)
+{
+    if (obj == NULL) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+        return 0;
+    }
+
+    PyObject *dict = PyObject_GetAttrString(obj, "__dict__");
+    if (dict == NULL) {
+        PyErr_Format(PyExc_TypeError, "bad config %R", obj);
+        return -1;
+    }
+    int res = _PyInterpreterConfig_InitFromDict(config, dict);
+    Py_DECREF(dict);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyInterpreterState *
+_new_interpreter(PyInterpreterConfig *config, long whence)
+{
+    if (whence == _PyInterpreterState_WHENCE_XI) {
+        return _PyXI_NewInterpreter(config, &whence, NULL, NULL);
+    }
+    PyObject *exc = NULL;
+    PyInterpreterState *interp = NULL;
+    if (whence == _PyInterpreterState_WHENCE_UNKNOWN) {
+        assert(config == NULL);
+        interp = PyInterpreterState_New();
+    }
+    else if (whence == _PyInterpreterState_WHENCE_CAPI
+             || whence == _PyInterpreterState_WHENCE_LEGACY_CAPI)
+    {
+        PyThreadState *tstate = NULL;
+        PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+        if (whence == _PyInterpreterState_WHENCE_LEGACY_CAPI) {
+            assert(config == NULL);
+            tstate = Py_NewInterpreter();
+            PyThreadState_Swap(save_tstate);
+        }
+        else {
+            PyStatus status = Py_NewInterpreterFromConfig(&tstate, config);
+            PyThreadState_Swap(save_tstate);
+            if (PyStatus_Exception(status)) {
+                assert(tstate == NULL);
+                _PyErr_SetFromPyStatus(status);
+                exc = PyErr_GetRaisedException();
+            }
+        }
+        if (tstate != NULL) {
+            interp = PyThreadState_GetInterpreter(tstate);
+            // Throw away the initial tstate.
+            PyThreadState_Swap(tstate);
+            PyThreadState_Clear(tstate);
+            PyThreadState_Swap(save_tstate);
+            PyThreadState_Delete(tstate);
+        }
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported whence %ld", whence);
+        return NULL;
+    }
+
+    if (interp == NULL) {
+        PyErr_SetString(PyExc_InterpreterError,
+                        "sub-interpreter creation failed");
+        if (exc != NULL) {
+            _PyErr_ChainExceptions1(exc);
+        }
+    }
+    return interp;
+}
+
+// This exists mostly for testing the _interpreters module, as an
+// alternative to _interpreters.create()
+static PyObject *
+create_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"config", "whence", NULL};
+    PyObject *configobj = NULL;
+    long whence = _PyInterpreterState_WHENCE_XI;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "|O$l:create_interpreter", kwlist,
+                                     &configobj, &whence))
+    {
+        return NULL;
+    }
+    if (configobj == Py_None) {
+        configobj = NULL;
+    }
+
+    // Resolve the config.
+    PyInterpreterConfig *config = NULL;
+    PyInterpreterConfig _config;
+    if (whence == _PyInterpreterState_WHENCE_UNKNOWN
+            || whence == _PyInterpreterState_WHENCE_LEGACY_CAPI)
+    {
+        if (configobj != NULL) {
+            PyErr_SetString(PyExc_ValueError, "got unexpected config");
+            return NULL;
+        }
+    }
+    else {
+        config = &_config;
+        if (_init_interp_config_from_object(config, configobj) < 0) {
+            return NULL;
+        }
+    }
+
+    // Create the interpreter.
+    PyInterpreterState *interp = _new_interpreter(config, whence);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    // Return the ID.
+    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
+    if (idobj == NULL) {
+        _PyXI_EndInterpreter(interp, NULL, NULL);
+        return NULL;
+    }
+
+    return idobj;
+}
+
+// This exists mostly for testing the _interpreters module, as an
+// alternative to _interpreters.destroy()
+static PyObject *
+destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *idobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "O:destroy_interpreter", kwlist,
+                                     &idobj))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    _PyXI_EndInterpreter(interp, NULL, NULL);
+    Py_RETURN_NONE;
+}
+
+// This exists mostly for testing the _interpreters module, as an
+// alternative to _interpreters.destroy()
+static PyObject *
+exec_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"id", "code", "main", NULL};
+    PyObject *idobj;
+    const char *code;
+    int runningmain = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "Os|$p:exec_interpreter", kwlist,
+                                     &idobj, &code, &runningmain))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = NULL;
+    PyThreadState *tstate =
+        _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
+
+    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+
+    if (runningmain) {
+       if (_PyInterpreterState_SetRunningMain(interp) < 0) {
+           goto finally;
+       }
+    }
+
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
+    int r = PyRun_SimpleStringFlags(code, &cflags);
+    if (PyErr_Occurred()) {
+        PyErr_PrintEx(0);
+    }
+
+    if (runningmain) {
+        _PyInterpreterState_SetNotRunningMain(interp);
+    }
+
+    res = PyLong_FromLong(r);
+
+finally:
+    PyThreadState_Clear(tstate);
+    PyThreadState_Swap(save_tstate);
+    PyThreadState_Delete(tstate);
+    return res;
+}
+
+
+/* To run some code in a sub-interpreter.
+
+Generally you can use test.support.interpreters,
+but we keep this helper as a distinct implementation.
+That's especially important for testing test.support.interpreters.
+*/
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
-    int use_main_obmalloc = -1;
-    int allow_fork = -1;
-    int allow_exec = -1;
-    int allow_threads = -1;
-    int allow_daemon_threads = -1;
-    int check_multi_interp_extensions = -1;
-    int gil = -1;
-    int r;
-    PyThreadState *substate, *mainstate;
+    PyObject *configobj;
+    int xi = 0;
+    static char *kwlist[] = {"code", "config", "xi", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "sO|$p:run_in_subinterp_with_config", kwlist,
+                    &code, &configobj, &xi))
+    {
+        return NULL;
+    }
+
+    PyInterpreterConfig config;
+    if (_init_interp_config_from_object(&config, configobj) < 0) {
+        return NULL;
+    }
+
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
     PyCompilerFlags cflags = {0};
 
-    static char *kwlist[] = {"code",
-                             "use_main_obmalloc",
-                             "allow_fork",
-                             "allow_exec",
-                             "allow_threads",
-                             "allow_daemon_threads",
-                             "check_multi_interp_extensions",
-                             "gil",
-                             NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
-                    &code, &use_main_obmalloc,
-                    &allow_fork, &allow_exec,
-                    &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions,
-                    &gil)) {
-        return NULL;
-    }
-    if (use_main_obmalloc < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
-        return NULL;
-    }
-    if (allow_fork < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
-        return NULL;
-    }
-    if (allow_exec < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
-        return NULL;
-    }
-    if (allow_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
-        return NULL;
-    }
-    if (gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing gil");
-        return NULL;
-    }
-    if (allow_daemon_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
-        return NULL;
-    }
-    if (check_multi_interp_extensions < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
-        return NULL;
-    }
+    int r;
+    if (xi) {
+        PyThreadState *save_tstate;
+        PyThreadState *tstate;
 
-    mainstate = PyThreadState_Get();
+        /* Create an interpreter, staying switched to it. */
+        PyInterpreterState *interp = \
+                _PyXI_NewInterpreter(&config, NULL, &tstate, &save_tstate);
+        if (interp == NULL) {
+            return NULL;
+        }
 
-    PyThreadState_Swap(NULL);
+        /* Exec the code in the new interpreter. */
+        r = PyRun_SimpleStringFlags(code, &cflags);
 
-    const PyInterpreterConfig config = {
-        .use_main_obmalloc = use_main_obmalloc,
-        .allow_fork = allow_fork,
-        .allow_exec = allow_exec,
-        .allow_threads = allow_threads,
-        .allow_daemon_threads = allow_daemon_threads,
-        .check_multi_interp_extensions = check_multi_interp_extensions,
-        .gil = gil,
-    };
-    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
-    if (PyStatus_Exception(status)) {
-        /* Since no new thread state was created, there is no exception to
-           propagate; raise a fresh one after swapping in the old thread
-           state. */
+        /* clean up post-exec. */
+        _PyXI_EndInterpreter(interp, tstate, &save_tstate);
+    }
+    else {
+        PyThreadState *substate;
+        PyThreadState *mainstate = PyThreadState_Swap(NULL);
+
+        /* Create an interpreter, staying switched to it. */
+        PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
+        if (PyStatus_Exception(status)) {
+            /* Since no new thread state was created, there is no exception to
+               propagate; raise a fresh one after swapping in the old thread
+               state. */
+            PyThreadState_Swap(mainstate);
+            _PyErr_SetFromPyStatus(status);
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_InterpreterError,
+                            "sub-interpreter creation failed");
+            _PyErr_ChainExceptions1(exc);
+            return NULL;
+        }
+
+        /* Exec the code in the new interpreter. */
+        r = PyRun_SimpleStringFlags(code, &cflags);
+
+        /* clean up post-exec. */
+        Py_EndInterpreter(substate);
         PyThreadState_Swap(mainstate);
-        _PyErr_SetFromPyStatus(status);
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
-        _PyErr_ChainExceptions1(exc);
-        return NULL;
     }
-    assert(substate != NULL);
-    r = PyRun_SimpleStringFlags(code, &cflags);
-    Py_EndInterpreter(substate);
-
-    PyThreadState_Swap(mainstate);
 
     return PyLong_FromLong(r);
 }
 
 
-/*[clinic input]
-_testinternalcapi.write_unraisable_exc
-    exception as exc: object
-    err_msg: object
-    obj: object
-    /
-[clinic start generated code]*/
+static PyObject *
+normalize_interp_id(PyObject *self, PyObject *idobj)
+{
+    int64_t interpid = _PyInterpreterState_ObjectToID(idobj);
+    if (interpid < 0) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(interpid);
+}
 
 static PyObject *
-_testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                            PyObject *err_msg, PyObject *obj)
-/*[clinic end generated code: output=a0f063cdd04aad83 input=274381b1a3fa5cd6]*/
+next_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    int64_t interpid = _PyRuntime.interpreters.next_id;
+    return PyLong_FromLongLong(interpid);
+}
 
-    const char *err_msg_utf8;
-    if (err_msg != Py_None) {
-        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
-        if (err_msg_utf8 == NULL) {
-            return NULL;
+static PyObject *
+unused_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    int64_t interpid = INT64_MAX;
+    assert(interpid > _PyRuntime.interpreters.next_id);
+    return PyLong_FromLongLong(interpid);
+}
+
+static PyObject *
+interpreter_exists(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_InterpreterNotFoundError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
         }
+        assert(PyErr_Occurred());
+        return NULL;
     }
-    else {
-        err_msg_utf8 = NULL;
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+get_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(interp->id_refcount);
+}
+
+static PyObject *
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+interpreter_refcount_linked(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    if (_PyInterpreterState_RequiresIDRef(interp)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+
+static void
+_xid_capsule_destructor(PyObject *capsule)
+{
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data != NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        _PyCrossInterpreterData_Free(data);
+    }
+}
+
+static PyObject *
+get_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *obj = NULL;
+    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+        return NULL;
     }
 
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
-    Py_RETURN_NONE;
+    _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+    if (data == NULL) {
+        return NULL;
+    }
+    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+        _PyCrossInterpreterData_Free(data);
+        return NULL;
+    }
+    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    if (capsule == NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        _PyCrossInterpreterData_Free(data);
+    }
+    return capsule;
+}
+
+static PyObject *
+restore_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *capsule = NULL;
+    if (!PyArg_ParseTuple(args, "O:restore_crossinterp_data", &capsule)) {
+        return NULL;
+    }
+
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data == NULL) {
+        return NULL;
+    }
+    return _PyCrossInterpreterData_NewObject(data);
 }
 
 
@@ -1530,10 +1894,151 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+compile_perf_trampoline_entry(PyObject *self, PyObject *args)
+{
+    PyObject *co;
+    if (!PyArg_ParseTuple(args, "O!", &PyCode_Type, &co)) {
+        return NULL;
+    }
+    int ret = PyUnstable_PerfTrampoline_CompileCode((PyCodeObject *)co);
+    if (ret != 0) {
+        PyErr_SetString(PyExc_AssertionError, "Failed to compile trampoline");
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
+static PyObject *
+perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
+{
+    int enable;
+    if (!PyArg_ParseTuple(args, "i", &enable)) {
+        return NULL;
+    }
+    int ret = PyUnstable_PerfTrampoline_SetPersistAfterFork(enable);
+    if (ret == 0) {
+        PyErr_SetString(PyExc_AssertionError, "Failed to set persist_after_fork");
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
+
+static PyObject *
+get_rare_event_counters(PyObject *self, PyObject *type)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    return Py_BuildValue(
+        "{sksksksksk}",
+        "set_class", (unsigned long)interp->rare_events.set_class,
+        "set_bases", (unsigned long)interp->rare_events.set_bases,
+        "set_eval_frame_func", (unsigned long)interp->rare_events.set_eval_frame_func,
+        "builtin_dict", (unsigned long)interp->rare_events.builtin_dict,
+        "func_modification", (unsigned long)interp->rare_events.func_modification
+    );
+}
+
+static PyObject *
+reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    interp->rare_events.set_class = 0;
+    interp->rare_events.set_bases = 0;
+    interp->rare_events.set_eval_frame_func = 0;
+    interp->rare_events.builtin_dict = 0;
+    interp->rare_events.func_modification = 0;
+
+    return Py_None;
+}
+
+
+#ifdef Py_GIL_DISABLED
+static PyObject *
+get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    uintptr_t tid = _Py_ThreadId();
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(tid));
+    return PyLong_FromUnsignedLongLong(tid);
+}
+#endif
+
+static PyObject *
+suppress_immortalization(PyObject *self, PyObject *value)
+{
+#ifdef Py_GIL_DISABLED
+    int suppress = PyObject_IsTrue(value);
+    if (suppress < 0) {
+        return NULL;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    // Subtract two to suppress immortalization (so that 1 -> -1)
+    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
+#endif
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
+#else
+    Py_RETURN_FALSE;
+#endif
+}
+
+static PyObject *
+has_inline_values(PyObject *self, PyObject *obj)
+{
+    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        _PyObject_InlineValues(obj)->valid) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+
+// Circumvents standard version assignment machinery - use with caution and only on
+// short-lived heap types
+static PyObject *
+type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    unsigned int version;
+    if (!PyArg_ParseTuple(args, "Oi:type_assign_specific_version_unsafe", &type, &version)) {
+        return NULL;
+    }
+    assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
+    _PyType_SetVersion(type, version);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+gh_119213_getargs
+
+    spam: object = None
+
+Test _PyArg_Parser.kwtuple
+[clinic start generated code]*/
+
+static PyObject *
+gh_119213_getargs_impl(PyObject *module, PyObject *spam)
+/*[clinic end generated code: output=d8d9c95d5b446802 input=65ef47511da80fc2]*/
+{
+    // It must never have been called in the main interprer
+    assert(!_Py_IsMainInterpreter(PyInterpreterState_Get()));
+    return Py_NewRef(spam);
+}
+
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
+    {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
@@ -1550,6 +2055,7 @@ static PyMethodDef module_functions[] = {
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
+    _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
@@ -1560,11 +2066,15 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_co_framesize", get_co_framesize, METH_O, NULL},
+#ifdef _Py_TIER2
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
-    {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
-    {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
+    {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
+    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
+    {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
+    {"invalidate_executors", invalidate_executors, METH_O, NULL},
+#endif
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},
@@ -1582,11 +2092,43 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"create_interpreter", _PyCFunction_CAST(create_interpreter),
+     METH_VARARGS | METH_KEYWORDS},
+    {"destroy_interpreter", _PyCFunction_CAST(destroy_interpreter),
+     METH_VARARGS | METH_KEYWORDS},
+    {"exec_interpreter", _PyCFunction_CAST(exec_interpreter),
+     METH_VARARGS | METH_KEYWORDS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
-    _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
+    {"normalize_interp_id", normalize_interp_id, METH_O},
+    {"next_interpreter_id", next_interpreter_id, METH_NOARGS},
+    {"unused_interpreter_id", unused_interpreter_id, METH_NOARGS},
+    {"interpreter_exists", interpreter_exists, METH_O},
+    {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
+    {"interpreter_refcount_linked", interpreter_refcount_linked, METH_O},
+    {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
+    {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
+    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
+    {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
+    {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
+    {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
+    {"has_inline_values", has_inline_values, METH_O},
+    {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
+     PyDoc_STR("forcefully assign type->tp_version_tag")},
+
+#ifdef Py_GIL_DISABLED
+    {"py_thread_id", get_py_thread_id, METH_NOARGS},
+#endif
+    {"suppress_immortalization", suppress_immortalization, METH_O},
+    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
+#ifdef _Py_TIER2
+    {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
+#endif
+    GH_119213_GETARGS_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
@@ -1605,9 +2147,22 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
         return 1;
     }
+    if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
+        return 1;
+    }
+
+    Py_ssize_t sizeof_gc_head = 0;
+#ifndef Py_GIL_DISABLED
+    sizeof_gc_head = sizeof(PyGC_Head);
+#endif
 
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
-                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+                        PyLong_FromSsize_t(sizeof_gc_head)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SIZEOF_MANAGED_PRE_HEADER",
+                        PyLong_FromSsize_t(2 * sizeof(PyObject*))) < 0) {
         return 1;
     }
 
@@ -1621,12 +2176,18 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    if (PyModule_Add(module, "TIER2_THRESHOLD",
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE)) < 0) {
+        return 1;
+    }
+
     return 0;
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

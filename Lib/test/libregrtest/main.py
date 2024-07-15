@@ -5,21 +5,23 @@ import shlex
 import sys
 import sysconfig
 import time
+import trace
 
-from test import support
-from test.support import os_helper, MS_WINDOWS
+from test.support import (os_helper, MS_WINDOWS, flush_std_streams,
+                          suppress_immortalization)
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
-from .result import State
+from .result import State, TestResult
 from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
+from .tsan import setup_tsan_tests
 from .utils import (
-    StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
+    StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
@@ -56,6 +58,7 @@ class Regrtest:
         self.quiet: bool = ns.quiet
         self.pgo: bool = ns.pgo
         self.pgo_extended: bool = ns.pgo_extended
+        self.tsan: bool = ns.tsan
 
         # Test results
         self.results: TestResults = TestResults()
@@ -72,32 +75,27 @@ class Regrtest:
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
         self.want_run_leaks: bool = ns.runleaks
+        self.want_bisect: bool = ns.bisect
 
         self.ci_mode: bool = (ns.fast_ci or ns.slow_ci)
         self.want_add_python_opts: bool = (_add_python_opts
                                            and ns._add_python_opts)
 
         # Select tests
-        if ns.match_tests:
-            self.match_tests: FilterTuple | None = tuple(ns.match_tests)
-        else:
-            self.match_tests = None
-        if ns.ignore_tests:
-            self.ignore_tests: FilterTuple | None = tuple(ns.ignore_tests)
-        else:
-            self.ignore_tests = None
+        self.match_tests: TestFilter = ns.match_tests
         self.exclude: bool = ns.exclude
         self.fromfile: StrPath | None = ns.fromfile
         self.starting_test: TestName | None = ns.start
         self.cmdline_args: TestList = ns.args
 
         # Workers
-        if ns.use_mp is None:
-            num_workers = 0  # run sequentially
+        self.single_process: bool = ns.single_process
+        if self.single_process or ns.use_mp is None:
+            num_workers = 0   # run sequentially in a single process
         elif ns.use_mp <= 0:
-            num_workers = -1  # use the number of CPUs
+            num_workers = -1  # run in parallel, use the number of CPUs
         else:
-            num_workers = ns.use_mp
+            num_workers = ns.use_mp  # run in parallel
         self.num_workers: int = num_workers
         self.worker_json: StrJSON | None = ns.worker_json
 
@@ -129,14 +127,19 @@ class Regrtest:
 
         # Randomize
         self.randomize: bool = ns.randomize
-        self.random_seed: int | None =  (
-            ns.random_seed
-            if ns.random_seed is not None
-            else random.getrandbits(32)
-        )
-        if 'SOURCE_DATE_EPOCH' in os.environ:
+        if ('SOURCE_DATE_EPOCH' in os.environ
+            # don't use the variable if empty
+            and os.environ['SOURCE_DATE_EPOCH']
+        ):
             self.randomize = False
-            self.random_seed = None
+            # SOURCE_DATE_EPOCH should be an integer, but use a string to not
+            # fail if it's not integer. random.seed() accepts a string.
+            # https://reproducible-builds.org/docs/source-date-epoch/
+            self.random_seed: int | str = os.environ['SOURCE_DATE_EPOCH']
+        elif ns.random_seed is None:
+            self.random_seed = random.getrandbits(32)
+        else:
+            self.random_seed = ns.random_seed
 
         # tests
         self.first_runtests: RunTests | None = None
@@ -183,6 +186,9 @@ class Regrtest:
         if self.pgo:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.cmdline_args, self.pgo_extended)
+
+        if self.tsan:
+            setup_tsan_tests(self.cmdline_args)
 
         exclude_tests = set()
         if self.exclude:
@@ -231,7 +237,7 @@ class Regrtest:
 
     def _rerun_failed_tests(self, runtests: RunTests):
         # Configure the runner to re-run tests
-        if self.num_workers == 0:
+        if self.num_workers == 0 and not self.single_process:
             # Always run tests in fresh processes to have more deterministic
             # initial state. Don't re-run tests in parallel but limit to a
             # single worker process to have side effects (on the system load
@@ -241,7 +247,6 @@ class Regrtest:
         tests, match_tests_dict = self.results.prepare_rerun()
 
         # Re-run failed tests
-        self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
         runtests = runtests.copy(
             tests=tests,
             rerun=True,
@@ -251,7 +256,15 @@ class Regrtest:
             match_tests_dict=match_tests_dict,
             output_on_failure=False)
         self.logger.set_tests(runtests)
-        self._run_tests_mp(runtests, self.num_workers)
+
+        msg = f"Re-running {len(tests)} failed tests in verbose mode"
+        if not self.single_process:
+            msg = f"{msg} in subprocesses"
+            self.log(msg)
+            self._run_tests_mp(runtests, self.num_workers)
+        else:
+            self.log(msg)
+            self.run_tests_sequentially(runtests)
         return runtests
 
     def rerun_failed_tests(self, runtests: RunTests):
@@ -274,6 +287,55 @@ class Regrtest:
 
         self.display_result(rerun_runtests)
 
+    def _run_bisect(self, runtests: RunTests, test: str, progress: str) -> bool:
+        print()
+        title = f"Bisect {test}"
+        if progress:
+            title = f"{title} ({progress})"
+        print(title)
+        print("#" * len(title))
+        print()
+
+        cmd = runtests.create_python_cmd()
+        cmd.extend([
+            "-u", "-m", "test.bisect_cmd",
+            # Limit to 25 iterations (instead of 100) to not abuse CI resources
+            "--max-iter", "25",
+            "-v",
+            # runtests.match_tests is not used (yet) for bisect_cmd -i arg
+        ])
+        cmd.extend(runtests.bisect_cmd_args())
+        cmd.append(test)
+        print("+", shlex.join(cmd), flush=True)
+
+        flush_std_streams()
+
+        import subprocess
+        proc = subprocess.run(cmd, timeout=runtests.timeout)
+        exitcode = proc.returncode
+
+        title = f"{title}: exit code {exitcode}"
+        print(title)
+        print("#" * len(title))
+        print(flush=True)
+
+        if exitcode:
+            print(f"Bisect failed with exit code {exitcode}")
+            return False
+
+        return True
+
+    def run_bisect(self, runtests: RunTests) -> None:
+        tests, _ = self.results.prepare_rerun(clear=False)
+
+        for index, name in enumerate(tests, 1):
+            if len(tests) > 1:
+                progress = f"{index}/{len(tests)}"
+            else:
+                progress = ""
+            if not self._run_bisect(runtests, name, progress):
+                return
+
     def display_result(self, runtests):
         # If running the test suite for PGO then no one cares about results.
         if runtests.pgo:
@@ -286,7 +348,9 @@ class Regrtest:
         self.results.display_result(runtests.tests,
                                     self.quiet, self.print_slowest)
 
-    def run_test(self, test_name: TestName, runtests: RunTests, tracer):
+    def run_test(
+        self, test_name: TestName, runtests: RunTests, tracer: trace.Trace | None
+    ) -> TestResult:
         if tracer is not None:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
@@ -294,6 +358,7 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
+            result.covered_lines = list(tracer.counts)
         else:
             result = run_single_test(test_name, runtests)
 
@@ -301,21 +366,20 @@ class Regrtest:
 
         return result
 
-    def run_tests_sequentially(self, runtests):
+    def run_tests_sequentially(self, runtests) -> None:
         if self.coverage:
-            import trace
             tracer = trace.Trace(trace=False, count=True)
         else:
             tracer = None
 
-        save_modules = sys.modules.keys()
+        save_modules = set(sys.modules)
 
         jobs = runtests.get_jobs()
         if jobs is not None:
             tests = count(jobs, 'test')
         else:
             tests = 'tests'
-        msg = f"Run {tests} sequentially"
+        msg = f"Run {tests} sequentially in a single process"
         if runtests.timeout:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
@@ -332,10 +396,18 @@ class Regrtest:
 
             result = self.run_test(test_name, runtests, tracer)
 
-            # Unload the newly imported modules (best effort finalization)
-            for module in sys.modules.keys():
-                if module not in save_modules and module.startswith("test."):
-                    support.unload(module)
+            # Unload the newly imported test modules (best effort finalization)
+            new_modules = [module for module in sys.modules
+                           if module not in save_modules and
+                                module.startswith(("test.", "test_"))]
+            for module in new_modules:
+                sys.modules.pop(module, None)
+                # Remove the attribute of the parent module.
+                parent, _, name = module.rpartition('.')
+                try:
+                    delattr(sys.modules[parent], name)
+                except (KeyError, AttributeError):
+                    pass
 
             if result.must_stop(self.fail_fast, self.fail_env_changed):
                 break
@@ -351,8 +423,6 @@ class Regrtest:
         if previous_test:
             print(previous_test)
 
-        return tracer
-
     def get_state(self):
         state = self.results.get_state(self.fail_env_changed)
         if self.first_state:
@@ -363,7 +433,7 @@ class Regrtest:
         from .run_workers import RunWorkers
         RunWorkers(num_workers, runtests, self.logger, self.results).run()
 
-    def finalize_tests(self, tracer):
+    def finalize_tests(self, coverage: trace.CoverageResults | None) -> None:
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -371,10 +441,11 @@ class Regrtest:
             else:
                 os.unlink(self.next_single_filename)
 
-        if tracer is not None:
-            results = tracer.results()
-            results.write_results(show_missing=True, summary=True,
-                                  coverdir=self.coverage_dir)
+        if coverage is not None:
+            # uses a new-in-Python 3.13 keyword argument that mypy doesn't know about yet:
+            coverage.write_results(show_missing=True, summary=True,  # type: ignore[call-arg]
+                                   coverdir=self.coverage_dir,
+                                   ignore_missing_files=True)
 
         if self.want_run_leaks:
             os.system("leaks %d" % os.getpid())
@@ -384,7 +455,7 @@ class Regrtest:
 
     def display_summary(self):
         duration = time.perf_counter() - self.logger.start_time
-        filtered = bool(self.match_tests) or bool(self.ignore_tests)
+        filtered = bool(self.match_tests)
 
         # Total duration
         print()
@@ -402,7 +473,6 @@ class Regrtest:
             fail_fast=self.fail_fast,
             fail_env_changed=self.fail_env_changed,
             match_tests=self.match_tests,
-            ignore_tests=self.ignore_tests,
             match_tests_dict=None,
             rerun=False,
             forever=self.forever,
@@ -415,13 +485,13 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
+            coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
             use_resources=self.use_resources,
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
-            json_file=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -433,7 +503,10 @@ class Regrtest:
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests
             # that like to sleep
-            self.num_workers = (os.process_cpu_count() or 1) + 2
+            #
+            # os.process.cpu_count() is new in Python 3.13;
+            # mypy doesn't know about it yet
+            self.num_workers = (os.process_cpu_count() or 1) + 2  # type: ignore[attr-defined]
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
@@ -441,7 +514,7 @@ class Regrtest:
                    or tests or self.cmdline_args)):
             display_header(self.use_resources, self.python_cmd)
 
-        print("Using random seed", self.random_seed)
+        print("Using random seed:", self.random_seed)
 
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
@@ -449,7 +522,7 @@ class Regrtest:
 
         setup_process()
 
-        if self.hunt_refleak and not self.num_workers:
+        if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interfers with refleak check
             use_load_tracker = False
         else:
@@ -461,20 +534,26 @@ class Regrtest:
         try:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
-                tracer = None
             else:
-                tracer = self.run_tests_sequentially(runtests)
+                # gh-117783: don't immortalize deferred objects when tracking
+                # refleaks. Only releveant for the free-threaded build.
+                with suppress_immortalization(runtests.hunt_refleak):
+                    self.run_tests_sequentially(runtests)
 
+            coverage = self.results.get_coverage_results()
             self.display_result(runtests)
 
             if self.want_rerun and self.results.need_rerun():
                 self.rerun_failed_tests(runtests)
+
+            if self.want_bisect and self.results.need_rerun():
+                self.run_bisect(runtests)
         finally:
             if use_load_tracker:
                 self.logger.stop_load_tracker()
 
         self.display_summary()
-        self.finalize_tests(tracer)
+        self.finalize_tests(coverage)
 
         return self.results.get_exitcode(self.fail_env_changed,
                                          self.fail_rerun)
@@ -528,7 +607,7 @@ class Regrtest:
             keep_environ = True
 
         if cross_compile and hostrunner:
-            if self.num_workers == 0:
+            if self.num_workers == 0 and not self.single_process:
                 # For now use only two cores for cross-compiled builds;
                 # hostrunner can be expensive.
                 regrtest_opts.extend(['-j', '2'])
@@ -655,7 +734,6 @@ class Regrtest:
         elif self.want_list_cases:
             list_cases(selected,
                        match_tests=self.match_tests,
-                       ignore_tests=self.ignore_tests,
                        test_dir=self.test_dir)
         else:
             exitcode = self.run_tests(selected, tests)

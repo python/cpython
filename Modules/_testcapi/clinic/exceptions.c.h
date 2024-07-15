@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_testcapi_err_set_raised__doc__,
 "err_set_raised($module, exception, /)\n"
@@ -455,4 +456,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ff19512450b3bbdb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b11ef105030a48e input=a9049054013a1b77]*/

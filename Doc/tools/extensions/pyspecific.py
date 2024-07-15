@@ -26,19 +26,13 @@ from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-
-try:
-    # Sphinx 6+
-    from sphinx.util.display import status_iterator
-except ImportError:
-    # Deprecated in Sphinx 6.1, will be removed in Sphinx 8
-    from sphinx.util import status_iterator
+from sphinx.util.display import status_iterator
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
+# Used in conf.py and updated here by python/release-tools/run_release.py
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
@@ -47,6 +41,12 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
+
+# monkey-patch the productionlist directive to allow hyphens in group names
+# https://github.com/sphinx-doc/sphinx/issues/11854
+from sphinx.domains import std
+
+std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
 
 
 # Support for marking up and linking to bugs.python.org issues
@@ -77,16 +77,6 @@ def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
         return [prb], [msg]
     text = 'gh-' + issue
     refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
-    return [refnode], []
-
-
-# Support for linking to Python source files easily
-
-def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
-    has_t, title, target = split_explicit_title(text)
-    title = utils.unescape(title)
-    target = utils.unescape(target)
-    refnode = nodes.reference(title, title, refuri=SOURCE_URI % target)
     return [refnode], []
 
 
@@ -127,8 +117,8 @@ class Availability(SphinxDirective):
     # known platform, libc, and threading implementations
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
-        "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
-        "WASI", "Windows", "macOS",
+        "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
+        "Unix", "VxWorks", "WASI", "Windows", "macOS", "iOS",
         # libc
         "BSD libc", "glibc", "musl",
         # POSIX platforms with pthreads
@@ -159,7 +149,7 @@ class Availability(SphinxDirective):
 
         Example::
 
-           .. availability:: Windows, Linux >= 4.2, not Emscripten, not WASI
+           .. availability:: Windows, Linux >= 4.2, not WASI
 
         Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
         parsed into separate tokens.
@@ -187,7 +177,6 @@ class Availability(SphinxDirective):
             )
 
         return platforms
-
 
 
 # Support for documenting audit event
@@ -607,8 +596,15 @@ def parse_pdb_command(env, sig, signode):
     return fullname
 
 
+def parse_monitoring_event(env, sig, signode):
+    """Transform a monitoring event signature into RST nodes."""
+    signode += addnodes.desc_addname('sys.monitoring.events.', 'sys.monitoring.events.')
+    signode += addnodes.desc_name(sig, sig)
+    return sig
+
+
 def process_audit_events(app, doctree, fromdocname):
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         break
     else:
         return
@@ -667,7 +663,7 @@ def process_audit_events(app, doctree, fromdocname):
 
         body += row
 
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         node.replace_self(table)
 
 
@@ -698,7 +694,6 @@ def patch_pairindextypes(app, _env) -> None:
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
-    app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)
     app.add_directive('audit-event', AuditEvent)
@@ -707,6 +702,7 @@ def setup(app):
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
+    app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)

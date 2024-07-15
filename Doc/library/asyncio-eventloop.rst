@@ -243,9 +243,9 @@ Scheduling callbacks
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-.. versionchanged:: 3.7
-   The *context* keyword-only parameter was added. See :pep:`567`
-   for more details.
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 .. _asyncio-pass-keywords:
 
@@ -509,7 +509,7 @@ Opening network connections
 
    .. versionchanged:: 3.6
 
-      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.7
@@ -581,7 +581,7 @@ Opening network connections
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
-     and some Unixes. If the :py:const:`~socket.SO_REUSEPORT` constant is not
+     and some Unixes. If the :ref:`socket.SO_REUSEPORT <socket-unix-constants>` constant is not
      defined then this capability is unsupported.
 
    * *allow_broadcast* tells the kernel to allow this endpoint to send
@@ -605,9 +605,13 @@ Opening network connections
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port*,
       *allow_broadcast*, and *sock* parameters were added.
 
+   .. versionchanged:: 3.8
+      Added support for Windows.
+
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
-      :py:const:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      :ref:`socket.SO_REUSEADDR <socket-unix-constants>`
+      poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
       When multiple processes with differing UIDs assign sockets to an
@@ -616,15 +620,13 @@ Opening network connections
 
       For supported platforms, *reuse_port* can be used as a replacement for
       similar functionality. With *reuse_port*,
-      :py:const:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      :ref:`socket.SO_REUSEPORT <socket-unix-constants>`
+      is used instead, which specifically
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
-   .. versionchanged:: 3.8
-      Added support for Windows.
-
    .. versionchanged:: 3.11
-      The *reuse_address* parameter, disabled since Python 3.9.0, 3.8.1,
+      The *reuse_address* parameter, disabled since Python 3.8.1,
       3.7.6 and 3.6.10, has been entirely removed.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
@@ -661,12 +663,15 @@ Opening network connections
 Creating network servers
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _loop_create_server:
+
 .. coroutinemethod:: loop.create_server(protocol_factory, \
                         host=None, port=None, *, \
                         family=socket.AF_UNSPEC, \
                         flags=socket.AI_PASSIVE, \
                         sock=None, backlog=100, ssl=None, \
                         reuse_address=None, reuse_port=None, \
+                        keep_alive=None, \
                         ssl_handshake_timeout=None, \
                         ssl_shutdown_timeout=None, \
                         start_serving=True)
@@ -731,6 +736,13 @@ Creating network servers
      set this flag when being created. This option is not supported on
      Windows.
 
+   * *keep_alive* set to ``True`` keeps connections active by enabling the
+     periodic transmission of messages.
+
+   .. versionchanged:: 3.13
+
+      Added the *keep_alive* parameter.
+
    * *ssl_handshake_timeout* is (for a TLS server) the time in seconds to wait
      for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
@@ -756,7 +768,7 @@ Creating network servers
    .. versionchanged:: 3.6
 
       Added *ssl_handshake_timeout* and *start_serving* parameters.
-      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.11
@@ -774,7 +786,7 @@ Creating network servers
                           *, sock=None, backlog=100, ssl=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          start_serving=True)
+                          start_serving=True, cleanup_socket=True)
 
    Similar to :meth:`loop.create_server` but works with the
    :py:const:`~socket.AF_UNIX` socket family.
@@ -783,6 +795,10 @@ Creating network servers
    unless a *sock* argument is provided.  Abstract Unix sockets,
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths
    are supported.
+
+   If *cleanup_socket* is true then the Unix socket will automatically
+   be removed from the filesystem when the server is closed, unless the
+   socket has been replaced after the server has been created.
 
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
@@ -797,6 +813,10 @@ Creating network servers
    .. versionchanged:: 3.11
 
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.13
+
+      Added the *cleanup_socket* parameter.
 
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \
@@ -1135,6 +1155,14 @@ DNS
 
    Asynchronous version of :meth:`socket.getnameinfo`.
 
+.. note::
+   Both *getaddrinfo* and *getnameinfo* internally utilize their synchronous
+   versions through the loop's default thread pool executor.
+   When this executor is saturated, these methods may experience delays,
+   which higher-level networking libraries may report as increased timeouts.
+   To mitigate this, consider using a custom executor for other user tasks,
+   or setting a default executor with a larger number of workers.
+
 .. versionchanged:: 3.7
    Both *getaddrinfo* and *getnameinfo* methods were always documented
    to return a coroutine, but prior to Python 3.7 they were, in fact,
@@ -1191,6 +1219,8 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
+.. _loop_add_signal_handler:
+
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
@@ -1232,6 +1262,9 @@ Executing code in thread or process pools
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
+   The default executor can be set by :meth:`loop.set_default_executor`,
+   otherwise, a :class:`concurrent.futures.ThreadPoolExecutor` will be
+   lazy-initialized and used by :func:`run_in_executor` if needed.
 
    Example::
 
@@ -1391,6 +1424,14 @@ Enabling debug mode
       The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
+.. attribute:: loop.slow_callback_duration
+
+   This attribute can be used to set the
+   minimum execution duration in seconds that is considered "slow".
+   When debug mode is enabled, "slow" callbacks are logged.
+
+   Default value is 100 milliseconds.
+
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
@@ -1410,6 +1451,8 @@ async/await code consider using the high-level
    subprocesses, whereas :class:`SelectorEventLoop` does not. See
    :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
    details.
+
+.. _loop_subprocess_exec:
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
@@ -1605,8 +1648,34 @@ Do not instantiate the :class:`Server` class directly.
       The sockets that represent existing incoming client connections
       are left open.
 
-      The server is closed asynchronously, use the :meth:`wait_closed`
-      coroutine to wait until the server is closed.
+      The server is closed asynchronously; use the :meth:`wait_closed`
+      coroutine to wait until the server is closed (and no more
+      connections are active).
+
+   .. method:: close_clients()
+
+      Close all existing incoming client connections.
+
+      Calls :meth:`~asyncio.BaseTransport.close` on all associated
+      transports.
+
+      :meth:`close` should be called before :meth:`close_clients` when
+      closing the server to avoid races with new clients connecting.
+
+      .. versionadded:: 3.13
+
+   .. method:: abort_clients()
+
+      Close all existing incoming client connections immediately,
+      without waiting for pending operations to complete.
+
+      Calls :meth:`~asyncio.WriteTransport.abort` on all associated
+      transports.
+
+      :meth:`close` should be called before :meth:`abort_clients` when
+      closing the server to avoid races with new clients connecting.
+
+      .. versionadded:: 3.13
 
    .. method:: get_loop()
 
@@ -1664,7 +1733,8 @@ Do not instantiate the :class:`Server` class directly.
 
    .. coroutinemethod:: wait_closed()
 
-      Wait until the :meth:`close` method completes.
+      Wait until the :meth:`close` method completes and all active
+      connections have finished.
 
    .. attribute:: sockets
 
@@ -1880,7 +1950,7 @@ Set signal handlers for SIGINT and SIGTERM
 
 (This ``signals`` example only works on Unix.)
 
-Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`
+Register handlers for signals :const:`~signal.SIGINT` and :const:`~signal.SIGTERM`
 using the :meth:`loop.add_signal_handler` method::
 
     import asyncio

@@ -1,3 +1,7 @@
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 import collections
 import enum
 import warnings
@@ -243,13 +247,12 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         The protocol's connection_lost() method will (eventually) be
         called with None as its argument.
         """
-        self._closed = True
-        if self._ssl_protocol is not None:
-            self._ssl_protocol._abort()
+        self._force_close(None)
 
     def _force_close(self, exc):
         self._closed = True
-        self._ssl_protocol._abort(exc)
+        if self._ssl_protocol is not None:
+            self._ssl_protocol._abort(exc)
 
     def _test__append_write_backlog(self, data):
         # for test only
@@ -576,6 +579,7 @@ class SSLProtocol(protocols.BufferedProtocol):
 
             peercert = sslobj.getpeercert()
         except Exception as exc:
+            handshake_exc = None
             self._set_state(SSLProtocolState.UNWRAPPED)
             if isinstance(exc, ssl.CertificateError):
                 msg = 'SSL handshake failed on verifying the certificate'
@@ -614,7 +618,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._app_transport is not None:
             self._app_transport._closed = True
         if self._state == SSLProtocolState.DO_HANDSHAKE:
-            self._abort()
+            self._abort(None)
         else:
             self._set_state(SSLProtocolState.FLUSHING)
             self._shutdown_timeout_handle = self._loop.call_later(
@@ -661,10 +665,10 @@ class SSLProtocol(protocols.BufferedProtocol):
         else:
             self._loop.call_soon(self._transport.close)
 
-    def _abort(self):
+    def _abort(self, exc):
         self._set_state(SSLProtocolState.UNWRAPPED)
         if self._transport is not None:
-            self._transport.abort()
+            self._transport._force_close(exc)
 
     # Outgoing flow
 

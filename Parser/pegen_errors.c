@@ -68,6 +68,7 @@ _Pypegen_tokenizer_error(Parser *p)
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
     Py_ssize_t col_offset = -1;
+    p->error_indicator = 1;
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -103,6 +104,10 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "unexpected character after line continuation character";
             break;
         }
+        case E_COLUMNOVERFLOW:
+            PyErr_SetString(PyExc_OverflowError,
+                    "Parser column offset overflow - source line is too big");
+            return -1;
         default:
             msg = "unknown parsing error";
     }
@@ -214,6 +219,10 @@ exit:
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     if (p->fill == 0) {
         va_list va;
         va_start(va, errmsg);
@@ -235,12 +244,6 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *err
             col_offset = 0;
         } else {
             const char* start = p->tok->buf  ? p->tok->line_start : p->tok->buf;
-            if (p->tok->cur - start > INT_MAX) {
-                PyErr_SetString(PyExc_OverflowError,
-                    "Parser column offset overflow - source line is too big");
-                p->error_indicator = 1;
-                return NULL;
-            }
             col_offset = Py_SAFE_DOWNCAST(p->tok->cur - start, intptr_t, int);
         }
     } else {
@@ -279,6 +282,10 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
     const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
 
+    if (buf_end < cur_line) {
+        buf_end = cur_line + strlen(cur_line);
+    }
+
     for (int i = 0; i < relative_lineno - 1; i++) {
         char *new_line = strchr(cur_line, '\n');
         // The assert is here for debug builds but the conditional that
@@ -304,6 +311,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     PyObject *value = NULL;
     PyObject *errstr = NULL;
     PyObject *error_line = NULL;
@@ -358,20 +369,18 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     Py_ssize_t col_number = col_offset;
     Py_ssize_t end_col_number = end_col_offset;
 
-    if (p->tok->encoding != NULL) {
-        col_number = _PyPegen_byte_offset_to_character_offset(error_line, col_offset);
-        if (col_number < 0) {
+    col_number = _PyPegen_byte_offset_to_character_offset(error_line, col_offset);
+    if (col_number < 0) {
+        goto error;
+    }
+
+    if (end_col_offset > 0) {
+        end_col_number = _PyPegen_byte_offset_to_character_offset(error_line, end_col_offset);
+        if (end_col_number < 0) {
             goto error;
         }
-        if (end_col_number > 0) {
-            Py_ssize_t end_col_offset = _PyPegen_byte_offset_to_character_offset(error_line, end_col_number);
-            if (end_col_offset < 0) {
-                goto error;
-            } else {
-                end_col_number = end_col_offset;
-            }
-        }
     }
+
     tmp = Py_BuildValue("(OnnNnn)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
         goto error;
@@ -395,7 +404,7 @@ error:
 
 void
 _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
-    // Existing sintax error
+    // Existing syntax error
     if (PyErr_Occurred()) {
         // Prioritize tokenizer errors to custom syntax errors raised
         // on the second phase only if the errors come from the parser.

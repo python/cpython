@@ -1,4 +1,4 @@
-// Macros and other things needed by ceval.c, executor.c, and bytecodes.c
+// Macros and other things needed by ceval.c, and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -60,31 +60,48 @@
 #endif
 
 #ifdef Py_STATS
-#define INSTRUCTION_START(op) \
+#define INSTRUCTION_STATS(op) \
     do { \
-        frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { \
-    lltrace_instruction(frame, stack_pointer, next_instr); }
+#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+    lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
+#endif
+
+#if LLTRACE
+#define LLTRACE_RESUME_FRAME() \
+do { \
+    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    if (lltrace < 0) { \
+        goto exit_unwind; \
+    } \
+} while (0)
+#else
+#define LLTRACE_RESUME_FRAME() ((void)0)
+#endif
+
+#ifdef Py_GIL_DISABLED
+#define QSBR_QUIESCENT_STATE(tstate) _Py_qsbr_quiescent_state(((_PyThreadStateImpl *)tstate)->qsbr)
+#else
+#define QSBR_QUIESCENT_STATE(tstate)
 #endif
 
 
@@ -107,18 +124,21 @@
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
 
+// Use this instead of 'goto error' so Tier 2 can go to a different label
+#define GOTO_ERROR(LABEL) goto LABEL
+
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
+    QSBR_QUIESCENT_STATE(tstate); \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
-            goto error; \
+            GOTO_ERROR(error); \
         } \
     }
 
@@ -142,11 +162,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
-        _Py_CODEUNIT word = *next_instr; \
+        _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
-#define JUMPTO(x)       (next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x))
 
 /* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
  * for advancing to the next instruction, taking into account cache entries
@@ -227,6 +246,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
 #endif
 
+#define WITHIN_STACK_BOUNDS() \
+   (frame == &entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -243,9 +264,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
    This is because it is possible that during the DECREF the frame is
    accessed by other code (e.g. a __del__ method or gc.collect()) and the
    variable would be pointing to already-freed memory. */
-#define SETLOCAL(i, value)      do { PyObject *tmp = GETLOCAL(i); \
+#define SETLOCAL(i, value)      do { _PyStackRef tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
-                                     Py_XDECREF(tmp); } while (0)
+                                     PyStackRef_XCLOSE(tmp); } while (0)
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
@@ -255,12 +276,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
+        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
-        }                                                        \
-        else {                                                   \
-            /* This is about to be (incorrectly) incremented: */ \
-            STAT_DEC((INSTNAME), deferred);                      \
         }                                                        \
     } while (0)
 #else
@@ -287,21 +304,28 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         dtrace_function_entry(frame); \
     }
 
-#define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == 0)
+/* This takes a uint16_t instead of a _Py_BackoffCounter,
+ * because it is used directly on the cache entry in generated code,
+ * which is always an integral type. */
+#define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
+    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
-#define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
-
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
-    do {                                              \
-        assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
-        (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
+#ifdef Py_GIL_DISABLED
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        /* gh-115999 tracks progress on addressing this. */ \
+        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
+#else
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        (COUNTER) = advance_backoff_counter((COUNTER)); \
+    } while (0);
+#endif
 
-#define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
-    do {                                             \
-        (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -325,7 +349,7 @@ do { \
     }\
     else { \
         result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) goto error; \
+        if ((result) == NULL) GOTO_ERROR(error); \
         _Py_DECREF_NO_DEALLOC(left); \
         _Py_DECREF_NO_DEALLOC(right); \
     } \
@@ -336,22 +360,19 @@ do { \
 // for an exception handler, displaying the traceback, and so on
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
-    if (next_instr == NULL) { \
-        next_instr = (dest)+1; \
-        goto error; \
+    if (tstate->tracing) {\
+        next_instr = dest; \
+    } else { \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        if (next_instr == NULL) { \
+            next_instr = (dest)+1; \
+            goto error; \
+        } \
     } \
 } while (0);
 
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
-
-static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
-    [FVC_STR] = PyObject_Str,
-    [FVC_REPR] = PyObject_Repr,
-    [FVC_ASCII] = PyObject_ASCII
-};
 
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
@@ -369,43 +390,92 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
 
-/* Marker to specify tier 1 only instructions */
-#define TIER_ONE_ONLY
-
-/* Marker to specify tier 2 only instructions */
-#define TIER_TWO_ONLY
-
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
- * These need to treated differently by tier 1 and 2. */
+ * These need to treated differently by tier 1 and 2.
+ * The Tier 1 version is here; Tier 2 is inlined in ceval.c. */
 
-#if TIER_ONE
+#define LOAD_IP(OFFSET) do { \
+        next_instr = frame->instr_ptr + (OFFSET); \
+    } while (0)
 
-#define LOAD_IP() \
-do { next_instr = frame->prev_instr+1; } while (0)
-
-#define STORE_SP() \
-_PyFrame_SetStackPointer(frame, stack_pointer)
-
-#define LOAD_SP() \
-stack_pointer = _PyFrame_GetStackPointer(frame);
-
-#endif
-
-
-#if TIER_TWO
-
-#define LOAD_IP() \
-do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
-
-#define STORE_SP() \
-_PyFrame_SetStackPointer(frame, stack_pointer)
+/* There's no STORE_IP(), it's inlined by the code generator. */
 
 #define LOAD_SP() \
 stack_pointer = _PyFrame_GetStackPointer(frame);
 
+/* Tier-switching macros. */
+
+#ifdef _Py_JIT
+#define GOTO_TIER_TWO(EXECUTOR)                        \
+do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
+    jit_func jitted = (EXECUTOR)->jit_code;            \
+    next_instr = jitted(frame, stack_pointer, tstate); \
+    Py_DECREF(tstate->previous_executor);              \
+    tstate->previous_executor = NULL;                  \
+    frame = tstate->current_frame;                     \
+    if (next_instr == NULL) {                          \
+        goto resume_with_error;                        \
+    }                                                  \
+    stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    DISPATCH();                                        \
+} while (0)
+#else
+#define GOTO_TIER_TWO(EXECUTOR) \
+do { \
+    OPT_STAT_INC(traces_executed); \
+    next_uop = (EXECUTOR)->trace; \
+    assert(next_uop->opcode == _START_EXECUTOR); \
+    goto enter_tier_two; \
+} while (0)
 #endif
 
+#define GOTO_TIER_ONE(TARGET) \
+do { \
+    Py_DECREF(tstate->previous_executor); \
+    tstate->previous_executor = NULL;  \
+    next_instr = target; \
+    DISPATCH(); \
+} while (0)
 
+#define CURRENT_OPARG() (next_uop[-1].oparg)
 
+#define CURRENT_OPERAND() (next_uop[-1].operand)
 
+#define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
+#define JUMP_TO_ERROR() goto jump_to_error_target
+#define GOTO_UNWIND() goto error_tier_two
+#define EXIT_TO_TIER1() goto exit_to_tier1
+#define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
+
+/* Stackref macros */
+
+/* How much scratch space to give stackref to PyObject* conversion. */
+#define MAX_STACKREF_SCRATCH 10
+
+#ifdef Py_GIL_DISABLED
+#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
+    /* +1 because vectorcall might use -1 to write self */ \
+    PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
+#else
+#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
+    PyObject **NAME = (PyObject **)ARGS; \
+    assert(NAME != NULL);
+#endif
+
+#ifdef Py_GIL_DISABLED
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
+    /* +1 because we +1 previously */ \
+    _PyObjectArray_Free(NAME - 1, NAME##_temp);
+#else
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
+    (void)(NAME);
+#endif
+
+#ifdef Py_GIL_DISABLED
+#define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+#else
+#define CONVERSION_FAILED(NAME) (0)
+#endif

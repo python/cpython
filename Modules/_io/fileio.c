@@ -54,6 +54,9 @@
 #  define SMALLCHUNK BUFSIZ
 #endif
 
+/* Size at which a buffer is considered "large" and behavior should change to
+   avoid excessive memory allocation */
+#define LARGE_BUFFER_CUTOFF_SIZE 65536
 
 /*[clinic input]
 module _io
@@ -72,6 +75,7 @@ typedef struct {
     unsigned int closefd : 1;
     char finalizing;
     unsigned int blksize;
+    Py_off_t estimated_size;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -157,7 +161,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         return res;
     }
 
-    PyObject *exc;
+    PyObject *exc = NULL;
     if (res == NULL) {
         exc = PyErr_GetRaisedException();
     }
@@ -196,6 +200,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->appending = 0;
         self->seekable = -1;
         self->blksize = 0;
+        self->estimated_size = -1;
         self->closefd = 1;
         self->weakreflist = NULL;
     }
@@ -269,6 +274,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
+    if (PyBool_Check(nameobj)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return -1;
+        }
+    }
     fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
@@ -475,6 +487,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         if (fdfstat.st_blksize > 1)
             self->blksize = fdfstat.st_blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
+        if (fdfstat.st_size < PY_SSIZE_T_MAX) {
+            self->estimated_size = (Py_off_t)fdfstat.st_size;
+        }
     }
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -677,7 +692,7 @@ new_buffersize(fileio *self, size_t currentsize)
        giving us amortized linear-time behavior.  For bigger sizes, use a
        less-than-double growth factor to avoid excessive allocation. */
     assert(currentsize <= PY_SSIZE_T_MAX);
-    if (currentsize > 65536)
+    if (currentsize > LARGE_BUFFER_CUTOFF_SIZE)
         addend = currentsize >> 3;
     else
         addend = 256 + currentsize;
@@ -700,42 +715,55 @@ static PyObject *
 _io_FileIO_readall_impl(fileio *self)
 /*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
 {
-    struct _Py_stat_struct status;
     Py_off_t pos, end;
     PyObject *result;
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
-    int fstat_result;
 
-    if (self->fd < 0)
+    if (self->fd < 0) {
         return err_closed();
+    }
 
-    Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
-#ifdef MS_WINDOWS
-    pos = _lseeki64(self->fd, 0L, SEEK_CUR);
-#else
-    pos = lseek(self->fd, 0L, SEEK_CUR);
-#endif
-    _Py_END_SUPPRESS_IPH
-    fstat_result = _Py_fstat_noraise(self->fd, &status);
-    Py_END_ALLOW_THREADS
-
-    if (fstat_result == 0)
-        end = status.st_size;
-    else
-        end = (Py_off_t)-1;
-
-    if (end > 0 && end >= pos && pos >= 0 && end - pos < PY_SSIZE_T_MAX) {
+    end = self->estimated_size;
+    if (end <= 0) {
+        /* Use a default size and resize as needed. */
+        bufsize = SMALLCHUNK;
+    }
+    else {
         /* This is probably a real file, so we try to allocate a
            buffer one byte larger than the rest of the file.  If the
            calculation is right then we should get EOF without having
            to enlarge the buffer. */
-        bufsize = (size_t)(end - pos + 1);
-    } else {
-        bufsize = SMALLCHUNK;
+        if (end > _PY_READ_MAX - 1) {
+            bufsize = _PY_READ_MAX;
+        }
+        else {
+            bufsize = (size_t)end + 1;
+        }
+
+        /* While a lot of code does open().read() to get the whole contents
+           of a file it is possible a caller seeks/reads a ways into the file
+           then calls readall() to get the rest, which would result in allocating
+           more than required. Guard against that for larger files where we expect
+           the I/O time to dominate anyways while keeping small files fast. */
+        if (bufsize > LARGE_BUFFER_CUTOFF_SIZE) {
+            Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
+#ifdef MS_WINDOWS
+            pos = _lseeki64(self->fd, 0L, SEEK_CUR);
+#else
+            pos = lseek(self->fd, 0L, SEEK_CUR);
+#endif
+            _Py_END_SUPPRESS_IPH
+            Py_END_ALLOW_THREADS
+
+            if (end >= pos && pos >= 0 && (end - pos) < (_PY_READ_MAX - 1)) {
+                bufsize = (size_t)(end - pos) + 1;
+            }
+        }
     }
+
 
     result = PyBytes_FromStringAndSize(NULL, bufsize);
     if (result == NULL)
@@ -776,7 +804,6 @@ _io_FileIO_readall_impl(fileio *self)
             return NULL;
         }
         bytes_read += n;
-        pos += n;
     }
 
     if (PyBytes_GET_SIZE(result) > bytes_read) {
@@ -1067,6 +1094,12 @@ _io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj)
         return NULL;
     }
 
+    /* Sometimes a large file is truncated. While estimated_size is used as a
+    estimate, that it is much larger than the actual size can result in a
+    significant over allocation and sometimes a MemoryError / running out of
+    memory. */
+    self->estimated_size = pos;
+
     return posobj;
 }
 #endif /* HAVE_FTRUNCATE */
@@ -1100,31 +1133,32 @@ static PyObject *
 fileio_repr(fileio *self)
 {
     PyObject *nameobj, *res;
+    const char *type_name = Py_TYPE((PyObject *) self)->tp_name;
 
-    if (self->fd < 0)
-        return PyUnicode_FromFormat("<_io.FileIO [closed]>");
+    if (self->fd < 0) {
+        return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
+    }
 
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {
         res = PyUnicode_FromFormat(
-            "<_io.FileIO fd=%d mode='%s' closefd=%s>",
-            self->fd, mode_string(self), self->closefd ? "True" : "False");
+            "<%.100s fd=%d mode='%s' closefd=%s>",
+            type_name, self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
         int status = Py_ReprEnter((PyObject *)self);
         res = NULL;
         if (status == 0) {
             res = PyUnicode_FromFormat(
-                "<_io.FileIO name=%R mode='%s' closefd=%s>",
-                nameobj, mode_string(self), self->closefd ? "True" : "False");
+                "<%.100s name=%R mode='%s' closefd=%s>",
+                type_name, nameobj, mode_string(self), self->closefd ? "True" : "False");
             Py_ReprLeave((PyObject *)self);
         }
         else if (status > 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "reentrant call inside %s.__repr__",
-                         Py_TYPE(self)->tp_name);
+                         "reentrant call inside %.100s.__repr__", type_name);
         }
         Py_DECREF(nameobj);
     }
@@ -1170,8 +1204,8 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
     {NULL,           NULL}             /* sentinel */
 };
 

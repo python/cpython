@@ -4,8 +4,8 @@ machinery = test_util.import_importlib('importlib.machinery')
 import os
 import re
 import sys
-import sysconfig
 import unittest
+from test import support
 from test.support import import_helper
 from contextlib import contextmanager
 from test.test_importlib.util import temp_module
@@ -112,7 +112,7 @@ class WindowsRegistryFinderTests:
 class WindowsExtensionSuffixTests:
     def test_tagged_suffix(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
-        abi_flags = "t" if sysconfig.get_config_var("Py_NOGIL") else ""
+        abi_flags = "t" if support.Py_GIL_DISABLED else ""
         ver = sys.version_info
         platform = re.sub('[^a-zA-Z0-9]', '_', get_platform())
         expected_tag = f".cp{ver.major}{ver.minor}{abi_flags}-{platform}.pyd"

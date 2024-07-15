@@ -1,5 +1,5 @@
-:mod:`site` --- Site-specific configuration hook
-================================================
+:mod:`!site` --- Site-specific configuration hook
+=================================================
 
 .. module:: site
    :synopsis: Module responsible for site-specific configuration.
@@ -73,6 +73,10 @@ with ``import`` (followed by space or tab) are executed.
    actual import, if and when it happens.
    Limiting a code chunk to a single line is a deliberate measure
    to discourage putting anything more complex here.
+
+.. versionchanged:: 3.13
+   The :file:`.pth` files are now decoded by UTF-8 at first and then by the
+   :term:`locale encoding` if it fails.
 
 .. index::
    single: package

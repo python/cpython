@@ -1,5 +1,5 @@
-:mod:`sysconfig` --- Provide access to Python's configuration information
-=========================================================================
+:mod:`!sysconfig` --- Provide access to Python's configuration information
+==========================================================================
 
 .. module:: sysconfig
    :synopsis: Python's configuration information
@@ -9,7 +9,7 @@
 
 .. versionadded:: 3.2
 
-**Source code:** :source:`Lib/sysconfig.py`
+**Source code:** :source:`Lib/sysconfig`
 
 .. index::
    single: configuration information

@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
 "--\n"
@@ -325,4 +327,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=77409227fa9caf8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9c8a1b6759ca073 input=a9049054013a1b77]*/

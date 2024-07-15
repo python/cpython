@@ -3,37 +3,28 @@ import sys
 import os
 from typing import Any, NoReturn
 
-from test import support
-from test.support import os_helper
+from test.support import os_helper, Py_DEBUG
 
 from .setup import setup_process, setup_test_dir
-from .runtests import RunTests, JsonFile, JsonFileType
+from .runtests import WorkerRunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
-    StrPath, StrJSON, FilterTuple,
+    StrPath, StrJSON, TestFilter,
     get_temp_dir, get_work_dir, exit_timeout)
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+NEED_TTY = {
+    'test_ioctl',
+}
 
 
-def create_worker_process(runtests: RunTests, output_fd: int,
+def create_worker_process(runtests: WorkerRunTests, output_fd: int,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen:
-    python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
-    python_opts = support.args_from_interpreter_flags()
-    if python_cmd is not None:
-        executable = python_cmd
-        # Remove -E option, since --python=COMMAND can set PYTHON environment
-        # variables, such as PYTHONPATH, in the worker process.
-        python_opts = [opt for opt in python_opts if opt != "-E"]
-    else:
-        executable = (sys.executable,)
-    cmd = [*executable, *python_opts,
-           '-u',    # Unbuffered stdout and stderr
-           '-m', 'test.libregrtest.worker',
-           worker_json]
+    cmd = runtests.create_python_cmd()
+    cmd.extend(['-m', 'test.libregrtest.worker', worker_json])
 
     env = dict(os.environ)
     if tmp_dir is not None:
@@ -59,7 +50,10 @@ def create_worker_process(runtests: RunTests, output_fd: int,
         close_fds=True,
         cwd=work_dir,
     )
-    if USE_PROCESS_GROUP:
+
+    # Don't use setsid() in tests using TTY
+    test_name = runtests.tests[0]
+    if USE_PROCESS_GROUP and test_name not in NEED_TTY:
         kwargs['start_new_session'] = True
 
     # Pass json_file to the worker process
@@ -71,9 +65,9 @@ def create_worker_process(runtests: RunTests, output_fd: int,
 
 
 def worker_process(worker_json: StrJSON) -> NoReturn:
-    runtests = RunTests.from_json(worker_json)
+    runtests = WorkerRunTests.from_json(worker_json)
     test_name = runtests.tests[0]
-    match_tests: FilterTuple | None = runtests.match_tests
+    match_tests: TestFilter = runtests.match_tests
     json_file: JsonFile = runtests.json_file
 
     setup_test_dir(runtests.test_dir)
@@ -81,12 +75,24 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
 
     if runtests.rerun:
         if match_tests:
-            matching = "matching: " + ", ".join(match_tests)
+            matching = "matching: " + ", ".join(pattern for pattern, result in match_tests if result)
             print(f"Re-running {test_name} in verbose mode ({matching})", flush=True)
         else:
             print(f"Re-running {test_name} in verbose mode", flush=True)
 
     result = run_single_test(test_name, runtests)
+    if runtests.coverage:
+        if "test.cov" in sys.modules:  # imported by -Xpresite=
+            result.covered_lines = list(sys.modules["test.cov"].coverage)
+        elif not Py_DEBUG:
+            print(
+                "Gathering coverage in worker processes requires --with-pydebug",
+                flush=True,
+            )
+        else:
+            raise LookupError(
+                "`test.cov` not found in sys.modules but coverage wanted"
+            )
 
     if json_file.file_type == JsonFileType.STDOUT:
         print()

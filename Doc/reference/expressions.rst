@@ -14,7 +14,7 @@ be used to describe syntax, not lexical analysis.  When (one alternative of) a
 syntax rule has the form
 
 .. productionlist:: python-grammar
-   name: `othername`
+   name: othername
 
 and no semantics are given, the semantics of this form of ``name`` are the same
 as for ``othername``.
@@ -83,18 +83,47 @@ exception.
    pair: name; mangling
    pair: private; names
 
-**Private name mangling:** When an identifier that textually occurs in a class
-definition begins with two or more underscore characters and does not end in two
-or more underscores, it is considered a :dfn:`private name` of that class.
-Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name, with leading underscores
-removed and a single underscore inserted, in front of the name.  For example,
-the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
-to ``_Ham__spam``.  This transformation is independent of the syntactical
-context in which the identifier is used.  If the transformed name is extremely
-long (longer than 255 characters), implementation defined truncation may happen.
-If the class name consists only of underscores, no transformation is done.
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
 
+When an identifier that textually occurs in a class definition begins with two
+or more underscore characters and does not end in two or more underscores, it
+is considered a :dfn:`private name` of that class.
+
+.. seealso::
+
+   The :ref:`class specifications <class>`.
+
+More precisely, private names are transformed to a longer form before code is
+generated for them.  If the transformed name is longer than 255 characters,
+implementation-defined truncation may happen.
+
+The transformation is independent of the syntactical context in which the
+identifier is used but only the following private identifiers are mangled:
+
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The ``__name__`` attribute of nested functions, classes, and type aliases
+  is however not mangled.
+
+- The name of imported modules, e.g., ``__spam`` in ``import __spam``.
+  If the module is part of a package (i.e., its name contains a dot),
+  the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
+  is not mangled.
+
+- The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
+
+The transformation rule is defined as follows:
+
+- The class name, with leading underscores removed and a single leading
+  underscore inserted, is inserted in front of the identifier, e.g., the
+  identifier ``__spam`` occurring in a class named ``Foo``, ``_Foo`` or
+  ``__Foo`` is transformed to ``_Foo__spam``.
+
+- If the class name consists only of underscores, the transformation is the
+  identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
+  or ``__`` is left as is.
 
 .. _atom-literals:
 
@@ -218,10 +247,12 @@ A comprehension in an :keyword:`!async def` function may consist of either a
 :keyword:`!for` or :keyword:`!async for` clause following the leading
 expression, may contain additional :keyword:`!for` or :keyword:`!async for`
 clauses, and may also use :keyword:`await` expressions.
-If a comprehension contains either :keyword:`!async for` clauses or
-:keyword:`!await` expressions or other asynchronous comprehensions it is called
-an :dfn:`asynchronous comprehension`.  An asynchronous comprehension may
-suspend the execution of the coroutine function in which it appears.
+
+If a comprehension contains :keyword:`!async for` clauses, or if it contains
+:keyword:`!await` expressions or other asynchronous comprehensions anywhere except
+the iterable expression in the leftmost :keyword:`!for` clause, it is called an
+:dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
+execution of the coroutine function in which it appears.
 See also :pep:`530`.
 
 .. versionadded:: 3.6
@@ -422,7 +453,8 @@ Yield expressions
 
 .. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
-   yield_expression: "yield" [`expression_list` | "from" `expression`]
+   yield_from: "yield" "from" `expression`
+   yield_expression: "yield" `expression_list` | `yield_from`
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
@@ -823,12 +855,18 @@ An attribute reference is a primary followed by a period and a name:
 
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
-attribute whose name is the identifier.  This production can be customized by
-overriding the :meth:`__getattr__` method.  If this attribute is not available,
-the exception :exc:`AttributeError` is raised.  Otherwise, the type and value of
-the object produced is determined by the object.  Multiple evaluations of the
-same attribute reference may yield different objects.
+attribute whose name is the identifier. The type and value produced is
+determined by the object.  Multiple evaluations of the same attribute
+reference may yield different objects.
 
+This production can be customized by overriding the
+:meth:`~object.__getattribute__` method or the :meth:`~object.__getattr__`
+method.  The :meth:`!__getattribute__` method is called first and either
+returns a value or raises :exc:`AttributeError` if the attribute is not
+available.
+
+If an :exc:`AttributeError` is raised and the object has a :meth:`!__getattr__`
+method, that method is called as a fallback.
 
 .. _subscriptions:
 
@@ -889,7 +927,7 @@ to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
 resulting value must be a nonnegative integer less than the number of items in
 the sequence, and the subscription selects the item whose index is that value
 (counting from zero). Since the support for negative indices and slicing
-occurs in the object's :meth:`__getitem__` method, subclasses overriding
+occurs in the object's :meth:`~object.__getitem__` method, subclasses overriding
 this method will need to explicitly add that support.
 
 .. index::
@@ -944,7 +982,7 @@ slice list contains no proper slice).
    single: step (slice object attribute)
 
 The semantics for a slicing are as follows.  The primary is indexed (using the
-same :meth:`__getitem__` method as
+same :meth:`~object.__getitem__` method as
 normal subscription) with a key that is constructed from the slice list, as
 follows.  If the slice list contains at least one comma, the key is a tuple
 containing the conversion of the slice items; otherwise, the conversion of the
@@ -994,7 +1032,7 @@ but does not affect the semantics.
 
 The primary must evaluate to a callable object (user-defined functions, built-in
 functions, methods of built-in objects, class objects, methods of class
-instances, and all objects having a :meth:`__call__` method are callable).  All
+instances, and all objects having a :meth:`~object.__call__` method are callable).  All
 argument expressions are evaluated before the call is attempted.  Please refer
 to section :ref:`function` for the syntax of formal :term:`parameter` lists.
 
@@ -1152,7 +1190,7 @@ a class instance:
       pair: instance; call
       single: __call__() (object method)
 
-   The class must define a :meth:`__call__` method; the effect is then the same as
+   The class must define a :meth:`~object.__call__` method; the effect is then the same as
    if that method was called.
 
 
@@ -1204,7 +1242,8 @@ Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
 Raising a negative number to a fractional power results in a :class:`complex`
 number. (In earlier versions it raised a :exc:`ValueError`.)
 
-This operation can be customized using the special :meth:`__pow__` method.
+This operation can be customized using the special :meth:`~object.__pow__` and
+:meth:`~object.__rpow__` methods.
 
 .. _unary:
 
@@ -1227,7 +1266,7 @@ All unary arithmetic and bitwise operations have the same priority:
    single: - (minus); unary operator
 
 The unary ``-`` (minus) operator yields the negation of its numeric argument; the
-operation can be overridden with the :meth:`__neg__` special method.
+operation can be overridden with the :meth:`~object.__neg__` special method.
 
 .. index::
    single: plus
@@ -1235,7 +1274,7 @@ operation can be overridden with the :meth:`__neg__` special method.
    single: + (plus); unary operator
 
 The unary ``+`` (plus) operator yields its numeric argument unchanged; the
-operation can be overridden with the :meth:`__pos__` special method.
+operation can be overridden with the :meth:`~object.__pos__` special method.
 
 .. index::
    single: inversion
@@ -1244,7 +1283,7 @@ operation can be overridden with the :meth:`__pos__` special method.
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
 applies to integral numbers or to custom objects that override the
-:meth:`__invert__` special method.
+:meth:`~object.__invert__` special method.
 
 
 
@@ -1282,8 +1321,8 @@ the other must be a sequence. In the former case, the numbers are converted to a
 common type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
-This operation can be customized using the special :meth:`__mul__` and
-:meth:`__rmul__` methods.
+This operation can be customized using the special :meth:`~object.__mul__` and
+:meth:`~object.__rmul__` methods.
 
 .. index::
    single: matrix multiplication
@@ -1291,6 +1330,9 @@ This operation can be customized using the special :meth:`__mul__` and
 
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
+
+This operation can be customized using the special :meth:`~object.__matmul__` and
+:meth:`~object.__rmatmul__` methods.
 
 .. versionadded:: 3.5
 
@@ -1307,8 +1349,10 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-This operation can be customized using the special :meth:`__truediv__` and
-:meth:`__floordiv__` methods.
+The division operation can be customized using the special :meth:`~object.__truediv__`
+and :meth:`~object.__rtruediv__` methods.
+The floor division operation can be customized using the special
+:meth:`~object.__floordiv__` and :meth:`~object.__rfloordiv__` methods.
 
 .. index::
    single: modulo
@@ -1333,7 +1377,8 @@ also overloaded by string objects to perform old-style string formatting (also
 known as interpolation).  The syntax for string formatting is described in the
 Python Library Reference, section :ref:`old-string-formatting`.
 
-The *modulo* operation can be customized using the special :meth:`__mod__` method.
+The *modulo* operation can be customized using the special :meth:`~object.__mod__`
+and :meth:`~object.__rmod__` methods.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a floating
@@ -1349,8 +1394,8 @@ must either both be numbers or both be sequences of the same type.  In the
 former case, the numbers are converted to a common type and then added together.
 In the latter case, the sequences are concatenated.
 
-This operation can be customized using the special :meth:`__add__` and
-:meth:`__radd__` methods.
+This operation can be customized using the special :meth:`~object.__add__` and
+:meth:`~object.__radd__` methods.
 
 .. index::
    single: subtraction
@@ -1360,7 +1405,8 @@ This operation can be customized using the special :meth:`__add__` and
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
 numeric arguments are first converted to a common type.
 
-This operation can be customized using the special :meth:`__sub__` method.
+This operation can be customized using the special :meth:`~object.__sub__` and
+:meth:`~object.__rsub__` methods.
 
 
 .. _shifting:
@@ -1381,8 +1427,10 @@ The shifting operations have lower priority than the arithmetic operations:
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
 
-This operation can be customized using the special :meth:`__lshift__` and
-:meth:`__rshift__` methods.
+The left shift operation can be customized using the special :meth:`~object.__lshift__`
+and :meth:`~object.__rlshift__` methods.
+The right shift operation can be customized using the special :meth:`~object.__rshift__`
+and :meth:`~object.__rrshift__` methods.
 
 .. index:: pair: exception; ValueError
 
@@ -1409,8 +1457,8 @@ Each of the three bitwise operations has a different priority level:
    pair: operator; & (ampersand)
 
 The ``&`` operator yields the bitwise AND of its arguments, which must be
-integers or one of them must be a custom object overriding :meth:`__and__` or
-:meth:`__rand__` special methods.
+integers or one of them must be a custom object overriding :meth:`~object.__and__` or
+:meth:`~object.__rand__` special methods.
 
 .. index::
    pair: bitwise; xor
@@ -1418,8 +1466,8 @@ integers or one of them must be a custom object overriding :meth:`__and__` or
    pair: operator; ^ (caret)
 
 The ``^`` operator yields the bitwise XOR (exclusive OR) of its arguments, which
-must be integers or one of them must be a custom object overriding :meth:`__xor__` or
-:meth:`__rxor__` special methods.
+must be integers or one of them must be a custom object overriding :meth:`~object.__xor__` or
+:meth:`~object.__rxor__` special methods.
 
 .. index::
    pair: bitwise; or
@@ -1427,8 +1475,8 @@ must be integers or one of them must be a custom object overriding :meth:`__xor_
    pair: operator; | (vertical bar)
 
 The ``|`` operator yields the bitwise (inclusive) OR of its arguments, which
-must be integers or one of them must be a custom object overriding :meth:`__or__` or
-:meth:`__ror__` special methods.
+must be integers or one of them must be a custom object overriding :meth:`~object.__or__` or
+:meth:`~object.__ror__` special methods.
 
 
 .. _comparisons:
@@ -1495,7 +1543,7 @@ comparison implementation.
 Because all types are (direct or indirect) subtypes of :class:`object`, they
 inherit the default comparison behavior from :class:`object`.  Types can
 customize their comparison behavior by implementing
-:dfn:`rich comparison methods` like :meth:`__lt__`, described in
+:dfn:`rich comparison methods` like :meth:`~object.__lt__`, described in
 :ref:`customization`.
 
 The default behavior for equality comparison (``==`` and ``!=``) is based on
@@ -1532,7 +1580,7 @@ built-in types.
   ``x == x`` are all false, while ``x != x`` is true.  This behavior is
   compliant with IEEE 754.
 
-* ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
+* ``None`` and :data:`NotImplemented` are singletons.  :PEP:`8` advises that
   comparisons for singletons should always be done with ``is`` or ``is not``,
   never the equality operators.
 
@@ -1659,18 +1707,18 @@ substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
 always considered to be a substring of any other string, so ``"" in "abc"`` will
 return ``True``.
 
-For user-defined classes which define the :meth:`__contains__` method, ``x in
+For user-defined classes which define the :meth:`~object.__contains__` method, ``x in
 y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
 ``False`` otherwise.
 
-For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
+For user-defined classes which do not define :meth:`~object.__contains__` but do define
+:meth:`~object.__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
 expression ``x is z or x == z`` is true, is produced while iterating over ``y``.
 If an exception is raised during the iteration, it is as if :keyword:`in` raised
 that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
-:meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
+:meth:`~object.__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
 integer index *i* such that ``x is y[i] or x == y[i]``, and no lower integer index
 raises the :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).
@@ -1781,10 +1829,11 @@ Or, when processing a file stream in chunks:
    while chunk := file.read(9000):
        process(chunk)
 
-Assignment expressions must be surrounded by parentheses when used
-as sub-expressions in slicing, conditional, lambda,
-keyword-argument, and comprehension-if expressions
-and in ``assert`` and ``with`` statements.
+Assignment expressions must be surrounded by parentheses when
+used as expression statements and when used as sub-expressions in
+slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions and
+in ``assert``, ``with``, and ``assignment`` statements.
 In all other places where they can be used, parentheses are not required,
 including in ``if`` and ``while`` statements.
 
@@ -1882,8 +1931,9 @@ the unpacking.
 
 .. index:: pair: trailing; comma
 
-The trailing comma is required only to create a single tuple (a.k.a. a
-*singleton*); it is optional in all other cases.  A single expression without a
+A trailing comma is required only to create a one-item tuple,
+such as ``1,``; it is optional in all other cases.
+A single expression without a
 trailing comma doesn't create a tuple, but rather yields the value of that
 expression. (To create an empty tuple, use an empty pair of parentheses:
 ``()``.)

@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
+#include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -20,13 +21,11 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
-#include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
 struct _getargs_runtime_state {
-    PyThread_type_lock mutex;
     struct _PyArg_Parser *static_parsers;
 };
 
@@ -56,75 +55,101 @@ typedef struct _Py_DebugOffsets {
     uint64_t version;
     // Runtime state offset;
     struct _runtime_state {
-        off_t finalizing;
-        off_t interpreters_head;
+        uint64_t size;
+        uint64_t finalizing;
+        uint64_t interpreters_head;
     } runtime_state;
 
     // Interpreter state offset;
     struct _interpreter_state {
-        off_t next;
-        off_t threads_head;
-        off_t gc;
-        off_t imports_modules;
-        off_t sysdict;
-        off_t builtins;
-        off_t ceval_gil;
-        off_t gil_runtime_state_locked;
-        off_t gil_runtime_state_holder;
+        uint64_t size;
+        uint64_t id;
+        uint64_t next;
+        uint64_t threads_head;
+        uint64_t gc;
+        uint64_t imports_modules;
+        uint64_t sysdict;
+        uint64_t builtins;
+        uint64_t ceval_gil;
+        uint64_t gil_runtime_state_locked;
+        uint64_t gil_runtime_state_holder;
     } interpreter_state;
 
     // Thread state offset;
     struct _thread_state{
-        off_t prev;
-        off_t next;
-        off_t interp;
-        off_t current_frame;
-        off_t thread_id;
-        off_t native_thread_id;
+        uint64_t size;
+        uint64_t prev;
+        uint64_t next;
+        uint64_t interp;
+        uint64_t current_frame;
+        uint64_t thread_id;
+        uint64_t native_thread_id;
+        uint64_t datastack_chunk;
+        uint64_t status;
     } thread_state;
 
     // InterpreterFrame offset;
     struct _interpreter_frame {
-        off_t previous;
-        off_t executable;
-        off_t prev_instr;
-        off_t localsplus;
-        off_t owner;
+        uint64_t size;
+        uint64_t previous;
+        uint64_t executable;
+        uint64_t instr_ptr;
+        uint64_t localsplus;
+        uint64_t owner;
     } interpreter_frame;
-
-    // CFrame offset;
-    struct _cframe {
-        off_t current_frame;
-        off_t previous;
-    } cframe;
 
     // Code object offset;
     struct _code_object {
-        off_t filename;
-        off_t name;
-        off_t linetable;
-        off_t firstlineno;
-        off_t argcount;
-        off_t localsplusnames;
-        off_t localspluskinds;
-        off_t co_code_adaptive;
+        uint64_t size;
+        uint64_t filename;
+        uint64_t name;
+        uint64_t qualname;
+        uint64_t linetable;
+        uint64_t firstlineno;
+        uint64_t argcount;
+        uint64_t localsplusnames;
+        uint64_t localspluskinds;
+        uint64_t co_code_adaptive;
     } code_object;
 
     // PyObject offset;
     struct _pyobject {
-        off_t ob_type;
+        uint64_t size;
+        uint64_t ob_type;
     } pyobject;
 
     // PyTypeObject object offset;
     struct _type_object {
-        off_t tp_name;
+        uint64_t size;
+        uint64_t tp_name;
     } type_object;
 
     // PyTuple object offset;
     struct _tuple_object {
-        off_t ob_item;
+        uint64_t size;
+        uint64_t ob_item;
     } tuple_object;
+
+    // Unicode object offset;
+    struct _unicode_object {
+        uint64_t size;
+        uint64_t state;
+        uint64_t length;
+        size_t asciiobject_size;
+    } unicode_object;
+
+    // GC runtime state offset;
+    struct _gc {
+        uint64_t size;
+        uint64_t collecting;
+    } gc;
 } _Py_DebugOffsets;
+
+/* Reference tracer state */
+struct _reftracer_runtime_state {
+    PyRefTracer tracer_func;
+    void* tracer_data;
+};
 
 /* Full Python runtime state */
 
@@ -174,7 +199,7 @@ typedef struct pyruntimestate {
     unsigned long _finalizing_id;
 
     struct pyinterpreters {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The linked list of interpreters, newest first. */
         PyInterpreterState *head;
         /* The runtime's initial interpreter, which has a special role
@@ -192,20 +217,22 @@ typedef struct pyruntimestate {
         int64_t next_id;
     } interpreters;
 
+    /* Platform-specific identifier and PyThreadState, respectively, for the
+       main thread in the main interpreter. */
     unsigned long main_thread;
+    PyThreadState *main_tstate;
 
     /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
      possible to facilitate out-of-process observability
      tools. */
 
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry xidregistry;
+    /* cross-interpreter data and utils */
+    struct _xi_runtime_state xi;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
-    struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
@@ -228,6 +255,14 @@ typedef struct pyruntimestate {
     struct _fileutils_state fileutils;
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
+    struct _reftracer_runtime_state ref_tracer;
+
+    // The rwmutex is used to prevent overlapping global and per-interpreter
+    // stop-the-world events. Global stop-the-world events lock the mutex
+    // exclusively (as a "writer"), while per-interpreter stop-the-world events
+    // lock it non-exclusively (as "readers").
+    _PyRWMutex stoptheworld_mutex;
+    struct _stoptheworld_state stoptheworld;
 
     PyPreConfig preconfig;
 
@@ -236,7 +271,7 @@ typedef struct pyruntimestate {
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     struct {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         _Py_AuditHookEntry *head;
     } audit_hooks;
 
@@ -263,7 +298,7 @@ typedef struct pyruntimestate {
        a pointer type.
        */
 
-    /* PyInterpreterState.interpreters.main */
+    /* _PyRuntimeState.interpreters.main */
     PyInterpreterState _main_interpreter;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)

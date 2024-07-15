@@ -44,7 +44,8 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`~object.__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a
+:meth:`~object.__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
@@ -197,7 +198,7 @@ exception.
 
 Two more operations with the same syntactic priority, :keyword:`in` and
 :keyword:`not in`, are supported by types that are :term:`iterable` or
-implement the :meth:`__contains__` method.
+implement the :meth:`~object.__contains__` method.
 
 .. _typesnumeric:
 
@@ -753,7 +754,7 @@ that's defined for any rational number, and hence applies to all instances of
 :class:`int` and :class:`fractions.Fraction`, and all finite instances of
 :class:`float` and :class:`decimal.Decimal`.  Essentially, this function is
 given by reduction modulo ``P`` for a fixed prime ``P``.  The value of ``P`` is
-made available to Python as the :attr:`modulus` attribute of
+made available to Python as the :attr:`~sys.hash_info.modulus` attribute of
 :data:`sys.hash_info`.
 
 .. impl-detail::
@@ -942,9 +943,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -1255,7 +1256,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 Notes:
 
 (1)
-   *t* must have the same length as the slice it is replacing.
+   If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
 
 (2)
    The optional argument *i* defaults to ``-1``, so that by default the last
@@ -1526,13 +1527,12 @@ objects that compare equal might have different :attr:`~range.start`,
    sequence of values they define (instead of comparing based on
    object identity).
 
-.. versionadded:: 3.3
-   The :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
+   Added the :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
    attributes.
 
 .. seealso::
 
-   * The `linspace recipe <https://code.activestate.com/recipes/579000/>`_
+   * The `linspace recipe <https://code.activestate.com/recipes/579000-equally-spaced-numbers-linspace/>`_
      shows how to implement a lazy version of range suitable for floating
      point applications.
 
@@ -1563,7 +1563,7 @@ between them will be implicitly converted to a single string literal. That
 is, ``("spam " "eggs") == "spam eggs"``.
 
 See :ref:`strings` for more about the various forms of string literal,
-including supported escape sequences, and the ``r`` ("raw") prefix that
+including supported :ref:`escape sequences <escape-sequences>`, and the ``r`` ("raw") prefix that
 disables most escape sequence processing.
 
 Strings may also be created from other objects using the :class:`str`
@@ -1804,7 +1804,7 @@ expression support in the :mod:`re` module).
       cases.
 
 
-.. method:: str.format_map(mapping)
+.. method:: str.format_map(mapping, /)
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful
@@ -2131,8 +2131,9 @@ expression support in the :mod:`re` module).
    If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
    ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
-   (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
-   Splitting an empty string with a specified separator returns ``['']``.
+   as a single delimiter (to split with multiple delimiters, use
+   :func:`re.split`). Splitting an empty string with a specified separator
+   returns ``['']``.
 
    For example::
 
@@ -2142,6 +2143,8 @@ expression support in the :mod:`re` module).
       ['1', '2,3']
       >>> '1,2,,3,'.split(',')
       ['1', '2', '', '3', '']
+      >>> '1<>2<>3<4'.split('<>')
+      ['1', '2', '3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
    applied: runs of consecutive whitespace are regarded as a single separator,
@@ -2303,7 +2306,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
-   indexing via :meth:`__getitem__`, typically a :term:`mapping` or
+   indexing via :meth:`~object.__getitem__`, typically a :term:`mapping` or
    :term:`sequence`.  When indexed by a Unicode ordinal (an integer), the
    table object can do any of the following: return a Unicode ordinal or a
    string, to map the character to one or more other characters; return
@@ -2375,7 +2378,13 @@ String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a string), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
+For example:
+
+.. doctest::
+
+   >>> print('%s has %d quote types.' % ('Python', 2))
+   Python has 2 quote types.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -3179,10 +3188,9 @@ produce new objects.
    If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty subsequences (for example, ``b'1,,2'.split(b',')``
    returns ``[b'1', b'', b'2']``).  The *sep* argument may consist of a
-   multibyte sequence (for example, ``b'1<>2<>3'.split(b'<>')`` returns
-   ``[b'1', b'2', b'3']``). Splitting an empty sequence with a specified
-   separator returns ``[b'']`` or ``[bytearray(b'')]`` depending on the type
-   of object being split.  The *sep* argument may be any
+   multibyte sequence as a single delimiter. Splitting an empty sequence with
+   a specified separator returns ``[b'']`` or ``[bytearray(b'')]`` depending
+   on the type of object being split.  The *sep* argument may be any
    :term:`bytes-like object`.
 
    For example::
@@ -3193,6 +3201,8 @@ produce new objects.
       [b'1', b'2,3']
       >>> b'1,2,,3,'.split(b',')
       [b'1', b'2', b'', b'3', b'']
+      >>> b'1<>2<>3<4'.split(b'<>')
+      [b'1', b'2', b'3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
    is applied: runs of consecutive ASCII whitespace are regarded as a single
@@ -3708,7 +3718,7 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'b'``    | Bytes (any object that follows the                  | \(5)  |
 |            | :ref:`buffer protocol <bufferobjects>` or has       |       |
-|            | :meth:`__bytes__`).                                 |       |
+|            | :meth:`~object.__bytes__`).                         |       |
 +------------+-----------------------------------------------------+-------+
 | ``'s'``    | ``'s'`` is an alias for ``'b'`` and should only     | \(6)  |
 |            | be used for Python2/3 code bases.                   |       |
@@ -4446,7 +4456,8 @@ The constructors for both classes work the same:
    :meth:`symmetric_difference_update` methods will accept any iterable as an
    argument.
 
-   Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
+   Note, the *elem* argument to the :meth:`~object.__contains__`,
+   :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
    frozenset, a temporary one is created from *elem*.
 
@@ -4594,7 +4605,7 @@ can be used interchangeably to index the same dictionary entry.
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(iterable[, value])
+   .. classmethod:: fromkeys(iterable, value=None, /)
 
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
@@ -4604,7 +4615,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key[, default])
+   .. method:: get(key, default=None)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4646,7 +4657,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key[, default])
+   .. method:: setdefault(key, default=None)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -4791,14 +4802,17 @@ support membership tests:
 
    .. versionadded:: 3.10
 
-Keys views are set-like since their entries are unique and :term:`hashable`.  If all
-values are hashable, so that ``(key, value)`` pairs are unique and hashable,
-then the items view is also set-like.  (Values views are not treated as set-like
+Keys views are set-like since their entries are unique and :term:`hashable`.
+Items views also have set-like operations since the (key, value) pairs
+are unique and the keys are hashable.
+If all values in an items view are hashable as well,
+then the items view can interoperate with other sets.
+(Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
 available (for example, ``==``, ``<``, or ``^``).  While using set operators,
-set-like views accept any iterable as the other operand, unlike sets which only
-accept sets as the input.
+set-like views accept any iterable as the other operand,
+unlike sets which only accept sets as the input.
 
 An example of dictionary view usage::
 
@@ -4893,7 +4907,7 @@ before the statement body is executed and exited when the statement ends:
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
    successfully and does not want to suppress the raised exception. This allows
-   context management code to easily detect whether or not an :meth:`__exit__`
+   context management code to easily detect whether or not an :meth:`~object.__exit__`
    method has actually failed.
 
 Python defines several context managers to support easy thread synchronisation,
@@ -5087,7 +5101,6 @@ list is non-exhaustive.
 * :class:`collections.abc.MutableMapping`
 * :class:`collections.abc.Sequence`
 * :class:`collections.abc.MutableSequence`
-* :class:`collections.abc.ByteString`
 * :class:`collections.abc.MappingView`
 * :class:`collections.abc.KeysView`
 * :class:`collections.abc.ItemsView`
@@ -5269,9 +5282,11 @@ instantiated from the type::
    TypeError: cannot create 'types.UnionType' instances
 
 .. note::
-   The :meth:`__or__` method for type objects was added to support the syntax
-   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
-   override it::
+   The :meth:`!__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`!__or__`, the Union may
+   override it:
+
+   .. doctest::
 
       >>> class M(type):
       ...     def __or__(self, other):
@@ -5283,7 +5298,7 @@ instantiated from the type::
       >>> C | int
       'Hello'
       >>> int | C
-      int | __main__.C
+      int | C
 
 .. seealso::
 
@@ -5357,25 +5372,30 @@ Methods
 .. index:: pair: object; method
 
 Methods are functions that are called using the attribute notation. There are
-two flavors: built-in methods (such as :meth:`append` on lists) and class
-instance methods.  Built-in methods are described with the types that support
-them.
+two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`append`
+on lists) and :ref:`class instance method <instance-methods>`.
+Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an
 instance, you get a special object: a :dfn:`bound method` (also called
-:dfn:`instance method`) object. When called, it will add the ``self`` argument
+:ref:`instance method <instance-methods>`) object. When called, it will add
+the ``self`` argument
 to the argument list.  Bound methods have two special read-only attributes:
-``m.__self__`` is the object on which the method operates, and ``m.__func__`` is
+:attr:`m.__self__ <method.__self__>` is the object on which the method
+operates, and :attr:`m.__func__ <method.__func__>` is
 the function implementing the method.  Calling ``m(arg-1, arg-2, ..., arg-n)``
 is completely equivalent to calling ``m.__func__(m.__self__, arg-1, arg-2, ...,
 arg-n)``.
 
-Like function objects, bound method objects support getting arbitrary
+Like :ref:`function objects <user-defined-funcs>`, bound method objects support
+getting arbitrary
 attributes.  However, since method attributes are actually stored on the
-underlying function object (``meth.__func__``), setting method attributes on
+underlying function object (:attr:`method.__func__`), setting method attributes on
 bound methods is disallowed.  Attempting to set an attribute on a method
 results in an :exc:`AttributeError` being raised.  In order to set a method
-attribute, you need to explicitly set it on the underlying function object::
+attribute, you need to explicitly set it on the underlying function object:
+
+.. doctest::
 
    >>> class C:
    ...     def method(self):
@@ -5390,7 +5410,7 @@ attribute, you need to explicitly set it on the underlying function object::
    >>> c.method.whoami
    'my name is method'
 
-See :ref:`types` for more information.
+See :ref:`instance-methods` for more information.
 
 
 .. index:: object; code, code object
@@ -5408,10 +5428,10 @@ Code objects are used by the implementation to represent "pseudo-compiled"
 executable Python code such as a function body. They differ from function
 objects because they don't contain a reference to their global execution
 environment.  Code objects are returned by the built-in :func:`compile` function
-and can be extracted from function objects through their :attr:`__code__`
-attribute. See also the :mod:`code` module.
+and can be extracted from function objects through their
+:attr:`~function.__code__` attribute. See also the :mod:`code` module.
 
-Accessing ``__code__`` raises an :ref:`auditing event <auditing>`
+Accessing :attr:`~function.__code__` raises an :ref:`auditing event <auditing>`
 ``object.__getattr__`` with arguments ``obj`` and ``"__code__"``.
 
 .. index::
@@ -5474,10 +5494,10 @@ The NotImplemented Object
 
 This object is returned from comparisons and binary operations when they are
 asked to operate on types they don't support. See :ref:`comparisons` for more
-information.  There is exactly one ``NotImplemented`` object.
-``type(NotImplemented)()`` produces the singleton instance.
+information.  There is exactly one :data:`NotImplemented` object.
+:code:`type(NotImplemented)()` produces the singleton instance.
 
-It is written as ``NotImplemented``.
+It is written as :code:`NotImplemented`.
 
 
 .. _typesinternal:
@@ -5485,8 +5505,9 @@ It is written as ``NotImplemented``.
 Internal Objects
 ----------------
 
-See :ref:`types` for this information.  It describes stack frame objects,
-traceback objects, and slice objects.
+See :ref:`types` for this information.  It describes
+:ref:`stack frame objects <frame-objects>`,
+:ref:`traceback objects <traceback-objects>`, and slice objects.
 
 
 .. _specialattrs:
@@ -5560,6 +5581,13 @@ types, where they are relevant.  Some of these are not reported by the
       [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 
+.. attribute:: class.__static_attributes__
+
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
+
+      .. versionadded:: 3.13
+
 .. _int_max_str_digits:
 
 Integer string conversion length limitation
@@ -5577,8 +5605,7 @@ a string to a binary integer or a binary integer to a string in linear time,
 have sub-quadratic complexity. Converting a large value such as ``int('1' *
 500_000)`` can take over a second on a fast CPU.
 
-Limiting conversion size offers a practical way to avoid `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+Limiting conversion size offers a practical way to avoid :cve:`2020-10735`.
 
 The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores

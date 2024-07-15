@@ -129,7 +129,7 @@ Random.setstate() now validates the value of state last element.
 .. nonce: HvJf6T
 .. section: Library
 
-Fixed an issue that caused `inspect.getsource` to return incorrect results
+Fixed an issue that caused ``inspect.getsource`` to return incorrect results
 on nested functions.
 
 ..

@@ -1,5 +1,8 @@
 #ifndef Py_INTERNAL_ATEXIT_H
 #define Py_INTERNAL_ATEXIT_H
+
+#include "pycore_lock.h"        // PyMutex
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,7 +18,7 @@ extern "C" {
 typedef void (*atexit_callbackfunc)(void);
 
 struct _atexit_runtime_state {
-    PyThread_type_lock mutex;
+    PyMutex mutex;
 #define NEXITFUNCS 32
     atexit_callbackfunc callbacks[NEXITFUNCS];
     int ncallbacks;
@@ -51,7 +54,7 @@ struct atexit_state {
     int callback_len;
 };
 
-// Export for '_xxinterpchannels' shared extension
+// Export for '_interpchannels' shared extension
 PyAPI_FUNC(int) _Py_AtExit(
     PyInterpreterState *interp,
     atexit_datacallbackfunc func,

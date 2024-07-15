@@ -82,8 +82,8 @@ the following::
 
 The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
-next line: ``Ordered by: cumulative time``, indicates that the text string in the
-far right column was used to sort the output. The column headings include:
+next line: ``Ordered by: cumulative time`` indicates the output is sorted
+by the ``cumtime`` values. The column headings include:
 
 ncalls
    for the number of calls.
@@ -234,7 +234,7 @@ functions:
 .. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
-   globals and locals dictionaries for the *command* string. This routine
+   globals and locals mappings for the *command* string. This routine
    executes::
 
       exec(command, globals, locals)
@@ -298,6 +298,13 @@ functions:
 
       Create a :class:`~pstats.Stats` object based on the current
       profile and print the results to stdout.
+
+      The *sort* parameter specifies the sorting order of the displayed
+      statistics. It accepts a single key or a tuple of keys to enable
+      multi-level sorting, as in :func:`Stats.sort_stats <pstats.Stats.sort_stats>`.
+
+      .. versionadded:: 3.13
+         :meth:`~Profile.print_stats` now accepts a tuple of keys.
 
    .. method:: dump_stats(filename)
 
@@ -692,7 +699,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
    As the :class:`cProfile.Profile` class cannot be calibrated, custom timer
    functions should be used with care and should be as fast as possible.  For
    the best results with a custom timer, it might be necessary to hard-code it
-   in the C source of the internal :mod:`_lsprof` module.
+   in the C source of the internal :mod:`!_lsprof` module.
 
 Python 3.3 adds several new functions in :mod:`time` that can be used to make
 precise measurements of process or wall-clock time. For example, see

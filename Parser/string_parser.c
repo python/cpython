@@ -13,6 +13,11 @@
 static int
 warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
 {
+    if (p->call_invalid_rules) {
+        // Do not report warnings if we are in the second pass of the parser
+        // to avoid showing the warning twice.
+        return 0;
+    }
     unsigned char c = *first_invalid_escape;
     if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END) && (c == '{' || c == '}')) {
         // in this case the tokenizer has already emitted a warning,
@@ -224,9 +229,14 @@ _PyPegen_parse_string(Parser *p, Token *t)
         PyErr_BadInternalCall();
         return NULL;
     }
+
     /* Skip the leading quote char. */
     s++;
     len = strlen(s);
+    // gh-120155: 's' contains at least the trailing quote,
+    // so the code '--len' below is safe.
+    assert(len >= 1);
+
     if (len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
         return NULL;

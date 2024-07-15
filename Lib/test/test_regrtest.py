@@ -21,12 +21,17 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+from xml.etree import ElementTree
+
 from test import support
-from test.support import os_helper, TestStats, without_optimizer
+from test.support import import_helper
+from test.support import os_helper
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
+from test.libregrtest.filter import get_match_tests, set_match_tests, match_test
+from test.libregrtest.result import TestStats
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -143,18 +148,26 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertTrue(ns.header)
 
     def test_randomize(self):
-        for opt in '-r', '--randomize':
+        for opt in ('-r', '--randomize'):
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
         with os_helper.EnvironmentVarGuard() as env:
-            env['SOURCE_DATE_EPOCH'] = '1'
-
+            # with SOURCE_DATE_EPOCH
+            env['SOURCE_DATE_EPOCH'] = '1697839080'
             ns = self.parse_args(['--randomize'])
             regrtest = main.Regrtest(ns)
             self.assertFalse(regrtest.randomize)
-            self.assertIsNone(regrtest.random_seed)
+            self.assertIsInstance(regrtest.random_seed, str)
+            self.assertEqual(regrtest.random_seed, '1697839080')
+
+            # without SOURCE_DATE_EPOCH
+            del env['SOURCE_DATE_EPOCH']
+            ns = self.parse_args(['--randomize'])
+            regrtest = main.Regrtest(ns)
+            self.assertTrue(regrtest.randomize)
+            self.assertIsInstance(regrtest.random_seed, int)
 
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
@@ -184,34 +197,27 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
 
-    def test_ignore(self):
-        for opt in '-i', '--ignore':
-            with self.subTest(opt=opt):
-                ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.ignore_tests, ['pattern'])
-                self.checkError([opt], 'expected one argument')
-
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as fp:
-            print('matchfile1', file=fp)
-            print('matchfile2', file=fp)
-
-        filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--ignorefile', filename])
-        self.assertEqual(ns.ignore_tests,
-                         ['matchfile1', 'matchfile2'])
-
     def test_match(self):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.match_tests, ['pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', True)])
                 self.checkError([opt], 'expected one argument')
 
-        ns = self.parse_args(['-m', 'pattern1',
-                                      '-m', 'pattern2'])
-        self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
+        for opt in '-i', '--ignore':
+            with self.subTest(opt=opt):
+                ns = self.parse_args([opt, 'pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', False)])
+                self.checkError([opt], 'expected one argument')
+
+        ns = self.parse_args(['-m', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', True)])
+
+        ns = self.parse_args(['-m', 'pattern1', '-i', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', False)])
+
+        ns = self.parse_args(['-i', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', False), ('pattern2', True)])
 
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, "w") as fp:
@@ -219,10 +225,13 @@ class ParseArgsTestCase(unittest.TestCase):
             print('matchfile2', file=fp)
 
         filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--matchfile', filename])
+        ns = self.parse_args(['-m', 'match', '--matchfile', filename])
         self.assertEqual(ns.match_tests,
-                         ['match', 'matchfile1', 'matchfile2'])
+                         [('match', True), ('matchfile1', True), ('matchfile2', True)])
+
+        ns = self.parse_args(['-i', 'match', '--ignorefile', filename])
+        self.assertEqual(ns.match_tests,
+                         [('match', False), ('matchfile1', False), ('matchfile2', False)])
 
     def test_failfast(self):
         for opt in '-G', '--failfast':
@@ -300,13 +309,23 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertEqual(ns.use_mp, 2)
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid int value')
-                self.checkError([opt, '2', '-T'], "don't go together")
-                self.checkError([opt, '0', '-T'], "don't go together")
 
-    def test_coverage(self):
+    def test_coverage_sequential(self):
         for opt in '-T', '--coverage':
             with self.subTest(opt=opt):
-                ns = self.parse_args([opt])
+                with support.captured_stderr() as stderr:
+                    ns = self.parse_args([opt])
+                self.assertTrue(ns.trace)
+                self.assertIn(
+                    "collecting coverage without -j is imprecise",
+                    stderr.getvalue(),
+                )
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    def test_coverage_mp(self):
+        for opt in '-T', '--coverage':
+            with self.subTest(opt=opt):
+                ns = self.parse_args([opt, '-j1'])
                 self.assertTrue(ns.trace)
 
     def test_coverdir(self):
@@ -383,12 +402,22 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
 
-    def check_ci_mode(self, args, use_resources, rerun=True):
+    def create_regrtest(self, args):
         ns = cmdline._parse_args(args)
 
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
-        regrtest = main.Regrtest(ns)
+        with os_helper.EnvironmentVarGuard() as env:
+            # Ignore SOURCE_DATE_EPOCH env var if it's set
+            if 'SOURCE_DATE_EPOCH' in env:
+                del env['SOURCE_DATE_EPOCH']
+
+            regrtest = main.Regrtest(ns)
+
+        return regrtest
+
+    def check_ci_mode(self, args, use_resources, rerun=True):
+        regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
@@ -415,9 +444,11 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.python_cmd, ('python', '-X', 'dev'))
 
     def test_fast_ci_resource(self):
-        # it should be possible to override resources
-        args = ['--fast-ci', '-u', 'network']
-        use_resources = ['network']
+        # it should be possible to override resources individually
+        args = ['--fast-ci', '-u-network']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        use_resources.remove('network')
         self.check_ci_mode(args, use_resources)
 
     def test_slow_ci(self):
@@ -430,6 +461,33 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--dont-add-python-opts']
         ns = cmdline._parse_args(args)
         self.assertFalse(ns._add_python_opts)
+
+    def test_bisect(self):
+        args = ['--bisect']
+        regrtest = self.create_regrtest(args)
+        self.assertTrue(regrtest.want_bisect)
+
+    def test_verbose3_huntrleaks(self):
+        args = ['-R', '3:10', '--verbose3']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.hunt_refleak)
+        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
+        self.assertEqual(regrtest.hunt_refleak.runs, 10)
+        self.assertFalse(regrtest.output_on_failure)
+
+    def test_single_process(self):
+        args = ['-j2', '--single-process']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
+
+        args = ['--fast-ci', '--single-process']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
 
 
 @dataclasses.dataclass(slots=True)
@@ -659,21 +717,26 @@ class BaseTestCase(unittest.TestCase):
             state = f'{state} then {new_state}'
         self.check_line(output, f'Result: {state}', full=True)
 
-    def parse_random_seed(self, output):
-        match = self.regex_search(r'Using random seed ([0-9]+)', output)
-        randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed, randseed)
-        return randseed
+    def parse_random_seed(self, output: str) -> str:
+        match = self.regex_search(r'Using random seed: (.*)', output)
+        return match.group(1)
 
     def run_command(self, args, input=None, exitcode=0, **kw):
         if not input:
             input = ''
         if 'stderr' not in kw:
             kw['stderr'] = subprocess.STDOUT
+
+        env = kw.pop('env', None)
+        if env is None:
+            env = dict(os.environ)
+            env.pop('SOURCE_DATE_EPOCH', None)
+
         proc = subprocess.run(args,
                               text=True,
                               input=input,
                               stdout=subprocess.PIPE,
+                              env=env,
                               **kw)
         if proc.returncode != exitcode:
             msg = ("Command %s failed with exit code %s, but exit code %s expected!\n"
@@ -749,7 +812,9 @@ class ProgramsTestCase(BaseTestCase):
             self.regrtest_args.append('-n')
 
     def check_output(self, output):
-        self.parse_random_seed(output)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
+
         self.check_executed_tests(output, self.tests,
                                   randomize=True, stats=len(self.tests))
 
@@ -814,6 +879,8 @@ class ProgramsTestCase(BaseTestCase):
             test_args.append('-x64')   # 64-bit build
         if not support.Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
+        if sysconfig.get_config_var("Py_GIL_DISABLED"):
+            test_args.append('--disable-gil')
         self.run_batch(script, *test_args, *self.tests)
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
@@ -831,6 +898,8 @@ class ProgramsTestCase(BaseTestCase):
             rt_args.append('-x64')   # 64-bit build
         if support.Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
+        if sysconfig.get_config_var("Py_GIL_DISABLED"):
+            rt_args.append('--disable-gil')
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
 
@@ -940,7 +1009,7 @@ class ArgsTestCase(BaseTestCase):
         test_random = int(match.group(1))
 
         # try to reproduce with the random seed
-        output = self.run_tests('-r', '--randseed=%s' % randseed, test,
+        output = self.run_tests('-r', f'--randseed={randseed}', test,
                                 exitcode=EXITCODE_NO_TESTS_RAN)
         randseed2 = self.parse_random_seed(output)
         self.assertEqual(randseed2, randseed)
@@ -951,7 +1020,32 @@ class ArgsTestCase(BaseTestCase):
 
         # check that random.seed is used by default
         output = self.run_tests(test, exitcode=EXITCODE_NO_TESTS_RAN)
-        self.assertIsInstance(self.parse_random_seed(output), int)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
+
+        # check SOURCE_DATE_EPOCH (integer)
+        timestamp = '1697839080'
+        env = dict(os.environ, SOURCE_DATE_EPOCH=timestamp)
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertEqual(randseed, timestamp)
+        self.check_line(output, 'TESTRANDOM: 520')
+
+        # check SOURCE_DATE_EPOCH (string)
+        env = dict(os.environ, SOURCE_DATE_EPOCH='XYZ')
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertEqual(randseed, 'XYZ')
+        self.check_line(output, 'TESTRANDOM: 22')
+
+        # check SOURCE_DATE_EPOCH (empty string): ignore the env var
+        env = dict(os.environ, SOURCE_DATE_EPOCH='')
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
 
     def test_fromfile(self):
         # test --fromfile
@@ -1087,7 +1181,7 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    @without_optimizer
+    @support.without_optimizer
     def check_leak(self, code, what, *, run_workers=False):
         test = self.create_test('huntrleaks', code=code)
 
@@ -1102,8 +1196,8 @@ class ArgsTestCase(BaseTestCase):
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
 
-        line = 'beginning 6 repetitions\n123456\n......\n'
-        self.check_line(output, re.escape(line))
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        self.check_line(output, line)
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
         self.assertIn(line2, output)
@@ -1131,6 +1225,47 @@ class ArgsTestCase(BaseTestCase):
 
     def test_huntrleaks_mp(self):
         self.check_huntrleaks(run_workers=True)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    def test_huntrleaks_bisect(self):
+        # test --huntrleaks --bisect
+        code = textwrap.dedent("""
+            import unittest
+
+            GLOBAL_LIST = []
+
+            class RefLeakTest(unittest.TestCase):
+                def test1(self):
+                    pass
+
+                def test2(self):
+                    pass
+
+                def test3(self):
+                    GLOBAL_LIST.append(object())
+
+                def test4(self):
+                    pass
+        """)
+
+        test = self.create_test('huntrleaks', code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(os_helper.unlink, filename)
+        cmd = ['--huntrleaks', '3:3:', '--bisect', test]
+        output = self.run_tests(*cmd,
+                                exitcode=EXITCODE_BAD_TEST,
+                                stderr=subprocess.STDOUT)
+
+        self.assertIn(f"Bisect {test}", output)
+        self.assertIn(f"Bisect {test}: exit code 0", output)
+
+        # test3 is the one which leaks
+        self.assertIn("Bisection completed in", output)
+        self.assertIn(
+            "Tests (1):\n"
+            f"* {test}.RefLeakTest.test3\n",
+            output)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
@@ -1614,6 +1749,9 @@ class ArgsTestCase(BaseTestCase):
 
     @support.cpython_only
     def test_uncollectable(self):
+        # Skip test if _testcapi is missing
+        import_helper.import_module('_testcapi')
+
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -1975,8 +2113,31 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests,
                                   stats=len(tests), parallel=True)
 
+    def test_unload_tests(self):
+        # Test that unloading test modules does not break tests
+        # that import from other tests.
+        # The test execution order matters for this test.
+        # Both test_regrtest_a and test_regrtest_c which are executed before
+        # and after test_regrtest_b import a submodule from the test_regrtest_b
+        # package and use it in testing. test_regrtest_b itself does not import
+        # that submodule.
+        # Previously test_regrtest_c failed because test_regrtest_b.util in
+        # sys.modules was left after test_regrtest_a (making the import
+        # statement no-op), but new test_regrtest_b without the util attribute
+        # was imported for test_regrtest_b.
+        testdir = os.path.join(os.path.dirname(__file__),
+                               'regrtestdata', 'import_from_tests')
+        tests = [f'test_regrtest_{name}' for name in ('a', 'b', 'c')]
+        args = ['-Wd', '-E', '-bb', '-m', 'test', '--testdir=%s' % testdir, *tests]
+        output = self.run_python(args)
+        self.check_executed_tests(output, tests, stats=3)
+
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
+
+        # Skip test if _testinternalcapi is missing
+        import_helper.import_module('_testinternalcapi')
+
         code = textwrap.dedent(r"""
             import sys
             import unittest
@@ -2039,10 +2200,8 @@ class ArgsTestCase(BaseTestCase):
     @unittest.skipIf(support.is_android,
                      'raising SIGSEGV on Android is unreliable')
     def test_worker_output_on_failure(self):
-        try:
-            from faulthandler import _sigsegv
-        except ImportError:
-            self.skipTest("need faulthandler._sigsegv")
+        # Skip test if faulthandler is missing
+        import_helper.import_module('faulthandler')
 
         code = textwrap.dedent(r"""
             import faulthandler
@@ -2073,6 +2232,67 @@ class ArgsTestCase(BaseTestCase):
             exitcode = -int(signal.SIGSEGV)
             self.assertIn(f"Exit code {exitcode} (SIGSEGV)", output)
         self.check_line(output, "just before crash!", full=True, regex=False)
+
+    def test_verbose3(self):
+        code = textwrap.dedent(r"""
+            import unittest
+            from test import support
+
+            class VerboseTests(unittest.TestCase):
+                def test_pass(self):
+                    print("SPAM SPAM SPAM")
+        """)
+        testname = self.create_test(code=code)
+
+        # Run sequentially
+        output = self.run_tests("--verbose3", testname)
+        self.check_executed_tests(output, testname, stats=1)
+        self.assertNotIn('SPAM SPAM SPAM', output)
+
+        # -R option needs a debug build
+        if support.Py_DEBUG:
+            # Check for reference leaks, run in parallel
+            output = self.run_tests("-R", "3:3", "-j1", "--verbose3", testname)
+            self.check_executed_tests(output, testname, stats=1, parallel=True)
+            self.assertNotIn('SPAM SPAM SPAM', output)
+
+    def test_xml(self):
+        code = textwrap.dedent(r"""
+            import unittest
+            from test import support
+
+            class VerboseTests(unittest.TestCase):
+                def test_failed(self):
+                    print("abc \x1b def")
+                    self.fail()
+        """)
+        testname = self.create_test(code=code)
+
+        # Run sequentially
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        output = self.run_tests(testname, "--junit-xml", filename,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=testname,
+                                  stats=TestStats(1, 1, 0))
+
+        # Test generated XML
+        with open(filename, encoding="utf8") as fp:
+            content = fp.read()
+
+        testsuite = ElementTree.fromstring(content)
+        self.assertEqual(int(testsuite.get('tests')), 1)
+        self.assertEqual(int(testsuite.get('errors')), 0)
+        self.assertEqual(int(testsuite.get('failures')), 1)
+
+        testcase = testsuite[0][0]
+        self.assertEqual(testcase.get('status'), 'run')
+        self.assertEqual(testcase.get('result'), 'completed')
+        self.assertGreater(float(testcase.get('time')), 0)
+        for out in testcase.iter('system-out'):
+            self.assertEqual(out.text, r"abc \x1b def")
 
 
 class TestUtils(unittest.TestCase):
@@ -2109,15 +2329,6 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(normalize('setUpModule (test.test_x)', is_error=True))
         self.assertIsNone(normalize('tearDownModule (test.test_module)', is_error=True))
 
-    def test_get_signal_name(self):
-        for exitcode, expected in (
-            (-int(signal.SIGINT), 'SIGINT'),
-            (-int(signal.SIGSEGV), 'SIGSEGV'),
-            (3221225477, "STATUS_ACCESS_VIOLATION"),
-            (0xC00000FD, "STATUS_STACK_OVERFLOW"),
-        ):
-            self.assertEqual(utils.get_signal_name(exitcode), expected, exitcode)
-
     def test_format_resources(self):
         format_resources = utils.format_resources
         ALL_RESOURCES = utils.ALL_RESOURCES
@@ -2137,6 +2348,143 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             format_resources((*ALL_RESOURCES, "tzdata")),
             'resources: all,tzdata')
+
+    def test_match_test(self):
+        class Test:
+            def __init__(self, test_id):
+                self.test_id = test_id
+
+            def id(self):
+                return self.test_id
+
+        # Restore patterns once the test completes
+        patterns = get_match_tests()
+        self.addCleanup(set_match_tests, patterns)
+
+        test_access = Test('test.test_os.FileTests.test_access')
+        test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
+        test_copy = Test('test.test_shutil.TestCopy.test_copy')
+
+        # Test acceptance
+        with support.swap_attr(support, '_test_matchers', ()):
+            # match all
+            set_match_tests([])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # match all using None
+            set_match_tests(None)
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # match the full test identifier
+            set_match_tests([(test_access.id(), True)])
+            self.assertTrue(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+
+            # match the module name
+            set_match_tests([('test_os', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
+
+            # Test '*' pattern
+            set_match_tests([('test_*', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # Test case sensitivity
+            set_match_tests([('filetests', True)])
+            self.assertFalse(match_test(test_access))
+            set_match_tests([('FileTests', True)])
+            self.assertTrue(match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            set_match_tests([('*test_os.*.test_*', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
+
+            # Multiple patterns
+            set_match_tests([(test_access.id(), True), (test_chdir.id(), True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
+
+            set_match_tests([('test_access', True), ('DONTMATCH', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+
+        # Test rejection
+        with support.swap_attr(support, '_test_matchers', ()):
+            # match the full test identifier
+            set_match_tests([(test_access.id(), False)])
+            self.assertFalse(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # match the module name
+            set_match_tests([('test_os', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            # Test '*' pattern
+            set_match_tests([('test_*', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+
+            # Test case sensitivity
+            set_match_tests([('filetests', False)])
+            self.assertTrue(match_test(test_access))
+            set_match_tests([('FileTests', False)])
+            self.assertFalse(match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            set_match_tests([('*test_os.*.test_*', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            # Multiple patterns
+            set_match_tests([(test_access.id(), False), (test_chdir.id(), False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            set_match_tests([('test_access', False), ('DONTMATCH', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+        # Test mixed filters
+        with support.swap_attr(support, '_test_matchers', ()):
+            set_match_tests([('*test_os', False), ('test_access', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            set_match_tests([('*test_os', True), ('test_access', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
+
+    def test_sanitize_xml(self):
+        sanitize_xml = utils.sanitize_xml
+
+        # escape invalid XML characters
+        self.assertEqual(sanitize_xml('abc \x1b\x1f def'),
+                         r'abc \x1b\x1f def')
+        self.assertEqual(sanitize_xml('nul:\x00, bell:\x07'),
+                         r'nul:\x00, bell:\x07')
+        self.assertEqual(sanitize_xml('surrogate:\uDC80'),
+                         r'surrogate:\udc80')
+        self.assertEqual(sanitize_xml('illegal \uFFFE and \uFFFF'),
+                         r'illegal \ufffe and \uffff')
+
+        # no escape for valid XML characters
+        self.assertEqual(sanitize_xml('a\n\tb'),
+                         'a\n\tb')
+        self.assertEqual(sanitize_xml('valid t\xe9xt \u20ac'),
+                         'valid t\xe9xt \u20ac')
 
 
 if __name__ == '__main__':

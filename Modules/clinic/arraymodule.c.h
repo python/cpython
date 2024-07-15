@@ -2,7 +2,29 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+PyDoc_STRVAR(array_array_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the array.");
+
+#define ARRAY_ARRAY_CLEAR_METHODDEF    \
+    {"clear", (PyCFunction)array_array_clear, METH_NOARGS, array_array_clear__doc__},
+
+static PyObject *
+array_array_clear_impl(arrayobject *self);
+
+static PyObject *
+array_array_clear(arrayobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return array_array_clear_impl(self);
+}
 
 PyDoc_STRVAR(array_array___copy____doc__,
 "__copy__($self, /)\n"
@@ -441,10 +463,6 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("frombytes", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = array_array_frombytes_impl(self, &buffer);
 
 exit:
@@ -581,7 +599,10 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[1]) != 1) {
-        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
+        PyErr_Format(PyExc_TypeError,
+            "_array_reconstructor(): argument 2 must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(args[1]));
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
@@ -655,7 +676,7 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
 static PyObject *
 array_arrayiterator___reduce__(arrayiterobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
         return NULL;
     }
@@ -670,4 +691,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=8595b1906b5a6552 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ecd63acd7924c223 input=a9049054013a1b77]*/

@@ -1,13 +1,14 @@
 """Test the interactive interpreter."""
 
-import sys
 import os
-import unittest
 import subprocess
+import sys
+import unittest
 from textwrap import dedent
 from test import support
 from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
-from test.support.script_helper import kill_python
+from test.support.script_helper import assert_python_failure, kill_python, assert_python_ok
+from test.support.import_helper import import_module
 
 
 if not has_subprocess_support:
@@ -64,6 +65,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_no_memory(self):
+        import_module("_testcapi")
         # Issue #30696: Fix the interactive interpreter looping endlessly when
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
@@ -161,10 +163,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
-        traceback_lines = output.splitlines()[-7:-1]
+        traceback_lines = output.splitlines()[-8:-1]
         expected_lines = [
             '  File "<stdin>", line 1, in <module>',
             '    foo(0)',
+            '    ~~~^^^',
             '  File "<stdin>", line 2, in foo',
             '    1 / x',
             '    ~~^~~',
@@ -184,7 +187,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache.cache['<python-input-1>'])
+        print(linecache.cache['<stdin>-1'])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)
@@ -192,6 +195,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
         expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
 
+    def test_asyncio_repl_no_tty_fails(self):
+        assert assert_python_failure("-m", "asyncio")
 
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):

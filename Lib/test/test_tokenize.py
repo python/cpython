@@ -617,6 +617,16 @@ f'__{
     FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
+        self.check_tokenize("""\
+    '''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli
+    aktualni pracownicy, obecni pracownicy'''
+""", """\
+    INDENT     '    '        (1, 0) (1, 4)
+    STRING     "'''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli\\n    aktualni pracownicy, obecni pracownicy'''" (1, 4) (2, 45)
+    NEWLINE    '\\n'          (2, 45) (2, 46)
+    DEDENT     ''            (3, 0) (3, 0)
+    """)
+
     def test_function(self):
         self.check_tokenize("def d22(a, b, c=2, d=2, *k): pass", """\
     NAME       'def'         (1, 0) (1, 3)
@@ -1187,6 +1197,31 @@ async def f():
     OP         ')'           (1, 0) (1, 1)
     OP         ';'           (1, 1) (1, 2)
     NAME       'x'           (1, 3) (1, 4)
+    """)
+
+    def test_multiline_non_ascii_fstring(self):
+        self.check_tokenize("""\
+a = f'''
+    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli'''""", """\
+    NAME       'a'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    FSTRING_START "f\'\'\'"        (1, 4) (1, 8)
+    FSTRING_MIDDLE '\\n    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli' (1, 8) (2, 68)
+    FSTRING_END "\'\'\'"         (2, 68) (2, 71)
+    """)
+
+    def test_multiline_non_ascii_fstring_with_expr(self):
+        self.check_tokenize("""\
+f'''
+    🔗 This is a test {test_arg1}🔗
+🔗'''""", """\
+    FSTRING_START "f\'\'\'"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '\\n    🔗 This is a test ' (1, 4) (2, 21)
+    OP         '{'           (2, 21) (2, 22)
+    NAME       'test_arg1'   (2, 22) (2, 31)
+    OP         '}'           (2, 31) (2, 32)
+    FSTRING_MIDDLE '🔗\\n🔗'        (2, 32) (3, 1)
+    FSTRING_END "\'\'\'"         (3, 1) (3, 4)
     """)
 
 class GenerateTokensTest(TokenizeTest):
@@ -1867,6 +1902,43 @@ class TestRoundtrip(TestCase):
                              "    print('Can not import' # comment2\n)"
                              "else:   print('Loaded')\n")
 
+        self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
+        self.check_roundtrip(r"f'\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\N{{SNAKE}}'")
+        self.check_roundtrip(r"f'\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\\\N{SNAKE}'")
+
+        self.check_roundtrip(r"f'\\N{1}'")
+        self.check_roundtrip(r"f'\\\\N{2}'")
+        self.check_roundtrip(r"f'\\\\\\N{3}'")
+        self.check_roundtrip(r"f'\\\\\\\\N{4}'")
+
+        self.check_roundtrip(r"f'\\N{{'")
+        self.check_roundtrip(r"f'\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\\\N{{'")
+        cases = [
+    """
+if 1:
+    "foo"
+"bar"
+""",
+    """
+if 1:
+    ("foo"
+     "bar")
+""",
+    """
+if 1:
+    "foo"
+    "bar"
+""" ]
+        for case in cases:
+            self.check_roundtrip(case)
+
+
     def test_continuation(self):
         # Balancing continuation
         self.check_roundtrip("a = (3,4, \n"
@@ -1900,19 +1972,6 @@ class TestRoundtrip(TestCase):
         import glob, random
         tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
-
-        # Tokenize is broken on test_pep3131.py because regular expressions are
-        # broken on the obscure unicode identifiers in it. *sigh*
-        # With roundtrip extended to test the 5-tuple mode of untokenize,
-        # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
-
-        testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
-
-        # TODO: Remove this once we can untokenize PEP 701 syntax
-        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
-
-        for f in ('buffer', 'builtin', 'fileio', 'os', 'platform', 'sys'):
-            testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)

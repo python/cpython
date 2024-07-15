@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(complex_conjugate__doc__,
 "conjugate($self, /)\n"
@@ -93,9 +94,12 @@ PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
 "\n"
-"Create a complex number from a real part and an optional imaginary part.\n"
+"Create a complex number from a string or numbers.\n"
 "\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.");
+"If a string is given, parse it as a complex number.\n"
+"If a single number is given, convert it to a complex number.\n"
+"If the \'real\' or \'imag\' arguments are given, create a complex number\n"
+"with the specified real and imaginary components.");
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i);
@@ -165,4 +169,4 @@ PyDoc_STRVAR(complex_from_number__doc__,
 
 #define COMPLEX_FROM_NUMBER_METHODDEF    \
     {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
-/*[clinic end generated code: output=6a99688764c101d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=188438cc9ae167f7 input=a9049054013a1b77]*/

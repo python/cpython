@@ -50,7 +50,6 @@ General notes on the underlying Mersenne Twister core generator:
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
 # the Mersenne Twister  and os.urandom() core generators.
 
-from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
@@ -62,13 +61,6 @@ from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
 import _random
-
-try:
-    # hashlib is pretty heavy to load, try lean internal module first
-    from _sha2 import sha512 as _sha512
-except ImportError:
-    # fallback to official implementation
-    from hashlib import sha512 as _sha512
 
 __all__ = [
     "Random",
@@ -105,6 +97,7 @@ SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
 _ONE = 1
+_sha512 = None
 
 
 class Random(_random.Random):
@@ -159,6 +152,16 @@ class Random(_random.Random):
             a = -2 if x == -1 else x
 
         elif version == 2 and isinstance(a, (str, bytes, bytearray)):
+            global _sha512
+            if _sha512 is None:
+                try:
+                    # hashlib is pretty heavy to load, try lean internal
+                    # module first
+                    from _sha2 import sha512 as _sha512
+                except ImportError:
+                    # fallback to official implementation
+                    from hashlib import sha512 as _sha512
+
             if isinstance(a, str):
                 a = a.encode()
             a = int.from_bytes(a + _sha512(a).digest())
@@ -257,9 +260,10 @@ class Random(_random.Random):
 
         random = self.random
         if n >= maxsize:
-            _warn("Underlying random() generator does not supply \n"
-                "enough bits to choose from a population range this large.\n"
-                "To remove the range limitation, add a getrandbits() method.")
+            from warnings import warn
+            warn("Underlying random() generator does not supply \n"
+                 "enough bits to choose from a population range this large.\n"
+                 "To remove the range limitation, add a getrandbits() method.")
             return _floor(random() * n)
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
@@ -992,5 +996,75 @@ if hasattr(_os, "fork"):
     _os.register_at_fork(after_in_child=_inst.seed)
 
 
+# ------------------------------------------------------
+# -------------- command-line interface ----------------
+
+
+def _parse_args(arg_list: list[str] | None):
+    import argparse
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "-c", "--choice", nargs="+",
+        help="print a random choice")
+    group.add_argument(
+        "-i", "--integer", type=int, metavar="N",
+        help="print a random integer between 1 and N inclusive")
+    group.add_argument(
+        "-f", "--float", type=float, metavar="N",
+        help="print a random floating point number between 1 and N inclusive")
+    group.add_argument(
+        "--test", type=int, const=10_000, nargs="?",
+        help=argparse.SUPPRESS)
+    parser.add_argument("input", nargs="*",
+                        help="""\
+if no options given, output depends on the input
+    string or multiple: same as --choice
+    integer: same as --integer
+    float: same as --float""")
+    args = parser.parse_args(arg_list)
+    return args, parser.format_help()
+
+
+def main(arg_list: list[str] | None = None) -> int | str:
+    args, help_text = _parse_args(arg_list)
+
+    # Explicit arguments
+    if args.choice:
+        return choice(args.choice)
+
+    if args.integer is not None:
+        return randint(1, args.integer)
+
+    if args.float is not None:
+        return uniform(1, args.float)
+
+    if args.test:
+        _test(args.test)
+        return ""
+
+    # No explicit argument, select based on input
+    if len(args.input) == 1:
+        val = args.input[0]
+        try:
+            # Is it an integer?
+            val = int(val)
+            return randint(1, val)
+        except ValueError:
+            try:
+                # Is it a float?
+                val = float(val)
+                return uniform(1, val)
+            except ValueError:
+                # Split in case of space-separated string: "a b c"
+                return choice(val.split())
+
+    if len(args.input) >= 2:
+        return choice(args.input)
+
+    return help_text
+
+
 if __name__ == '__main__':
-    _test()
+    print(main())

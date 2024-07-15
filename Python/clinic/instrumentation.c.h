@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(monitoring_use_tool_id__doc__,
 "use_tool_id($module, tool_id, name, /)\n"
 "--\n"
@@ -302,4 +304,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=46f449b18195f976 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=14ffc0884a6de50a input=a9049054013a1b77]*/

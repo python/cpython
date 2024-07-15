@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_asyncio_Future___init____doc__,
 "Future(*, loop=None)\n"
@@ -119,7 +120,7 @@ _asyncio_Future_exception_impl(FutureObj *self, PyTypeObject *cls);
 static PyObject *
 _asyncio_Future_exception(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "exception() takes no arguments");
         return NULL;
     }
@@ -452,7 +453,7 @@ _asyncio_Future_get_loop_impl(FutureObj *self, PyTypeObject *cls);
 static PyObject *
 _asyncio_Future_get_loop(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_loop() takes no arguments");
         return NULL;
     }
@@ -1486,4 +1487,64 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1b7658bfab7024f3 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_asyncio_all_tasks__doc__,
+"all_tasks($module, /, loop=None)\n"
+"--\n"
+"\n"
+"Return a set of all tasks for the loop.");
+
+#define _ASYNCIO_ALL_TASKS_METHODDEF    \
+    {"all_tasks", _PyCFunction_CAST(_asyncio_all_tasks), METH_FASTCALL|METH_KEYWORDS, _asyncio_all_tasks__doc__},
+
+static PyObject *
+_asyncio_all_tasks_impl(PyObject *module, PyObject *loop);
+
+static PyObject *
+_asyncio_all_tasks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(loop), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"loop", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "all_tasks",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *loop = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    loop = args[0];
+skip_optional_pos:
+    return_value = _asyncio_all_tasks_impl(module, loop);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ffe9b71bc65888b3 input=a9049054013a1b77]*/

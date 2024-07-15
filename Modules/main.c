@@ -249,7 +249,7 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), &cf);
+    ret = _PyRun_SimpleStringFlagsWithName(PyBytes_AsString(bytes), "<string>", &cf);
     Py_DECREF(bytes);
     return (ret != 0);
 
@@ -513,8 +513,13 @@ pymain_run_stdin(PyConfig *config)
         return pymain_exit_err_print();
     }
 
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+    if (!isatty(fileno(stdin))
+        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+        return (run != 0);
+    }
+    int run = pymain_run_module(L"_pyrepl", 0);
     return (run != 0);
 }
 
@@ -537,9 +542,16 @@ pymain_repl(PyConfig *config, int *exitcode)
         return;
     }
 
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int res = PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
-    *exitcode = (res != 0);
+    if (!isatty(fileno(stdin))
+        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+        *exitcode = (run != 0);
+        return;
+    }
+    int run = pymain_run_module(L"_pyrepl", 0);
+    *exitcode = (run != 0);
+    return;
 }
 
 

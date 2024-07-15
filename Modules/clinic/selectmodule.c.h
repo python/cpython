@@ -6,8 +6,9 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(select_select__doc__,
 "select($module, rlist, wlist, xlist, timeout=None, /)\n"
@@ -99,7 +100,8 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (nargs < 2) {
@@ -109,7 +111,9 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_poll_register_impl(self, fd, eventmask);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -147,13 +151,16 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("modify", nargs, 2, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_poll_modify_impl(self, fd, eventmask);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -181,10 +188,13 @@ select_poll_unregister(pollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_poll_unregister_impl(self, fd);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -227,7 +237,9 @@ select_poll_poll(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     timeout_obj = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_poll_poll_impl(self, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -267,7 +279,8 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (nargs < 2) {
@@ -277,7 +290,9 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_devpoll_register_impl(self, fd, eventmask);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -317,7 +332,8 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("modify", nargs, 1, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (nargs < 2) {
@@ -327,7 +343,9 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_devpoll_modify_impl(self, fd, eventmask);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -355,10 +373,13 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_devpoll_unregister_impl(self, fd);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -401,7 +422,9 @@ select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     timeout_obj = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = select_devpoll_poll_impl(self, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -428,7 +451,13 @@ select_devpoll_close_impl(devpollObject *self);
 static PyObject *
 select_devpoll_close(devpollObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return select_devpoll_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = select_devpoll_close_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
@@ -450,7 +479,13 @@ select_devpoll_fileno_impl(devpollObject *self);
 static PyObject *
 select_devpoll_fileno(devpollObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return select_devpoll_fileno_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = select_devpoll_fileno_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
@@ -609,7 +644,13 @@ select_epoll_close_impl(pyEpoll_Object *self);
 static PyObject *
 select_epoll_close(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
-    return select_epoll_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = select_epoll_close_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_EPOLL) */
@@ -729,7 +770,8 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -805,7 +847,8 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -873,7 +916,8 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = select_epoll_unregister_impl(self, fd);
@@ -1099,7 +1143,13 @@ select_kqueue_close_impl(kqueue_queue_Object *self);
 static PyObject *
 select_kqueue_close(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
 {
-    return select_kqueue_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = select_kqueue_close_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_KQUEUE) */
@@ -1310,4 +1360,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=35cd4aa7b6802838 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f31e724f492225b1 input=a9049054013a1b77]*/

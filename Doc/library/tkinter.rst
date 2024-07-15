@@ -1,5 +1,5 @@
-:mod:`tkinter` --- Python interface to Tcl/Tk
-=============================================
+:mod:`!tkinter` --- Python interface to Tcl/Tk
+==============================================
 
 .. module:: tkinter
    :synopsis: Interface to Tcl/Tk for graphical user interfaces
@@ -58,8 +58,8 @@ details that are unchanged.
    * `Modern Tkinter for Busy Python Developers <https://tkdocs.com/book.html>`_
       By Mark Roseman. (ISBN 978-1999149567)
 
-   * `Python and Tkinter Programming <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
-      By Alan Moore. (ISBN 978-1788835886)
+   * `Python GUI programming with Tkinter <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
+      By Alan D. Moore. (ISBN 978-1788835886)
 
    * `Programming Python <https://learning-python.com/about-pp4e.html>`_
       By Mark Lutz; has excellent coverage of Tkinter. (ISBN 978-0596158101)
@@ -231,6 +231,9 @@ The modules that provide Tk support include:
    for many of the classic widgets in the main :mod:`tkinter` module.
 
 Additional modules:
+
+.. module:: _tkinter
+   :synopsis: A binary module that contains the low-level interface to Tcl/Tk.
 
 :mod:`_tkinter`
    A binary module that contains the low-level interface to Tcl/Tk.
@@ -975,6 +978,15 @@ of :class:`tkinter.Image`:
 
 Either type of image is created through either the ``file`` or the ``data``
 option (other options are available as well).
+
+.. versionchanged:: 3.13
+   Added the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
+   from one image to other image, possibly with pixel zooming and/or
+   subsampling.
+   Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy()`,
+   :meth:`!zoom()` and :meth:`!subsample()`.
+   Add *zoom* and *subsample* parameters to :class:`!PhotoImage` method
+   :meth:`!copy()`.
 
 The image object can then be used wherever an ``image`` option is supported by
 some widget (e.g. labels, buttons, menus). In these cases, Tk will not keep a

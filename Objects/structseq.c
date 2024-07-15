@@ -8,12 +8,11 @@
 */
 
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_Pop()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -417,14 +416,13 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         // We do not support types with unnamed fields, so we can iterate over
         // i >= n_visible_fields case without slicing with (i - n_unnamed_fields).
         for (i = 0; i < n_fields; ++i) {
-            PyObject *key = PyUnicode_FromString(Py_TYPE(self)->tp_members[i].name);
-            if (!key) {
+            PyObject *ob;
+            if (PyDict_PopString(kwargs, Py_TYPE(self)->tp_members[i].name,
+                                 &ob) < 0) {
                 goto error;
             }
-            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
-            Py_DECREF(key);
-            if (!ob) {
-                goto error;
+            if (ob == NULL) {
+                ob = Py_NewRef(self->ob_item[i]);
             }
             result->ob_item[i] = ob;
         }
@@ -455,7 +453,9 @@ error:
 
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
-    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
+        "Return a copy of the structure with new values for the specified fields.")},
     {NULL, NULL}  // sentinel
 };
 
@@ -605,6 +605,9 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
                                        PyStructSequence_Desc *desc,
                                        unsigned long tp_flags)
 {
+    if (Py_TYPE(type) == NULL) {
+        Py_SET_TYPE(type, &PyType_Type);
+    }
     Py_ssize_t n_unnamed_members;
     Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
     PyMemberDef *members = NULL;
@@ -620,7 +623,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
         }
         initialize_static_fields(type, desc, members, tp_flags);
 
-        _Py_SetImmortal(type);
+        _Py_SetImmortal((PyObject *)type);
     }
 #ifndef NDEBUG
     else {
@@ -715,7 +718,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
         return;
     }
 
-    _PyStaticType_Dealloc(interp, type);
+    _PyStaticType_FiniBuiltin(interp, type);
 
     if (_Py_IsMainInterpreter(interp)) {
         // Undo _PyStructSequence_InitBuiltinWithFlags().
