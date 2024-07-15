@@ -5,10 +5,14 @@ import queue
 import time
 import weakref
 import _interpqueues as _queues
+from . import _crossinterp
 
 # aliases:
 from _interpqueues import (
     QueueError, QueueNotFoundError,
+)
+from ._crossinterp import (
+    UNBOUND_ERROR, UNBOUND_REMOVE,
 )
 
 __all__ = [
@@ -34,7 +38,8 @@ class QueueFull(QueueError, queue.Full):
     """
 
 
-class ItemInterpreterDestroyed(QueueError):
+class ItemInterpreterDestroyed(QueueError,
+                               _crossinterp.ItemInterpreterDestroyed):
     """Raised from get() and get_nowait()."""
 
 
@@ -42,57 +47,20 @@ _SHARED_ONLY = 0
 _PICKLED = 1
 
 
-class UnboundItem:
-    """Represents a Queue item no longer bound to an interpreter.
+UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
 
-    An item is unbound when the interpreter that added it to the queue
-    is destroyed.
-    """
-
-    __slots__ = ()
-
-    def __new__(cls):
-        return UNBOUND
-
-    def __repr__(self):
-        return f'interpreters.queues.UNBOUND'
-
-
-UNBOUND = object.__new__(UnboundItem)
-UNBOUND_ERROR = object()
-UNBOUND_REMOVE = object()
-
-_UNBOUND_CONSTANT_TO_FLAG = {
-    UNBOUND_REMOVE: 1,
-    UNBOUND_ERROR: 2,
-    UNBOUND: 3,
-}
-_UNBOUND_FLAG_TO_CONSTANT = {v: k
-                             for k, v in _UNBOUND_CONSTANT_TO_FLAG.items()}
 
 def _serialize_unbound(unbound):
-    op = unbound
-    try:
-        flag = _UNBOUND_CONSTANT_TO_FLAG[op]
-    except KeyError:
-        raise NotImplementedError(f'unsupported unbound replacement op {op!r}')
-    return flag,
+    if unbound is UNBOUND:
+        unbound = _crossinterp.UNBOUND
+    return _crossinterp.serialize_unbound(unbound)
 
 
 def _resolve_unbound(flag):
-    try:
-        op = _UNBOUND_FLAG_TO_CONSTANT[flag]
-    except KeyError:
-        raise NotImplementedError(f'unsupported unbound replacement op {flag!r}')
-    if op is UNBOUND_REMOVE:
-        # "remove" not possible here
-        raise NotImplementedError
-    elif op is UNBOUND_ERROR:
-        raise ItemInterpreterDestroyed("item's original interpreter destroyed")
-    elif op is UNBOUND:
-        return UNBOUND
-    else:
-        raise NotImplementedError(repr(op))
+    resolved = _crossinterp.resolve_unbound(flag, ItemInterpreterDestroyed)
+    if resolved is _crossinterp.UNBOUND:
+        resolved = UNBOUND
+    return resolved
 
 
 def create(maxsize=0, *, syncobj=False, unbounditems=UNBOUND):
