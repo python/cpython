@@ -757,6 +757,15 @@ frozenset_hash(PyObject *self)
     return hash;
 }
 
+static Py_hash_t
+set_hash(PyObject *self)
+{
+    PySetObject *so = (PySetObject *)self;
+    Py_uhash_t hash = frozenset_hash(self);
+    so->hash = (Py_hash_t)-1;
+    return hash;
+}
+
 /***** Set iterator type ***********************************************/
 
 typedef struct {
@@ -2137,7 +2146,7 @@ set_add_impl(PySetObject *so, PyObject *key)
 static int
 set_contains_lock_held(PySetObject *so, PyObject *key)
 {
-    PyObject *tmpkey;
+    Py_uhash_t hash;
     int rv;
 
     rv = set_contains_key(so, key);
@@ -2145,11 +2154,8 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return -1;
-        rv = set_contains_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        hash = set_hash(key);
+        rv = set_contains_entry(so, key, hash);
     }
     return rv;
 }
@@ -2203,7 +2209,7 @@ static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=0b9134a2a2200363 input=893e1cb1df98227a]*/
 {
-    PyObject *tmpkey;
+    Py_uhash_t hash;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2211,11 +2217,8 @@ set_remove_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        hash = set_hash(key);
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
@@ -2244,7 +2247,7 @@ static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=eec3b687bf32759e input=861cb7fb69b4def0]*/
 {
-    PyObject *tmpkey;
+    Py_uhash_t hash;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2252,11 +2255,8 @@ set_discard_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        hash = set_hash(key);
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
