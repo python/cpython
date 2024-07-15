@@ -712,7 +712,7 @@ _shuffle_bits(Py_uhash_t h)
    graph recipes in Lib/test/test_set.py) */
 
 static Py_hash_t
-set_hash_func(PyObject *self)
+compute_setobject_hash(PyObject *self)
 {
     assert(PyAnySet_Check(self));
     PySetObject *so = (PySetObject *)self;
@@ -758,12 +758,12 @@ static Py_hash_t
 frozenset_hash(PyObject *self)
 {
     PySetObject *so = (PySetObject *)self;
-    Py_uhash_t hash = 0;
+    Py_uhash_t hash;
 
     if (so->hash != -1)
         return so->hash;
     
-    hash = set_hash_func(self);
+    hash = compute_setobject_hash(self);
     so->hash = hash;
     return hash;
 }
@@ -2157,7 +2157,7 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
             return -1;
         PyErr_Clear();
         Py_BEGIN_CRITICAL_SECTION(key);
-        hash = set_hash_func(key);
+        hash = compute_setobject_hash(key);
         Py_END_CRITICAL_SECTION();
         rv = set_contains_entry(so, key, hash);
     }
@@ -2222,7 +2222,7 @@ set_remove_impl(PySetObject *so, PyObject *key)
             return NULL;
         PyErr_Clear();
         Py_BEGIN_CRITICAL_SECTION(key);
-        hash = set_hash_func(key);
+        hash = compute_setobject_hash(key);
         Py_END_CRITICAL_SECTION();
         rv = set_discard_entry(so, key, hash);
         if (rv < 0)
@@ -2262,7 +2262,7 @@ set_discard_impl(PySetObject *so, PyObject *key)
             return NULL;
         PyErr_Clear();
         Py_BEGIN_CRITICAL_SECTION(key);
-        hash = set_hash_func(key);
+        hash = compute_setobject_hash(key);
         Py_END_CRITICAL_SECTION();
         rv = set_discard_entry(so, key, hash);
         if (rv < 0)
