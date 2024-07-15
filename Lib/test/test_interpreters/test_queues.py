@@ -8,11 +8,11 @@ from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
 _queues = import_helper.import_module('_interpqueues')
 from test.support import interpreters
-from test.support.interpreters import queues
+from test.support.interpreters import queues, _crossinterp
 from .utils import _run_output, TestBase as _TestBase
 
 
-REPLACE = queues._UNBOUND_CONSTANT_TO_FLAG[queues.UNBOUND]
+REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
 
 
 def get_num_queues():
