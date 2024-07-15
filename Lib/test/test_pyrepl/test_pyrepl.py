@@ -856,7 +856,7 @@ class TestMain(TestCase):
 
         patcher = patch('os.environ', new=clean_env)
         self.addCleanup(patcher.stop)
-        self.mock_foo = patcher.start()
+        patcher.start()
 
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
