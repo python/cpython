@@ -3470,8 +3470,10 @@
         }
 
         case _CHECK_FUNCTION_VERSION: {
+            _PyStackRef self_or_null;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
+            self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -3527,7 +3529,6 @@
             assert(PyStackRef_IsNull(null));
             assert(Py_TYPE(callable_o) == &PyMethod_Type);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
-            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
             method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
             assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
             PyStackRef_CLOSE(callable);
@@ -3617,20 +3618,18 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            _PyStackRef null;
             _PyStackRef callable;
             _PyStackRef func;
             _PyStackRef self;
             oparg = CURRENT_OPARG();
+            null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             STAT_INC(CALL, hit);
-            stack_pointer[-1 - oparg] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
-            stack_pointer[-2 - oparg] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);  // This is used by CALL, upon deoptimization
-            self = stack_pointer[-1 - oparg];
-            func = stack_pointer[-2 - oparg];
+            self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
+            func = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
             PyStackRef_CLOSE(callable);
-            // self may be unused in tier 1, so silence warnings.
-            (void)self;
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = self;
             break;
@@ -3662,8 +3661,10 @@
         }
 
         case _CHECK_STACK_SPACE: {
+            _PyStackRef self_or_null;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
+            self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;

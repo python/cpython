@@ -103,6 +103,7 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
+    cached: bool = False
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""

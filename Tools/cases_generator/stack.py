@@ -113,7 +113,7 @@ class StackOffset:
         self.pushed = []
 
 
-class SizeMismatch(Exception):
+class StackError(Exception):
     pass
 
 
@@ -133,11 +133,12 @@ class Stack:
         if self.variables:
             popped = self.variables.pop()
             if popped.size != var.size:
-                raise SizeMismatch(
+                raise StackError(
                     f"Size mismatch when popping '{popped.name}' from stack to assign to {var.name}. "
                     f"Expected {var.size} got {popped.size}"
                 )
             if popped.name == var.name:
+                var.cached = popped.cached
                 return ""
             elif popped.name in UNUSED:
                 self.defined.add(var.name)
@@ -145,9 +146,13 @@ class Stack:
                     f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
                 )
             elif var.name in UNUSED:
+                if popped.cached:
+                    raise StackError(f"Value is declared unused, but is already cached by prior operation")
                 return ""
             else:
                 self.defined.add(var.name)
+                assert popped.cached
+                var.cached = True
                 return f"{var.name} = {popped.name};\n"
         self.base_offset.pop(var)
         if var.name in UNUSED:
@@ -177,6 +182,8 @@ class Stack:
             return f"{var.name} = &stack_pointer[{c_offset}];\n"
         else:
             self.top_offset.push(var)
+            if var.name not in UNUSED:
+                var.cached = True
             return ""
 
     def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:

@@ -22,7 +22,7 @@ from generators_common import (
 )
 from cwriter import CWriter
 from typing import TextIO
-from stack import Stack, SizeMismatch
+from stack import Stack, StackError
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -100,8 +100,8 @@ def write_uop(
             out.emit("}\n")
         # out.emit(stack.as_comment() + "\n")
         return offset
-    except SizeMismatch as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+    except StackError as ex:
+        raise analysis_error(ex.args[0], uop.body[0]) from None
 
 
 def uses_this(inst: Instruction) -> bool:

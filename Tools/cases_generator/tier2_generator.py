@@ -24,7 +24,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, SizeMismatch
+from stack import Stack, StackError
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
@@ -176,8 +176,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         if uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
                 out.emit(stack.push(var))
-    except SizeMismatch as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+    except StackError as ex:
+        raise analysis_error(ex.args[0], uop.body[0]) from None
 
 
 SKIPS = ("_EXTENDED_ARG",)
