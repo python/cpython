@@ -1,2 +1,0 @@
-Remove a dead code branch from ``codecs.py`` for non-Unicode Python builds,
-which aren't supported anymore.
