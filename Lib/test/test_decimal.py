@@ -1303,7 +1303,6 @@ class FormatTest:
         a = A.from_float(42)
         self.assertEqual(self.decimal.Decimal, a.a_type)
 
-
 @requires_cdecimal
 class CFormatTest(FormatTest, unittest.TestCase):
     decimal = C
