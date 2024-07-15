@@ -57,7 +57,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       Accepts *serializer* and *deserializer* as parameters.
 
    .. note::
@@ -164,7 +164,7 @@ Restrictions
       :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       Accepts *serializer* and *deserializer* as parameters.
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, \
@@ -179,7 +179,7 @@ Restrictions
    methods.  This is generally accomplished by calling one of
    :func:`!bsddb.hashopen`, :func:`!bsddb.btopen` or :func:`!bsddb.rnopen`.  The
    optional *protocol*, *writeback*, *keyencoding*, *serializer* and *deserializer*
-   parameters have the same interpretation as for the :class:`Shelf` class.
+   parameters have the same interpretation as for the :func:`~shelve.open`.
 
 
 .. class:: DbfilenameShelf(filename, flag='c', protocol=None, writeback=False, \
@@ -191,7 +191,7 @@ Restrictions
    optional *flag* parameter has the same interpretation as for the
    :func:`.open` function.  The optional *protocol*, *writeback*, *serializer*
    and *deserializer* parameters have the same interpretation as for the
-   :class:`Shelf` class.
+   :func:`~shelve.open`
 
 
 .. _shelve-example:
