@@ -148,10 +148,7 @@ Restrictions
    The *keyencoding* parameter is the encoding used to encode keys before they
    are used with the underlying dict.
 
-   The *deserializer* parameter can be the function that takes the
-   :term:`bytes-like object` and the *protocol* parameter and returns the
-   object. *serializer* parameter can be the function that takes the object
-   and returns :class:`bytes`.
+   The *deserializer* and *serializer* are as in :func:`~shelve.open`.
 
    A :class:`Shelf` object can also be used as a context manager, in which
    case it will be automatically closed when the :keyword:`with` block ends.
