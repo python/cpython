@@ -146,7 +146,15 @@ def run_multiline_interactive_console(
             assert not more
             input_n += 1
         except KeyboardInterrupt:
-            console.write("KeyboardInterrupt\n")
+            r = _get_reader()
+            if r.last_command and 'isearch' in r.last_command.__name__:
+                r.isearch_direction = ''
+                r.console.forgetinput()
+                r.pop_input_trans()
+                r.dirty = True
+            r.refresh()
+            r.in_bracketed_paste = False
+            console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")
