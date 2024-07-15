@@ -60,20 +60,6 @@ _release_xid_data(_PyCrossInterpreterData *data, int flags)
     return res;
 }
 
-static inline int64_t
-_get_interpid(_PyCrossInterpreterData *data)
-{
-    int64_t interpid;
-    if (data != NULL) {
-        interpid = _PyCrossInterpreterData_INTERPID(data);
-        assert(!PyErr_Occurred());
-    }
-    else {
-        interpid = PyInterpreterState_GetID(PyInterpreterState_Get());
-    }
-    return interpid;
-}
-
 static PyInterpreterState *
 _get_current_interp(void)
 {

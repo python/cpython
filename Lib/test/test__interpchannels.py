@@ -40,9 +40,9 @@ def recv_wait(cid):
             return obj
 
 
-def recv_nowait(cid, *args):
+def recv_nowait(cid, *args, unbound=False):
     obj, unboundop = _channels.recv(cid, *args)
-    assert unboundop is None, repr(unboundop)
+    assert (unboundop is None) != unbound, repr(unboundop)
     return obj
 
 
@@ -772,7 +772,8 @@ class ChannelTests(TestBase):
             _channels.send(cid2, b'eggs', blocking=False)
             _interpreters.destroy(interp)
 
-            recv_nowait(cid2)
+            recv_nowait(cid2, unbound=True)
+            recv_nowait(cid2, unbound=False)
             with self.assertRaisesRegex(RuntimeError,
                                         f'channel {cid2} is empty'):
                 _channels.recv(cid2)

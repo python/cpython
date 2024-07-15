@@ -21,6 +21,21 @@ clear_xid_class(PyTypeObject *cls)
 #endif
 
 
+static inline int64_t
+_get_interpid(_PyCrossInterpreterData *data)
+{
+    int64_t interpid;
+    if (data != NULL) {
+        interpid = _PyCrossInterpreterData_INTERPID(data);
+        assert(!PyErr_Occurred());
+    }
+    else {
+        interpid = PyInterpreterState_GetID(PyInterpreterState_Get());
+    }
+    return interpid;
+}
+
+
 /* unbound items ************************************************************/
 
 #ifdef HAS_UNBOUND_ITEMS

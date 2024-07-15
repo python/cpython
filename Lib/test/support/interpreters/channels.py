@@ -177,8 +177,11 @@ class SendChannel(_ChannelEnd):
 
     def __new__(cls, cid, *, _unbound=None):
         if _unbound is None:
-            op = _channels.get_channel_defaults(cid)
-            _unbound = (op,)
+            try:
+                op = _channels.get_channel_defaults(cid)
+                _unbound = (op,)
+            except ChannelNotFoundError:
+                _unbound = _serialize_unbound(UNBOUND)
         self = super().__new__(cls, cid)
         self._unbound = _unbound
         return self

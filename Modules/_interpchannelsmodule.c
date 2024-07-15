@@ -513,8 +513,14 @@ _waiting_finish_releasing(_waiting_t *waiting)
 struct _channelitem;
 
 typedef struct _channelitem {
+    /* The interpreter that added the item to the queue.
+       The actual bound interpid is found in item->data.
+       This is necessary because item->data might be NULL,
+       meaning the interpreter has been destroyed. */
+    int64_t interpid;
     _PyCrossInterpreterData *data;
     _waiting_t *waiting;
+    int unboundop;
     struct _channelitem *next;
 } _channelitem;
 
@@ -526,11 +532,22 @@ _channelitem_ID(_channelitem *item)
 
 static void
 _channelitem_init(_channelitem *item,
-                  _PyCrossInterpreterData *data, _waiting_t *waiting)
+                  int64_t interpid, _PyCrossInterpreterData *data,
+                  _waiting_t *waiting, int unboundop)
 {
+    if (interpid < 0) {
+        interpid = _get_interpid(data);
+    }
+    else {
+        assert(data == NULL
+               || _PyCrossInterpreterData_INTERPID(data) < 0
+               || interpid == _PyCrossInterpreterData_INTERPID(data));
+    }
     *item = (_channelitem){
+        .interpid = interpid,
         .data = data,
         .waiting = waiting,
+        .unboundop = unboundop,
     };
     if (waiting != NULL) {
         waiting->itemid = _channelitem_ID(item);
@@ -538,17 +555,15 @@ _channelitem_init(_channelitem *item,
 }
 
 static void
-_channelitem_clear(_channelitem *item)
+_channelitem_clear_data(_channelitem *item, int removed)
 {
-    item->next = NULL;
-
     if (item->data != NULL) {
         // It was allocated in channel_send().
         (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
         item->data = NULL;
     }
 
-    if (item->waiting != NULL) {
+    if (item->waiting != NULL && removed) {
         if (item->waiting->status == WAITING_ACQUIRED) {
             _waiting_release(item->waiting, 0);
         }
@@ -556,15 +571,23 @@ _channelitem_clear(_channelitem *item)
     }
 }
 
+static void
+_channelitem_clear(_channelitem *item)
+{
+    item->next = NULL;
+    _channelitem_clear_data(item, 1);
+}
+
 static _channelitem *
-_channelitem_new(_PyCrossInterpreterData *data, _waiting_t *waiting)
+_channelitem_new(int64_t interpid, _PyCrossInterpreterData *data,
+                 _waiting_t *waiting, int unboundop)
 {
     _channelitem *item = GLOBAL_MALLOC(_channelitem);
     if (item == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _channelitem_init(item, data, waiting);
+    _channelitem_init(item, interpid, data, waiting, unboundop);
     return item;
 }
 
@@ -587,16 +610,47 @@ _channelitem_free_all(_channelitem *item)
 
 static void
 _channelitem_popped(_channelitem *item,
-                    _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
+                    _PyCrossInterpreterData **p_data, _waiting_t **p_waiting,
+                    int *p_unboundop)
 {
     assert(item->waiting == NULL || item->waiting->status == WAITING_ACQUIRED);
     *p_data = item->data;
     *p_waiting = item->waiting;
+    *p_unboundop = item->unboundop;
     // We clear them here, so they won't be released in _channelitem_clear().
     item->data = NULL;
     item->waiting = NULL;
     _channelitem_free(item);
 }
+
+static int
+_channelitem_clear_interpreter(_channelitem *item)
+{
+    assert(item->interpid >= 0);
+    if (item->data == NULL) {
+        // Its interpreter was already cleared (or it was never bound).
+        // For UNBOUND_REMOVE it should have been freed at that time.
+        assert(item->unboundop != UNBOUND_REMOVE);
+        return 0;
+    }
+    assert(_PyCrossInterpreterData_INTERPID(item->data) == item->interpid);
+
+    switch (item->unboundop) {
+    case UNBOUND_REMOVE:
+        // The caller must free/clear it.
+        return 1;
+    case UNBOUND_ERROR:
+    case UNBOUND_REPLACE:
+        // We won't need the cross-interpreter data later
+        // so we completely throw it away.
+        _channelitem_clear_data(item, 0);
+        return 0;
+    default:
+        Py_FatalError("not reachable");
+        return -1;
+    }
+}
+
 
 typedef struct _channelqueue {
     int64_t count;
@@ -636,9 +690,10 @@ _channelqueue_free(_channelqueue *queue)
 
 static int
 _channelqueue_put(_channelqueue *queue,
-                  _PyCrossInterpreterData *data, _waiting_t *waiting)
+                  int64_t interpid, _PyCrossInterpreterData *data,
+                  _waiting_t *waiting, int unboundop)
 {
-    _channelitem *item = _channelitem_new(data, waiting);
+    _channelitem *item = _channelitem_new(interpid, data, waiting, unboundop);
     if (item == NULL) {
         return -1;
     }
@@ -661,7 +716,8 @@ _channelqueue_put(_channelqueue *queue,
 
 static int
 _channelqueue_get(_channelqueue *queue,
-                  _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
+                  _PyCrossInterpreterData **p_data, _waiting_t **p_waiting,
+                  int *p_unboundop)
 {
     _channelitem *item = queue->first;
     if (item == NULL) {
@@ -673,7 +729,7 @@ _channelqueue_get(_channelqueue *queue,
     }
     queue->count -= 1;
 
-    _channelitem_popped(item, p_data, p_waiting);
+    _channelitem_popped(item, p_data, p_waiting, p_unboundop);
     return 0;
 }
 
@@ -739,7 +795,8 @@ _channelqueue_remove(_channelqueue *queue, _channelitem_id_t itemid,
     }
     queue->count -= 1;
 
-    _channelitem_popped(item, p_data, p_waiting);
+    int unboundop;
+    _channelitem_popped(item, p_data, p_waiting, &unboundop);
 }
 
 static void
@@ -750,14 +807,17 @@ _channelqueue_clear_interpreter(_channelqueue *queue, int64_t interpid)
     while (next != NULL) {
         _channelitem *item = next;
         next = item->next;
-        if (_PyCrossInterpreterData_INTERPID(item->data) == interpid) {
+        int remove = (item->interpid == interpid)
+            ? _channelitem_clear_interpreter(item)
+            : 0;
+        if (remove) {
+            _channelitem_free(item);
             if (prev == NULL) {
-                queue->first = item->next;
+                queue->first = next;
             }
             else {
-                prev->next = item->next;
+                prev->next = next;
             }
-            _channelitem_free(item);
             queue->count -= 1;
         }
         else {
@@ -1020,12 +1080,15 @@ typedef struct _channel {
     PyThread_type_lock mutex;
     _channelqueue *queue;
     _channelends *ends;
+    struct {
+        int unboundop;
+    } defaults;
     int open;
     struct _channel_closing *closing;
 } _channel_state;
 
 static _channel_state *
-_channel_new(PyThread_type_lock mutex)
+_channel_new(PyThread_type_lock mutex, int unboundop)
 {
     _channel_state *chan = GLOBAL_MALLOC(_channel_state);
     if (chan == NULL) {
@@ -1043,6 +1106,7 @@ _channel_new(PyThread_type_lock mutex)
         GLOBAL_FREE(chan);
         return NULL;
     }
+    chan->defaults.unboundop = unboundop;
     chan->open = 1;
     chan->closing = NULL;
     return chan;
@@ -1063,7 +1127,8 @@ _channel_free(_channel_state *chan)
 
 static int
 _channel_add(_channel_state *chan, int64_t interpid,
-             _PyCrossInterpreterData *data, _waiting_t *waiting)
+             _PyCrossInterpreterData *data, _waiting_t *waiting,
+             int unboundop)
 {
     int res = -1;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -1077,7 +1142,7 @@ _channel_add(_channel_state *chan, int64_t interpid,
         goto done;
     }
 
-    if (_channelqueue_put(chan->queue, data, waiting) != 0) {
+    if (_channelqueue_put(chan->queue, interpid, data, waiting, unboundop) != 0) {
         goto done;
     }
     // Any errors past this point must cause a _waiting_release() call.
@@ -1090,7 +1155,8 @@ done:
 
 static int
 _channel_next(_channel_state *chan, int64_t interpid,
-              _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
+              _PyCrossInterpreterData **p_data, _waiting_t **p_waiting,
+              int *p_unboundop)
 {
     int err = 0;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -1104,11 +1170,15 @@ _channel_next(_channel_state *chan, int64_t interpid,
         goto done;
     }
 
-    int empty = _channelqueue_get(chan->queue, p_data, p_waiting);
-    assert(empty == 0 || empty == ERR_CHANNEL_EMPTY);
+    int empty = _channelqueue_get(chan->queue, p_data, p_waiting, p_unboundop);
     assert(!PyErr_Occurred());
-    if (empty && chan->closing != NULL) {
-        chan->open = 0;
+    if (empty) {
+        assert(empty == ERR_CHANNEL_EMPTY);
+        if (chan->closing != NULL) {
+            chan->open = 0;
+        }
+        err = ERR_CHANNEL_EMPTY;
+        goto done;
     }
 
 done:
@@ -1530,18 +1600,27 @@ done:
     PyThread_release_lock(channels->mutex);
 }
 
-static int64_t *
+struct channel_id_and_info {
+    int64_t id;
+    int unboundop;
+};
+
+static struct channel_id_and_info *
 _channels_list_all(_channels *channels, int64_t *count)
 {
-    int64_t *cids = NULL;
+    struct channel_id_and_info *cids = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
-    int64_t *ids = PyMem_NEW(int64_t, (Py_ssize_t)(channels->numopen));
+    struct channel_id_and_info *ids =
+        PyMem_NEW(struct channel_id_and_info, (Py_ssize_t)(channels->numopen));
     if (ids == NULL) {
         goto done;
     }
     _channelref *ref = channels->head;
     for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
-        ids[i] = ref->cid;
+        ids[i] = (struct channel_id_and_info){
+            .id = ref->cid,
+            .unboundop = ref->chan->defaults.unboundop,
+        };
     }
     *count = channels->numopen;
 
@@ -1626,13 +1705,13 @@ _channel_finish_closing(_channel_state *chan) {
 
 // Create a new channel.
 static int64_t
-channel_create(_channels *channels)
+channel_create(_channels *channels, int unboundop)
 {
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
         return ERR_CHANNEL_MUTEX_INIT;
     }
-    _channel_state *chan = _channel_new(mutex);
+    _channel_state *chan = _channel_new(mutex, unboundop);
     if (chan == NULL) {
         PyThread_free_lock(mutex);
         return -1;
@@ -1664,7 +1743,7 @@ channel_destroy(_channels *channels, int64_t cid)
 // Optionally request to be notified when it is received.
 static int
 channel_send(_channels *channels, int64_t cid, PyObject *obj,
-             _waiting_t *waiting)
+             _waiting_t *waiting, int unboundop)
 {
     PyInterpreterState *interp = _get_current_interp();
     if (interp == NULL) {
@@ -1700,7 +1779,7 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
     }
 
     // Add the data to the channel.
-    int res = _channel_add(chan, interpid, data, waiting);
+    int res = _channel_add(chan, interpid, data, waiting, unboundop);
     PyThread_release_lock(mutex);
     if (res != 0) {
         // We may chain an exception here:
@@ -1737,7 +1816,7 @@ channel_clear_sent(_channels *channels, int64_t cid, _waiting_t *waiting)
 // Like channel_send(), but strictly wait for the object to be received.
 static int
 channel_send_wait(_channels *channels, int64_t cid, PyObject *obj,
-                   PY_TIMEOUT_T timeout)
+                  int unboundop, PY_TIMEOUT_T timeout)
 {
     // We use a stack variable here, so we must ensure that &waiting
     // is not held by any channel item at the point this function exits.
@@ -1748,7 +1827,7 @@ channel_send_wait(_channels *channels, int64_t cid, PyObject *obj,
     }
 
     /* Queue up the object. */
-    int res = channel_send(channels, cid, obj, &waiting);
+    int res = channel_send(channels, cid, obj, &waiting, unboundop);
     if (res < 0) {
         assert(waiting.status == WAITING_NO_STATUS);
         goto finally;
@@ -1790,7 +1869,7 @@ finally:
 // The current interpreter gets associated with the recv end of the channel.
 // XXX Support a "wait" mutex?
 static int
-channel_recv(_channels *channels, int64_t cid, PyObject **res)
+channel_recv(_channels *channels, int64_t cid, PyObject **res, int *p_unboundop)
 {
     int err;
     *res = NULL;
@@ -1818,13 +1897,15 @@ channel_recv(_channels *channels, int64_t cid, PyObject **res)
     // Pop off the next item from the channel.
     _PyCrossInterpreterData *data = NULL;
     _waiting_t *waiting = NULL;
-    err = _channel_next(chan, interpid, &data, &waiting);
+    err = _channel_next(chan, interpid, &data, &waiting, p_unboundop);
     PyThread_release_lock(mutex);
     if (err != 0) {
         return err;
     }
     else if (data == NULL) {
+        // The item was unbound.
         assert(!PyErr_Occurred());
+        *res = NULL;
         return 0;
     }
 
@@ -2801,8 +2882,7 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    // XXX Save unboundop.
-    int64_t cid = channel_create(&_globals.channels);
+    int64_t cid = channel_create(&_globals.channels, unboundop);
     if (cid < 0) {
         (void)handle_channel_error(-1, self, cid);
         return NULL;
@@ -2864,7 +2944,8 @@ static PyObject *
 channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t count = 0;
-    int64_t *cids = _channels_list_all(&_globals.channels, &count);
+    struct channel_id_and_info *cids =
+        _channels_list_all(&_globals.channels, &count);
     if (cids == NULL) {
         if (count == 0) {
             return PyList_New(0);
@@ -2881,22 +2962,20 @@ channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
         ids = NULL;
         goto finally;
     }
-    int64_t *cur = cids;
+    struct channel_id_and_info *cur = cids;
     for (int64_t i=0; i < count; cur++, i++) {
         PyObject *cidobj = NULL;
-        int err = newchannelid(state->ChannelIDType, *cur, 0,
+        int err = newchannelid(state->ChannelIDType, cur->id, 0,
                                &_globals.channels, 0, 0,
                                (channelid **)&cidobj);
-        if (handle_channel_error(err, self, *cur)) {
+        if (handle_channel_error(err, self, cur->id)) {
             assert(cidobj == NULL);
             Py_SETREF(ids, NULL);
             break;
         }
         assert(cidobj != NULL);
 
-        // XXX get unboundop
-        int unboundop = UNBOUND_REPLACE;
-        PyObject *item = Py_BuildValue("Oi", cidobj, unboundop);
+        PyObject *item = Py_BuildValue("Oi", cidobj, cur->unboundop);
         Py_DECREF(cidobj);
         if (item == NULL) {
             Py_SETREF(ids, NULL);
@@ -2990,8 +3069,7 @@ channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
         .module = self,
     };
     PyObject *obj;
-    // XXX Make unboundop required.
-    int unboundop = UNBOUND_REMOVE;
+    int unboundop = UNBOUND_REPLACE;
     int blocking = 1;
     PyObject *timeout_obj = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|i$pO:channel_send", kwlist,
@@ -3016,10 +3094,10 @@ channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
     int err = 0;
     // XXX Store unboundop
     if (blocking) {
-        err = channel_send_wait(&_globals.channels, cid, obj, timeout);
+        err = channel_send_wait(&_globals.channels, cid, obj, unboundop, timeout);
     }
     else {
-        err = channel_send(&_globals.channels, cid, obj, NULL);
+        err = channel_send(&_globals.channels, cid, obj, NULL, unboundop);
     }
     if (handle_channel_error(err, self, cid)) {
         return NULL;
@@ -3043,8 +3121,7 @@ channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
         .module = self,
     };
     PyObject *obj;
-    // XXX Make unboundop required.
-    int unboundop = UNBOUND_REMOVE;
+    int unboundop = UNBOUND_REPLACE;
     int blocking = 1;
     PyObject *timeout_obj = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
@@ -3074,10 +3151,11 @@ channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
     int err = 0;
     // XXX Store unboundop
     if (blocking) {
-        err = channel_send_wait(&_globals.channels, cid, tempobj, timeout);
+        err = channel_send_wait(
+                &_globals.channels, cid, tempobj, unboundop, timeout);
     }
     else {
-        err = channel_send(&_globals.channels, cid, tempobj, NULL);
+        err = channel_send(&_globals.channels, cid, tempobj, NULL, unboundop);
     }
     Py_DECREF(tempobj);
     if (handle_channel_error(err, self, cid)) {
@@ -3109,22 +3187,21 @@ channelsmod_recv(PyObject *self, PyObject *args, PyObject *kwds)
     cid = cid_data.cid;
 
     PyObject *obj = NULL;
-    int err = channel_recv(&_globals.channels, cid, &obj);
-    if (handle_channel_error(err, self, cid)) {
+    int unboundop = 0;
+    int err = channel_recv(&_globals.channels, cid, &obj, &unboundop);
+    if (err == ERR_CHANNEL_EMPTY && dflt != NULL) {
+        // Use the default.
+        obj = Py_NewRef(dflt);
+        err = 0;
+    }
+    else if (handle_channel_error(err, self, cid)) {
         return NULL;
     }
-    Py_XINCREF(dflt);
-    if (obj == NULL) {
-        // Use the default.
-        if (dflt == NULL) {
-            (void)handle_channel_error(ERR_CHANNEL_EMPTY, self, cid);
-            return NULL;
-        }
-        obj = Py_NewRef(dflt);
+    else if (obj == NULL) {
+        // The item was unbound.
+        return Py_BuildValue("Oi", Py_None, unboundop);
     }
-    Py_XDECREF(dflt);
 
-    // XXX return unboundop if unbound
     PyObject *res = Py_BuildValue("OO", obj, Py_None);
     Py_DECREF(obj);
     return res;
@@ -3301,17 +3378,14 @@ channelsmod_get_channel_defaults(PyObject *self, PyObject *args, PyObject *kwds)
     }
     int64_t cid = cid_data.cid;
 
-    // XXX get stored defaults.
-//    _channel *channel = NULL;
-//    int err = _channels_lookup(&_globals.channels, cid, &channel);
-//    if (handle_channel_error(err, self, cid)) {
-//        return NULL;
-//    }
-//    int unboundop = channel->defaults.unboundop;
-//    _channel_unmark_waiter(channel, _globals.channels.mutex);
-
-    (void)cid;
-    int unboundop = UNBOUND_REPLACE;
+    PyThread_type_lock mutex = NULL;
+    _channel_state *channel = NULL;
+    int err = _channels_lookup(&_globals.channels, cid, &mutex, &channel);
+    if (handle_channel_error(err, self, cid)) {
+        return NULL;
+    }
+    int unboundop = channel->defaults.unboundop;
+    PyThread_release_lock(mutex);
 
     PyObject *defaults = Py_BuildValue("i", unboundop);
     return defaults;
