@@ -31,7 +31,7 @@ test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
     from analyzer import StackItem
     import parser
-    from stack import Stack, StackError
+    from stack import Stack
     import tier1_generator
     import optimizer_generator
 
@@ -869,7 +869,6 @@ class TestGeneratedCases(unittest.TestCase):
         self.run_cases_test(input, output)
 
     def test_unused_cached_value(self):
-
         input = """
         op(FIRST, (arg1 -- out)) {
             out = arg1;
