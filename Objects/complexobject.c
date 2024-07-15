@@ -757,22 +757,6 @@ complex___complex___impl(PyComplexObject *self)
 }
 
 
-static PyMethodDef complex_methods[] = {
-    COMPLEX_CONJUGATE_METHODDEF
-    COMPLEX___COMPLEX___METHODDEF
-    COMPLEX___GETNEWARGS___METHODDEF
-    COMPLEX___FORMAT___METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-static PyMemberDef complex_members[] = {
-    {"real", Py_T_DOUBLE, offsetof(PyComplexObject, cval.real), Py_READONLY,
-     "the real part of a complex number"},
-    {"imag", Py_T_DOUBLE, offsetof(PyComplexObject, cval.imag), Py_READONLY,
-     "the imaginary part of a complex number"},
-    {0},
-};
-
 static PyObject *
 complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
 {
@@ -1141,6 +1125,52 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     return complex_subtype_from_doubles(type, cr.real, ci.real);
 }
+
+/*[clinic input]
+@classmethod
+complex.from_number
+
+    number: object
+    /
+
+Convert number to a complex floating-point number.
+[clinic start generated code]*/
+
+static PyObject *
+complex_from_number(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=658a7a5fb0de074d input=3f8bdd3a2bc3facd]*/
+{
+    if (PyComplex_CheckExact(number) && type == &PyComplex_Type) {
+        Py_INCREF(number);
+        return number;
+    }
+    Py_complex cv = PyComplex_AsCComplex(number);
+    if (cv.real == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyObject *result = PyComplex_FromCComplex(cv);
+    if (type != &PyComplex_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
+    }
+    return result;
+}
+
+static PyMethodDef complex_methods[] = {
+    COMPLEX_FROM_NUMBER_METHODDEF
+    COMPLEX_CONJUGATE_METHODDEF
+    COMPLEX___COMPLEX___METHODDEF
+    COMPLEX___GETNEWARGS___METHODDEF
+    COMPLEX___FORMAT___METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyMemberDef complex_members[] = {
+    {"real", Py_T_DOUBLE, offsetof(PyComplexObject, cval.real), Py_READONLY,
+     "the real part of a complex number"},
+    {"imag", Py_T_DOUBLE, offsetof(PyComplexObject, cval.imag), Py_READONLY,
+     "the imaginary part of a complex number"},
+    {0},
+};
 
 static PyNumberMethods complex_as_number = {
     (binaryfunc)complex_add,                    /* nb_add */

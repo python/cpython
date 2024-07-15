@@ -1670,6 +1670,36 @@ float_vectorcall(PyObject *type, PyObject * const*args,
 
 
 /*[clinic input]
+@classmethod
+float.from_number
+
+    number: object
+    /
+
+Convert real number to a floating-point number.
+[clinic start generated code]*/
+
+static PyObject *
+float_from_number(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=bbcf05529fe907a3 input=1f8424d9bc11866a]*/
+{
+    if (PyFloat_CheckExact(number) && type == &PyFloat_Type) {
+        Py_INCREF(number);
+        return number;
+    }
+    double x = PyFloat_AsDouble(number);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyObject *result = PyFloat_FromDouble(x);
+    if (type != &PyFloat_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
+    }
+    return result;
+}
+
+
+/*[clinic input]
 float.__getnewargs__
 [clinic start generated code]*/
 
@@ -1782,6 +1812,7 @@ float___format___impl(PyObject *self, PyObject *format_spec)
 }
 
 static PyMethodDef float_methods[] = {
+    FLOAT_FROM_NUMBER_METHODDEF
     FLOAT_CONJUGATE_METHODDEF
     FLOAT___TRUNC___METHODDEF
     FLOAT___FLOOR___METHODDEF
