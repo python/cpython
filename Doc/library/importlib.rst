@@ -1585,7 +1585,7 @@ Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
 This recipe should be used with caution: it is an approximation of an import statement where the file path is specified directly, rather than `sys.path` being searched.
-Alternatives should first be considered, such as modifying `sys.path` when a proper module is required, or using `runpy.run_path()` when the global namespace resulting from running a Python file is appropriate.
+Alternatives should first be considered, such as modifying :data:`sys.path` when a proper module is required, or using :func:`runpy.run_path` when the global namespace resulting from running a Python file is appropriate.
 
 To import a Python source file directly from a path, use the following recipe::
 
