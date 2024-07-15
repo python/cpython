@@ -55,4 +55,3 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     from .simple_interact import run_multiline_interactive_console
     console = InteractiveColoredConsole(namespace, filename="<stdin>")
     run_multiline_interactive_console(console)
-
