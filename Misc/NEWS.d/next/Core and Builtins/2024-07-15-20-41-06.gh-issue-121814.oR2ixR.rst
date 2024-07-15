@@ -1,0 +1,1 @@
+Fixed the SegFault when :c:func:`PyEval_SetTrace` is used with no Python frame on stack.
