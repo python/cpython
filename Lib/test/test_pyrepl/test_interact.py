@@ -7,7 +7,7 @@ from textwrap import dedent
 from test.support import force_not_colorized
 
 from _pyrepl.console import InteractiveColoredConsole
-
+from _pyrepl.simple_interact import _more_lines
 
 class TestSimpleInteract(unittest.TestCase):
     def test_multiple_statements(self):
@@ -111,3 +111,104 @@ class TestSimpleInteract(unittest.TestCase):
             result = console.runsource(source)
         self.assertFalse(result)
         self.assertEqual(f.getvalue(), "{'x': <class 'int'>}\n")
+
+
+class TestMoreLines(unittest.TestCase):
+    def test_invalid_syntax_single_line(self):
+        namespace = {}
+        code = "if foo"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_empty_line(self):
+        namespace = {}
+        code = ""
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_valid_single_statement(self):
+        namespace = {}
+        code = "foo = 1"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_multiline_single_assignment(self):
+        namespace = {}
+        code = dedent("""\
+        foo = [
+            1,
+            2,
+            3,
+        ]""")
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_multiline_single_block(self):
+        namespace = {}
+        code = dedent("""\
+        def foo():
+            '''docs'''
+
+            return 1""")
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertTrue(_more_lines(console, code))
+
+    def test_multiple_statements_single_line(self):
+        namespace = {}
+        code = "foo = 1;bar = 2"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_multiple_statements(self):
+        namespace = {}
+        code = dedent("""\
+        import time
+
+        foo = 1""")
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertTrue(_more_lines(console, code))
+
+    def test_multiple_blocks(self):
+        namespace = {}
+        code = dedent("""\
+        from dataclasses import dataclass
+
+        @dataclass
+        class Point:
+            x: float
+            y: float""")
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertTrue(_more_lines(console, code))
+
+    def test_multiple_blocks_empty_newline(self):
+        namespace = {}
+        code = dedent("""\
+        from dataclasses import dataclass
+
+        @dataclass
+        class Point:
+            x: float
+            y: float
+        """)
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_multiple_blocks_indented_newline(self):
+        namespace = {}
+        code = (
+            "from dataclasses import dataclass\n"
+            "\n"
+            "@dataclass\n"
+            "class Point:\n"
+            "    x: float\n"
+            "    y: float\n"
+            "    "
+        )
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_incomplete_statement(self):
+        namespace = {}
+        code = "if foo:"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertTrue(_more_lines(console, code))
