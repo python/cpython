@@ -32,11 +32,11 @@ __all__ = ['AppleFrameworkLoader', 'BYTECODE_SUFFIXES', 'BuiltinImporter',
 
 def __getattr__(name):
     if name in ('DEBUG_BYTECODE_SUFFIXES', 'OPTIMIZED_BYTECODE_SUFFIXES', 'WindowsRegistryFinder'):
-        if name in ('DEBUG_BYTECODE_SUFFIXES','OPTIMIZED_BYTECODE_SUFFIXES'):
+        if name in ('DEBUG_BYTECODE_SUFFIXES', 'OPTIMIZED_BYTECODE_SUFFIXES'):
             warnings.warn(f"The '{name}' module is deprecated.",
-                      DeprecationWarning, stacklevel=2)
+                          DeprecationWarning, stacklevel=2)
             return name
         else:
             warnings.warn(f"The '{name}' class is deprecated.",
-                      DeprecationWarning, stacklevel=2)
+                          DeprecationWarning, stacklevel=2)
             return name
