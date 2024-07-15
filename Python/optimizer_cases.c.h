@@ -645,9 +645,8 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
-            _PyInterpreterFrame *gen_frame;
-            gen_frame = sym_new_not_null(ctx);
-            stack_pointer[-1] = (_Py_UopsSymbol *)gen_frame;
+            // We are about to hit the end of the trace:
+            ctx->done = true;
             break;
         }
 
