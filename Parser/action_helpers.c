@@ -3,6 +3,7 @@
 #include "pegen.h"
 #include "string_parser.h"
 #include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_pystate.h"         // _PyInterpreterState_GET()
 
 void *
 _PyPegen_dummy_name(Parser *p, ...)
@@ -123,7 +124,8 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     if (!uni) {
         return NULL;
     }
-    PyUnicode_InternInPlace(&uni);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, &uni);
     if (_PyArena_AddPyObject(p->arena, uni) < 0) {
         Py_DECREF(uni);
         return NULL;
@@ -543,22 +545,30 @@ _make_posargs(Parser *p,
               asdl_arg_seq *plain_names,
               asdl_seq *names_with_default,
               asdl_arg_seq **posargs) {
-    if (plain_names != NULL && names_with_default != NULL) {
-        asdl_arg_seq *names_with_default_names = _get_names(p, names_with_default);
-        if (!names_with_default_names) {
-            return -1;
+
+    if (names_with_default != NULL) {
+        if (plain_names != NULL) {
+            asdl_arg_seq *names_with_default_names = _get_names(p, names_with_default);
+            if (!names_with_default_names) {
+                return -1;
+            }
+            *posargs = (asdl_arg_seq*)_PyPegen_join_sequences(
+                    p,(asdl_seq*)plain_names, (asdl_seq*)names_with_default_names);
         }
-        *posargs = (asdl_arg_seq*)_PyPegen_join_sequences(
-                p,(asdl_seq*)plain_names, (asdl_seq*)names_with_default_names);
-    }
-    else if (plain_names == NULL && names_with_default != NULL) {
-        *posargs = _get_names(p, names_with_default);
-    }
-    else if (plain_names != NULL && names_with_default == NULL) {
-        *posargs = plain_names;
+        else {
+            *posargs = _get_names(p, names_with_default);
+        }
     }
     else {
-        *posargs = _Py_asdl_arg_seq_new(0, p->arena);
+        if (plain_names != NULL) {
+            // With the current grammar, we never get here.
+            // If that has changed, remove the assert, and test thoroughly.
+            assert(0);
+            *posargs = plain_names;
+        }
+        else {
+            *posargs = _Py_asdl_arg_seq_new(0, p->arena);
+        }
     }
     return *posargs == NULL ? -1 : 0;
 }
@@ -854,7 +864,7 @@ _PyPegen_make_module(Parser *p, asdl_stmt_seq *a) {
         if (type_ignores == NULL) {
             return NULL;
         }
-        for (int i = 0; i < num; i++) {
+        for (Py_ssize_t i = 0; i < num; i++) {
             PyObject *tag = _PyPegen_new_type_comment(p, p->type_ignore_comments.items[i].comment);
             if (tag == NULL) {
                 return NULL;

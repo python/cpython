@@ -1,5 +1,5 @@
-:mod:`email.headerregistry`: Custom Header Objects
---------------------------------------------------
+:mod:`!email.headerregistry`: Custom Header Objects
+---------------------------------------------------
 
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name

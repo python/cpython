@@ -1,2 +1,0 @@
-Fixes a bug when :class:`doctest.DocTestFinder` was failing on wrapped
-``builtin_function_or_method``.

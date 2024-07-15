@@ -164,8 +164,8 @@ Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
 # explicitly protected, internal-only
-Modules/_xxinterpchannelsmodule.c	-	_globals	-
-Modules/_xxinterpqueuesmodule.c	-	_globals	-
+Modules/_interpchannelsmodule.c	-	_globals	-
+Modules/_interpqueuesmodule.c	-	_globals	-
 
 # set once during module init
 Modules/_decimal/_decimal.c	-	minalloc_is_set	-
@@ -217,6 +217,7 @@ Modules/_datetimemodule.c	-	max_fold_seconds	-
 Modules/_datetimemodule.c	datetime_isoformat	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
+Modules/_datetimemodule.c	-	capi_types	-
 Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
@@ -246,11 +247,11 @@ Modules/_struct.c	-	bigendian_table	-
 Modules/_struct.c	-	lilendian_table	-
 Modules/_struct.c	-	native_table	-
 Modules/_tkinter.c	-	state_key	-
-Modules/_xxinterpchannelsmodule.c	-	_channelid_end_recv	-
-Modules/_xxinterpchannelsmodule.c	-	_channelid_end_send	-
+Modules/_interpchannelsmodule.c	-	_channelid_end_recv	-
+Modules/_interpchannelsmodule.c	-	_channelid_end_send	-
 Modules/_zoneinfo.c	-	DAYS_BEFORE_MONTH	-
 Modules/_zoneinfo.c	-	DAYS_IN_MONTH	-
-Modules/_xxsubinterpretersmodule.c	-	no_exception	-
+Modules/_interpretersmodule.c	-	no_exception	-
 Modules/arraymodule.c	-	descriptors	-
 Modules/arraymodule.c	-	emptybuf	-
 Modules/cjkcodecs/_codecs_cn.c	-	_mapping_list	-
@@ -344,7 +345,7 @@ Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
-Python/codecs.c	_PyCodecRegistry_Init	methods	-
+Python/codecs.c	_PyCodec_InitRegistry	methods	-
 Python/compile.c	-	NO_LABEL	-
 Python/compile.c	-	NO_LOCATION	-
 Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
@@ -365,6 +366,8 @@ Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
 Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 Python/opcode_targets.h	-	opcode_targets	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
+Python/perf_jit_trampoline.c	-	_Py_perfmap_jit_callbacks	-
+Python/perf_jit_trampoline.c	-	perf_jit_map_state	-
 Python/pyhash.c	-	PyHash_Func	-
 Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
@@ -385,16 +388,12 @@ Python/optimizer.c	-	_PyUOpExecutor_Type	-
 Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 Python/optimizer.c	-	_ColdExit_Type	-
-Python/optimizer.c	-	COLD_EXITS	-
 Python/optimizer.c	-	Py_FatalErrorExecutor	-
 Python/optimizer.c	-	EMPTY_FILTER	-
-Python/optimizer.c	-	cold_exits_initialized	-
 
 ##-----------------------
 ## test code
 
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
 Modules/_ctypes/_ctypes_test.c	-	_xxx_lib	-
 Modules/_ctypes/_ctypes_test.c	-	an_integer	-
 Modules/_ctypes/_ctypes_test.c	-	bottom	-
@@ -402,7 +401,6 @@ Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_s	-
 Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_u	-
 Modules/_ctypes/_ctypes_test.c	-	last_tfrsuv_arg	-
 Modules/_ctypes/_ctypes_test.c	-	left	-
-Modules/_ctypes/_ctypes_test.c	-	module_methods	-
 Modules/_ctypes/_ctypes_test.c	-	my_eggs	-
 Modules/_ctypes/_ctypes_test.c	-	my_spams	-
 Modules/_ctypes/_ctypes_test.c	-	right	-

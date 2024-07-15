@@ -36,9 +36,11 @@ struct _PyWeakReference {
      * Normally this can be derived from wr_object, but in some cases we need
      * to lock after wr_object has been set to Py_None.
      */
-    struct _PyMutex *weakrefs_lock;
+    PyMutex *weakrefs_lock;
 #endif
 };
+
+PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
 
 Py_DEPRECATED(3.13) static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj)
 {

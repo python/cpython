@@ -6,7 +6,6 @@
 # (before the site module is run).
 
 import _testinternalcapi
-import os
 import sys
 import unittest
 from test import support

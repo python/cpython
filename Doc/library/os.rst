@@ -1,5 +1,5 @@
-:mod:`os` --- Miscellaneous operating system interfaces
-=======================================================
+:mod:`!os` --- Miscellaneous operating system interfaces
+========================================================
 
 .. module:: os
    :synopsis: Miscellaneous operating system interfaces.
@@ -193,6 +193,10 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
+   The :meth:`!os.environ.refresh()` method updates :data:`os.environ` with
+   changes to the environment made by :func:`os.putenv`, by
+   :func:`os.unsetenv`, or made outside Python in the same process.
+
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
    is modified.
@@ -224,6 +228,9 @@ process and user.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+   .. versionchanged:: 3.14
+      Added the :meth:`!os.environ.refresh()` method.
 
 
 .. data:: environb
@@ -561,6 +568,8 @@ process and user.
    of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
    respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
    .. note::
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
@@ -809,6 +818,8 @@ process and user.
    don't update :data:`os.environ`, so it is actually preferable to delete items of
    :data:`os.environ`.
 
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
    .. audit-event:: os.unsetenv key os.unsetenv
 
    .. versionchanged:: 3.9
@@ -923,10 +934,10 @@ as internal buffering of data.
 
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
-   If *offset_src* is None, then *src* is read from the current position;
+   If *offset_src* is ``None``, then *src* is read from the current position;
    respectively for *offset_dst*.
 
-   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
+   In Linux kernel older than 5.3, the files pointed to by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1713,14 +1724,31 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Added support for pipes on Windows.
 
 
-.. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
+.. function:: splice(src, dst, count, offset_src=None, offset_dst=None, flags=0)
 
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+
+   The splicing behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
+
+   * If :const:`SPLICE_F_MOVE` is specified,
+     the kernel is asked to move pages instead of copying,
+     but pages may still be copied if the kernel cannot move the pages from the pipe.
+
+   * If :const:`SPLICE_F_NONBLOCK` is specified,
+     the kernel is asked to not block on I/O.
+     This makes the splice pipe operations nonblocking,
+     but splice may nevertheless block because the spliced file descriptors may block.
+
+   * If :const:`SPLICE_F_MORE` is specified,
+     it hints to the kernel that more data will be coming in a subsequent splice.
+
    At least one of the file descriptors must refer to a pipe. If *offset_src*
-   is None, then *src* is read from the current position; respectively for
+   is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
-   pipe must be ``None``. The files pointed by *src* and *dst* must reside in
+   pipe must be ``None``. The files pointed to by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with
    :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1734,6 +1762,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    pipe, then this means that there was no data to transfer, and it would not
    make sense to block because there are no writers connected to the write end
    of the pipe.
+
+   .. seealso:: The :manpage:`splice(2)` man page.
 
    .. availability:: Linux >= 2.6.17 with glibc >= 2.5
 
@@ -2430,6 +2460,10 @@ features:
    platform-dependent.  On some platforms, they are ignored and you should call
    :func:`chmod` explicitly to set them.
 
+   On Windows, a *mode* of ``0o700`` is specifically handled to apply access
+   control to the new directory such that only the current user and
+   administrators have access. Other values of *mode* are ignored.
+
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
@@ -2443,6 +2477,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Windows now handles a *mode* of ``0o700``.
 
 
 .. function:: makedirs(name, mode=0o777, exist_ok=False)
@@ -4624,6 +4661,10 @@ written in Python, such as a mail server's external command delivery program.
       Use :class:`subprocess.Popen` or :func:`subprocess.run` to
       control options like encodings.
 
+   .. deprecated:: 3.14
+      The function is :term:`soft deprecated` and should no longer be used to
+      write new code. The :mod:`subprocess` module is recommended instead.
+
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
@@ -4850,6 +4891,10 @@ written in Python, such as a mail server's external command delivery program.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. deprecated:: 3.14
+      These functions are :term:`soft deprecated` and should no longer be used
+      to write new code. The :mod:`subprocess` module is recommended instead.
+
 
 .. data:: P_NOWAIT
           P_NOWAITO
@@ -4954,7 +4999,7 @@ written in Python, such as a mail server's external command delivery program.
    shell documentation.
 
    The :mod:`subprocess` module provides more powerful facilities for spawning
-   new processes and retrieving their results; using that module is preferable
+   new processes and retrieving their results; using that module is recommended
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 

@@ -20,13 +20,13 @@ JSON = 'glossary.json'
 
 
 def process_glossary_nodes(app, doctree, fromdocname):
-    if app.builder.format != 'html':
+    if app.builder.format != 'html' or app.builder.embedded:
         return
 
     terms = {}
 
-    for node in doctree.traverse(glossary):
-        for glossary_item in node.traverse(definition_list_item):
+    for node in doctree.findall(glossary):
+        for glossary_item in node.findall(definition_list_item):
             term = glossary_item[0].astext().lower()
             definition = glossary_item[1]
 

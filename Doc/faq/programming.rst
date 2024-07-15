@@ -1741,11 +1741,31 @@ but effective way to define class private variables.  Any identifier of the form
 is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with any leading underscores stripped.
 
-This doesn't guarantee privacy: an outside user can still deliberately access
-the "_classname__spam" attribute, and private values are visible in the object's
-``__dict__``.  Many Python programmers never bother to use private variable
-names at all.
+The identifier can be used unchanged within the class, but to access it outside
+the class, the mangled name must be used:
 
+.. code-block:: python
+
+   class A:
+       def __one(self):
+           return 1
+       def two(self):
+           return 2 * self.__one()
+
+   class B(A):
+       def three(self):
+           return 3 * self._A__one()
+
+   four = 4 * A()._A__one()
+
+In particular, this does not guarantee privacy since an outside user can still
+deliberately access the private attribute; many Python programmers never bother
+to use private variable names at all.
+
+.. seealso::
+
+   The :ref:`private name mangling specifications <private-name-mangling>`
+   for details and special cases.
 
 My class defines __del__ but it is not called when I delete the object.
 -----------------------------------------------------------------------

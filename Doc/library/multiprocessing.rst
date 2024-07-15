@@ -1,5 +1,5 @@
-:mod:`multiprocessing` --- Process-based parallelism
-====================================================
+:mod:`!multiprocessing` --- Process-based parallelism
+=====================================================
 
 .. module:: multiprocessing
    :synopsis: Process-based parallelism.
@@ -254,6 +254,7 @@ processes:
           p.join()
 
    Queues are thread and process safe.
+   Any object put into a :mod:`~multiprocessing` queue will be serialized.
 
 **Pipes**
 
@@ -281,6 +282,8 @@ processes:
    of corruption from processes using different ends of the pipe at the same
    time.
 
+   The :meth:`~Connection.send` method serializes the the object and
+   :meth:`~Connection.recv` re-creates the object.
 
 Synchronization between processes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -745,6 +748,11 @@ If you use :class:`JoinableQueue` then you **must** call
 semaphore used to count the number of unfinished tasks may eventually overflow,
 raising an exception.
 
+One difference from other Python queue implementations, is that :mod:`multiprocessing`
+queues serializes all objects that are put into them using :mod:`pickle`.
+The object return by the get method is a re-created object that does not share memory
+with the original object.
+
 Note that one can also create a shared queue by using a manager object -- see
 :ref:`multiprocessing-managers`.
 
@@ -811,6 +819,8 @@ For an example of the usage of queues for interprocess communication see
    used for receiving messages and ``conn2`` can only be used for sending
    messages.
 
+   The :meth:`~multiprocessing.Connection.send` method serializes the the object using
+   :mod:`pickle` and the :meth:`~multiprocessing.Connection.recv` re-creates the object.
 
 .. class:: Queue([maxsize])
 
@@ -836,6 +846,8 @@ For an example of the usage of queues for interprocess communication see
 
       Return ``True`` if the queue is empty, ``False`` otherwise.  Because of
       multithreading/multiprocessing semantics, this is not reliable.
+
+      May raise an :exc:`OSError` on closed queues. (not guaranteed)
 
    .. method:: full()
 
@@ -939,6 +951,8 @@ For an example of the usage of queues for interprocess communication see
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
+
+      Always raises an :exc:`OSError` if the SimpleQueue is closed.
 
    .. method:: get()
 
@@ -2483,9 +2497,9 @@ multiple connections at the same time.
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authkey* is given and not None, it should be a byte string and will be
+   If *authkey* is given and not ``None``, it should be a byte string and will be
    used as the secret key for an HMAC-based authentication challenge. No
-   authentication is done if *authkey* is None.
+   authentication is done if *authkey* is ``None``.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
@@ -2518,9 +2532,9 @@ multiple connections at the same time.
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
-   If *authkey* is given and not None, it should be a byte string and will be
+   If *authkey* is given and not ``None``, it should be a byte string and will be
    used as the secret key for an HMAC-based authentication challenge. No
-   authentication is done if *authkey* is None.
+   authentication is done if *authkey* is ``None``.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 

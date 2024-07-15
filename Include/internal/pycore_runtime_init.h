@@ -35,10 +35,13 @@ extern PyTypeObject _PyExc_MemoryError;
             .cookie = "xdebugpy", \
             .version = PY_VERSION_HEX, \
             .runtime_state = { \
+                .size = sizeof(_PyRuntimeState), \
                 .finalizing = offsetof(_PyRuntimeState, _finalizing), \
                 .interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
             }, \
             .interpreter_state = { \
+                .size = sizeof(PyInterpreterState), \
+                .id = offsetof(PyInterpreterState, id), \
                 .next = offsetof(PyInterpreterState, next), \
                 .threads_head = offsetof(PyInterpreterState, threads.head), \
                 .gc = offsetof(PyInterpreterState, gc), \
@@ -50,14 +53,18 @@ extern PyTypeObject _PyExc_MemoryError;
                 .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
             }, \
             .thread_state = { \
+                .size = sizeof(PyThreadState), \
                 .prev = offsetof(PyThreadState, prev), \
                 .next = offsetof(PyThreadState, next), \
                 .interp = offsetof(PyThreadState, interp), \
                 .current_frame = offsetof(PyThreadState, current_frame), \
                 .thread_id = offsetof(PyThreadState, thread_id), \
                 .native_thread_id = offsetof(PyThreadState, native_thread_id), \
+                .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \
+                .status = offsetof(PyThreadState, _status), \
             }, \
             .interpreter_frame = { \
+                .size = sizeof(_PyInterpreterFrame), \
                 .previous = offsetof(_PyInterpreterFrame, previous), \
                 .executable = offsetof(_PyInterpreterFrame, f_executable), \
                 .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
@@ -65,8 +72,10 @@ extern PyTypeObject _PyExc_MemoryError;
                 .owner = offsetof(_PyInterpreterFrame, owner), \
             }, \
             .code_object = { \
+                .size = sizeof(PyCodeObject), \
                 .filename = offsetof(PyCodeObject, co_filename), \
                 .name = offsetof(PyCodeObject, co_name), \
+                .qualname = offsetof(PyCodeObject, co_qualname), \
                 .linetable = offsetof(PyCodeObject, co_linetable), \
                 .firstlineno = offsetof(PyCodeObject, co_firstlineno), \
                 .argcount = offsetof(PyCodeObject, co_argcount), \
@@ -75,18 +84,26 @@ extern PyTypeObject _PyExc_MemoryError;
                 .co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
             }, \
             .pyobject = { \
+                .size = sizeof(PyObject), \
                 .ob_type = offsetof(PyObject, ob_type), \
             }, \
             .type_object = { \
+                .size = sizeof(PyTypeObject), \
                 .tp_name = offsetof(PyTypeObject, tp_name), \
             }, \
             .tuple_object = { \
+                .size = sizeof(PyTupleObject), \
                 .ob_item = offsetof(PyTupleObject, ob_item), \
             }, \
             .unicode_object = { \
+                .size = sizeof(PyUnicodeObject), \
                 .state = offsetof(PyUnicodeObject, _base._base.state), \
                 .length = offsetof(PyUnicodeObject, _base._base.length), \
                 .asciiobject_size = sizeof(PyASCIIObject), \
+            }, \
+            .gc = { \
+                .size = sizeof(struct _gc_runtime_state), \
+                .collecting = offsetof(struct _gc_runtime_state, collecting), \
             }, \
         }, \
         .allocators = { \
@@ -114,6 +131,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
+            .pending_mainthread = { \
+                .max = MAXPENDINGCALLS_MAIN, \
+                .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
+            }, \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
         .gilstate = { \
@@ -124,6 +145,10 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .ref_tracer = { \
+            .tracer_func = NULL, \
+            .tracer_data = NULL, \
+        }, \
         .stoptheworld = { \
             .is_global = 1, \
         }, \
@@ -166,6 +191,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+            .pending = { \
+                .max = MAXPENDINGCALLS, \
+                .maxloop = MAXPENDINGCALLSLOOP, \
+            }, \
         }, \
         .gc = { \
             .enabled = 1, \

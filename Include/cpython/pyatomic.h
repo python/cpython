@@ -485,6 +485,9 @@ static inline int
 _Py_atomic_load_int_acquire(const int *obj);
 
 static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value);
+
+static inline void
 _Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value);
 
 static inline uint64_t
@@ -506,6 +509,9 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 // generally do not require explicit use of a fence.
 // See https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence
 static inline void _Py_atomic_fence_seq_cst(void);
+
+// Acquire fence
+static inline void _Py_atomic_fence_acquire(void);
 
 // Release fence
 static inline void _Py_atomic_fence_release(void);

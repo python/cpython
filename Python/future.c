@@ -8,7 +8,7 @@
 static int
 future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 {
-    int i;
+    Py_ssize_t i;
 
     assert(s->kind == ImportFrom_kind);
 
@@ -77,7 +77,7 @@ future_parse(_PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
          *  are another future statement and a doc string.
          */
 
-        if (s->kind == ImportFrom_kind) {
+        if (s->kind == ImportFrom_kind && s->v.ImportFrom.level == 0) {
             identifier modname = s->v.ImportFrom.module;
             if (modname &&
                 _PyUnicode_EqualToASCIIString(modname, "__future__")) {

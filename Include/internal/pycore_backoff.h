@@ -13,6 +13,18 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+
+typedef struct {
+    union {
+        struct {
+            uint16_t backoff : 4;
+            uint16_t value : 12;
+        };
+        uint16_t as_counter;  // For printf("%#x", ...)
+    };
+} _Py_BackoffCounter;
+
+
 /* 16-bit countdown counters using exponential backoff.
 
    These are used by the adaptive specializer to count down until
@@ -44,13 +56,18 @@ make_backoff_counter(uint16_t value, uint16_t backoff)
 {
     assert(backoff <= 15);
     assert(value <= 0xFFF);
-    return (_Py_BackoffCounter){.backoff = backoff, .value = value};
+    _Py_BackoffCounter result;
+    result.value = value;
+    result.backoff = backoff;
+    return result;
 }
 
 static inline _Py_BackoffCounter
 forge_backoff_counter(uint16_t counter)
 {
-    return (_Py_BackoffCounter){.as_counter = counter};
+    _Py_BackoffCounter result;
+    result.as_counter = counter;
+    return result;
 }
 
 static inline _Py_BackoffCounter
@@ -105,14 +122,14 @@ initial_jump_backoff_counter(void)
  * otherwise when a side exit warms up we may construct
  * a new trace before the Tier 1 code has properly re-specialized.
  * Backoff sequence 64, 128, 256, 512, 1024, 2048, 4096. */
-#define COLD_EXIT_INITIAL_VALUE 64
-#define COLD_EXIT_INITIAL_BACKOFF 6
+#define SIDE_EXIT_INITIAL_VALUE 64
+#define SIDE_EXIT_INITIAL_BACKOFF 6
 
 static inline _Py_BackoffCounter
 initial_temperature_backoff_counter(void)
 {
-    return make_backoff_counter(COLD_EXIT_INITIAL_VALUE,
-                                COLD_EXIT_INITIAL_BACKOFF);
+    return make_backoff_counter(SIDE_EXIT_INITIAL_VALUE,
+                                SIDE_EXIT_INITIAL_BACKOFF);
 }
 
 /* Unreachable backoff counter. */

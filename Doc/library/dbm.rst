@@ -1,5 +1,5 @@
-:mod:`dbm` --- Interfaces to Unix "databases"
-=============================================
+:mod:`!dbm` --- Interfaces to Unix "databases"
+==============================================
 
 .. module:: dbm
    :synopsis: Interfaces to various Unix "database" formats.

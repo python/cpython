@@ -395,7 +395,7 @@ Fix bug in line numbers of instructions emitted for :keyword:`except*
 .. section: Core and Builtins
 
 Clarify :exc:`SyntaxWarning` with literal ``is`` comparison by specifying
-which literal is problematic, since comparisons using ``is`` with e.g. None
+which literal is problematic, since comparisons using ``is`` with e.g. ``None``
 and bool literals are idiomatic.
 
 ..
@@ -1446,7 +1446,7 @@ Adapt the :mod:`winsound` extension module to :pep:`687`.
 .. nonce: jurMzv
 .. section: Library
 
-Remove deprecation of enum ``memmber.member`` access.
+Remove deprecation of enum ``member.member`` access.
 
 ..
 
@@ -1828,7 +1828,7 @@ is relative.
 .. nonce: 511Tbh
 .. section: Library
 
-Convert private :meth:`_posixsubprocess.fork_exec` to use Argument Clinic.
+Convert private :meth:`!_posixsubprocess.fork_exec` to use Argument Clinic.
 
 ..
 
