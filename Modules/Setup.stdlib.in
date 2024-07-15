@@ -33,6 +33,7 @@
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CONTEXTVARS_TRUE@_contextvars _contextvarsmodule.c
 @MODULE__CSV_TRUE@_csv _csv.c
+@MODULE__FNMATCH_TRUE@_fnmatch _fnmatch/_fnmatchmodule.c _fnmatch/matcher.c _fnmatch/translate.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
 @MODULE__JSON_TRUE@_json _json.c
 @MODULE__LSPROF_TRUE@_lsprof _lsprof.c rotatingtree.c

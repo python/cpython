@@ -7681,7 +7681,6 @@ AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
 ])
 
 dnl static modules in Modules/Setup.bootstrap
-PY_STDLIB_MOD_SIMPLE([_fnmatch], [-I\$(srcdir)/Modules/_fnmatch], [])
 PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
 PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
@@ -7691,6 +7690,7 @@ PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
 PY_STDLIB_MOD_SIMPLE([_contextvars])
 PY_STDLIB_MOD_SIMPLE([_csv])
+PY_STDLIB_MOD_SIMPLE([_fnmatch], [-I\$(srcdir)/Modules/_fnmatch], [])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
 PY_STDLIB_MOD_SIMPLE([_lsprof])

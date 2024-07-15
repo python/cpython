@@ -1,4 +1,7 @@
 #include "_fnmatchmodule.h"
+
+#include "pycore_runtime.h" // _Py_ID()
+
 #include "clinic/_fnmatchmodule.c.h"
 
 #define COMPILED_CACHE_SIZE     32768
