@@ -58,7 +58,7 @@ from .types import Callback, Completer, KeySpec, CommandName
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Mapping
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -559,7 +559,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup(namespace: dict[str, Any]) -> None:
+def _setup(namespace: Mapping[str, Any]) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice

@@ -23,7 +23,7 @@ else:
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     if not CAN_USE_PYREPL:
-        if not os.environ.get('PYTHON_BASIC_REPL', None) and FAIL_REASON:
+        if not os.getenv('PYTHON_BASIC_REPL') and FAIL_REASON:
             from .trace import trace
             trace(FAIL_REASON)
             print(FAIL_REASON, file=sys.stderr)
