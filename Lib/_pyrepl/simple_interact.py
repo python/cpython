@@ -27,12 +27,9 @@ from __future__ import annotations
 
 import _sitebuiltins
 import linecache
-import builtins
 import sys
 import code
-from types import ModuleType
 
-from .console import InteractiveColoredConsole
 from .readline import _get_reader, multiline_input
 
 TYPE_CHECKING = False
@@ -82,17 +79,12 @@ REPL_COMMANDS = {
 
 
 def run_multiline_interactive_console(
-    namespace: dict[str, Any],
+    console: code.InteractiveConsole,
+    *,
     future_flags: int = 0,
-    console: code.InteractiveConsole | None = None,
 ) -> None:
     from .readline import _setup
-    _setup(namespace)
-
-    if console is None:
-        console = InteractiveColoredConsole(
-            namespace, filename="<stdin>"
-        )
+    _setup(console.locals)
     if future_flags:
         console.compile.compiler.flags |= future_flags
 

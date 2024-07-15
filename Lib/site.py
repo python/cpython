@@ -517,10 +517,7 @@ def register_readline():
         pass
 
     if readline.get_current_history_length() == 0:
-        try:
-            from _pyrepl.main import CAN_USE_PYREPL
-        except ImportError:
-            CAN_USE_PYREPL = False
+        from _pyrepl.main import CAN_USE_PYREPL
         # If no history was loaded, default to .python_history,
         # or PYTHON_HISTORY.
         # The guard is necessary to avoid doubling history size at
