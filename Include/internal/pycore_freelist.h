@@ -124,14 +124,6 @@ struct _Py_object_stack_freelist {
     Py_ssize_t numfree;
 };
 
-
-struct _Py_asyncmodule_futureiter_freelist {
-#ifdef WITH_FREELISTS
-    struct futureiterobject *fi_freelist;
-    Py_ssize_t fi_freelist_len;
-#endif
-};
-
 struct _Py_object_freelists {
     struct _Py_float_freelist floats;
     struct _Py_tuple_freelist tuples;
@@ -143,7 +135,6 @@ struct _Py_object_freelists {
     struct _Py_async_gen_freelist async_gens;
     struct _Py_async_gen_asend_freelist async_gen_asends;
     struct _Py_object_stack_freelist object_stacks;
-    struct _Py_asyncmodule_futureiter_freelist futureiters;
 };
 
 extern void _PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization);
@@ -155,39 +146,6 @@ extern void _PyDict_ClearFreeList(struct _Py_object_freelists *freelists, int is
 extern void _PyAsyncGen_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization);
 extern void _PyContext_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
 extern void _PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
-
-// Keep in sync with _asynciomodule.c !
-typedef struct futureiterobject_dummy {
-    PyObject_HEAD
-    void *future;
-} futureiterobject_dummy;
-
-static inline void
-_PyAsyncModule_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization)
-{
-#ifdef WITH_FREELISTS
-    PyObject *next;
-    PyObject *current;
-
-    next = (PyObject*) freelists->futureiters.fi_freelist;
-    while (next != NULL) {
-        assert(freelists->futureiters.fi_freelist_len > 0);
-        freelists->futureiters.fi_freelist_len--;
-
-        current = next;
-        next = (PyObject*) ((futureiterobject_dummy*) current)->future;
-        PyObject_GC_Del(current);
-    }
-    assert(freelists->futureiters.fi_freelist_len == 0 || freelists->futureiters.fi_freelist_len == -1);
-    freelists->futureiters.fi_freelist = NULL;
-    if (is_finalization) {
-        freelists->futureiters.fi_freelist_len = -1;
-    }
-    else {
-        freelists->futureiters.fi_freelist_len = 0;
-    }
-#endif
-}
 
 #ifdef __cplusplus
 }
