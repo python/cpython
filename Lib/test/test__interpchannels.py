@@ -8,14 +8,13 @@ import unittest
 
 from test.support import import_helper
 
+_channels = import_helper.import_module('_interpchannels')
 from test.support.interpreters import _crossinterp
 from test.test__interpreters import (
     _interpreters,
     _run_output,
     clean_up_interpreters,
 )
-
-_channels = import_helper.import_module('_interpchannels')
 
 
 REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
