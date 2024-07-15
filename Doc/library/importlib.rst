@@ -1584,9 +1584,10 @@ Note that if ``name`` is a submodule (contains a dot),
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
-``SourceFileLoader.load_module()`` has been deprecated -- this recipe should be used instead.
+This recipe should be used with caution: it is an approximation of an import statement where the file path is specified directly, rather than `sys.path` being searched.
+Alternatives should first be considered, such as modifying `sys.path` when a proper module is required, or using `runpy.run_path()` when the global namespace resulting from running a Python file is appropriate.
 
-To import a Python source file directly, use the following recipe::
+To import a Python source file directly from a path, use the following recipe::
 
     import importlib.util
     import sys
@@ -1630,7 +1631,6 @@ The example below shows how to implement lazy imports::
     >>> #but it is not loaded in memory yet.
     >>> lazy_typing.TYPE_CHECKING
     False
-
 
 
 Setting up an importer
