@@ -264,11 +264,6 @@ def reduce(function, sequence, initial=_initial_missing):
 
     return value
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
-
 
 ################################################################################
 ### partial() argument application
@@ -1058,3 +1053,8 @@ in Python 3.14 and will be forbidden in Python 3.16.""",
     return wrapper
 
 reduce = _warn_kwargs(reduce)
+
+try:
+    from _functools import reduce
+except ImportError:
+    pass
