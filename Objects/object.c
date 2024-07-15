@@ -375,13 +375,17 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
 {
     assert(op->ob_ref_local == 0);
 
-    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
         // Fast-path: shared refcount is zero (including flags)
         _Py_Dealloc(op);
         return;
     }
+
+    // gh-121794: This must be before the store to `ob_ref_shared` (gh-119999),
+    // but should outside the fast-path to maintain the invariant that
+    // a zero `ob_tid` implies a merged refcount.
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
 
     // Slow-path: atomically set the flags (low two bits) to _Py_REF_MERGED.
     Py_ssize_t new_shared;
@@ -2739,7 +2743,6 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
 #ifdef Py_GIL_DISABLED
-    _PyObject_ASSERT(op, op->ob_tid == 0);
     op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
     _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->delete_later);
@@ -2772,6 +2775,7 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
         tstate->delete_later = (PyObject*) op->ob_tid;
         op->ob_tid = 0;
+        _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 #else
         tstate->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
 #endif
