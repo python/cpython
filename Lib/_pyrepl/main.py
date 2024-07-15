@@ -1,16 +1,32 @@
+import errno
 import os
 import sys
 
+
 CAN_USE_PYREPL: bool
-if sys.platform != "win32":
-    CAN_USE_PYREPL = True
+FAIL_REASON: str
+try:
+    if sys.platform == "win32" and sys.getwindowsversion().build < 10586:
+        raise RuntimeError("Windows 10 TH2 or later required")
+    if not os.isatty(sys.stdin.fileno()):
+        raise OSError(errno.ENOTTY, "tty required", "stdin")
+    from .simple_interact import check
+    if err := check():
+        raise RuntimeError(err)
+except Exception as e:
+    CAN_USE_PYREPL = False
+    FAIL_REASON = f"warning: can't use pyrepl: {e}"
 else:
-    CAN_USE_PYREPL = sys.getwindowsversion().build >= 10586  # Windows 10 TH2
+    CAN_USE_PYREPL = True
+    FAIL_REASON = ""
 
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
-    global CAN_USE_PYREPL
     if not CAN_USE_PYREPL:
+        if not os.environ.get('PYTHON_BASIC_REPL', None) and FAIL_REASON:
+            from .trace import trace
+            trace(FAIL_REASON)
+            print(FAIL_REASON, file=sys.stderr)
         return sys._baserepl()
 
     if mainmodule:
@@ -20,6 +36,7 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         namespace = __main__.__dict__
         namespace.pop("__pyrepl_interactive_console", None)
 
+    # sys._baserepl() above does this internally, we do it here
     startup_path = os.getenv("PYTHONSTARTUP")
     if pythonstartup and startup_path:
         import tokenize
@@ -34,22 +51,5 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     if not hasattr(sys, "ps2"):
         sys.ps2 = "... "
 
-    run_interactive = None
-    try:
-        import errno
-        if not os.isatty(sys.stdin.fileno()):
-            raise OSError(errno.ENOTTY, "tty required", "stdin")
-        from .simple_interact import check
-        if err := check():
-            raise RuntimeError(err)
-        from .simple_interact import run_multiline_interactive_console
-        run_interactive = run_multiline_interactive_console
-    except Exception as e:
-        from .trace import trace
-        msg = f"warning: can't use pyrepl: {e}"
-        trace(msg)
-        print(msg, file=sys.stderr)
-        CAN_USE_PYREPL = False
-    if run_interactive is None:
-        return sys._baserepl()
-    run_interactive(namespace)
+    from .simple_interact import run_multiline_interactive_console
+    run_multiline_interactive_console(namespace)
