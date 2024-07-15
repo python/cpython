@@ -1,0 +1,2 @@
+Fix bug in free-threaded Python where a resurrected object could lead to
+a negative ref count assertion failure.
