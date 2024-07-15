@@ -319,82 +319,20 @@ get_future_loop(asyncio_state *state, PyObject *fut)
 }
 
 
-static int
+static void
 get_running_loop(asyncio_state *state, PyObject **loop)
 {
-    PyObject *rl;
-
     PyThreadState *ts = _PyThreadState_GET();
-    uint64_t ts_id = PyThreadState_GetID(ts);
-    if (ts->asyncio_cached_running_loop_tsid == ts_id &&
-        ts->asyncio_cached_running_loop != NULL)
-    {
-        // Fast path, check the cache.
-        rl = ts->asyncio_cached_running_loop;
-    }
-    else {
-        PyObject *ts_dict = _PyThreadState_GetDict(ts);  // borrowed
-        if (ts_dict == NULL) {
-            goto not_found;
-        }
-
-        rl = PyDict_GetItemWithError(
-            ts_dict, &_Py_ID(__asyncio_running_event_loop__));  // borrowed
-        if (rl == NULL) {
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-            else {
-                goto not_found;
-            }
-        }
-
-        ts->asyncio_cached_running_loop = rl;
-        ts->asyncio_cached_running_loop_tsid = ts_id;
-    }
-
-
-    if (rl == Py_None) {
-        goto not_found;
-    }
-
-    *loop = Py_NewRef(rl);
-    return 0;
-
-not_found:
-    *loop = NULL;
-    return 0;
-
-error:
-    *loop = NULL;
-    return -1;
+    assert(ts->asyncio_cached_running_loop != NULL);
+    *loop = Py_NewRef(ts->asyncio_cached_running_loop);
 }
 
 
 static int
 set_running_loop(asyncio_state *state, PyObject *loop)
 {
-    PyObject *ts_dict = NULL;
-
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate != NULL) {
-        ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
-    }
-
-    if (ts_dict == NULL) {
-        PyErr_SetString(
-            PyExc_RuntimeError, "thread-local storage is not available");
-        return -1;
-    }
-    if (PyDict_SetItem(
-            ts_dict, &_Py_ID(__asyncio_running_event_loop__), loop) < 0)
-    {
-        return -1;
-    }
-
-
-    tstate->asyncio_cached_running_loop = loop; // borrowed, kept alive by ts_dict
-    tstate->asyncio_cached_running_loop_tsid = PyThreadState_GetID(tstate);
+    Py_XSETREF(tstate->asyncio_cached_running_loop, Py_NewRef(loop));
 
     return 0;
 }
@@ -406,10 +344,9 @@ get_event_loop(asyncio_state *state)
     PyObject *loop;
     PyObject *policy;
 
-    if (get_running_loop(state, &loop)) {
-        return NULL;
-    }
-    if (loop != NULL) {
+    get_running_loop(state, &loop);
+
+    if (loop != NULL && loop != Py_None) {
         return loop;
     }
 
@@ -3361,13 +3298,7 @@ _asyncio__get_running_loop_impl(PyObject *module)
 {
     PyObject *loop;
     asyncio_state *state = get_asyncio_state(module);
-    if (get_running_loop(state, &loop)) {
-        return NULL;
-    }
-    if (loop == NULL) {
-        /* There's no currently running event loop */
-        Py_RETURN_NONE;
-    }
+    get_running_loop(state, &loop);
     return loop;
 }
 
@@ -3428,13 +3359,12 @@ _asyncio_get_running_loop_impl(PyObject *module)
 {
     PyObject *loop;
     asyncio_state *state = get_asyncio_state(module);
-    if (get_running_loop(state, &loop)) {
-        return NULL;
-    }
-    if (loop == NULL) {
+    get_running_loop(state, &loop);
+    if (loop == Py_None) {
         /* There's no currently running event loop */
         PyErr_SetString(
             PyExc_RuntimeError, "no running event loop");
+        return NULL;
     }
     return loop;
 }

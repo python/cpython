@@ -968,7 +968,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         # Confirm the loop has been cleaned up
         with self.assertRaises(RuntimeError):
-            asyncio.get_running_loop()
+            raise Exception(asyncio.get_running_loop())
         self.assertFalse(self.loop.is_running())
 
         # Confirm the loop actually did run, processing events 10 times,

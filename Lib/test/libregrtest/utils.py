@@ -293,12 +293,6 @@ def clear_caches():
     else:
         importlib_metadata.FastPath.__new__.cache_clear()
 
-    try:
-        _asyncio = sys.modules['_asyncio']
-    except KeyError:
-        pass
-    else:
-        _asyncio._clear_freelist()
 
 
 def get_build_info():
