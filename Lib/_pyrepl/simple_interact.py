@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import _sitebuiltins
 import linecache
+import functools
 import sys
 import code
 
@@ -78,6 +79,25 @@ REPL_COMMANDS = {
 }
 
 
+def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
+    # ooh, look at the hack:
+    src = _strip_final_indent(unicodetext)
+    try:
+        code = console.compile(src, "<stdin>", "single")
+    except (OverflowError, SyntaxError, ValueError):
+        lines = src.splitlines(keepends=True)
+        if len(lines) == 1:
+            return False
+
+        last_line = lines[-1]
+        was_indented = last_line.startswith((" ", "\t"))
+        not_empty = last_line.strip() != ""
+        incomplete = not last_line.endswith("\n")
+        return (was_indented or not_empty) and incomplete
+    else:
+        return code is None
+
+
 def run_multiline_interactive_console(
     console: code.InteractiveConsole,
     *,
@@ -88,6 +108,7 @@ def run_multiline_interactive_console(
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
+    more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
     def maybe_run_command(statement: str) -> bool:
@@ -112,16 +133,6 @@ def run_multiline_interactive_console(
             return True
 
         return False
-
-    def more_lines(unicodetext: str) -> bool:
-        # ooh, look at the hack:
-        src = _strip_final_indent(unicodetext)
-        try:
-            code = console.compile(src, "<stdin>", "single")
-        except (OverflowError, SyntaxError, ValueError):
-            return False
-        else:
-            return code is None
 
     while 1:
         try:
