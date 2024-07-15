@@ -3092,7 +3092,6 @@ channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* Queue up the object. */
     int err = 0;
-    // XXX Store unboundop
     if (blocking) {
         err = channel_send_wait(&_globals.channels, cid, obj, unboundop, timeout);
     }
@@ -3149,7 +3148,6 @@ channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* Queue up the object. */
     int err = 0;
-    // XXX Store unboundop
     if (blocking) {
         err = channel_send_wait(
                 &_globals.channels, cid, tempobj, unboundop, timeout);
