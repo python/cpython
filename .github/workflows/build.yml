@@ -179,18 +179,24 @@ jobs:
         run: make check-c-globals
 
   build_windows:
-    name: 'Windows'
+    name: >-
+      Windows
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-windows.yml
-
-  build_windows_free_threading:
-    name: 'Windows (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    if: fromJSON(needs.check_source.outputs.run_tests)
+    strategy:
+      matrix:
+        arch:
+        - Win32
+        - x64
+        - arm64
+        free-threading:
+        - false
+        - true
     uses: ./.github/workflows/reusable-windows.yml
     with:
-      free-threading: true
+      arch: ${{ matrix.arch }}
+      free-threading: ${{ matrix.free-threading }}
 
   build_macos:
     name: 'macOS'
@@ -393,7 +399,7 @@ jobs:
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
         restore-keys: |
-          - hypothesis-database-
+          hypothesis-database-
     - name: "Run tests"
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -556,7 +562,6 @@ jobs:
     - build_ubuntu_ssltests
     - build_wasi
     - build_windows
-    - build_windows_free_threading
     - test_hypothesis
     - build_asan
     - build_tsan
@@ -592,7 +597,6 @@ jobs:
             build_ubuntu_ssltests,
             build_wasi,
             build_windows,
-            build_windows_free_threading,
             build_asan,
             build_tsan,
             build_tsan_free_threading,
