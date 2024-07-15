@@ -265,14 +265,15 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(target), new_target, interpreter='python2.7')
         self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
 
-    def test_read_from_pathobj(self):
-        # Test that we can copy an archive using a pathlib.Path object
+    def test_read_from_pathlike_obj(self):
+        # Test that we can copy an archive using a path-like object
         # for the source.
         source = self.tmpdir / 'source'
         source.mkdir()
         (source / '__main__.py').touch()
-        target1 = self.tmpdir / 'target1.pyz'
-        target2 = self.tmpdir / 'target2.pyz'
+        source = os_helper.FakePath(str(source))
+        target1 = os_helper.FakePath(str(self.tmpdir / 'target1.pyz'))
+        target2 = os_helper.FakePath(str(self.tmpdir / 'target2.pyz'))
         zipapp.create_archive(source, target1, interpreter='python')
         zipapp.create_archive(target1, target2, interpreter='python2.7')
         self.assertEqual(zipapp.get_interpreter(target2), 'python2.7')

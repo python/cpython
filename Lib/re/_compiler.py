@@ -28,6 +28,8 @@ _REPEATING_CODES = {
     POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
 }
 
+_CHARSET_ALL = [(NEGATE, None)]
+
 def _combine_flags(flags, add_flags, del_flags,
                    TYPE_FLAGS=_parser.TYPE_FLAGS):
     if add_flags & TYPE_FLAGS:
@@ -84,25 +86,28 @@ def _compile(code, pattern, flags):
                     code[skip] = _len(code) - skip
         elif op is IN:
             charset, hascased = _optimize_charset(av, iscased, tolower, fixes)
-            if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
-                emit(IN_LOC_IGNORE)
-            elif not hascased:
-                emit(IN)
-            elif not fixes:  # ascii
-                emit(IN_IGNORE)
+            if not charset:
+                emit(FAILURE)
+            elif charset == _CHARSET_ALL:
+                emit(ANY_ALL)
             else:
-                emit(IN_UNI_IGNORE)
-            skip = _len(code); emit(0)
-            _compile_charset(charset, flags, code)
-            code[skip] = _len(code) - skip
+                if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
+                    emit(IN_LOC_IGNORE)
+                elif not hascased:
+                    emit(IN)
+                elif not fixes:  # ascii
+                    emit(IN_IGNORE)
+                else:
+                    emit(IN_UNI_IGNORE)
+                skip = _len(code); emit(0)
+                _compile_charset(charset, flags, code)
+                code[skip] = _len(code) - skip
         elif op is ANY:
             if flags & SRE_FLAG_DOTALL:
                 emit(ANY_ALL)
             else:
                 emit(ANY)
         elif op in REPEATING_CODES:
-            if flags & SRE_FLAG_TEMPLATE:
-                raise error("internal: unsupported template operator %r" % (op,))
             if _simple(av[2]):
                 emit(REPEATING_CODES[op][2])
                 skip = _len(code); emit(0)
@@ -149,8 +154,10 @@ def _compile(code, pattern, flags):
                 emit(0) # look ahead
             else:
                 lo, hi = av[1].getwidth()
+                if lo > MAXCODE:
+                    raise error("looks too much behind")
                 if lo != hi:
-                    raise error("look-behind requires fixed-width pattern")
+                    raise PatternError("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
             _compile(code, av[1], flags)
             emit(SUCCESS)
@@ -209,7 +216,7 @@ def _compile(code, pattern, flags):
             else:
                 code[skipyes] = _len(code) - skipyes + 1
         else:
-            raise error("internal: unsupported operand type %r" % (op,))
+            raise PatternError(f"internal: unsupported operand type {op!r}")
 
 def _compile_charset(charset, flags, code):
     # compile charset subprogram
@@ -235,7 +242,7 @@ def _compile_charset(charset, flags, code):
             else:
                 emit(av)
         else:
-            raise error("internal: unsupported set operator %r" % (op,))
+            raise PatternError(f"internal: unsupported set operator {op!r}")
     emit(FAILURE)
 
 def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
@@ -277,6 +284,10 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                             charmap[i] = 1
                 elif op is NEGATE:
                     out.append((op, av))
+                elif op is CATEGORY and tail and (CATEGORY, CH_NEGATE[av]) in tail:
+                    # Optimize [\s\S] etc.
+                    out = [] if out else _CHARSET_ALL
+                    return out, False
                 else:
                     tail.append((op, av))
             except IndexError:
@@ -519,13 +530,18 @@ def _compile_info(code, pattern, flags):
     # look for a literal prefix
     prefix = []
     prefix_skip = 0
-    charset = [] # not used
+    charset = None # not used
     if not (flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE):
         # look for literal prefix
         prefix, prefix_skip, got_all = _get_literal_prefix(pattern, flags)
         # if no prefix, look for charset prefix
         if not prefix:
             charset = _get_charset_prefix(pattern, flags)
+            if charset:
+                charset, hascased = _optimize_charset(charset)
+                assert not hascased
+                if charset == _CHARSET_ALL:
+                    charset = None
 ##     if prefix:
 ##         print("*** PREFIX", prefix, prefix_skip)
 ##     if charset:
@@ -549,7 +565,7 @@ def _compile_info(code, pattern, flags):
     else:
         emit(MAXCODE)
         prefix = prefix[:MAXCODE]
-    emit(min(hi, MAXCODE))
+    emit(hi)
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length
@@ -560,8 +576,6 @@ def _compile_info(code, pattern, flags):
         # generate overlap table
         code.extend(_generate_overlap_table(prefix))
     elif charset:
-        charset, hascased = _optimize_charset(charset)
-        assert not hascased
         _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
 

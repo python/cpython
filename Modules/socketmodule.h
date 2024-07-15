@@ -98,6 +98,8 @@ typedef int socklen_t;
 #  include <asm/types.h>
 # endif
 # include <linux/netlink.h>
+#elif defined(HAVE_NETLINK_NETLINK_H)
+# include <netlink/netlink.h>
 #else
 #  undef AF_NETLINK
 #endif
@@ -320,7 +322,7 @@ typedef struct {
     PyObject *(*errorhandler)(void); /* Error handler; checks
                                         errno, returns NULL and
                                         sets a Python exception */
-    _PyTime_t sock_timeout;     /* Operation timeout in seconds;
+    PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
     struct _socket_state *state;
 } PySocketSockObject;

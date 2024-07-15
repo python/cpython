@@ -461,5 +461,25 @@ class TestTPen(unittest.TestCase):
             self.assertTrue(tpen.isdown())
 
 
+class TestModuleLevel(unittest.TestCase):
+    def test_all_signatures(self):
+        import inspect
+
+        known_signatures = {
+            'teleport':
+                '(x=None, y=None, *, fill_gap: bool = False) -> None',
+            'undo': '()',
+            'goto': '(x, y=None)',
+            'bgcolor': '(*args)',
+            'pen': '(pen=None, **pendict)',
+        }
+
+        for name in known_signatures:
+            with self.subTest(name=name):
+                obj = getattr(turtle, name)
+                sig = inspect.signature(obj)
+                self.assertEqual(str(sig), known_signatures[name])
+
+
 if __name__ == '__main__':
     unittest.main()

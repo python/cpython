@@ -6,6 +6,7 @@ import doctest
 import unittest
 import weakref
 import inspect
+import types
 
 from test import support
 
@@ -89,9 +90,12 @@ class FinalizationTest(unittest.TestCase):
         self.assertEqual(gc.garbage, old_garbage)
 
     def test_lambda_generator(self):
-        # Issue #23192: Test that a lambda returning a generator behaves
+        # bpo-23192, gh-119897: Test that a lambda returning a generator behaves
         # like the equivalent function
         f = lambda: (yield 1)
+        self.assertIsInstance(f(), types.GeneratorType)
+        self.assertEqual(next(f()), 1)
+
         def g(): return (yield 1)
 
         # test 'yield from'
@@ -532,6 +536,26 @@ class GeneratorCloseTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             gen.close()
 
+    def test_close_releases_frame_locals(self):
+        # See gh-118272
+
+        class Foo:
+            pass
+
+        f = Foo()
+        f_wr = weakref.ref(f)
+
+        def genfn():
+            a = f
+            yield
+
+        g = genfn()
+        next(g)
+        del f
+        g.close()
+        support.gc_collect()
+        self.assertIsNone(f_wr())
+
 
 class GeneratorThrowTest(unittest.TestCase):
 
@@ -887,7 +911,7 @@ Specification: Generators and Exception Propagation
       File "<stdin>", line 1, in ?
       File "<stdin>", line 2, in g
       File "<stdin>", line 2, in f
-    ZeroDivisionError: integer division or modulo by zero
+    ZeroDivisionError: division by zero
     >>> next(k)  # and the generator cannot be resumed
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
@@ -2223,6 +2247,11 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
+>>> yield from [1,2]
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield from' outside function
+
 >>> def f(): x = yield = y
 Traceback (most recent call last):
   ...
@@ -2258,6 +2287,7 @@ caught ValueError ()
 caught ValueError (xyz)
 
 >>> import warnings
+>>> old_filters = warnings.filters.copy()
 >>> warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Filter DeprecationWarning: regarding the (type, val, tb) signature of throw().
@@ -2331,8 +2361,7 @@ Traceback (most recent call last):
   ...
 ValueError: 7
 
->>> warnings.filters.pop(0)
-('ignore', None, <class 'DeprecationWarning'>, None, 0)
+>>> warnings.filters[:] = old_filters
 
 # Re-enable DeprecationWarning: the (type, val, tb) exception representation is deprecated,
 #                               and may be removed in a future version of Python.

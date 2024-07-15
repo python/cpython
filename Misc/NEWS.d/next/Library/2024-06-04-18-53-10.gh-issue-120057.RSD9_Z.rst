@@ -1,0 +1,4 @@
+Added the :data:`os.environ.refresh() <os.environ>` method to update
+:data:`os.environ` with changes to the environment made by :func:`os.putenv`,
+by :func:`os.unsetenv`, or made outside Python in the same process.
+Patch by Victor Stinner.

@@ -454,7 +454,7 @@ There are two factors that produce this result:
    (the list), and both ``x`` and ``y`` refer to it.
 2) Lists are :term:`mutable`, which means that you can change their content.
 
-After the call to :meth:`~list.append`, the content of the mutable object has
+After the call to :meth:`!append`, the content of the mutable object has
 changed from ``[]`` to ``[10]``.  Since both the variables refer to the same
 object, using either name accesses the modified value ``[10]``.
 
@@ -924,12 +924,12 @@ module::
    'Hello, there!'
 
    >>> import array
-   >>> a = array.array('u', s)
+   >>> a = array.array('w', s)
    >>> print(a)
-   array('u', 'Hello, world')
+   array('w', 'Hello, world')
    >>> a[0] = 'y'
    >>> print(a)
-   array('u', 'yello, world')
+   array('w', 'yello, world')
    >>> a.tounicode()
    'yello, world'
 
@@ -1397,7 +1397,7 @@ To see why this happens, you need to know that (a) if an object implements an
 :meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
 assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`~list.extend` on the list
+and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`!extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
 "shorthand" for :meth:`!list.extend`::
 
@@ -1741,11 +1741,31 @@ but effective way to define class private variables.  Any identifier of the form
 is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with any leading underscores stripped.
 
-This doesn't guarantee privacy: an outside user can still deliberately access
-the "_classname__spam" attribute, and private values are visible in the object's
-``__dict__``.  Many Python programmers never bother to use private variable
-names at all.
+The identifier can be used unchanged within the class, but to access it outside
+the class, the mangled name must be used:
 
+.. code-block:: python
+
+   class A:
+       def __one(self):
+           return 1
+       def two(self):
+           return 2 * self.__one()
+
+   class B(A):
+       def three(self):
+           return 3 * self._A__one()
+
+   four = 4 * A()._A__one()
+
+In particular, this does not guarantee privacy since an outside user can still
+deliberately access the private attribute; many Python programmers never bother
+to use private variable names at all.
+
+.. seealso::
+
+   The :ref:`private name mangling specifications <private-name-mangling>`
+   for details and special cases.
 
 My class defines __del__ but it is not called when I delete the object.
 -----------------------------------------------------------------------
@@ -1903,7 +1923,7 @@ identity tests.  This prevents the code from being confused by objects such as
 ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
-:meth:`collections.abc.Sequence.__contains__`::
+:meth:`!collections.abc.Sequence.__contains__`::
 
     def __contains__(self, value):
         for v in self:

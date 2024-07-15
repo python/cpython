@@ -1,3 +1,0 @@
-Remove the :meth:`!turtle.RawTurtle.settiltangle` method, deprecated in docs
-since Python 3.1 and with a deprecation warning since Python 3.11. Patch by
-Hugo van Kemenade.

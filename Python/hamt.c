@@ -1,9 +1,10 @@
 #include "Python.h"
-
-#include "pycore_bitutils.h"      // _Py_popcount32
+#include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_hamt.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_Format()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+
 #include <stddef.h>               // offsetof()
 
 /*
@@ -514,7 +515,7 @@ hamt_node_bitmap_new(Py_ssize_t size)
         /* Since bitmap nodes are immutable, we can cache the instance
            for size=0 and reuse it whenever we need an empty bitmap node.
         */
-        return (PyHamtNode *)Py_NewRef(&_Py_SINGLETON(hamt_bitmap_node_empty));
+        return (PyHamtNode *)&_Py_SINGLETON(hamt_bitmap_node_empty);
     }
 
     assert(size >= 0);
@@ -2425,7 +2426,7 @@ hamt_alloc(void)
 }
 
 #define _empty_hamt \
-    (&_Py_INTERP_SINGLETON(_PyInterpreterState_Get(), hamt_empty))
+    (&_Py_INTERP_SINGLETON(_PyInterpreterState_GET(), hamt_empty))
 
 PyHamtObject *
 _PyHamt_New(void)

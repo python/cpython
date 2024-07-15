@@ -1,0 +1,1 @@
+Slightly speed up :func:`os.walk` by simplifying exception handling.

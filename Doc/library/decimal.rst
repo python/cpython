@@ -1,5 +1,5 @@
-:mod:`decimal` --- Decimal fixed point and floating point arithmetic
-====================================================================
+:mod:`!decimal` --- Decimal fixed point and floating point arithmetic
+=====================================================================
 
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic  Specification.
@@ -743,12 +743,23 @@ Decimal objects
 
    .. method:: normalize(context=None)
 
-      Normalize the number by stripping the rightmost trailing zeros and
-      converting any result equal to ``Decimal('0')`` to
-      ``Decimal('0e0')``. Used for producing canonical values for attributes
-      of an equivalence class. For example, ``Decimal('32.100')`` and
-      ``Decimal('0.321000e+2')`` both normalize to the equivalent value
-      ``Decimal('32.1')``.
+      Used for producing canonical values of an equivalence
+      class within either the current context or the specified context.
+
+      This has the same semantics as the unary plus operation, except that if
+      the final result is finite it is reduced to its simplest form, with all
+      trailing zeros removed and its sign preserved. That is, while the
+      coefficient is non-zero and a multiple of ten the coefficient is divided
+      by ten and the exponent is incremented by 1. Otherwise (the coefficient is
+      zero) the exponent is set to 0. In all cases the sign is unchanged.
+
+      For example, ``Decimal('32.100')`` and ``Decimal('0.321000e+2')`` both
+      normalize to the equivalent value ``Decimal('32.1')``.
+
+      Note that rounding is applied *before* reducing to simplest form.
+
+      In the latest versions of the specification, this operation is also known
+      as ``reduce``.
 
    .. method:: number_class(context=None)
 
@@ -885,6 +896,48 @@ Decimal objects
       Round to the nearest integer without signaling :const:`Inexact` or
       :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the
       rounding method in either the supplied *context* or the current context.
+
+   Decimal numbers can be rounded using the :func:`.round` function:
+
+   .. describe:: round(number)
+   .. describe:: round(number, ndigits)
+
+      If *ndigits* is not given or ``None``,
+      returns the nearest :class:`int` to *number*,
+      rounding ties to even, and ignoring the rounding mode of the
+      :class:`Decimal` context.  Raises :exc:`OverflowError` if *number* is an
+      infinity or :exc:`ValueError` if it is a (quiet or signaling) NaN.
+
+      If *ndigits* is an :class:`int`, the context's rounding mode is respected
+      and a :class:`Decimal` representing *number* rounded to the nearest
+      multiple of ``Decimal('1E-ndigits')`` is returned; in this case,
+      ``round(number, ndigits)`` is equivalent to
+      ``self.quantize(Decimal('1E-ndigits'))``.  Returns ``Decimal('NaN')`` if
+      *number* is a quiet NaN.  Raises :class:`InvalidOperation` if *number*
+      is an infinity, a signaling NaN, or if the length of the coefficient after
+      the quantize operation would be greater than the current context's
+      precision.  In other words, for the non-corner cases:
+
+      * if *ndigits* is positive, return *number* rounded to *ndigits* decimal
+        places;
+      * if *ndigits* is zero, return *number* rounded to the nearest integer;
+      * if *ndigits* is negative, return *number* rounded to the nearest
+        multiple of ``10**abs(ndigits)``.
+
+      For example::
+
+          >>> from decimal import Decimal, getcontext, ROUND_DOWN
+          >>> getcontext().rounding = ROUND_DOWN
+          >>> round(Decimal('3.75'))     # context rounding ignored
+          4
+          >>> round(Decimal('3.5'))      # round-ties-to-even
+          4
+          >>> round(Decimal('3.75'), 0)  # uses the context rounding
+          Decimal('3')
+          >>> round(Decimal('3.75'), 1)
+          Decimal('3.7')
+          >>> round(Decimal('3.75'), -1)
+          Decimal('0E+1')
 
 
 .. _logical_operands_label:
@@ -1385,10 +1438,10 @@ In addition to the three supplied contexts, new contexts can be created with the
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
 
-         - all three arguments must be integral
-         - ``y`` must be nonnegative
-         - at least one of ``x`` or ``y`` must be nonzero
-         - ``modulo`` must be nonzero and have at most 'precision' digits
+      - all three arguments must be integral
+      - ``y`` must be nonnegative
+      - at least one of ``x`` or ``y`` must be nonzero
+      - ``modulo`` must be nonzero and have at most 'precision' digits
 
       The value resulting from ``Context.power(x, y, modulo)`` is
       equal to the value that would be obtained by computing ``(x**y)
@@ -1497,7 +1550,7 @@ are also included in the pure Python version for compatibility.
 
    The value is ``True``.  Deprecated, because Python now always has threads.
 
-.. deprecated:: 3.9
+   .. deprecated:: 3.9
 
 .. data:: HAVE_CONTEXTVAR
 
@@ -1506,7 +1559,7 @@ are also included in the pure Python version for compatibility.
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 
-.. versionadded:: 3.9 backported to 3.7 and 3.8.
+   .. versionadded:: 3.8.3
 
 
 Rounding modes
@@ -2077,6 +2130,26 @@ representative:
    >>> values = map(Decimal, '200 200.000 2E2 .02E+4'.split())
    >>> [v.normalize() for v in values]
    [Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2')]
+
+Q. When does rounding occur in a computation?
+
+A. It occurs *after* the computation.  The philosophy of the decimal
+specification is that numbers are considered exact and are created
+independent of the current context.  They can even have greater
+precision than current context.  Computations process with those
+exact inputs and then rounding (or other context operations) is
+applied to the *result* of the computation::
+
+   >>> getcontext().prec = 5
+   >>> pi = Decimal('3.1415926535')   # More than 5 digits
+   >>> pi                             # All digits are retained
+   Decimal('3.1415926535')
+   >>> pi + 0                         # Rounded after an addition
+   Decimal('3.1416')
+   >>> pi - Decimal('0.00005')        # Subtract unrounded numbers, then round
+   Decimal('3.1415')
+   >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
+   Decimal('3.1416')
 
 Q. Some decimal values always print with exponential notation.  Is there a way
 to get a non-exponential representation?

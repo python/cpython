@@ -10,9 +10,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-PyAPI_DATA(PyTypeObject) _PyNamespace_Type;
+extern PyTypeObject _PyNamespace_Type;
 
-PyAPI_FUNC(PyObject *) _PyNamespace_New(PyObject *kwds);
+// Export for '_testmultiphase' shared extension
+PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject *kwds);
 
 #ifdef __cplusplus
 }

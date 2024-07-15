@@ -1,0 +1,2 @@
+Remove deprecated names from ``importlib.abc`` as found in
+``importlib.resources.abc``.

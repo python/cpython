@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(subprocess_fork_exec__doc__,
 "fork_exec($module, args, executable_list, close_fds, pass_fds, cwd,\n"
@@ -98,35 +94,35 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     py_fds_to_keep = args[3];
     cwd_obj = args[4];
     env_list = args[5];
-    p2cread = _PyLong_AsInt(args[6]);
+    p2cread = PyLong_AsInt(args[6]);
     if (p2cread == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    p2cwrite = _PyLong_AsInt(args[7]);
+    p2cwrite = PyLong_AsInt(args[7]);
     if (p2cwrite == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    c2pread = _PyLong_AsInt(args[8]);
+    c2pread = PyLong_AsInt(args[8]);
     if (c2pread == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    c2pwrite = _PyLong_AsInt(args[9]);
+    c2pwrite = PyLong_AsInt(args[9]);
     if (c2pwrite == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    errread = _PyLong_AsInt(args[10]);
+    errread = PyLong_AsInt(args[10]);
     if (errread == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    errwrite = _PyLong_AsInt(args[11]);
+    errwrite = PyLong_AsInt(args[11]);
     if (errwrite == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    errpipe_read = _PyLong_AsInt(args[12]);
+    errpipe_read = PyLong_AsInt(args[12]);
     if (errpipe_read == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    errpipe_write = _PyLong_AsInt(args[13]);
+    errpipe_write = PyLong_AsInt(args[13]);
     if (errpipe_write == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -145,7 +141,7 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     gid_object = args[17];
     extra_groups_packed = args[18];
     uid_object = args[19];
-    child_umask = _PyLong_AsInt(args[20]);
+    child_umask = PyLong_AsInt(args[20]);
     if (child_umask == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -159,4 +155,4 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=46d71e86845c93d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48555f5965a871be input=a9049054013a1b77]*/

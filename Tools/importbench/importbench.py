@@ -15,6 +15,7 @@ import py_compile
 import sys
 import tabnanny
 import timeit
+import types
 
 
 def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
@@ -40,7 +41,7 @@ def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
 def from_cache(seconds, repeat):
     """sys.modules"""
     name = '<benchmark import>'
-    module = imp.new_module(name)
+    module = types.ModuleType(name)
     module.__file__ = '<test>'
     module.__package__ = ''
     with util.uncache(name):
@@ -164,8 +165,8 @@ decimal_using_bytecode = _using_bytecode(decimal)
 
 def main(import_, options):
     if options.source_file:
-        with options.source_file:
-            prev_results = json.load(options.source_file)
+        with open(options.source_file, 'r', encoding='utf-8') as source_file:
+            prev_results = json.load(source_file)
     else:
         prev_results = {}
     __builtins__.__import__ = import_
@@ -217,8 +218,8 @@ def main(import_, options):
                                               new_result/old_result)
             print(benchmark_name, ':', result)
     if options.dest_file:
-        with options.dest_file:
-            json.dump(new_results, options.dest_file, indent=2)
+        with open(options.dest_file, 'w', encoding='utf-8') as dest_file:
+            json.dump(new_results, dest_file, indent=2)
 
 
 if __name__ == '__main__':
@@ -228,11 +229,9 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--builtin', dest='builtin', action='store_true',
                         default=False, help="use the built-in __import__")
     parser.add_argument('-r', '--read', dest='source_file',
-                        type=argparse.FileType('r'),
                         help='file to read benchmark data from to compare '
                              'against')
     parser.add_argument('-w', '--write', dest='dest_file',
-                        type=argparse.FileType('w'),
                         help='file to write benchmark data to')
     parser.add_argument('--benchmark', dest='benchmark',
                         help='specific benchmark to run')

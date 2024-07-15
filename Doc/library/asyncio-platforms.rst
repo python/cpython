@@ -37,7 +37,7 @@ All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
   :meth:`loop.create_unix_server` are not supported.
-  The :data:`socket.AF_UNIX` socket family is specific to Unix.
+  The :const:`socket.AF_UNIX` socket family is specific to Unix.
 
 * :meth:`loop.add_signal_handler` and
   :meth:`loop.remove_signal_handler` are not supported.
@@ -76,11 +76,6 @@ Subprocess Support on Windows
 
 On Windows, the default event loop :class:`ProactorEventLoop` supports
 subprocesses, whereas :class:`SelectorEventLoop` does not.
-
-The :meth:`policy.set_child_watcher()
-<AbstractEventLoopPolicy.set_child_watcher>` function is also
-not supported, as :class:`ProactorEventLoop` has a different mechanism
-to watch child processes.
 
 
 macOS

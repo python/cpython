@@ -78,14 +78,6 @@ PyAPI_FUNC(void) PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator);
 PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 
 
-/* Code built with Py_BUILD_CORE must include pycore_gc.h instead which
-   defines a different _PyGC_FINALIZED() macro. */
-#ifndef Py_BUILD_CORE
-   // Kept for backward compatibility with Python 3.8
-#  define _PyGC_FINALIZED(o) PyObject_GC_IsFinalized(o)
-#endif
-
-
 // Test if a type supports weak references
 PyAPI_FUNC(int) PyType_SUPPORTS_WEAKREFS(PyTypeObject *type);
 
@@ -93,3 +85,20 @@ PyAPI_FUNC(PyObject **) PyObject_GET_WEAKREFS_LISTPTR(PyObject *op);
 
 PyAPI_FUNC(PyObject *) PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *,
                                                              size_t);
+
+
+/* Visit all live GC-capable objects, similar to gc.get_objects(None). The
+ * supplied callback is called on every such object with the void* arg set
+ * to the supplied arg. Returning 0 from the callback ends iteration, returning
+ * 1 allows iteration to continue. Returning any other value may result in
+ * undefined behaviour.
+ *
+ * If new objects are (de)allocated by the callback it is undefined if they
+ * will be visited.
+
+ * Garbage collection is disabled during operation. Explicitly running a
+ * collection in the callback may lead to undefined behaviour e.g. visiting the
+ * same objects multiple times or not at all.
+ */
+typedef int (*gcvisitobjects_t)(PyObject*, void*);
+PyAPI_FUNC(void) PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void* arg);

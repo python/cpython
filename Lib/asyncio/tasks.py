@@ -15,8 +15,8 @@ import contextvars
 import functools
 import inspect
 import itertools
+import math
 import types
-import warnings
 import weakref
 from types import GenericAlias
 
@@ -25,6 +25,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import futures
+from . import queues
 from . import timeouts
 
 # Helper to generate new task names
@@ -67,34 +68,31 @@ def all_tasks(loop=None):
             if futures._get_loop(t) is loop and not t.done()}
 
 
-def _set_task_name(task, name):
-    if name is not None:
-        try:
-            set_name = task.set_name
-        except AttributeError:
-            warnings.warn("Task.set_name() was added in Python 3.8, "
-                      "the method support will be mandatory for third-party "
-                      "task implementations since 3.13.",
-                      DeprecationWarning, stacklevel=3)
-        else:
-            set_name(name)
-
-
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
     """A coroutine wrapped in a Future."""
 
     # An important invariant maintained while a Task not done:
+    # _fut_waiter is either None or a Future.  The Future
+    # can be either done() or not done().
+    # The task can be in any of 3 states:
     #
-    # - Either _fut_waiter is None, and _step() is scheduled;
-    # - or _fut_waiter is some Future, and _step() is *not* scheduled.
+    # - 1: _fut_waiter is not None and not _fut_waiter.done():
+    #      __step() is *not* scheduled and the Task is waiting for _fut_waiter.
+    # - 2: (_fut_waiter is None or _fut_waiter.done()) and __step() is scheduled:
+    #       the Task is waiting for __step() to be executed.
+    # - 3:  _fut_waiter is None and __step() is *not* scheduled:
+    #       the Task is currently executing (in __step()).
     #
-    # The only transition from the latter to the former is through
-    # _wakeup().  When _fut_waiter is not None, one of its callbacks
-    # must be _wakeup().
+    # * In state 1, one of the callbacks of __fut_waiter must be __wakeup().
+    # * The transition from 1 to 2 happens when _fut_waiter becomes done(),
+    #   as it schedules __wakeup() to be called (which calls __step() so
+    #   we way that __step() is scheduled).
+    # * It transitions from 2 to 3 when __step() is executed, and it clears
+    #   _fut_waiter to None.
 
-    # If False, don't log a message if the task is destroyed whereas its
+    # If False, don't log a message if the task is destroyed while its
     # status is still pending
     _log_destroy_pending = True
 
@@ -257,6 +255,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         """
         if self._num_cancels_requested > 0:
             self._num_cancels_requested -= 1
+            if self._num_cancels_requested == 0:
+                self._must_cancel = False
         return self._num_cancels_requested
 
     def __eager_start(self):
@@ -281,7 +281,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def __step(self, exc=None):
         if self.done():
             raise exceptions.InvalidStateError(
-                f'_step(): already done: {self!r}, {exc!r}')
+                f'__step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()
@@ -379,7 +379,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             # Don't pass the value of `future.result()` explicitly,
             # as `Future.__iter__` and `Future.__await__` don't need it.
-            # If we call `_step(value, None)` instead of `_step()`,
+            # If we call `__step(value, None)` instead of `__step()`,
             # Python eval loop would use `.send(value)` method call,
             # instead of `__next__()`, which is slower for futures
             # that return non-generator iterators from their `__iter__`.
@@ -407,11 +407,10 @@ def create_task(coro, *, name=None, context=None):
     loop = events.get_running_loop()
     if context is None:
         # Use legacy API if context is not needed
-        task = loop.create_task(coro)
+        task = loop.create_task(coro, name=name)
     else:
-        task = loop.create_task(coro, context=context)
+        task = loop.create_task(coro, name=name, context=context)
 
-    _set_task_name(task, name)
     return task
 
 
@@ -426,8 +425,6 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures or Tasks given by fs to complete.
 
     The fs iterable must not be empty.
-
-    Coroutines will be wrapped in Tasks.
 
     Returns two sets of Future: (done, pending).
 
@@ -470,7 +467,7 @@ async def wait_for(fut, timeout):
 
     If the wait is cancelled, the task is also cancelled.
 
-    If the task supresses the cancellation and returns a value instead,
+    If the task suppresses the cancellation and returns a value instead,
     that value is returned.
 
     This function is a coroutine.
@@ -570,62 +567,125 @@ async def _cancel_and_wait(fut):
         fut.remove_done_callback(cb)
 
 
-# This is *not* a @coroutine!  It is just an iterator (yielding Futures).
-def as_completed(fs, *, timeout=None):
-    """Return an iterator whose values are coroutines.
+class _AsCompletedIterator:
+    """Iterator of awaitables representing tasks of asyncio.as_completed.
 
-    When waiting for the yielded coroutines you'll get the results (or
-    exceptions!) of the original Futures (or coroutines), in the order
-    in which and as soon as they complete.
-
-    This differs from PEP 3148; the proper way to use this is:
-
-        for f in as_completed(fs):
-            result = await f  # The 'await' may raise.
-            # Use result.
-
-    If a timeout is specified, the 'await' will raise
-    TimeoutError when the timeout occurs before all Futures are done.
-
-    Note: The futures 'f' are not necessarily members of fs.
+    As an asynchronous iterator, iteration yields futures as they finish. As a
+    plain iterator, new coroutines are yielded that will return or raise the
+    result of the next underlying future to complete.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError(f"expect an iterable of futures, not {type(fs).__name__}")
+    def __init__(self, aws, timeout):
+        self._done = queues.Queue()
+        self._timeout_handle = None
 
-    from .queues import Queue  # Import here to avoid circular import problem.
-    done = Queue()
-
-    loop = events.get_event_loop()
-    todo = {ensure_future(f, loop=loop) for f in set(fs)}
-    timeout_handle = None
-
-    def _on_timeout():
+        loop = events.get_event_loop()
+        todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
         for f in todo:
-            f.remove_done_callback(_on_completion)
-            done.put_nowait(None)  # Queue a dummy value for _wait_for_one().
-        todo.clear()  # Can't do todo.remove(f) in the loop.
+            f.add_done_callback(self._handle_completion)
+        if todo and timeout is not None:
+            self._timeout_handle = (
+                loop.call_later(timeout, self._handle_timeout)
+            )
+        self._todo = todo
+        self._todo_left = len(todo)
 
-    def _on_completion(f):
-        if not todo:
-            return  # _on_timeout() was here first.
-        todo.remove(f)
-        done.put_nowait(f)
-        if not todo and timeout_handle is not None:
-            timeout_handle.cancel()
+    def __aiter__(self):
+        return self
 
-    async def _wait_for_one():
-        f = await done.get()
+    def __iter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self._todo_left:
+            raise StopAsyncIteration
+        assert self._todo_left > 0
+        self._todo_left -= 1
+        return await self._wait_for_one()
+
+    def __next__(self):
+        if not self._todo_left:
+            raise StopIteration
+        assert self._todo_left > 0
+        self._todo_left -= 1
+        return self._wait_for_one(resolve=True)
+
+    def _handle_timeout(self):
+        for f in self._todo:
+            f.remove_done_callback(self._handle_completion)
+            self._done.put_nowait(None)  # Sentinel for _wait_for_one().
+        self._todo.clear()  # Can't do todo.remove(f) in the loop.
+
+    def _handle_completion(self, f):
+        if not self._todo:
+            return  # _handle_timeout() was here first.
+        self._todo.remove(f)
+        self._done.put_nowait(f)
+        if not self._todo and self._timeout_handle is not None:
+            self._timeout_handle.cancel()
+
+    async def _wait_for_one(self, resolve=False):
+        # Wait for the next future to be done and return it unless resolve is
+        # set, in which case return either the result of the future or raise
+        # an exception.
+        f = await self._done.get()
         if f is None:
-            # Dummy value from _on_timeout().
+            # Dummy value from _handle_timeout().
             raise exceptions.TimeoutError
-        return f.result()  # May raise f.exception().
+        return f.result() if resolve else f
 
-    for f in todo:
-        f.add_done_callback(_on_completion)
-    if todo and timeout is not None:
-        timeout_handle = loop.call_later(timeout, _on_timeout)
-    for _ in range(len(todo)):
-        yield _wait_for_one()
+
+def as_completed(fs, *, timeout=None):
+    """Create an iterator of awaitables or their results in completion order.
+
+    Run the supplied awaitables concurrently. The returned object can be
+    iterated to obtain the results of the awaitables as they finish.
+
+    The object returned can be iterated as an asynchronous iterator or a plain
+    iterator. When asynchronous iteration is used, the originally-supplied
+    awaitables are yielded if they are tasks or futures. This makes it easy to
+    correlate previously-scheduled tasks with their results:
+
+        ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+        ipv6_connect = create_task(open_connection("::1", 80))
+        tasks = [ipv4_connect, ipv6_connect]
+
+        async for earliest_connect in as_completed(tasks):
+            # earliest_connect is done. The result can be obtained by
+            # awaiting it or calling earliest_connect.result()
+            reader, writer = await earliest_connect
+
+            if earliest_connect is ipv6_connect:
+                print("IPv6 connection established.")
+            else:
+                print("IPv4 connection established.")
+
+    During asynchronous iteration, implicitly-created tasks will be yielded for
+    supplied awaitables that aren't tasks or futures.
+
+    When used as a plain iterator, each iteration yields a new coroutine that
+    returns the result or raises the exception of the next completed awaitable.
+    This pattern is compatible with Python versions older than 3.13:
+
+        ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+        ipv6_connect = create_task(open_connection("::1", 80))
+        tasks = [ipv4_connect, ipv6_connect]
+
+        for next_connect in as_completed(tasks):
+            # next_connect is not one of the original task objects. It must be
+            # awaited to obtain the result value or raise the exception of the
+            # awaitable that finishes next.
+            reader, writer = await next_connect
+
+    A TimeoutError is raised if the timeout occurs before all awaitables are
+    done. This is raised by the async for loop during asynchronous iteration or
+    by the coroutines yielded during plain iteration.
+    """
+    if inspect.isawaitable(fs):
+        raise TypeError(
+            f"expects an iterable of awaitables, not {type(fs).__name__}"
+        )
+
+    return _AsCompletedIterator(fs, timeout)
 
 
 @types.coroutine
@@ -645,6 +705,9 @@ async def sleep(delay, result=None):
     if delay <= 0:
         await __sleep0()
         return result
+
+    if math.isnan(delay):
+        raise ValueError("Invalid delay: NaN (not a number)")
 
     loop = events.get_running_loop()
     future = loop.create_future()
@@ -944,21 +1007,21 @@ def run_coroutine_threadsafe(coro, loop):
 def create_eager_task_factory(custom_task_constructor):
     """Create a function suitable for use as a task factory on an event-loop.
 
-	    Example usage:
+        Example usage:
 
-	        loop.set_task_factory(
-	            asyncio.create_eager_task_factory(my_task_constructor))
+            loop.set_task_factory(
+                asyncio.create_eager_task_factory(my_task_constructor))
 
-	    Now, tasks created will be started immediately (rather than being first
-	    scheduled to an event loop). The constructor argument can be any callable
-	    that returns a Task-compatible object and has a signature compatible
-	    with `Task.__init__`; it must have the `eager_start` keyword argument.
+        Now, tasks created will be started immediately (rather than being first
+        scheduled to an event loop). The constructor argument can be any callable
+        that returns a Task-compatible object and has a signature compatible
+        with `Task.__init__`; it must have the `eager_start` keyword argument.
 
-	    Most applications will use `Task` for `custom_task_constructor` and in
+        Most applications will use `Task` for `custom_task_constructor` and in
         this case there's no need to call `create_eager_task_factory()`
         directly. Instead the  global `eager_task_factory` instance can be
         used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
-	    """
+        """
 
     def factory(loop, coro, *, name=None, context=None):
         return custom_task_constructor(
@@ -1034,14 +1097,14 @@ _py_unregister_eager_task = _unregister_eager_task
 _py_enter_task = _enter_task
 _py_leave_task = _leave_task
 _py_swap_current_task = _swap_current_task
-
+_py_all_tasks = all_tasks
 
 try:
     from _asyncio import (_register_task, _register_eager_task,
                           _unregister_task, _unregister_eager_task,
                           _enter_task, _leave_task, _swap_current_task,
                           _scheduled_tasks, _eager_tasks, _current_tasks,
-                          current_task)
+                          current_task, all_tasks)
 except ImportError:
     pass
 else:
@@ -1053,3 +1116,4 @@ else:
     _c_enter_task = _enter_task
     _c_leave_task = _leave_task
     _c_swap_current_task = _swap_current_task
+    _c_all_tasks = all_tasks

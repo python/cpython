@@ -4,10 +4,19 @@
 #include "pycore_ast.h"
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+#include "pycore_lock.h"          // _PyOnceFlag
 #include "pycore_interp.h"        // _PyInterpreterState.ast
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry(), _PySet_Update()
+#include "pycore_unionobject.h"   // _Py_union_type_or
 #include "structmember.h"
 #include <stddef.h>
+
+struct validator {
+    int recursion_depth;            /* current recursion depth */
+    int recursion_limit;            /* recursion limit */
+};
 
 // Forward declaration
 static int init_types(struct ast_state *state);
@@ -17,7 +26,8 @@ get_ast_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct ast_state *state = &interp->ast;
-    if (!init_types(state)) {
+    assert(!state->finalized);
+    if (_PyOnceFlag_CallOnce(&state->once, (_Py_once_fn_t *)&init_types, state) < 0) {
         return NULL;
     }
     return state;
@@ -195,6 +205,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->conversion);
     Py_CLEAR(state->ctx);
     Py_CLEAR(state->decorator_list);
+    Py_CLEAR(state->default_value);
     Py_CLEAR(state->defaults);
     Py_CLEAR(state->elt);
     Py_CLEAR(state->elts);
@@ -272,102 +283,100 @@ void _PyAST_Fini(PyInterpreterState *interp)
 
     Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
 
-#if !defined(NDEBUG)
-    state->initialized = -1;
-#else
-    state->initialized = 0;
-#endif
+    state->finalized = 1;
+    state->once = (_PyOnceFlag){0};
 }
 
 static int init_identifiers(struct ast_state *state)
 {
-    if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
-    if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return 0;
-    if ((state->__match_args__ = PyUnicode_InternFromString("__match_args__")) == NULL) return 0;
-    if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
-    if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
-    if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return 0;
-    if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return 0;
-    if ((state->arg = PyUnicode_InternFromString("arg")) == NULL) return 0;
-    if ((state->args = PyUnicode_InternFromString("args")) == NULL) return 0;
-    if ((state->argtypes = PyUnicode_InternFromString("argtypes")) == NULL) return 0;
-    if ((state->asname = PyUnicode_InternFromString("asname")) == NULL) return 0;
-    if ((state->ast = PyUnicode_InternFromString("ast")) == NULL) return 0;
-    if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return 0;
-    if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return 0;
-    if ((state->body = PyUnicode_InternFromString("body")) == NULL) return 0;
-    if ((state->bound = PyUnicode_InternFromString("bound")) == NULL) return 0;
-    if ((state->cases = PyUnicode_InternFromString("cases")) == NULL) return 0;
-    if ((state->cause = PyUnicode_InternFromString("cause")) == NULL) return 0;
-    if ((state->cls = PyUnicode_InternFromString("cls")) == NULL) return 0;
-    if ((state->col_offset = PyUnicode_InternFromString("col_offset")) == NULL) return 0;
-    if ((state->comparators = PyUnicode_InternFromString("comparators")) == NULL) return 0;
-    if ((state->context_expr = PyUnicode_InternFromString("context_expr")) == NULL) return 0;
-    if ((state->conversion = PyUnicode_InternFromString("conversion")) == NULL) return 0;
-    if ((state->ctx = PyUnicode_InternFromString("ctx")) == NULL) return 0;
-    if ((state->decorator_list = PyUnicode_InternFromString("decorator_list")) == NULL) return 0;
-    if ((state->defaults = PyUnicode_InternFromString("defaults")) == NULL) return 0;
-    if ((state->elt = PyUnicode_InternFromString("elt")) == NULL) return 0;
-    if ((state->elts = PyUnicode_InternFromString("elts")) == NULL) return 0;
-    if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return 0;
-    if ((state->end_lineno = PyUnicode_InternFromString("end_lineno")) == NULL) return 0;
-    if ((state->exc = PyUnicode_InternFromString("exc")) == NULL) return 0;
-    if ((state->finalbody = PyUnicode_InternFromString("finalbody")) == NULL) return 0;
-    if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return 0;
-    if ((state->func = PyUnicode_InternFromString("func")) == NULL) return 0;
-    if ((state->generators = PyUnicode_InternFromString("generators")) == NULL) return 0;
-    if ((state->guard = PyUnicode_InternFromString("guard")) == NULL) return 0;
-    if ((state->handlers = PyUnicode_InternFromString("handlers")) == NULL) return 0;
-    if ((state->id = PyUnicode_InternFromString("id")) == NULL) return 0;
-    if ((state->ifs = PyUnicode_InternFromString("ifs")) == NULL) return 0;
-    if ((state->is_async = PyUnicode_InternFromString("is_async")) == NULL) return 0;
-    if ((state->items = PyUnicode_InternFromString("items")) == NULL) return 0;
-    if ((state->iter = PyUnicode_InternFromString("iter")) == NULL) return 0;
-    if ((state->key = PyUnicode_InternFromString("key")) == NULL) return 0;
-    if ((state->keys = PyUnicode_InternFromString("keys")) == NULL) return 0;
-    if ((state->keywords = PyUnicode_InternFromString("keywords")) == NULL) return 0;
-    if ((state->kind = PyUnicode_InternFromString("kind")) == NULL) return 0;
-    if ((state->kw_defaults = PyUnicode_InternFromString("kw_defaults")) == NULL) return 0;
-    if ((state->kwarg = PyUnicode_InternFromString("kwarg")) == NULL) return 0;
-    if ((state->kwd_attrs = PyUnicode_InternFromString("kwd_attrs")) == NULL) return 0;
-    if ((state->kwd_patterns = PyUnicode_InternFromString("kwd_patterns")) == NULL) return 0;
-    if ((state->kwonlyargs = PyUnicode_InternFromString("kwonlyargs")) == NULL) return 0;
-    if ((state->left = PyUnicode_InternFromString("left")) == NULL) return 0;
-    if ((state->level = PyUnicode_InternFromString("level")) == NULL) return 0;
-    if ((state->lineno = PyUnicode_InternFromString("lineno")) == NULL) return 0;
-    if ((state->lower = PyUnicode_InternFromString("lower")) == NULL) return 0;
-    if ((state->module = PyUnicode_InternFromString("module")) == NULL) return 0;
-    if ((state->msg = PyUnicode_InternFromString("msg")) == NULL) return 0;
-    if ((state->name = PyUnicode_InternFromString("name")) == NULL) return 0;
-    if ((state->names = PyUnicode_InternFromString("names")) == NULL) return 0;
-    if ((state->op = PyUnicode_InternFromString("op")) == NULL) return 0;
-    if ((state->operand = PyUnicode_InternFromString("operand")) == NULL) return 0;
-    if ((state->ops = PyUnicode_InternFromString("ops")) == NULL) return 0;
-    if ((state->optional_vars = PyUnicode_InternFromString("optional_vars")) == NULL) return 0;
-    if ((state->orelse = PyUnicode_InternFromString("orelse")) == NULL) return 0;
-    if ((state->pattern = PyUnicode_InternFromString("pattern")) == NULL) return 0;
-    if ((state->patterns = PyUnicode_InternFromString("patterns")) == NULL) return 0;
-    if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return 0;
-    if ((state->rest = PyUnicode_InternFromString("rest")) == NULL) return 0;
-    if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return 0;
-    if ((state->right = PyUnicode_InternFromString("right")) == NULL) return 0;
-    if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return 0;
-    if ((state->slice = PyUnicode_InternFromString("slice")) == NULL) return 0;
-    if ((state->step = PyUnicode_InternFromString("step")) == NULL) return 0;
-    if ((state->subject = PyUnicode_InternFromString("subject")) == NULL) return 0;
-    if ((state->tag = PyUnicode_InternFromString("tag")) == NULL) return 0;
-    if ((state->target = PyUnicode_InternFromString("target")) == NULL) return 0;
-    if ((state->targets = PyUnicode_InternFromString("targets")) == NULL) return 0;
-    if ((state->test = PyUnicode_InternFromString("test")) == NULL) return 0;
-    if ((state->type = PyUnicode_InternFromString("type")) == NULL) return 0;
-    if ((state->type_comment = PyUnicode_InternFromString("type_comment")) == NULL) return 0;
-    if ((state->type_ignores = PyUnicode_InternFromString("type_ignores")) == NULL) return 0;
-    if ((state->type_params = PyUnicode_InternFromString("type_params")) == NULL) return 0;
-    if ((state->upper = PyUnicode_InternFromString("upper")) == NULL) return 0;
-    if ((state->value = PyUnicode_InternFromString("value")) == NULL) return 0;
-    if ((state->values = PyUnicode_InternFromString("values")) == NULL) return 0;
-    if ((state->vararg = PyUnicode_InternFromString("vararg")) == NULL) return 0;
-    return 1;
+    if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return -1;
+    if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return -1;
+    if ((state->__match_args__ = PyUnicode_InternFromString("__match_args__")) == NULL) return -1;
+    if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return -1;
+    if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return -1;
+    if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return -1;
+    if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return -1;
+    if ((state->arg = PyUnicode_InternFromString("arg")) == NULL) return -1;
+    if ((state->args = PyUnicode_InternFromString("args")) == NULL) return -1;
+    if ((state->argtypes = PyUnicode_InternFromString("argtypes")) == NULL) return -1;
+    if ((state->asname = PyUnicode_InternFromString("asname")) == NULL) return -1;
+    if ((state->ast = PyUnicode_InternFromString("ast")) == NULL) return -1;
+    if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return -1;
+    if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return -1;
+    if ((state->body = PyUnicode_InternFromString("body")) == NULL) return -1;
+    if ((state->bound = PyUnicode_InternFromString("bound")) == NULL) return -1;
+    if ((state->cases = PyUnicode_InternFromString("cases")) == NULL) return -1;
+    if ((state->cause = PyUnicode_InternFromString("cause")) == NULL) return -1;
+    if ((state->cls = PyUnicode_InternFromString("cls")) == NULL) return -1;
+    if ((state->col_offset = PyUnicode_InternFromString("col_offset")) == NULL) return -1;
+    if ((state->comparators = PyUnicode_InternFromString("comparators")) == NULL) return -1;
+    if ((state->context_expr = PyUnicode_InternFromString("context_expr")) == NULL) return -1;
+    if ((state->conversion = PyUnicode_InternFromString("conversion")) == NULL) return -1;
+    if ((state->ctx = PyUnicode_InternFromString("ctx")) == NULL) return -1;
+    if ((state->decorator_list = PyUnicode_InternFromString("decorator_list")) == NULL) return -1;
+    if ((state->default_value = PyUnicode_InternFromString("default_value")) == NULL) return -1;
+    if ((state->defaults = PyUnicode_InternFromString("defaults")) == NULL) return -1;
+    if ((state->elt = PyUnicode_InternFromString("elt")) == NULL) return -1;
+    if ((state->elts = PyUnicode_InternFromString("elts")) == NULL) return -1;
+    if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return -1;
+    if ((state->end_lineno = PyUnicode_InternFromString("end_lineno")) == NULL) return -1;
+    if ((state->exc = PyUnicode_InternFromString("exc")) == NULL) return -1;
+    if ((state->finalbody = PyUnicode_InternFromString("finalbody")) == NULL) return -1;
+    if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return -1;
+    if ((state->func = PyUnicode_InternFromString("func")) == NULL) return -1;
+    if ((state->generators = PyUnicode_InternFromString("generators")) == NULL) return -1;
+    if ((state->guard = PyUnicode_InternFromString("guard")) == NULL) return -1;
+    if ((state->handlers = PyUnicode_InternFromString("handlers")) == NULL) return -1;
+    if ((state->id = PyUnicode_InternFromString("id")) == NULL) return -1;
+    if ((state->ifs = PyUnicode_InternFromString("ifs")) == NULL) return -1;
+    if ((state->is_async = PyUnicode_InternFromString("is_async")) == NULL) return -1;
+    if ((state->items = PyUnicode_InternFromString("items")) == NULL) return -1;
+    if ((state->iter = PyUnicode_InternFromString("iter")) == NULL) return -1;
+    if ((state->key = PyUnicode_InternFromString("key")) == NULL) return -1;
+    if ((state->keys = PyUnicode_InternFromString("keys")) == NULL) return -1;
+    if ((state->keywords = PyUnicode_InternFromString("keywords")) == NULL) return -1;
+    if ((state->kind = PyUnicode_InternFromString("kind")) == NULL) return -1;
+    if ((state->kw_defaults = PyUnicode_InternFromString("kw_defaults")) == NULL) return -1;
+    if ((state->kwarg = PyUnicode_InternFromString("kwarg")) == NULL) return -1;
+    if ((state->kwd_attrs = PyUnicode_InternFromString("kwd_attrs")) == NULL) return -1;
+    if ((state->kwd_patterns = PyUnicode_InternFromString("kwd_patterns")) == NULL) return -1;
+    if ((state->kwonlyargs = PyUnicode_InternFromString("kwonlyargs")) == NULL) return -1;
+    if ((state->left = PyUnicode_InternFromString("left")) == NULL) return -1;
+    if ((state->level = PyUnicode_InternFromString("level")) == NULL) return -1;
+    if ((state->lineno = PyUnicode_InternFromString("lineno")) == NULL) return -1;
+    if ((state->lower = PyUnicode_InternFromString("lower")) == NULL) return -1;
+    if ((state->module = PyUnicode_InternFromString("module")) == NULL) return -1;
+    if ((state->msg = PyUnicode_InternFromString("msg")) == NULL) return -1;
+    if ((state->name = PyUnicode_InternFromString("name")) == NULL) return -1;
+    if ((state->names = PyUnicode_InternFromString("names")) == NULL) return -1;
+    if ((state->op = PyUnicode_InternFromString("op")) == NULL) return -1;
+    if ((state->operand = PyUnicode_InternFromString("operand")) == NULL) return -1;
+    if ((state->ops = PyUnicode_InternFromString("ops")) == NULL) return -1;
+    if ((state->optional_vars = PyUnicode_InternFromString("optional_vars")) == NULL) return -1;
+    if ((state->orelse = PyUnicode_InternFromString("orelse")) == NULL) return -1;
+    if ((state->pattern = PyUnicode_InternFromString("pattern")) == NULL) return -1;
+    if ((state->patterns = PyUnicode_InternFromString("patterns")) == NULL) return -1;
+    if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return -1;
+    if ((state->rest = PyUnicode_InternFromString("rest")) == NULL) return -1;
+    if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return -1;
+    if ((state->right = PyUnicode_InternFromString("right")) == NULL) return -1;
+    if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return -1;
+    if ((state->slice = PyUnicode_InternFromString("slice")) == NULL) return -1;
+    if ((state->step = PyUnicode_InternFromString("step")) == NULL) return -1;
+    if ((state->subject = PyUnicode_InternFromString("subject")) == NULL) return -1;
+    if ((state->tag = PyUnicode_InternFromString("tag")) == NULL) return -1;
+    if ((state->target = PyUnicode_InternFromString("target")) == NULL) return -1;
+    if ((state->targets = PyUnicode_InternFromString("targets")) == NULL) return -1;
+    if ((state->test = PyUnicode_InternFromString("test")) == NULL) return -1;
+    if ((state->type = PyUnicode_InternFromString("type")) == NULL) return -1;
+    if ((state->type_comment = PyUnicode_InternFromString("type_comment")) == NULL) return -1;
+    if ((state->type_ignores = PyUnicode_InternFromString("type_ignores")) == NULL) return -1;
+    if ((state->type_params = PyUnicode_InternFromString("type_params")) == NULL) return -1;
+    if ((state->upper = PyUnicode_InternFromString("upper")) == NULL) return -1;
+    if ((state->value = PyUnicode_InternFromString("value")) == NULL) return -1;
+    if ((state->values = PyUnicode_InternFromString("values")) == NULL) return -1;
+    if ((state->vararg = PyUnicode_InternFromString("vararg")) == NULL) return -1;
+    return 0;
 };
 
 GENERATE_ASDL_SEQ_CONSTRUCTOR(mod, mod_ty)
@@ -385,7 +394,8 @@ GENERATE_ASDL_SEQ_CONSTRUCTOR(pattern, pattern_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(type_ignore, type_ignore_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(type_param, type_param_ty)
 
-static PyObject* ast2obj_mod(struct ast_state *state, void*);
+static PyObject* ast2obj_mod(struct ast_state *state, struct validator *vstate,
+                             void*);
 static const char * const Module_fields[]={
     "body",
     "type_ignores",
@@ -406,7 +416,8 @@ static const char * const stmt_attributes[] = {
     "end_lineno",
     "end_col_offset",
 };
-static PyObject* ast2obj_stmt(struct ast_state *state, void*);
+static PyObject* ast2obj_stmt(struct ast_state *state, struct validator
+                              *vstate, void*);
 static const char * const FunctionDef_fields[]={
     "name",
     "args",
@@ -541,7 +552,8 @@ static const char * const expr_attributes[] = {
     "end_lineno",
     "end_col_offset",
 };
-static PyObject* ast2obj_expr(struct ast_state *state, void*);
+static PyObject* ast2obj_expr(struct ast_state *state, struct validator
+                              *vstate, void*);
 static const char * const BoolOp_fields[]={
     "op",
     "values",
@@ -654,12 +666,18 @@ static const char * const Slice_fields[]={
     "upper",
     "step",
 };
-static PyObject* ast2obj_expr_context(struct ast_state *state, expr_context_ty);
-static PyObject* ast2obj_boolop(struct ast_state *state, boolop_ty);
-static PyObject* ast2obj_operator(struct ast_state *state, operator_ty);
-static PyObject* ast2obj_unaryop(struct ast_state *state, unaryop_ty);
-static PyObject* ast2obj_cmpop(struct ast_state *state, cmpop_ty);
-static PyObject* ast2obj_comprehension(struct ast_state *state, void*);
+static PyObject* ast2obj_expr_context(struct ast_state *state, struct validator
+                                      *vstate, expr_context_ty);
+static PyObject* ast2obj_boolop(struct ast_state *state, struct validator
+                                *vstate, boolop_ty);
+static PyObject* ast2obj_operator(struct ast_state *state, struct validator
+                                  *vstate, operator_ty);
+static PyObject* ast2obj_unaryop(struct ast_state *state, struct validator
+                                 *vstate, unaryop_ty);
+static PyObject* ast2obj_cmpop(struct ast_state *state, struct validator
+                               *vstate, cmpop_ty);
+static PyObject* ast2obj_comprehension(struct ast_state *state, struct
+                                       validator *vstate, void*);
 static const char * const comprehension_fields[]={
     "target",
     "iter",
@@ -672,13 +690,15 @@ static const char * const excepthandler_attributes[] = {
     "end_lineno",
     "end_col_offset",
 };
-static PyObject* ast2obj_excepthandler(struct ast_state *state, void*);
+static PyObject* ast2obj_excepthandler(struct ast_state *state, struct
+                                       validator *vstate, void*);
 static const char * const ExceptHandler_fields[]={
     "type",
     "name",
     "body",
 };
-static PyObject* ast2obj_arguments(struct ast_state *state, void*);
+static PyObject* ast2obj_arguments(struct ast_state *state, struct validator
+                                   *vstate, void*);
 static const char * const arguments_fields[]={
     "posonlyargs",
     "args",
@@ -688,7 +708,8 @@ static const char * const arguments_fields[]={
     "kwarg",
     "defaults",
 };
-static PyObject* ast2obj_arg(struct ast_state *state, void*);
+static PyObject* ast2obj_arg(struct ast_state *state, struct validator *vstate,
+                             void*);
 static const char * const arg_attributes[] = {
     "lineno",
     "col_offset",
@@ -700,7 +721,8 @@ static const char * const arg_fields[]={
     "annotation",
     "type_comment",
 };
-static PyObject* ast2obj_keyword(struct ast_state *state, void*);
+static PyObject* ast2obj_keyword(struct ast_state *state, struct validator
+                                 *vstate, void*);
 static const char * const keyword_attributes[] = {
     "lineno",
     "col_offset",
@@ -711,7 +733,8 @@ static const char * const keyword_fields[]={
     "arg",
     "value",
 };
-static PyObject* ast2obj_alias(struct ast_state *state, void*);
+static PyObject* ast2obj_alias(struct ast_state *state, struct validator
+                               *vstate, void*);
 static const char * const alias_attributes[] = {
     "lineno",
     "col_offset",
@@ -722,12 +745,14 @@ static const char * const alias_fields[]={
     "name",
     "asname",
 };
-static PyObject* ast2obj_withitem(struct ast_state *state, void*);
+static PyObject* ast2obj_withitem(struct ast_state *state, struct validator
+                                  *vstate, void*);
 static const char * const withitem_fields[]={
     "context_expr",
     "optional_vars",
 };
-static PyObject* ast2obj_match_case(struct ast_state *state, void*);
+static PyObject* ast2obj_match_case(struct ast_state *state, struct validator
+                                    *vstate, void*);
 static const char * const match_case_fields[]={
     "pattern",
     "guard",
@@ -739,7 +764,8 @@ static const char * const pattern_attributes[] = {
     "end_lineno",
     "end_col_offset",
 };
-static PyObject* ast2obj_pattern(struct ast_state *state, void*);
+static PyObject* ast2obj_pattern(struct ast_state *state, struct validator
+                                 *vstate, void*);
 static const char * const MatchValue_fields[]={
     "value",
 };
@@ -770,7 +796,8 @@ static const char * const MatchAs_fields[]={
 static const char * const MatchOr_fields[]={
     "patterns",
 };
-static PyObject* ast2obj_type_ignore(struct ast_state *state, void*);
+static PyObject* ast2obj_type_ignore(struct ast_state *state, struct validator
+                                     *vstate, void*);
 static const char * const TypeIgnore_fields[]={
     "lineno",
     "tag",
@@ -781,17 +808,4233 @@ static const char * const type_param_attributes[] = {
     "end_lineno",
     "end_col_offset",
 };
-static PyObject* ast2obj_type_param(struct ast_state *state, void*);
+static PyObject* ast2obj_type_param(struct ast_state *state, struct validator
+                                    *vstate, void*);
 static const char * const TypeVar_fields[]={
     "name",
     "bound",
+    "default_value",
 };
 static const char * const ParamSpec_fields[]={
     "name",
+    "default_value",
 };
 static const char * const TypeVarTuple_fields[]={
     "name",
+    "default_value",
 };
+
+
+static int
+add_ast_annotations(struct ast_state *state)
+{
+    bool cond;
+    PyObject *Module_annotations = PyDict_New();
+    if (!Module_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Module_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_ignore_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Module_annotations, "type_ignores", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Module_type, "_field_types",
+                                  Module_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Module_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Module_type, "__annotations__",
+                                  Module_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Module_annotations);
+        return 0;
+    }
+    Py_DECREF(Module_annotations);
+    PyObject *Interactive_annotations = PyDict_New();
+    if (!Interactive_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Interactive_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Interactive_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Interactive_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Interactive_type, "_field_types",
+                                  Interactive_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Interactive_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Interactive_type, "__annotations__",
+                                  Interactive_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Interactive_annotations);
+        return 0;
+    }
+    Py_DECREF(Interactive_annotations);
+    PyObject *Expression_annotations = PyDict_New();
+    if (!Expression_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Expression_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Expression_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Expression_type, "_field_types",
+                                  Expression_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Expression_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Expression_type, "__annotations__",
+                                  Expression_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Expression_annotations);
+        return 0;
+    }
+    Py_DECREF(Expression_annotations);
+    PyObject *FunctionType_annotations = PyDict_New();
+    if (!FunctionType_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionType_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionType_annotations, "argtypes", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionType_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FunctionType_annotations, "returns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionType_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FunctionType_type, "_field_types",
+                                  FunctionType_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FunctionType_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->FunctionType_type, "__annotations__",
+                                  FunctionType_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FunctionType_annotations);
+        return 0;
+    }
+    Py_DECREF(FunctionType_annotations);
+    PyObject *FunctionDef_annotations = PyDict_New();
+    if (!FunctionDef_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FunctionDef_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arguments_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FunctionDef_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "decorator_list",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "returns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "type_comment",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "type_params",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FunctionDef_type, "_field_types",
+                                  FunctionDef_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FunctionDef_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->FunctionDef_type, "__annotations__",
+                                  FunctionDef_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FunctionDef_annotations);
+        return 0;
+    }
+    Py_DECREF(FunctionDef_annotations);
+    PyObject *AsyncFunctionDef_annotations = PyDict_New();
+    if (!AsyncFunctionDef_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "name", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arguments_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "args", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "body", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations,
+                                    "decorator_list", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "returns",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations,
+                                    "type_comment", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations,
+                                    "type_params", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AsyncFunctionDef_type, "_field_types",
+                                  AsyncFunctionDef_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AsyncFunctionDef_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->AsyncFunctionDef_type,
+                                  "__annotations__",
+                                  AsyncFunctionDef_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AsyncFunctionDef_annotations);
+        return 0;
+    }
+    Py_DECREF(AsyncFunctionDef_annotations);
+    PyObject *ClassDef_annotations = PyDict_New();
+    if (!ClassDef_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(ClassDef_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "bases", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->keyword_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "keywords", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "decorator_list",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "type_params", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ClassDef_type, "_field_types",
+                                  ClassDef_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ClassDef_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->ClassDef_type, "__annotations__",
+                                  ClassDef_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ClassDef_annotations);
+        return 0;
+    }
+    Py_DECREF(ClassDef_annotations);
+    PyObject *Return_annotations = PyDict_New();
+    if (!Return_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Return_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Return_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Return_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Return_type, "_field_types",
+                                  Return_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Return_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Return_type, "__annotations__",
+                                  Return_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Return_annotations);
+        return 0;
+    }
+    Py_DECREF(Return_annotations);
+    PyObject *Delete_annotations = PyDict_New();
+    if (!Delete_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Delete_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Delete_annotations, "targets", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Delete_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Delete_type, "_field_types",
+                                  Delete_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Delete_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Delete_type, "__annotations__",
+                                  Delete_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Delete_annotations);
+        return 0;
+    }
+    Py_DECREF(Delete_annotations);
+    PyObject *Assign_annotations = PyDict_New();
+    if (!Assign_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Assign_annotations, "targets", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Assign_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Assign_annotations, "type_comment", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Assign_type, "_field_types",
+                                  Assign_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Assign_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Assign_type, "__annotations__",
+                                  Assign_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Assign_annotations);
+        return 0;
+    }
+    Py_DECREF(Assign_annotations);
+    PyObject *TypeAlias_annotations = PyDict_New();
+    if (!TypeAlias_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeAlias_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeAlias_annotations, "type_params", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeAlias_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeAlias_type, "_field_types",
+                                  TypeAlias_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeAlias_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->TypeAlias_type, "__annotations__",
+                                  TypeAlias_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeAlias_annotations);
+        return 0;
+    }
+    Py_DECREF(TypeAlias_annotations);
+    PyObject *AugAssign_annotations = PyDict_New();
+    if (!AugAssign_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AugAssign_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AugAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->operator_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AugAssign_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AugAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AugAssign_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AugAssign_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AugAssign_type, "_field_types",
+                                  AugAssign_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AugAssign_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->AugAssign_type, "__annotations__",
+                                  AugAssign_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AugAssign_annotations);
+        return 0;
+    }
+    Py_DECREF(AugAssign_annotations);
+    PyObject *AnnAssign_annotations = PyDict_New();
+    if (!AnnAssign_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AnnAssign_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AnnAssign_annotations, "annotation", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AnnAssign_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AnnAssign_annotations, "simple", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AnnAssign_type, "_field_types",
+                                  AnnAssign_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AnnAssign_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->AnnAssign_type, "__annotations__",
+                                  AnnAssign_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AnnAssign_annotations);
+        return 0;
+    }
+    Py_DECREF(AnnAssign_annotations);
+    PyObject *For_annotations = PyDict_New();
+    if (!For_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(For_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(For_annotations, "iter", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(For_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(For_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(For_annotations, "type_comment", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->For_type, "_field_types",
+                                  For_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(For_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->For_type, "__annotations__",
+                                  For_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(For_annotations);
+        return 0;
+    }
+    Py_DECREF(For_annotations);
+    PyObject *AsyncFor_annotations = PyDict_New();
+    if (!AsyncFor_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFor_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFor_annotations, "iter", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFor_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFor_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFor_annotations, "type_comment", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AsyncFor_type, "_field_types",
+                                  AsyncFor_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AsyncFor_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->AsyncFor_type, "__annotations__",
+                                  AsyncFor_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AsyncFor_annotations);
+        return 0;
+    }
+    Py_DECREF(AsyncFor_annotations);
+    PyObject *While_annotations = PyDict_New();
+    if (!While_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(While_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(While_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(While_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->While_type, "_field_types",
+                                  While_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(While_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->While_type, "__annotations__",
+                                  While_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(While_annotations);
+        return 0;
+    }
+    Py_DECREF(While_annotations);
+    PyObject *If_annotations = PyDict_New();
+    if (!If_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(If_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(If_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(If_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->If_type, "_field_types",
+                                  If_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(If_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->If_type, "__annotations__",
+                                  If_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(If_annotations);
+        return 0;
+    }
+    Py_DECREF(If_annotations);
+    PyObject *With_annotations = PyDict_New();
+    if (!With_annotations) return 0;
+    {
+        PyObject *type = state->withitem_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(With_annotations, "items", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(With_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(With_annotations, "type_comment", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->With_type, "_field_types",
+                                  With_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(With_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->With_type, "__annotations__",
+                                  With_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(With_annotations);
+        return 0;
+    }
+    Py_DECREF(With_annotations);
+    PyObject *AsyncWith_annotations = PyDict_New();
+    if (!AsyncWith_annotations) return 0;
+    {
+        PyObject *type = state->withitem_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncWith_annotations, "items", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncWith_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncWith_annotations, "type_comment",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AsyncWith_type, "_field_types",
+                                  AsyncWith_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AsyncWith_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->AsyncWith_type, "__annotations__",
+                                  AsyncWith_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(AsyncWith_annotations);
+        return 0;
+    }
+    Py_DECREF(AsyncWith_annotations);
+    PyObject *Match_annotations = PyDict_New();
+    if (!Match_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Match_annotations, "subject", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Match_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->match_case_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Match_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Match_annotations, "cases", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Match_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Match_type, "_field_types",
+                                  Match_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Match_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Match_type, "__annotations__",
+                                  Match_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Match_annotations);
+        return 0;
+    }
+    Py_DECREF(Match_annotations);
+    PyObject *Raise_annotations = PyDict_New();
+    if (!Raise_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Raise_annotations, "exc", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Raise_annotations, "cause", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Raise_type, "_field_types",
+                                  Raise_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Raise_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Raise_type, "__annotations__",
+                                  Raise_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Raise_annotations);
+        return 0;
+    }
+    Py_DECREF(Raise_annotations);
+    PyObject *Try_annotations = PyDict_New();
+    if (!Try_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->excepthandler_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "handlers", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "finalbody", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Try_type, "_field_types",
+                                  Try_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Try_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Try_type, "__annotations__",
+                                  Try_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Try_annotations);
+        return 0;
+    }
+    Py_DECREF(Try_annotations);
+    PyObject *TryStar_annotations = PyDict_New();
+    if (!TryStar_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->excepthandler_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "handlers", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "finalbody", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TryStar_type, "_field_types",
+                                  TryStar_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TryStar_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->TryStar_type, "__annotations__",
+                                  TryStar_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TryStar_annotations);
+        return 0;
+    }
+    Py_DECREF(TryStar_annotations);
+    PyObject *Assert_annotations = PyDict_New();
+    if (!Assert_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Assert_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assert_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Assert_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Assert_annotations, "msg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assert_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Assert_type, "_field_types",
+                                  Assert_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Assert_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Assert_type, "__annotations__",
+                                  Assert_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Assert_annotations);
+        return 0;
+    }
+    Py_DECREF(Assert_annotations);
+    PyObject *Import_annotations = PyDict_New();
+    if (!Import_annotations) return 0;
+    {
+        PyObject *type = state->alias_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Import_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Import_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Import_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Import_type, "_field_types",
+                                  Import_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Import_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Import_type, "__annotations__",
+                                  Import_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Import_annotations);
+        return 0;
+    }
+    Py_DECREF(Import_annotations);
+    PyObject *ImportFrom_annotations = PyDict_New();
+    if (!ImportFrom_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ImportFrom_annotations, "module", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->alias_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ImportFrom_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ImportFrom_annotations, "level", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ImportFrom_type, "_field_types",
+                                  ImportFrom_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ImportFrom_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->ImportFrom_type, "__annotations__",
+                                  ImportFrom_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ImportFrom_annotations);
+        return 0;
+    }
+    Py_DECREF(ImportFrom_annotations);
+    PyObject *Global_annotations = PyDict_New();
+    if (!Global_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Global_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Global_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Global_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Global_type, "_field_types",
+                                  Global_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Global_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Global_type, "__annotations__",
+                                  Global_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Global_annotations);
+        return 0;
+    }
+    Py_DECREF(Global_annotations);
+    PyObject *Nonlocal_annotations = PyDict_New();
+    if (!Nonlocal_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Nonlocal_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Nonlocal_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Nonlocal_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Nonlocal_type, "_field_types",
+                                  Nonlocal_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Nonlocal_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Nonlocal_type, "__annotations__",
+                                  Nonlocal_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Nonlocal_annotations);
+        return 0;
+    }
+    Py_DECREF(Nonlocal_annotations);
+    PyObject *Expr_annotations = PyDict_New();
+    if (!Expr_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Expr_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Expr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Expr_type, "_field_types",
+                                  Expr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Expr_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Expr_type, "__annotations__",
+                                  Expr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Expr_annotations);
+        return 0;
+    }
+    Py_DECREF(Expr_annotations);
+    PyObject *Pass_annotations = PyDict_New();
+    if (!Pass_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Pass_type, "_field_types",
+                                  Pass_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Pass_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Pass_type, "__annotations__",
+                                  Pass_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Pass_annotations);
+        return 0;
+    }
+    Py_DECREF(Pass_annotations);
+    PyObject *Break_annotations = PyDict_New();
+    if (!Break_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Break_type, "_field_types",
+                                  Break_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Break_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Break_type, "__annotations__",
+                                  Break_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Break_annotations);
+        return 0;
+    }
+    Py_DECREF(Break_annotations);
+    PyObject *Continue_annotations = PyDict_New();
+    if (!Continue_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Continue_type, "_field_types",
+                                  Continue_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Continue_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Continue_type, "__annotations__",
+                                  Continue_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Continue_annotations);
+        return 0;
+    }
+    Py_DECREF(Continue_annotations);
+    PyObject *BoolOp_annotations = PyDict_New();
+    if (!BoolOp_annotations) return 0;
+    {
+        PyObject *type = state->boolop_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BoolOp_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BoolOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(BoolOp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(BoolOp_annotations, "values", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BoolOp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->BoolOp_type, "_field_types",
+                                  BoolOp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BoolOp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->BoolOp_type, "__annotations__",
+                                  BoolOp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BoolOp_annotations);
+        return 0;
+    }
+    Py_DECREF(BoolOp_annotations);
+    PyObject *NamedExpr_annotations = PyDict_New();
+    if (!NamedExpr_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(NamedExpr_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(NamedExpr_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(NamedExpr_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(NamedExpr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->NamedExpr_type, "_field_types",
+                                  NamedExpr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(NamedExpr_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->NamedExpr_type, "__annotations__",
+                                  NamedExpr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(NamedExpr_annotations);
+        return 0;
+    }
+    Py_DECREF(NamedExpr_annotations);
+    PyObject *BinOp_annotations = PyDict_New();
+    if (!BinOp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BinOp_annotations, "left", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BinOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->operator_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BinOp_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BinOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BinOp_annotations, "right", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BinOp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->BinOp_type, "_field_types",
+                                  BinOp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BinOp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->BinOp_type, "__annotations__",
+                                  BinOp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BinOp_annotations);
+        return 0;
+    }
+    Py_DECREF(BinOp_annotations);
+    PyObject *UnaryOp_annotations = PyDict_New();
+    if (!UnaryOp_annotations) return 0;
+    {
+        PyObject *type = state->unaryop_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(UnaryOp_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(UnaryOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(UnaryOp_annotations, "operand", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(UnaryOp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->UnaryOp_type, "_field_types",
+                                  UnaryOp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(UnaryOp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->UnaryOp_type, "__annotations__",
+                                  UnaryOp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(UnaryOp_annotations);
+        return 0;
+    }
+    Py_DECREF(UnaryOp_annotations);
+    PyObject *Lambda_annotations = PyDict_New();
+    if (!Lambda_annotations) return 0;
+    {
+        PyObject *type = state->arguments_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Lambda_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Lambda_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Lambda_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Lambda_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Lambda_type, "_field_types",
+                                  Lambda_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Lambda_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Lambda_type, "__annotations__",
+                                  Lambda_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Lambda_annotations);
+        return 0;
+    }
+    Py_DECREF(Lambda_annotations);
+    PyObject *IfExp_annotations = PyDict_New();
+    if (!IfExp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(IfExp_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(IfExp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(IfExp_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(IfExp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(IfExp_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(IfExp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->IfExp_type, "_field_types",
+                                  IfExp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(IfExp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->IfExp_type, "__annotations__",
+                                  IfExp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(IfExp_annotations);
+        return 0;
+    }
+    Py_DECREF(IfExp_annotations);
+    PyObject *Dict_annotations = PyDict_New();
+    if (!Dict_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Dict_annotations, "keys", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Dict_annotations, "values", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Dict_type, "_field_types",
+                                  Dict_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Dict_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Dict_type, "__annotations__",
+                                  Dict_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Dict_annotations);
+        return 0;
+    }
+    Py_DECREF(Dict_annotations);
+    PyObject *Set_annotations = PyDict_New();
+    if (!Set_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Set_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Set_annotations, "elts", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Set_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Set_type, "_field_types",
+                                  Set_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Set_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Set_type, "__annotations__",
+                                  Set_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Set_annotations);
+        return 0;
+    }
+    Py_DECREF(Set_annotations);
+    PyObject *ListComp_annotations = PyDict_New();
+    if (!ListComp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(ListComp_annotations, "elt", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ListComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ListComp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ListComp_annotations, "generators", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ListComp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ListComp_type, "_field_types",
+                                  ListComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ListComp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->ListComp_type, "__annotations__",
+                                  ListComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ListComp_annotations);
+        return 0;
+    }
+    Py_DECREF(ListComp_annotations);
+    PyObject *SetComp_annotations = PyDict_New();
+    if (!SetComp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(SetComp_annotations, "elt", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(SetComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(SetComp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(SetComp_annotations, "generators", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(SetComp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->SetComp_type, "_field_types",
+                                  SetComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(SetComp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->SetComp_type, "__annotations__",
+                                  SetComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(SetComp_annotations);
+        return 0;
+    }
+    Py_DECREF(SetComp_annotations);
+    PyObject *DictComp_annotations = PyDict_New();
+    if (!DictComp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(DictComp_annotations, "key", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(DictComp_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(DictComp_annotations, "generators", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->DictComp_type, "_field_types",
+                                  DictComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(DictComp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->DictComp_type, "__annotations__",
+                                  DictComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(DictComp_annotations);
+        return 0;
+    }
+    Py_DECREF(DictComp_annotations);
+    PyObject *GeneratorExp_annotations = PyDict_New();
+    if (!GeneratorExp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(GeneratorExp_annotations, "elt", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(GeneratorExp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(GeneratorExp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(GeneratorExp_annotations, "generators",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(GeneratorExp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->GeneratorExp_type, "_field_types",
+                                  GeneratorExp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(GeneratorExp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->GeneratorExp_type, "__annotations__",
+                                  GeneratorExp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(GeneratorExp_annotations);
+        return 0;
+    }
+    Py_DECREF(GeneratorExp_annotations);
+    PyObject *Await_annotations = PyDict_New();
+    if (!Await_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Await_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Await_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Await_type, "_field_types",
+                                  Await_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Await_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Await_type, "__annotations__",
+                                  Await_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Await_annotations);
+        return 0;
+    }
+    Py_DECREF(Await_annotations);
+    PyObject *Yield_annotations = PyDict_New();
+    if (!Yield_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Yield_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Yield_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Yield_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Yield_type, "_field_types",
+                                  Yield_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Yield_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Yield_type, "__annotations__",
+                                  Yield_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Yield_annotations);
+        return 0;
+    }
+    Py_DECREF(Yield_annotations);
+    PyObject *YieldFrom_annotations = PyDict_New();
+    if (!YieldFrom_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(YieldFrom_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(YieldFrom_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->YieldFrom_type, "_field_types",
+                                  YieldFrom_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(YieldFrom_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->YieldFrom_type, "__annotations__",
+                                  YieldFrom_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(YieldFrom_annotations);
+        return 0;
+    }
+    Py_DECREF(YieldFrom_annotations);
+    PyObject *Compare_annotations = PyDict_New();
+    if (!Compare_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Compare_annotations, "left", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->cmpop_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Compare_annotations, "ops", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Compare_annotations, "comparators", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Compare_type, "_field_types",
+                                  Compare_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Compare_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Compare_type, "__annotations__",
+                                  Compare_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Compare_annotations);
+        return 0;
+    }
+    Py_DECREF(Compare_annotations);
+    PyObject *Call_annotations = PyDict_New();
+    if (!Call_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Call_annotations, "func", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Call_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->keyword_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Call_annotations, "keywords", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Call_type, "_field_types",
+                                  Call_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Call_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Call_type, "__annotations__",
+                                  Call_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Call_annotations);
+        return 0;
+    }
+    Py_DECREF(Call_annotations);
+    PyObject *FormattedValue_annotations = PyDict_New();
+    if (!FormattedValue_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FormattedValue_annotations, "value", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FormattedValue_annotations, "conversion",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FormattedValue_annotations, "format_spec",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FormattedValue_type, "_field_types",
+                                  FormattedValue_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FormattedValue_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->FormattedValue_type,
+                                  "__annotations__",
+                                  FormattedValue_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FormattedValue_annotations);
+        return 0;
+    }
+    Py_DECREF(FormattedValue_annotations);
+    PyObject *JoinedStr_annotations = PyDict_New();
+    if (!JoinedStr_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(JoinedStr_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(JoinedStr_annotations, "values", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(JoinedStr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->JoinedStr_type, "_field_types",
+                                  JoinedStr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(JoinedStr_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->JoinedStr_type, "__annotations__",
+                                  JoinedStr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(JoinedStr_annotations);
+        return 0;
+    }
+    Py_DECREF(JoinedStr_annotations);
+    PyObject *Constant_annotations = PyDict_New();
+    if (!Constant_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyBaseObject_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Constant_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Constant_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Constant_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Constant_annotations, "kind", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Constant_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Constant_type, "_field_types",
+                                  Constant_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Constant_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Constant_type, "__annotations__",
+                                  Constant_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Constant_annotations);
+        return 0;
+    }
+    Py_DECREF(Constant_annotations);
+    PyObject *Attribute_annotations = PyDict_New();
+    if (!Attribute_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Attribute_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Attribute_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Attribute_annotations, "attr", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Attribute_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Attribute_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Attribute_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Attribute_type, "_field_types",
+                                  Attribute_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Attribute_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Attribute_type, "__annotations__",
+                                  Attribute_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Attribute_annotations);
+        return 0;
+    }
+    Py_DECREF(Attribute_annotations);
+    PyObject *Subscript_annotations = PyDict_New();
+    if (!Subscript_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Subscript_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Subscript_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Subscript_annotations, "slice", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Subscript_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Subscript_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Subscript_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Subscript_type, "_field_types",
+                                  Subscript_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Subscript_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Subscript_type, "__annotations__",
+                                  Subscript_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Subscript_annotations);
+        return 0;
+    }
+    Py_DECREF(Subscript_annotations);
+    PyObject *Starred_annotations = PyDict_New();
+    if (!Starred_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Starred_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Starred_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Starred_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Starred_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Starred_type, "_field_types",
+                                  Starred_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Starred_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Starred_type, "__annotations__",
+                                  Starred_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Starred_annotations);
+        return 0;
+    }
+    Py_DECREF(Starred_annotations);
+    PyObject *Name_annotations = PyDict_New();
+    if (!Name_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Name_annotations, "id", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Name_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Name_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Name_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Name_type, "_field_types",
+                                  Name_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Name_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Name_type, "__annotations__",
+                                  Name_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Name_annotations);
+        return 0;
+    }
+    Py_DECREF(Name_annotations);
+    PyObject *List_annotations = PyDict_New();
+    if (!List_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(List_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(List_annotations, "elts", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(List_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(List_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(List_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->List_type, "_field_types",
+                                  List_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(List_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->List_type, "__annotations__",
+                                  List_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(List_annotations);
+        return 0;
+    }
+    Py_DECREF(List_annotations);
+    PyObject *Tuple_annotations = PyDict_New();
+    if (!Tuple_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Tuple_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Tuple_annotations, "elts", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Tuple_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Tuple_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Tuple_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Tuple_type, "_field_types",
+                                  Tuple_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Tuple_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Tuple_type, "__annotations__",
+                                  Tuple_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Tuple_annotations);
+        return 0;
+    }
+    Py_DECREF(Tuple_annotations);
+    PyObject *Slice_annotations = PyDict_New();
+    if (!Slice_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Slice_annotations, "lower", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Slice_annotations, "upper", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Slice_annotations, "step", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Slice_type, "_field_types",
+                                  Slice_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Slice_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Slice_type, "__annotations__",
+                                  Slice_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Slice_annotations);
+        return 0;
+    }
+    Py_DECREF(Slice_annotations);
+    PyObject *Load_annotations = PyDict_New();
+    if (!Load_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Load_type, "_field_types",
+                                  Load_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Load_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Load_type, "__annotations__",
+                                  Load_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Load_annotations);
+        return 0;
+    }
+    Py_DECREF(Load_annotations);
+    PyObject *Store_annotations = PyDict_New();
+    if (!Store_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Store_type, "_field_types",
+                                  Store_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Store_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Store_type, "__annotations__",
+                                  Store_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Store_annotations);
+        return 0;
+    }
+    Py_DECREF(Store_annotations);
+    PyObject *Del_annotations = PyDict_New();
+    if (!Del_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Del_type, "_field_types",
+                                  Del_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Del_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Del_type, "__annotations__",
+                                  Del_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Del_annotations);
+        return 0;
+    }
+    Py_DECREF(Del_annotations);
+    PyObject *And_annotations = PyDict_New();
+    if (!And_annotations) return 0;
+    cond = PyObject_SetAttrString(state->And_type, "_field_types",
+                                  And_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(And_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->And_type, "__annotations__",
+                                  And_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(And_annotations);
+        return 0;
+    }
+    Py_DECREF(And_annotations);
+    PyObject *Or_annotations = PyDict_New();
+    if (!Or_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Or_type, "_field_types",
+                                  Or_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Or_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Or_type, "__annotations__",
+                                  Or_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Or_annotations);
+        return 0;
+    }
+    Py_DECREF(Or_annotations);
+    PyObject *Add_annotations = PyDict_New();
+    if (!Add_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Add_type, "_field_types",
+                                  Add_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Add_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Add_type, "__annotations__",
+                                  Add_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Add_annotations);
+        return 0;
+    }
+    Py_DECREF(Add_annotations);
+    PyObject *Sub_annotations = PyDict_New();
+    if (!Sub_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Sub_type, "_field_types",
+                                  Sub_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Sub_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Sub_type, "__annotations__",
+                                  Sub_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Sub_annotations);
+        return 0;
+    }
+    Py_DECREF(Sub_annotations);
+    PyObject *Mult_annotations = PyDict_New();
+    if (!Mult_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Mult_type, "_field_types",
+                                  Mult_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Mult_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Mult_type, "__annotations__",
+                                  Mult_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Mult_annotations);
+        return 0;
+    }
+    Py_DECREF(Mult_annotations);
+    PyObject *MatMult_annotations = PyDict_New();
+    if (!MatMult_annotations) return 0;
+    cond = PyObject_SetAttrString(state->MatMult_type, "_field_types",
+                                  MatMult_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatMult_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatMult_type, "__annotations__",
+                                  MatMult_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatMult_annotations);
+        return 0;
+    }
+    Py_DECREF(MatMult_annotations);
+    PyObject *Div_annotations = PyDict_New();
+    if (!Div_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Div_type, "_field_types",
+                                  Div_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Div_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Div_type, "__annotations__",
+                                  Div_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Div_annotations);
+        return 0;
+    }
+    Py_DECREF(Div_annotations);
+    PyObject *Mod_annotations = PyDict_New();
+    if (!Mod_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Mod_type, "_field_types",
+                                  Mod_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Mod_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Mod_type, "__annotations__",
+                                  Mod_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Mod_annotations);
+        return 0;
+    }
+    Py_DECREF(Mod_annotations);
+    PyObject *Pow_annotations = PyDict_New();
+    if (!Pow_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Pow_type, "_field_types",
+                                  Pow_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Pow_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Pow_type, "__annotations__",
+                                  Pow_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Pow_annotations);
+        return 0;
+    }
+    Py_DECREF(Pow_annotations);
+    PyObject *LShift_annotations = PyDict_New();
+    if (!LShift_annotations) return 0;
+    cond = PyObject_SetAttrString(state->LShift_type, "_field_types",
+                                  LShift_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(LShift_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->LShift_type, "__annotations__",
+                                  LShift_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(LShift_annotations);
+        return 0;
+    }
+    Py_DECREF(LShift_annotations);
+    PyObject *RShift_annotations = PyDict_New();
+    if (!RShift_annotations) return 0;
+    cond = PyObject_SetAttrString(state->RShift_type, "_field_types",
+                                  RShift_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(RShift_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->RShift_type, "__annotations__",
+                                  RShift_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(RShift_annotations);
+        return 0;
+    }
+    Py_DECREF(RShift_annotations);
+    PyObject *BitOr_annotations = PyDict_New();
+    if (!BitOr_annotations) return 0;
+    cond = PyObject_SetAttrString(state->BitOr_type, "_field_types",
+                                  BitOr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BitOr_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->BitOr_type, "__annotations__",
+                                  BitOr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BitOr_annotations);
+        return 0;
+    }
+    Py_DECREF(BitOr_annotations);
+    PyObject *BitXor_annotations = PyDict_New();
+    if (!BitXor_annotations) return 0;
+    cond = PyObject_SetAttrString(state->BitXor_type, "_field_types",
+                                  BitXor_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BitXor_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->BitXor_type, "__annotations__",
+                                  BitXor_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BitXor_annotations);
+        return 0;
+    }
+    Py_DECREF(BitXor_annotations);
+    PyObject *BitAnd_annotations = PyDict_New();
+    if (!BitAnd_annotations) return 0;
+    cond = PyObject_SetAttrString(state->BitAnd_type, "_field_types",
+                                  BitAnd_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BitAnd_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->BitAnd_type, "__annotations__",
+                                  BitAnd_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(BitAnd_annotations);
+        return 0;
+    }
+    Py_DECREF(BitAnd_annotations);
+    PyObject *FloorDiv_annotations = PyDict_New();
+    if (!FloorDiv_annotations) return 0;
+    cond = PyObject_SetAttrString(state->FloorDiv_type, "_field_types",
+                                  FloorDiv_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FloorDiv_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->FloorDiv_type, "__annotations__",
+                                  FloorDiv_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FloorDiv_annotations);
+        return 0;
+    }
+    Py_DECREF(FloorDiv_annotations);
+    PyObject *Invert_annotations = PyDict_New();
+    if (!Invert_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Invert_type, "_field_types",
+                                  Invert_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Invert_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Invert_type, "__annotations__",
+                                  Invert_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Invert_annotations);
+        return 0;
+    }
+    Py_DECREF(Invert_annotations);
+    PyObject *Not_annotations = PyDict_New();
+    if (!Not_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Not_type, "_field_types",
+                                  Not_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Not_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Not_type, "__annotations__",
+                                  Not_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Not_annotations);
+        return 0;
+    }
+    Py_DECREF(Not_annotations);
+    PyObject *UAdd_annotations = PyDict_New();
+    if (!UAdd_annotations) return 0;
+    cond = PyObject_SetAttrString(state->UAdd_type, "_field_types",
+                                  UAdd_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(UAdd_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->UAdd_type, "__annotations__",
+                                  UAdd_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(UAdd_annotations);
+        return 0;
+    }
+    Py_DECREF(UAdd_annotations);
+    PyObject *USub_annotations = PyDict_New();
+    if (!USub_annotations) return 0;
+    cond = PyObject_SetAttrString(state->USub_type, "_field_types",
+                                  USub_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(USub_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->USub_type, "__annotations__",
+                                  USub_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(USub_annotations);
+        return 0;
+    }
+    Py_DECREF(USub_annotations);
+    PyObject *Eq_annotations = PyDict_New();
+    if (!Eq_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Eq_type, "_field_types",
+                                  Eq_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Eq_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Eq_type, "__annotations__",
+                                  Eq_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Eq_annotations);
+        return 0;
+    }
+    Py_DECREF(Eq_annotations);
+    PyObject *NotEq_annotations = PyDict_New();
+    if (!NotEq_annotations) return 0;
+    cond = PyObject_SetAttrString(state->NotEq_type, "_field_types",
+                                  NotEq_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(NotEq_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->NotEq_type, "__annotations__",
+                                  NotEq_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(NotEq_annotations);
+        return 0;
+    }
+    Py_DECREF(NotEq_annotations);
+    PyObject *Lt_annotations = PyDict_New();
+    if (!Lt_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Lt_type, "_field_types",
+                                  Lt_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Lt_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Lt_type, "__annotations__",
+                                  Lt_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Lt_annotations);
+        return 0;
+    }
+    Py_DECREF(Lt_annotations);
+    PyObject *LtE_annotations = PyDict_New();
+    if (!LtE_annotations) return 0;
+    cond = PyObject_SetAttrString(state->LtE_type, "_field_types",
+                                  LtE_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(LtE_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->LtE_type, "__annotations__",
+                                  LtE_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(LtE_annotations);
+        return 0;
+    }
+    Py_DECREF(LtE_annotations);
+    PyObject *Gt_annotations = PyDict_New();
+    if (!Gt_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Gt_type, "_field_types",
+                                  Gt_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Gt_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Gt_type, "__annotations__",
+                                  Gt_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Gt_annotations);
+        return 0;
+    }
+    Py_DECREF(Gt_annotations);
+    PyObject *GtE_annotations = PyDict_New();
+    if (!GtE_annotations) return 0;
+    cond = PyObject_SetAttrString(state->GtE_type, "_field_types",
+                                  GtE_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(GtE_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->GtE_type, "__annotations__",
+                                  GtE_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(GtE_annotations);
+        return 0;
+    }
+    Py_DECREF(GtE_annotations);
+    PyObject *Is_annotations = PyDict_New();
+    if (!Is_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Is_type, "_field_types",
+                                  Is_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Is_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Is_type, "__annotations__",
+                                  Is_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Is_annotations);
+        return 0;
+    }
+    Py_DECREF(Is_annotations);
+    PyObject *IsNot_annotations = PyDict_New();
+    if (!IsNot_annotations) return 0;
+    cond = PyObject_SetAttrString(state->IsNot_type, "_field_types",
+                                  IsNot_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(IsNot_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->IsNot_type, "__annotations__",
+                                  IsNot_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(IsNot_annotations);
+        return 0;
+    }
+    Py_DECREF(IsNot_annotations);
+    PyObject *In_annotations = PyDict_New();
+    if (!In_annotations) return 0;
+    cond = PyObject_SetAttrString(state->In_type, "_field_types",
+                                  In_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(In_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->In_type, "__annotations__",
+                                  In_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(In_annotations);
+        return 0;
+    }
+    Py_DECREF(In_annotations);
+    PyObject *NotIn_annotations = PyDict_New();
+    if (!NotIn_annotations) return 0;
+    cond = PyObject_SetAttrString(state->NotIn_type, "_field_types",
+                                  NotIn_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(NotIn_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->NotIn_type, "__annotations__",
+                                  NotIn_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(NotIn_annotations);
+        return 0;
+    }
+    Py_DECREF(NotIn_annotations);
+    PyObject *comprehension_annotations = PyDict_New();
+    if (!comprehension_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(comprehension_annotations, "target", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(comprehension_annotations, "iter", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(comprehension_annotations, "ifs", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(comprehension_annotations, "is_async",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->comprehension_type, "_field_types",
+                                  comprehension_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(comprehension_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->comprehension_type, "__annotations__",
+                                  comprehension_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(comprehension_annotations);
+        return 0;
+    }
+    Py_DECREF(comprehension_annotations);
+    PyObject *ExceptHandler_annotations = PyDict_New();
+    if (!ExceptHandler_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ExceptHandler_annotations, "type", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ExceptHandler_annotations, "name", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ExceptHandler_annotations, "body", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ExceptHandler_type, "_field_types",
+                                  ExceptHandler_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ExceptHandler_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->ExceptHandler_type, "__annotations__",
+                                  ExceptHandler_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ExceptHandler_annotations);
+        return 0;
+    }
+    Py_DECREF(ExceptHandler_annotations);
+    PyObject *arguments_annotations = PyDict_New();
+    if (!arguments_annotations) return 0;
+    {
+        PyObject *type = state->arg_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "posonlyargs", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "vararg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "kwonlyargs", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "kw_defaults", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "kwarg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "defaults", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->arguments_type, "_field_types",
+                                  arguments_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(arguments_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->arguments_type, "__annotations__",
+                                  arguments_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(arguments_annotations);
+        return 0;
+    }
+    Py_DECREF(arguments_annotations);
+    PyObject *arg_annotations = PyDict_New();
+    if (!arg_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(arg_annotations, "arg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arg_annotations, "annotation", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arg_annotations, "type_comment", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->arg_type, "_field_types",
+                                  arg_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(arg_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->arg_type, "__annotations__",
+                                  arg_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(arg_annotations);
+        return 0;
+    }
+    Py_DECREF(arg_annotations);
+    PyObject *keyword_annotations = PyDict_New();
+    if (!keyword_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(keyword_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(keyword_annotations, "arg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(keyword_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(keyword_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(keyword_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->keyword_type, "_field_types",
+                                  keyword_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(keyword_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->keyword_type, "__annotations__",
+                                  keyword_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(keyword_annotations);
+        return 0;
+    }
+    Py_DECREF(keyword_annotations);
+    PyObject *alias_annotations = PyDict_New();
+    if (!alias_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(alias_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(alias_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(alias_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(alias_annotations, "asname", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(alias_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->alias_type, "_field_types",
+                                  alias_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(alias_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->alias_type, "__annotations__",
+                                  alias_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(alias_annotations);
+        return 0;
+    }
+    Py_DECREF(alias_annotations);
+    PyObject *withitem_annotations = PyDict_New();
+    if (!withitem_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(withitem_annotations, "context_expr", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(withitem_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(withitem_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(withitem_annotations, "optional_vars",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(withitem_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->withitem_type, "_field_types",
+                                  withitem_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(withitem_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->withitem_type, "__annotations__",
+                                  withitem_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(withitem_annotations);
+        return 0;
+    }
+    Py_DECREF(withitem_annotations);
+    PyObject *match_case_annotations = PyDict_New();
+    if (!match_case_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(match_case_annotations, "pattern", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(match_case_annotations, "guard", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(match_case_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->match_case_type, "_field_types",
+                                  match_case_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(match_case_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->match_case_type, "__annotations__",
+                                  match_case_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(match_case_annotations);
+        return 0;
+    }
+    Py_DECREF(match_case_annotations);
+    PyObject *MatchValue_annotations = PyDict_New();
+    if (!MatchValue_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(MatchValue_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchValue_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchValue_type, "_field_types",
+                                  MatchValue_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchValue_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchValue_type, "__annotations__",
+                                  MatchValue_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchValue_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchValue_annotations);
+    PyObject *MatchSingleton_annotations = PyDict_New();
+    if (!MatchSingleton_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyBaseObject_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(MatchSingleton_annotations, "value", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchSingleton_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchSingleton_type, "_field_types",
+                                  MatchSingleton_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchSingleton_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchSingleton_type,
+                                  "__annotations__",
+                                  MatchSingleton_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchSingleton_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchSingleton_annotations);
+    PyObject *MatchSequence_annotations = PyDict_New();
+    if (!MatchSequence_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchSequence_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchSequence_annotations, "patterns",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchSequence_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchSequence_type, "_field_types",
+                                  MatchSequence_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchSequence_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchSequence_type, "__annotations__",
+                                  MatchSequence_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchSequence_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchSequence_annotations);
+    PyObject *MatchMapping_annotations = PyDict_New();
+    if (!MatchMapping_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchMapping_annotations, "keys", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchMapping_annotations, "patterns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchMapping_annotations, "rest", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchMapping_type, "_field_types",
+                                  MatchMapping_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchMapping_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchMapping_type, "__annotations__",
+                                  MatchMapping_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchMapping_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchMapping_annotations);
+    PyObject *MatchClass_annotations = PyDict_New();
+    if (!MatchClass_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(MatchClass_annotations, "cls", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchClass_annotations, "patterns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchClass_annotations, "kwd_attrs", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchClass_annotations, "kwd_patterns",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchClass_type, "_field_types",
+                                  MatchClass_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchClass_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchClass_type, "__annotations__",
+                                  MatchClass_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchClass_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchClass_annotations);
+    PyObject *MatchStar_annotations = PyDict_New();
+    if (!MatchStar_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchStar_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchStar_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchStar_type, "_field_types",
+                                  MatchStar_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchStar_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchStar_type, "__annotations__",
+                                  MatchStar_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchStar_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchStar_annotations);
+    PyObject *MatchAs_annotations = PyDict_New();
+    if (!MatchAs_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchAs_annotations, "pattern", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchAs_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchAs_type, "_field_types",
+                                  MatchAs_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchAs_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchAs_type, "__annotations__",
+                                  MatchAs_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchAs_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchAs_annotations);
+    PyObject *MatchOr_annotations = PyDict_New();
+    if (!MatchOr_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchOr_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchOr_annotations, "patterns", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchOr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchOr_type, "_field_types",
+                                  MatchOr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchOr_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->MatchOr_type, "__annotations__",
+                                  MatchOr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(MatchOr_annotations);
+        return 0;
+    }
+    Py_DECREF(MatchOr_annotations);
+    PyObject *TypeIgnore_annotations = PyDict_New();
+    if (!TypeIgnore_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeIgnore_annotations, "lineno", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeIgnore_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeIgnore_annotations, "tag", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeIgnore_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeIgnore_type, "_field_types",
+                                  TypeIgnore_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeIgnore_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->TypeIgnore_type, "__annotations__",
+                                  TypeIgnore_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeIgnore_annotations);
+        return 0;
+    }
+    Py_DECREF(TypeIgnore_annotations);
+    PyObject *TypeVar_annotations = PyDict_New();
+    if (!TypeVar_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeVar_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeVar_annotations, "bound", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeVar_annotations, "default_value", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeVar_type, "_field_types",
+                                  TypeVar_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeVar_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->TypeVar_type, "__annotations__",
+                                  TypeVar_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeVar_annotations);
+        return 0;
+    }
+    Py_DECREF(TypeVar_annotations);
+    PyObject *ParamSpec_annotations = PyDict_New();
+    if (!ParamSpec_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(ParamSpec_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ParamSpec_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ParamSpec_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ParamSpec_annotations, "default_value",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ParamSpec_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ParamSpec_type, "_field_types",
+                                  ParamSpec_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ParamSpec_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->ParamSpec_type, "__annotations__",
+                                  ParamSpec_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(ParamSpec_annotations);
+        return 0;
+    }
+    Py_DECREF(ParamSpec_annotations);
+    PyObject *TypeVarTuple_annotations = PyDict_New();
+    if (!TypeVarTuple_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeVarTuple_annotations, "name", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVarTuple_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeVarTuple_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeVarTuple_annotations, "default_value",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVarTuple_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeVarTuple_type, "_field_types",
+                                  TypeVarTuple_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeVarTuple_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->TypeVarTuple_type, "__annotations__",
+                                  TypeVarTuple_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TypeVarTuple_annotations);
+        return 0;
+    }
+    Py_DECREF(TypeVarTuple_annotations);
+
+    return 1;
+}
 
 
 
@@ -838,8 +5081,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     Py_ssize_t i, numfields = 0;
     int res = -1;
-    PyObject *key, *value, *fields;
-    if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+    PyObject *key, *value, *fields, *attributes = NULL, *remaining_fields = NULL;
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
     if (fields) {
@@ -847,6 +5090,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (numfields == -1) {
             goto cleanup;
         }
+        remaining_fields = PySet_New(fields);
+    }
+    else {
+        remaining_fields = PySet_New(NULL);
+    }
+    if (remaining_fields == NULL) {
+        goto cleanup;
     }
 
     res = 0; /* if no error occurs, this stays 0 to the end */
@@ -866,6 +5116,11 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto cleanup;
         }
         res = PyObject_SetAttr(self, name, PyTuple_GET_ITEM(args, i));
+        if (PySet_Discard(remaining_fields, name) < 0) {
+            res = -1;
+            Py_DECREF(name);
+            goto cleanup;
+        }
         Py_DECREF(name);
         if (res < 0) {
             goto cleanup;
@@ -878,18 +5133,46 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             if (contains == -1) {
                 res = -1;
                 goto cleanup;
-            } else if (contains == 1) {
-                Py_ssize_t p = PySequence_Index(fields, key);
+            }
+            else if (contains == 1) {
+                int p = PySet_Discard(remaining_fields, key);
                 if (p == -1) {
                     res = -1;
                     goto cleanup;
                 }
-                if (p < PyTuple_GET_SIZE(args)) {
+                if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
                         "%.400s got multiple values for argument '%U'",
                         Py_TYPE(self)->tp_name, key);
                     res = -1;
                     goto cleanup;
+                }
+            }
+            else {
+                // Lazily initialize "attributes"
+                if (attributes == NULL) {
+                    attributes = PyObject_GetAttr((PyObject*)Py_TYPE(self), state->_attributes);
+                    if (attributes == NULL) {
+                        res = -1;
+                        goto cleanup;
+                    }
+                }
+                int contains = PySequence_Contains(attributes, key);
+                if (contains == -1) {
+                    res = -1;
+                    goto cleanup;
+                }
+                else if (contains == 0) {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                        "Support for arbitrary keyword arguments is deprecated "
+                        "and will be removed in Python 3.15.",
+                        Py_TYPE(self)->tp_name, key
+                    ) < 0) {
+                        res = -1;
+                        goto cleanup;
+                    }
                 }
             }
             res = PyObject_SetAttr(self, key, value);
@@ -898,9 +5181,90 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             }
         }
     }
+    Py_ssize_t size = PySet_Size(remaining_fields);
+    PyObject *field_types = NULL, *remaining_list = NULL;
+    if (size > 0) {
+        if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
+                                     &field_types) < 0) {
+            res = -1;
+            goto cleanup;
+        }
+        if (field_types == NULL) {
+            // Probably a user-defined subclass of AST that lacks _field_types.
+            // This will continue to work as it did before 3.13; i.e., attributes
+            // that are not passed in simply do not exist on the instance.
+            goto cleanup;
+        }
+        remaining_list = PySequence_List(remaining_fields);
+        if (!remaining_list) {
+            goto set_remaining_cleanup;
+        }
+        for (Py_ssize_t i = 0; i < size; i++) {
+            PyObject *name = PyList_GET_ITEM(remaining_list, i);
+            PyObject *type = PyDict_GetItemWithError(field_types, name);
+            if (!type) {
+                if (PyErr_Occurred()) {
+                    goto set_remaining_cleanup;
+                }
+                else {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "Field '%U' is missing from %.400s._field_types. "
+                        "This will become an error in Python 3.15.",
+                        name, Py_TYPE(self)->tp_name
+                    ) < 0) {
+                        goto set_remaining_cleanup;
+                    }
+                }
+            }
+            else if (_PyUnion_Check(type)) {
+                // optional field
+                // do nothing, we'll have set a None default on the class
+            }
+            else if (Py_IS_TYPE(type, &Py_GenericAliasType)) {
+                // list field
+                PyObject *empty = PyList_New(0);
+                if (!empty) {
+                    goto set_remaining_cleanup;
+                }
+                res = PyObject_SetAttr(self, name, empty);
+                Py_DECREF(empty);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
+            else if (type == state->expr_context_type) {
+                // special case for expr_context: default to Load()
+                res = PyObject_SetAttr(self, name, state->Load_singleton);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
+            else {
+                // simple field (e.g., identifier)
+                if (PyErr_WarnFormat(
+                    PyExc_DeprecationWarning, 1,
+                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
+                    "This will become an error in Python 3.15.",
+                    Py_TYPE(self)->tp_name, name
+                ) < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
+        }
+        Py_DECREF(remaining_list);
+        Py_DECREF(field_types);
+    }
   cleanup:
+    Py_XDECREF(attributes);
     Py_XDECREF(fields);
+    Py_XDECREF(remaining_fields);
     return res;
+  set_remaining_cleanup:
+    Py_XDECREF(remaining_list);
+    Py_XDECREF(field_types);
+    res = -1;
+    goto cleanup;
 }
 
 /* Pickling support */
@@ -912,23 +5276,358 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    PyObject *dict;
-    if (_PyObject_LookupAttr(self, state->__dict__, &dict) < 0) {
+    PyObject *dict = NULL, *fields = NULL, *positional_args = NULL;
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
+    PyObject *result = NULL;
     if (dict) {
-        return Py_BuildValue("O()N", Py_TYPE(self), dict);
+        // Unpickling (or copying) works as follows:
+        // - Construct the object with only positional arguments
+        // - Set the fields from the dict
+        // We have two constraints:
+        // - We must set all the required fields in the initial constructor call,
+        //   or the unpickling or deepcopying of the object will trigger DeprecationWarnings.
+        // - We must not include child nodes in the positional args, because
+        //   that may trigger runaway recursion during copying (gh-120108).
+        // To satisfy both constraints, we set all the fields to None in the
+        // initial list of positional args, and then set the fields from the dict.
+        if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+            goto cleanup;
+        }
+        if (fields) {
+            Py_ssize_t numfields = PySequence_Size(fields);
+            if (numfields == -1) {
+                Py_DECREF(dict);
+                goto cleanup;
+            }
+            positional_args = PyList_New(0);
+            if (!positional_args) {
+                goto cleanup;
+            }
+            for (Py_ssize_t i = 0; i < numfields; i++) {
+                PyObject *name = PySequence_GetItem(fields, i);
+                if (!name) {
+                    goto cleanup;
+                }
+                PyObject *value;
+                int rc = PyDict_GetItemRef(dict, name, &value);
+                Py_DECREF(name);
+                if (rc < 0) {
+                    goto cleanup;
+                }
+                if (!value) {
+                    break;
+                }
+                rc = PyList_Append(positional_args, Py_None);
+                Py_DECREF(value);
+                if (rc < 0) {
+                    goto cleanup;
+                }
+            }
+            PyObject *args_tuple = PyList_AsTuple(positional_args);
+            if (!args_tuple) {
+                goto cleanup;
+            }
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple, dict);
+        }
+        else {
+            result = Py_BuildValue("O()N", Py_TYPE(self), dict);
+        }
     }
-    return Py_BuildValue("O()", Py_TYPE(self));
+    else {
+        result = Py_BuildValue("O()", Py_TYPE(self));
+    }
+cleanup:
+    Py_XDECREF(fields);
+    Py_XDECREF(positional_args);
+    return result;
+}
+
+/*
+ * Perform the following validations:
+ *
+ *   - All keyword arguments are known 'fields' or 'attributes'.
+ *   - No field or attribute would be left unfilled after copy.replace().
+ *
+ * On success, this returns 1. Otherwise, set a TypeError
+ * exception and returns -1 (no exception is set if some
+ * other internal errors occur).
+ *
+ * Parameters
+ *
+ *      self          The AST node instance.
+ *      dict          The AST node instance dictionary (self.__dict__).
+ *      fields        The list of fields (self._fields).
+ *      attributes    The list of attributes (self._attributes).
+ *      kwargs        Keyword arguments passed to ast_type_replace().
+ *
+ * The 'dict', 'fields', 'attributes' and 'kwargs' arguments can be NULL.
+ *
+ * Note: this function can be removed in 3.15 since the verification
+ *       will be done inside the constructor.
+ */
+static inline int
+ast_type_replace_check(PyObject *self,
+                       PyObject *dict,
+                       PyObject *fields,
+                       PyObject *attributes,
+                       PyObject *kwargs)
+{
+    // While it is possible to make some fast paths that would avoid
+    // allocating objects on the stack, this would cost us readability.
+    // For instance, if 'fields' and 'attributes' are both empty, and
+    // 'kwargs' is not empty, we could raise a TypeError immediately.
+    PyObject *expecting = PySet_New(fields);
+    if (expecting == NULL) {
+        return -1;
+    }
+    if (attributes) {
+        if (_PySet_Update(expecting, attributes) < 0) {
+            Py_DECREF(expecting);
+            return -1;
+        }
+    }
+    // Any keyword argument that is neither a field nor attribute is rejected.
+    // We first need to check whether a keyword argument is accepted or not.
+    // If all keyword arguments are accepted, we compute the required fields
+    // and attributes. A field or attribute is not needed if:
+    //
+    //  1) it is given in 'kwargs', or
+    //  2) it already exists on 'self'.
+    if (kwargs) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(kwargs, &pos, &key, &value)) {
+            int rc = PySet_Discard(expecting, key);
+            if (rc < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            if (rc == 0) {
+                PyErr_Format(PyExc_TypeError,
+                             "%.400s.__replace__ got an unexpected keyword "
+                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
+                Py_DECREF(expecting);
+                return -1;
+            }
+        }
+    }
+    // check that the remaining fields or attributes would be filled
+    if (dict) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(dict, &pos, &key, &value)) {
+            // Mark fields or attributes that are found on the instance
+            // as non-mandatory. If they are not given in 'kwargs', they
+            // will be shallow-coied; otherwise, they would be replaced
+            // (not in this function).
+            if (PySet_Discard(expecting, key) < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+        }
+        if (attributes) {
+            // Some attributes may or may not be present at runtime.
+            // In particular, now that we checked whether 'kwargs'
+            // is correct or not, we allow any attribute to be missing.
+            //
+            // Note that fields must still be entirely determined when
+            // calling the constructor later.
+            PyObject *unused = PyObject_CallMethodOneArg(expecting,
+                                                         &_Py_ID(difference_update),
+                                                         attributes);
+            if (unused == NULL) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            Py_DECREF(unused);
+        }
+    }
+    // Now 'expecting' contains the fields or attributes
+    // that would not be filled inside ast_type_replace().
+    Py_ssize_t m = PySet_GET_SIZE(expecting);
+    if (m > 0) {
+        PyObject *names = PyList_New(m);
+        if (names == NULL) {
+            Py_DECREF(expecting);
+            return -1;
+        }
+        Py_ssize_t i = 0, pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
+            PyObject *name = PyObject_Repr(item);
+            if (name == NULL) {
+                Py_DECREF(expecting);
+                Py_DECREF(names);
+                return -1;
+            }
+            // steal the reference 'name'
+            PyList_SET_ITEM(names, i++, name);
+        }
+        Py_DECREF(expecting);
+        if (PyList_Sort(names) < 0) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *sep = PyUnicode_FromString(", ");
+        if (sep == NULL) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *str_names = PyUnicode_Join(sep, names);
+        Py_DECREF(sep);
+        Py_DECREF(names);
+        if (str_names == NULL) {
+            return -1;
+        }
+        PyErr_Format(PyExc_TypeError,
+                     "%.400s.__replace__ missing %ld keyword argument%s: %U.",
+                     Py_TYPE(self)->tp_name, m, m == 1 ? "" : "s", str_names);
+        Py_DECREF(str_names);
+        return -1;
+    }
+    else {
+        Py_DECREF(expecting);
+        return 1;
+    }
+}
+
+/*
+ * Python equivalent:
+ *
+ *   for key in keys:
+ *       if hasattr(self, key):
+ *           payload[key] = getattr(self, key)
+ *
+ * The 'keys' argument is a sequence corresponding to
+ * the '_fields' or the '_attributes' of an AST node.
+ *
+ * This returns -1 if an error occurs and 0 otherwise.
+ *
+ * Parameters
+ *
+ *      payload   A dictionary to fill.
+ *      keys      A sequence of keys or NULL for an empty sequence.
+ *      dict      The AST node instance dictionary (must not be NULL).
+ */
+static inline int
+ast_type_replace_update_payload(PyObject *payload,
+                                PyObject *keys,
+                                PyObject *dict)
+{
+    assert(dict != NULL);
+    if (keys == NULL) {
+        return 0;
+    }
+    Py_ssize_t n = PySequence_Size(keys);
+    if (n == -1) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *key = PySequence_GetItem(keys, i);
+        if (key == NULL) {
+            return -1;
+        }
+        PyObject *value;
+        if (PyDict_GetItemRef(dict, key, &value) < 0) {
+            Py_DECREF(key);
+            return -1;
+        }
+        if (value == NULL) {
+            Py_DECREF(key);
+            // If a field or attribute is not present at runtime, it should
+            // be explicitly given in 'kwargs'. If not, the constructor will
+            // issue a warning (which becomes an error in 3.15).
+            continue;
+        }
+        int rc = PyDict_SetItem(payload, key, value);
+        Py_DECREF(key);
+        Py_DECREF(value);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/* copy.replace() support (shallow copy) */
+static PyObject *
+ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        return NULL;
+    }
+
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = NULL;
+    // known AST class fields and attributes
+    PyObject *fields = NULL, *attributes = NULL;
+    // current instance dictionary
+    PyObject *dict = NULL;
+    // constructor positional and keyword arguments
+    PyObject *empty_tuple = NULL, *payload = NULL;
+
+    PyObject *type = (PyObject *)Py_TYPE(self);
+    if (PyObject_GetOptionalAttr(type, state->_fields, &fields) < 0) {
+        goto cleanup;
+    }
+    if (PyObject_GetOptionalAttr(type, state->_attributes, &attributes) < 0) {
+        goto cleanup;
+    }
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
+        goto cleanup;
+    }
+    if (ast_type_replace_check(self, dict, fields, attributes, kwargs) < 0) {
+        goto cleanup;
+    }
+    empty_tuple = PyTuple_New(0);
+    if (empty_tuple == NULL) {
+        goto cleanup;
+    }
+    payload = PyDict_New();
+    if (payload == NULL) {
+        goto cleanup;
+    }
+    if (dict) { // in case __dict__ is missing (for some obscure reason)
+        // copy the instance's fields (possibly NULL)
+        if (ast_type_replace_update_payload(payload, fields, dict) < 0) {
+            goto cleanup;
+        }
+        // copy the instance's attributes (possibly NULL)
+        if (ast_type_replace_update_payload(payload, attributes, dict) < 0) {
+            goto cleanup;
+        }
+    }
+    if (kwargs && PyDict_Update(payload, kwargs) < 0) {
+        goto cleanup;
+    }
+    result = PyObject_Call(type, empty_tuple, payload);
+cleanup:
+    Py_XDECREF(payload);
+    Py_XDECREF(empty_tuple);
+    Py_XDECREF(dict);
+    Py_XDECREF(attributes);
+    Py_XDECREF(fields);
+    return result;
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
+    {"__replace__", _PyCFunction_CAST(ast_type_replace), METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **fields)\n--\n\n"
+               "Return a copy of the AST node with new values "
+               "for the specified fields.")},
     {NULL}
 };
 
@@ -994,23 +5693,24 @@ add_attributes(struct ast_state *state, PyObject *type, const char * const *attr
     int i, result;
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l)
-        return 0;
+        return -1;
     for (i = 0; i < num_fields; i++) {
         s = PyUnicode_InternFromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
-            return 0;
+            return -1;
         }
         PyTuple_SET_ITEM(l, i, s);
     }
-    result = PyObject_SetAttr(type, state->_attributes, l) >= 0;
+    result = PyObject_SetAttr(type, state->_attributes, l);
     Py_DECREF(l);
     return result;
 }
 
 /* Conversion AST -> Python */
 
-static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq, PyObject* (*func)(struct ast_state *state, void*))
+static PyObject* ast2obj_list(struct ast_state *state, struct validator *vstate, asdl_seq *seq,
+                              PyObject* (*func)(struct ast_state *state, struct validator *vstate, void*))
 {
     Py_ssize_t i, n = asdl_seq_LEN(seq);
     PyObject *result = PyList_New(n);
@@ -1018,7 +5718,7 @@ static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq, PyObject* 
     if (!result)
         return NULL;
     for (i = 0; i < n; i++) {
-        value = func(state, asdl_seq_GET_UNTYPED(seq, i));
+        value = func(state, vstate, asdl_seq_GET_UNTYPED(seq, i));
         if (!value) {
             Py_DECREF(result);
             return NULL;
@@ -1028,7 +5728,7 @@ static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq, PyObject* 
     return result;
 }
 
-static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
+static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), struct validator *Py_UNUSED(vstate), void *o)
 {
     PyObject *op = (PyObject*)o;
     if (!op) {
@@ -1040,7 +5740,7 @@ static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
 
-static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), long b)
+static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), struct validator *Py_UNUSED(vstate), long b)
 {
     return PyLong_FromLong(b);
 }
@@ -1078,7 +5778,7 @@ static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject**
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
         PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
-        return 1;
+        return -1;
     }
     return obj2ast_object(state, obj, out, arena);
 }
@@ -1087,7 +5787,7 @@ static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
         PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
-        return 1;
+        return -1;
     }
     return obj2ast_object(state, obj, out, arena);
 }
@@ -1097,12 +5797,12 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
     int i;
     if (!PyLong_Check(obj)) {
         PyErr_Format(PyExc_ValueError, "invalid integer value: %R", obj);
-        return 1;
+        return -1;
     }
 
-    i = _PyLong_AsInt(obj);
+    i = PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
-        return 1;
+        return -1;
     *out = i;
     return 0;
 }
@@ -1127,47 +5827,40 @@ static int add_ast_fields(struct ast_state *state)
 static int
 init_types(struct ast_state *state)
 {
-    // init_types() must not be called after _PyAST_Fini()
-    // has been called
-    assert(state->initialized >= 0);
-
-    if (state->initialized) {
-        return 1;
-    }
     if (init_identifiers(state) < 0) {
-        return 0;
+        return -1;
     }
     state->AST_type = PyType_FromSpec(&AST_type_spec);
     if (!state->AST_type) {
-        return 0;
+        return -1;
     }
     if (add_ast_fields(state) < 0) {
-        return 0;
+        return -1;
     }
     state->mod_type = make_type(state, "mod", state->AST_type, NULL, 0,
         "mod = Module(stmt* body, type_ignore* type_ignores)\n"
         "    | Interactive(stmt* body)\n"
         "    | Expression(expr body)\n"
         "    | FunctionType(expr* argtypes, expr returns)");
-    if (!state->mod_type) return 0;
-    if (!add_attributes(state, state->mod_type, NULL, 0)) return 0;
+    if (!state->mod_type) return -1;
+    if (add_attributes(state, state->mod_type, NULL, 0) < 0) return -1;
     state->Module_type = make_type(state, "Module", state->mod_type,
                                    Module_fields, 2,
         "Module(stmt* body, type_ignore* type_ignores)");
-    if (!state->Module_type) return 0;
+    if (!state->Module_type) return -1;
     state->Interactive_type = make_type(state, "Interactive", state->mod_type,
                                         Interactive_fields, 1,
         "Interactive(stmt* body)");
-    if (!state->Interactive_type) return 0;
+    if (!state->Interactive_type) return -1;
     state->Expression_type = make_type(state, "Expression", state->mod_type,
                                        Expression_fields, 1,
         "Expression(expr body)");
-    if (!state->Expression_type) return 0;
+    if (!state->Expression_type) return -1;
     state->FunctionType_type = make_type(state, "FunctionType",
                                          state->mod_type, FunctionType_fields,
                                          2,
         "FunctionType(expr* argtypes, expr returns)");
-    if (!state->FunctionType_type) return 0;
+    if (!state->FunctionType_type) return -1;
     state->stmt_type = make_type(state, "stmt", state->AST_type, NULL, 0,
         "stmt = FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)\n"
         "     | AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)\n"
@@ -1197,160 +5890,161 @@ init_types(struct ast_state *state)
         "     | Pass\n"
         "     | Break\n"
         "     | Continue");
-    if (!state->stmt_type) return 0;
-    if (!add_attributes(state, state->stmt_type, stmt_attributes, 4)) return 0;
+    if (!state->stmt_type) return -1;
+    if (add_attributes(state, state->stmt_type, stmt_attributes, 4) < 0) return
+        -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_col_offset, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->FunctionDef_type = make_type(state, "FunctionDef", state->stmt_type,
                                         FunctionDef_fields, 7,
         "FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)");
-    if (!state->FunctionDef_type) return 0;
+    if (!state->FunctionDef_type) return -1;
     if (PyObject_SetAttr(state->FunctionDef_type, state->returns, Py_None) ==
         -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->FunctionDef_type, state->type_comment, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->AsyncFunctionDef_type = make_type(state, "AsyncFunctionDef",
                                              state->stmt_type,
                                              AsyncFunctionDef_fields, 7,
         "AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)");
-    if (!state->AsyncFunctionDef_type) return 0;
+    if (!state->AsyncFunctionDef_type) return -1;
     if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->returns, Py_None)
         == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->type_comment,
         Py_None) == -1)
-        return 0;
+        return -1;
     state->ClassDef_type = make_type(state, "ClassDef", state->stmt_type,
                                      ClassDef_fields, 6,
         "ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list, type_param* type_params)");
-    if (!state->ClassDef_type) return 0;
+    if (!state->ClassDef_type) return -1;
     state->Return_type = make_type(state, "Return", state->stmt_type,
                                    Return_fields, 1,
         "Return(expr? value)");
-    if (!state->Return_type) return 0;
+    if (!state->Return_type) return -1;
     if (PyObject_SetAttr(state->Return_type, state->value, Py_None) == -1)
-        return 0;
+        return -1;
     state->Delete_type = make_type(state, "Delete", state->stmt_type,
                                    Delete_fields, 1,
         "Delete(expr* targets)");
-    if (!state->Delete_type) return 0;
+    if (!state->Delete_type) return -1;
     state->Assign_type = make_type(state, "Assign", state->stmt_type,
                                    Assign_fields, 3,
         "Assign(expr* targets, expr value, string? type_comment)");
-    if (!state->Assign_type) return 0;
+    if (!state->Assign_type) return -1;
     if (PyObject_SetAttr(state->Assign_type, state->type_comment, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->TypeAlias_type = make_type(state, "TypeAlias", state->stmt_type,
                                       TypeAlias_fields, 3,
         "TypeAlias(expr name, type_param* type_params, expr value)");
-    if (!state->TypeAlias_type) return 0;
+    if (!state->TypeAlias_type) return -1;
     state->AugAssign_type = make_type(state, "AugAssign", state->stmt_type,
                                       AugAssign_fields, 3,
         "AugAssign(expr target, operator op, expr value)");
-    if (!state->AugAssign_type) return 0;
+    if (!state->AugAssign_type) return -1;
     state->AnnAssign_type = make_type(state, "AnnAssign", state->stmt_type,
                                       AnnAssign_fields, 4,
         "AnnAssign(expr target, expr annotation, expr? value, int simple)");
-    if (!state->AnnAssign_type) return 0;
+    if (!state->AnnAssign_type) return -1;
     if (PyObject_SetAttr(state->AnnAssign_type, state->value, Py_None) == -1)
-        return 0;
+        return -1;
     state->For_type = make_type(state, "For", state->stmt_type, For_fields, 5,
         "For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
-    if (!state->For_type) return 0;
+    if (!state->For_type) return -1;
     if (PyObject_SetAttr(state->For_type, state->type_comment, Py_None) == -1)
-        return 0;
+        return -1;
     state->AsyncFor_type = make_type(state, "AsyncFor", state->stmt_type,
                                      AsyncFor_fields, 5,
         "AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
-    if (!state->AsyncFor_type) return 0;
+    if (!state->AsyncFor_type) return -1;
     if (PyObject_SetAttr(state->AsyncFor_type, state->type_comment, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->While_type = make_type(state, "While", state->stmt_type,
                                   While_fields, 3,
         "While(expr test, stmt* body, stmt* orelse)");
-    if (!state->While_type) return 0;
+    if (!state->While_type) return -1;
     state->If_type = make_type(state, "If", state->stmt_type, If_fields, 3,
         "If(expr test, stmt* body, stmt* orelse)");
-    if (!state->If_type) return 0;
+    if (!state->If_type) return -1;
     state->With_type = make_type(state, "With", state->stmt_type, With_fields,
                                  3,
         "With(withitem* items, stmt* body, string? type_comment)");
-    if (!state->With_type) return 0;
+    if (!state->With_type) return -1;
     if (PyObject_SetAttr(state->With_type, state->type_comment, Py_None) == -1)
-        return 0;
+        return -1;
     state->AsyncWith_type = make_type(state, "AsyncWith", state->stmt_type,
                                       AsyncWith_fields, 3,
         "AsyncWith(withitem* items, stmt* body, string? type_comment)");
-    if (!state->AsyncWith_type) return 0;
+    if (!state->AsyncWith_type) return -1;
     if (PyObject_SetAttr(state->AsyncWith_type, state->type_comment, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->Match_type = make_type(state, "Match", state->stmt_type,
                                   Match_fields, 2,
         "Match(expr subject, match_case* cases)");
-    if (!state->Match_type) return 0;
+    if (!state->Match_type) return -1;
     state->Raise_type = make_type(state, "Raise", state->stmt_type,
                                   Raise_fields, 2,
         "Raise(expr? exc, expr? cause)");
-    if (!state->Raise_type) return 0;
+    if (!state->Raise_type) return -1;
     if (PyObject_SetAttr(state->Raise_type, state->exc, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->Raise_type, state->cause, Py_None) == -1)
-        return 0;
+        return -1;
     state->Try_type = make_type(state, "Try", state->stmt_type, Try_fields, 4,
         "Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)");
-    if (!state->Try_type) return 0;
+    if (!state->Try_type) return -1;
     state->TryStar_type = make_type(state, "TryStar", state->stmt_type,
                                     TryStar_fields, 4,
         "TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)");
-    if (!state->TryStar_type) return 0;
+    if (!state->TryStar_type) return -1;
     state->Assert_type = make_type(state, "Assert", state->stmt_type,
                                    Assert_fields, 2,
         "Assert(expr test, expr? msg)");
-    if (!state->Assert_type) return 0;
+    if (!state->Assert_type) return -1;
     if (PyObject_SetAttr(state->Assert_type, state->msg, Py_None) == -1)
-        return 0;
+        return -1;
     state->Import_type = make_type(state, "Import", state->stmt_type,
                                    Import_fields, 1,
         "Import(alias* names)");
-    if (!state->Import_type) return 0;
+    if (!state->Import_type) return -1;
     state->ImportFrom_type = make_type(state, "ImportFrom", state->stmt_type,
                                        ImportFrom_fields, 3,
         "ImportFrom(identifier? module, alias* names, int? level)");
-    if (!state->ImportFrom_type) return 0;
+    if (!state->ImportFrom_type) return -1;
     if (PyObject_SetAttr(state->ImportFrom_type, state->module, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->ImportFrom_type, state->level, Py_None) == -1)
-        return 0;
+        return -1;
     state->Global_type = make_type(state, "Global", state->stmt_type,
                                    Global_fields, 1,
         "Global(identifier* names)");
-    if (!state->Global_type) return 0;
+    if (!state->Global_type) return -1;
     state->Nonlocal_type = make_type(state, "Nonlocal", state->stmt_type,
                                      Nonlocal_fields, 1,
         "Nonlocal(identifier* names)");
-    if (!state->Nonlocal_type) return 0;
+    if (!state->Nonlocal_type) return -1;
     state->Expr_type = make_type(state, "Expr", state->stmt_type, Expr_fields,
                                  1,
         "Expr(expr value)");
-    if (!state->Expr_type) return 0;
+    if (!state->Expr_type) return -1;
     state->Pass_type = make_type(state, "Pass", state->stmt_type, NULL, 0,
         "Pass");
-    if (!state->Pass_type) return 0;
+    if (!state->Pass_type) return -1;
     state->Break_type = make_type(state, "Break", state->stmt_type, NULL, 0,
         "Break");
-    if (!state->Break_type) return 0;
+    if (!state->Break_type) return -1;
     state->Continue_type = make_type(state, "Continue", state->stmt_type, NULL,
                                      0,
         "Continue");
-    if (!state->Continue_type) return 0;
+    if (!state->Continue_type) return -1;
     state->expr_type = make_type(state, "expr", state->AST_type, NULL, 0,
         "expr = BoolOp(boolop op, expr* values)\n"
         "     | NamedExpr(expr target, expr value)\n"
@@ -1379,454 +6073,457 @@ init_types(struct ast_state *state)
         "     | List(expr* elts, expr_context ctx)\n"
         "     | Tuple(expr* elts, expr_context ctx)\n"
         "     | Slice(expr? lower, expr? upper, expr? step)");
-    if (!state->expr_type) return 0;
-    if (!add_attributes(state, state->expr_type, expr_attributes, 4)) return 0;
+    if (!state->expr_type) return -1;
+    if (add_attributes(state, state->expr_type, expr_attributes, 4) < 0) return
+        -1;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->expr_type, state->end_col_offset, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->BoolOp_type = make_type(state, "BoolOp", state->expr_type,
                                    BoolOp_fields, 2,
         "BoolOp(boolop op, expr* values)");
-    if (!state->BoolOp_type) return 0;
+    if (!state->BoolOp_type) return -1;
     state->NamedExpr_type = make_type(state, "NamedExpr", state->expr_type,
                                       NamedExpr_fields, 2,
         "NamedExpr(expr target, expr value)");
-    if (!state->NamedExpr_type) return 0;
+    if (!state->NamedExpr_type) return -1;
     state->BinOp_type = make_type(state, "BinOp", state->expr_type,
                                   BinOp_fields, 3,
         "BinOp(expr left, operator op, expr right)");
-    if (!state->BinOp_type) return 0;
+    if (!state->BinOp_type) return -1;
     state->UnaryOp_type = make_type(state, "UnaryOp", state->expr_type,
                                     UnaryOp_fields, 2,
         "UnaryOp(unaryop op, expr operand)");
-    if (!state->UnaryOp_type) return 0;
+    if (!state->UnaryOp_type) return -1;
     state->Lambda_type = make_type(state, "Lambda", state->expr_type,
                                    Lambda_fields, 2,
         "Lambda(arguments args, expr body)");
-    if (!state->Lambda_type) return 0;
+    if (!state->Lambda_type) return -1;
     state->IfExp_type = make_type(state, "IfExp", state->expr_type,
                                   IfExp_fields, 3,
         "IfExp(expr test, expr body, expr orelse)");
-    if (!state->IfExp_type) return 0;
+    if (!state->IfExp_type) return -1;
     state->Dict_type = make_type(state, "Dict", state->expr_type, Dict_fields,
                                  2,
         "Dict(expr* keys, expr* values)");
-    if (!state->Dict_type) return 0;
+    if (!state->Dict_type) return -1;
     state->Set_type = make_type(state, "Set", state->expr_type, Set_fields, 1,
         "Set(expr* elts)");
-    if (!state->Set_type) return 0;
+    if (!state->Set_type) return -1;
     state->ListComp_type = make_type(state, "ListComp", state->expr_type,
                                      ListComp_fields, 2,
         "ListComp(expr elt, comprehension* generators)");
-    if (!state->ListComp_type) return 0;
+    if (!state->ListComp_type) return -1;
     state->SetComp_type = make_type(state, "SetComp", state->expr_type,
                                     SetComp_fields, 2,
         "SetComp(expr elt, comprehension* generators)");
-    if (!state->SetComp_type) return 0;
+    if (!state->SetComp_type) return -1;
     state->DictComp_type = make_type(state, "DictComp", state->expr_type,
                                      DictComp_fields, 3,
         "DictComp(expr key, expr value, comprehension* generators)");
-    if (!state->DictComp_type) return 0;
+    if (!state->DictComp_type) return -1;
     state->GeneratorExp_type = make_type(state, "GeneratorExp",
                                          state->expr_type, GeneratorExp_fields,
                                          2,
         "GeneratorExp(expr elt, comprehension* generators)");
-    if (!state->GeneratorExp_type) return 0;
+    if (!state->GeneratorExp_type) return -1;
     state->Await_type = make_type(state, "Await", state->expr_type,
                                   Await_fields, 1,
         "Await(expr value)");
-    if (!state->Await_type) return 0;
+    if (!state->Await_type) return -1;
     state->Yield_type = make_type(state, "Yield", state->expr_type,
                                   Yield_fields, 1,
         "Yield(expr? value)");
-    if (!state->Yield_type) return 0;
+    if (!state->Yield_type) return -1;
     if (PyObject_SetAttr(state->Yield_type, state->value, Py_None) == -1)
-        return 0;
+        return -1;
     state->YieldFrom_type = make_type(state, "YieldFrom", state->expr_type,
                                       YieldFrom_fields, 1,
         "YieldFrom(expr value)");
-    if (!state->YieldFrom_type) return 0;
+    if (!state->YieldFrom_type) return -1;
     state->Compare_type = make_type(state, "Compare", state->expr_type,
                                     Compare_fields, 3,
         "Compare(expr left, cmpop* ops, expr* comparators)");
-    if (!state->Compare_type) return 0;
+    if (!state->Compare_type) return -1;
     state->Call_type = make_type(state, "Call", state->expr_type, Call_fields,
                                  3,
         "Call(expr func, expr* args, keyword* keywords)");
-    if (!state->Call_type) return 0;
+    if (!state->Call_type) return -1;
     state->FormattedValue_type = make_type(state, "FormattedValue",
                                            state->expr_type,
                                            FormattedValue_fields, 3,
         "FormattedValue(expr value, int conversion, expr? format_spec)");
-    if (!state->FormattedValue_type) return 0;
+    if (!state->FormattedValue_type) return -1;
     if (PyObject_SetAttr(state->FormattedValue_type, state->format_spec,
         Py_None) == -1)
-        return 0;
+        return -1;
     state->JoinedStr_type = make_type(state, "JoinedStr", state->expr_type,
                                       JoinedStr_fields, 1,
         "JoinedStr(expr* values)");
-    if (!state->JoinedStr_type) return 0;
+    if (!state->JoinedStr_type) return -1;
     state->Constant_type = make_type(state, "Constant", state->expr_type,
                                      Constant_fields, 2,
         "Constant(constant value, string? kind)");
-    if (!state->Constant_type) return 0;
+    if (!state->Constant_type) return -1;
     if (PyObject_SetAttr(state->Constant_type, state->kind, Py_None) == -1)
-        return 0;
+        return -1;
     state->Attribute_type = make_type(state, "Attribute", state->expr_type,
                                       Attribute_fields, 3,
         "Attribute(expr value, identifier attr, expr_context ctx)");
-    if (!state->Attribute_type) return 0;
+    if (!state->Attribute_type) return -1;
     state->Subscript_type = make_type(state, "Subscript", state->expr_type,
                                       Subscript_fields, 3,
         "Subscript(expr value, expr slice, expr_context ctx)");
-    if (!state->Subscript_type) return 0;
+    if (!state->Subscript_type) return -1;
     state->Starred_type = make_type(state, "Starred", state->expr_type,
                                     Starred_fields, 2,
         "Starred(expr value, expr_context ctx)");
-    if (!state->Starred_type) return 0;
+    if (!state->Starred_type) return -1;
     state->Name_type = make_type(state, "Name", state->expr_type, Name_fields,
                                  2,
         "Name(identifier id, expr_context ctx)");
-    if (!state->Name_type) return 0;
+    if (!state->Name_type) return -1;
     state->List_type = make_type(state, "List", state->expr_type, List_fields,
                                  2,
         "List(expr* elts, expr_context ctx)");
-    if (!state->List_type) return 0;
+    if (!state->List_type) return -1;
     state->Tuple_type = make_type(state, "Tuple", state->expr_type,
                                   Tuple_fields, 2,
         "Tuple(expr* elts, expr_context ctx)");
-    if (!state->Tuple_type) return 0;
+    if (!state->Tuple_type) return -1;
     state->Slice_type = make_type(state, "Slice", state->expr_type,
                                   Slice_fields, 3,
         "Slice(expr? lower, expr? upper, expr? step)");
-    if (!state->Slice_type) return 0;
+    if (!state->Slice_type) return -1;
     if (PyObject_SetAttr(state->Slice_type, state->lower, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->Slice_type, state->upper, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
-        return 0;
+        return -1;
     state->expr_context_type = make_type(state, "expr_context",
                                          state->AST_type, NULL, 0,
         "expr_context = Load | Store | Del");
-    if (!state->expr_context_type) return 0;
-    if (!add_attributes(state, state->expr_context_type, NULL, 0)) return 0;
+    if (!state->expr_context_type) return -1;
+    if (add_attributes(state, state->expr_context_type, NULL, 0) < 0) return -1;
     state->Load_type = make_type(state, "Load", state->expr_context_type, NULL,
                                  0,
         "Load");
-    if (!state->Load_type) return 0;
+    if (!state->Load_type) return -1;
     state->Load_singleton = PyType_GenericNew((PyTypeObject *)state->Load_type,
                                               NULL, NULL);
-    if (!state->Load_singleton) return 0;
+    if (!state->Load_singleton) return -1;
     state->Store_type = make_type(state, "Store", state->expr_context_type,
                                   NULL, 0,
         "Store");
-    if (!state->Store_type) return 0;
+    if (!state->Store_type) return -1;
     state->Store_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->Store_type, NULL, NULL);
-    if (!state->Store_singleton) return 0;
+    if (!state->Store_singleton) return -1;
     state->Del_type = make_type(state, "Del", state->expr_context_type, NULL, 0,
         "Del");
-    if (!state->Del_type) return 0;
+    if (!state->Del_type) return -1;
     state->Del_singleton = PyType_GenericNew((PyTypeObject *)state->Del_type,
                                              NULL, NULL);
-    if (!state->Del_singleton) return 0;
+    if (!state->Del_singleton) return -1;
     state->boolop_type = make_type(state, "boolop", state->AST_type, NULL, 0,
         "boolop = And | Or");
-    if (!state->boolop_type) return 0;
-    if (!add_attributes(state, state->boolop_type, NULL, 0)) return 0;
+    if (!state->boolop_type) return -1;
+    if (add_attributes(state, state->boolop_type, NULL, 0) < 0) return -1;
     state->And_type = make_type(state, "And", state->boolop_type, NULL, 0,
         "And");
-    if (!state->And_type) return 0;
+    if (!state->And_type) return -1;
     state->And_singleton = PyType_GenericNew((PyTypeObject *)state->And_type,
                                              NULL, NULL);
-    if (!state->And_singleton) return 0;
+    if (!state->And_singleton) return -1;
     state->Or_type = make_type(state, "Or", state->boolop_type, NULL, 0,
         "Or");
-    if (!state->Or_type) return 0;
+    if (!state->Or_type) return -1;
     state->Or_singleton = PyType_GenericNew((PyTypeObject *)state->Or_type,
                                             NULL, NULL);
-    if (!state->Or_singleton) return 0;
+    if (!state->Or_singleton) return -1;
     state->operator_type = make_type(state, "operator", state->AST_type, NULL,
                                      0,
         "operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift | RShift | BitOr | BitXor | BitAnd | FloorDiv");
-    if (!state->operator_type) return 0;
-    if (!add_attributes(state, state->operator_type, NULL, 0)) return 0;
+    if (!state->operator_type) return -1;
+    if (add_attributes(state, state->operator_type, NULL, 0) < 0) return -1;
     state->Add_type = make_type(state, "Add", state->operator_type, NULL, 0,
         "Add");
-    if (!state->Add_type) return 0;
+    if (!state->Add_type) return -1;
     state->Add_singleton = PyType_GenericNew((PyTypeObject *)state->Add_type,
                                              NULL, NULL);
-    if (!state->Add_singleton) return 0;
+    if (!state->Add_singleton) return -1;
     state->Sub_type = make_type(state, "Sub", state->operator_type, NULL, 0,
         "Sub");
-    if (!state->Sub_type) return 0;
+    if (!state->Sub_type) return -1;
     state->Sub_singleton = PyType_GenericNew((PyTypeObject *)state->Sub_type,
                                              NULL, NULL);
-    if (!state->Sub_singleton) return 0;
+    if (!state->Sub_singleton) return -1;
     state->Mult_type = make_type(state, "Mult", state->operator_type, NULL, 0,
         "Mult");
-    if (!state->Mult_type) return 0;
+    if (!state->Mult_type) return -1;
     state->Mult_singleton = PyType_GenericNew((PyTypeObject *)state->Mult_type,
                                               NULL, NULL);
-    if (!state->Mult_singleton) return 0;
+    if (!state->Mult_singleton) return -1;
     state->MatMult_type = make_type(state, "MatMult", state->operator_type,
                                     NULL, 0,
         "MatMult");
-    if (!state->MatMult_type) return 0;
+    if (!state->MatMult_type) return -1;
     state->MatMult_singleton = PyType_GenericNew((PyTypeObject
                                                  *)state->MatMult_type, NULL,
                                                  NULL);
-    if (!state->MatMult_singleton) return 0;
+    if (!state->MatMult_singleton) return -1;
     state->Div_type = make_type(state, "Div", state->operator_type, NULL, 0,
         "Div");
-    if (!state->Div_type) return 0;
+    if (!state->Div_type) return -1;
     state->Div_singleton = PyType_GenericNew((PyTypeObject *)state->Div_type,
                                              NULL, NULL);
-    if (!state->Div_singleton) return 0;
+    if (!state->Div_singleton) return -1;
     state->Mod_type = make_type(state, "Mod", state->operator_type, NULL, 0,
         "Mod");
-    if (!state->Mod_type) return 0;
+    if (!state->Mod_type) return -1;
     state->Mod_singleton = PyType_GenericNew((PyTypeObject *)state->Mod_type,
                                              NULL, NULL);
-    if (!state->Mod_singleton) return 0;
+    if (!state->Mod_singleton) return -1;
     state->Pow_type = make_type(state, "Pow", state->operator_type, NULL, 0,
         "Pow");
-    if (!state->Pow_type) return 0;
+    if (!state->Pow_type) return -1;
     state->Pow_singleton = PyType_GenericNew((PyTypeObject *)state->Pow_type,
                                              NULL, NULL);
-    if (!state->Pow_singleton) return 0;
+    if (!state->Pow_singleton) return -1;
     state->LShift_type = make_type(state, "LShift", state->operator_type, NULL,
                                    0,
         "LShift");
-    if (!state->LShift_type) return 0;
+    if (!state->LShift_type) return -1;
     state->LShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->LShift_type, NULL,
                                                 NULL);
-    if (!state->LShift_singleton) return 0;
+    if (!state->LShift_singleton) return -1;
     state->RShift_type = make_type(state, "RShift", state->operator_type, NULL,
                                    0,
         "RShift");
-    if (!state->RShift_type) return 0;
+    if (!state->RShift_type) return -1;
     state->RShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->RShift_type, NULL,
                                                 NULL);
-    if (!state->RShift_singleton) return 0;
+    if (!state->RShift_singleton) return -1;
     state->BitOr_type = make_type(state, "BitOr", state->operator_type, NULL, 0,
         "BitOr");
-    if (!state->BitOr_type) return 0;
+    if (!state->BitOr_type) return -1;
     state->BitOr_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->BitOr_type, NULL, NULL);
-    if (!state->BitOr_singleton) return 0;
+    if (!state->BitOr_singleton) return -1;
     state->BitXor_type = make_type(state, "BitXor", state->operator_type, NULL,
                                    0,
         "BitXor");
-    if (!state->BitXor_type) return 0;
+    if (!state->BitXor_type) return -1;
     state->BitXor_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitXor_type, NULL,
                                                 NULL);
-    if (!state->BitXor_singleton) return 0;
+    if (!state->BitXor_singleton) return -1;
     state->BitAnd_type = make_type(state, "BitAnd", state->operator_type, NULL,
                                    0,
         "BitAnd");
-    if (!state->BitAnd_type) return 0;
+    if (!state->BitAnd_type) return -1;
     state->BitAnd_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitAnd_type, NULL,
                                                 NULL);
-    if (!state->BitAnd_singleton) return 0;
+    if (!state->BitAnd_singleton) return -1;
     state->FloorDiv_type = make_type(state, "FloorDiv", state->operator_type,
                                      NULL, 0,
         "FloorDiv");
-    if (!state->FloorDiv_type) return 0;
+    if (!state->FloorDiv_type) return -1;
     state->FloorDiv_singleton = PyType_GenericNew((PyTypeObject
                                                   *)state->FloorDiv_type, NULL,
                                                   NULL);
-    if (!state->FloorDiv_singleton) return 0;
+    if (!state->FloorDiv_singleton) return -1;
     state->unaryop_type = make_type(state, "unaryop", state->AST_type, NULL, 0,
         "unaryop = Invert | Not | UAdd | USub");
-    if (!state->unaryop_type) return 0;
-    if (!add_attributes(state, state->unaryop_type, NULL, 0)) return 0;
+    if (!state->unaryop_type) return -1;
+    if (add_attributes(state, state->unaryop_type, NULL, 0) < 0) return -1;
     state->Invert_type = make_type(state, "Invert", state->unaryop_type, NULL,
                                    0,
         "Invert");
-    if (!state->Invert_type) return 0;
+    if (!state->Invert_type) return -1;
     state->Invert_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->Invert_type, NULL,
                                                 NULL);
-    if (!state->Invert_singleton) return 0;
+    if (!state->Invert_singleton) return -1;
     state->Not_type = make_type(state, "Not", state->unaryop_type, NULL, 0,
         "Not");
-    if (!state->Not_type) return 0;
+    if (!state->Not_type) return -1;
     state->Not_singleton = PyType_GenericNew((PyTypeObject *)state->Not_type,
                                              NULL, NULL);
-    if (!state->Not_singleton) return 0;
+    if (!state->Not_singleton) return -1;
     state->UAdd_type = make_type(state, "UAdd", state->unaryop_type, NULL, 0,
         "UAdd");
-    if (!state->UAdd_type) return 0;
+    if (!state->UAdd_type) return -1;
     state->UAdd_singleton = PyType_GenericNew((PyTypeObject *)state->UAdd_type,
                                               NULL, NULL);
-    if (!state->UAdd_singleton) return 0;
+    if (!state->UAdd_singleton) return -1;
     state->USub_type = make_type(state, "USub", state->unaryop_type, NULL, 0,
         "USub");
-    if (!state->USub_type) return 0;
+    if (!state->USub_type) return -1;
     state->USub_singleton = PyType_GenericNew((PyTypeObject *)state->USub_type,
                                               NULL, NULL);
-    if (!state->USub_singleton) return 0;
+    if (!state->USub_singleton) return -1;
     state->cmpop_type = make_type(state, "cmpop", state->AST_type, NULL, 0,
         "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn");
-    if (!state->cmpop_type) return 0;
-    if (!add_attributes(state, state->cmpop_type, NULL, 0)) return 0;
+    if (!state->cmpop_type) return -1;
+    if (add_attributes(state, state->cmpop_type, NULL, 0) < 0) return -1;
     state->Eq_type = make_type(state, "Eq", state->cmpop_type, NULL, 0,
         "Eq");
-    if (!state->Eq_type) return 0;
+    if (!state->Eq_type) return -1;
     state->Eq_singleton = PyType_GenericNew((PyTypeObject *)state->Eq_type,
                                             NULL, NULL);
-    if (!state->Eq_singleton) return 0;
+    if (!state->Eq_singleton) return -1;
     state->NotEq_type = make_type(state, "NotEq", state->cmpop_type, NULL, 0,
         "NotEq");
-    if (!state->NotEq_type) return 0;
+    if (!state->NotEq_type) return -1;
     state->NotEq_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotEq_type, NULL, NULL);
-    if (!state->NotEq_singleton) return 0;
+    if (!state->NotEq_singleton) return -1;
     state->Lt_type = make_type(state, "Lt", state->cmpop_type, NULL, 0,
         "Lt");
-    if (!state->Lt_type) return 0;
+    if (!state->Lt_type) return -1;
     state->Lt_singleton = PyType_GenericNew((PyTypeObject *)state->Lt_type,
                                             NULL, NULL);
-    if (!state->Lt_singleton) return 0;
+    if (!state->Lt_singleton) return -1;
     state->LtE_type = make_type(state, "LtE", state->cmpop_type, NULL, 0,
         "LtE");
-    if (!state->LtE_type) return 0;
+    if (!state->LtE_type) return -1;
     state->LtE_singleton = PyType_GenericNew((PyTypeObject *)state->LtE_type,
                                              NULL, NULL);
-    if (!state->LtE_singleton) return 0;
+    if (!state->LtE_singleton) return -1;
     state->Gt_type = make_type(state, "Gt", state->cmpop_type, NULL, 0,
         "Gt");
-    if (!state->Gt_type) return 0;
+    if (!state->Gt_type) return -1;
     state->Gt_singleton = PyType_GenericNew((PyTypeObject *)state->Gt_type,
                                             NULL, NULL);
-    if (!state->Gt_singleton) return 0;
+    if (!state->Gt_singleton) return -1;
     state->GtE_type = make_type(state, "GtE", state->cmpop_type, NULL, 0,
         "GtE");
-    if (!state->GtE_type) return 0;
+    if (!state->GtE_type) return -1;
     state->GtE_singleton = PyType_GenericNew((PyTypeObject *)state->GtE_type,
                                              NULL, NULL);
-    if (!state->GtE_singleton) return 0;
+    if (!state->GtE_singleton) return -1;
     state->Is_type = make_type(state, "Is", state->cmpop_type, NULL, 0,
         "Is");
-    if (!state->Is_type) return 0;
+    if (!state->Is_type) return -1;
     state->Is_singleton = PyType_GenericNew((PyTypeObject *)state->Is_type,
                                             NULL, NULL);
-    if (!state->Is_singleton) return 0;
+    if (!state->Is_singleton) return -1;
     state->IsNot_type = make_type(state, "IsNot", state->cmpop_type, NULL, 0,
         "IsNot");
-    if (!state->IsNot_type) return 0;
+    if (!state->IsNot_type) return -1;
     state->IsNot_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->IsNot_type, NULL, NULL);
-    if (!state->IsNot_singleton) return 0;
+    if (!state->IsNot_singleton) return -1;
     state->In_type = make_type(state, "In", state->cmpop_type, NULL, 0,
         "In");
-    if (!state->In_type) return 0;
+    if (!state->In_type) return -1;
     state->In_singleton = PyType_GenericNew((PyTypeObject *)state->In_type,
                                             NULL, NULL);
-    if (!state->In_singleton) return 0;
+    if (!state->In_singleton) return -1;
     state->NotIn_type = make_type(state, "NotIn", state->cmpop_type, NULL, 0,
         "NotIn");
-    if (!state->NotIn_type) return 0;
+    if (!state->NotIn_type) return -1;
     state->NotIn_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotIn_type, NULL, NULL);
-    if (!state->NotIn_singleton) return 0;
+    if (!state->NotIn_singleton) return -1;
     state->comprehension_type = make_type(state, "comprehension",
                                           state->AST_type,
                                           comprehension_fields, 4,
         "comprehension(expr target, expr iter, expr* ifs, int is_async)");
-    if (!state->comprehension_type) return 0;
-    if (!add_attributes(state, state->comprehension_type, NULL, 0)) return 0;
+    if (!state->comprehension_type) return -1;
+    if (add_attributes(state, state->comprehension_type, NULL, 0) < 0) return
+        -1;
     state->excepthandler_type = make_type(state, "excepthandler",
                                           state->AST_type, NULL, 0,
         "excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)");
-    if (!state->excepthandler_type) return 0;
-    if (!add_attributes(state, state->excepthandler_type,
-        excepthandler_attributes, 4)) return 0;
+    if (!state->excepthandler_type) return -1;
+    if (add_attributes(state, state->excepthandler_type,
+        excepthandler_attributes, 4) < 0) return -1;
     if (PyObject_SetAttr(state->excepthandler_type, state->end_lineno, Py_None)
         == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->excepthandler_type, state->end_col_offset,
         Py_None) == -1)
-        return 0;
+        return -1;
     state->ExceptHandler_type = make_type(state, "ExceptHandler",
                                           state->excepthandler_type,
                                           ExceptHandler_fields, 3,
         "ExceptHandler(expr? type, identifier? name, stmt* body)");
-    if (!state->ExceptHandler_type) return 0;
+    if (!state->ExceptHandler_type) return -1;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->type, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->name, Py_None) == -1)
-        return 0;
+        return -1;
     state->arguments_type = make_type(state, "arguments", state->AST_type,
                                       arguments_fields, 7,
         "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
-    if (!state->arguments_type) return 0;
-    if (!add_attributes(state, state->arguments_type, NULL, 0)) return 0;
+    if (!state->arguments_type) return -1;
+    if (add_attributes(state, state->arguments_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arguments_type, state->kwarg, Py_None) == -1)
-        return 0;
+        return -1;
     state->arg_type = make_type(state, "arg", state->AST_type, arg_fields, 3,
         "arg(identifier arg, expr? annotation, string? type_comment)");
-    if (!state->arg_type) return 0;
-    if (!add_attributes(state, state->arg_type, arg_attributes, 4)) return 0;
+    if (!state->arg_type) return -1;
+    if (add_attributes(state, state->arg_type, arg_attributes, 4) < 0) return
+        -1;
     if (PyObject_SetAttr(state->arg_type, state->annotation, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arg_type, state->type_comment, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arg_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arg_type, state->end_col_offset, Py_None) == -1)
-        return 0;
+        return -1;
     state->keyword_type = make_type(state, "keyword", state->AST_type,
                                     keyword_fields, 2,
         "keyword(identifier? arg, expr value)");
-    if (!state->keyword_type) return 0;
-    if (!add_attributes(state, state->keyword_type, keyword_attributes, 4))
-        return 0;
+    if (!state->keyword_type) return -1;
+    if (add_attributes(state, state->keyword_type, keyword_attributes, 4) < 0)
+        return -1;
     if (PyObject_SetAttr(state->keyword_type, state->arg, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->keyword_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->keyword_type, state->end_col_offset, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->alias_type = make_type(state, "alias", state->AST_type,
                                   alias_fields, 2,
         "alias(identifier name, identifier? asname)");
-    if (!state->alias_type) return 0;
-    if (!add_attributes(state, state->alias_type, alias_attributes, 4)) return
-        0;
+    if (!state->alias_type) return -1;
+    if (add_attributes(state, state->alias_type, alias_attributes, 4) < 0)
+        return -1;
     if (PyObject_SetAttr(state->alias_type, state->asname, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->alias_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->alias_type, state->end_col_offset, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->withitem_type = make_type(state, "withitem", state->AST_type,
                                      withitem_fields, 2,
         "withitem(expr context_expr, expr? optional_vars)");
-    if (!state->withitem_type) return 0;
-    if (!add_attributes(state, state->withitem_type, NULL, 0)) return 0;
+    if (!state->withitem_type) return -1;
+    if (add_attributes(state, state->withitem_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->withitem_type, state->optional_vars, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->match_case_type = make_type(state, "match_case", state->AST_type,
                                        match_case_fields, 3,
         "match_case(pattern pattern, expr? guard, stmt* body)");
-    if (!state->match_case_type) return 0;
-    if (!add_attributes(state, state->match_case_type, NULL, 0)) return 0;
+    if (!state->match_case_type) return -1;
+    if (add_attributes(state, state->match_case_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->match_case_type, state->guard, Py_None) == -1)
-        return 0;
+        return -1;
     state->pattern_type = make_type(state, "pattern", state->AST_type, NULL, 0,
         "pattern = MatchValue(expr value)\n"
         "        | MatchSingleton(constant value)\n"
@@ -1836,99 +6533,102 @@ init_types(struct ast_state *state)
         "        | MatchStar(identifier? name)\n"
         "        | MatchAs(pattern? pattern, identifier? name)\n"
         "        | MatchOr(pattern* patterns)");
-    if (!state->pattern_type) return 0;
-    if (!add_attributes(state, state->pattern_type, pattern_attributes, 4))
-        return 0;
+    if (!state->pattern_type) return -1;
+    if (add_attributes(state, state->pattern_type, pattern_attributes, 4) < 0)
+        return -1;
     state->MatchValue_type = make_type(state, "MatchValue",
                                        state->pattern_type, MatchValue_fields,
                                        1,
         "MatchValue(expr value)");
-    if (!state->MatchValue_type) return 0;
+    if (!state->MatchValue_type) return -1;
     state->MatchSingleton_type = make_type(state, "MatchSingleton",
                                            state->pattern_type,
                                            MatchSingleton_fields, 1,
         "MatchSingleton(constant value)");
-    if (!state->MatchSingleton_type) return 0;
+    if (!state->MatchSingleton_type) return -1;
     state->MatchSequence_type = make_type(state, "MatchSequence",
                                           state->pattern_type,
                                           MatchSequence_fields, 1,
         "MatchSequence(pattern* patterns)");
-    if (!state->MatchSequence_type) return 0;
+    if (!state->MatchSequence_type) return -1;
     state->MatchMapping_type = make_type(state, "MatchMapping",
                                          state->pattern_type,
                                          MatchMapping_fields, 3,
         "MatchMapping(expr* keys, pattern* patterns, identifier? rest)");
-    if (!state->MatchMapping_type) return 0;
+    if (!state->MatchMapping_type) return -1;
     if (PyObject_SetAttr(state->MatchMapping_type, state->rest, Py_None) == -1)
-        return 0;
+        return -1;
     state->MatchClass_type = make_type(state, "MatchClass",
                                        state->pattern_type, MatchClass_fields,
                                        4,
         "MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)");
-    if (!state->MatchClass_type) return 0;
+    if (!state->MatchClass_type) return -1;
     state->MatchStar_type = make_type(state, "MatchStar", state->pattern_type,
                                       MatchStar_fields, 1,
         "MatchStar(identifier? name)");
-    if (!state->MatchStar_type) return 0;
+    if (!state->MatchStar_type) return -1;
     if (PyObject_SetAttr(state->MatchStar_type, state->name, Py_None) == -1)
-        return 0;
+        return -1;
     state->MatchAs_type = make_type(state, "MatchAs", state->pattern_type,
                                     MatchAs_fields, 2,
         "MatchAs(pattern? pattern, identifier? name)");
-    if (!state->MatchAs_type) return 0;
+    if (!state->MatchAs_type) return -1;
     if (PyObject_SetAttr(state->MatchAs_type, state->pattern, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->MatchAs_type, state->name, Py_None) == -1)
-        return 0;
+        return -1;
     state->MatchOr_type = make_type(state, "MatchOr", state->pattern_type,
                                     MatchOr_fields, 1,
         "MatchOr(pattern* patterns)");
-    if (!state->MatchOr_type) return 0;
+    if (!state->MatchOr_type) return -1;
     state->type_ignore_type = make_type(state, "type_ignore", state->AST_type,
                                         NULL, 0,
         "type_ignore = TypeIgnore(int lineno, string tag)");
-    if (!state->type_ignore_type) return 0;
-    if (!add_attributes(state, state->type_ignore_type, NULL, 0)) return 0;
+    if (!state->type_ignore_type) return -1;
+    if (add_attributes(state, state->type_ignore_type, NULL, 0) < 0) return -1;
     state->TypeIgnore_type = make_type(state, "TypeIgnore",
                                        state->type_ignore_type,
                                        TypeIgnore_fields, 2,
         "TypeIgnore(int lineno, string tag)");
-    if (!state->TypeIgnore_type) return 0;
+    if (!state->TypeIgnore_type) return -1;
     state->type_param_type = make_type(state, "type_param", state->AST_type,
                                        NULL, 0,
-        "type_param = TypeVar(identifier name, expr? bound)\n"
-        "           | ParamSpec(identifier name)\n"
-        "           | TypeVarTuple(identifier name)");
-    if (!state->type_param_type) return 0;
-    if (!add_attributes(state, state->type_param_type, type_param_attributes,
-        4)) return 0;
-    if (PyObject_SetAttr(state->type_param_type, state->end_lineno, Py_None) ==
-        -1)
-        return 0;
-    if (PyObject_SetAttr(state->type_param_type, state->end_col_offset,
-        Py_None) == -1)
-        return 0;
+        "type_param = TypeVar(identifier name, expr? bound, expr? default_value)\n"
+        "           | ParamSpec(identifier name, expr? default_value)\n"
+        "           | TypeVarTuple(identifier name, expr? default_value)");
+    if (!state->type_param_type) return -1;
+    if (add_attributes(state, state->type_param_type, type_param_attributes, 4)
+        < 0) return -1;
     state->TypeVar_type = make_type(state, "TypeVar", state->type_param_type,
-                                    TypeVar_fields, 2,
-        "TypeVar(identifier name, expr? bound)");
-    if (!state->TypeVar_type) return 0;
+                                    TypeVar_fields, 3,
+        "TypeVar(identifier name, expr? bound, expr? default_value)");
+    if (!state->TypeVar_type) return -1;
     if (PyObject_SetAttr(state->TypeVar_type, state->bound, Py_None) == -1)
-        return 0;
+        return -1;
+    if (PyObject_SetAttr(state->TypeVar_type, state->default_value, Py_None) ==
+        -1)
+        return -1;
     state->ParamSpec_type = make_type(state, "ParamSpec",
                                       state->type_param_type, ParamSpec_fields,
-                                      1,
-        "ParamSpec(identifier name)");
-    if (!state->ParamSpec_type) return 0;
+                                      2,
+        "ParamSpec(identifier name, expr? default_value)");
+    if (!state->ParamSpec_type) return -1;
+    if (PyObject_SetAttr(state->ParamSpec_type, state->default_value, Py_None)
+        == -1)
+        return -1;
     state->TypeVarTuple_type = make_type(state, "TypeVarTuple",
                                          state->type_param_type,
-                                         TypeVarTuple_fields, 1,
-        "TypeVarTuple(identifier name)");
-    if (!state->TypeVarTuple_type) return 0;
+                                         TypeVarTuple_fields, 2,
+        "TypeVarTuple(identifier name, expr? default_value)");
+    if (!state->TypeVarTuple_type) return -1;
+    if (PyObject_SetAttr(state->TypeVarTuple_type, state->default_value,
+        Py_None) == -1)
+        return -1;
 
-    state->recursion_depth = 0;
-    state->recursion_limit = 0;
-    state->initialized = 1;
-    return 1;
+    if (!add_ast_annotations(state)) {
+        return -1;
+    }
+    return 0;
 }
 
 static int obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out,
@@ -3714,8 +8414,9 @@ _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena)
 }
 
 type_param_ty
-_PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
-               end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_TypeVar(identifier name, expr_ty bound, expr_ty default_value, int
+               lineno, int col_offset, int end_lineno, int end_col_offset,
+               PyArena *arena)
 {
     type_param_ty p;
     if (!name) {
@@ -3729,6 +8430,7 @@ _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
     p->kind = TypeVar_kind;
     p->v.TypeVar.name = name;
     p->v.TypeVar.bound = bound;
+    p->v.TypeVar.default_value = default_value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -3737,8 +8439,8 @@ _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
 }
 
 type_param_ty
-_PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
-                 int end_col_offset, PyArena *arena)
+_PyAST_ParamSpec(identifier name, expr_ty default_value, int lineno, int
+                 col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     type_param_ty p;
     if (!name) {
@@ -3751,6 +8453,7 @@ _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
         return NULL;
     p->kind = ParamSpec_kind;
     p->v.ParamSpec.name = name;
+    p->v.ParamSpec.default_value = default_value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -3759,8 +8462,9 @@ _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
 }
 
 type_param_ty
-_PyAST_TypeVarTuple(identifier name, int lineno, int col_offset, int
-                    end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_TypeVarTuple(identifier name, expr_ty default_value, int lineno, int
+                    col_offset, int end_lineno, int end_col_offset, PyArena
+                    *arena)
 {
     type_param_ty p;
     if (!name) {
@@ -3773,6 +8477,7 @@ _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset, int
         return NULL;
     p->kind = TypeVarTuple_kind;
     p->v.TypeVarTuple.name = name;
+    p->v.TypeVarTuple.default_value = default_value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -3782,7 +8487,7 @@ _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset, int
 
 
 PyObject*
-ast2obj_mod(struct ast_state *state, void* _o)
+ast2obj_mod(struct ast_state *state, struct validator *vstate, void* _o)
 {
     mod_ty o = (mod_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -3790,22 +8495,24 @@ ast2obj_mod(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case Module_kind:
         tp = (PyTypeObject *)state->Module_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Module.body, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Module.body,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Module.type_ignores,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.Module.type_ignores,
                              ast2obj_type_ignore);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_ignores, value) == -1)
@@ -3816,7 +8523,7 @@ ast2obj_mod(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Interactive_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Interactive.body,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Interactive.body,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
@@ -3827,7 +8534,7 @@ ast2obj_mod(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Expression_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Expression.body);
+        value = ast2obj_expr(state, vstate, o->v.Expression.body);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
@@ -3837,29 +8544,31 @@ ast2obj_mod(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->FunctionType_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.FunctionType.argtypes,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.FunctionType.argtypes,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->argtypes, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.FunctionType.returns);
+        value = ast2obj_expr(state, vstate, o->v.FunctionType.returns);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->returns, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
     }
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_stmt(struct ast_state *state, void* _o)
+ast2obj_stmt(struct ast_state *state, struct validator *vstate, void* _o)
 {
     stmt_ty o = (stmt_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -3867,49 +8576,51 @@ ast2obj_stmt(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case FunctionDef_kind:
         tp = (PyTypeObject *)state->FunctionDef_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.FunctionDef.name);
+        value = ast2obj_identifier(state, vstate, o->v.FunctionDef.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_arguments(state, o->v.FunctionDef.args);
+        value = ast2obj_arguments(state, vstate, o->v.FunctionDef.args);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->args, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.FunctionDef.body,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.FunctionDef.body,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.FunctionDef.decorator_list,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.FunctionDef.decorator_list,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->decorator_list, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.FunctionDef.returns);
+        value = ast2obj_expr(state, vstate, o->v.FunctionDef.returns);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->returns, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.FunctionDef.type_comment);
+        value = ast2obj_string(state, vstate, o->v.FunctionDef.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.FunctionDef.type_params,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.FunctionDef.type_params,
                              ast2obj_type_param);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_params, value) == -1)
@@ -3920,40 +8631,41 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->AsyncFunctionDef_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.AsyncFunctionDef.name);
+        value = ast2obj_identifier(state, vstate, o->v.AsyncFunctionDef.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_arguments(state, o->v.AsyncFunctionDef.args);
+        value = ast2obj_arguments(state, vstate, o->v.AsyncFunctionDef.args);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->args, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.AsyncFunctionDef.body,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.AsyncFunctionDef.body,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state,
+        value = ast2obj_list(state, vstate,
                              (asdl_seq*)o->v.AsyncFunctionDef.decorator_list,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->decorator_list, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.AsyncFunctionDef.returns);
+        value = ast2obj_expr(state, vstate, o->v.AsyncFunctionDef.returns);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->returns, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.AsyncFunctionDef.type_comment);
+        value = ast2obj_string(state, vstate, o->v.AsyncFunctionDef.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state,
+        value = ast2obj_list(state, vstate,
                              (asdl_seq*)o->v.AsyncFunctionDef.type_params,
                              ast2obj_type_param);
         if (!value) goto failed;
@@ -3965,36 +8677,38 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->ClassDef_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.ClassDef.name);
+        value = ast2obj_identifier(state, vstate, o->v.ClassDef.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.bases,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.ClassDef.bases,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->bases, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.keywords,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.ClassDef.keywords,
                              ast2obj_keyword);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->keywords, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.body,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.ClassDef.body,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.decorator_list,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.ClassDef.decorator_list,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->decorator_list, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.type_params,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.ClassDef.type_params,
                              ast2obj_type_param);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_params, value) == -1)
@@ -4005,7 +8719,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Return_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Return.value);
+        value = ast2obj_expr(state, vstate, o->v.Return.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4015,7 +8729,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Delete_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Delete.targets,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Delete.targets,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->targets, value) == -1)
@@ -4026,18 +8740,18 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Assign_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Assign.targets,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Assign.targets,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->targets, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.Assign.value);
+        value = ast2obj_expr(state, vstate, o->v.Assign.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.Assign.type_comment);
+        value = ast2obj_string(state, vstate, o->v.Assign.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
@@ -4047,18 +8761,19 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->TypeAlias_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.TypeAlias.name);
+        value = ast2obj_expr(state, vstate, o->v.TypeAlias.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.TypeAlias.type_params,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.TypeAlias.type_params,
                              ast2obj_type_param);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_params, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.TypeAlias.value);
+        value = ast2obj_expr(state, vstate, o->v.TypeAlias.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4068,17 +8783,17 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->AugAssign_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.AugAssign.target);
+        value = ast2obj_expr(state, vstate, o->v.AugAssign.target);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->target, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_operator(state, o->v.AugAssign.op);
+        value = ast2obj_operator(state, vstate, o->v.AugAssign.op);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->op, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.AugAssign.value);
+        value = ast2obj_expr(state, vstate, o->v.AugAssign.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4088,22 +8803,22 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->AnnAssign_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.AnnAssign.target);
+        value = ast2obj_expr(state, vstate, o->v.AnnAssign.target);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->target, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.AnnAssign.annotation);
+        value = ast2obj_expr(state, vstate, o->v.AnnAssign.annotation);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->annotation, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.AnnAssign.value);
+        value = ast2obj_expr(state, vstate, o->v.AnnAssign.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_int(state, o->v.AnnAssign.simple);
+        value = ast2obj_int(state, vstate, o->v.AnnAssign.simple);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->simple, value) == -1)
             goto failed;
@@ -4113,27 +8828,29 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->For_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.For.target);
+        value = ast2obj_expr(state, vstate, o->v.For.target);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->target, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.For.iter);
+        value = ast2obj_expr(state, vstate, o->v.For.iter);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->iter, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.For.body, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.For.body,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.For.orelse, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.For.orelse,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.For.type_comment);
+        value = ast2obj_string(state, vstate, o->v.For.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
@@ -4143,29 +8860,29 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->AsyncFor_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.AsyncFor.target);
+        value = ast2obj_expr(state, vstate, o->v.AsyncFor.target);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->target, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.AsyncFor.iter);
+        value = ast2obj_expr(state, vstate, o->v.AsyncFor.iter);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->iter, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.AsyncFor.body,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.AsyncFor.body,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.AsyncFor.orelse,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.AsyncFor.orelse,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.AsyncFor.type_comment);
+        value = ast2obj_string(state, vstate, o->v.AsyncFor.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
@@ -4175,17 +8892,19 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->While_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.While.test);
+        value = ast2obj_expr(state, vstate, o->v.While.test);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->test, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.While.body, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.While.body,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.While.orelse, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.While.orelse,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
             goto failed;
@@ -4195,17 +8914,19 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->If_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.If.test);
+        value = ast2obj_expr(state, vstate, o->v.If.test);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->test, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.If.body, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.If.body,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.If.orelse, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.If.orelse,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
             goto failed;
@@ -4215,18 +8936,19 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->With_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.With.items,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.With.items,
                              ast2obj_withitem);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->items, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.With.body, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.With.body,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.With.type_comment);
+        value = ast2obj_string(state, vstate, o->v.With.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
@@ -4236,19 +8958,19 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->AsyncWith_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.AsyncWith.items,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.AsyncWith.items,
                              ast2obj_withitem);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->items, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.AsyncWith.body,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.AsyncWith.body,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.AsyncWith.type_comment);
+        value = ast2obj_string(state, vstate, o->v.AsyncWith.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
@@ -4258,12 +8980,12 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Match_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Match.subject);
+        value = ast2obj_expr(state, vstate, o->v.Match.subject);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->subject, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Match.cases,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Match.cases,
                              ast2obj_match_case);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->cases, value) == -1)
@@ -4274,12 +8996,12 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Raise_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Raise.exc);
+        value = ast2obj_expr(state, vstate, o->v.Raise.exc);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->exc, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.Raise.cause);
+        value = ast2obj_expr(state, vstate, o->v.Raise.cause);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->cause, value) == -1)
             goto failed;
@@ -4289,23 +9011,25 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Try_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Try.body, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Try.body,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Try.handlers,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Try.handlers,
                              ast2obj_excepthandler);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->handlers, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Try.orelse, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Try.orelse,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Try.finalbody,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Try.finalbody,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->finalbody, value) == -1)
@@ -4316,24 +9040,25 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->TryStar_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.TryStar.body, ast2obj_stmt);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.TryStar.body,
+                             ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.TryStar.handlers,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.TryStar.handlers,
                              ast2obj_excepthandler);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->handlers, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.TryStar.orelse,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.TryStar.orelse,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.TryStar.finalbody,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.TryStar.finalbody,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->finalbody, value) == -1)
@@ -4344,12 +9069,12 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Assert_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Assert.test);
+        value = ast2obj_expr(state, vstate, o->v.Assert.test);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->test, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.Assert.msg);
+        value = ast2obj_expr(state, vstate, o->v.Assert.msg);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->msg, value) == -1)
             goto failed;
@@ -4359,7 +9084,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Import_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Import.names,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Import.names,
                              ast2obj_alias);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->names, value) == -1)
@@ -4370,18 +9095,18 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->ImportFrom_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.ImportFrom.module);
+        value = ast2obj_identifier(state, vstate, o->v.ImportFrom.module);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->module, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ImportFrom.names,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.ImportFrom.names,
                              ast2obj_alias);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->names, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_int(state, o->v.ImportFrom.level);
+        value = ast2obj_int(state, vstate, o->v.ImportFrom.level);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->level, value) == -1)
             goto failed;
@@ -4391,7 +9116,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Global_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Global.names,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Global.names,
                              ast2obj_identifier);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->names, value) == -1)
@@ -4402,7 +9127,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Nonlocal_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Nonlocal.names,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Nonlocal.names,
                              ast2obj_identifier);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->names, value) == -1)
@@ -4413,7 +9138,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Expr_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Expr.value);
+        value = ast2obj_expr(state, vstate, o->v.Expr.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4435,36 +9160,37 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         if (!result) goto failed;
         break;
     }
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_expr(struct ast_state *state, void* _o)
+ast2obj_expr(struct ast_state *state, struct validator *vstate, void* _o)
 {
     expr_ty o = (expr_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -4472,22 +9198,22 @@ ast2obj_expr(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case BoolOp_kind:
         tp = (PyTypeObject *)state->BoolOp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_boolop(state, o->v.BoolOp.op);
+        value = ast2obj_boolop(state, vstate, o->v.BoolOp.op);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->op, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.BoolOp.values,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.BoolOp.values,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->values, value) == -1)
@@ -4498,12 +9224,12 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->NamedExpr_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.NamedExpr.target);
+        value = ast2obj_expr(state, vstate, o->v.NamedExpr.target);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->target, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.NamedExpr.value);
+        value = ast2obj_expr(state, vstate, o->v.NamedExpr.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4513,17 +9239,17 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->BinOp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.BinOp.left);
+        value = ast2obj_expr(state, vstate, o->v.BinOp.left);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->left, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_operator(state, o->v.BinOp.op);
+        value = ast2obj_operator(state, vstate, o->v.BinOp.op);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->op, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.BinOp.right);
+        value = ast2obj_expr(state, vstate, o->v.BinOp.right);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->right, value) == -1)
             goto failed;
@@ -4533,12 +9259,12 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->UnaryOp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_unaryop(state, o->v.UnaryOp.op);
+        value = ast2obj_unaryop(state, vstate, o->v.UnaryOp.op);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->op, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.UnaryOp.operand);
+        value = ast2obj_expr(state, vstate, o->v.UnaryOp.operand);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->operand, value) == -1)
             goto failed;
@@ -4548,12 +9274,12 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Lambda_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_arguments(state, o->v.Lambda.args);
+        value = ast2obj_arguments(state, vstate, o->v.Lambda.args);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->args, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.Lambda.body);
+        value = ast2obj_expr(state, vstate, o->v.Lambda.body);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
@@ -4563,17 +9289,17 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->IfExp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.IfExp.test);
+        value = ast2obj_expr(state, vstate, o->v.IfExp.test);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->test, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.IfExp.body);
+        value = ast2obj_expr(state, vstate, o->v.IfExp.body);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.IfExp.orelse);
+        value = ast2obj_expr(state, vstate, o->v.IfExp.orelse);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
             goto failed;
@@ -4583,12 +9309,14 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Dict_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Dict.keys, ast2obj_expr);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Dict.keys,
+                             ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->keys, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Dict.values, ast2obj_expr);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Dict.values,
+                             ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->values, value) == -1)
             goto failed;
@@ -4598,7 +9326,8 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Set_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Set.elts, ast2obj_expr);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Set.elts,
+                             ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->elts, value) == -1)
             goto failed;
@@ -4608,12 +9337,13 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->ListComp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.ListComp.elt);
+        value = ast2obj_expr(state, vstate, o->v.ListComp.elt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->elt, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ListComp.generators,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.ListComp.generators,
                              ast2obj_comprehension);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->generators, value) == -1)
@@ -4624,12 +9354,12 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->SetComp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.SetComp.elt);
+        value = ast2obj_expr(state, vstate, o->v.SetComp.elt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->elt, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.SetComp.generators,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.SetComp.generators,
                              ast2obj_comprehension);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->generators, value) == -1)
@@ -4640,17 +9370,18 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->DictComp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.DictComp.key);
+        value = ast2obj_expr(state, vstate, o->v.DictComp.key);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->key, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.DictComp.value);
+        value = ast2obj_expr(state, vstate, o->v.DictComp.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.DictComp.generators,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.DictComp.generators,
                              ast2obj_comprehension);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->generators, value) == -1)
@@ -4661,12 +9392,13 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->GeneratorExp_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.GeneratorExp.elt);
+        value = ast2obj_expr(state, vstate, o->v.GeneratorExp.elt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->elt, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.GeneratorExp.generators,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.GeneratorExp.generators,
                              ast2obj_comprehension);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->generators, value) == -1)
@@ -4677,7 +9409,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Await_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Await.value);
+        value = ast2obj_expr(state, vstate, o->v.Await.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4687,7 +9419,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Yield_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Yield.value);
+        value = ast2obj_expr(state, vstate, o->v.Yield.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4697,7 +9429,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->YieldFrom_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.YieldFrom.value);
+        value = ast2obj_expr(state, vstate, o->v.YieldFrom.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -4707,7 +9439,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Compare_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Compare.left);
+        value = ast2obj_expr(state, vstate, o->v.Compare.left);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->left, value) == -1)
             goto failed;
@@ -4717,14 +9449,14 @@ ast2obj_expr(struct ast_state *state, void* _o)
             value = PyList_New(n);
             if (!value) goto failed;
             for(i = 0; i < n; i++)
-                PyList_SET_ITEM(value, i, ast2obj_cmpop(state, (cmpop_ty)asdl_seq_GET(o->v.Compare.ops, i)));
+                PyList_SET_ITEM(value, i, ast2obj_cmpop(state, vstate, (cmpop_ty)asdl_seq_GET(o->v.Compare.ops, i)));
         }
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ops, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Compare.comparators,
-                             ast2obj_expr);
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.Compare.comparators, ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->comparators, value) == -1)
             goto failed;
@@ -4734,17 +9466,18 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Call_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Call.func);
+        value = ast2obj_expr(state, vstate, o->v.Call.func);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->func, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Call.args, ast2obj_expr);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Call.args,
+                             ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->args, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.Call.keywords,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Call.keywords,
                              ast2obj_keyword);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->keywords, value) == -1)
@@ -4755,17 +9488,17 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->FormattedValue_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.FormattedValue.value);
+        value = ast2obj_expr(state, vstate, o->v.FormattedValue.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_int(state, o->v.FormattedValue.conversion);
+        value = ast2obj_int(state, vstate, o->v.FormattedValue.conversion);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->conversion, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.FormattedValue.format_spec);
+        value = ast2obj_expr(state, vstate, o->v.FormattedValue.format_spec);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->format_spec, value) == -1)
             goto failed;
@@ -4775,7 +9508,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->JoinedStr_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.JoinedStr.values,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.JoinedStr.values,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->values, value) == -1)
@@ -4786,12 +9519,12 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Constant_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_constant(state, o->v.Constant.value);
+        value = ast2obj_constant(state, vstate, o->v.Constant.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.Constant.kind);
+        value = ast2obj_string(state, vstate, o->v.Constant.kind);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->kind, value) == -1)
             goto failed;
@@ -4801,17 +9534,17 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Attribute_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Attribute.value);
+        value = ast2obj_expr(state, vstate, o->v.Attribute.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_identifier(state, o->v.Attribute.attr);
+        value = ast2obj_identifier(state, vstate, o->v.Attribute.attr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->attr, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr_context(state, o->v.Attribute.ctx);
+        value = ast2obj_expr_context(state, vstate, o->v.Attribute.ctx);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ctx, value) == -1)
             goto failed;
@@ -4821,17 +9554,17 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Subscript_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Subscript.value);
+        value = ast2obj_expr(state, vstate, o->v.Subscript.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.Subscript.slice);
+        value = ast2obj_expr(state, vstate, o->v.Subscript.slice);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->slice, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr_context(state, o->v.Subscript.ctx);
+        value = ast2obj_expr_context(state, vstate, o->v.Subscript.ctx);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ctx, value) == -1)
             goto failed;
@@ -4841,12 +9574,12 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Starred_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Starred.value);
+        value = ast2obj_expr(state, vstate, o->v.Starred.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr_context(state, o->v.Starred.ctx);
+        value = ast2obj_expr_context(state, vstate, o->v.Starred.ctx);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ctx, value) == -1)
             goto failed;
@@ -4856,12 +9589,12 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Name_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.Name.id);
+        value = ast2obj_identifier(state, vstate, o->v.Name.id);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->id, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr_context(state, o->v.Name.ctx);
+        value = ast2obj_expr_context(state, vstate, o->v.Name.ctx);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ctx, value) == -1)
             goto failed;
@@ -4871,12 +9604,13 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->List_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.List.elts, ast2obj_expr);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.List.elts,
+                             ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->elts, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr_context(state, o->v.List.ctx);
+        value = ast2obj_expr_context(state, vstate, o->v.List.ctx);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ctx, value) == -1)
             goto failed;
@@ -4886,12 +9620,13 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Tuple_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.Tuple.elts, ast2obj_expr);
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.Tuple.elts,
+                             ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->elts, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr_context(state, o->v.Tuple.ctx);
+        value = ast2obj_expr_context(state, vstate, o->v.Tuple.ctx);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ctx, value) == -1)
             goto failed;
@@ -4901,52 +9636,54 @@ ast2obj_expr(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->Slice_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Slice.lower);
+        value = ast2obj_expr(state, vstate, o->v.Slice.lower);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->lower, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.Slice.upper);
+        value = ast2obj_expr(state, vstate, o->v.Slice.upper);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->upper, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.Slice.step);
+        value = ast2obj_expr(state, vstate, o->v.Slice.step);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->step, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
     }
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
-PyObject* ast2obj_expr_context(struct ast_state *state, expr_context_ty o)
+PyObject* ast2obj_expr_context(struct ast_state *state, struct validator
+                               *vstate, expr_context_ty o)
 {
     switch(o) {
         case Load:
@@ -4958,7 +9695,8 @@ PyObject* ast2obj_expr_context(struct ast_state *state, expr_context_ty o)
     }
     Py_UNREACHABLE();
 }
-PyObject* ast2obj_boolop(struct ast_state *state, boolop_ty o)
+PyObject* ast2obj_boolop(struct ast_state *state, struct validator *vstate,
+                         boolop_ty o)
 {
     switch(o) {
         case And:
@@ -4968,7 +9706,8 @@ PyObject* ast2obj_boolop(struct ast_state *state, boolop_ty o)
     }
     Py_UNREACHABLE();
 }
-PyObject* ast2obj_operator(struct ast_state *state, operator_ty o)
+PyObject* ast2obj_operator(struct ast_state *state, struct validator *vstate,
+                           operator_ty o)
 {
     switch(o) {
         case Add:
@@ -5000,7 +9739,8 @@ PyObject* ast2obj_operator(struct ast_state *state, operator_ty o)
     }
     Py_UNREACHABLE();
 }
-PyObject* ast2obj_unaryop(struct ast_state *state, unaryop_ty o)
+PyObject* ast2obj_unaryop(struct ast_state *state, struct validator *vstate,
+                          unaryop_ty o)
 {
     switch(o) {
         case Invert:
@@ -5014,7 +9754,8 @@ PyObject* ast2obj_unaryop(struct ast_state *state, unaryop_ty o)
     }
     Py_UNREACHABLE();
 }
-PyObject* ast2obj_cmpop(struct ast_state *state, cmpop_ty o)
+PyObject* ast2obj_cmpop(struct ast_state *state, struct validator *vstate,
+                        cmpop_ty o)
 {
     switch(o) {
         case Eq:
@@ -5041,7 +9782,8 @@ PyObject* ast2obj_cmpop(struct ast_state *state, cmpop_ty o)
     Py_UNREACHABLE();
 }
 PyObject*
-ast2obj_comprehension(struct ast_state *state, void* _o)
+ast2obj_comprehension(struct ast_state *state, struct validator *vstate, void*
+                      _o)
 {
     comprehension_ty o = (comprehension_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5049,44 +9791,46 @@ ast2obj_comprehension(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->comprehension_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
-    value = ast2obj_expr(state, o->target);
+    value = ast2obj_expr(state, vstate, o->target);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->target, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_expr(state, o->iter);
+    value = ast2obj_expr(state, vstate, o->iter);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->iter, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_list(state, (asdl_seq*)o->ifs, ast2obj_expr);
+    value = ast2obj_list(state, vstate, (asdl_seq*)o->ifs, ast2obj_expr);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->ifs, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->is_async);
+    value = ast2obj_int(state, vstate, o->is_async);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->is_async, value) == -1)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_excepthandler(struct ast_state *state, void* _o)
+ast2obj_excepthandler(struct ast_state *state, struct validator *vstate, void*
+                      _o)
 {
     excepthandler_ty o = (excepthandler_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5094,27 +9838,27 @@ ast2obj_excepthandler(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case ExceptHandler_kind:
         tp = (PyTypeObject *)state->ExceptHandler_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.ExceptHandler.type);
+        value = ast2obj_expr(state, vstate, o->v.ExceptHandler.type);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_identifier(state, o->v.ExceptHandler.name);
+        value = ast2obj_identifier(state, vstate, o->v.ExceptHandler.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ExceptHandler.body,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.ExceptHandler.body,
                              ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->body, value) == -1)
@@ -5122,36 +9866,37 @@ ast2obj_excepthandler(struct ast_state *state, void* _o)
         Py_DECREF(value);
         break;
     }
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_arguments(struct ast_state *state, void* _o)
+ast2obj_arguments(struct ast_state *state, struct validator *vstate, void* _o)
 {
     arguments_ty o = (arguments_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5159,59 +9904,61 @@ ast2obj_arguments(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->arguments_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
-    value = ast2obj_list(state, (asdl_seq*)o->posonlyargs, ast2obj_arg);
+    value = ast2obj_list(state, vstate, (asdl_seq*)o->posonlyargs, ast2obj_arg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->posonlyargs, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_list(state, (asdl_seq*)o->args, ast2obj_arg);
+    value = ast2obj_list(state, vstate, (asdl_seq*)o->args, ast2obj_arg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->args, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_arg(state, o->vararg);
+    value = ast2obj_arg(state, vstate, o->vararg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->vararg, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_list(state, (asdl_seq*)o->kwonlyargs, ast2obj_arg);
+    value = ast2obj_list(state, vstate, (asdl_seq*)o->kwonlyargs, ast2obj_arg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->kwonlyargs, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_list(state, (asdl_seq*)o->kw_defaults, ast2obj_expr);
+    value = ast2obj_list(state, vstate, (asdl_seq*)o->kw_defaults,
+                         ast2obj_expr);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->kw_defaults, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_arg(state, o->kwarg);
+    value = ast2obj_arg(state, vstate, o->kwarg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->kwarg, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_list(state, (asdl_seq*)o->defaults, ast2obj_expr);
+    value = ast2obj_list(state, vstate, (asdl_seq*)o->defaults, ast2obj_expr);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->defaults, value) == -1)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_arg(struct ast_state *state, void* _o)
+ast2obj_arg(struct ast_state *state, struct validator *vstate, void* _o)
 {
     arg_ty o = (arg_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5219,59 +9966,60 @@ ast2obj_arg(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->arg_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
-    value = ast2obj_identifier(state, o->arg);
+    value = ast2obj_identifier(state, vstate, o->arg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->arg, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_expr(state, o->annotation);
+    value = ast2obj_expr(state, vstate, o->annotation);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->annotation, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_string(state, o->type_comment);
+    value = ast2obj_string(state, vstate, o->type_comment);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->type_comment, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_keyword(struct ast_state *state, void* _o)
+ast2obj_keyword(struct ast_state *state, struct validator *vstate, void* _o)
 {
     keyword_ty o = (keyword_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5279,54 +10027,55 @@ ast2obj_keyword(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->keyword_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
-    value = ast2obj_identifier(state, o->arg);
+    value = ast2obj_identifier(state, vstate, o->arg);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->arg, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_expr(state, o->value);
+    value = ast2obj_expr(state, vstate, o->value);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->value, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_alias(struct ast_state *state, void* _o)
+ast2obj_alias(struct ast_state *state, struct validator *vstate, void* _o)
 {
     alias_ty o = (alias_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5334,54 +10083,55 @@ ast2obj_alias(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->alias_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
-    value = ast2obj_identifier(state, o->name);
+    value = ast2obj_identifier(state, vstate, o->name);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->name, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_identifier(state, o->asname);
+    value = ast2obj_identifier(state, vstate, o->asname);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->asname, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_withitem(struct ast_state *state, void* _o)
+ast2obj_withitem(struct ast_state *state, struct validator *vstate, void* _o)
 {
     withitem_ty o = (withitem_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5389,34 +10139,35 @@ ast2obj_withitem(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->withitem_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
-    value = ast2obj_expr(state, o->context_expr);
+    value = ast2obj_expr(state, vstate, o->context_expr);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->context_expr, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_expr(state, o->optional_vars);
+    value = ast2obj_expr(state, vstate, o->optional_vars);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->optional_vars, value) == -1)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_match_case(struct ast_state *state, void* _o)
+ast2obj_match_case(struct ast_state *state, struct validator *vstate, void* _o)
 {
     match_case_ty o = (match_case_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5424,39 +10175,40 @@ ast2obj_match_case(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->match_case_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
-    value = ast2obj_pattern(state, o->pattern);
+    value = ast2obj_pattern(state, vstate, o->pattern);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->pattern, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_expr(state, o->guard);
+    value = ast2obj_expr(state, vstate, o->guard);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->guard, value) == -1)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_list(state, (asdl_seq*)o->body, ast2obj_stmt);
+    value = ast2obj_list(state, vstate, (asdl_seq*)o->body, ast2obj_stmt);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->body, value) == -1)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_pattern(struct ast_state *state, void* _o)
+ast2obj_pattern(struct ast_state *state, struct validator *vstate, void* _o)
 {
     pattern_ty o = (pattern_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5464,17 +10216,17 @@ ast2obj_pattern(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case MatchValue_kind:
         tp = (PyTypeObject *)state->MatchValue_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.MatchValue.value);
+        value = ast2obj_expr(state, vstate, o->v.MatchValue.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -5484,7 +10236,7 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->MatchSingleton_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_constant(state, o->v.MatchSingleton.value);
+        value = ast2obj_constant(state, vstate, o->v.MatchSingleton.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -5494,7 +10246,8 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->MatchSequence_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchSequence.patterns,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.MatchSequence.patterns,
                              ast2obj_pattern);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->patterns, value) == -1)
@@ -5505,19 +10258,20 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->MatchMapping_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchMapping.keys,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.MatchMapping.keys,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->keys, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchMapping.patterns,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.MatchMapping.patterns,
                              ast2obj_pattern);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->patterns, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_identifier(state, o->v.MatchMapping.rest);
+        value = ast2obj_identifier(state, vstate, o->v.MatchMapping.rest);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->rest, value) == -1)
             goto failed;
@@ -5527,24 +10281,27 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->MatchClass_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.MatchClass.cls);
+        value = ast2obj_expr(state, vstate, o->v.MatchClass.cls);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->cls, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchClass.patterns,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.MatchClass.patterns,
                              ast2obj_pattern);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->patterns, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchClass.kwd_attrs,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.MatchClass.kwd_attrs,
                              ast2obj_identifier);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->kwd_attrs, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchClass.kwd_patterns,
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.MatchClass.kwd_patterns,
                              ast2obj_pattern);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->kwd_patterns, value) == -1)
@@ -5555,7 +10312,7 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->MatchStar_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.MatchStar.name);
+        value = ast2obj_identifier(state, vstate, o->v.MatchStar.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
@@ -5565,12 +10322,12 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->MatchAs_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_pattern(state, o->v.MatchAs.pattern);
+        value = ast2obj_pattern(state, vstate, o->v.MatchAs.pattern);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->pattern, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_identifier(state, o->v.MatchAs.name);
+        value = ast2obj_identifier(state, vstate, o->v.MatchAs.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
@@ -5580,7 +10337,7 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->MatchOr_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchOr.patterns,
+        value = ast2obj_list(state, vstate, (asdl_seq*)o->v.MatchOr.patterns,
                              ast2obj_pattern);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->patterns, value) == -1)
@@ -5588,36 +10345,37 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         Py_DECREF(value);
         break;
     }
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_type_ignore(struct ast_state *state, void* _o)
+ast2obj_type_ignore(struct ast_state *state, struct validator *vstate, void* _o)
 {
     type_ignore_ty o = (type_ignore_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5625,38 +10383,39 @@ ast2obj_type_ignore(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case TypeIgnore_kind:
         tp = (PyTypeObject *)state->TypeIgnore_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_int(state, o->v.TypeIgnore.lineno);
+        value = ast2obj_int(state, vstate, o->v.TypeIgnore.lineno);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->lineno, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(state, o->v.TypeIgnore.tag);
+        value = ast2obj_string(state, vstate, o->v.TypeIgnore.tag);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->tag, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
     }
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
 }
 
 PyObject*
-ast2obj_type_param(struct ast_state *state, void* _o)
+ast2obj_type_param(struct ast_state *state, struct validator *vstate, void* _o)
 {
     type_param_ty o = (type_param_ty)_o;
     PyObject *result = NULL, *value = NULL;
@@ -5664,24 +10423,29 @@ ast2obj_type_param(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
-    if (++state->recursion_depth > state->recursion_limit) {
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case TypeVar_kind:
         tp = (PyTypeObject *)state->TypeVar_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.TypeVar.name);
+        value = ast2obj_identifier(state, vstate, o->v.TypeVar.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(state, o->v.TypeVar.bound);
+        value = ast2obj_expr(state, vstate, o->v.TypeVar.bound);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->bound, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(state, vstate, o->v.TypeVar.default_value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->default_value, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -5689,9 +10453,14 @@ ast2obj_type_param(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->ParamSpec_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.ParamSpec.name);
+        value = ast2obj_identifier(state, vstate, o->v.ParamSpec.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(state, vstate, o->v.ParamSpec.default_value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->default_value, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -5699,36 +10468,42 @@ ast2obj_type_param(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->TypeVarTuple_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.TypeVarTuple.name);
+        value = ast2obj_identifier(state, vstate, o->v.TypeVarTuple.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_expr(state, vstate, o->v.TypeVarTuple.default_value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->default_value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     }
-    value = ast2obj_int(state, o->lineno);
+    value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->col_offset);
+    value = ast2obj_int(state, vstate, o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_lineno);
+    value = ast2obj_int(state, vstate, o->end_lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
         goto failed;
     Py_DECREF(value);
-    value = ast2obj_int(state, o->end_col_offset);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
-    state->recursion_depth--;
+    vstate->recursion_depth--;
     return result;
 failed:
+    vstate->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5750,20 +10525,22 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->Module_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
         asdl_type_ignore_seq* type_ignores;
 
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Module");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -5792,14 +10569,16 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_ignores, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_ignores, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_ignores\" missing from Module");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -5835,19 +10614,21 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->Interactive_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
 
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Interactive");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -5883,17 +10664,17 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->Expression_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty body;
 
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Expression");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -5912,20 +10693,22 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->FunctionType_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* argtypes;
         expr_ty returns;
 
-        if (_PyObject_LookupAttr(obj, state->argtypes, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->argtypes, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"argtypes\" missing from FunctionType");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -5954,12 +10737,12 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->returns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->returns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"returns\" missing from FunctionType");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -5979,7 +10762,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     PyErr_Format(PyExc_TypeError, "expected some sort of mod, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -5999,12 +10782,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         *out = NULL;
         return 0;
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from stmt");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -6016,12 +10799,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from stmt");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -6033,8 +10816,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -6050,8 +10833,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -6070,7 +10853,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->FunctionDef_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
@@ -6081,12 +10864,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         string type_comment;
         asdl_type_param_seq* type_params;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from FunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6098,12 +10881,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from FunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6115,14 +10898,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from FunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6151,14 +10936,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->decorator_list, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->decorator_list, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from FunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6187,8 +10974,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->returns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->returns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6204,8 +10991,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6221,14 +11008,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from FunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6267,7 +11056,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AsyncFunctionDef_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
@@ -6278,12 +11067,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         string type_comment;
         asdl_type_param_seq* type_params;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from AsyncFunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6295,12 +11084,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from AsyncFunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6312,14 +11101,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncFunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6348,14 +11139,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->decorator_list, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->decorator_list, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from AsyncFunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6384,8 +11177,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->returns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->returns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6401,8 +11194,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6418,14 +11211,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from AsyncFunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6464,7 +11259,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->ClassDef_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
@@ -6474,12 +11269,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_expr_seq* decorator_list;
         asdl_type_param_seq* type_params;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from ClassDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6491,14 +11286,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->bases, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->bases, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"bases\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6527,14 +11324,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->keywords, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->keywords, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6563,14 +11362,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6599,14 +11400,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->decorator_list, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->decorator_list, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6635,14 +11438,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6680,13 +11485,13 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Return_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6710,19 +11515,21 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Delete_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* targets;
 
-        if (_PyObject_LookupAttr(obj, state->targets, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->targets, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"targets\" missing from Delete");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6759,21 +11566,23 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Assign_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* targets;
         expr_ty value;
         string type_comment;
 
-        if (_PyObject_LookupAttr(obj, state->targets, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->targets, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"targets\" missing from Assign");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6802,12 +11611,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Assign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6819,8 +11628,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6844,19 +11653,19 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->TypeAlias_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty name;
         asdl_type_param_seq* type_params;
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from TypeAlias");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6868,14 +11677,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from TypeAlias");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6904,12 +11715,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from TypeAlias");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6929,19 +11740,19 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AugAssign_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
         operator_ty op;
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AugAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6953,12 +11764,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from AugAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6970,12 +11781,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from AugAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6995,7 +11806,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AnnAssign_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
@@ -7003,12 +11814,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         expr_ty value;
         int simple;
 
-        if (_PyObject_LookupAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AnnAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7020,12 +11831,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->annotation, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->annotation, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"annotation\" missing from AnnAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7037,8 +11848,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7054,12 +11865,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->simple, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->simple, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"simple\" missing from AnnAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7079,7 +11890,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->For_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
@@ -7088,12 +11899,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* orelse;
         string type_comment;
 
-        if (_PyObject_LookupAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from For");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7105,12 +11916,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->iter, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->iter, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from For");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7122,14 +11933,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from For");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7158,14 +11971,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from For");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7194,8 +12009,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7219,7 +12034,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AsyncFor_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
@@ -7228,12 +12043,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* orelse;
         string type_comment;
 
-        if (_PyObject_LookupAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AsyncFor");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7245,12 +12060,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->iter, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->iter, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from AsyncFor");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7262,14 +12077,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncFor");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7298,14 +12115,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from AsyncFor");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7334,8 +12153,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7360,19 +12179,19 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->While_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
         asdl_stmt_seq* body;
         asdl_stmt_seq* orelse;
 
-        if (_PyObject_LookupAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from While");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7384,14 +12203,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from While");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7420,14 +12241,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from While");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7464,19 +12287,19 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->If_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
         asdl_stmt_seq* body;
         asdl_stmt_seq* orelse;
 
-        if (_PyObject_LookupAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from If");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7488,14 +12311,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from If");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7524,14 +12349,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from If");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7568,21 +12395,23 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->With_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_withitem_seq* items;
         asdl_stmt_seq* body;
         string type_comment;
 
-        if (_PyObject_LookupAttr(obj, state->items, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->items, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from With");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7611,14 +12440,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from With");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7647,8 +12478,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7672,21 +12503,23 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AsyncWith_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_withitem_seq* items;
         asdl_stmt_seq* body;
         string type_comment;
 
-        if (_PyObject_LookupAttr(obj, state->items, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->items, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from AsyncWith");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7715,14 +12548,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncWith");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7751,8 +12586,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7776,18 +12611,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Match_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty subject;
         asdl_match_case_seq* cases;
 
-        if (_PyObject_LookupAttr(obj, state->subject, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->subject, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"subject\" missing from Match");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7799,14 +12634,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->cases, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->cases, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"cases\" missing from Match");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7843,14 +12680,14 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Raise_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty exc;
         expr_ty cause;
 
-        if (_PyObject_LookupAttr(obj, state->exc, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->exc, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7866,8 +12703,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->cause, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->cause, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7891,7 +12728,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Try_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
@@ -7899,14 +12736,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* orelse;
         asdl_stmt_seq* finalbody;
 
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7935,14 +12774,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->handlers, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->handlers, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7971,14 +12812,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8007,14 +12850,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->finalbody, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->finalbody, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"finalbody\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8051,7 +12896,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->TryStar_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
@@ -8059,14 +12904,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* orelse;
         asdl_stmt_seq* finalbody;
 
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8095,14 +12942,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->handlers, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->handlers, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8131,14 +12980,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8167,14 +13018,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->finalbody, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->finalbody, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"finalbody\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8211,18 +13064,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Assert_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
         expr_ty msg;
 
-        if (_PyObject_LookupAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from Assert");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8234,8 +13087,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->msg, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->msg, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -8259,19 +13112,21 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Import_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_alias_seq* names;
 
-        if (_PyObject_LookupAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Import");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8308,15 +13163,15 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->ImportFrom_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier module;
         asdl_alias_seq* names;
         int level;
 
-        if (_PyObject_LookupAttr(obj, state->module, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->module, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -8332,14 +13187,16 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from ImportFrom");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8368,8 +13225,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->level, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->level, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -8393,19 +13250,21 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Global_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_identifier_seq* names;
 
-        if (_PyObject_LookupAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Global");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8442,19 +13301,21 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Nonlocal_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_identifier_seq* names;
 
-        if (_PyObject_LookupAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Nonlocal");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8491,17 +13352,17 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Expr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Expr");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8521,7 +13382,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Pass_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
 
@@ -8533,7 +13394,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Break_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
 
@@ -8545,7 +13406,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Continue_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
 
@@ -8558,7 +13419,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     PyErr_Format(PyExc_TypeError, "expected some sort of stmt, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -8578,12 +13439,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         *out = NULL;
         return 0;
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from expr");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -8595,12 +13456,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from expr");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -8612,8 +13473,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -8629,8 +13490,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -8649,18 +13510,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->BoolOp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         boolop_ty op;
         asdl_expr_seq* values;
 
-        if (_PyObject_LookupAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BoolOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8672,14 +13533,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->values, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from BoolOp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8716,18 +13579,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->NamedExpr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from NamedExpr");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8739,12 +13602,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NamedExpr");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8764,19 +13627,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->BinOp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty left;
         operator_ty op;
         expr_ty right;
 
-        if (_PyObject_LookupAttr(obj, state->left, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->left, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from BinOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8788,12 +13651,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BinOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8805,12 +13668,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->right, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->right, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"right\" missing from BinOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8830,18 +13693,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->UnaryOp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         unaryop_ty op;
         expr_ty operand;
 
-        if (_PyObject_LookupAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from UnaryOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8853,12 +13716,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->operand, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->operand, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"operand\" missing from UnaryOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8878,18 +13741,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Lambda_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         arguments_ty args;
         expr_ty body;
 
-        if (_PyObject_LookupAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Lambda");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8901,12 +13764,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Lambda");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8926,19 +13789,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->IfExp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
         expr_ty body;
         expr_ty orelse;
 
-        if (_PyObject_LookupAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from IfExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8950,12 +13813,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from IfExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8967,12 +13830,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from IfExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8992,20 +13855,22 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Dict_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* keys;
         asdl_expr_seq* values;
 
-        if (_PyObject_LookupAttr(obj, state->keys, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->keys, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keys\" missing from Dict");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9034,14 +13899,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->values, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from Dict");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9078,19 +13945,21 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Set_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* elts;
 
-        if (_PyObject_LookupAttr(obj, state->elts, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->elts, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from Set");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9127,18 +13996,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->ListComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty elt;
         asdl_comprehension_seq* generators;
 
-        if (_PyObject_LookupAttr(obj, state->elt, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->elt, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from ListComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9150,14 +14019,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from ListComp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9194,18 +14065,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->SetComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty elt;
         asdl_comprehension_seq* generators;
 
-        if (_PyObject_LookupAttr(obj, state->elt, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->elt, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from SetComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9217,14 +14088,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from SetComp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9261,19 +14134,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->DictComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty key;
         expr_ty value;
         asdl_comprehension_seq* generators;
 
-        if (_PyObject_LookupAttr(obj, state->key, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->key, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"key\" missing from DictComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9285,12 +14158,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from DictComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9302,14 +14175,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from DictComp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9346,18 +14221,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->GeneratorExp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty elt;
         asdl_comprehension_seq* generators;
 
-        if (_PyObject_LookupAttr(obj, state->elt, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->elt, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from GeneratorExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9369,14 +14244,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from GeneratorExp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9413,17 +14290,17 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Await_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Await");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9443,13 +14320,13 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Yield_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -9473,17 +14350,17 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->YieldFrom_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from YieldFrom");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9503,19 +14380,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Compare_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty left;
         asdl_int_seq* ops;
         asdl_expr_seq* comparators;
 
-        if (_PyObject_LookupAttr(obj, state->left, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->left, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from Compare");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9527,14 +14404,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->ops, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->ops, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"ops\" missing from Compare");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9563,14 +14442,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->comparators, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->comparators, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"comparators\" missing from Compare");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9607,19 +14488,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Call_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty func;
         asdl_expr_seq* args;
         asdl_keyword_seq* keywords;
 
-        if (_PyObject_LookupAttr(obj, state->func, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->func, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"func\" missing from Call");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9631,14 +14512,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Call");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9667,14 +14550,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->keywords, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->keywords, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from Call");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9711,19 +14596,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->FormattedValue_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
         int conversion;
         expr_ty format_spec;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from FormattedValue");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9735,12 +14620,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->conversion, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->conversion, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"conversion\" missing from FormattedValue");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9752,8 +14637,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->format_spec, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->format_spec, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -9778,19 +14663,21 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->JoinedStr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* values;
 
-        if (_PyObject_LookupAttr(obj, state->values, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from JoinedStr");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9827,18 +14714,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Constant_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         constant value;
         string kind;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Constant");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9850,8 +14737,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->kind, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->kind, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -9875,19 +14762,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Attribute_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
         identifier attr;
         expr_context_ty ctx;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Attribute");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9899,12 +14786,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->attr, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->attr, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"attr\" missing from Attribute");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9916,12 +14803,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Attribute");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9941,19 +14828,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Subscript_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
         expr_ty slice;
         expr_context_ty ctx;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Subscript");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9965,12 +14852,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->slice, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->slice, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"slice\" missing from Subscript");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9982,12 +14869,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Subscript");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10007,18 +14894,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Starred_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
         expr_context_ty ctx;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Starred");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10030,12 +14917,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Starred");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10055,18 +14942,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Name_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier id;
         expr_context_ty ctx;
 
-        if (_PyObject_LookupAttr(obj, state->id, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->id, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"id\" missing from Name");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10078,12 +14965,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Name");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10103,20 +14990,22 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->List_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* elts;
         expr_context_ty ctx;
 
-        if (_PyObject_LookupAttr(obj, state->elts, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->elts, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from List");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -10145,12 +15034,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from List");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10170,20 +15059,22 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Tuple_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* elts;
         expr_context_ty ctx;
 
-        if (_PyObject_LookupAttr(obj, state->elts, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->elts, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from Tuple");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -10212,12 +15103,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Tuple");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10237,15 +15128,15 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Slice_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty lower;
         expr_ty upper;
         expr_ty step;
 
-        if (_PyObject_LookupAttr(obj, state->lower, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->lower, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10261,8 +15152,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->upper, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->upper, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10278,8 +15169,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->step, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->step, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10304,7 +15195,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     PyErr_Format(PyExc_TypeError, "expected some sort of expr, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -10315,7 +15206,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
 
     isinstance = PyObject_IsInstance(obj, state->Load_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Load;
@@ -10323,7 +15214,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
     }
     isinstance = PyObject_IsInstance(obj, state->Store_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Store;
@@ -10331,7 +15222,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
     }
     isinstance = PyObject_IsInstance(obj, state->Del_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Del;
@@ -10339,7 +15230,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr_context, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10350,7 +15241,7 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
 
     isinstance = PyObject_IsInstance(obj, state->And_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = And;
@@ -10358,7 +15249,7 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Or_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Or;
@@ -10366,7 +15257,7 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of boolop, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10377,7 +15268,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
 
     isinstance = PyObject_IsInstance(obj, state->Add_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Add;
@@ -10385,7 +15276,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Sub_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Sub;
@@ -10393,7 +15284,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Mult_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Mult;
@@ -10401,7 +15292,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->MatMult_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = MatMult;
@@ -10409,7 +15300,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Div_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Div;
@@ -10417,7 +15308,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Mod_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Mod;
@@ -10425,7 +15316,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Pow_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Pow;
@@ -10433,7 +15324,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->LShift_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = LShift;
@@ -10441,7 +15332,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->RShift_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = RShift;
@@ -10449,7 +15340,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->BitOr_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = BitOr;
@@ -10457,7 +15348,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->BitXor_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = BitXor;
@@ -10465,7 +15356,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->BitAnd_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = BitAnd;
@@ -10473,7 +15364,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->FloorDiv_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = FloorDiv;
@@ -10481,7 +15372,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of operator, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10492,7 +15383,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
 
     isinstance = PyObject_IsInstance(obj, state->Invert_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Invert;
@@ -10500,7 +15391,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Not_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Not;
@@ -10508,7 +15399,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->UAdd_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = UAdd;
@@ -10516,7 +15407,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->USub_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = USub;
@@ -10524,7 +15415,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of unaryop, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10535,7 +15426,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
 
     isinstance = PyObject_IsInstance(obj, state->Eq_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Eq;
@@ -10543,7 +15434,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->NotEq_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = NotEq;
@@ -10551,7 +15442,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Lt_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Lt;
@@ -10559,7 +15450,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->LtE_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = LtE;
@@ -10567,7 +15458,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Gt_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Gt;
@@ -10575,7 +15466,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->GtE_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = GtE;
@@ -10583,7 +15474,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Is_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Is;
@@ -10591,7 +15482,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->IsNot_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = IsNot;
@@ -10599,7 +15490,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->In_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = In;
@@ -10607,7 +15498,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->NotIn_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = NotIn;
@@ -10615,7 +15506,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of cmpop, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10628,12 +15519,12 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
     asdl_expr_seq* ifs;
     int is_async;
 
-    if (_PyObject_LookupAttr(obj, state->target, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from comprehension");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10645,12 +15536,12 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->iter, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->iter, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from comprehension");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10662,14 +15553,16 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->ifs, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->ifs, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"ifs\" missing from comprehension");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return -1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -10698,12 +15591,12 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         }
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->is_async, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->is_async, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"is_async\" missing from comprehension");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10716,10 +15609,11 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         Py_CLEAR(tmp);
     }
     *out = _PyAST_comprehension(target, iter, ifs, is_async, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -10739,12 +15633,12 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         *out = NULL;
         return 0;
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from excepthandler");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10756,12 +15650,12 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from excepthandler");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10773,8 +15667,8 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -10790,8 +15684,8 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -10810,15 +15704,15 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     tp = state->ExceptHandler_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty type;
         identifier name;
         asdl_stmt_seq* body;
 
-        if (_PyObject_LookupAttr(obj, state->type, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->type, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10834,8 +15728,8 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10851,14 +15745,16 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ExceptHandler");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -10896,7 +15792,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     PyErr_Format(PyExc_TypeError, "expected some sort of excepthandler, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -10912,14 +15808,16 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
     arg_ty kwarg;
     asdl_expr_seq* defaults;
 
-    if (_PyObject_LookupAttr(obj, state->posonlyargs, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->posonlyargs, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"posonlyargs\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return -1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -10948,14 +15846,16 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->args, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return -1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -10984,8 +15884,8 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->vararg, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->vararg, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11001,14 +15901,16 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->kwonlyargs, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->kwonlyargs, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"kwonlyargs\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return -1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11037,14 +15939,16 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->kw_defaults, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->kw_defaults, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"kw_defaults\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return -1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11073,8 +15977,8 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->kwarg, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->kwarg, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11090,14 +15994,16 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->defaults, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->defaults, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"defaults\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return -1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11128,10 +16034,11 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
     }
     *out = _PyAST_arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults,
                             kwarg, defaults, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11146,12 +16053,12 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     int end_lineno;
     int end_col_offset;
 
-    if (_PyObject_LookupAttr(obj, state->arg, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->arg, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"arg\" missing from arg");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11163,8 +16070,8 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->annotation, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->annotation, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11180,8 +16087,8 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->type_comment, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11197,12 +16104,12 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from arg");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11214,12 +16121,12 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from arg");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11231,8 +16138,8 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11248,8 +16155,8 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11267,10 +16174,11 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     }
     *out = _PyAST_arg(arg, annotation, type_comment, lineno, col_offset,
                       end_lineno, end_col_offset, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11285,8 +16193,8 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     int end_lineno;
     int end_col_offset;
 
-    if (_PyObject_LookupAttr(obj, state->arg, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->arg, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11302,12 +16210,12 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from keyword");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11319,12 +16227,12 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from keyword");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11336,12 +16244,12 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from keyword");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11353,8 +16261,8 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11370,8 +16278,8 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11389,10 +16297,11 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     }
     *out = _PyAST_keyword(arg, value, lineno, col_offset, end_lineno,
                           end_col_offset, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11407,12 +16316,12 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     int end_lineno;
     int end_col_offset;
 
-    if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from alias");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11424,8 +16333,8 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->asname, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->asname, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11441,12 +16350,12 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from alias");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11458,12 +16367,12 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from alias");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11475,8 +16384,8 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11492,8 +16401,8 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11511,10 +16420,11 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     }
     *out = _PyAST_alias(name, asname, lineno, col_offset, end_lineno,
                         end_col_offset, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11525,12 +16435,12 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
     expr_ty context_expr;
     expr_ty optional_vars;
 
-    if (_PyObject_LookupAttr(obj, state->context_expr, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->context_expr, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from withitem");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11542,8 +16452,8 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->optional_vars, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->optional_vars, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11560,10 +16470,11 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         Py_CLEAR(tmp);
     }
     *out = _PyAST_withitem(context_expr, optional_vars, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11575,12 +16486,12 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
     expr_ty guard;
     asdl_stmt_seq* body;
 
-    if (_PyObject_LookupAttr(obj, state->pattern, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->pattern, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"pattern\" missing from match_case");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11592,8 +16503,8 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->guard, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->guard, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11609,14 +16520,16 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->body, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from match_case");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return -1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11646,10 +16559,11 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         Py_CLEAR(tmp);
     }
     *out = _PyAST_match_case(pattern, guard, body, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11669,12 +16583,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         *out = NULL;
         return 0;
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11686,12 +16600,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11703,12 +16617,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"end_lineno\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11720,12 +16634,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"end_col_offset\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11740,17 +16654,17 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchValue_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from MatchValue");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -11770,17 +16684,17 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchSingleton_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         constant value;
 
-        if (_PyObject_LookupAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from MatchSingleton");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -11800,19 +16714,21 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchSequence_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_pattern_seq* patterns;
 
-        if (_PyObject_LookupAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchSequence");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -11849,21 +16765,23 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchMapping_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* keys;
         asdl_pattern_seq* patterns;
         identifier rest;
 
-        if (_PyObject_LookupAttr(obj, state->keys, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->keys, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keys\" missing from MatchMapping");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -11892,14 +16810,16 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchMapping");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -11928,8 +16848,8 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->rest, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->rest, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -11953,7 +16873,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchClass_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty cls;
@@ -11961,12 +16881,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         asdl_identifier_seq* kwd_attrs;
         asdl_pattern_seq* kwd_patterns;
 
-        if (_PyObject_LookupAttr(obj, state->cls, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->cls, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"cls\" missing from MatchClass");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -11978,14 +16898,16 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchClass");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -12014,14 +16936,16 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->kwd_attrs, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->kwd_attrs, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"kwd_attrs\" missing from MatchClass");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -12050,14 +16974,16 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->kwd_patterns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->kwd_patterns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"kwd_patterns\" missing from MatchClass");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -12095,13 +17021,13 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchStar_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12125,14 +17051,14 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchAs_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         pattern_ty pattern;
         identifier name;
 
-        if (_PyObject_LookupAttr(obj, state->pattern, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->pattern, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12148,8 +17074,8 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12173,19 +17099,21 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchOr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_pattern_seq* patterns;
 
-        if (_PyObject_LookupAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchOr");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -12223,7 +17151,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     PyErr_Format(PyExc_TypeError, "expected some sort of pattern, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -12242,18 +17170,18 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
     tp = state->TypeIgnore_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         int lineno;
         string tag;
 
-        if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from TypeIgnore");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12265,12 +17193,12 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->tag, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->tag, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"tag\" missing from TypeIgnore");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12290,7 +17218,7 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
     PyErr_Format(PyExc_TypeError, "expected some sort of type_ignore, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -12310,12 +17238,12 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         *out = NULL;
         return 0;
     }
-    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from type_param");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -12327,12 +17255,12 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from type_param");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -12344,12 +17272,12 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
     }
-    if (tmp == NULL || tmp == Py_None) {
-        Py_CLEAR(tmp);
-        end_lineno = lineno;
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"end_lineno\" missing from type_param");
+        return -1;
     }
     else {
         int res;
@@ -12361,12 +17289,12 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
     }
-    if (tmp == NULL || tmp == Py_None) {
-        Py_CLEAR(tmp);
-        end_col_offset = col_offset;
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"end_col_offset\" missing from type_param");
+        return -1;
     }
     else {
         int res;
@@ -12381,18 +17309,19 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     tp = state->TypeVar_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
         expr_ty bound;
+        expr_ty default_value;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from TypeVar");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12404,8 +17333,8 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->bound, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->bound, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12421,25 +17350,43 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_TypeVar(name, bound, lineno, col_offset, end_lineno,
-                              end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->default_value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            default_value = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'TypeVar' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &default_value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_TypeVar(name, bound, default_value, lineno, col_offset,
+                              end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
     tp = state->ParamSpec_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
+        expr_ty default_value;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from ParamSpec");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12451,25 +17398,43 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_ParamSpec(name, lineno, col_offset, end_lineno,
-                                end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->default_value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            default_value = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'ParamSpec' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &default_value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_ParamSpec(name, default_value, lineno, col_offset,
+                                end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
     tp = state->TypeVarTuple_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
+        expr_ty default_value;
 
-        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+        if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from TypeVarTuple");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12481,8 +17446,25 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_TypeVarTuple(name, lineno, col_offset, end_lineno,
-                                   end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->default_value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            default_value = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'TypeVarTuple' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &default_value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_TypeVarTuple(name, default_value, lineno, col_offset,
+                                   end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -12490,7 +17472,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     PyErr_Format(PyExc_TypeError, "expected some sort of type_param, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 
@@ -12511,6 +17493,9 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntMacro(m, PyCF_OPTIMIZED_AST) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "mod", state->mod_type) < 0) {
@@ -12900,6 +17885,7 @@ astmodule_exec(PyObject *m)
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
@@ -12927,24 +17913,24 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
-    int COMPILER_STACK_FRAME_SCALE = 3;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
-        return 0;
+        return NULL;
     }
-    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
-    state->recursion_depth = starting_recursion_depth;
+    struct validator vstate;
+    vstate.recursion_limit = Py_C_RECURSION_LIMIT;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth;
+    vstate.recursion_depth = starting_recursion_depth;
 
-    PyObject *result = ast2obj_mod(state, t);
+    PyObject *result = ast2obj_mod(state, &vstate, t);
 
     /* Check that the recursion depth counting balanced correctly */
-    if (result && state->recursion_depth != starting_recursion_depth) {
+    if (result && vstate.recursion_depth != starting_recursion_depth) {
         PyErr_Format(PyExc_SystemError,
             "AST constructor recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, state->recursion_depth);
-        return 0;
+            starting_recursion_depth, vstate.recursion_depth);
+        return NULL;
     }
     return result;
 }

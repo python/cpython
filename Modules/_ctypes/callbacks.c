@@ -8,9 +8,8 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_call.h"            // _PyObject_CallNoArgs()
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #include <stdbool.h>
 
@@ -110,10 +109,14 @@ PrintError(const char *msg, ...)
  * slower.
  */
 static void
-TryAddRef(StgDictObject *dict, CDataObject *obj)
+TryAddRef(PyObject *cnv, CDataObject *obj)
 {
     IUnknown *punk;
-    int r = PyDict_Contains((PyObject *)dict, &_Py_ID(_needs_com_addref_));
+    PyObject *attrdict = _PyType_GetDict((PyTypeObject *)cnv);
+    if (!attrdict) {
+        return;
+    }
+    int r = PyDict_Contains(attrdict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
         if (r < 0) {
             PrintError("getting _needs_com_addref_");
@@ -133,7 +136,10 @@ TryAddRef(StgDictObject *dict, CDataObject *obj)
  * Call the python object with all arguments
  *
  */
-static void _CallPythonObject(void *mem,
+
+// BEWARE: The GIL needs to be held throughout the function
+static void _CallPythonObject(ctypes_state *st,
+                              void *mem,
                               ffi_type *restype,
                               SETFUNC setfunc,
                               PyObject *callable,
@@ -145,7 +151,6 @@ static void _CallPythonObject(void *mem,
     Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
-    PyGILState_STATE state = PyGILState_Ensure();
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
@@ -154,37 +159,41 @@ static void _CallPythonObject(void *mem,
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
-        StgDictObject *dict;
-        dict = PyType_stgdict(cnv);
 
-        if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
-            PyObject *v = dict->getfunc(*pArgs, dict->size);
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, cnv, &info) < 0) {
+            goto Done;
+        }
+
+        if (info && info->getfunc && !_ctypes_simple_instance(st, cnv)) {
+            PyObject *v = info->getfunc(*pArgs, info->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
             args[i] = v;
             /* XXX XXX XX
-               We have the problem that c_byte or c_short have dict->size of
+               We have the problem that c_byte or c_short have info->size of
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
                BTW, the same problem occurs when they are pushed as parameters
             */
-        } else if (dict) {
+        }
+        else if (info) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
-            if (!CDataObject_Check(obj)) {
+            if (!CDataObject_Check(st, obj)) {
                 Py_DECREF(obj);
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
-            memcpy(obj->b_ptr, *pArgs, dict->size);
+            memcpy(obj->b_ptr, *pArgs, info->size);
             args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
-            TryAddRef(dict, obj);
+            TryAddRef(cnv, obj);
 #endif
         } else {
             PyErr_SetString(PyExc_TypeError,
@@ -197,7 +206,7 @@ static void _CallPythonObject(void *mem,
     }
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
-        error_object = _ctypes_get_errobj(&space);
+        error_object = _ctypes_get_errobj(st, &space);
         if (error_object == NULL)
             goto Done;
         if (flags & FUNCFLAG_USE_ERRNO) {
@@ -216,8 +225,9 @@ static void _CallPythonObject(void *mem,
 
     result = PyObject_Vectorcall(callable, args, nargs, NULL);
     if (result == NULL) {
-        _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
-                                  callable);
+        PyErr_FormatUnraisable(
+                "Exception ignored on calling ctypes callback function %R",
+                callable);
     }
 
 #ifdef MS_WIN32
@@ -258,9 +268,10 @@ static void _CallPythonObject(void *mem,
 
         if (keep == NULL) {
             /* Could not convert callback result. */
-            _PyErr_WriteUnraisableMsg("on converting result "
-                                      "of ctypes callback function",
-                                      callable);
+            PyErr_FormatUnraisable(
+                    "Exception ignored on converting result "
+                    "of ctypes callback function %R",
+                    callable);
         }
         else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
             if (keep == Py_None) {
@@ -270,9 +281,10 @@ static void _CallPythonObject(void *mem,
             else if (PyErr_WarnEx(PyExc_RuntimeWarning,
                                   "memory leak in callback function.",
                                   1) == -1) {
-                _PyErr_WriteUnraisableMsg("on converting result "
-                                          "of ctypes callback function",
-                                          callable);
+                PyErr_FormatUnraisable(
+                        "Exception ignored on converting result "
+                        "of ctypes callback function %R",
+                        callable);
             }
         }
     }
@@ -283,7 +295,6 @@ static void _CallPythonObject(void *mem,
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
     }
-    PyGILState_Release(state);
 }
 
 static void closure_fcn(ffi_cif *cif,
@@ -291,23 +302,28 @@ static void closure_fcn(ffi_cif *cif,
                         void **args,
                         void *userdata)
 {
-    CThunkObject *p = (CThunkObject *)userdata;
+    PyGILState_STATE state = PyGILState_Ensure();
 
-    _CallPythonObject(resp,
+    CThunkObject *p = (CThunkObject *)userdata;
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(p));
+
+    _CallPythonObject(st,
+                      resp,
                       p->ffi_restype,
                       p->setfunc,
                       p->callable,
                       p->converters,
                       p->flags,
                       args);
+
+    PyGILState_Release(state);
 }
 
-static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
+static CThunkObject* CThunkObject_new(ctypes_state *st, Py_ssize_t nargs)
 {
     CThunkObject *p;
     Py_ssize_t i;
 
-    ctypes_state *st = GLOBAL_STATE();
     p = PyObject_GC_NewVar(CThunkObject, st->PyCThunk_Type, nargs);
     if (p == NULL) {
         return NULL;
@@ -329,7 +345,8 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
     return p;
 }
 
-CThunkObject *_ctypes_alloc_callback(PyObject *callable,
+CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
+                                    PyObject *callable,
                                     PyObject *converters,
                                     PyObject *restype,
                                     int flags)
@@ -341,14 +358,11 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
-    p = CThunkObject_new(nargs);
+    p = CThunkObject_new(st, nargs);
     if (p == NULL)
         return NULL;
 
-#ifdef Py_DEBUG
-    ctypes_state *st = GLOBAL_STATE();
     assert(CThunk_CheckExact(st, (PyObject *)p));
-#endif
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
@@ -360,7 +374,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < nargs; ++i) {
         PyObject *cnv = cnvs[i]; // borrowed ref
-        p->atypes[i] = _ctypes_get_ffi_type(cnv);
+        p->atypes[i] = _ctypes_get_ffi_type(st, cnv);
     }
     p->atypes[i] = NULL;
 
@@ -369,14 +383,18 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         p->setfunc = NULL;
         p->ffi_restype = &ffi_type_void;
     } else {
-        StgDictObject *dict = PyType_stgdict(restype);
-        if (dict == NULL || dict->setfunc == NULL) {
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, restype, &info) < 0) {
+            goto error;
+        }
+
+        if (info == NULL || info->setfunc == NULL) {
           PyErr_SetString(PyExc_TypeError,
                           "invalid result type for callback function");
           goto error;
         }
-        p->setfunc = dict->setfunc;
-        p->ffi_restype = &dict->ffi_type_pointer;
+        p->setfunc = info->setfunc;
+        p->ffi_restype = &info->ffi_type_pointer;
     }
 
     cc = FFI_DEFAULT_ABI;
@@ -416,25 +434,29 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
-#if defined(__clang__)
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+        // GH-85272, GH-23327, GH-100540: On macOS,
+        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is checked at runtime because the
+        // symbol might not be available at runtime when targeting macOS 10.14
+        // or earlier. Even if ffi_prep_closure_loc() is called in practice,
+        // the deprecated ffi_prep_closure() code path is needed if
+        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is false.
+        //
+        // On non-macOS platforms, even if HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is
+        // defined as 1 and ffi_prep_closure_loc() is used in practice, this
+        // code path is still compiled and emits a compiler warning. The
+        // deprecated code path is likely to be removed by a simple
+        // optimization pass.
+        //
+        // Ignore the compiler warning on the ffi_prep_closure() deprecation,
+        // rather than using complex #if/#else code paths for the different
+        // platforms.
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
-
-#if defined(__clang__)
-        #pragma clang diagnostic pop
-#endif
-#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-        #pragma GCC diagnostic pop
-#endif
-
+        _Py_COMP_DIAG_POP
 #endif
     }
+
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_closure failed with %d", result);
@@ -479,12 +501,22 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 
     {
         PyObject *py_rclsid = PyLong_FromVoidPtr((void *)rclsid);
+        if (py_rclsid == NULL) {
+            Py_DECREF(func);
+            PyErr_WriteUnraisable(context ? context : Py_None);
+            return E_FAIL;
+        }
         PyObject *py_riid = PyLong_FromVoidPtr((void *)riid);
+        if (py_riid == NULL) {
+            Py_DECREF(func);
+            Py_DECREF(py_rclsid);
+            PyErr_WriteUnraisable(context ? context : Py_None);
+            return E_FAIL;
+        }
         PyObject *py_ppv = PyLong_FromVoidPtr(ppv);
-        if (!py_rclsid || !py_riid || !py_ppv) {
-            Py_XDECREF(py_rclsid);
-            Py_XDECREF(py_riid);
-            Py_XDECREF(py_ppv);
+        if (py_ppv == NULL) {
+            Py_DECREF(py_rclsid);
+            Py_DECREF(py_riid);
             Py_DECREF(func);
             PyErr_WriteUnraisable(context ? context : Py_None);
             return E_FAIL;

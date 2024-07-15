@@ -7,7 +7,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
+
 
 
 #include "clinic/context.c.h"
@@ -64,12 +64,12 @@ static int
 contextvar_del(PyContextVar *var);
 
 
-#if PyContext_MAXFREELIST > 0
-static struct _Py_context_state *
-get_context_state(void)
+#ifdef WITH_FREELISTS
+static struct _Py_context_freelist *
+get_context_freelist(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->context;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    return &freelists->contexts;
 }
 #endif
 
@@ -340,16 +340,12 @@ static inline PyContext *
 _context_alloc(void)
 {
     PyContext *ctx;
-#if PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = get_context_state();
-#ifdef Py_DEBUG
-    // _context_alloc() must not be called after _PyContext_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree) {
-        state->numfree--;
-        ctx = state->freelist;
-        state->freelist = (PyContext *)ctx->ctx_weakreflist;
+#ifdef WITH_FREELISTS
+    struct _Py_context_freelist *context_freelist = get_context_freelist();
+    if (context_freelist->numfree > 0) {
+        context_freelist->numfree--;
+        ctx = context_freelist->items;
+        context_freelist->items = (PyContext *)ctx->ctx_weakreflist;
         OBJECT_STAT_INC(from_freelist);
         ctx->ctx_weakreflist = NULL;
         _Py_NewReference((PyObject *)ctx);
@@ -471,16 +467,12 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-#if PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = get_context_state();
-#ifdef Py_DEBUG
-    // _context_alloc() must not be called after _PyContext_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree < PyContext_MAXFREELIST) {
-        state->numfree++;
-        self->ctx_weakreflist = (PyObject *)state->freelist;
-        state->freelist = self;
+#ifdef WITH_FREELISTS
+    struct _Py_context_freelist *context_freelist = get_context_freelist();
+    if (context_freelist->numfree >= 0 && context_freelist->numfree < PyContext_MAXFREELIST) {
+        context_freelist->numfree++;
+        self->ctx_weakreflist = (PyObject *)context_freelist->items;
+        context_freelist->items = self;
         OBJECT_STAT_INC(to_freelist);
     }
     else
@@ -669,6 +661,7 @@ context_run(PyContext *self, PyObject *const *args,
         ts, args[0], args + 1, nargs - 1, kwnames);
 
     if (_PyContext_Exit(ts, (PyObject *)self)) {
+        Py_XDECREF(call_result);
         return NULL;
     }
 
@@ -901,56 +894,39 @@ contextvar_tp_hash(PyContextVar *self)
 static PyObject *
 contextvar_tp_repr(PyContextVar *self)
 {
-    _PyUnicodeWriter writer;
-
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_PyUnicodeWriter_WriteASCIIString(
-            &writer, "<ContextVar name=", 17) < 0)
-    {
-        goto error;
+    // Estimation based on the shortest name and default value,
+    // but maximize the pointer size.
+    // "<ContextVar name='a' at 0x1234567812345678>"
+    // "<ContextVar name='a' default=1 at 0x1234567812345678>"
+    Py_ssize_t estimate = self->var_default ? 53 : 43;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(estimate);
+    if (writer == NULL) {
+        return NULL;
     }
 
-    PyObject *name = PyObject_Repr(self->var_name);
-    if (name == NULL) {
+    if (PyUnicodeWriter_WriteUTF8(writer, "<ContextVar name=", 17) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
-        Py_DECREF(name);
+    if (PyUnicodeWriter_WriteRepr(writer, self->var_name) < 0) {
         goto error;
     }
-    Py_DECREF(name);
 
     if (self->var_default != NULL) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, " default=", 9) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, " default=", 9) < 0) {
             goto error;
         }
-
-        PyObject *def = PyObject_Repr(self->var_default);
-        if (def == NULL) {
+        if (PyUnicodeWriter_WriteRepr(writer, self->var_default) < 0) {
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, def) < 0) {
-            Py_DECREF(def);
-            goto error;
-        }
-        Py_DECREF(def);
     }
 
-    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
-    if (addr == NULL) {
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
-        Py_DECREF(addr);
-        goto error;
-    }
-    Py_DECREF(addr);
-
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -1042,7 +1018,7 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
 
 
 static PyMemberDef PyContextVar_members[] = {
-    {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
+    {"name", _Py_T_OBJECT, offsetof(PyContextVar, var_name), Py_READONLY},
     {NULL}
 };
 
@@ -1267,7 +1243,7 @@ PyTypeObject _PyContextTokenMissing_Type = {
 static PyObject *
 get_token_missing(void)
 {
-    return Py_NewRef(&_Py_SINGLETON(context_token_missing));
+    return (PyObject *)&_Py_SINGLETON(context_token_missing);
 }
 
 
@@ -1275,27 +1251,19 @@ get_token_missing(void)
 
 
 void
-_PyContext_ClearFreeList(PyInterpreterState *interp)
+_PyContext_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
-#if PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = &interp->context;
-    for (; state->numfree; state->numfree--) {
-        PyContext *ctx = state->freelist;
-        state->freelist = (PyContext *)ctx->ctx_weakreflist;
+#ifdef WITH_FREELISTS
+    struct _Py_context_freelist *state = &freelists->contexts;
+    for (; state->numfree > 0; state->numfree--) {
+        PyContext *ctx = state->items;
+        state->items = (PyContext *)ctx->ctx_weakreflist;
         ctx->ctx_weakreflist = NULL;
         PyObject_GC_Del(ctx);
     }
-#endif
-}
-
-
-void
-_PyContext_Fini(PyInterpreterState *interp)
-{
-    _PyContext_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = &interp->context;
-    state->numfree = -1;
+    if (is_finalization) {
+        state->numfree = -1;
+    }
 #endif
 }
 

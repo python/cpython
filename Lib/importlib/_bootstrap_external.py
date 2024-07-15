@@ -52,7 +52,7 @@ _pathseps_with_colon = {f':{s}' for s in path_separators}
 
 # Bootstrap-related code ######################################################
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
-_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin'
+_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin', 'ios', 'tvos', 'watchos'
 _CASE_INSENSITIVE_PLATFORMS =  (_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY
                                 + _CASE_INSENSITIVE_PLATFORMS_STR_KEY)
 
@@ -80,6 +80,11 @@ def _pack_uint32(x):
     """Convert a 32-bit integer to little-endian."""
     return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
+
+def _unpack_uint64(data):
+    """Convert 8 bytes in little-endian to an integer."""
+    assert len(data) == 8
+    return int.from_bytes(data, 'little')
 
 def _unpack_uint32(data):
     """Convert 4 bytes in little-endian to an integer."""
@@ -413,6 +418,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
 #     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
 #     Python 3.11a7 3494 (New location info table)
+#     Python 3.11b4 3495 (Set line number of module's RESUME instr to 0 per PEP 626)
 #     Python 3.12a1 3500 (Remove PRECALL opcode)
 #     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
 #     Python 3.12a1 3502 (LOAD_FAST_CHECK, no NULL-check in LOAD_FAST)
@@ -445,8 +451,32 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12b1 3529 (Inline list/dict/set comprehensions)
 #     Python 3.12b1 3530 (Shrink the LOAD_SUPER_ATTR caches)
 #     Python 3.12b1 3531 (Add PEP 695 changes)
+#     Python 3.13a1 3550 (Plugin optimizer support)
+#     Python 3.13a1 3551 (Compact superinstructions)
+#     Python 3.13a1 3552 (Remove LOAD_FAST__LOAD_CONST and LOAD_CONST__LOAD_FAST)
+#     Python 3.13a1 3553 (Add SET_FUNCTION_ATTRIBUTE)
+#     Python 3.13a1 3554 (more efficient bytecodes for f-strings)
+#     Python 3.13a1 3555 (generate specialized opcodes metadata from bytecodes.c)
+#     Python 3.13a1 3556 (Convert LOAD_CLOSURE to a pseudo-op)
+#     Python 3.13a1 3557 (Make the conversion to boolean in jumps explicit)
+#     Python 3.13a1 3558 (Reorder the stack items for CALL)
+#     Python 3.13a1 3559 (Generate opcode IDs from bytecodes.c)
+#     Python 3.13a1 3560 (Add RESUME_CHECK instruction)
+#     Python 3.13a1 3561 (Add cache entry to branch instructions)
+#     Python 3.13a1 3562 (Assign opcode IDs for internal ops in separate range)
+#     Python 3.13a1 3563 (Add CALL_KW and remove KW_NAMES)
+#     Python 3.13a1 3564 (Removed oparg from YIELD_VALUE, changed oparg values of RESUME)
+#     Python 3.13a1 3565 (Oparg of YIELD_VALUE indicates whether it is in a yield-from)
+#     Python 3.13a1 3566 (Emit JUMP_NO_INTERRUPT instead of JUMP for non-loop no-lineno cases)
+#     Python 3.13a1 3567 (Reimplement line number propagation by the compiler)
+#     Python 3.13a1 3568 (Change semantics of END_FOR)
+#     Python 3.13a5 3569 (Specialize CONTAINS_OP)
+#     Python 3.13a6 3570 (Add __firstlineno__ class attribute)
+#     Python 3.14a1 3600 (Add LOAD_COMMON_CONSTANT)
+#     Python 3.14a1 3601 (Fix miscompilation of private names in generic classes)
+#     Python 3.14a1 3602 (Add LOAD_SPECIAL. Remove BEFORE_WITH and BEFORE_ASYNC_WITH)
 
-#     Python 3.13 will start with 3550
+#     Python 3.15 will start with 3650
 
 #     Please don't copy-paste the same pre-release tag for new entries above!!!
 #     You should always use the *upcoming* tag. For example, if 3.12a6 came out
@@ -461,7 +491,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3531).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3602).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
@@ -1437,7 +1467,7 @@ class PathFinder:
     @staticmethod
     def invalidate_caches():
         """Call the invalidate_caches() method on all path entry finders
-        stored in sys.path_importer_caches (where implemented)."""
+        stored in sys.path_importer_cache (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
             # Drop entry if finder name is a relative path. The current
             # working directory may have changed.
@@ -1448,6 +1478,9 @@ class PathFinder:
         # Also invalidate the caches of _NamespacePaths
         # https://bugs.python.org/issue45703
         _NamespacePath._epoch += 1
+
+        from importlib.metadata import MetadataPathFinder
+        MetadataPathFinder.invalidate_caches()
 
     @staticmethod
     def _path_hooks(path):
@@ -1690,6 +1723,46 @@ class FileFinder:
         return f'FileFinder({self.path!r})'
 
 
+class AppleFrameworkLoader(ExtensionFileLoader):
+    """A loader for modules that have been packaged as frameworks for
+    compatibility with Apple's iOS App Store policies.
+    """
+    def create_module(self, spec):
+        # If the ModuleSpec has been created by the FileFinder, it will have
+        # been created with an origin pointing to the .fwork file. We need to
+        # redirect this to the location in the Frameworks folder, using the
+        # content of the .fwork file.
+        if spec.origin.endswith(".fwork"):
+            with _io.FileIO(spec.origin, 'r') as file:
+                framework_binary = file.read().decode().strip()
+            bundle_path = _path_split(sys.executable)[0]
+            spec.origin = _path_join(bundle_path, framework_binary)
+
+        # If the loader is created based on the spec for a loaded module, the
+        # path will be pointing at the Framework location. If this occurs,
+        # get the original .fwork location to use as the module's __file__.
+        if self.path.endswith(".fwork"):
+            path = self.path
+        else:
+            with _io.FileIO(self.path + ".origin", 'r') as file:
+                origin = file.read().decode().strip()
+                bundle_path = _path_split(sys.executable)[0]
+                path = _path_join(bundle_path, origin)
+
+        module = _bootstrap._call_with_frames_removed(_imp.create_dynamic, spec)
+
+        _bootstrap._verbose_message(
+            "Apple framework extension module {!r} loaded from {!r} (path {!r})",
+            spec.name,
+            spec.origin,
+            path,
+        )
+
+        # Ensure that the __file__ points at the .fwork location
+        module.__file__ = path
+
+        return module
+
 # Import setup ###############################################################
 
 def _fix_up_module(ns, name, pathname, cpathname=None):
@@ -1722,10 +1795,17 @@ def _get_supported_file_loaders():
 
     Each item is a tuple (loader, suffixes).
     """
-    extensions = ExtensionFileLoader, _imp.extension_suffixes()
+    if sys.platform in {"ios", "tvos", "watchos"}:
+        extension_loaders = [(AppleFrameworkLoader, [
+            suffix.replace(".so", ".fwork")
+            for suffix in _imp.extension_suffixes()
+        ])]
+    else:
+        extension_loaders = []
+    extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
     source = SourceFileLoader, SOURCE_SUFFIXES
     bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES
-    return [extensions, source, bytecode]
+    return extension_loaders + [source, bytecode]
 
 
 def _set_bootstrap_module(_bootstrap_module):

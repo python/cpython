@@ -5,17 +5,18 @@ on:
     types: [opened, reopened, labeled, unlabeled, synchronize]
 
 permissions:
-  issues: read
-  pull-requests: read
+  issues: write
+  pull-requests: write
 
 jobs:
   label:
     name: DO-NOT-MERGE / unresolved review
+    if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - uses: mheap/github-action-required-labels@v4
+      - uses: mheap/github-action-required-labels@v5
         with:
           mode: exactly
           count: 0
