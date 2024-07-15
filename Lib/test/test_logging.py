@@ -3971,6 +3971,7 @@ class ConfigDictTest(BaseTest):
             )
         manager.assert_not_called()
 
+    @skip_if_tsan_fork
     @support.requires_subprocess()
     def test_multiprocessing_queues(self):
         # See gh-119819
@@ -4283,6 +4284,7 @@ if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing
     from unittest.mock import patch
 
+    @skip_if_tsan_fork
     @threading_helper.requires_working_threading()
     class QueueListenerTest(BaseTest):
         """
@@ -5183,6 +5185,7 @@ class LogRecordTest(BaseTest):
         else:
             return results
 
+    @skip_if_tsan_fork
     def test_multiprocessing(self):
         support.skip_if_broken_multiprocessing_synchronize()
         multiprocessing_imported = 'multiprocessing' in sys.modules
