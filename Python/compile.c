@@ -6117,7 +6117,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case YieldFrom_kind:
         if (!_PyST_IsFunctionLike(c->u->u_ste)) {
-            return compiler_error(c, loc, "'yield' outside function");
+            return compiler_error(c, loc, "'yield from' outside function");
         }
         if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
             return compiler_error(c, loc, "'yield from' inside async function");
