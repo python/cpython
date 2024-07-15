@@ -1610,12 +1610,20 @@ _ldict(localobject *self, thread_module_state *state)
 
     PyObject *wr = create_sentinel_wr(self);
     if (wr == NULL) {
-        PyDict_DelItem(self->localdicts, tstate->threading_local_key);
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) < 0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
 
     if (PySet_Add(self->thread_watchdogs, wr) < 0) {
-        PyDict_DelItem(self->localdicts, tstate->threading_local_key);
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) < 0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+        PyErr_SetRaisedException(exc);
         Py_DECREF(wr);
         return NULL;
     }
@@ -1625,8 +1633,15 @@ _ldict(localobject *self, thread_module_state *state)
         /* we need to get rid of ldict from thread so
            we create a new one the next time we do an attr
            access */
-        PyDict_DelItem(self->localdicts, tstate->threading_local_key);
-        PySet_Discard(self->thread_watchdogs, wr);
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) < 0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_Clear();
+        }
+        if (PySet_Discard(self->thread_watchdogs, wr) < 0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+        PyErr_SetRaisedException(exc);
         Py_DECREF(wr);
         return NULL;
     }
