@@ -120,7 +120,7 @@ class REPLThread(threading.Thread):
                 console.interact(banner="", exitmsg="")
             else:
                 try:
-                    run_multiline_interactive_console(console=console)
+                    run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands
                     pass
