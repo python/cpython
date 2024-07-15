@@ -351,13 +351,6 @@ IO_OBJS=	\
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
 
-FNMATCH_H=	Modules/_fnmatch/_fnmatchmodule.h
-
-FNMATCH_OBJS=	\
-		Modules/_fnmatch/_fnmatchmodule.o \
-		Modules/_fnmatch/matcher.o \
-		Modules/_fnmatch/translate.o
-
 ##########################################################################
 # mimalloc
 
@@ -1746,8 +1739,6 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydt
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
-
-$(FNMATCH_OBJS): $(FNMATCH_H)
 
 $(IO_OBJS): $(IO_H)
 
