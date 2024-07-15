@@ -639,7 +639,7 @@ class`. float also has the following additional methods.
    If :meth:`~object.__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: 3.14
 
 
 .. method:: float.as_integer_ratio()
@@ -736,7 +736,7 @@ The :class:`!complex` type implements the :class:`numbers.Complex`
    to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: 3.14
 
 
 .. _numeric-hash:
