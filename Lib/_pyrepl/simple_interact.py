@@ -155,7 +155,7 @@ def run_multiline_interactive_console(
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
-            if 'isearch' in r.last_command.__name__:
+            if r.last_command and 'isearch' in r.last_command.__name__:
                 r.isearch_direction = ''
                 r.console.forgetinput()
                 r.pop_input_trans()
