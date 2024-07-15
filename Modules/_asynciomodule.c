@@ -346,7 +346,7 @@ get_event_loop(asyncio_state *state)
 
     get_running_loop(state, &loop);
 
-    if (loop != NULL && loop != Py_None) {
+    if (loop != Py_None) {
         return loop;
     }
 
