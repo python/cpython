@@ -377,6 +377,36 @@ class SymtableTest(unittest.TestCase):
             'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
         ))
 
+    def test_genexpr_class_info(self):
+        # Test generator expressions that are of type TYPE_FUNCTION
+        # but will not be reported by get_methods() since they are
+        # not functions per se.
+        #
+        # Other kind of comprehensions such as list, set or dict
+        # expressions do not have the TYPE_FUNCTION type.
+
+        for paramlist in ('()', '(self)', '(a, b, c)'):
+            top = symtable.symtable("class A:\n"
+                                    f"    def genexpr{paramlist}:\n"
+                                    "        pass\n",
+                                    "?", "exec")
+            this = find_block(top, "A")
+            self.assertEqual(this.get_methods(), ('genexpr',))
+
+            top = symtable.symtable("class A:\n"
+                                    "    x = (x for x in [])\n"
+                                    f"    def genexpr{paramlist}:\n"
+                                    "        pass\n",
+                                    "?", "exec")
+            this = find_block(top, "A")
+            self.assertEqual(this.get_methods(), ('genexpr',))
+
+        top = symtable.symtable("class A:\n"
+                                "    genexpr = (x for x in [])\n",
+                                "?", "exec")
+        this = find_block(top, "A")
+        self.assertEqual(this.get_methods(), ())
+
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised
         ### while parsing or building symbol table.

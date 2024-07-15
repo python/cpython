@@ -249,6 +249,11 @@ class Class(SymbolTable):
                 if is_local_symbol(st.name):
                     match st.type:
                         case _symtable.TYPE_FUNCTION:
+                            # generators are of type TYPE_FUNCTION with a ".0"
+                            # parameter as a first parameter (which makes them
+                            # distinguishable from a function named 'genexpr')
+                            if st.name == 'genexpr' and '.0' in st.varnames:
+                                continue
                             d[st.name] = 1
                         case _symtable.TYPE_TYPE_PARAMETERS:
                             # Get the function-def block in the annotation
