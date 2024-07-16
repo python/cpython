@@ -404,7 +404,25 @@ class TestConcretePolicies(unittest.TestCase):
 
         self.assertRaises(ValueError,
                           instance.header_store_parse,
-                          'Subject', 'A 💩 subject=?UTF-8?Q?=0A?=Bcc: injected@example.com')
+                          'Subject',
+                          'A 💩 subject=?UTF-8?Q?=0A?=Bcc: injected@example.com')
+
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Subject',
+                          "Here's an =?UTF-8?Q?embedded_newline=0A?=")
+
+        factory = headerregistry.HeaderRegistry()
+        h = factory('subject', 'te\nst')
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Subject', h)
+
+        h = factory('subject',
+                    "Here's an =?UTF-8?Q?embedded_newline=0A?=")
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Subject', h)
 
 if __name__ == '__main__':
     unittest.main()

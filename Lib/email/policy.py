@@ -139,13 +139,15 @@ class EmailPolicy(Policy):
 
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
-            return (name, value)
-        if (isinstance(value, str) and
-            linesep_splitter.search(self.header_factory(name, value))
-        ):
+            header_value = value
+        else:
+            header_value = self.header_factory(name, value)
+
+        if linesep_splitter.search(str(header_value)):
             raise ValueError("Header values may not contain linefeed "
                              "or carriage return characters")
-        return (name, self.header_factory(name, value))
+
+        return (name, header_value)
 
     def header_fetch_parse(self, name, value):
         """+
