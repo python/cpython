@@ -2542,18 +2542,21 @@ PyEval_GetLocals(void)
 
     if (PyFrameLocalsProxy_Check(locals)) {
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
-        PyObject *ret = PyDict_New();
+        PyObject *ret = f->f_locals_cache;
         if (ret == NULL) {
-            Py_DECREF(locals);
-            return NULL;
+            PyObject *ret = PyDict_New();
+            if (ret == NULL) {
+                Py_DECREF(locals);
+                return NULL;
+            }
+            f->f_locals_cache = ret;
         }
         if (PyDict_Update(ret, locals) < 0) {
-            Py_DECREF(ret);
-            Py_DECREF(locals);
-            return NULL;
+            // At this point, if the cache dict is broken, it will stay broken, as
+            // trying to clean it up or replace it will just cause other problems
+            ret = NULL;
         }
         Py_DECREF(locals);
-        Py_XSETREF(f->f_locals_cache, ret);
         return ret;
     }
 
