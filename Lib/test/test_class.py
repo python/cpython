@@ -883,7 +883,7 @@ class TestInlineValues(unittest.TestCase):
         self.assertEqual(f.a, 3)
 
     def test_rematerialize_object_dict(self):
-        # gh-121860: re-materialize an object's managed dictionary after it
+        # gh-121860: rematerializing an object's managed dictionary after it
         # had been deleted caused a crash.
         class Foo: pass
         f = Foo()
