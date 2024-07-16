@@ -28,14 +28,14 @@ pointers.  This is consistent throughout the API.
    use structures of this type as input or output values, as appropriate.
 
    .. c:member:: double real
-   .. c:member:: double imag
+                 double imag
 
-      It is defined as::
+   The structure is defined as::
 
-         typedef struct {
-            double real;
-            double imag;
-         } Py_complex;
+      typedef struct {
+          double real;
+          double imag;
+      } Py_complex;
 
 
 .. c:function:: Py_complex _Py_c_sum(Py_complex left, Py_complex right)
