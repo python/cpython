@@ -11033,6 +11033,63 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     return 0;
 }
 
+static int
+expect_manually_inherited(PyTypeObject *type, void **slot)
+{
+    PyObject *typeobj = (PyObject *)type;
+    if (slot == (void *)&type->tp_init) {
+        if (typeobj != PyExc_BaseException
+            && typeobj != PyExc_BaseExceptionGroup
+            && typeobj != PyExc_ImportError
+            && typeobj != PyExc_NameError
+            && typeobj != PyExc_OSError
+            && typeobj != PyExc_StopIteration
+            && typeobj != PyExc_SyntaxError
+            && typeobj != PyExc_UnicodeDecodeError
+            && typeobj != PyExc_UnicodeEncodeError)
+        {
+            return 1;
+        }
+    }
+    else if (slot == (void *)&type->tp_str) {
+        if (typeobj == PyExc_AttributeError || typeobj == PyExc_NameError) {
+            return 1;
+        }
+    }
+    else if (slot == (void *)&type->tp_getattr
+             || slot == (void *)&type->tp_getattro)
+    {
+        if (typeobj == PyExc_BaseException
+            || type == &PyBool_Type
+            || type == &PyByteArray_Type
+            || type == &PyBytes_Type
+            || type == &PyClassMethod_Type
+            || type == &PyComplex_Type
+            || type == &PyDict_Type
+            || type == &PyEnum_Type
+            || type == &PyFilter_Type
+            || type == &PyLong_Type
+            || type == &PyList_Type
+            || type == &PyMap_Type
+            || type == &PyMemoryView_Type
+            || type == &PyProperty_Type
+            || type == &PyRange_Type
+            || type == &PyReversed_Type
+            || type == &PySet_Type
+            || type == &PySlice_Type
+            || type == &PyStaticMethod_Type
+            || type == &PySuper_Type
+            || type == &PyTuple_Type
+            || type == &PyZip_Type)
+        {
+            return 1;
+        }
+    }
+
+    /* It must be inherited (see type_ready_inherit()).. */
+    return 0;
+}
+
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or more
@@ -11080,10 +11137,21 @@ add_operators(PyTypeObject *type)
         if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
             && type->tp_base != NULL)
         {
+            /* Also ignore when the type slot has been inherited. */
             void **ptr_base = slotptr(type->tp_base, p->offset);
             if (ptr_base && *ptr == *ptr_base) {
-                /* It must have been inherited (see type_ready_inherit()).. */
-                continue;
+                /* Ideally we would always ignore any manually inherited
+                   slots, Which would mean inheriting the slot wrapper
+                   using normal attribute lookup rather than keeping
+                   a distinct copy.  However, that would introduce
+                   a slight change in behavior that could break
+                   existing code.
+
+                   In the meantime, look the other way when the definition
+                   explicitly inherits the slot. */
+                if (!expect_manually_inherited(type, ptr)) {
+                    continue;
+                }
             }
         }
         int r = PyDict_Contains(dict, p->name_strobj);
