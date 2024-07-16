@@ -1,0 +1,2 @@
+Add a test for :func:`readline.set_history_length`. Note that this test may
+fail on readline libraries.
