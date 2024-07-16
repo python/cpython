@@ -12,6 +12,7 @@ from analyzer import (
     Part,
     analyze_files,
     Skip,
+    Flush,
     analysis_error,
     StackItem,
 )
@@ -44,7 +45,7 @@ def declare_variable(var: StackItem, out: CWriter):
 def declare_variables(inst: Instruction, out: CWriter) -> None:
     stack = Stack()
     for part in inst.parts:
-        if isinstance(part, Skip):
+        if not isinstance(part, Uop):
             continue
         try:
             for var in reversed(part.stack.inputs):
@@ -55,7 +56,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
             raise analysis_error(ex.args[0], part.body[0]) from None
     required = set(stack.defined)
     for part in inst.parts:
-        if isinstance(part, Skip):
+        if not isinstance(part, Uop):
             continue
         for var in part.stack.inputs:
             if var.name in required:
@@ -74,6 +75,10 @@ def write_uop(
         entries = "entries" if uop.size > 1 else "entry"
         out.emit(f"/* Skip {uop.size} cache {entries} */\n")
         return offset + uop.size
+    if isinstance(uop, Flush):
+        out.emit(f"// flush\n")
+        stack.flush(out)
+        return offset
     try:
         out.start_line()
         if braces:
@@ -116,7 +121,7 @@ def uses_this(inst: Instruction) -> bool:
     if inst.properties.needs_this:
         return True
     for uop in inst.parts:
-        if isinstance(uop, Skip):
+        if not isinstance(uop, Uop):
             continue
         for cache in uop.caches:
             if cache.name != "unused":

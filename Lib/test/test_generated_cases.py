@@ -969,6 +969,49 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_flush(self):
+        input = """
+        op(FIRST, ( -- a, b)) {
+            a = 0;
+            b = 1;
+        }
+
+        op(SECOND, (a, b -- )) {
+            use(a, b);
+        }
+
+        macro(TEST) = FIRST + flush + SECOND;
+        """
+        output = """
+        TARGET(TEST) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(TEST);
+            _PyStackRef a;
+            _PyStackRef b;
+            // FIRST
+            {
+                a = 0;
+                b = 1;
+            }
+            // flush
+            stack_pointer[0] = a;
+            stack_pointer[1] = b;
+            stack_pointer += 2;
+            assert(WITHIN_STACK_BOUNDS());
+            // SECOND
+            b = stack_pointer[-1];
+            a = stack_pointer[-2];
+            {
+                use(a, b);
+            }
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

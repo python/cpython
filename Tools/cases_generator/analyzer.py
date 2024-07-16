@@ -78,7 +78,7 @@ SKIP_PROPERTIES = Properties(
     uses_locals=False,
     has_free=False,
     side_exit=False,
-    pure=False,
+    pure=True,
 )
 
 
@@ -95,6 +95,20 @@ class Skip:
     def properties(self) -> Properties:
         return SKIP_PROPERTIES
 
+
+class Flush:
+
+    @property
+    def properties(self) -> Properties:
+        return SKIP_PROPERTIES
+
+    @property
+    def name(self) -> str:
+        return "flush"
+
+    @property
+    def size(self) -> int:
+        return 0
 
 @dataclass
 class StackItem:
@@ -133,7 +147,6 @@ class CacheEntry:
 
     def __str__(self) -> str:
         return f"{self.name}/{self.size}"
-
 
 @dataclass
 class Uop:
@@ -196,7 +209,7 @@ class Uop:
         return False
 
 
-Part = Uop | Skip
+Part = Uop | Skip | Flush
 
 
 @dataclass
@@ -706,13 +719,16 @@ def desugar_inst(
 def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
-    parts: list[Uop | Skip] = []
+    parts: list[Part] = []
     for part in macro.uops:
         match part:
             case parser.OpName():
-                if part.name not in uops:
-                    analysis_error(f"No Uop named {part.name}", macro.tokens[0])
-                parts.append(uops[part.name])
+                if part.name == "flush":
+                    parts.append(Flush())
+                else:
+                    if part.name not in uops:
+                        raise analysis_error(f"No Uop named {part.name}", macro.tokens[0])
+                    parts.append(uops[part.name])
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:

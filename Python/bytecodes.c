@@ -3604,6 +3604,7 @@ dummy_func(
             _CHECK_PEP_523 +
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
+            flush + // In case the following deopt
             _CHECK_FUNCTION_VERSION +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +

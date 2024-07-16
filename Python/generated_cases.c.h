@@ -1004,9 +1004,11 @@
                 func = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
                 PyStackRef_CLOSE(callable);
             }
+            // flush
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = self;
             // _CHECK_FUNCTION_VERSION
-            self_or_null = self;
-            callable = func;
+            callable = stack_pointer[-2 - oparg];
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -1015,6 +1017,7 @@
                 DEOPT_IF(func->func_version != func_version, CALL);
             }
             // _CHECK_FUNCTION_EXACT_ARGS
+            self_or_null = stack_pointer[-1 - oparg];
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 assert(PyFunction_Check(callable_o));
