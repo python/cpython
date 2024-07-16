@@ -43,16 +43,16 @@ def declare_variable(var: StackItem, out: CWriter):
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
     stack = Stack()
-    try:
-        for part in inst.parts:
-            if isinstance(part, Skip):
-                continue
+    for part in inst.parts:
+        if isinstance(part, Skip):
+            continue
+        try:
             for var in reversed(part.stack.inputs):
                 stack.pop(var)
             for var in part.stack.outputs:
                  stack.push(var)
-    except StackError as ex:
-        raise analysis_error(ex.args[0], part.body[0]) from None
+        except StackError as ex:
+            raise analysis_error(ex.args[0], part.body[0]) from None
     required = set(stack.defined)
     for part in inst.parts:
         if isinstance(part, Skip):
