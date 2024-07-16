@@ -58,7 +58,8 @@ lots of shared  sub-objects.  The keys are ordinary strings.
       Accepts :term:`path-like object` for filename.
 
    .. versionchanged:: 3.14
-      Accepts *serializer* and *deserializer* as parameters.
+      Accepts custom *serializer* and *deserializer* functions in place of
+      :func:`pickle.dumps` and :func:`pickle.loads`.
 
    .. note::
 
@@ -165,7 +166,8 @@ Restrictions
       protocol.
 
    .. versionchanged:: 3.14
-      Accepts *serializer* and *deserializer* as parameters.
+      Accepts custom *serializer* and *deserializer* functions in place of
+      :func:`pickle.dumps` and :func:`pickle.loads`.
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, \
                       keyencoding='utf-8',  serializer=None, deserializer=None)
