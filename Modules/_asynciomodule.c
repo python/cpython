@@ -3281,6 +3281,7 @@ _asyncio__get_running_loop_impl(PyObject *module)
     PyThreadState *ts = _PyThreadState_GET();
     PyObject *loop = Py_XNewRef(ts->asyncio_running_loop);
     if (loop == NULL) {
+        /* There's no currently running event loop */
         Py_RETURN_NONE;
     }
     return loop;
