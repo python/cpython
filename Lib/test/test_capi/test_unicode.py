@@ -1862,6 +1862,11 @@ class PyUnicodeWriterTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             writer.write_ucs4("text", -1)
 
+    def test_zero_length(self):
+        writer = self.create_writer(0)
+        writer.write_substring("abc", 3, 3)
+        self.assertEqual(writer.finish(), "")
+
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')
