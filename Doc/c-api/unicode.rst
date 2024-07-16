@@ -602,7 +602,7 @@ APIs:
 
    Return a substring of *str*, from character index *start* (included) to
    character index *end* (excluded).  Negative indices are not supported.
-   Returns ``NULL`` and sets an exception on error.
+   On error, set an exception and return ``NULL``.
 
    .. versionadded:: 3.3
 
