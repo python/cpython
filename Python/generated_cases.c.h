@@ -1114,10 +1114,13 @@
                 assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
                 PyStackRef_CLOSE(callable);
             }
+            // flush
+            stack_pointer[-2 - oparg] = method;
+            stack_pointer[-1 - oparg] = self;
             // _PY_FRAME_GENERAL
             args = &stack_pointer[-oparg];
-            self_or_null = self;
-            callable = method;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 PyObject *self_or_null_o = PyStackRef_AsPyObjectBorrow(self_or_null);
