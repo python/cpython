@@ -762,7 +762,7 @@ frozenset_hash(PyObject *self)
 
     if (so->hash != -1)
         return so->hash;
-    
+
     hash = compute_setobject_hash(self);
     so->hash = hash;
     return hash;
