@@ -422,6 +422,10 @@ free-threaded build.
 Other Language Changes
 ======================
 
+* The :func:`exec` and :func:`eval` built-ins now accept their ``globals``
+  and ``locals`` namespace arguments as keywords.
+  (Contibuted by Raphael Gaschignard in :gh:`105879`)
+
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
 
@@ -2261,6 +2265,12 @@ Changes in the Python API
   The value of the :attr:`!mode` attribute of the readable file-like object
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
+* :class:`functools.partial` now emits a :exc:`FutureWarning` when it is
+  used as a method.
+  Its behavior will be changed in future Python versions.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`121027`.)
 
 .. _pep667-porting-notes-py:
 

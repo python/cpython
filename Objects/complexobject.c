@@ -88,8 +88,7 @@ _Py_c_quot(Py_complex a, Py_complex b)
      * numerators and denominator by whichever of {b.real, b.imag} has
      * larger magnitude.  The earliest reference I found was to CACM
      * Algorithm 116 (Complex Division, Robert L. Smith, Stanford
-     * University).  As usual, though, we're still ignoring all IEEE
-     * endcases.
+     * University).
      */
      Py_complex r;      /* the result */
      const double abs_breal = b.real < 0 ? -b.real : b.real;
@@ -120,6 +119,28 @@ _Py_c_quot(Py_complex a, Py_complex b)
         /* At least one of b.real or b.imag is a NaN */
         r.real = r.imag = Py_NAN;
     }
+
+    /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
+       the C11, Annex G.5.2, routine _Cdivd(). */
+    if (isnan(r.real) && isnan(r.imag)) {
+        if ((isinf(a.real) || isinf(a.imag))
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
+            const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
+            r.real = Py_INFINITY * (x*b.real + y*b.imag);
+            r.imag = Py_INFINITY * (y*b.real - x*b.imag);
+        }
+        else if ((isinf(abs_breal) || isinf(abs_bimag))
+                 && isfinite(a.real) && isfinite(a.imag))
+        {
+            const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
+            const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
+            r.real = 0.0 * (a.real*x + a.imag*y);
+            r.imag = 0.0 * (a.imag*x - a.real*y);
+        }
+    }
+
     return r;
 }
 #ifdef _M_ARM64
@@ -736,22 +757,6 @@ complex___complex___impl(PyComplexObject *self)
 }
 
 
-static PyMethodDef complex_methods[] = {
-    COMPLEX_CONJUGATE_METHODDEF
-    COMPLEX___COMPLEX___METHODDEF
-    COMPLEX___GETNEWARGS___METHODDEF
-    COMPLEX___FORMAT___METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-static PyMemberDef complex_members[] = {
-    {"real", Py_T_DOUBLE, offsetof(PyComplexObject, cval.real), Py_READONLY,
-     "the real part of a complex number"},
-    {"imag", Py_T_DOUBLE, offsetof(PyComplexObject, cval.imag), Py_READONLY,
-     "the imaginary part of a complex number"},
-    {0},
-};
-
 static PyObject *
 complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
 {
@@ -1120,6 +1125,52 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     return complex_subtype_from_doubles(type, cr.real, ci.real);
 }
+
+/*[clinic input]
+@classmethod
+complex.from_number
+
+    number: object
+    /
+
+Convert number to a complex floating-point number.
+[clinic start generated code]*/
+
+static PyObject *
+complex_from_number(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=658a7a5fb0de074d input=3f8bdd3a2bc3facd]*/
+{
+    if (PyComplex_CheckExact(number) && type == &PyComplex_Type) {
+        Py_INCREF(number);
+        return number;
+    }
+    Py_complex cv = PyComplex_AsCComplex(number);
+    if (cv.real == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyObject *result = PyComplex_FromCComplex(cv);
+    if (type != &PyComplex_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
+    }
+    return result;
+}
+
+static PyMethodDef complex_methods[] = {
+    COMPLEX_FROM_NUMBER_METHODDEF
+    COMPLEX_CONJUGATE_METHODDEF
+    COMPLEX___COMPLEX___METHODDEF
+    COMPLEX___GETNEWARGS___METHODDEF
+    COMPLEX___FORMAT___METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyMemberDef complex_members[] = {
+    {"real", Py_T_DOUBLE, offsetof(PyComplexObject, cval.real), Py_READONLY,
+     "the real part of a complex number"},
+    {"imag", Py_T_DOUBLE, offsetof(PyComplexObject, cval.imag), Py_READONLY,
+     "the imaginary part of a complex number"},
+    {0},
+};
 
 static PyNumberMethods complex_as_number = {
     (binaryfunc)complex_add,                    /* nb_add */

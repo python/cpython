@@ -122,14 +122,14 @@ initial_jump_backoff_counter(void)
  * otherwise when a side exit warms up we may construct
  * a new trace before the Tier 1 code has properly re-specialized.
  * Backoff sequence 64, 128, 256, 512, 1024, 2048, 4096. */
-#define COLD_EXIT_INITIAL_VALUE 64
-#define COLD_EXIT_INITIAL_BACKOFF 6
+#define SIDE_EXIT_INITIAL_VALUE 64
+#define SIDE_EXIT_INITIAL_BACKOFF 6
 
 static inline _Py_BackoffCounter
 initial_temperature_backoff_counter(void)
 {
-    return make_backoff_counter(COLD_EXIT_INITIAL_VALUE,
-                                COLD_EXIT_INITIAL_BACKOFF);
+    return make_backoff_counter(SIDE_EXIT_INITIAL_VALUE,
+                                SIDE_EXIT_INITIAL_BACKOFF);
 }
 
 /* Unreachable backoff counter. */
