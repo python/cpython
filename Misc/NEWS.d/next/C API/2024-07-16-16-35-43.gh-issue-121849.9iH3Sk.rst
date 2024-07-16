@@ -1,0 +1,2 @@
+Fixed crash when a length of zero was passed to
+:c:func:`PyUnicodeWriter_Create`.
