@@ -158,7 +158,7 @@ Complex Numbers as Python Objects
    to :meth:`~object.__index__`.
 
    Upon failure, this method returns :c:type:`Py_complex`
-   with ``.real`` set to ``-1.0`` and with an exception set, so one
+   with :c:member:`~Py_complex.real` set to ``-1.0`` and with an exception set, so one
    should call :c:func:`PyErr_Occurred` to check for errors.
 
    .. versionchanged:: 3.8
