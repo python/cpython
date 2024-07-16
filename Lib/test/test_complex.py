@@ -36,6 +36,16 @@ class WithFloat:
 class ComplexSubclass(complex):
     pass
 
+class OtherComplexSubclass(complex):
+    pass
+
+class MyInt:
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+
 class WithComplex:
     def __init__(self, value):
         self.value = value
@@ -94,6 +104,10 @@ class ComplexTest(unittest.TestCase):
                 msg += ': zeros have different signs'
         self.fail(msg.format(x, y))
 
+    def assertComplexesAreIdentical(self, x, y):
+        self.assertFloatsAreIdentical(x.real, y.real)
+        self.assertFloatsAreIdentical(x.imag, y.imag)
+
     def assertClose(self, x, y, eps=1e-9):
         """Return true iff complexes x and y "are close"."""
         self.assertCloseAbs(x.real, y.real, eps)
@@ -138,6 +152,33 @@ class ComplexTest(unittest.TestCase):
             z = complex(0, 0) / complex(denom_real, denom_imag)
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
+
+        self.assertComplexesAreIdentical(complex(INF, 1)/(0.0+1j),
+                                         complex(NAN, -INF))
+
+        # test recover of infs if numerator has infs and denominator is finite
+        self.assertComplexesAreIdentical(complex(INF, -INF)/(1+0j),
+                                         complex(INF, -INF))
+        self.assertComplexesAreIdentical(complex(INF, INF)/(0.0+1j),
+                                         complex(INF, -INF))
+        self.assertComplexesAreIdentical(complex(NAN, INF)/complex(2**1000, 2**-1000),
+                                         complex(INF, INF))
+        self.assertComplexesAreIdentical(complex(INF, NAN)/complex(2**1000, 2**-1000),
+                                         complex(INF, -INF))
+
+        # test recover of zeros if denominator is infinite
+        self.assertComplexesAreIdentical((1+1j)/complex(INF, INF), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex(INF, -INF), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex(-INF, INF),
+                                         complex(0.0, -0.0))
+        self.assertComplexesAreIdentical((1+1j)/complex(-INF, -INF),
+                                         complex(-0.0, 0))
+        self.assertComplexesAreIdentical((INF+1j)/complex(INF, INF),
+                                         complex(NAN, NAN))
+        self.assertComplexesAreIdentical(complex(1, INF)/complex(INF, INF),
+                                         complex(NAN, NAN))
+        self.assertComplexesAreIdentical(complex(INF, 1)/complex(1, INF),
+                                         complex(NAN, NAN))
 
     def test_truediv_zero_division(self):
         for a, b in ZERO_DIVISION:
@@ -643,6 +684,35 @@ class ComplexTest(unittest.TestCase):
                 continue
             if not any(ch in lit for ch in 'xXoObB'):
                 self.assertRaises(ValueError, complex, lit)
+
+    def test_from_number(self, cls=complex):
+        def eq(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertIs(type(actual), cls)
+
+        eq(cls.from_number(3.14), 3.14+0j)
+        eq(cls.from_number(3.14j), 3.14j)
+        eq(cls.from_number(314), 314.0+0j)
+        eq(cls.from_number(OtherComplexSubclass(3.14, 2.72)), 3.14+2.72j)
+        eq(cls.from_number(WithComplex(3.14+2.72j)), 3.14+2.72j)
+        eq(cls.from_number(WithFloat(3.14)), 3.14+0j)
+        eq(cls.from_number(WithIndex(314)), 314.0+0j)
+
+        cNAN = complex(NAN, NAN)
+        x = cls.from_number(cNAN)
+        self.assertTrue(x != x)
+        self.assertIs(type(x), cls)
+        if cls is complex:
+            self.assertIs(cls.from_number(cNAN), cNAN)
+
+        self.assertRaises(TypeError, cls.from_number, '3.14')
+        self.assertRaises(TypeError, cls.from_number, b'3.14')
+        self.assertRaises(TypeError, cls.from_number, MyInt(314))
+        self.assertRaises(TypeError, cls.from_number, {})
+        self.assertRaises(TypeError, cls.from_number)
+
+    def test_from_number_subclass(self):
+        self.test_from_number(ComplexSubclass)
 
     def test_hash(self):
         for x in range(-30, 30):

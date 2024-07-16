@@ -426,6 +426,10 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
             return basic_ref;
         }
         PyWeakReference *newref = allocate_weakref(type, obj, callback);
+        if (newref == NULL) {
+            UNLOCK_WEAKREFS(obj);
+            return NULL;
+        }
         insert_weakref(newref, list);
         UNLOCK_WEAKREFS(obj);
         return newref;
@@ -433,6 +437,9 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
     else {
         // We may not be able to safely allocate inside the lock
         PyWeakReference *newref = allocate_weakref(type, obj, callback);
+        if (newref == NULL) {
+            return NULL;
+        }
         LOCK_WEAKREFS(obj);
         insert_weakref(newref, list);
         UNLOCK_WEAKREFS(obj);
@@ -1016,7 +1023,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyObject *exc = PyErr_GetRaisedException();
     PyObject *tuple = PyTuple_New(num_weakrefs * 2);
     if (tuple == NULL) {
-        _PyWeakref_ClearWeakRefsExceptCallbacks(object);
+        _PyWeakref_ClearWeakRefsNoCallbacks(object);
         PyErr_WriteUnraisable(NULL);
         PyErr_SetRaisedException(exc);
         return;
@@ -1057,6 +1064,14 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyErr_SetRaisedException(exc);
 }
 
+void
+PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *obj)
+{
+    if (_PyType_SUPPORTS_WEAKREFS(Py_TYPE(obj))) {
+        _PyWeakref_ClearWeakRefsNoCallbacks(obj);
+    }
+}
+
 /* This function is called by _PyStaticType_Dealloc() to clear weak references.
  *
  * This is called at the end of runtime finalization, so we can just
@@ -1066,7 +1081,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 void
 _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
-    static_builtin_state *state = _PyStaticType_GetState(interp, type);
+    managed_static_type_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     // This is safe to do without holding the lock in free-threaded builds;
     // there is only one thread running and no new threads can be created.
@@ -1076,7 +1091,7 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 }
 
 void
-_PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
+_PyWeakref_ClearWeakRefsNoCallbacks(PyObject *obj)
 {
     /* Modeled after GET_WEAKREFS_LISTPTR().
 

@@ -438,6 +438,8 @@ are always available.  They are listed here in alphabetical order.
    If one of arguments is a real number, only its real component is used in
    the above expressions.
 
+   See also :meth:`complex.from_number` which only accepts a single numeric argument.
+
    If all arguments are omitted, returns ``0j``.
 
    The complex type is described in :ref:`typesnumeric`.
@@ -788,6 +790,8 @@ are always available.  They are listed here in alphabetical order.
    ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
+   See also :meth:`float.from_number` which only accepts a numeric argument.
+
    If no argument is given, ``0.0`` is returned.
 
    The float type is described in :ref:`typesnumeric`.
@@ -1004,9 +1008,8 @@ are always available.  They are listed here in alphabetical order.
       115
 
    If the argument defines :meth:`~object.__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If the argument defines :meth:`~object.__index__`,
-   it returns ``x.__index__()``.  If the argument defines :meth:`~object.__trunc__`,
-   it returns ``x.__trunc__()``.
+   ``int(x)`` returns ``x.__int__()``.  If the argument defines
+   :meth:`~object.__index__`, it returns ``x.__index__()``.
    For floating point numbers, this truncates towards zero.
 
    If the argument is not a number or if *base* is given, then it must be a string,
@@ -1045,15 +1048,15 @@ are always available.  They are listed here in alphabetical order.
       Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`~object.__trunc__` is deprecated.
-
-   .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
       help avoid denial of service attacks. A :exc:`ValueError` is raised when
       the limit is exceeded while converting a string to an :class:`int` or
       when converting an :class:`int` into a string would exceed the limit.
       See the :ref:`integer string conversion length limitation
       <int_max_str_digits>` documentation.
+
+   .. versionchanged:: 3.14
+      :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
 .. function:: isinstance(object, classinfo)
 
@@ -1562,7 +1565,9 @@ are always available.  They are listed here in alphabetical order.
    returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
    type :class:`int` or :class:`float` and a non-integral exponent, a complex
    result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
-   to ``3j``.
+   to ``3j``. Whereas, for a negative base of type :class:`int` or :class:`float`
+   with an integral exponent, a float result is delivered. For example,
+   ``pow(-9, 2.0)`` returns ``81.0``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
    also be of integer type and *mod* must be nonzero. If *mod* is present and
@@ -1932,6 +1937,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
       that gives higher accuracy and better commutativity on most builds.
+
+   .. versionchanged:: 3.14
+      Added specialization for summation of complexes,
+      using same algorithm as for summation of floats.
 
 
 .. class:: super()

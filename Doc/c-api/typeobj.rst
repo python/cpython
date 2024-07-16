@@ -1328,8 +1328,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       To indicate that a class has changed call :c:func:`PyType_Modified`
 
       .. warning::
-         This flag is present in header files, but is an internal feature and should
-         not be used. It will be removed in a future version of CPython
+         This flag is present in header files, but is not be used.
+         It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1592,7 +1592,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    weak references to the type object itself.
 
    It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
-   :c:member:`~PyTypeObject.tp_weaklist`.
+   :c:member:`~PyTypeObject.tp_weaklistoffset`.
 
    **Inheritance:**
 
@@ -1604,7 +1604,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Default:**
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit is set in the
-   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_flags` field, then
    :c:member:`~PyTypeObject.tp_weaklistoffset` will be set to a negative value,
    to indicate that it is unsafe to use this field.
 

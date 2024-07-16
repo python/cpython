@@ -1,0 +1,2 @@
+Fix :func:`os.path.isfile` on Windows for pipes.
+Speedup :func:`os.path.isjunction` and :func:`os.path.lexists` on Windows with a native implementation.
