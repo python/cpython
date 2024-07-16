@@ -6693,10 +6693,10 @@ _PyObject_MaterializeManagedDict_LockHeld(PyObject *obj)
         dict = make_dict_from_instance_attributes(interp, keys, values);
     }
     else {
-        dict = PyDict_New();
+        dict = (PyDictObject *)PyDict_New();
     }
     FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
-                                (PyDictObject *)dict);
+                                dict);
     return dict;
 }
 
