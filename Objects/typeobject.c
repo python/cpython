@@ -11077,6 +11077,15 @@ add_operators(PyTypeObject *type)
         ptr = slotptr(type, p->offset);
         if (!ptr || !*ptr)
             continue;
+        if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
+            && type->tp_base != NULL)
+        {
+            void **ptr_base = slotptr(type->tp_base, p->offset);
+            if (ptr_base && *ptr == *ptr_base) {
+                /* It must have been inherited (see type_ready_inherit()).. */
+                continue;
+            }
+        }
         int r = PyDict_Contains(dict, p->name_strobj);
         if (r > 0)
             continue;
