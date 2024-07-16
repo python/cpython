@@ -35,17 +35,16 @@ An enumeration:
 Enumerations are created either by using :keyword:`class` syntax, or by
 using function-call syntax::
 
-   from enum import Enum
+   >>> from enum import Enum
 
+   >>> # class syntax
+   >>> class Color(Enum):
+   ...     RED = 1
+   ...     GREEN = 2
+   ...     BLUE = 3
 
-   class Color(Enum):
-       RED = '#FF0000'
-       GREEN = 65280
-       BLUE = '#0000FF'
-
-
-   # functional syntax
-   Color = Enum('Color', [('RED', '#FF0000'), ('GREEN', 65280), ('BLUE', '#0000FF')])
+   >>> # functional syntax
+   >>> Color = Enum('Color', [('RED', 1), ('GREEN', 2), ('BLUE', 3)])
 
 Even though we can use :keyword:`class` syntax to create Enums, Enums
 are not normal Python classes.  See
