@@ -48,7 +48,7 @@ Aware and Naive Objects
 -----------------------
 
 Date and time objects may be categorized as "aware" or "naive" depending on
-whether or not they include timezone information.
+whether or not they include time zone information.
 
 With sufficient knowledge of applicable algorithmic and political time
 adjustments, such as time zone and daylight saving time information,
@@ -58,7 +58,7 @@ interpretation. [#]_
 
 A **naive** object does not contain enough information to unambiguously locate
 itself relative to other date/time objects. Whether a naive object represents
-Coordinated Universal Time (UTC), local time, or time in some other timezone is
+Coordinated Universal Time (UTC), local time, or time in some other time zone is
 purely up to the program, just like it is up to the program whether a
 particular number represents metres, miles, or mass. Naive objects are easy to
 understand and to work with, at the cost of ignoring some aspects of reality.
@@ -70,9 +70,9 @@ These :class:`tzinfo` objects capture information about the offset from UTC
 time, the time zone name, and whether daylight saving time is in effect.
 
 Only one concrete :class:`tzinfo` class, the :class:`timezone` class, is
-supplied by the :mod:`!datetime` module. The :class:`timezone` class can
-represent simple timezones with fixed offsets from UTC, such as UTC itself or
-North American EST and EDT timezones. Supporting timezones at deeper levels of
+supplied by the :mod:`!datetime` module. The :class:`!timezone` class can
+represent simple time zones with fixed offsets from UTC, such as UTC itself or
+North American EST and EDT time zones. Supporting time zones at deeper levels of
 detail is up to the application. The rules for time adjustment across the
 world are more political than rational, change frequently, and there is no
 standard suitable for every application aside from UTC.
@@ -95,7 +95,7 @@ The :mod:`!datetime` module exports the following constants:
 
 .. attribute:: UTC
 
-   Alias for the UTC timezone singleton :attr:`datetime.timezone.utc`.
+   Alias for the UTC time zone singleton :attr:`datetime.timezone.utc`.
 
    .. versionadded:: 3.11
 
@@ -850,7 +850,7 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.today()
 
-   Return the current local datetime, with :attr:`.tzinfo` ``None``.
+   Return the current local date and time, with :attr:`.tzinfo` ``None``.
 
    Equivalent to::
 
@@ -1051,7 +1051,7 @@ Other constructors, all class methods:
    Return a :class:`.datetime` corresponding to *date_string*, parsed according to
    *format*.
 
-   If *format* does not contain microseconds or timezone information, this is equivalent to::
+   If *format* does not contain microseconds or time zone information, this is equivalent to::
 
      datetime(*(time.strptime(date_string, format)[0:6]))
 
@@ -1267,22 +1267,22 @@ Instance methods:
 
    If provided, *tz* must be an instance of a :class:`tzinfo` subclass, and its
    :meth:`utcoffset` and :meth:`dst` methods must not return ``None``. If *self*
-   is naive, it is presumed to represent time in the system timezone.
+   is naive, it is presumed to represent time in the system time zone.
 
    If called without arguments (or with ``tz=None``) the system local
-   timezone is assumed for the target timezone. The ``.tzinfo`` attribute of the converted
+   time zone is assumed for the target time zone. The ``.tzinfo`` attribute of the converted
    datetime instance will be set to an instance of :class:`timezone`
    with the zone name and offset obtained from the OS.
 
    If ``self.tzinfo`` is *tz*, ``self.astimezone(tz)`` is equal to *self*:  no
    adjustment of date or time data is performed. Else the result is local
-   time in the timezone *tz*, representing the same UTC time as *self*:  after
+   time in the time zone *tz*, representing the same UTC time as *self*:  after
    ``astz = dt.astimezone(tz)``, ``astz - astz.utcoffset()`` will have
    the same date and time data as ``dt - dt.utcoffset()``.
 
-   If you merely want to attach a time zone object *tz* to a datetime *dt* without
+   If you merely want to attach a :class:`timezone` object *tz* to a datetime *dt* without
    adjustment of date and time data, use ``dt.replace(tzinfo=tz)``. If you
-   merely want to remove the time zone object from an aware datetime *dt* without
+   merely want to remove the :class:`!timezone` object from an aware datetime *dt* without
    conversion of date and time data, use ``dt.replace(tzinfo=None)``.
 
    Note that the default :meth:`tzinfo.fromutc` method can be overridden in a
@@ -1292,7 +1292,7 @@ Instance methods:
       def astimezone(self, tz):
           if self.tzinfo is tz:
               return self
-          # Convert self to UTC, and attach the new time zone object.
+          # Convert self to UTC, and attach the new timezone object.
           utc = (self - self.utcoffset()).replace(tzinfo=tz)
           # Convert from UTC to tz's local time.
           return tz.fromutc(utc)
@@ -1406,7 +1406,7 @@ Instance methods:
 
       There is no method to obtain the POSIX timestamp directly from a
       naive :class:`.datetime` instance representing UTC time. If your
-      application uses this convention and your system timezone is not
+      application uses this convention and your system time zone is not
       set to UTC, you can obtain the POSIX timestamp by supplying
       ``tzinfo=timezone.utc``::
 
@@ -1974,7 +1974,7 @@ Examples of working with a :class:`.time` object::
    supply implementations of the standard :class:`tzinfo` methods needed by the
    :class:`.datetime` methods you use. The :mod:`!datetime` module provides
    :class:`timezone`, a simple concrete subclass of :class:`tzinfo` which can
-   represent timezones with fixed offset from UTC such as UTC itself or North
+   represent time zones with fixed offset from UTC such as UTC itself or North
    American EST and EDT.
 
    Special requirement for pickling:  A :class:`tzinfo` subclass must have an
@@ -2099,7 +2099,7 @@ When a :class:`.datetime` object is passed in response to a :class:`.datetime`
 method, ``dt.tzinfo`` is the same object as *self*. :class:`tzinfo` methods can
 rely on this, unless user code calls :class:`tzinfo` methods directly. The
 intent is that the :class:`tzinfo` methods interpret *dt* as being in local
-time, and not need worry about objects in other timezones.
+time, and not need worry about objects in other time zones.
 
 There is one more :class:`tzinfo` method that a subclass may wish to override:
 
@@ -2216,12 +2216,12 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
     :mod:`zoneinfo`
       The :mod:`!datetime` module has a basic :class:`timezone` class (for
       handling arbitrary fixed offsets from UTC) and its :attr:`timezone.utc`
-      attribute (a UTC timezone instance).
+      attribute (a UTC :class:`!timezone` instance).
 
-      ``zoneinfo`` brings the *IANA timezone database* (also known as the Olson
+      ``zoneinfo`` brings the *IANA time zone database* (also known as the Olson
       database) to Python, and its usage is recommended.
 
-   `IANA timezone database <https://www.iana.org/time-zones>`_
+   `IANA time zone database <https://www.iana.org/time-zones>`_
       The Time Zone Database (often called tz, tzdata or zoneinfo) contains code
       and data that represent the history of local time for many representative
       locations around the globe. It is updated periodically to reflect changes
@@ -2235,10 +2235,10 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 -------------------------
 
 The :class:`timezone` class is a subclass of :class:`tzinfo`, each
-instance of which represents a timezone defined by a fixed offset from
+instance of which represents a time zone defined by a fixed offset from
 UTC.
 
-Objects of this class cannot be used to represent timezone information in the
+Objects of this class cannot be used to represent time zone information in the
 locations where different offsets are used in different days of the year or
 where historical changes have been made to civil time.
 
@@ -2299,7 +2299,7 @@ Class attributes:
 
 .. attribute:: timezone.utc
 
-   The UTC timezone, ``timezone(timedelta(0))``.
+   The UTC time zone, ``timezone(timedelta(0))``.
 
 
 .. index::
@@ -2508,7 +2508,7 @@ Using ``datetime.strptime(date_string, format)`` is equivalent to::
 
   datetime(*(time.strptime(date_string, format)[0:6]))
 
-except when the format includes sub-second components or timezone offset
+except when the format includes sub-second components or time zone offset
 information, which are supported in ``datetime.strptime`` but are discarded by
 ``time.strptime``.
 
