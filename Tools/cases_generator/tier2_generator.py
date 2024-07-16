@@ -50,13 +50,10 @@ def declare_variable(
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
     stack = Stack()
-    try:
-        for var in reversed(uop.stack.inputs):
-            stack.pop(var)
-        for var in uop.stack.outputs:
-                stack.push(var)
-    except StackError as ex:
-        raise analysis_error(ex.args[0], part.body[0]) from None
+    for var in reversed(uop.stack.inputs):
+        stack.pop(var)
+    for var in uop.stack.outputs:
+            stack.push(var)
     required = set(stack.defined)
     for var in reversed(uop.stack.inputs):
         declare_variable(var, uop, required, out)
