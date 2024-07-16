@@ -2247,12 +2247,12 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
->>> yield from [1,2]
+>>> f=lambda: (yield from (1,2)), (yield from (3,4))
 Traceback (most recent call last):
   ...
 SyntaxError: 'yield from' outside function
 
->>> f=lambda: (yield from (1,2)), (yield from (3,4))
+>>> yield from [1,2]
 Traceback (most recent call last):
   ...
 SyntaxError: 'yield from' outside function
