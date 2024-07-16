@@ -25,8 +25,12 @@ pointers.  This is consistent throughout the API.
 
    The C structure which corresponds to the value portion of a Python complex
    number object.  Most of the functions for dealing with complex number objects
-   use structures of this type as input or output values, as appropriate.  It is
-   defined as::
+   use structures of this type as input or output values, as appropriate.
+
+   * :c:member:`Py_complex.real`
+   * :c:member:`Py_complex.imag`
+
+   It is defined as::
 
       typedef struct {
          double real;
