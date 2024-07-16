@@ -208,8 +208,8 @@ Examining Symbol Tables
          ...    def outer(self): pass
          ... ''', 'test', 'exec')
          >>> class_A = st.get_children()[2]
-         >>> class_A.get_methods()
-         ('f', 'g', 'h')
+         >>> class_A.get_methods() == ('f', 'g', 'h')
+         True
 
       Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
       considered as a method-like function.
