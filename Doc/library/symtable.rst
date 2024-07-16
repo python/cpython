@@ -214,6 +214,9 @@ Examining Symbol Tables
       Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
       considered as a method-like function.
 
+      .. deprecated-removed:: 3.14 3.16
+
+
 .. class:: Symbol
 
    An entry in a :class:`SymbolTable` corresponding to an identifier in the
