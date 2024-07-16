@@ -62,7 +62,7 @@ typedef struct {
 typedef struct {
     uint32_t target;
     _Py_BackoffCounter temperature;
-    const struct _PyExecutorObject *executor;
+    struct _PyExecutorObject *executor;
 } _PyExitData;
 
 typedef struct _PyExecutorObject {
