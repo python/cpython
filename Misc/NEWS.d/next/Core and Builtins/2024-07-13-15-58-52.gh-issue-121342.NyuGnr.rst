@@ -1,0 +1,2 @@
+Fix ``pkgutil.iter_zipimport_modules`` when called on an invalidated cache.
+Patch by Andreas Stocker.

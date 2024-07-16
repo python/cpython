@@ -522,6 +522,51 @@ class ExtendPathTests(unittest.TestCase):
         del sys.modules['foo.bar']
         del sys.modules['foo.baz']
 
+    def test_iter_zipimport_modules(self):
+        with zipfile.ZipFile(
+            tempfile.NamedTemporaryFile(suffix='.zip', delete=False),
+            mode='w'
+        ) as tmp_file_zip:
+            tmp_file_zip.writestr(
+                'foo.py',
+                'print("foot")'
+            )
+            tmp_file_zip.writestr(
+                'bar/__init__.py',
+                'print("bar")'
+            )
+
+        module_zip = pkgutil.zipimporter(tmp_file_zip.filename)
+
+        self.assertIn(('foo', False), pkgutil.iter_zipimport_modules(module_zip, prefix=''))
+        self.assertIn(('bar', True), pkgutil.iter_zipimport_modules(module_zip, prefix=''))
+
+        # Cleanup
+        os.remove(tmp_file_zip.filename)
+
+    def test_iter_zipimport_modules_invalidate_caches(self):
+        with zipfile.ZipFile(
+            tempfile.NamedTemporaryFile(suffix='.zip', delete=False),
+            mode='w'
+        ) as tmp_file_zip:
+            tmp_file_zip.writestr(
+                'foo.py',
+                'print("foo")'
+            )
+            tmp_file_zip.writestr(
+                'bar/__init__.py',
+                'print("bar")'
+            )
+
+        module_zip = pkgutil.zipimporter(tmp_file_zip.filename)
+        module_zip.invalidate_caches()
+
+        self.assertIn(('foo', False), pkgutil.iter_zipimport_modules(module_zip, prefix=''))
+        self.assertIn(('bar', True), pkgutil.iter_zipimport_modules(module_zip, prefix=''))
+
+        # Cleanup
+        os.remove(tmp_file_zip.filename)
+
     # XXX: test .pkg files
 
 
