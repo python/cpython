@@ -3,11 +3,11 @@ import errno
 import os.path
 import socket
 import sys
+import subprocess
 import tempfile
 import unittest
 
 from .. import support
-from . import warnings_helper
 
 HOST = "localhost"
 HOSTv4 = "127.0.0.1"
@@ -63,7 +63,7 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     http://bugs.python.org/issue2550 for more info.  The following site also
     has a very thorough description about the implications of both REUSEADDR
     and EXCLUSIVEADDRUSE on Windows:
-    http://msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx)
+    https://learn.microsoft.com/windows/win32/winsock/using-so-reuseaddr-and-so-exclusiveaddruse
 
     XXX: although this approach is a vast improvement on previous attempts to
     elicit unused ports, it rests heavily on the assumption that the ephemeral
@@ -195,7 +195,6 @@ _NOT_SET = object()
 def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
     with the internet connection manifest themselves as exceptions."""
-    nntplib = warnings_helper.import_deprecated("nntplib")
     import urllib.error
     if timeout is _NOT_SET:
         timeout = support.INTERNET_TIMEOUT
@@ -248,10 +247,6 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
         if timeout is not None:
             socket.setdefaulttimeout(timeout)
         yield
-    except nntplib.NNTPTemporaryError as err:
-        if support.verbose:
-            sys.stderr.write(denied.args[0] + "\n")
-        raise denied from err
     except OSError as err:
         # urllib can wrap original socket errors multiple times (!), we must
         # unwrap to get at the original error.
@@ -283,3 +278,62 @@ def create_unix_domain_name():
     """
     return tempfile.mktemp(prefix="test_python_", suffix='.sock',
                            dir=os.path.curdir)
+
+
+# consider that sysctl values should not change while tests are running
+_sysctl_cache = {}
+
+def _get_sysctl(name):
+    """Get a sysctl value as an integer."""
+    try:
+        return _sysctl_cache[name]
+    except KeyError:
+        pass
+
+    # At least Linux and FreeBSD support the "-n" option
+    cmd = ['sysctl', '-n', name]
+    proc = subprocess.run(cmd,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          text=True)
+    if proc.returncode:
+        support.print_warning(f'{' '.join(cmd)!r} command failed with '
+                              f'exit code {proc.returncode}')
+        # cache the error to only log the warning once
+        _sysctl_cache[name] = None
+        return None
+    output = proc.stdout
+
+    # Parse '0\n' to get '0'
+    try:
+        value = int(output.strip())
+    except Exception as exc:
+        support.print_warning(f'Failed to parse {' '.join(cmd)!r} '
+                              f'command output {output!r}: {exc!r}')
+        # cache the error to only log the warning once
+        _sysctl_cache[name] = None
+        return None
+
+    _sysctl_cache[name] = value
+    return value
+
+
+def tcp_blackhole():
+    if not sys.platform.startswith('freebsd'):
+        return False
+
+    # gh-109015: test if FreeBSD TCP blackhole is enabled
+    value = _get_sysctl('net.inet.tcp.blackhole')
+    if value is None:
+        # don't skip if we fail to get the sysctl value
+        return False
+    return (value != 0)
+
+
+def skip_if_tcp_blackhole(test):
+    """Decorator skipping test if TCP blackhole is enabled."""
+    skip_if = unittest.skipIf(
+        tcp_blackhole(),
+        "TCP blackhole is enabled (sysctl net.inet.tcp.blackhole)"
+    )
+    return skip_if(test)

@@ -15,11 +15,8 @@ from test import support as test_support
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
-from test.support import warnings_helper
-
-
-asynchat = warnings_helper.import_deprecated('asynchat')
-asyncore = warnings_helper.import_deprecated('asyncore')
+from test.support import asynchat
+from test.support import asyncore
 
 
 test_support.requires_working_socket(module=True)
@@ -32,8 +29,8 @@ if hasattr(poplib, 'POP3_SSL'):
     import ssl
 
     SUPPORTS_SSL = True
-    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
-    CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
+    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
+    CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
 
 requires_ssl = skipUnless(SUPPORTS_SSL, 'SSL not supported')
 

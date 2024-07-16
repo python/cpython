@@ -1,2 +1,0 @@
-Add a mutex to unittest.mock.NonCallableMock to protect concurrent access
-to mock attributes.

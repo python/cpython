@@ -23,7 +23,9 @@ Slice Objects
    Return a new slice object with the given values.  The *start*, *stop*, and
    *step* parameters are used as the values of the slice object attributes of
    the same names.  Any of the values may be ``NULL``, in which case the
-   ``None`` will be used for the corresponding attribute.  Return ``NULL`` if
+   ``None`` will be used for the corresponding attribute.
+
+   Return ``NULL`` with an exception set if
    the new object could not be allocated.
 
 
@@ -34,7 +36,7 @@ Slice Objects
    *length* as errors.
 
    Returns ``0`` on success and ``-1`` on error with no exception set (unless one of
-   the indices was not :const:`None` and failed to be converted to an integer,
+   the indices was not ``None`` and failed to be converted to an integer,
    in which case ``-1`` is returned with an exception set).
 
    You probably do not want to use this function.
@@ -52,7 +54,7 @@ Slice Objects
    of bounds indices are clipped in a manner consistent with the handling of
    normal slices.
 
-   Returns ``0`` on success and ``-1`` on error with exception set.
+   Return ``0`` on success and ``-1`` on error with an exception set.
 
    .. note::
       This function is considered not safe for resizable sequences.
@@ -95,7 +97,7 @@ Slice Objects
    ``PY_SSIZE_T_MIN`` to ``PY_SSIZE_T_MIN``, and silently boost the step
    values less than ``-PY_SSIZE_T_MAX`` to ``-PY_SSIZE_T_MAX``.
 
-   Return ``-1`` on error, ``0`` on success.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.6.1
 
@@ -113,11 +115,13 @@ Slice Objects
 
 
 Ellipsis Object
----------------
+^^^^^^^^^^^^^^^
 
 
 .. c:var:: PyObject *Py_Ellipsis
 
-   The Python ``Ellipsis`` object.  This object has no methods.  It needs to be
-   treated just like any other object with respect to reference counts.  Like
-   :c:data:`Py_None` it is a singleton object.
+   The Python ``Ellipsis`` object.  This object has no methods.  Like
+   :c:data:`Py_None`, it is an :term:`immortal` singleton object.
+
+   .. versionchanged:: 3.12
+      :c:data:`Py_Ellipsis` is immortal.

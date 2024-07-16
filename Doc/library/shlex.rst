@@ -1,5 +1,5 @@
-:mod:`shlex` --- Simple lexical analysis
-========================================
+:mod:`!shlex` --- Simple lexical analysis
+=========================================
 
 .. module:: shlex
    :synopsis: Simple lexical analysis for Unix shell-like languages.
@@ -29,12 +29,6 @@ The :mod:`shlex` module defines the following functions:
    :class:`~shlex.shlex` instance to the empty string).  This function operates
    in POSIX mode by default, but uses non-POSIX mode if the *posix* argument is
    false.
-
-   .. note::
-
-      Since the :func:`split` function instantiates a :class:`~shlex.shlex`
-      instance, passing ``None`` for *s* will read the string to split from
-      standard input.
 
    .. versionchanged:: 3.12
       Passing ``None`` for *s* argument now raises an exception, rather than
@@ -418,17 +412,17 @@ otherwise.  To illustrate, you can see the difference in the following snippet:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-    >>> import shlex
-    >>> text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
-    >>> s = shlex.shlex(text, posix=True)
-    >>> s.whitespace_split = True
-    >>> list(s)
-    ['a', '&&', 'b;', 'c', '&&', 'd', '||', 'e;', 'f', '>abc;', '(def', 'ghi)']
-    >>> s = shlex.shlex(text, posix=True, punctuation_chars=True)
-    >>> s.whitespace_split = True
-    >>> list(s)
-    ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', 'abc', ';',
-    '(', 'def', 'ghi', ')']
+   >>> import shlex
+   >>> text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
+   >>> s = shlex.shlex(text, posix=True)
+   >>> s.whitespace_split = True
+   >>> list(s)
+   ['a', '&&', 'b;', 'c', '&&', 'd', '||', 'e;', 'f', '>abc;', '(def', 'ghi)']
+   >>> s = shlex.shlex(text, posix=True, punctuation_chars=True)
+   >>> s.whitespace_split = True
+   >>> list(s)
+   ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', 'abc', ';',
+   '(', 'def', 'ghi', ')']
 
 Of course, tokens will be returned which are not valid for shells, and you'll
 need to implement your own error checks on the returned tokens.
@@ -437,10 +431,10 @@ Instead of passing ``True`` as the value for the punctuation_chars parameter,
 you can pass a string with specific characters, which will be used to determine
 which characters constitute punctuation. For example::
 
-    >>> import shlex
-    >>> s = shlex.shlex("a && b || c", punctuation_chars="|")
-    >>> list(s)
-    ['a', '&', '&', 'b', '||', 'c']
+   >>> import shlex
+   >>> s = shlex.shlex("a && b || c", punctuation_chars="|")
+   >>> list(s)
+   ['a', '&', '&', 'b', '||', 'c']
 
 .. note:: When ``punctuation_chars`` is specified, the :attr:`~shlex.wordchars`
    attribute is augmented with the characters ``~-./*?=``.  That is because these

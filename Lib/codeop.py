@@ -65,25 +65,20 @@ def _maybe_compile(compiler, source, filename, symbol):
             try:
                 compiler(source + "\n", filename, symbol)
                 return None
+            except _IncompleteInputError as e:
+                return None
             except SyntaxError as e:
-                if "incomplete input" in str(e):
-                    return None
+                pass
                 # fallthrough
 
-    return compiler(source, filename, symbol)
+    return compiler(source, filename, symbol, incomplete_input=False)
 
-
-def _is_syntax_error(err1, err2):
-    rep1 = repr(err1)
-    rep2 = repr(err2)
-    if "was never closed" in rep1 and "was never closed" in rep2:
-        return False
-    if rep1 == rep2:
-        return True
-    return False
-
-def _compile(source, filename, symbol):
-    return compile(source, filename, symbol, PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT)
+def _compile(source, filename, symbol, incomplete_input=True):
+    flags = 0
+    if incomplete_input:
+        flags |= PyCF_ALLOW_INCOMPLETE_INPUT
+        flags |= PyCF_DONT_IMPLY_DEDENT
+    return compile(source, filename, symbol, flags)
 
 def compile_command(source, filename="<input>", symbol="single"):
     r"""Compile a command and determine whether it is incomplete.
@@ -114,8 +109,12 @@ class Compile:
     def __init__(self):
         self.flags = PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT
 
-    def __call__(self, source, filename, symbol):
-        codeob = compile(source, filename, symbol, self.flags, True)
+    def __call__(self, source, filename, symbol, **kwargs):
+        flags = self.flags
+        if kwargs.get('incomplete_input', True) is False:
+            flags &= ~PyCF_DONT_IMPLY_DEDENT
+            flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT
+        codeob = compile(source, filename, symbol, flags, True)
         for feature in _features:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag

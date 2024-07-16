@@ -6,10 +6,11 @@ import random
 import time
 import unittest
 import weakref
+from test import support
 from test.support import threading_helper
 
 try:
-    from _testcapi import hamt
+    from _testinternalcapi import hamt
 except ImportError:
     hamt = None
 
@@ -431,7 +432,7 @@ class EqError(Exception):
     pass
 
 
-@unittest.skipIf(hamt is None, '_testcapi lacks "hamt()" function')
+@unittest.skipIf(hamt is None, '_testinternalcapi.hamt() not available')
 class HamtTest(unittest.TestCase):
 
     def test_hashkey_helper_1(self):
@@ -570,6 +571,7 @@ class HamtTest(unittest.TestCase):
 
         self.assertEqual({k.name for k in h.keys()}, {'C', 'D', 'E'})
 
+    @support.requires_resource('cpu')
     def test_hamt_stress(self):
         COLLECTION_SIZE = 7000
         TEST_ITERS_EVERY = 647

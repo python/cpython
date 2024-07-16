@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -99,7 +99,7 @@ builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    level = _PyLong_AsInt(args[4]);
+    level = PyLong_AsInt(args[4]);
     if (level == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -216,9 +216,6 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("format", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
     format_spec = args[1];
 skip_optional:
     return_value = builtin_format_impl(module, value, format_spec);
@@ -235,25 +232,6 @@ PyDoc_STRVAR(builtin_chr__doc__,
 
 #define BUILTIN_CHR_METHODDEF    \
     {"chr", (PyCFunction)builtin_chr, METH_O, builtin_chr__doc__},
-
-static PyObject *
-builtin_chr_impl(PyObject *module, int i);
-
-static PyObject *
-builtin_chr(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int i;
-
-    i = _PyLong_AsInt(arg);
-    if (i == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = builtin_chr_impl(module, i);
-
-exit:
-    return return_value;
-}
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
@@ -345,7 +323,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[3]) {
-        flags = _PyLong_AsInt(args[3]);
+        flags = PyLong_AsInt(args[3]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -354,8 +332,8 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[4]) {
-        dont_inherit = _PyLong_AsInt(args[4]);
-        if (dont_inherit == -1 && PyErr_Occurred()) {
+        dont_inherit = PyObject_IsTrue(args[4]);
+        if (dont_inherit < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -363,7 +341,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        optimize = _PyLong_AsInt(args[5]);
+        optimize = PyLong_AsInt(args[5]);
         if (optimize == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -375,7 +353,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    feature_version = _PyLong_AsInt(args[6]);
+    feature_version = PyLong_AsInt(args[6]);
     if (feature_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -417,7 +395,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_eval__doc__,
-"eval($module, source, globals=None, locals=None, /)\n"
+"eval($module, source, /, globals=None, locals=None)\n"
 "--\n"
 "\n"
 "Evaluate the given source in the context of globals and locals.\n"
@@ -429,33 +407,63 @@ PyDoc_STRVAR(builtin_eval__doc__,
 "If only globals is given, locals defaults to it.");
 
 #define BUILTIN_EVAL_METHODDEF    \
-    {"eval", _PyCFunction_CAST(builtin_eval), METH_FASTCALL, builtin_eval__doc__},
+    {"eval", _PyCFunction_CAST(builtin_eval), METH_FASTCALL|METH_KEYWORDS, builtin_eval__doc__},
 
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals);
 
 static PyObject *
-builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(globals), &_Py_ID(locals), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "globals", "locals", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "eval",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *source;
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_CheckPositional("eval", nargs, 1, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     source = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
-    globals = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
+    if (args[1]) {
+        globals = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
     locals = args[2];
-skip_optional:
+skip_optional_pos:
     return_value = builtin_eval_impl(module, source, globals, locals);
 
 exit:
@@ -463,7 +471,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_exec__doc__,
-"exec($module, source, globals=None, locals=None, /, *, closure=None)\n"
+"exec($module, source, /, globals=None, locals=None, *, closure=None)\n"
 "--\n"
 "\n"
 "Execute the given source in the context of globals and locals.\n"
@@ -489,14 +497,14 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(closure), },
+        .ob_item = { &_Py_ID(globals), &_Py_ID(locals), &_Py_ID(closure), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -505,7 +513,7 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "", "", "closure", NULL};
+    static const char * const _keywords[] = {"", "globals", "locals", "closure", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "exec",
@@ -524,17 +532,22 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     source = args[0];
-    if (nargs < 2) {
-        goto skip_optional_posonly;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
-    noptargs--;
-    globals = args[1];
-    if (nargs < 3) {
-        goto skip_optional_posonly;
+    if (args[1]) {
+        globals = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
-    noptargs--;
-    locals = args[2];
-skip_optional_posonly:
+    if (args[2]) {
+        locals = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -715,10 +728,10 @@ PyDoc_STRVAR(builtin_anext__doc__,
 "anext($module, aiterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"async anext(aiterator[, default])\n"
+"Return the next item from the async iterator.\n"
 "\n"
-"Return the next item from the async iterator.  If default is given and the async\n"
-"iterator is exhausted, it is returned instead of raising StopAsyncIteration.");
+"If default is given and the async iterator is exhausted,\n"
+"it is returned instead of raising StopAsyncIteration.");
 
 #define BUILTIN_ANEXT_METHODDEF    \
     {"anext", _PyCFunction_CAST(builtin_anext), METH_FASTCALL, builtin_anext__doc__},
@@ -967,7 +980,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_input__doc__,
-"input($module, prompt=None, /)\n"
+"input($module, prompt=\'\', /)\n"
 "--\n"
 "\n"
 "Read a string from standard input.  The trailing newline is stripped.\n"
@@ -1215,4 +1228,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3c9497e0ffeb8a30 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=435d3f286a863c49 input=a9049054013a1b77]*/

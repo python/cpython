@@ -7,9 +7,11 @@ import sys
 from collections import OrderedDict
 
 import unittest
+import test
 from test.test_unittest.testmock import support
 from test.test_unittest.testmock.support import SomeClass, is_instance
 
+from test.support.import_helper import DirsOnSysPath
 from test.test_importlib.util import uncache
 from unittest.mock import (
     NonCallableMock, CallableMixin, sentinel,
@@ -996,6 +998,36 @@ class PatchTest(unittest.TestCase):
             method.assert_called_once_with()
 
 
+    def test_autospec_staticmethod_signature(self):
+        # Patched methods which are decorated with @staticmethod should have the same signature
+        class Foo:
+            @staticmethod
+            def static_method(a, b=10, *, c): pass
+
+        Foo.static_method(1, 2, c=3)
+
+        with patch.object(Foo, 'static_method', autospec=True) as method:
+            method(1, 2, c=3)
+            self.assertRaises(TypeError, method)
+            self.assertRaises(TypeError, method, 1)
+            self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+
+    def test_autospec_classmethod_signature(self):
+        # Patched methods which are decorated with @classmethod should have the same signature
+        class Foo:
+            @classmethod
+            def class_method(cls, a, b=10, *, c): pass
+
+        Foo.class_method(1, 2, c=3)
+
+        with patch.object(Foo, 'class_method', autospec=True) as method:
+            method(1, 2, c=3)
+            self.assertRaises(TypeError, method)
+            self.assertRaises(TypeError, method, 1)
+            self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+
     def test_autospec_with_new(self):
         patcher = patch('%s.function' % __name__, new=3, autospec=True)
         self.assertRaises(TypeError, patcher.start)
@@ -1698,6 +1730,71 @@ class PatchTest(unittest.TestCase):
                             'exception traceback not propagated')
 
 
+    def test_name_resolution_import_rebinding(self):
+        # Currently mock.patch uses pkgutil.resolve_name(), but repeat
+        # similar tests just for the case.
+        # The same data is also used for testing import in test_import and
+        # pkgutil.resolve_name() in test_pkgutil.
+        path = os.path.join(os.path.dirname(test.__file__), 'test_import', 'data')
+        def check(name):
+            p = patch(name)
+            p.start()
+            p.stop()
+        def check_error(name):
+            p = patch(name)
+            self.assertRaises(AttributeError, p.start)
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            check('package3.submodule.A.attr')
+            check_error('package3.submodule.B.attr')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            check('package3.submodule:A.attr')
+            check_error('package3.submodule:B.attr')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            check('package3:submodule.B.attr')
+            check_error('package3:submodule.A.attr')
+            check('package3.submodule.A.attr')
+            check_error('package3.submodule.B.attr')
+            check('package3:submodule.B.attr')
+            check_error('package3:submodule.A.attr')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            check('package3:submodule.B.attr')
+            check_error('package3:submodule.A.attr')
+            check('package3.submodule:A.attr')
+            check_error('package3.submodule:B.attr')
+            check('package3:submodule.B.attr')
+            check_error('package3:submodule.A.attr')
+
+    def test_name_resolution_import_rebinding2(self):
+        path = os.path.join(os.path.dirname(test.__file__), 'test_import', 'data')
+        def check(name):
+            p = patch(name)
+            p.start()
+            p.stop()
+        def check_error(name):
+            p = patch(name)
+            self.assertRaises(AttributeError, p.start)
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            check('package4.submodule.A.attr')
+            check_error('package4.submodule.B.attr')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            check('package4.submodule:A.attr')
+            check_error('package4.submodule:B.attr')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            check('package4:submodule.B.attr')
+            check_error('package4:submodule.A.attr')
+            check('package4.submodule.A.attr')
+            check_error('package4.submodule.B.attr')
+            check('package4:submodule.A.attr')
+            check_error('package4:submodule.B.attr')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            check('package4:submodule.B.attr')
+            check_error('package4:submodule.A.attr')
+            check('package4.submodule:A.attr')
+            check_error('package4.submodule:B.attr')
+            check('package4:submodule.A.attr')
+            check_error('package4:submodule.B.attr')
+
+
     def test_create_and_specs(self):
         for kwarg in ('spec', 'spec_set', 'autospec'):
             p = patch('%s.doesnotexist' % __name__, create=True,
@@ -1882,7 +1979,7 @@ class PatchTest(unittest.TestCase):
 
         with patch.object(foo, '__module__', "testpatch2"):
             self.assertEqual(foo.__module__, "testpatch2")
-        self.assertEqual(foo.__module__, 'test.test_unittest.testmock.testpatch')
+        self.assertEqual(foo.__module__, __name__)
 
         with patch.object(foo, '__annotations__', dict([('s', 1, )])):
             self.assertEqual(foo.__annotations__, dict([('s', 1, )]))
@@ -1947,6 +2044,13 @@ class PatchTest(unittest.TestCase):
         def test(): pass
         with self.assertRaises(TypeError):
             test()
+
+    def test_patch_proxy_object(self):
+        @patch("test.test_unittest.testmock.support.g", new_callable=MagicMock())
+        def test(_):
+            pass
+
+        test()
 
 
 if __name__ == '__main__':

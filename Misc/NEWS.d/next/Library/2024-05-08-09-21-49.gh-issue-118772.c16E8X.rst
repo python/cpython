@@ -1,0 +1,2 @@
+Allow :class:`typing.TypeVar` instances without a default to follow
+instances without a default in some cases. Patch by Jelle Zijlstra.

@@ -1,5 +1,5 @@
-:mod:`http.client` --- HTTP protocol client
-===========================================
+:mod:`!http.client` --- HTTP protocol client
+============================================
 
 .. module:: http.client
    :synopsis: HTTP and HTTPS protocol client (requires sockets).
@@ -10,7 +10,7 @@
    pair: HTTP; protocol
    single: HTTP; http.client (standard module)
 
-.. index:: module: urllib.request
+.. index:: pair: module; urllib.request
 
 --------------
 
@@ -20,7 +20,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 
 .. seealso::
 
-    The `Requests package <https://requests.readthedocs.io/en/master/>`_
+    The `Requests package <https://requests.readthedocs.io/en/latest/>`_
     is recommended for a higher-level HTTP client interface.
 
 .. note::
@@ -67,10 +67,9 @@ The module provides the following classes:
       *blocksize* parameter was added.
 
 
-.. class:: HTTPSConnection(host, port=None, key_file=None, \
-                           cert_file=None[, timeout], \
-                           source_address=None, *, context=None, \
-                           check_hostname=None, blocksize=8192)
+.. class:: HTTPSConnection(host, port=None, *[, timeout], \
+                           source_address=None, context=None, \
+                           blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -84,7 +83,7 @@ The module provides the following classes:
 
    .. versionchanged:: 3.2
       This class now supports HTTPS virtual hosts if possible (that is,
-      if :data:`ssl.HAS_SNI` is true).
+      if :const:`ssl.HAS_SNI` is true).
 
    .. versionchanged:: 3.4
       The *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
@@ -93,7 +92,7 @@ The module provides the following classes:
    .. versionchanged:: 3.4.3
       This class now performs all the necessary certificate and hostname checks
       by default. To revert to the previous, unverified, behavior
-      :func:`ssl._create_unverified_context` can be passed to the *context*
+      :func:`!ssl._create_unverified_context` can be passed to the *context*
       parameter.
 
    .. versionchanged:: 3.8
@@ -104,18 +103,11 @@ The module provides the following classes:
    .. versionchanged:: 3.10
       This class now sends an ALPN extension with protocol indicator
       ``http/1.1`` when no *context* is given. Custom *context* should set
-      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocols`.
 
-   .. deprecated:: 3.6
-
-       *key_file* and *cert_file* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
-       The *check_hostname* parameter is also deprecated; the
-       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
-       be used instead.
+   .. versionchanged:: 3.12
+      The deprecated *key_file*, *cert_file* and *check_hostname* parameters
+      have been removed.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)
@@ -132,7 +124,7 @@ This module provides the following function:
 .. function:: parse_headers(fp)
 
    Parse the headers from a file pointer *fp* representing a HTTP
-   request/response. The file has to be a :class:`BufferedIOBase` reader
+   request/response. The file has to be a :class:`~io.BufferedIOBase` reader
    (i.e. not text) and must provide a valid :rfc:`2822` style header.
 
    This function returns an instance of :class:`http.client.HTTPMessage`
@@ -262,7 +254,10 @@ HTTPConnection Objects
             encode_chunked=False)
 
    This will send a request to the server using the HTTP request
-   method *method* and the selector *url*.
+   method *method* and the request URI *url*. The provided *url* must be
+   an absolute path to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *body* is specified, the specified data is sent after the headers are
    finished.  It may be a :class:`str`, a :term:`bytes-like object`, an
@@ -277,7 +272,10 @@ HTTPConnection Objects
    iterable are sent as is until the iterable is exhausted.
 
    The *headers* argument should be a mapping of extra HTTP headers to send
-   with the request.
+   with the request. A :rfc:`Host header <2616#section-14.23>`
+   must be provided to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *headers* contains neither Content-Length nor Transfer-Encoding,
    but there is a request body, one of those
@@ -296,6 +294,16 @@ HTTPConnection Objects
    HTTPConnection object assumes that all encoding is handled by the
    calling code.  If it is ``True``, the body will be chunk-encoded.
 
+   For example, to perform a ``GET`` request to ``https://docs.python.org/3/``::
+
+      >>> import http.client
+      >>> host = "docs.python.org"
+      >>> conn = http.client.HTTPSConnection(host)
+      >>> conn.request("GET", "/3/", headers={"Host": host})
+      >>> response = conn.getresponse()
+      >>> print(response.status, response.reason)
+      200 OK
+
    .. note::
       Chunked transfer encoding has been added to the HTTP protocol
       version 1.1.  Unless the HTTP server is known to handle HTTP 1.1,
@@ -303,7 +311,7 @@ HTTPConnection Objects
       :class:`str` or bytes-like object that is not also a file as the
       body representation.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       *body* can now be an iterable.
 
    .. versionchanged:: 3.6
@@ -344,12 +352,19 @@ HTTPConnection Objects
    Set the host and the port for HTTP Connect Tunnelling. This allows running
    the connection through a proxy server.
 
-   The host and port arguments specify the endpoint of the tunneled connection
+   The *host* and *port* arguments specify the endpoint of the tunneled connection
    (i.e. the address included in the CONNECT request, *not* the address of the
    proxy server).
 
-   The headers argument should be a mapping of extra HTTP headers to send with
+   The *headers* argument should be a mapping of extra HTTP headers to send with
    the CONNECT request.
+
+   As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
+   <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
+   header must be provided, matching the authority-form of the request target
+   provided as the destination for the CONNECT request. If a HTTP ``Host:``
+   header is not provided via the headers argument, one is generated and
+   transmitted automatically.
 
    For example, to tunnel through a HTTPS proxy server running locally on port
    8080, we would pass the address of the proxy to the :class:`HTTPSConnection`
@@ -362,6 +377,22 @@ HTTPConnection Objects
       >>> conn.request("HEAD","/index.html")
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.12
+      HTTP CONNECT tunnelling requests use protocol HTTP/1.1, upgraded from
+      protocol HTTP/1.0. ``Host:`` HTTP headers are mandatory for HTTP/1.1, so
+      one will be automatically generated and transmitted if not provided in
+      the headers argument.
+
+
+.. method:: HTTPConnection.get_proxy_response_headers()
+
+   Returns a dictionary with the headers of the response received from
+   the proxy server to the CONNECT request.
+
+   If the CONNECT request was not sent, the method returns ``None``.
+
+   .. versionadded:: 3.12
 
 
 .. method:: HTTPConnection.connect()
@@ -385,7 +416,7 @@ HTTPConnection Objects
    .. versionadded:: 3.7
 
 
-As an alternative to using the :meth:`request` method described above, you can
+As an alternative to using the :meth:`~HTTPConnection.request` method described above, you can
 also send your request step by step, by using the four functions below.
 
 
@@ -430,9 +461,8 @@ also send your request step by step, by using the four functions below.
       This is to avoid premature termination of the read of the request by
       the target server due to malformed encoding.
 
-   .. versionadded:: 3.6
-      Chunked encoding support.  The *encode_chunked* parameter was
-      added.
+   .. versionchanged:: 3.6
+      Added chunked encoding support and the *encode_chunked* parameter.
 
 
 .. method:: HTTPConnection.send(data)
@@ -530,7 +560,7 @@ statement.
    .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.headers`.
 
-.. method:: HTTPResponse.getstatus()
+.. method:: HTTPResponse.getcode()
 
    .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.status`.
@@ -616,6 +646,8 @@ method attribute. Here is an example session that uses the ``PUT`` method::
 
 HTTPMessage Objects
 -------------------
+
+.. class:: HTTPMessage(email.message.Message)
 
 An :class:`http.client.HTTPMessage` instance holds the headers from an HTTP
 response.  It is implemented using the :class:`email.message.Message` class.

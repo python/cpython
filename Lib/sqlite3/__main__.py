@@ -62,7 +62,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         return False
 
 
-def main():
+def main(*args):
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
         prog="python -m sqlite3",
@@ -86,7 +86,7 @@ def main():
         version=f"SQLite version {sqlite3.sqlite_version}",
         help="Print underlying SQLite library version",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(*args)
 
     if args.filename == ":memory:":
         db_name = "a transient in-memory database"
@@ -94,12 +94,16 @@ def main():
         db_name = repr(args.filename)
 
     # Prepare REPL banner and prompts.
+    if sys.platform == "win32" and "idlelib.run" not in sys.modules:
+        eofkey = "CTRL-Z"
+    else:
+        eofkey = "CTRL-D"
     banner = dedent(f"""
         sqlite3 shell, running on SQLite version {sqlite3.sqlite_version}
         Connected to {db_name}
 
         Each command will be run using execute() on the cursor.
-        Type ".help" for more information; type ".quit" or CTRL-D to quit.
+        Type ".help" for more information; type ".quit" or {eofkey} to quit.
     """).strip()
     sys.ps1 = "sqlite> "
     sys.ps2 = "    ... "
@@ -112,9 +116,16 @@ def main():
         else:
             # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con)
+            try:
+                import readline  # noqa: F401
+            except ImportError:
+                pass
             console.interact(banner, exitmsg="")
     finally:
         con.close()
 
+    sys.exit(0)
 
-main()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

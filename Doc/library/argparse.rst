@@ -1,5 +1,5 @@
-:mod:`argparse` --- Parser for command-line options, arguments and sub-commands
-===============================================================================
+:mod:`!argparse` --- Parser for command-line options, arguments and sub-commands
+================================================================================
 
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
@@ -31,12 +31,12 @@ Core Functionality
 
 The :mod:`argparse` module's support for command-line interfaces is built
 around an instance of :class:`argparse.ArgumentParser`.  It is a container for
-argument specifications and has options that apply the parser as whole::
+argument specifications and has options that apply to the parser as whole::
 
    parser = argparse.ArgumentParser(
-                       prog = 'ProgramName',
-                       description = 'What the program does',
-                       epilog = 'Text at the bottom of help')
+                       prog='ProgramName',
+                       description='What the program does',
+                       epilog='Text at the bottom of help')
 
 The :meth:`ArgumentParser.add_argument` method attaches individual argument
 specifications to the parser.  It supports positional arguments, options that
@@ -57,20 +57,20 @@ the extracted data in a :class:`argparse.Namespace` object::
 Quick Links for add_argument()
 ------------------------------
 
-====================== =========================================================== ==========================================================================================================================
-Name                   Description                                                 Values
-====================== =========================================================== ==========================================================================================================================
-action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
-const_                 Store a constant value
-default_               Default value used when an argument is not provided         Defaults to ``None``
-dest_                  Specify the attribute name used in the result namespace
-help_                  Help message for an argument
-metavar_               Alternate display name for the argument as shown in help
-nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, ``'+'``, or ``argparse.REMAINDER``
-required_              Indicate whether an argument is required or optional        ``True`` or ``False``
-type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
-====================== =========================================================== ==========================================================================================================================
+============================ =========================================================== ==========================================================================================================================
+Name                         Description                                                 Values
+============================ =========================================================== ==========================================================================================================================
+action_                      Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
+choices_                     Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
+const_                       Store a constant value
+default_                     Default value used when an argument is not provided         Defaults to ``None``
+dest_                        Specify the attribute name used in the result namespace
+help_                        Help message for an argument
+metavar_                     Alternate display name for the argument as shown in help
+nargs_                       Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, or ``'+'``
+required_                    Indicate whether an argument is required or optional        ``True`` or ``False``
+:ref:`type <argparse-type>`  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
+============================ =========================================================== ==========================================================================================================================
 
 
 Example
@@ -565,6 +565,7 @@ arguments they contain.  For example::
 
    >>> with open('args.txt', 'w', encoding=sys.getfilesystemencoding()) as fp:
    ...     fp.write('-f\nbar')
+   ...
    >>> parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
    >>> parser.add_argument('-f')
    >>> parser.parse_args(['-f', 'foo', '@args.txt'])
@@ -584,7 +585,7 @@ arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
    :class:`ArgumentParser` changed encoding and errors to read arguments files
-   from default (e.g. :func:`locale.getpreferredencoding(False)` and
+   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
    ``"strict"``) to :term:`filesystem encoding and error handler`.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
@@ -744,7 +745,7 @@ The add_argument() method
 
 .. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], \
                            [const], [default], [type], [choices], [required], \
-                           [help], [metavar], [dest])
+                           [help], [metavar], [dest], [deprecated])
 
    Define how a single command-line argument should be parsed.  Each parameter
    has its own more detailed description below, but in short they are:
@@ -764,7 +765,7 @@ The add_argument() method
 
    * type_ - The type to which the command-line argument should be converted.
 
-   * choices_ - A container of the allowable values for the argument.
+   * choices_ - A sequence of the allowable values for the argument.
 
    * required_ - Whether or not the command-line option may be omitted
      (optionals only).
@@ -775,6 +776,8 @@ The add_argument() method
 
    * dest_ - The name of the attribute to be added to the object returned by
      :meth:`parse_args`.
+
+   * deprecated_ - Whether or not use of the argument is deprecated.
 
 The following sections describe how each of these are used.
 
@@ -1131,7 +1134,7 @@ command-line argument was not present::
    Namespace(foo='1')
 
 
-.. _type:
+.. _argparse-type:
 
 type
 ^^^^
@@ -1190,7 +1193,7 @@ done downstream after the arguments are parsed.
 For example, JSON or YAML conversions have complex error cases that require
 better reporting than can be given by the ``type`` keyword.  A
 :exc:`~json.JSONDecodeError` would not be well formatted and a
-:exc:`FileNotFound` exception would not be handled at all.
+:exc:`FileNotFoundError` exception would not be handled at all.
 
 Even :class:`~argparse.FileType` has its limitations for use with the ``type``
 keyword.  If one argument uses *FileType* and then a subsequent argument fails,
@@ -1208,7 +1211,7 @@ choices
 ^^^^^^^
 
 Some command-line arguments should be selected from a restricted set of values.
-These can be handled by passing a container object as the *choices* keyword
+These can be handled by passing a sequence object as the *choices* keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
 if the argument was not one of the acceptable values::
@@ -1222,9 +1225,9 @@ if the argument was not one of the acceptable values::
    game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
    'paper', 'scissors')
 
-Note that inclusion in the *choices* container is checked after any type_
+Note that inclusion in the *choices* sequence is checked after any type_
 conversions have been performed, so the type of the objects in the *choices*
-container should match the type_ specified::
+sequence should match the type_ specified::
 
    >>> parser = argparse.ArgumentParser(prog='doors.py')
    >>> parser.add_argument('door', type=int, choices=range(1, 4))
@@ -1234,8 +1237,8 @@ container should match the type_ specified::
    usage: doors.py [-h] {1,2,3}
    doors.py: error: argument door: invalid choice: 4 (choose from 1, 2, 3)
 
-Any container can be passed as the *choices* value, so :class:`list` objects,
-:class:`set` objects, and custom containers are all supported.
+Any sequence can be passed as the *choices* value, so :class:`list` objects,
+:class:`tuple` objects, and custom sequences are all supported.
 
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
@@ -1438,13 +1441,41 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
+
+.. _deprecated:
+
+deprecated
+^^^^^^^^^^
+
+During a project's lifetime, some arguments may need to be removed from the
+command line. Before removing them, you should inform
+your users that the arguments are deprecated and will be removed.
+The ``deprecated`` keyword argument of
+:meth:`~ArgumentParser.add_argument`, which defaults to ``False``,
+specifies if the argument is deprecated and will be removed
+in the future.
+For arguments, if ``deprecated`` is ``True``, then a warning will be
+printed to standard error when the argument is used::
+
+   >>> import argparse
+   >>> parser = argparse.ArgumentParser(prog='snake.py')
+   >>> parser.add_argument('--legs', default=0, type=int, deprecated=True)
+   >>> parser.parse_args([])
+   Namespace(legs=0)
+   >>> parser.parse_args(['--legs', '4'])  # doctest: +SKIP
+   snake.py: warning: option '--legs' is deprecated
+   Namespace(legs=4)
+
+.. versionchanged:: 3.13
+
+
 Action classes
 ^^^^^^^^^^^^^^
 
 Action classes implement the Action API, a callable which returns a callable
 which processes arguments from the command-line. Any object which follows
 this API may be passed as the ``action`` parameter to
-:meth:`add_argument`.
+:meth:`~ArgumentParser.add_argument`.
 
 .. class:: Action(option_strings, dest, nargs=None, const=None, default=None, \
                   type=None, choices=None, required=False, help=None, \
@@ -1722,7 +1753,7 @@ Sub-commands
    :class:`ArgumentParser` supports the creation of such sub-commands with the
    :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
-   has a single method, :meth:`~ArgumentParser.add_parser`, which takes a
+   has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
    command name and any :class:`ArgumentParser` constructor arguments, and
    returns an :class:`ArgumentParser` object that can be modified as usual.
 
@@ -1788,7 +1819,7 @@ Sub-commands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to :meth:`add_parser` as above.)
+   to :meth:`~_SubParsersAction.add_parser` as above.)
 
    ::
 
@@ -1841,7 +1872,8 @@ Sub-commands
 
        {foo,bar}   additional help
 
-   Furthermore, ``add_parser`` supports an additional ``aliases`` argument,
+   Furthermore, :meth:`~_SubParsersAction.add_parser` supports an additional
+   *aliases* argument,
    which allows multiple strings to refer to the same subparser. This example,
    like ``svn``, aliases ``co`` as a shorthand for ``checkout``::
 
@@ -1851,6 +1883,20 @@ Sub-commands
      >>> checkout.add_argument('foo')
      >>> parser.parse_args(['co', 'bar'])
      Namespace(foo='bar')
+
+   :meth:`~_SubParsersAction.add_parser` supports also an additional
+   *deprecated* argument, which allows to deprecate the subparser.
+
+      >>> import argparse
+      >>> parser = argparse.ArgumentParser(prog='chicken.py')
+      >>> subparsers = parser.add_subparsers()
+      >>> run = subparsers.add_parser('run')
+      >>> fly = subparsers.add_parser('fly', deprecated=True)
+      >>> parser.parse_args(['fly'])  # doctest: +SKIP
+      chicken.py: warning: command 'fly' is deprecated
+      Namespace()
+
+   .. versionadded:: 3.13
 
    One particularly effective way of handling sub-commands is to combine the use
    of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
@@ -1866,7 +1912,7 @@ Sub-commands
      ...
      >>> # create the top-level parser
      >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers()
+     >>> subparsers = parser.add_subparsers(required=True)
      >>>
      >>> # create the parser for the "foo" command
      >>> parser_foo = subparsers.add_parser('foo')
@@ -1935,8 +1981,8 @@ FileType objects
       >>> parser.parse_args(['-'])
       Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
 
-   .. versionadded:: 3.4
-      The *encodings* and *errors* keyword arguments.
+   .. versionchanged:: 3.4
+      Added the *encodings* and *errors* parameters.
 
 
 Argument groups
@@ -1945,7 +1991,7 @@ Argument groups
 .. method:: ArgumentParser.add_argument_group(title=None, description=None)
 
    By default, :class:`ArgumentParser` groups command-line arguments into
-   "positional arguments" and "optional arguments" when displaying help
+   "positional arguments" and "options" when displaying help
    messages. When there is a better conceptual grouping of arguments than this
    default one, appropriate groups can be created using the
    :meth:`add_argument_group` method::
@@ -2156,7 +2202,7 @@ the populated namespace and the list of remaining argument strings.
 
 .. warning::
    :ref:`Prefix matching <prefix-matching>` rules apply to
-   :meth:`parse_known_args`. The parser may consume an option even if it's just
+   :meth:`~ArgumentParser.parse_known_args`. The parser may consume an option even if it's just
    a prefix of one of its known options, instead of leaving it in the remaining
    arguments list.
 
@@ -2217,7 +2263,7 @@ support this parsing style.
 
 These parsers do not support all the argparse features, and will raise
 exceptions if unsupported features are used.  In particular, subparsers,
-``argparse.REMAINDER``, and mutually exclusive groups that include both
+and mutually exclusive groups that include both
 optionals and positionals are not supported.
 
 The following example shows the difference between
@@ -2294,3 +2340,17 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 
 * Replace the OptionParser constructor ``version`` argument with a call to
   ``parser.add_argument('--version', action='version', version='<the version>')``.
+
+Exceptions
+----------
+
+.. exception:: ArgumentError
+
+   An error from creating or using an argument (optional or positional).
+
+   The string value of this exception is the message, augmented with
+   information about the argument that caused it.
+
+.. exception:: ArgumentTypeError
+
+   Raised when something goes wrong converting a command line string to a type.

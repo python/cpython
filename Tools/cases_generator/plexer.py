@@ -1,9 +1,10 @@
 import lexer as lx
+
 Token = lx.Token
 
 
 class PLexer:
-    def __init__(self, src: str, filename: str|None = None):
+    def __init__(self, src: str, filename: str):
         self.src = src
         self.filename = filename
         self.tokens = list(lx.tokenize(self.src, filename=filename))
@@ -64,7 +65,9 @@ class PLexer:
         tkn = self.next()
         if tkn is not None and tkn.kind == kind:
             return tkn
-        raise self.make_syntax_error(f"Expected {kind!r} but got {tkn and tkn.text!r}", tkn)
+        raise self.make_syntax_error(
+            f"Expected {kind!r} but got {tkn and tkn.text!r}", tkn
+        )
 
     def extract_line(self, lineno: int) -> str:
         # Return source line `lineno` (1-based)
@@ -73,32 +76,35 @@ class PLexer:
             return ""
         return lines[lineno - 1]
 
-    def make_syntax_error(self, message: str, tkn: Token|None = None) -> SyntaxError:
+    def make_syntax_error(self, message: str, tkn: Token | None = None) -> SyntaxError:
         # Construct a SyntaxError instance from message and token
         if tkn is None:
             tkn = self.peek()
         if tkn is None:
             tkn = self.tokens[-1]
-        return lx.make_syntax_error(message,
-            self.filename, tkn.line, tkn.column, self.extract_line(tkn.line))
+        return lx.make_syntax_error(
+            message, self.filename, tkn.line, tkn.column, self.extract_line(tkn.line)
+        )
 
 
 if __name__ == "__main__":
     import sys
+
     if sys.argv[1:]:
         filename = sys.argv[1]
         if filename == "-c" and sys.argv[2:]:
             src = sys.argv[2]
-            filename = None
+            filename = "<string>"
         else:
             with open(filename) as f:
                 src = f.read()
     else:
-        filename = None
+        filename = "<default>"
         src = "if (x) { x.foo; // comment\n}"
     p = PLexer(src, filename)
     while not p.eof():
         tok = p.next(raw=True)
+        assert tok
         left = repr(tok)
         right = lx.to_text([tok]).rstrip()
         print(f"{left:40.40} {right}")

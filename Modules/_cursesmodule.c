@@ -104,8 +104,6 @@ static const char PyCursesVersion[] = "2.2";
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_structseq.h"     // _PyStructSequence_NewType()
@@ -130,7 +128,7 @@ static const char PyCursesVersion[] = "2.2";
 #include <langinfo.h>
 #endif
 
-#if !defined(HAVE_NCURSES_H) && (defined(sgi) || defined(__sun) || defined(SCO5))
+#if !defined(NCURSES_VERSION) && (defined(sgi) || defined(__sun) || defined(SCO5))
 #define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
@@ -235,13 +233,20 @@ static int
 PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
 {
     long value;
-    if(PyBytes_Check(obj) && PyBytes_Size(obj) == 1) {
+    if (PyBytes_Check(obj)) {
+        if (PyBytes_GET_SIZE(obj) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "expect int or bytes or str of length 1, "
+                         "got a bytes of length %zd",
+                         PyBytes_GET_SIZE(obj));
+            return 0;
+        }
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_GetLength(obj) != 1) {
+        if (PyUnicode_GET_LENGTH(obj) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect bytes or str of length 1, or int, "
+                         "expect int or bytes or str of length 1, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -274,7 +279,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
+                     "expect int or bytes or str of length 1, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
@@ -317,7 +322,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
 #ifdef HAVE_NCURSESW
         if (PyUnicode_AsWideChar(obj, buffer, 2) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect bytes or str of length 1, or int, "
+                         "expect int or bytes or str of length 1, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -328,7 +333,14 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
         return PyCurses_ConvertToChtype(win, obj, ch);
 #endif
     }
-    else if(PyBytes_Check(obj) && PyBytes_Size(obj) == 1) {
+    else if (PyBytes_Check(obj)) {
+        if (PyBytes_GET_SIZE(obj) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "expect int or bytes or str of length 1, "
+                         "got a bytes of length %zd",
+                         PyBytes_GET_SIZE(obj));
+            return 0;
+        }
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyLong_CheckExact(obj)) {
@@ -342,7 +354,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
+                     "expect int or bytes or str of length 1, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
@@ -389,8 +401,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
 #endif
     }
     else if (PyBytes_Check(obj)) {
-        Py_INCREF(obj);
-        *bytes = obj;
+        *bytes = Py_NewRef(obj);
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
             Py_DECREF(obj);
@@ -1159,8 +1170,10 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 #endif
 
 #if defined(HAVE_CURSES_IS_PAD)
+// is_pad() is defined, either as a macro or as a function
 #define py_is_pad(win)      is_pad(win)
 #elif defined(WINDOW_HAS_FLAGS)
+// is_pad() is not defined, but we can inspect WINDOW structure members
 #define py_is_pad(win)      ((win) ? ((win)->_flags & _ISPAD) != 0 : FALSE)
 #endif
 
@@ -2372,7 +2385,7 @@ _curses.window.touchline
     start: int
     count: int
     [
-    changed: bool(accept={int}) = True
+    changed: bool = True
     ]
     /
 
@@ -2385,7 +2398,7 @@ as having been changed (changed=True) or unchanged (changed=False).
 static PyObject *
 _curses_window_touchline_impl(PyCursesWindowObject *self, int start,
                               int count, int group_right_1, int changed)
-/*[clinic end generated code: output=65d05b3f7438c61d input=918ad1cbdadf93ea]*/
+/*[clinic end generated code: output=65d05b3f7438c61d input=a98aa4f79b6be845]*/
 {
     if (!group_right_1) {
         return PyCursesCheckERR(touchline(self->win, start, count), "touchline");
@@ -2707,7 +2720,7 @@ NoArgTrueFalseFunctionBody(can_change_color)
 /*[clinic input]
 _curses.cbreak
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling nocbreak().
     /
 
@@ -2722,7 +2735,7 @@ Calling first raw() then cbreak() leaves the terminal in cbreak mode.
 
 static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=9f9dee9664769751 input=150be619eb1f1458]*/
+/*[clinic end generated code: output=9f9dee9664769751 input=c7d0bddda93016c1]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
 /*[clinic input]
@@ -2871,7 +2884,7 @@ NoArgNoReturnFunctionBody(doupdate)
 /*[clinic input]
 _curses.echo
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noecho().
     /
 
@@ -2882,7 +2895,7 @@ In echo mode, each character input is echoed to the screen as it is entered.
 
 static PyObject *
 _curses_echo_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=03acb2ddfa6c8729 input=2e9e891d637eac5d]*/
+/*[clinic end generated code: output=03acb2ddfa6c8729 input=86cd4d5bb1d569c0]*/
 NoArgOrFlagNoReturnFunctionBody(echo, flag)
 
 /*[clinic input]
@@ -3072,8 +3085,8 @@ _curses_getwin(PyObject *module, PyObject *file)
     }
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
-        Py_DECREF(data);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(data);
         goto error;
     }
     Py_DECREF(data);
@@ -3497,14 +3510,14 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 /*[clinic input]
 _curses.intrflush
 
-    flag: bool(accept={int})
+    flag: bool
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _curses_intrflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=c1986df35e999a0f input=fcba57bb28dfd795]*/
+/*[clinic end generated code: output=c1986df35e999a0f input=c65fe2ef973fe40a]*/
 {
     PyCursesInitialised;
 
@@ -3606,7 +3619,7 @@ NoArgReturnStringFunctionBody(longname)
 /*[clinic input]
 _curses.meta
 
-    yes: bool(accept={int})
+    yes: bool
     /
 
 Enable/disable meta keys.
@@ -3617,7 +3630,7 @@ allow only 7-bit characters.
 
 static PyObject *
 _curses_meta_impl(PyObject *module, int yes)
-/*[clinic end generated code: output=22f5abda46a605d8 input=af9892e3a74f35db]*/
+/*[clinic end generated code: output=22f5abda46a605d8 input=cfe7da79f51d0e30]*/
 {
     PyCursesInitialised;
 
@@ -3676,7 +3689,7 @@ _curses_mousemask_impl(PyObject *module, unsigned long newmask)
 #endif
 
 /*[clinic input]
-_curses.napms
+_curses.napms -> int
 
     ms: int
         Duration in milliseconds.
@@ -3685,13 +3698,13 @@ _curses.napms
 Sleep for specified time.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _curses_napms_impl(PyObject *module, int ms)
-/*[clinic end generated code: output=a40a1da2e39ea438 input=20cd3af2b6900f56]*/
+/*[clinic end generated code: output=5f292a6a724491bd input=c6d6e01f2f1df9f7]*/
 {
     PyCursesInitialised;
 
-    return Py_BuildValue("i", napms(ms));
+    return napms(ms);
 }
 
 
@@ -3767,7 +3780,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
 /*[clinic input]
 _curses.nl
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling nonl().
     /
 
@@ -3779,7 +3792,7 @@ newline into return and line-feed on output.  Newline mode is initially on.
 
 static PyObject *
 _curses_nl_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b39cc0ffc9015003 input=cf36a63f7b86e28a]*/
+/*[clinic end generated code: output=b39cc0ffc9015003 input=18e3e9c6e8cfcf6f]*/
 NoArgOrFlagNoReturnFunctionBody(nl, flag)
 
 /*[clinic input]
@@ -3926,7 +3939,7 @@ _curses_putp_impl(PyObject *module, const char *string)
 /*[clinic input]
 _curses.qiflush
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noqiflush().
     /
 
@@ -3938,7 +3951,7 @@ will be flushed when the INTR, QUIT and SUSP characters are read.
 
 static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=9167e862f760ea30 input=e9e4a389946a0dbc]*/
+/*[clinic end generated code: output=9167e862f760ea30 input=6ec8b3e2b717ec40]*/
 {
     PyCursesInitialised;
 
@@ -4019,7 +4032,7 @@ _curses_update_lines_cols_impl(PyObject *module)
 /*[clinic input]
 _curses.raw
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noraw().
     /
 
@@ -4032,7 +4045,7 @@ curses input functions one by one.
 
 static PyObject *
 _curses_raw_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=a750e4b342be015b input=e36d8db27832b848]*/
+/*[clinic end generated code: output=a750e4b342be015b input=4b447701389fb4df]*/
 NoArgOrFlagNoReturnFunctionBody(raw, flag)
 
 /*[clinic input]
@@ -4444,7 +4457,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
         wchar_t buffer[2];
         if (PyUnicode_AsWideChar(obj, buffer, 2) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect str of length 1 or int, "
+                         "expect int or str of length 1, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -4471,7 +4484,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect str of length 1 or int, got %s",
+                     "expect int or str of length 1, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
@@ -4504,7 +4517,7 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 /*[clinic input]
 _curses.use_env
 
-    flag: bool(accept={int})
+    flag: bool
     /
 
 Use environment variables LINES and COLUMNS.
@@ -4521,7 +4534,7 @@ not set).
 
 static PyObject *
 _curses_use_env_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b2c445e435c0b164 input=1778eb1e9151ea37]*/
+/*[clinic end generated code: output=b2c445e435c0b164 input=06ac30948f2d78e4]*/
 {
     use_env(flag);
     Py_RETURN_NONE;
@@ -4589,7 +4602,14 @@ make_ncurses_version(PyTypeObject *type)
     if (ncurses_version == NULL) {
         return NULL;
     }
-
+    const char *str = curses_version();
+    unsigned long major = 0, minor = 0, patch = 0;
+    if (!str || sscanf(str, "%*[^0-9]%lu.%lu.%lu", &major, &minor, &patch) < 3) {
+        // Fallback to header version, which cannot be that wrong
+        major = NCURSES_VERSION_MAJOR;
+        minor = NCURSES_VERSION_MINOR;
+        patch = NCURSES_VERSION_PATCH;
+    }
 #define SetIntItem(flag) \
     PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
     if (PyErr_Occurred()) { \
@@ -4597,9 +4617,9 @@ make_ncurses_version(PyTypeObject *type)
         return NULL; \
     }
 
-    SetIntItem(NCURSES_VERSION_MAJOR)
-    SetIntItem(NCURSES_VERSION_MINOR)
-    SetIntItem(NCURSES_VERSION_PATCH)
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(patch)
 #undef SetIntItem
 
     return ncurses_version;
@@ -4746,6 +4766,9 @@ PyInit__curses(void)
     m = PyModule_Create(&_cursesmodule);
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);

@@ -43,7 +43,6 @@ class Future:
     - This class is not compatible with the wait() and as_completed()
       methods in the concurrent.futures package.
 
-    (In Python 3.4 or later we may be able to unify the implementations.)
     """
 
     # Class variables serving as defaults for instance variables.
@@ -61,7 +60,7 @@ class Future:
     #   the Future protocol (i.e. is intended to be duck-type compatible).
     #   The value must also be not-None, to enable a subclass to declare
     #   that it is not compatible by setting this to None.
-    # - It is set by __iter__() below so that Task._step() can tell
+    # - It is set by __iter__() below so that Task.__step() can tell
     #   the difference between
     #   `await Future()` or`yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
@@ -77,7 +76,7 @@ class Future:
         the default event loop.
         """
         if loop is None:
-            self._loop = events._get_event_loop()
+            self._loop = events.get_event_loop()
         else:
             self._loop = loop
         self._callbacks = []
@@ -138,9 +137,6 @@ class Future:
             exc = exceptions.CancelledError()
         else:
             exc = exceptions.CancelledError(self._cancel_message)
-        exc.__context__ = self._cancelled_exc
-        # Remove the reference since we don't need this anymore.
-        self._cancelled_exc = None
         return exc
 
     def cancel(self, msg=None):
@@ -272,9 +268,13 @@ class Future:
             raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
         if isinstance(exception, type):
             exception = exception()
-        if type(exception) is StopIteration:
-            raise TypeError("StopIteration interacts badly with generators "
-                            "and cannot be raised into a Future")
+        if isinstance(exception, StopIteration):
+            new_exc = RuntimeError("StopIteration interacts badly with "
+                                   "generators and cannot be raised into a "
+                                   "Future")
+            new_exc.__cause__ = exception
+            new_exc.__context__ = exception
+            exception = new_exc
         self._exception = exception
         self._exception_tb = exception.__traceback__
         self._state = _FINISHED
@@ -318,11 +318,9 @@ def _set_result_unless_cancelled(fut, result):
 def _convert_future_exc(exc):
     exc_class = type(exc)
     if exc_class is concurrent.futures.CancelledError:
-        return exceptions.CancelledError(*exc.args)
-    elif exc_class is concurrent.futures.TimeoutError:
-        return exceptions.TimeoutError(*exc.args)
+        return exceptions.CancelledError(*exc.args).with_traceback(exc.__traceback__)
     elif exc_class is concurrent.futures.InvalidStateError:
-        return exceptions.InvalidStateError(*exc.args)
+        return exceptions.InvalidStateError(*exc.args).with_traceback(exc.__traceback__)
     else:
         return exc
 
@@ -413,7 +411,7 @@ def wrap_future(future, *, loop=None):
     assert isinstance(future, concurrent.futures.Future), \
         f'concurrent.futures.Future is expected, got {future!r}'
     if loop is None:
-        loop = events._get_event_loop()
+        loop = events.get_event_loop()
     new_future = loop.create_future()
     _chain_future(future, new_future)
     return new_future

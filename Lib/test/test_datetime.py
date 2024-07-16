@@ -1,5 +1,6 @@
 import unittest
 import sys
+import functools
 
 from test.support.import_helper import import_fresh_module
 
@@ -8,10 +9,12 @@ TESTS = 'test.datetimetester'
 
 def load_tests(loader, tests, pattern):
     try:
-        pure_tests = import_fresh_module(TESTS, fresh=['datetime', '_strptime'],
-                                        blocked=['_datetime'])
-        fast_tests = import_fresh_module(TESTS, fresh=['datetime',
-                                                    '_datetime', '_strptime'])
+        pure_tests = import_fresh_module(TESTS,
+                                         fresh=['datetime', '_pydatetime', '_strptime'],
+                                         blocked=['_datetime'])
+        fast_tests = import_fresh_module(TESTS,
+                                         fresh=['datetime', '_strptime'],
+                                         blocked=['_pydatetime'])
     finally:
         # XXX: import_fresh_module() is supposed to leave sys.module cache untouched,
         # XXX: but it does not, so we have to cleanup ourselves.
@@ -37,19 +40,26 @@ def load_tests(loader, tests, pattern):
         for cls in test_classes:
             cls.__name__ += suffix
             cls.__qualname__ += suffix
-            @classmethod
-            def setUpClass(cls_, module=module):
-                cls_._save_sys_modules = sys.modules.copy()
-                sys.modules[TESTS] = module
-                sys.modules['datetime'] = module.datetime_module
-                sys.modules['_strptime'] = module._strptime
-            @classmethod
-            def tearDownClass(cls_):
-                sys.modules.clear()
-                sys.modules.update(cls_._save_sys_modules)
-            cls.setUpClass = setUpClass
-            cls.tearDownClass = tearDownClass
-            tests.addTests(loader.loadTestsFromTestCase(cls))
+
+            @functools.wraps(cls, updated=())
+            class Wrapper(cls):
+                @classmethod
+                def setUpClass(cls_, module=module):
+                    cls_._save_sys_modules = sys.modules.copy()
+                    sys.modules[TESTS] = module
+                    sys.modules['datetime'] = module.datetime_module
+                    if hasattr(module, '_pydatetime'):
+                        sys.modules['_pydatetime'] = module._pydatetime
+                    sys.modules['_strptime'] = module._strptime
+                    super().setUpClass()
+
+                @classmethod
+                def tearDownClass(cls_):
+                    super().tearDownClass()
+                    sys.modules.clear()
+                    sys.modules.update(cls_._save_sys_modules)
+
+            tests.addTests(loader.loadTestsFromTestCase(Wrapper))
     return tests
 
 

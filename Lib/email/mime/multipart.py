@@ -9,7 +9,6 @@ __all__ = ['MIMEMultipart']
 from email.mime.base import MIMEBase
 
 
-
 class MIMEMultipart(MIMEBase):
     """Base class for MIME multipart/* type messages."""
 
@@ -22,7 +21,7 @@ class MIMEMultipart(MIMEBase):
         Content-Type and MIME-Version headers.
 
         _subtype is the subtype of the multipart content type, defaulting to
-        `mixed'.
+        'mixed'.
 
         boundary is the multipart boundary string.  By default it is
         calculated as needed.

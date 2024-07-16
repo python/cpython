@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 
-#define COMMON_FIELDS(PREFIX) \
+#define _Py_COMMON_FIELDS(PREFIX) \
     PyObject *PREFIX ## globals; \
     PyObject *PREFIX ## builtins; \
     PyObject *PREFIX ## name; \
@@ -19,7 +19,7 @@ extern "C" {
     PyObject *PREFIX ## closure;     /* NULL or a tuple of cell objects */
 
 typedef struct {
-    COMMON_FIELDS(fc_)
+    _Py_COMMON_FIELDS(fc_)
 } PyFrameConstructor;
 
 /* Function objects and code objects should not be confused with each other:
@@ -35,12 +35,14 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    COMMON_FIELDS(func_)
+    _Py_COMMON_FIELDS(func_)
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
+    PyObject *func_annotate;    /* Callable to fill the annotations dictionary */
+    PyObject *func_typeparams;  /* Tuple of active type variables or NULL */
     vectorcallfunc vectorcall;
     /* Version number for use by specializer.
      * Can set to non-zero when we want to specialize.
@@ -58,6 +60,8 @@ typedef struct {
      *     (func_closure may be NULL if PyCode_GetNumFree(func_code) == 0).
      */
 } PyFunctionObject;
+
+#undef _Py_COMMON_FIELDS
 
 PyAPI_DATA(PyTypeObject) PyFunction_Type;
 
@@ -77,12 +81,6 @@ PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
-
-PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
-    PyObject *func,
-    PyObject *const *stack,
-    size_t nargsf,
-    PyObject *kwnames);
 
 #define _PyFunction_CAST(func) \
     (assert(PyFunction_Check(func)), _Py_CAST(PyFunctionObject*, func))
@@ -130,6 +128,55 @@ PyAPI_DATA(PyTypeObject) PyStaticMethod_Type;
 
 PyAPI_FUNC(PyObject *) PyClassMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
+
+#define PY_FOREACH_FUNC_EVENT(V) \
+    V(CREATE)                    \
+    V(DESTROY)                   \
+    V(MODIFY_CODE)               \
+    V(MODIFY_DEFAULTS)           \
+    V(MODIFY_KWDEFAULTS)
+
+typedef enum {
+    #define PY_DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,
+    PY_FOREACH_FUNC_EVENT(PY_DEF_EVENT)
+    #undef PY_DEF_EVENT
+} PyFunction_WatchEvent;
+
+/*
+ * A callback that is invoked for different events in a function's lifecycle.
+ *
+ * The callback is invoked with a borrowed reference to func, after it is
+ * created and before it is modified or destroyed. The callback should not
+ * modify func.
+ *
+ * When a function's code object, defaults, or kwdefaults are modified the
+ * callback will be invoked with the respective event and new_value will
+ * contain a borrowed reference to the new value that is about to be stored in
+ * the function. Otherwise the third argument is NULL.
+ *
+ * If the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0.
+ */
+typedef int (*PyFunction_WatchCallback)(
+  PyFunction_WatchEvent event,
+  PyFunctionObject *func,
+  PyObject *new_value);
+
+/*
+ * Register a per-interpreter callback that will be invoked for function lifecycle
+ * events.
+ *
+ * Returns a handle that may be passed to PyFunction_ClearWatcher on success,
+ * or -1 and sets an error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyFunction_AddWatcher(PyFunction_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the supplied id.
+ */
+PyAPI_FUNC(int) PyFunction_ClearWatcher(int watcher_id);
 
 #ifdef __cplusplus
 }

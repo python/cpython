@@ -12,24 +12,15 @@
 /* Includes for frozen modules: */
 #include "Python/frozen_modules/importlib._bootstrap.h"
 #include "Python/frozen_modules/importlib._bootstrap_external.h"
+#include "Python/frozen_modules/zipimport.h"
 /* End includes */
-
-/* Empty initializer for deepfrozen modules */
-int _Py_Deepfreeze_Init(void)
-{
-    return 0;
-}
-/* Empty finalizer for deepfrozen modules */
-void
-_Py_Deepfreeze_Fini(void)
-{
-}
 
 /* Note that a negative size indicates a package. */
 
 static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap)},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external)},
+    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
     {0, 0, 0} /* bootstrap sentinel */
 };
 static const struct _frozen stdlib_modules[] = {

@@ -21,10 +21,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "cursor.h"
 #include "microprotocols.h"
 #include "module.h"
 #include "util.h"
+
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 
 typedef enum {
     TYPE_LONG,
@@ -662,6 +668,16 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             return;
         }
         for (i = 0; i < num_params; i++) {
+            const char *name = sqlite3_bind_parameter_name(self->st, i+1);
+            if (name != NULL && name[0] != '?') {
+                PyErr_Format(state->ProgrammingError,
+                        "Binding %d ('%s') is a named parameter, but you "
+                        "supplied a sequence which requires nameless (qmark) "
+                        "placeholders.",
+                        i+1, name);
+                return;
+            }
+
             if (PyTuple_CheckExact(parameters)) {
                 PyObject *item = PyTuple_GET_ITEM(parameters, i);
                 current_param = Py_NewRef(item);
@@ -692,18 +708,16 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyObject *exc, *val, *tb;
-                PyErr_Fetch(&exc, &val, &tb);
+                PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
                 _pysqlite_seterror(state, db);
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
             }
         }
     } else if (PyDict_Check(parameters)) {
         /* parameters passed as dictionary */
         for (i = 1; i <= num_params_needed; i++) {
-            PyObject *binding_name_obj;
             Py_BEGIN_ALLOW_THREADS
             binding_name = sqlite3_bind_parameter_name(self->st, i);
             Py_END_ALLOW_THREADS
@@ -715,17 +729,8 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             }
 
             binding_name++; /* skip first char (the colon) */
-            binding_name_obj = PyUnicode_FromString(binding_name);
-            if (!binding_name_obj) {
-                return;
-            }
-            if (PyDict_CheckExact(parameters)) {
-                PyObject *item = PyDict_GetItemWithError(parameters, binding_name_obj);
-                current_param = Py_XNewRef(item);
-            } else {
-                current_param = PyObject_GetItem(parameters, binding_name_obj);
-            }
-            Py_DECREF(binding_name_obj);
+            PyObject *current_param;
+            (void)PyMapping_GetOptionalItemString(parameters, binding_name, &current_param);
             if (!current_param) {
                 if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_LookupError)) {
                     PyErr_Format(state->ProgrammingError,
@@ -752,11 +757,10 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyObject *exc, *val, *tb;
-                PyErr_Fetch(&exc, &val, &tb);
+                PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
                 _pysqlite_seterror(state, db);
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
            }
         }
@@ -855,7 +859,8 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
-    if (self->connection->isolation_level
+    if (self->connection->autocommit == AUTOCOMMIT_LEGACY
+        && self->connection->isolation_level
         && self->statement->is_dml
         && sqlite3_get_autocommit(self->connection->db))
     {
@@ -1033,7 +1038,9 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
 
     // Commit if needed
     sqlite3 *db = self->connection->db;
-    if (!sqlite3_get_autocommit(db)) {
+    if (self->connection->autocommit == AUTOCOMMIT_LEGACY
+        && !sqlite3_get_autocommit(db))
+    {
         int rc = SQLITE_OK;
 
         Py_BEGIN_ALLOW_THREADS
@@ -1120,8 +1127,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         PyObject *factory = self->row_factory;
         PyObject *args[] = { (PyObject *)self, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
-        Py_DECREF(row);
-        row = new_row;
+        Py_SETREF(row, new_row);
     }
     return row;
 }
@@ -1306,13 +1312,13 @@ static PyMethodDef cursor_methods[] = {
 
 static struct PyMemberDef cursor_members[] =
 {
-    {"connection", T_OBJECT, offsetof(pysqlite_Cursor, connection), READONLY},
-    {"description", T_OBJECT, offsetof(pysqlite_Cursor, description), READONLY},
-    {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
-    {"lastrowid", T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), READONLY},
-    {"rowcount", T_LONG, offsetof(pysqlite_Cursor, rowcount), READONLY},
-    {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), READONLY},
+    {"connection", _Py_T_OBJECT, offsetof(pysqlite_Cursor, connection), Py_READONLY},
+    {"description", _Py_T_OBJECT, offsetof(pysqlite_Cursor, description), Py_READONLY},
+    {"arraysize", Py_T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
+    {"lastrowid", _Py_T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), Py_READONLY},
+    {"rowcount", Py_T_LONG, offsetof(pysqlite_Cursor, rowcount), Py_READONLY},
+    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), Py_READONLY},
     {NULL}
 };
 

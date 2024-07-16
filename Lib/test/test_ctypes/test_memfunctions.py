@@ -1,20 +1,23 @@
 import sys
-from test import support
 import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
+from test import support
+from ctypes import (POINTER, sizeof, cast,
+                    create_string_buffer, string_at,
+                    create_unicode_buffer, wstring_at,
+                    memmove, memset,
+                    c_char_p, c_byte, c_ubyte, c_wchar)
+
 
 class MemFunctionsTest(unittest.TestCase):
-    @unittest.skip('test disabled')
     def test_overflow(self):
         # string_at and wstring_at must use the Python calling
         # convention (which acquires the GIL and checks the Python
         # error flag).  Provoke an error and catch it; see also issue
-        # #3554: <http://bugs.python.org/issue3554>
+        # gh-47804.
         self.assertRaises((OverflowError, MemoryError, SystemError),
-                          lambda: wstring_at(u"foo", sys.maxint - 1))
+                          lambda: wstring_at(u"foo", sys.maxsize - 1))
         self.assertRaises((OverflowError, MemoryError, SystemError),
-                          lambda: string_at("foo", sys.maxint - 1))
+                          lambda: string_at("foo", sys.maxsize - 1))
 
     def test_memmove(self):
         # large buffers apparently increase the chance that the memory
@@ -63,7 +66,6 @@ class MemFunctionsTest(unittest.TestCase):
         self.assertEqual(string_at(b"foo bar", 7), b"foo bar")
         self.assertEqual(string_at(b"foo bar", 3), b"foo")
 
-    @need_symbol('create_unicode_buffer')
     def test_wstring_at(self):
         p = create_unicode_buffer("Hello, World")
         a = create_unicode_buffer(1000000)
@@ -74,6 +76,7 @@ class MemFunctionsTest(unittest.TestCase):
         self.assertEqual(wstring_at(a, 5), "Hello")
         self.assertEqual(wstring_at(a, 16), "Hello, World\0\0\0\0")
         self.assertEqual(wstring_at(a, 0), "")
+
 
 if __name__ == "__main__":
     unittest.main()

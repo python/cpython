@@ -2,7 +2,6 @@ import gc
 import pprint
 import sys
 import unittest
-from test import support
 
 
 class TestGetProfile(unittest.TestCase):
@@ -31,9 +30,9 @@ class HookWatcher:
         if (event == "call"
             or event == "return"
             or event == "exception"):
-            self.add_event(event, frame)
+            self.add_event(event, frame, arg)
 
-    def add_event(self, event, frame=None):
+    def add_event(self, event, frame=None, arg=None):
         """Add an event to the log."""
         if frame is None:
             frame = sys._getframe(1)
@@ -44,7 +43,7 @@ class HookWatcher:
             frameno = len(self.frames)
             self.frames.append(frame)
 
-        self.events.append((frameno, event, ident(frame)))
+        self.events.append((frameno, event, ident(frame), arg))
 
     def get_events(self):
         """Remove calls to add_event()."""
@@ -90,11 +89,16 @@ class ProfileSimulator(HookWatcher):
 
 
 class TestCaseBase(unittest.TestCase):
-    def check_events(self, callable, expected):
+    def check_events(self, callable, expected, check_args=False):
         events = capture_events(callable, self.new_watcher())
-        if events != expected:
-            self.fail("Expected events:\n%s\nReceived events:\n%s"
-                      % (pprint.pformat(expected), pprint.pformat(events)))
+        if check_args:
+            if events != expected:
+                self.fail("Expected events:\n%s\nReceived events:\n%s"
+                          % (pprint.pformat(expected), pprint.pformat(events)))
+        else:
+            if [(frameno, event, ident) for frameno, event, ident, arg in events] != expected:
+                self.fail("Expected events:\n%s\nReceived events:\n%s"
+                          % (pprint.pformat(expected), pprint.pformat(events)))
 
 
 class ProfileHookTestCase(TestCaseBase):
@@ -255,6 +259,21 @@ class ProfileHookTestCase(TestCaseBase):
                               (2, 'return', f_ident),
                               (1, 'return', g_ident),
                               ])
+
+    def test_unfinished_generator(self):
+        def f():
+            for i in range(2):
+                yield i
+        def g(p):
+            next(f())
+
+        f_ident = ident(f)
+        g_ident = ident(g)
+        self.check_events(g, [(1, 'call', g_ident, None),
+                              (2, 'call', f_ident, None),
+                              (2, 'return', f_ident, 0),
+                              (1, 'return', g_ident, None),
+                              ], check_args=True)
 
     def test_stop_iteration(self):
         def f():
@@ -440,7 +459,6 @@ class TestEdgeCases(unittest.TestCase):
         sys.setprofile(foo)
         self.assertEqual(sys.getprofile(), bar)
 
-
     def test_same_object(self):
         def foo(*args):
             ...
@@ -448,6 +466,18 @@ class TestEdgeCases(unittest.TestCase):
         sys.setprofile(foo)
         del foo
         sys.setprofile(sys.getprofile())
+
+    def test_profile_after_trace_opcodes(self):
+        def f():
+            ...
+
+        sys._getframe().f_trace_opcodes = True
+        prev_trace = sys.gettrace()
+        sys.settrace(lambda *args: None)
+        f()
+        sys.settrace(prev_trace)
+        sys.setprofile(lambda *args: None)
+        f()
 
 
 if __name__ == "__main__":
