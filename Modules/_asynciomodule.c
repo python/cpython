@@ -325,10 +325,9 @@ get_event_loop(asyncio_state *state)
     PyObject *policy;
 
     PyThreadState *ts = _PyThreadState_GET();
-    assert(ts->asyncio_running_loop != NULL);
-    loop = Py_NewRef(ts->asyncio_running_loop);
+    loop = Py_XNewRef(ts->asyncio_running_loop);
 
-    if (loop != Py_None) {
+    if (loop != NULL) {
         return loop;
     }
 
@@ -3279,10 +3278,11 @@ static PyObject *
 _asyncio__get_running_loop_impl(PyObject *module)
 /*[clinic end generated code: output=b4390af721411a0a input=0a21627e25a4bd43]*/
 {
-    PyObject *loop;
     PyThreadState *ts = _PyThreadState_GET();
-    assert(ts->asyncio_running_loop != NULL);
-    loop = Py_NewRef(ts->asyncio_running_loop);
+    PyObject *loop = Py_XNewRef(ts->asyncio_running_loop);
+    if (loop == NULL) {
+        Py_RETURN_NONE;
+    }
     return loop;
 }
 
@@ -3302,7 +3302,10 @@ _asyncio__set_running_loop(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=ae56bf7a28ca189a input=4c9720233d606604]*/
 {
     PyThreadState *ts = _PyThreadState_GET();
-    Py_SETREF(ts->asyncio_running_loop, Py_NewRef(loop));
+    if (loop == Py_None) {
+        loop = NULL;
+    }
+    Py_XSETREF(ts->asyncio_running_loop, Py_XNewRef(loop));
     Py_RETURN_NONE;
 }
 
@@ -3341,9 +3344,8 @@ _asyncio_get_running_loop_impl(PyObject *module)
 {
     PyObject *loop;
     PyThreadState *ts = _PyThreadState_GET();
-    assert(ts->asyncio_running_loop != NULL);
-    loop = Py_NewRef(ts->asyncio_running_loop);
-    if (loop == Py_None) {
+    loop = Py_XNewRef(ts->asyncio_running_loop);
+    if (loop == NULL) {
         /* There's no currently running event loop */
         PyErr_SetString(
             PyExc_RuntimeError, "no running event loop");
