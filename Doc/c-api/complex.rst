@@ -27,15 +27,17 @@ pointers.  This is consistent throughout the API.
    number object.  Most of the functions for dealing with complex number objects
    use structures of this type as input or output values, as appropriate.
 
-   * :c:member:`Py_complex.real`
-   * :c:member:`Py_complex.imag`
+   .. c:namespace:: Py_complex
 
-   It is defined as::
+   .. c:member:: double real
+   .. c:member:: double imag
 
-      typedef struct {
-         double real;
-         double imag;
-      } Py_complex;
+      It is defined as::
+
+         typedef struct {
+            double real;
+            double imag;
+         } Py_complex;
 
 
 .. c:function:: Py_complex _Py_c_sum(Py_complex left, Py_complex right)
