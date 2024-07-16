@@ -6,6 +6,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
+#include "pycore_jit.h"           // _export_jit_data
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
@@ -287,6 +288,28 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             );
         }
     }
+
+#ifdef _Py_JIT
+    _export_jit_data(stats);
+
+    for (int i = 0; i < MAX_UOP_ID+1; i++){
+        const char * possible_name = _PyUOpName(i);
+        if (possible_name){
+            fprintf(
+                out,
+                "uops[%s].metadata.code_size : %d\n",
+                possible_name,
+                stats->opcode[i].code_size
+            );
+            fprintf(
+                out,
+                "uops[%s].metadata.data_size : %d\n",
+                possible_name,
+                stats->opcode[i].data_size
+            );
+        }
+    }
+#endif
 }
 #endif
 

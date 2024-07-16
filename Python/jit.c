@@ -16,6 +16,8 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_jit.h"
+#include "pycore_uop_ids.h"
+#include "pystats.h"
 
 // Memory management stuff: ////////////////////////////////////////////////////
 
@@ -391,6 +393,19 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 }
 
 #include "jit_stencils.h"
+
+
+#ifdef Py_STATS
+void
+_export_jit_data(OptimizationStats *stats){
+    for (int i = 0; i < MAX_UOP_ID + 1; i++){
+        if (stencil_groups[i].code_size){
+            stats->opcode[i].code_size = stencil_groups[i].code_size;
+            stats->opcode[i].data_size = stencil_groups[i].data_size;
+        }
+    }
+}
+#endif
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
