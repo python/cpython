@@ -345,7 +345,7 @@ APIs:
    This is the recommended way to allocate a new Unicode object.  Objects
    created using this function are not resizable.
 
-   On failure returns ``NULL`` and sets an exception.
+   On error, set an exception and return ``NULL``.
 
    .. versionadded:: 3.3
 
@@ -534,8 +534,9 @@ APIs:
    Return the length of the Unicode object, in code points.
 
    This function checks that *unicode* is a Unicode object, in contrast to
-   :c:func:`PyUnicode_GET_LENGTH`, which performs no error checking. On error
-   returns ``-1`` and sets an exception.
+   :c:func:`PyUnicode_GET_LENGTH`, which performs no error checking.
+
+   On error, set an exception and return ``-1``.
 
    .. versionadded:: 3.3
 
