@@ -795,8 +795,6 @@ MODULE__POSIXSUBPROCESS_FALSE
 MODULE__POSIXSUBPROCESS_TRUE
 MODULE__PICKLE_FALSE
 MODULE__PICKLE_TRUE
-MODULE__OPCODE_FALSE
-MODULE__OPCODE_TRUE
 MODULE__LSPROF_FALSE
 MODULE__LSPROF_TRUE
 MODULE__JSON_FALSE
@@ -930,6 +928,7 @@ DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 JIT_STENCILS_H
 REGEN_JIT_COMMAND
+ABI_THREAD
 ABIFLAGS
 LN
 MKDIR_P
@@ -981,9 +980,6 @@ IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
-APP_STORE_COMPLIANCE_PATCH_FLAGS
-APP_STORE_COMPLIANCE_PATCH_TARGET
-APP_STORE_COMPLIANCE_PATCH
 INSTALLTARGETS
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
@@ -1079,7 +1075,6 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
-with_app_store_compliance
 with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
@@ -1859,10 +1854,6 @@ Optional Packages:
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
                           Mac/README.rst (default is 'Python')
-  --with-app-store-compliance=[PATCH-FILE]
-                          Enable any patches required for compiliance with app
-                          stores. Optional PATCH-FILE specifies the custom
-                          patch to apply.
   --with-emscripten-target=[browser|node]
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
@@ -4109,7 +4100,7 @@ printf "%s\n" "\"$MACHDEP\"" >&6; }
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -4438,71 +4429,6 @@ fi
 printf "%s\n" "#define _PYTHONFRAMEWORK \"${PYTHONFRAMEWORK}\"" >>confdefs.h
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-app-store-compliance" >&5
-printf %s "checking for --with-app-store-compliance... " >&6; }
-
-# Check whether --with-app_store_compliance was given.
-if test ${with_app_store_compliance+y}
-then :
-  withval=$with_app_store_compliance;
-    case "$withval" in
-    yes)
-      case $ac_sys_system in
-        Darwin|iOS)
-          # iOS is able to share the macOS patch
-          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
-          ;;
-        *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
-      esac
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
-printf "%s\n" "applying default app store compliance patch" >&6; }
-      ;;
-    *)
-      APP_STORE_COMPLIANCE_PATCH="${withval}"
-      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-      APP_STORE_COMPLIANCE_PATCH_FLAGS=
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying custom app store compliance patch" >&5
-printf "%s\n" "applying custom app store compliance patch" >&6; }
-      ;;
-    esac
-
-else $as_nop
-
-    case $ac_sys_system in
-      iOS)
-        # Always apply the compliance patch on iOS; we can use the macOS patch
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
-printf "%s\n" "applying default app store compliance patch" >&6; }
-        ;;
-      Darwin)
-        # Always *check* the compliance patch on macOS
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: checking (not applying) default app store compliance patch" >&5
-printf "%s\n" "checking (not applying) default app store compliance patch" >&6; }
-        ;;
-      *)
-        # No app compliance patching on any other platform
-        APP_STORE_COMPLIANCE_PATCH=
-        APP_STORE_COMPLIANCE_PATCH_TARGET=
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not patching for app store compliance" >&5
-printf "%s\n" "not patching for app store compliance" >&6; }
-        ;;
-    esac
-
-fi
-
-
-
-
-
 
 if test "$cross_compiling" = yes; then
 	case "$host" in
@@ -4524,8 +4450,12 @@ if test "$cross_compiling" = yes; then
 		_host_device=${_host_device:=os}
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking iOS deployment target" >&5
+printf %s "checking iOS deployment target... " >&6; }
 		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
-		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=12.0}
+		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $IPHONEOS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 
 		case "$host_cpu" in
 			aarch64)
@@ -8162,7 +8092,9 @@ fi
 
 # For calculating the .so ABI tag.
 
+
 ABIFLAGS=""
+ABI_THREAD=""
 
 # Check for --disable-gil
 # --disable-gil
@@ -8192,6 +8124,7 @@ printf "%s\n" "#define Py_GIL_DISABLED 1" >>confdefs.h
 
   # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
+  ABI_THREAD="t"
 fi
 
 # Check for --with-pydebug
@@ -13291,8 +13224,6 @@ case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
-    perf_trampoline=yes ;; #(
-  riscv64-linux-gnu) :
     perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
@@ -24742,11 +24673,11 @@ fi
 
 
 
-BINLIBDEST='$(LIBDIR)/python$(VERSION)'
+BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
 
 
 # Check for --with-platlibdir
-# /usr/$LIDIRNAME/python$VERSION
+# /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 
 PLATLIBDIR="lib"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
@@ -24765,7 +24696,7 @@ then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)'
+  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -24779,9 +24710,9 @@ fi
 
 
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 
@@ -29236,28 +29167,6 @@ then :
 fi
 
 
-        if test "$py_cv_module__opcode" != "n/a"
-then :
-  py_cv_module__opcode=yes
-fi
-   if test "$py_cv_module__opcode" = yes; then
-  MODULE__OPCODE_TRUE=
-  MODULE__OPCODE_FALSE='#'
-else
-  MODULE__OPCODE_TRUE='#'
-  MODULE__OPCODE_FALSE=
-fi
-
-  as_fn_append MODULE_BLOCK "MODULE__OPCODE_STATE=$py_cv_module__opcode$as_nl"
-  if test "x$py_cv_module__opcode" = xyes
-then :
-
-
-
-
-fi
-
-
         if test "$py_cv_module__pickle" != "n/a"
 then :
   py_cv_module__pickle=yes
@@ -31784,10 +31693,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__LSPROF_TRUE}" && test -z "${MODULE__LSPROF_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__LSPROF\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__OPCODE_TRUE}" && test -z "${MODULE__OPCODE_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__OPCODE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__PICKLE_TRUE}" && test -z "${MODULE__PICKLE_FALSE}"; then

@@ -75,6 +75,10 @@ New Features
 Other Language Changes
 ======================
 
+* Added class methods :meth:`float.from_number` and :meth:`complex.from_number`
+  to convert a number to :class:`float` or :class:`complex` type correspondingly.
+  They raise an error if the argument is a string.
+  (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
 
 New Modules
@@ -89,8 +93,12 @@ Improved Modules
 ast
 ---
 
-Added :func:`ast.compare` for comparing two ASTs.
-(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+* Added :func:`ast.compare` for comparing two ASTs.
+  (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+
+* Add support for :func:`copy.replace` for AST nodes.
+
+  (Contributed by Bénédikt Tran in :gh:`121141`.)
 
 os
 --
@@ -109,6 +117,16 @@ pathlib
 * Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
   another.
   (Contributed by Barney Gale in :gh:`73991`.)
+
+pdb
+---
+
+* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace()`) now
+  reuse the most recent :class:`~pdb.Pdb` instance that calls
+  :meth:`~pdb.Pdb.set_trace()`, instead of creating a new one each time.
+  As a result, all the instance specific data like :pdbcmd:`display` and
+  :pdbcmd:`commands` are preserved across hard-coded breakpoints.
+  (Contributed by Tian Gao in :gh:`121450`.)
 
 symtable
 --------
@@ -305,6 +323,12 @@ Porting to Python 3.14
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
+* :class:`functools.partial` is now a method descriptor.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
 Build Changes
 =============
