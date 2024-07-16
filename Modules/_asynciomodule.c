@@ -318,33 +318,15 @@ get_future_loop(asyncio_state *state, PyObject *fut)
     return PyObject_GetAttr(fut, &_Py_ID(_loop));
 }
 
-
-static void
-get_running_loop(asyncio_state *state, PyObject **loop)
-{
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts->asyncio_cached_running_loop != NULL);
-    *loop = Py_NewRef(ts->asyncio_cached_running_loop);
-}
-
-
-static int
-set_running_loop(asyncio_state *state, PyObject *loop)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    Py_XSETREF(tstate->asyncio_cached_running_loop, Py_NewRef(loop));
-
-    return 0;
-}
-
-
 static PyObject *
 get_event_loop(asyncio_state *state)
 {
     PyObject *loop;
     PyObject *policy;
 
-    get_running_loop(state, &loop);
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts->asyncio_running_loop != NULL);
+    loop = Py_NewRef(ts->asyncio_running_loop);
 
     if (loop != Py_None) {
         return loop;
@@ -3298,8 +3280,9 @@ _asyncio__get_running_loop_impl(PyObject *module)
 /*[clinic end generated code: output=b4390af721411a0a input=0a21627e25a4bd43]*/
 {
     PyObject *loop;
-    asyncio_state *state = get_asyncio_state(module);
-    get_running_loop(state, &loop);
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts->asyncio_running_loop != NULL);
+    loop = Py_NewRef(ts->asyncio_running_loop);
     return loop;
 }
 
@@ -3318,10 +3301,8 @@ static PyObject *
 _asyncio__set_running_loop(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=ae56bf7a28ca189a input=4c9720233d606604]*/
 {
-    asyncio_state *state = get_asyncio_state(module);
-    if (set_running_loop(state, loop)) {
-        return NULL;
-    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    Py_SETREF(tstate->asyncio_running_loop, Py_NewRef(loop));
     Py_RETURN_NONE;
 }
 
@@ -3359,8 +3340,9 @@ _asyncio_get_running_loop_impl(PyObject *module)
 /*[clinic end generated code: output=c247b5f9e529530e input=2a3bf02ba39f173d]*/
 {
     PyObject *loop;
-    asyncio_state *state = get_asyncio_state(module);
-    get_running_loop(state, &loop);
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts->asyncio_running_loop != NULL);
+    loop = Py_NewRef(ts->asyncio_running_loop);
     if (loop == Py_None) {
         /* There's no currently running event loop */
         PyErr_SetString(
