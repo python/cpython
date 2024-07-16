@@ -1678,7 +1678,7 @@ expression support in the :mod:`re` module).
    Return the number of non-overlapping occurrences of substring *sub* in the
    (optional) range [*start*, *end*]::
 
-         >>> 'spam, spam, spam'.count('spam')
+      >>> 'spam, spam, spam'.count('spam')
       3
 
       >>> 'spam, spam, spam'.count('spam', 5)
@@ -1686,19 +1686,13 @@ expression support in the :mod:`re` module).
 
    The arguments *start* and *end* are optional and interpreted as in :func:`slice` notation::
 
-
-
       >>> 'spam, spam, spam'[5:10].count('spam')
       1
 
-           Or, perhaps more readable alternative::
+   Or, perhaps more readable alternative::
 
       >>> 'spam, spam, spam'.count('spam', 5, 10)
       1
-
-
-      >>> 'spam, spam, spam'.count('eggs')
-      0
 
    If *sub* is empty, returns the number of empty strings between characters
    which is the length of the string plus one. These are examples of each case::
@@ -1710,11 +1704,11 @@ expression support in the :mod:`re` module).
 
    Return the string encoded to :class:`bytes` ::
 
-      >>> encoded_str_to_byte = 'Python'.encode()
+      >>> encoded_str_to_byte = '¿cómo estás?'.encode()
       >>> type(encoded_str_to_byte)
       <class 'bytes'>
       >>> encoded_str_to_byte
-      b'¿como estás?'
+      b'\xc2\xbfc\xc3\xb3mo est\xc3\xa1s?'
 
 
    *encoding* defaults to ``'utf-8'``;
@@ -1863,7 +1857,7 @@ expression support in the :mod:`re` module).
       ...     def __missing__(self, key):
       ...         return key
       ...
-      >>> '{name} was born in {country}'.format_map(Default(name='Guido'))
+      >>> '{name} was born in {country}'.format_map(Default(name='Guido', country='Netherlands'))
       'Guido was born in country'
 
    .. versionadded:: 3.2
