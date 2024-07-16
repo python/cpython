@@ -961,6 +961,8 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
     return result_token_with_metadata(p, conv, conv_token->metadata);
 }
 
+static asdl_expr_seq *
+unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions);
 ResultTokenWithMetadata *
 _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, int lineno, int col_offset,
                                 int end_lineno, int end_col_offset, PyArena *arena)
@@ -999,8 +1001,15 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
         assert(j == non_empty_count);
         spec = resized_spec;
     }
-    expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno,
-                                   end_col_offset, p->arena);
+    expr_ty res;
+    if (asdl_seq_LEN(spec) == 0) {
+        res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno,
+                                    end_col_offset, p->arena);
+    } else {
+        res = _PyPegen_concatenate_strings(p, spec,
+                             lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
+    }
     if (!res) {
         return NULL;
     }
@@ -1300,6 +1309,7 @@ unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions)
 
 expr_ty
 _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
+
     asdl_expr_seq *expr = unpack_top_level_joined_strs(p, raw_expressions);
     Py_ssize_t n_items = asdl_seq_LEN(expr);
 
@@ -1464,7 +1474,6 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
             debug_end_offset = end_col_offset;
             debug_metadata = closing_brace->metadata;
         }
-
         expr_ty debug_text = _PyAST_Constant(debug_metadata, NULL, lineno, col_offset + 1, debug_end_line,
                                              debug_end_offset - 1, p->arena);
         if (!debug_text) {
@@ -1497,16 +1506,23 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     Py_ssize_t n_flattened_elements = 0;
     for (i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        if (elem->kind == Constant_kind) {
-            if (PyBytes_CheckExact(elem->v.Constant.value)) {
-                bytes_found = 1;
-            } else {
-                unicode_string_found = 1;
-            }
-            n_flattened_elements++;
-        } else {
-            n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
-            f_string_found = 1;
+        switch(elem->kind) {
+            case Constant_kind:
+                if (PyBytes_CheckExact(elem->v.Constant.value)) {
+                    bytes_found = 1;
+                } else {
+                    unicode_string_found = 1;
+                }
+                n_flattened_elements++;
+                break;
+            case JoinedStr_kind:
+                n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
+                f_string_found = 1;
+                break;
+            default:
+                n_flattened_elements++;
+                f_string_found = 1;
+                break;
         }
     }
 
@@ -1548,16 +1564,19 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     Py_ssize_t j = 0;
     for (i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        if (elem->kind == Constant_kind) {
-            asdl_seq_SET(flattened, current_pos++, elem);
-        } else {
-            for (j = 0; j < asdl_seq_LEN(elem->v.JoinedStr.values); j++) {
-                expr_ty subvalue = asdl_seq_GET(elem->v.JoinedStr.values, j);
-                if (subvalue == NULL) {
-                    return NULL;
+        switch(elem->kind) {
+            case JoinedStr_kind:
+                for (j = 0; j < asdl_seq_LEN(elem->v.JoinedStr.values); j++) {
+                    expr_ty subvalue = asdl_seq_GET(elem->v.JoinedStr.values, j);
+                    if (subvalue == NULL) {
+                        return NULL;
+                    }
+                    asdl_seq_SET(flattened, current_pos++, subvalue);
                 }
-                asdl_seq_SET(flattened, current_pos++, subvalue);
-            }
+                break;
+            default:
+                asdl_seq_SET(flattened, current_pos++, elem);
+                break;
         }
     }
 
