@@ -27,8 +27,6 @@ pointers.  This is consistent throughout the API.
    number object.  Most of the functions for dealing with complex number objects
    use structures of this type as input or output values, as appropriate.
 
-   .. c:namespace:: Py_complex
-
    .. c:member:: double real
    .. c:member:: double imag
 
