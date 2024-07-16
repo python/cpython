@@ -1176,7 +1176,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--forever', '--rerun', test, exitcode=0)
         self.check_executed_tests(output, [test]*3,
                                   rerun=Rerun(test,
-                                              match='test_regrtest_forever.ForeverTester.test_run',
+                                              match=r'test_regrtest_forever\.ForeverTester\.test_run',
                                               success=True),
                                   stats=TestStats(4, 1),
                                   forever=True)
@@ -1452,7 +1452,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
                                   rerun=Rerun(testname,
-                                              "test_regrtest_noop\d+.Tests.test_fail_always",
+                                              match=r"test_regrtest_noop\d+\.Tests\.test_fail_always",
                                               success=False),
                                   stats=TestStats(3, 2))
 
@@ -1483,7 +1483,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--rerun", testname, exitcode=0)
         self.check_executed_tests(output, [testname],
                                   rerun=Rerun(testname,
-                                              match="test_regrtest_noop\d+.Tests.test_fail_once",
+                                              match=r"test_regrtest_noop\d+\.Tests\.test_fail_once",
                                               success=True),
                                   stats=TestStats(3, 1))
         os_helper.unlink(marker_filename)
@@ -1494,7 +1494,7 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_RERUN_FAIL)
         self.check_executed_tests(output, [testname],
                                   rerun=Rerun(testname,
-                                              match="test_regrtest_noop\d+.Tests.test_fail_once",
+                                              match=r"test_regrtest_noop\d+\.Tests\.test_fail_once",
                                               success=True),
                                   stats=TestStats(3, 1))
         os_helper.unlink(marker_filename)
@@ -1607,7 +1607,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testname,
                                   failed=[testname],
                                   rerun=Rerun(testname,
-                                              match="test_regrtest_noop\d+.ExampleTests.test_success",
+                                              match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
                                               success=False),
                                   stats=2)
 
@@ -1629,7 +1629,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testname,
                                   failed=[testname],
                                   rerun=Rerun(testname,
-                                              match="test_regrtest_noop\d+.ExampleTests.test_success",
+                                              match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
                                               success=False),
                                   stats=2)
 
@@ -1650,7 +1650,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   rerun=Rerun(testname,
-                                              match="test_regrtest_noop\d+.ExampleTests.test_success",
+                                              match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
                                               success=False),
                                   stats=2)
 
@@ -1672,7 +1672,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testname,
                                   failed=[testname],
                                   rerun=Rerun(testname,
-                                              match="test_regrtest_noop\d+.ExampleTests.test_success",
+                                              match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
                                               success=False),
                                   stats=2)
 
