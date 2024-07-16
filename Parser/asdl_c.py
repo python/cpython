@@ -1450,10 +1450,9 @@ ast_repr_list(PyObject *list, int depth)
         return PyObject_Repr(list);
     }
 
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
-        return NULL;
-    }
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
     PyObject *items[2] = {NULL, NULL};
 
     items[0] = PySequence_GetItem(list, 0);
@@ -1468,7 +1467,7 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     bool is_list = PyList_Check(list);
-    if (PyUnicodeWriter_WriteChar(writer, is_list ? '[' : '(') < 0) {
+    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? '[' : '(') < 0) {
         goto error;
     }
 
@@ -1485,16 +1484,16 @@ ast_repr_list(PyObject *list, int depth)
             goto error;
         }
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
                 goto error;
             }
         }
-        if (PyUnicodeWriter_WriteStr(writer, item_repr) < 0) {
+        if (_PyUnicodeWriter_WriteStr(&writer, item_repr) < 0) {
             Py_DECREF(item_repr);
             goto error;
         }
         if (i == 0 && length > 2) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ...", 5) < 0) {
                 Py_DECREF(item_repr);
                 goto error;
             }
@@ -1502,18 +1501,18 @@ ast_repr_list(PyObject *list, int depth)
         Py_DECREF(item_repr);
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, is_list ? ']' : ')') < 0) {
+    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? ']' : ')') < 0) {
         goto error;
     }
 
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    return PyUnicodeWriter_Finish(writer);
+    return _PyUnicodeWriter_Finish(&writer);
 
 error:
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    PyUnicodeWriter_Discard(writer);
+    _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
 
@@ -1557,15 +1556,14 @@ ast_repr_max_depth(AST_object *self, int depth)
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
-        return NULL;
-    }
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
 
-    if (PyUnicodeWriter_WriteUTF8(writer, tp_name, strlen(tp_name)) < 0) {
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, tp_name, strlen(tp_name)) < 0) {
         goto error;
     }
-    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0) {
         goto error;
     }
 
@@ -1599,26 +1597,26 @@ ast_repr_max_depth(AST_object *self, int depth)
         }
 
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
                 Py_DECREF(name);
                 Py_DECREF(value);
                 Py_DECREF(value_repr);
                 goto error;
             }
         }
-        if (PyUnicodeWriter_WriteStr(writer, name) < 0) {
+        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
             Py_DECREF(name);
             Py_DECREF(value);
             Py_DECREF(value_repr);
             goto error;
         }
-        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
             Py_DECREF(name);
             Py_DECREF(value);
             Py_DECREF(value_repr);
             goto error;
         }
-        if (PyUnicodeWriter_WriteStr(writer, value_repr) < 0) {
+        if (_PyUnicodeWriter_WriteStr(&writer, value_repr) < 0) {
             Py_DECREF(name);
             Py_DECREF(value);
             Py_DECREF(value_repr);
@@ -1630,17 +1628,17 @@ ast_repr_max_depth(AST_object *self, int depth)
         Py_DECREF(value_repr);
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0) {
         goto error;
     }
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    return PyUnicodeWriter_Finish(writer);
+    return _PyUnicodeWriter_Finish(&writer);
 
 error:
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    PyUnicodeWriter_Discard(writer);
+    _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
 
