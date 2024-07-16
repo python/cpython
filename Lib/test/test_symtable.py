@@ -1,7 +1,6 @@
 """
 Test the API of the symtable module.
 """
-import itertools
 
 import re
 import textwrap
