@@ -19,11 +19,11 @@
 // Define _PY_INTERPRETER macro to increment interpreter_increfs and
 // interpreter_decrefs. Otherwise, increment increfs and decrefs.
 
-#include "pycore_uop_ids.h"
-
 #ifndef Py_CPYTHON_PYSTATS_H
 #  error "this header file must not be included directly"
 #endif
+
+#define PYSTATS_MAX_UOP_ID 512
 
 #define SPECIALIZATION_FAILURE_KINDS 36
 
@@ -100,7 +100,7 @@ typedef struct _gc_stats {
 typedef struct _uop_stats {
     uint64_t execution_count;
     uint64_t miss;
-    uint64_t pair_count[MAX_UOP_ID + 1];
+    uint64_t pair_count[PYSTATS_MAX_UOP_ID + 1];
 } UOpStats;
 
 #define _Py_UOP_HIST_SIZE 32
@@ -118,7 +118,7 @@ typedef struct _optimization_stats {
     uint64_t recursive_call;
     uint64_t low_confidence;
     uint64_t executors_invalidated;
-    UOpStats opcode[MAX_UOP_ID+1];
+    UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
     uint64_t unsupported_opcode[256];
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];
@@ -128,7 +128,7 @@ typedef struct _optimization_stats {
     uint64_t optimizer_failure_reason_no_memory;
     uint64_t remove_globals_builtins_changed;
     uint64_t remove_globals_incorrect_keys;
-    uint64_t error_in_opcode[MAX_UOP_ID+1];
+    uint64_t error_in_opcode[PYSTATS_MAX_UOP_ID + 1];
 } OptimizationStats;
 
 typedef struct _rare_event_stats {
