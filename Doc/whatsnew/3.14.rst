@@ -80,6 +80,11 @@ Other Language Changes
   command line option. For example, ``python -O -c 'assert await 1'``
   now produces a :exc:`SyntaxError`. (Contributed by Jelle Zijlstra in :gh:`121637`.)
 
+* Added class methods :meth:`float.from_number` and :meth:`complex.from_number`
+  to convert a number to :class:`float` or :class:`complex` type correspondingly.
+  They raise an error if the argument is a string.
+  (Contributed by Serhiy Storchaka in :gh:`84978`.)
+
 
 New Modules
 ===========

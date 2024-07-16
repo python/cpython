@@ -605,7 +605,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_STOP_ITERATION);
 
         PyFrameObject* frame = PyEval_GetFrame();
-        if (frame->f_trace_opcodes) {
+        if (frame && frame->f_trace_opcodes) {
             int ret = _PyEval_SetOpcodeTrace(frame, true);
             if (ret != 0) {
                 return ret;

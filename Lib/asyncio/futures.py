@@ -43,7 +43,6 @@ class Future:
     - This class is not compatible with the wait() and as_completed()
       methods in the concurrent.futures package.
 
-    (In Python 3.4 or later we may be able to unify the implementations.)
     """
 
     # Class variables serving as defaults for instance variables.
@@ -61,7 +60,7 @@ class Future:
     #   the Future protocol (i.e. is intended to be duck-type compatible).
     #   The value must also be not-None, to enable a subclass to declare
     #   that it is not compatible by setting this to None.
-    # - It is set by __iter__() below so that Task._step() can tell
+    # - It is set by __iter__() below so that Task.__step() can tell
     #   the difference between
     #   `await Future()` or`yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
