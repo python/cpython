@@ -11,46 +11,55 @@
 //
 // The following _WRITE_* and _WRITE_*_OR macros do NOT check their inputs
 // since they directly delegate to the _PyUnicodeWriter_Write* underlying
-// function.
+// function. In particular, the caller is responsible for type safety.
 
-#define _WRITE_OR_FAIL(writeop, onerror) \
-    do { \
-        if ((writeop) < 0) { \
-            onerror; \
-        } \
+#define _WRITE_OR_FAIL(WRITE_OPERATION, ON_ERROR)   \
+    do {                                            \
+        if ((WRITE_OPERATION) < 0) {                \
+            ON_ERROR;                               \
+        }                                           \
     } while (0)
 
-/* write a character 'ch' */
-#define _WRITE_CHAR(writer, ch) \
-    _PyUnicodeWriter_WriteChar((_PyUnicodeWriter *)(writer), (ch))
-/* write a character 'ch', or execute 'onerror' if it fails */
-#define _WRITE_CHAR_OR(writer, ch, onerror) \
-    _WRITE_OR_FAIL(_WRITE_CHAR((writer), (ch)), onerror)
+/* write a character CHAR */
+#define _WRITE_CHAR(WRITER, CHAR) \
+    _PyUnicodeWriter_WriteChar((_PyUnicodeWriter *)(WRITER), (CHAR))
+/* write a character CHAR or execute the ON_ERROR statements if it fails */
+#define _WRITE_CHAR_OR(WRITER, CHAR, ON_ERROR) \
+    _WRITE_OR_FAIL(_WRITE_CHAR((WRITER), (CHAR)), ON_ERROR)
 
-/* write an ASCII 'string' of given 'length' */
-#define _WRITE_ASCII(writer, ascii, length) \
-    _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)(writer), (ascii), (length))
-/* write an ASCII 'string' of given 'length', or execute 'onerror' if it fails */
-#define _WRITE_ASCII_OR(writer, ascii, length, onerror) \
-    _WRITE_OR_FAIL(_WRITE_ASCII((writer), (ascii), (length)), onerror)
+/* write an ASCII string STRING of given length LENGTH */
+#define _WRITE_ASCII(WRITER, ASCII, LENGTH)                         \
+    _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)(WRITER), \
+                                      (ASCII), (LENGTH))
+/*
+ * Write an ASCII string STRING of given length LENGTH,
+ * or execute the ON_ERROR statements if it fails.
+ */
+#define _WRITE_ASCII_OR(WRITER, ASCII, LENGTH, ON_ERROR) \
+    _WRITE_OR_FAIL(_WRITE_ASCII((WRITER), (ASCII), (LENGTH)), ON_ERROR)
 
-/* write a 'string' */
-#define _WRITE_STRING(writer, string) \
-    _PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)(writer), (string))
-/* write a 'string', or execute 'onerror' if it fails */
-#define _WRITE_STRING_OR(writer, string, onerror) \
-    _WRITE_OR_FAIL(_WRITE_STRING((writer), (string)), onerror)
+/* write the string STRING */
+#define _WRITE_STRING(WRITER, STRING) \
+    _PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)(WRITER), (STRING))
+/* write the string STRING or execute the ON_ERROR statements if it fails */
+#define _WRITE_STRING_OR(WRITER, STRING, ON_ERROR) \
+    _WRITE_OR_FAIL(_WRITE_STRING((WRITER), (STRING)), ON_ERROR)
 
-/* write the substring string[i:j] */
-#define _WRITE_BLOCK(writer, string, i, j) \
-    _PyUnicodeWriter_WriteSubstring((_PyUnicodeWriter *)(writer), (string), (i), (j))
-/* write the substring string[i:j] if i < j, or execute 'onerror' if it fails */
-#define _WRITE_BLOCK_OR(writer, string, i, j, onerror) \
-    do { \
-        Py_ssize_t _i = (i), _j = (j); /* to allow in-place operators on i or j */ \
-        if (_i < _j && _WRITE_BLOCK((writer), (string), _i, _j) < 0) { \
-            onerror; \
-        } \
+/* write the substring STRING[START:STOP] */
+#define _WRITE_BLOCK(WRITER, STRING, START, STOP)                   \
+    _PyUnicodeWriter_WriteSubstring((_PyUnicodeWriter *)(WRITER),   \
+                                    (STRING), (START), (STOP))
+/*
+ * Write the substring STRING[START:STOP] if START < STOP,
+ * or execute the ON_ERROR statements if it fails.
+ */
+#define _WRITE_BLOCK_OR(WRITER, STRING, START, STOP, ON_ERROR)          \
+    do {                                                                \
+        /* intermediate variables to allow in-place operations */       \
+        Py_ssize_t _i = (START), _j = (STOP);                           \
+        if (_i < _j && _WRITE_BLOCK((WRITER), (STRING), _i, _j) < 0) {  \
+            ON_ERROR;                                                   \
+        }                                                               \
     } while (0)
 
 // ==== Helper declarations ===================================================
@@ -147,32 +156,20 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
         goto abort;
     }
 
-    const int kind = PyUnicode_KIND(pattern);
-    const void *data = PyUnicode_DATA(pattern);
+    const int unicode_kind = PyUnicode_KIND(pattern);
+    const void *const unicode_data = PyUnicode_DATA(pattern);
     /* declaration of some local helping macros */
-#define READ(ind) PyUnicode_READ(kind, data, (ind))
-    /* advance 'ind' if the character is 'ch' */
-#define ADVANCE_IF_CHAR(ch, ind, maxind) \
-    do { \
-        /* the following forces ind to be a variable name */ \
-        Py_ssize_t *Py_UNUSED(_ind) = &ind; \
-        if ((ind) < (maxind) && READ(ind) == (ch)) { \
-            ++ind; \
-        } \
+#define READ(IND) PyUnicode_READ(unicode_kind, unicode_data, (IND))
+    /* advance IND if the character is CHAR */
+#define ADVANCE_IF_NEXT_CHAR_IS(CHAR, IND, MAXIND)              \
+    do {                                                        \
+        /* the following forces IND to be a variable name */    \
+        void *Py_UNUSED(_ind) = &IND;                           \
+        if ((IND) < (MAXIND) && READ(IND) == (CHAR)) {          \
+            ++IND;                                              \
+        }                                                       \
     } while (0)
-    /* advance 'ind' until the character compares to 'READ[ind] CMPOP ch' */
-#define _WHILE_READ_CMP(ch, ind, maxind, CMPOP) \
-    do { \
-        /* the following forces ind to be a variable name */ \
-        Py_ssize_t *Py_UNUSED(_ind) = &ind; \
-        while ((ind) < (maxind) && READ(ind) CMPOP (ch)) { \
-            ++ind; \
-        } \
-    } while (0)
-    /* advance 'from' as long as READ(from) != ch */
-#define ADVANCE_TO_NEXT(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), !=)
-    /* advance 'from' as long as READ(from) == ch */
-#define SKIP_DUPLICATES(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), ==)
+
     Py_ssize_t i = 0;   // current index
     Py_ssize_t wi = 0;  // number of characters written
     while (i < n) {
@@ -181,7 +178,8 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
         switch (chr) {
             case '*': {
                 _WRITE_CHAR_OR(writer, '*', goto abort);
-                SKIP_DUPLICATES('*', i, n);
+                // skip duplicated '*'
+                for (; i < n && READ(i) == '*'; ++i);
                 PyObject *index = PyLong_FromSsize_t(wi++);
                 if (index == NULL) {
                     goto abort;
@@ -200,10 +198,10 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 break;
             }
             case '[': {
-                Py_ssize_t j = i;           // 'i' is already at next char
-                ADVANCE_IF_CHAR('!', j, n); // [!
-                ADVANCE_IF_CHAR(']', j, n); // [!] or []
-                ADVANCE_TO_NEXT(']', j, n); // locate closing ']'
+                Py_ssize_t j = i;
+                ADVANCE_IF_NEXT_CHAR_IS('!', j, n);     // [!
+                ADVANCE_IF_NEXT_CHAR_IS(']', j, n);     // [!] or []
+                for (; j < n && READ(j) != ']'; ++j);   // locate closing ']'
                 if (j >= n) {
                     _WRITE_ASCII_OR(writer, "\\[", 2, goto abort);
                     wi += 2; // we just wrote 2 characters
@@ -224,8 +222,10 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                             goto abort;
                         }
                         s1 = PyObject_CallMethodObjArgs(
-                            s0, &_Py_ID(replace),
-                            state->backslash_str, state->backslash_esc_str,
+                            s0,
+                            &_Py_ID(replace),
+                            state->backslash_str,
+                            state->backslash_esc_str,
                             NULL
                         );
                         Py_DECREF(s0);
@@ -269,17 +269,18 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 if (escchr == NULL) {
                     goto abort;
                 }
-                _WRITE_STRING_OR(writer, escchr, Py_DECREF(escchr); goto abort);
-                wi += PyUnicode_GET_LENGTH(escchr);
+                Py_ssize_t difflen = PyUnicode_GET_LENGTH(escchr);
+                int rc = _WRITE_STRING(writer, escchr);
                 Py_DECREF(escchr);
+                if (rc < 0) {
+                    goto abort;
+                }
+                wi += difflen;
                 break;
             }
         }
     }
-#undef SKIP_DUPLICATES
-#undef ADVANCE_TO_NEXT
-#undef _WHILE_READ_CMP
-#undef ADVANCE_IF_CHAR
+#undef ADVANCE_IF_NEXT_CHAR_IS
 #undef READ
     Py_DECREF(re_sub_func);
     Py_DECREF(re_escape_func);
@@ -388,12 +389,12 @@ translate_expression_split(fnmatchmodule_state *state,
         assert(chunkscount > 0);
         PyObject *chunk = PyList_GET_ITEM(chunks, chunkscount - 1);
         assert(chunk != NULL);
-        PyObject *repl = PyUnicode_Concat(chunk, state->hyphen_str);
-        // PyList_SetItem() does not create a new reference on 'repl'
-        // so we should not decref 'repl' after the call, unless there
+        PyObject *str = PyUnicode_Concat(chunk, state->hyphen_str);
+        // PyList_SetItem() does not create a new reference on 'str'
+        // so we should not decref 'str' after the call, unless there
         // is an issue while setting the item.
-        if (repl == NULL || PyList_SetItem(chunks, chunkscount - 1, repl) < 0) {
-            Py_XDECREF(repl);
+        if (str == NULL || PyList_SetItem(chunks, chunkscount - 1, str) < 0) {
+            Py_XDECREF(str);
             goto abort;
         }
     }
@@ -620,7 +621,7 @@ process_wildcards(PyObject *pattern, PyObject *indices)
         return NULL;
     }
     _WRITE_BLOCK_OR(writer, pattern, i, j, goto abort);
-    i = j + 1;              // jump after the '*'
+    i = j + 1; // jump after the '*'
     for (Py_ssize_t k = 1; k < m; ++k) {
         // process all but the last wildcard.
         PyObject *ind = PyList_GET_ITEM(indices, k);

@@ -55,12 +55,14 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
     if (maxsize == NULL) {
         return -1;
     }
-    PyObject *lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    PyObject *lru_cache = _PyImport_GetModuleAttrString("functools",
+                                                        "lru_cache");
     if (lru_cache == NULL) {
         Py_DECREF(maxsize);
         return -1;
     }
-    PyObject *decorator = PyObject_CallFunctionObjArgs(lru_cache, maxsize, Py_True, NULL);
+    PyObject *decorator = PyObject_CallFunctionObjArgs(
+        lru_cache, maxsize, Py_True, NULL);
     Py_DECREF(lru_cache);
     Py_DECREF(maxsize);
     if (decorator == NULL) {

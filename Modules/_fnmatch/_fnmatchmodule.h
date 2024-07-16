@@ -74,7 +74,9 @@ _Py_fnmatch_filter(PyObject *matcher, PyObject *names);
  * The 'normcase' argument is a callable implementing os.path.normcase().
  */
 extern PyObject *
-_Py_fnmatch_filter_normalized(PyObject *matcher, PyObject *names, PyObject *normcase);
+_Py_fnmatch_filter_normalized(PyObject *matcher,
+                              PyObject *names,
+                              PyObject *normcase);
 
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.

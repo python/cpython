@@ -48,7 +48,9 @@ abort:
 }
 
 PyObject *
-_Py_fnmatch_filter_normalized(PyObject *matcher, PyObject *names, PyObject *normcase)
+_Py_fnmatch_filter_normalized(PyObject *matcher,
+                              PyObject *names,
+                              PyObject *normcase)
 {
     PyObject *iter = PyObject_GetIter(names);
     if (iter == NULL) {
