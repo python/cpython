@@ -3470,7 +3470,6 @@
         }
 
         case _CHECK_FUNCTION_VERSION: {
-            _PyStackRef self_or_null;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
             callable = stack_pointer[-2 - oparg];
@@ -3617,7 +3616,6 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _PyStackRef null;
             _PyStackRef callable;
             _PyStackRef func;
             _PyStackRef self;
@@ -3659,7 +3657,6 @@
         }
 
         case _CHECK_STACK_SPACE: {
-            _PyStackRef self_or_null;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
             callable = stack_pointer[-2 - oparg];

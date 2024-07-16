@@ -31,11 +31,11 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+    var: StackItem, uop: Uop, required: set[str], out: CWriter
 ) -> None:
-    if var.name in variables:
+    if var.name not in required:
         return
-    variables.add(var.name)
+    required.remove(var.name)
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
     if var.condition:
@@ -49,12 +49,19 @@ def declare_variable(
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
-    variables = {"unused"}
+    stack = Stack()
+    try:
+        for var in reversed(uop.stack.inputs):
+            stack.pop(var)
+        for var in uop.stack.outputs:
+                stack.push(var)
+    except StackError as ex:
+        raise analysis_error(ex.args[0], part.body[0]) from None
+    required = set(stack.defined)
     for var in reversed(uop.stack.inputs):
-        declare_variable(var, uop, variables, out)
+        declare_variable(var, uop, required, out)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, variables, out)
-
+        declare_variable(var, uop, required, out)
 
 def tier2_replace_error(
     out: CWriter,
