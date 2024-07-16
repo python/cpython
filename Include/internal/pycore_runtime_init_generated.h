@@ -586,7 +586,6 @@ extern "C" {
     INIT_ID(__annotate__), \
     INIT_ID(__annotations__), \
     INIT_ID(__args__), \
-    INIT_ID(__asyncio_running_event_loop__), \
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
     INIT_ID(__bool__), \
