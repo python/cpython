@@ -12,14 +12,21 @@
 #include "Python.h"
 
 typedef struct {
-    PyObject *os_module;            // import os
-    PyObject *posixpath_module;     // import posixpath
-    PyObject *re_module;            // import re
+    PyObject *os_module;                // import os
+    PyObject *posixpath_module;         // import posixpath
+    PyObject *re_module;                // import re
 
-    PyObject *translator;           // LRU-cached translation unit
+    PyObject *translator;               // LRU-cached translation unit
 
     // strings used by translate.c
-    PyObject *hyphen_str;           // hyphen glyph '-'
+    PyObject *hyphen_str;               // hyphen '-'
+    PyObject *hyphen_esc_str;           // escaped hyphen '\\-'
+
+    PyObject *backslash_str;            // backslash '\\'
+    PyObject *backslash_esc_str;        // escaped backslash '\\\\'
+
+    PyObject *inactive_toks_str;        // inactive tokens '([&~|])'
+    PyObject *inactive_toks_repl_str;   // replacement pattern '\\\\\\1'
 } fnmatchmodule_state;
 
 static inline fnmatchmodule_state *

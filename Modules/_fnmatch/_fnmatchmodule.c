@@ -56,6 +56,10 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
         return -1;
     }
     PyObject *lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    if (lru_cache == NULL) {
+        Py_DECREF(maxsize);
+        return -1;
+    }
     PyObject *decorator = PyObject_CallFunctionObjArgs(lru_cache, maxsize, Py_True, NULL);
     Py_DECREF(lru_cache);
     Py_DECREF(maxsize);
@@ -133,6 +137,11 @@ fnmatchmodule_exec(PyObject *module)
         return -1;
     }
     INTERN_STRING(st, hyphen_str, "-");
+    INTERN_STRING(st, hyphen_esc_str, "\\-");
+    INTERN_STRING(st, backslash_str, "\\");
+    INTERN_STRING(st, backslash_esc_str, "\\\\");
+    INTERN_STRING(st, inactive_toks_str, "([&~|])");
+    INTERN_STRING(st, inactive_toks_repl_str, "\\\\\\1");
     return 0;
 }
 #undef INTERN_STRING
@@ -142,6 +151,11 @@ static int
 fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
+    Py_VISIT(st->inactive_toks_repl_str);
+    Py_VISIT(st->inactive_toks_str);
+    Py_VISIT(st->backslash_esc_str);
+    Py_VISIT(st->backslash_str);
+    Py_VISIT(st->hyphen_esc_str);
     Py_VISIT(st->hyphen_str);
     Py_VISIT(st->translator);
     Py_VISIT(st->re_module);
@@ -154,6 +168,11 @@ static int
 fnmatchmodule_clear(PyObject *m)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
+    Py_CLEAR(st->inactive_toks_repl_str);
+    Py_CLEAR(st->inactive_toks_str);
+    Py_CLEAR(st->backslash_esc_str);
+    Py_CLEAR(st->backslash_str);
+    Py_CLEAR(st->hyphen_esc_str);
     Py_CLEAR(st->hyphen_str);
     Py_CLEAR(st->translator);
     Py_CLEAR(st->re_module);
@@ -376,3 +395,6 @@ PyInit__fnmatch(void)
 {
     return PyModuleDef_Init(&_fnmatchmodule);
 }
+
+#undef INVALID_PATTERN_TYPE
+#undef COMPILED_CACHE_SIZE
