@@ -6683,13 +6683,20 @@ _PyObject_MaterializeManagedDict_LockHeld(PyObject *obj)
 {
     ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
 
-    PyDictValues *values = _PyObject_InlineValues(obj);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     OBJECT_STAT_INC(dict_materialized_on_request);
-    PyDictObject *dict = make_dict_from_instance_attributes(interp, keys, values);
+
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    PyDictObject *dict;
+    if (values->valid) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
+        dict = make_dict_from_instance_attributes(interp, keys, values);
+    }
+    else {
+        dict = (PyDictObject *)PyDict_New();
+    }
     FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
-                                (PyDictObject *)dict);
+                                dict);
     return dict;
 }
 
