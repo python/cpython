@@ -32,30 +32,39 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 FOOTER = "#undef TIER_ONE\n"
 
+def declare_variable(var: StackItem, out: CWriter):
+    type, null = type_and_null(var)
+    space = " " if type[-1].isalnum() else ""
+    if var.condition:
+        out.emit(f"{type}{space}{var.name} = {null};\n")
+    else:
+        out.emit(f"{type}{space}{var.name};\n")
+
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
-    variables = {"unused"}
-    for uop in inst.parts:
-        if isinstance(uop, Uop):
-            for var in reversed(uop.stack.inputs):
-                if var.name not in variables:
-                    variables.add(var.name)
-                    type, null = type_and_null(var)
-                    space = " " if type[-1].isalnum() else ""
-                    if var.condition:
-                        out.emit(f"{type}{space}{var.name} = {null};\n")
-                    else:
-                        out.emit(f"{type}{space}{var.name};\n")
-            for var in uop.stack.outputs:
-                if var.name not in variables:
-                    variables.add(var.name)
-                    type, null = type_and_null(var)
-                    space = " " if type[-1].isalnum() else ""
-                    if var.condition:
-                        out.emit(f"{type}{space}{var.name} = {null};\n")
-                    else:
-                        out.emit(f"{type}{space}{var.name};\n")
-
+    stack = Stack()
+    try:
+        for part in inst.parts:
+            if isinstance(part, Skip):
+                continue
+            for var in reversed(part.stack.inputs):
+                stack.pop(var)
+            for var in part.stack.outputs:
+                 stack.push(var)
+    except StackError as ex:
+        raise analysis_error(ex.args[0], part.body[0]) from None
+    required = set(stack.defined)
+    for part in inst.parts:
+        if isinstance(part, Skip):
+            continue
+        for var in part.stack.inputs:
+            if var.name in required:
+                required.remove(var.name)
+                declare_variable(var, out)
+        for var in part.stack.outputs:
+            if var.name in required:
+                required.remove(var.name)
+                declare_variable(var, out)
 
 def write_uop(
     uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruction, braces: bool

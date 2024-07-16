@@ -103,7 +103,7 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
-    cached: bool = False
+    used: bool = False
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -307,6 +307,16 @@ def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | No
     for input, output in zip(inputs, outputs):
         if input.name == output.name:
             input.peek = output.peek = True
+    if isinstance(op, parser.InstDef):
+        output_names = [out.name for out in outputs]
+        for input in inputs:
+            if (variable_used(op, input.name) or
+                variable_used(op, "DECREF_INPUTS") or
+                (not input.peek and input.name in output_names)):
+                input.used = True
+        for output in outputs:
+            if variable_used(op, output.name):
+                output.used = True
     return StackEffect(inputs, outputs)
 
 
@@ -325,7 +335,13 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens
+    )
+
+def oparg_used(node: parser.InstDef) -> bool:
+    """Determine whether a variable with a given name is used in a node."""
+    return any(
+        token.kind == "IDENTIFIER" and token.text == "oparg" for token in node.tokens
     )
 
 def tier_variable(node: parser.InstDef) -> int | None:
@@ -571,7 +587,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         error_without_pop=error_without_pop,
         deopts=deopts_if,
         side_exit=exits_if,
-        oparg=variable_used(op, "oparg"),
+        oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
         ends_with_eval_breaker=eval_breaker_at_end(op),

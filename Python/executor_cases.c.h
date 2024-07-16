@@ -3473,7 +3473,6 @@
             _PyStackRef self_or_null;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
-            self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -3623,7 +3622,6 @@
             _PyStackRef func;
             _PyStackRef self;
             oparg = CURRENT_OPARG();
-            null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             STAT_INC(CALL, hit);
@@ -3664,7 +3662,6 @@
             _PyStackRef self_or_null;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
-            self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;

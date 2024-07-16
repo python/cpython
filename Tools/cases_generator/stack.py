@@ -138,28 +138,25 @@ class Stack:
                     f"Size mismatch when popping '{popped.name}' from stack to assign to {var.name}. "
                     f"Expected {var.size} got {popped.size}"
                 )
-            if popped.name == var.name:
-                var.cached = popped.cached
+            if var.name in UNUSED:
+                if popped.name not in UNUSED and popped.name in self.defined:
+                    raise StackError(f"Value is declared unused, but is already cached by prior operation")
                 return ""
-            elif popped.name in UNUSED:
+            if popped.name in UNUSED or popped.name not in self.defined:
                 self.defined.add(var.name)
                 return (
                     f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
                 )
-            elif var.name in UNUSED:
-                if popped.cached:
-                    raise StackError(f"Value is declared unused, but is already cached by prior operation")
-                return ""
             else:
                 self.defined.add(var.name)
-                assert popped.cached
-                var.cached = True
-                return f"{var.name} = {popped.name};\n"
+                if popped.name == var.name:
+                    return ""
+                else:
+                    return f"{var.name} = {popped.name};\n"
         self.base_offset.pop(var)
-        if var.name in UNUSED:
+        if var.name in UNUSED or not var.used:
             return ""
-        else:
-            self.defined.add(var.name)
+        self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
         bits = ".bits" if cast and not extract_bits else ""
         assign = (
@@ -183,8 +180,8 @@ class Stack:
             return f"{var.name} = &stack_pointer[{c_offset}];\n"
         else:
             self.top_offset.push(var)
-            if var.name not in UNUSED:
-                var.cached = True
+            if var.used:
+                self.defined.add(var.name)
             return ""
 
     def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
