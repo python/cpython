@@ -13410,6 +13410,11 @@ PyUnicodeWriter_Create(Py_ssize_t length)
                         "length must be positive");
         return NULL;
     }
+    if (length == 0) {
+        /* gh-121849: _PyUnicodeWriter_Prepare leaves writer->buffer as NULL
+         * if the length is zero. */
+        length = 1;
+    }
 
     const size_t size = sizeof(_PyUnicodeWriter);
     PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
