@@ -777,7 +777,7 @@ Add error checking during :mod:`!_socket` module init.
 .. nonce: urFYtn
 .. section: Library
 
-Fix :mod:`_blake2` not checking for errors when initializing.
+Fix :mod:`!_blake2` not checking for errors when initializing.
 
 ..
 

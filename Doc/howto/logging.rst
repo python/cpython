@@ -382,8 +382,48 @@ Logging Flow
 The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
-.. image:: logging_flow.png
-   :class: invert-in-dark-mode
+.. raw:: html
+   :file: logging_flow.svg
+
+.. raw:: html
+
+   <script>
+   /*
+    * This snippet is needed to handle the case where a light or dark theme is
+    * chosen via the theme is selected in the page. We call the existing handler
+    * and then add a dark-theme class to the body when the dark theme is selected.
+    * The SVG styling (above) then does the rest.
+    *
+    * If the pydoc theme is updated to set the dark-theme class, this snippet
+    * won't be needed any more.
+    */
+   (function() {
+     var oldActivateTheme = activateTheme;
+
+     function updateBody(theme) {
+        let elem = document.body;
+
+        elem.classList.remove('dark-theme');
+        elem.classList.remove('light-theme');
+        if (theme === 'dark') {
+            elem.classList.add('dark-theme');
+        }
+        else if (theme === 'light') {
+            elem.classList.add('light-theme');
+        }
+     }
+
+     activateTheme = function(theme) {
+        oldActivateTheme(theme);
+        updateBody(theme);
+     };
+     /*
+      * If the page is refreshed, make sure we update the body - the overriding
+      * of activateTheme won't have taken effect yet.
+      */
+      updateBody(localStorage.getItem('currentTheme') || 'auto');
+   })();
+   </script>
 
 Loggers
 ^^^^^^^

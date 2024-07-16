@@ -2095,7 +2095,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* now index_map[i] == i if consts[i] is used, -1 otherwise */
     /* condense consts */
     Py_ssize_t n_used_consts = 0;
-    for (int i = 0; i < nconsts; i++) {
+    for (Py_ssize_t i = 0; i < nconsts; i++) {
         if (index_map[i] != -1) {
             assert(index_map[i] == i);
             index_map[n_used_consts++] = index_map[i];
@@ -2389,7 +2389,7 @@ convert_pseudo_ops(cfg_builder *g)
             }
         }
     }
-    return remove_redundant_nops(g);
+    return remove_redundant_nops_and_jumps(g);
 }
 
 static inline bool

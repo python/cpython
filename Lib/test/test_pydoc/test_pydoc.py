@@ -1239,7 +1239,8 @@ class PydocImportTest(PydocBaseTest):
             sys.path.insert(0, TESTFN)
             try:
                 with self.assertRaisesRegex(ValueError, "ouch"):
-                    import test_error_package  # Sanity check
+                    # Sanity check
+                    import test_error_package  # noqa: F401
 
                 text = self.call_url_handler("search?key=test_error_package",
                     "Pydoc: Search Results")

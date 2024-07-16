@@ -387,7 +387,7 @@ def skip_if_buildbot(reason=None):
         reason = 'not suitable for buildbots'
     try:
         isbuildbot = getpass.getuser().lower() == 'buildbot'
-    except (KeyError, EnvironmentError) as err:
+    except (KeyError, OSError) as err:
         warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
@@ -1221,8 +1221,8 @@ def refcount_test(test):
 
 def requires_limited_api(test):
     try:
-        import _testcapi
-        import _testlimitedcapi
+        import _testcapi  # noqa: F401
+        import _testlimitedcapi  # noqa: F401
     except ImportError:
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
@@ -2299,7 +2299,7 @@ def clear_ignored_deprecations(*tokens: object) -> None:
 def requires_venv_with_pip():
     # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
     try:
-        import zlib
+        import zlib  # noqa: F401
     except ImportError:
         return unittest.skipIf(True, "venv: ensurepip requires zlib")
 
@@ -2626,3 +2626,41 @@ def force_not_colorized(func):
                 if value is not None:
                     os.environ[key] = value
     return wrapper
+
+
+def initialized_with_pyrepl():
+    """Detect whether PyREPL was used during Python initialization."""
+    # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
+    return hasattr(sys.modules["__main__"], "__file__")
+
+
+WINDOWS_STATUS = {
+    0xC0000005: "STATUS_ACCESS_VIOLATION",
+    0xC00000FD: "STATUS_STACK_OVERFLOW",
+    0xC000013A: "STATUS_CONTROL_C_EXIT",
+}
+
+def get_signal_name(exitcode):
+    import signal
+
+    if exitcode < 0:
+        signum = -exitcode
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    # Shell exit code (ex: WASI build)
+    if 128 < exitcode < 256:
+        signum = exitcode - 128
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    try:
+        return WINDOWS_STATUS[exitcode]
+    except KeyError:
+        pass
+
+    return None
