@@ -144,7 +144,7 @@ class EmailPolicy(Policy):
             linesep_splitter.search(self.header_factory(name, value))
         ):
             raise ValueError("Header values may not contain linefeed "
-                         "or carriage return characters")
+                             "or carriage return characters")
         return (name, self.header_factory(name, value))
 
     def header_fetch_parse(self, name, value):
