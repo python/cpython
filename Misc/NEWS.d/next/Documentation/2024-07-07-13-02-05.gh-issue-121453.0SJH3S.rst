@@ -1,2 +1,0 @@
-Update the ``Doc/templates/download.html`` download files size estimates and
-support download ``.texi`` format.
