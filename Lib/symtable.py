@@ -237,6 +237,12 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
+        import warnings
+        typename = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        warnings.warn(f'{typename}.get_methods() is deprecated '
+                      f'and will be removed in Python 3.16.',
+                      DeprecationWarning, stacklevel=2)
+
         if self.__methods is None:
             d = {}
 
@@ -261,7 +267,14 @@ class Class(SymbolTable):
                             scope_name = st.name
                             for c in st.children:
                                 if c.name == scope_name and c.type == _symtable.TYPE_FUNCTION:
-                                    d[st.name] = 1
+                                    # A generic generator of type TYPE_FUNCTION
+                                    # cannot be a direct child of 'st' (but it
+                                    # can be a descendant), e.g.:
+                                    #
+                                    # class A:
+                                    #   type genexpr[genexpr] = (x for x in [])
+                                    assert scope_name != 'genexpr' or '.0' not in c.varnames
+                                    d[scope_name] = 1
                                     break
             self.__methods = tuple(d)
         return self.__methods
