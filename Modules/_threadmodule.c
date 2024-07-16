@@ -1434,7 +1434,7 @@ typedef struct {
 } localobject;
 
 /* Forward declaration */
-static PyObject *_ldict(localobject *self, thread_module_state *state);
+static int create_localsdict(localobject *self, thread_module_state *state, PyObject **localsdict, PyObject **sentinel_wr);
 static PyObject *clear_locals(PyObject *meth_self, PyObject *dummyweakref);
 
 /* Create a weakref to the sentinel localdummy for the current thread */
@@ -1514,9 +1514,14 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         goto err;
     }
 
-    if (_ldict(self, state) == NULL) {
+    PyObject *localsdict = NULL;
+    PyObject *sentinel_wr = NULL;
+    if (create_localsdict(self, state, &localsdict, &sentinel_wr) < 0) {
         goto err;
     }
+    Py_DECREF(localsdict);
+    Py_DECREF(sentinel_wr);
+
     return (PyObject *)self;
 
   err:
@@ -1563,59 +1568,64 @@ local_dealloc(localobject *self)
     Py_DECREF(tp);
 }
 
-/* Returns a borrowed reference to the local dict for the current thread,
- * creating it if necessary */
-static PyObject *
-_ldict(localobject *self, thread_module_state *state)
+/* Create the TLS key and sentinel if they don't exist */
+static int
+create_localdummies(thread_module_state *state)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    /* Create the TLS key and sentinel if they don't exist */
+    if (tstate->threading_local_key != NULL) {
+        return 0;
+    }
+
+    PyTypeObject *ld_type = state->local_dummy_type;
+    tstate->threading_local_key = ld_type->tp_alloc(ld_type, 0);
     if (tstate->threading_local_key == NULL) {
-        PyTypeObject *ld_type = state->local_dummy_type;
-        tstate->threading_local_key = ld_type->tp_alloc(ld_type, 0);
-        if (tstate->threading_local_key == NULL) {
-            return NULL;
-        }
-
-        tstate->threading_local_sentinel = ld_type->tp_alloc(ld_type, 0);
-        if (tstate->threading_local_sentinel == NULL) {
-            Py_CLEAR(tstate->threading_local_key);
-            return NULL;
-        }
+        return -1;
     }
 
-    /* Check if a locals dict already exists */
-    PyObject *ldict =
-        PyDict_GetItemWithError(self->localdicts, tstate->threading_local_key);
-    if (ldict != NULL) {
-        return ldict;
+    tstate->threading_local_sentinel = ld_type->tp_alloc(ld_type, 0);
+    if (tstate->threading_local_sentinel == NULL) {
+        Py_CLEAR(tstate->threading_local_key);
+        return -1;
     }
-    else if (PyErr_Occurred()) {
-        return NULL;
+
+    return 0;
+}
+
+/* Insert a localsdict and sentinel weakref for the current thread, placing
+   strong references in localsdict and sentinel_wr, respectively.
+*/
+static int
+create_localsdict(localobject *self, thread_module_state *state, PyObject **localsdict, PyObject **sentinel_wr)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *ldict = NULL;
+    PyObject *wr = NULL;
+
+    if (create_localdummies(state) < 0) {
+        goto err;
     }
 
     /* Create and insert the locals dict and sentinel weakref */
     ldict = PyDict_New();
     if (ldict == NULL) {
-        return NULL;
+        goto err;
     }
 
     if (PyDict_SetItem(self->localdicts, tstate->threading_local_key, ldict) <
         0) {
-        Py_DECREF(ldict);
-        return NULL;
+        goto err;
     }
-    Py_DECREF(ldict);
 
-    PyObject *wr = create_sentinel_wr(self);
+    wr = create_sentinel_wr(self);
     if (wr == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
         if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) < 0) {
             PyErr_WriteUnraisable((PyObject *)self);
         }
         PyErr_SetRaisedException(exc);
-        return NULL;
+        goto err;
     }
 
     if (PySet_Add(self->thread_watchdogs, wr) < 0) {
@@ -1624,10 +1634,46 @@ _ldict(localobject *self, thread_module_state *state)
             PyErr_WriteUnraisable((PyObject *)self);
         }
         PyErr_SetRaisedException(exc);
-        Py_DECREF(wr);
+        goto err;
+    }
+
+    *localsdict = ldict;
+    *sentinel_wr = wr;
+    return 0;
+
+err:
+    Py_XDECREF(ldict);
+    Py_XDECREF(wr);
+    return -1;
+}
+
+/* Return a strong reference to the locals dict for the current thread, creating it
+   if necessary.
+*/
+static PyObject *
+_ldict(localobject *self, thread_module_state *state)
+{
+    if (create_localdummies(state) < 0) {
         return NULL;
     }
 
+    /* Check if a localsdict already exists */
+    PyObject *ldict;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (PyDict_GetItemRef(self->localdicts, tstate->threading_local_key, &ldict) < 0) {
+        return NULL;
+    }
+    if (ldict != NULL) {
+        return ldict;
+    }
+
+    /* threading.local hasn't been instantiated for this thread */
+    PyObject *wr;
+    if (create_localsdict(self, state, &ldict, &wr) < 0) {
+        return NULL;
+    }
+
+    /* run __init__ if we're a subtype of `threading.local` */
     if (Py_TYPE(self)->tp_init != PyBaseObject_Type.tp_init &&
         Py_TYPE(self)->tp_init((PyObject *)self, self->args, self->kw) < 0) {
         /* we need to get rid of ldict from thread so
@@ -1642,6 +1688,7 @@ _ldict(localobject *self, thread_module_state *state)
             PyErr_WriteUnraisable((PyObject *)self);
         }
         PyErr_SetRaisedException(exc);
+        Py_DECREF(ldict);
         Py_DECREF(wr);
         return NULL;
     }
@@ -1659,21 +1706,27 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
 
     PyObject *ldict = _ldict(self, state);
     if (ldict == NULL) {
-        return -1;
+        goto err;
     }
 
     int r = PyObject_RichCompareBool(name, &_Py_ID(__dict__), Py_EQ);
     if (r == -1) {
-        return -1;
+        goto err;
     }
     if (r == 1) {
         PyErr_Format(PyExc_AttributeError,
                      "'%.100s' object attribute '%U' is read-only",
                      Py_TYPE(self)->tp_name, name);
-        return -1;
+        goto err;
     }
 
-    return _PyObject_GenericSetAttrWithDict((PyObject *)self, name, v, ldict);
+    int st =  _PyObject_GenericSetAttrWithDict((PyObject *)self, name, v, ldict);
+    Py_DECREF(ldict);
+    return st;
+
+err:
+    Py_XDECREF(ldict);
+    return -1;
 }
 
 static PyObject *local_getattro(localobject *, PyObject *);
@@ -1716,28 +1769,34 @@ local_getattro(localobject *self, PyObject *name)
 
     int r = PyObject_RichCompareBool(name, &_Py_ID(__dict__), Py_EQ);
     if (r == 1) {
-        return Py_NewRef(ldict);
+        return ldict;
     }
     if (r == -1) {
+        Py_DECREF(ldict);
         return NULL;
     }
 
     if (!Py_IS_TYPE(self, state->local_type)) {
         /* use generic lookup for subtypes */
-        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name,
-                                                ldict, 0);
+        PyObject *res =  _PyObject_GenericGetAttrWithDict((PyObject *)self, name,
+                                                          ldict, 0);
+        Py_DECREF(ldict);
+        return res;
     }
 
     /* Optimization: just look in dict ourselves */
     PyObject *value;
     if (PyDict_GetItemRef(ldict, name, &value) != 0) {
         // found or error
+        Py_DECREF(ldict);
         return value;
     }
 
     /* Fall back on generic to get __class__ and __dict__ */
-    return _PyObject_GenericGetAttrWithDict(
+    PyObject *res =  _PyObject_GenericGetAttrWithDict(
         (PyObject *)self, name, ldict, 0);
+    Py_DECREF(ldict);
+    return res;
 }
 
 /* Called when a dummy is destroyed, indicating that the owning thread is being
