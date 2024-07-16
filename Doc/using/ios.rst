@@ -284,7 +284,8 @@ To add Python to an iOS Xcode project:
    * :c:member:`UTF-8 mode <PyPreConfig.utf8_mode>` is *enabled*;
    * :c:member:`Buffered stdio <PyConfig.buffered_stdio>` is *disabled*;
    * :c:member:`Writing bytecode <PyConfig.write_bytecode>` is *disabled*;
-   * :c:member:`Signal handlers <PyConfig.install_signal_handlers>` are *enabled*;
+   * :c:member:`Signal handlers <PyConfig.install_signal_handlers>` are *enabled*
+
      - This is important because Python libraries may use SIGINT to communicate. Also, only the SIGPIPE and SIGINT signals are affected, meaning that third-party crash reporting libraries, which handle many signals but generally not those two, are unaffected.
    * ``PYTHONHOME`` for the interpreter is configured to point at the
      ``python`` subfolder of your app's bundle; and
