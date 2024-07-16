@@ -35,10 +35,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
+      # Some of the referenced steps set outputs conditionally and there may be
+      # cases when referencing them evaluates to empty strings. It is nice to
+      # work with proper booleans so they have to be evaluated through JSON
+      # conversion in the expressions. However, empty strings used like that
+      # may trigger all sorts of undefined and hard-to-debug behaviors in
+      # GitHub Actions CI/CD. To help with this, all of the outputs set here
+      # that are meant to be used as boolean flags (and not arbitrary strings),
+      # MUST have fallbacks with default values set. A common pattern would be
+      # to add ` || false` to all such expressions here, in the output
+      # definitions. They can then later be safely used through the following
+      # idiom in job conditionals and other expressions. Here's some examples:
+      #
+      #   if: fromJSON(needs.check_source.outputs.run-docs)
+      #
+      #   ${{
+      #        fromJSON(needs.check_source.outputs.run_tests)
+      #        && 'truthy-branch'
+      #        || 'falsy-branch'
+      #   }}
+      #
       run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
-      run_tests: ${{ steps.check.outputs.run_tests }}
-      run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
-      config_hash: ${{ steps.config_hash.outputs.hash }}
+      run_tests: ${{ steps.check.outputs.run_tests || false }}
+      run_hypothesis: ${{ steps.check.outputs.run_hypothesis || false }}
+      config_hash: ${{ steps.config_hash.outputs.hash }}  # str
     steps:
       - uses: actions/checkout@v4
       - name: Check for source changes
