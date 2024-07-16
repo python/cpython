@@ -15584,7 +15584,7 @@ void
 PyUnicode_InternInPlace(PyObject **p)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternImmortal(interp, p);
+    _PyUnicode_InternMortal(interp, p);
 }
 
 // Public-looking name kept for the stable ABI; user should not call this:
