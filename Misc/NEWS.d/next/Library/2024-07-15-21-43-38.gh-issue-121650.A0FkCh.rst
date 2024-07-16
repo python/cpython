@@ -1,2 +1,3 @@
-Fixed newlines and carriage returns in :mod:`email` headers, both at the end of
-the header, and encoded entities that are resolved to newlines and returns
+Fix :mod:`email.policy` to properly disallow newlines and carriage returns
+in email headers, both at the end of the header, and encoded entities that are
+resolved to newlines and carriage returns.
