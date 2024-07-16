@@ -229,13 +229,13 @@ class TestCase(unittest.TestCase):
                                deserializer=deserializer) as s:
             num = 1
             s['number'] = num
-            num2 = 2
+            num2 = 2.3
             s['number2'] = num2
             self.assertEqual(s['number'], type(num))
 
             key, value = s.previous()
             self.assertEqual("number2", key)
-            self.assertEqual(value, type(num))
+            self.assertEqual(value, type(num2))
 
             key, value = s.set_location(b'number')
             self.assertEqual("number", key)
@@ -243,7 +243,7 @@ class TestCase(unittest.TestCase):
 
             key, value = s.next()
             self.assertEqual("number2", key)
-            self.assertEqual(value, type(num))
+            self.assertEqual(value, type(num2))
 
             key, value = s.first()
             self.assertEqual("number", key)
