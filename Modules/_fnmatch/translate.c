@@ -83,15 +83,6 @@ translate_expression(fnmatchmodule_state *state,
                      PyObject *pattern, Py_ssize_t start, Py_ssize_t stop);
 
 /*
- * Write an escaped string using re.escape().
- *
- * This returns the number of written characters, or -1 if an error occurred.
- */
-static Py_ssize_t
-write_literal(fnmatchmodule_state *state,
-              PyUnicodeWriter *writer, PyObject *literal);
-
-/*
  * Write the translated pattern obtained by translate_expression().
  *
  * This returns the number of written characters, or -1 if an error occurred.
@@ -114,8 +105,8 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
 {
     assert(PyUnicode_Check(pattern));
     fnmatchmodule_state *state = get_fnmatchmodule_state(module);
-    PyObject *re = state->re_module;
     const Py_ssize_t n = PyUnicode_GET_LENGTH(pattern);
+
     // We would write less data if there are successive '*',
     // which should not be the case in general. Otherwise,
     // we write >= n characters since escaping them always
@@ -137,11 +128,25 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     if (writer == NULL) {
         return NULL;
     }
+
     // list containing the indices where '*' has a special meaning
-    PyObject *indices = PyList_New(0);
+    PyObject *indices = NULL;
+    // cached functions (cache is local to the call)
+    PyObject *re_escape_func = NULL, *re_sub_func = NULL;
+
+    indices = PyList_New(0);
     if (indices == NULL) {
         goto abort;
     }
+    re_escape_func = PyObject_GetAttr(state->re_module, &_Py_ID(escape));
+    if (re_escape_func == NULL) {
+        goto abort;
+    }
+    re_sub_func = PyObject_GetAttr(state->re_module, &_Py_ID(sub));
+    if (re_sub_func == NULL) {
+        goto abort;
+    }
+
     const int kind = PyUnicode_KIND(pattern);
     const void *data = PyUnicode_DATA(pattern);
     /* declaration of some local helping macros */
@@ -218,9 +223,11 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                         if (s0 == NULL) {
                             goto abort;
                         }
-                        // NOTE(picnixz): maybe cache the method and intern the arguments
-                        // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
-                        s1 = _PyObject_CallMethod(s0, &_Py_ID(replace), "ss", "\\", "\\\\");
+                        s1 = PyObject_CallMethodObjArgs(
+                            s0, &_Py_ID(replace),
+                            state->backslash_str, state->backslash_esc_str,
+                            NULL
+                        );
                         Py_DECREF(s0);
                     }
                     else {
@@ -231,9 +238,13 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                     if (s1 == NULL) {
                         goto abort;
                     }
-                    // NOTE(picnixz): maybe cache the method and intern the arguments
-                    // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
-                    s2 = _PyObject_CallMethod(re, &_Py_ID(sub), "ssO", "([&~|])", "\\\\\\1", s1);
+                    s2 = PyObject_CallFunctionObjArgs(
+                        re_sub_func,
+                        state->inactive_toks_str,
+                        state->inactive_toks_repl_str,
+                        s1,
+                        NULL
+                    );
                     Py_DECREF(s1);
                     if (s2 == NULL) {
                         goto abort;
@@ -253,12 +264,14 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 if (str == NULL) {
                     goto abort;
                 }
-                Py_ssize_t difflen = write_literal(state, writer, str);
+                PyObject *escchr = PyObject_CallOneArg(re_escape_func, str);
                 Py_DECREF(str);
-                if (difflen < 0) {
+                if (escchr == NULL) {
                     goto abort;
                 }
-                wi += difflen;
+                _WRITE_STRING_OR(writer, escchr, Py_DECREF(escchr); goto abort);
+                wi += PyUnicode_GET_LENGTH(escchr);
+                Py_DECREF(escchr);
                 break;
             }
         }
@@ -268,6 +281,8 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
 #undef _WHILE_READ_CMP
 #undef ADVANCE_IF_CHAR
 #undef READ
+    Py_DECREF(re_sub_func);
+    Py_DECREF(re_escape_func);
     PyObject *translated = PyUnicodeWriter_Finish(writer);
     if (translated == NULL) {
         Py_DECREF(indices);
@@ -278,8 +293,10 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     Py_DECREF(indices);
     return res;
 abort:
-    PyUnicodeWriter_Discard(writer);
+    Py_XDECREF(re_sub_func);
+    Py_XDECREF(re_escape_func);
     Py_XDECREF(indices);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -310,18 +327,36 @@ get_unicode_character(Py_UCS4 ch)
     return unicode;
 }
 
+/*
+ * Extract a list of chunks from the pattern group described by i and j.
+ *
+ * See translate_expression() for its usage.
+ */
 static PyObject *
-translate_expression(fnmatchmodule_state *state,
-                     PyObject *pattern, Py_ssize_t i, Py_ssize_t j)
+translate_expression_split(fnmatchmodule_state *state,
+                           PyObject *pattern, Py_ssize_t i, Py_ssize_t j)
 {
-    PyObject *chunks = PyList_New(0);
+    PyObject *chunks = NULL;
+    // local cache for some objects
+    PyObject *str_find_func = NULL, *max_find_index = NULL;
+
+    chunks = PyList_New(0);
     if (chunks == NULL) {
-        return NULL;
+        goto abort;
     }
+    str_find_func = PyObject_GetAttr(pattern, &_Py_ID(find));
+    if (str_find_func == NULL) {
+        goto abort;
+    }
+    max_find_index = PyLong_FromSsize_t(j);
+    if (max_find_index == NULL) {
+        goto abort;
+    }
+
     Py_ssize_t k = (PyUnicode_READ_CHAR(pattern, i) == '!') ? i + 2 : i + 1;
-    Py_ssize_t chunkscount = 0;
     while (k < j) {
-        PyObject *eobj = _PyObject_CallMethod(pattern, &_Py_ID(find), "sii", "-", k, j);
+        PyObject *eobj = PyObject_CallFunction(
+            str_find_func, "OnO", state->hyphen_str, k, max_find_index);
         if (eobj == NULL) {
             goto abort;
         }
@@ -344,11 +379,12 @@ translate_expression(fnmatchmodule_state *state,
         if (rc < 0) {
             goto abort;
         }
-        chunkscount += 1;
         i = t + 1;
         k = t + 3;
     }
+    // handle the last group
     if (i >= j) {
+        Py_ssize_t chunkscount = PyList_GET_SIZE(chunks);
         assert(chunkscount > 0);
         PyObject *chunk = PyList_GET_ITEM(chunks, chunkscount - 1);
         assert(chunk != NULL);
@@ -362,6 +398,7 @@ translate_expression(fnmatchmodule_state *state,
         }
     }
     else {
+        // add the remaining sub-pattern
         PyObject *sub = PyUnicode_Substring(pattern, i, j);
         if (sub == NULL) {
             goto abort;
@@ -371,10 +408,26 @@ translate_expression(fnmatchmodule_state *state,
         if (rc < 0) {
             goto abort;
         }
-        chunkscount += 1;
     }
-    // remove empty ranges (they are not valid in RE)
-    Py_ssize_t c = chunkscount;
+    Py_DECREF(max_find_index);
+    Py_DECREF(str_find_func);
+    return chunks;
+abort:
+    Py_XDECREF(max_find_index);
+    Py_XDECREF(str_find_func);
+    Py_XDECREF(chunks);
+    return NULL;
+}
+
+/*
+ * Remove empty ranges (they are invalid in RE).
+ *
+ * See translate_expression() for its usage.
+ */
+static int
+translate_expression_simplify(fnmatchmodule_state *st, PyObject *chunks)
+{
+    Py_ssize_t c = PyList_GET_SIZE(chunks);
     while (--c) {
         PyObject *c1 = PyList_GET_ITEM(chunks, c - 1);
         assert(c1 != NULL);
@@ -387,90 +440,99 @@ translate_expression(fnmatchmodule_state *state,
         assert(c2len > 0);
 
         if (PyUnicode_READ_CHAR(c1, c1len - 1) > PyUnicode_READ_CHAR(c2, 0)) {
-            // all but the last character in the chunk
-            PyObject *c1sub = PyUnicode_Substring(c1, 0, c1len - 1);
-            // all but the first character in the chunk
-            PyObject *c2sub = PyUnicode_Substring(c2, 1, c2len);
-            if (c1sub == NULL || c2sub == NULL) {
-                Py_XDECREF(c1sub);
-                Py_XDECREF(c2sub);
-                goto abort;
+            Py_ssize_t olen = c1len + c2len - 2;
+            assert(olen >= 0);
+            // see https://github.com/python/cpython/issues/114917 for
+            // why we need olen + 1 and not olen currently
+            PyUnicodeWriter *writer = PyUnicodeWriter_Create(olen + 1);
+            if (writer == NULL) {
+                return -1;
             }
-            PyObject *merged = PyUnicode_Concat(c1sub, c2sub);
-            Py_DECREF(c1sub);
-            Py_DECREF(c2sub);
+            // all but the last character in the first chunk
+            if (_WRITE_BLOCK(writer, c1, 0, c1len - 1) < 0) {
+                PyUnicodeWriter_Discard(writer);
+                return -1;
+            }
+            // all but the first character in the second chunk
+            if (_WRITE_BLOCK(writer, c2, 1, c2len) < 0) {
+                PyUnicodeWriter_Discard(writer);
+                return -1;
+            }
             // PyList_SetItem() does not create a new reference on 'merged'
             // so we should not decref 'merged' after the call, unless there
             // is an issue while setting the item.
+            PyObject *merged = PyUnicodeWriter_Finish(writer);
             if (merged == NULL || PyList_SetItem(chunks, c - 1, merged) < 0) {
                 Py_XDECREF(merged);
-                goto abort;
+                return -1;
             }
             if (PySequence_DelItem(chunks, c) < 0) {
-                goto abort;
+                return -1;
             }
-            chunkscount--;
         }
     }
-    assert(chunkscount == PyList_GET_SIZE(chunks));
-    // Escape backslashes and hyphens for set difference (--),
-    // but hyphens that create ranges should not be escaped.
-    for (c = 0; c < chunkscount; ++c) {
+    return 0;
+}
+
+/*
+ * Escape backslashes and hyphens for set difference (--),
+ * but hyphens that create ranges should not be escaped.
+ *
+ * See translate_expression() for its usage.
+ */
+static int
+translate_expression_escape(fnmatchmodule_state *st, PyObject *chunks)
+{
+    for (Py_ssize_t c = 0; c < PyList_GET_SIZE(chunks); ++c) {
         PyObject *s0 = PyList_GET_ITEM(chunks, c);
         assert(s0 != NULL);
-        // NOTE(picnixz): maybe cache the method and intern the arguments
-        // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
-        PyObject *s1 = _PyObject_CallMethod(s0, &_Py_ID(replace), "ss", "\\", "\\\\");
+        PyObject *s1 = PyObject_CallMethodObjArgs(s0,
+                                                  &_Py_ID(replace),
+                                                  st->backslash_str,
+                                                  st->backslash_esc_str,
+                                                  NULL);
         if (s1 == NULL) {
-            goto abort;
+            return -1;
         }
-        // NOTE(picnixz): maybe cache the method and intern the arguments
-        // NOTE(picnixz): to be able to use PyObject_CallFunctionObjArgs()
-        PyObject *s2 = _PyObject_CallMethod(s1, &_Py_ID(replace), "ss", "-", "\\-");
+        PyObject *s2 = PyObject_CallMethodObjArgs(s1,
+                                                  &_Py_ID(replace),
+                                                  st->hyphen_str,
+                                                  st->hyphen_esc_str,
+                                                  NULL);
         Py_DECREF(s1);
         // PyList_SetItem() does not create a new reference on 's2'
         // so we should not decref 's2' after the call, unless there
         // is an issue while setting the item.
         if (s2 == NULL || PyList_SetItem(chunks, c, s2) < 0) {
             Py_XDECREF(s2);
-            goto abort;
+            return -1;
         }
     }
-    PyObject *hyphen = PyUnicode_FromOrdinal('-');
-    if (hyphen == NULL) {
+    return 0;
+}
+
+static PyObject *
+translate_expression(fnmatchmodule_state *state,
+                     PyObject *pattern, Py_ssize_t i, Py_ssize_t j)
+{
+    PyObject *chunks = translate_expression_split(state, pattern, i, j);
+    if (chunks == NULL) {
         goto abort;
     }
-    PyObject *res = PyUnicode_Join(hyphen, chunks);
-    Py_DECREF(hyphen);
-    if (res == NULL) {
+    // remove empty ranges
+    if (translate_expression_simplify(state, chunks) < 0) {
         goto abort;
     }
+    // escape backslashes and set differences
+    if (translate_expression_escape(state, chunks) < 0) {
+        goto abort;
+    }
+    PyObject *res = PyUnicode_Join(state->hyphen_str, chunks);
     Py_DECREF(chunks);
     return res;
 abort:
     Py_XDECREF(chunks);
     return NULL;
-}
-
-static Py_ssize_t
-write_literal(fnmatchmodule_state *state,
-              PyUnicodeWriter *writer, PyObject *literal)
-{
-    PyObject *escaped = PyObject_CallMethodOneArg(state->re_module,
-                                                  &_Py_ID(escape),
-                                                  literal);
-    if (escaped == NULL) {
-        return -1;
-    }
-    Py_ssize_t written = PyUnicode_GET_LENGTH(escaped);
-    assert(written >= 0);
-    int rc = _WRITE_STRING(writer, escaped);
-    Py_DECREF(escaped);
-    if (rc < 0) {
-        return -1;
-    }
-    assert(written > 0);
-    return written;
 }
 
 static Py_ssize_t
@@ -522,7 +584,7 @@ process_wildcards(PyObject *pattern, PyObject *indices)
     const Py_ssize_t m = PyList_GET_SIZE(indices);
     if (m == 0) {
         // "(?s:" + pattern + ")\Z"
-        return PyUnicode_FromFormat("(?s:%S)\\Z", pattern);
+        return PyUnicode_FromFormat("(?s:%U)\\Z", pattern);
     }
     /*
      * Special cases: indices[0] == 0 or indices[-1] + 1 == n
@@ -583,7 +645,7 @@ process_wildcards(PyObject *pattern, PyObject *indices)
         return NULL;
     }
     // "(?s:" + processed + ")\Z"
-    PyObject *res = PyUnicode_FromFormat("(?s:%S)\\Z", processed);
+    PyObject *res = PyUnicode_FromFormat("(?s:%U)\\Z", processed);
     Py_DECREF(processed);
     return res;
 abort:
