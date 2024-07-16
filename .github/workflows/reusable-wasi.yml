@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       WASMTIME_VERSION: 22.0.0
-      WASI_SDK_VERSION: 21
+      WASI_SDK_VERSION: 22
       WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasi
