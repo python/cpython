@@ -968,6 +968,27 @@ class TestMain(TestCase):
         self.assertIn("spam", output)
         self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
 
+    def test_readline_history_file(self):
+        # skip, if readline module is not available
+        import_module("readline")
+
+        hfile = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(unlink, hfile.name)
+        env = os.environ.copy()
+        env["PYTHON_HISTORY"] = hfile.name
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl("spam \nexit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("spam ", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+        self.assertIn("spam\\040", pathlib.Path(hfile.name).read_text())
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl("exit\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())
+
     def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
         cmd = [sys.executable, "-i", "-u"]
