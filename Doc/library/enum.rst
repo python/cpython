@@ -179,11 +179,11 @@ Data Types
 
       Update the dictionary from the given iterable or dictionary members and more_members.
 
+.. class:: EnumType
+
    *EnumType* is the :term:`metaclass` for *enum* enumerations.  It is possible
    to subclass *EnumType* -- see :ref:`Subclassing EnumType <enumtype-examples>`
    for details.
-
-.. class:: EnumType
 
    ``EnumType`` is responsible for setting the correct :meth:`!__repr__`,
    :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
