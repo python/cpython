@@ -68,6 +68,8 @@ struct _ts {
        pycore_ceval.h. */
     uintptr_t eval_breaker;
 
+    PyObject *asyncio_running_loop; // Strong reference
+
     struct {
         /* Has been initialized to a safe state.
 
@@ -163,8 +165,6 @@ struct _ts {
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
-
-    PyObject *asyncio_running_loop; // Strong reference
 
     PyObject *context;
     uint64_t context_ver;

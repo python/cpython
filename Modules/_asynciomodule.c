@@ -3301,8 +3301,8 @@ static PyObject *
 _asyncio__set_running_loop(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=ae56bf7a28ca189a input=4c9720233d606604]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    Py_SETREF(tstate->asyncio_running_loop, Py_NewRef(loop));
+    PyThreadState *ts = _PyThreadState_GET();
+    Py_SETREF(ts->asyncio_running_loop, Py_NewRef(loop));
     Py_RETURN_NONE;
 }
 
