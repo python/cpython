@@ -1,0 +1,2 @@
+The app store compliance patch is now applied to the installed products,
+rather than to the original source tree.
