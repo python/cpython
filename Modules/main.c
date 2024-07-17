@@ -261,7 +261,7 @@ error:
 
 
 static int
-pymain_start_pyrepl_no_main()
+pymain_start_pyrepl_no_main(void)
 {
     int res = 0;
     PyObject *pyrepl, *console, *empty_tuple, *kwargs, *console_result;
