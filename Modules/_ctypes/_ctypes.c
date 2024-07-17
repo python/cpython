@@ -2164,9 +2164,15 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(result);
                 return NULL;
             }
-            x = PyDict_SetItemString(result->tp_dict,
-                                     ml->ml_name,
-                                     meth);
+            PyObject *name = PyUnicode_FromString(ml->ml_name);
+            if (name == NULL) {
+                Py_DECREF(meth);
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyUnicode_InternInPlace(&name);
+            x = PyDict_SetItem(result->tp_dict, name, meth);
+            Py_DECREF(name);
             Py_DECREF(meth);
             if (x == -1) {
                 Py_DECREF(result);
