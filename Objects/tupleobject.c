@@ -18,6 +18,9 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 #include "clinic/tupleobject.c.h"
 
 
+static inline int maybe_freelist_push(PyTupleObject *);
+
+
 /* Allocate an uninitialized tuple object. Before making it public, following
    steps must be done:
 
@@ -176,19 +179,6 @@ PyTuple_Pack(Py_ssize_t n, ...)
 
 
 /* Methods */
-
-static inline int
-maybe_freelist_push(PyTupleObject *op)
-{
-    if (!Py_IS_TYPE(op, &PyTuple_Type)) {
-        return 0;
-    }
-    Py_ssize_t index = Py_SIZE(op) - 1;
-    if (index < PyTuple_MAXSAVESIZE) {
-        return _Py_FREELIST_PUSH(tuples[index], op, Py_tuple_MAXFREELIST);
-    }
-    return 0;
-}
 
 static void
 tupledealloc(PyTupleObject *op)
@@ -1138,6 +1128,19 @@ tuple_iter(PyObject *seq)
 /*************
  * freelists *
  *************/
+
+static inline int
+maybe_freelist_push(PyTupleObject *op)
+{
+    if (!Py_IS_TYPE(op, &PyTuple_Type)) {
+        return 0;
+    }
+    Py_ssize_t index = Py_SIZE(op) - 1;
+    if (index < PyTuple_MAXSAVESIZE) {
+        return _Py_FREELIST_PUSH(tuples[index], op, Py_tuple_MAXFREELIST);
+    }
+    return 0;
+}
 
 /* Print summary info about the state of the optimized allocator */
 void

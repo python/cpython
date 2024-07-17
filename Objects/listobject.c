@@ -223,7 +223,6 @@ PyList_New(Py_ssize_t size)
             return NULL;
         }
     }
-
     if (size <= 0) {
         op->ob_item = NULL;
     }
