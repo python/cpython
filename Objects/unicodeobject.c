@@ -13637,27 +13637,28 @@ int
 _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
                                 Py_ssize_t start, Py_ssize_t end)
 {
-    Py_UCS4 maxchar;
-    Py_ssize_t len;
-
     assert(0 <= start);
     assert(end <= PyUnicode_GET_LENGTH(str));
     assert(start <= end);
 
-    if (end == 0)
-        return 0;
-
     if (start == 0 && end == PyUnicode_GET_LENGTH(str))
         return _PyUnicodeWriter_WriteStr(writer, str);
 
-    if (PyUnicode_MAX_CHAR_VALUE(str) > writer->maxchar)
-        maxchar = _PyUnicode_FindMaxChar(str, start, end);
-    else
-        maxchar = writer->maxchar;
-    len = end - start;
+    Py_ssize_t len = end - start;
+    if (len == 0) {
+        return 0;
+    }
 
-    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0)
+    Py_UCS4 maxchar;
+    if (PyUnicode_MAX_CHAR_VALUE(str) > writer->maxchar) {
+        maxchar = _PyUnicode_FindMaxChar(str, start, end);
+    }
+    else {
+        maxchar = writer->maxchar;
+    }
+    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0) {
         return -1;
+    }
 
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, start, len);
