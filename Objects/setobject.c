@@ -760,8 +760,9 @@ frozenset_hash(PyObject *self)
     PySetObject *so = (PySetObject *)self;
     Py_uhash_t hash;
 
-    if (so->hash != -1)
+    if (so->hash != -1) {
         return so->hash;
+    }
 
     hash = compute_setobject_hash(self);
     so->hash = hash;
@@ -2148,7 +2149,6 @@ set_add_impl(PySetObject *so, PyObject *key)
 static int
 set_contains_lock_held(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash;
     int rv;
 
     rv = set_contains_key(so, key);
@@ -2156,6 +2156,7 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
+        Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
         hash = compute_setobject_hash(key);
         Py_END_CRITICAL_SECTION();
@@ -2213,7 +2214,6 @@ static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=0b9134a2a2200363 input=893e1cb1df98227a]*/
 {
-    Py_hash_t hash;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2221,6 +2221,7 @@ set_remove_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
+        Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
         hash = compute_setobject_hash(key);
         Py_END_CRITICAL_SECTION();
@@ -2253,7 +2254,6 @@ static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=eec3b687bf32759e input=861cb7fb69b4def0]*/
 {
-    Py_hash_t hash;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2261,6 +2261,7 @@ set_discard_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
+        Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
         hash = compute_setobject_hash(key);
         Py_END_CRITICAL_SECTION();
