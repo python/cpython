@@ -1023,18 +1023,6 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
 
     Py_BEGIN_ALLOW_THREADS
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-
-    /* issue11395 there is an unspecified upper bound on how many bytes
-       can be written at once. We cap at 32k - the caller will have to
-       handle partial writes.
-       Since we don't know how many input bytes are being ignored, we
-       have to reduce and recalculate. */
-    while (wlen > 32766 / sizeof(wchar_t)) {
-        len /= 2;
-        /* Fix for github issues gh-110913 and gh-82052. */
-        len = _find_last_utf8_boundary(b->buf, len);
-        wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-    }
     Py_END_ALLOW_THREADS
 
     if (!wlen)
