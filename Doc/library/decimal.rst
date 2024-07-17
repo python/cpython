@@ -600,8 +600,8 @@ Decimal objects
 
    .. classmethod:: from_number(number)
 
-      Alternative constructor that only accepts numbers (instances of
-      :class:`float`, :class:`int` or :class:`Decimal`), but not strings
+      Alternative constructor that only accepts instances of
+      :class:`float`, :class:`int` or :class:`Decimal`, but not strings
       or tuples.
 
       .. doctest::
