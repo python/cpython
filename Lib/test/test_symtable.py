@@ -2,7 +2,6 @@
 Test the API of the symtable module.
 """
 
-import re
 import textwrap
 import symtable
 import unittest
@@ -360,32 +359,25 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.Mine.get_name(), "Mine")
 
     def test_class_get_methods(self):
-        deprecation_mess = (
-            re.escape('symtable.Class.get_methods() is deprecated '
-                      'and will be removed in Python 3.16.')
-        )
-
-        with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
-            self.assertEqual(self.Mine.get_methods(), ('a_method',))
+        self.assertEqual(self.Mine.get_methods(), ('a_method',))
 
         top = symtable.symtable(TEST_COMPLEX_CLASS_CODE, "?", "exec")
         this = find_block(top, "ComplexClass")
 
-        with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
-            self.assertEqual(this.get_methods(), (
-                'a_method', 'a_method_pep_695',
-                'an_async_method', 'an_async_method_pep_695',
-                'a_classmethod', 'a_classmethod_pep_695',
-                'an_async_classmethod', 'an_async_classmethod_pep_695',
-                'a_staticmethod', 'a_staticmethod_pep_695',
-                'an_async_staticmethod', 'an_async_staticmethod_pep_695',
-                'a_fakemethod', 'a_fakemethod_pep_695',
-                'an_async_fakemethod', 'an_async_fakemethod_pep_695',
-                'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
-                'glob_unassigned_async_meth', 'glob_unassigned_async_meth_pep_695',
-                'glob_assigned_meth', 'glob_assigned_meth_pep_695',
-                'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
-            ))
+        self.assertEqual(this.get_methods(), (
+            'a_method', 'a_method_pep_695',
+            'an_async_method', 'an_async_method_pep_695',
+            'a_classmethod', 'a_classmethod_pep_695',
+            'an_async_classmethod', 'an_async_classmethod_pep_695',
+            'a_staticmethod', 'a_staticmethod_pep_695',
+            'an_async_staticmethod', 'an_async_staticmethod_pep_695',
+            'a_fakemethod', 'a_fakemethod_pep_695',
+            'an_async_fakemethod', 'an_async_fakemethod_pep_695',
+            'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
+            'glob_unassigned_async_meth', 'glob_unassigned_async_meth_pep_695',
+            'glob_assigned_meth', 'glob_assigned_meth_pep_695',
+            'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
+        ))
 
         # Test generator expressions that are of type TYPE_FUNCTION
         # but will not be reported by get_methods() since they are
@@ -398,8 +390,7 @@ class SymtableTest(unittest.TestCase):
             indented = textwrap.indent(body, ' ' * 4)
             top = symtable.symtable(f"class A:\n{indented}", "?", "exec")
             this = find_block(top, "A")
-            with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
-                self.assertEqual(this.get_methods(), expected_methods)
+            self.assertEqual(this.get_methods(), expected_methods)
 
         # statements with 'genexpr' inside it
         GENEXPRS = (

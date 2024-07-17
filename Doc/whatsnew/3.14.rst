@@ -167,9 +167,6 @@ Deprecated
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
-* Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
-  (Contributed by Bénédikt Tran in :gh:`119698`.)
-
 
 Removed
 =======
