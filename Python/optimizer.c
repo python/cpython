@@ -503,7 +503,7 @@ add_to_trace(
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
         OPT_STAT_INC(trace_stack_overflow); \
-        trace_length = 0; \
+        progress_needed = true; \
         goto done; \
     } \
     assert(func == NULL || func->func_code == (PyObject *)code); \
@@ -569,7 +569,6 @@ translate_bytecode_to_trace(
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
     uint32_t target = 0;
 
-top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
         // Need space for _DEOPT
@@ -611,7 +610,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         /* Special case the first instruction,
          * so that we can guarantee forward progress */
         if (progress_needed) {
-            progress_needed = false;
             if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
                 opcode = _PyOpcode_Deopt[opcode];
             }
@@ -888,6 +886,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             assert(instr->op.code == POP_TOP);
             instr++;
         }
+    top:
+        // Jump here after _PUSH_FRAME or likely branches.
+        progress_needed = false;
     }  // End for (;;)
 
 done:
@@ -895,16 +896,15 @@ done:
         TRACE_STACK_POP();
     }
     assert(code == initial_code);
-    // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, _EXIT_TRACE
-    if (progress_needed || trace_length < 5) {
+    // Skip short traces where we can't even translate a single instruction:
+    if (progress_needed) {
         OPT_STAT_INC(trace_too_short);
         DPRINTF(2,
-                "No trace for %s (%s:%d) at byte offset %d (%s)\n",
+                "No trace for %s (%s:%d) at byte offset %d (no progress)\n",
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
-                2 * INSTR_IP(initial_instr, code),
-                progress_needed ? "no progress" : "too short");
+                2 * INSTR_IP(initial_instr, code));
         return 0;
     }
     if (trace[trace_length-1].opcode != _JUMP_TO_TOP) {
