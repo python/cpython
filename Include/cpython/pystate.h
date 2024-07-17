@@ -68,6 +68,8 @@ struct _ts {
        pycore_ceval.h. */
     uintptr_t eval_breaker;
 
+    PyObject *asyncio_running_loop; // Strong reference
+
     struct {
         /* Has been initialized to a safe state.
 
@@ -97,10 +99,11 @@ struct _ts {
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
 #  define _PyThreadState_WHENCE_UNKNOWN 0
-#  define _PyThreadState_WHENCE_INTERP 1
-#  define _PyThreadState_WHENCE_THREADING 2
-#  define _PyThreadState_WHENCE_GILSTATE 3
-#  define _PyThreadState_WHENCE_EXEC 4
+#  define _PyThreadState_WHENCE_INIT 1
+#  define _PyThreadState_WHENCE_FINI 2
+#  define _PyThreadState_WHENCE_THREADING 3
+#  define _PyThreadState_WHENCE_GILSTATE 4
+#  define _PyThreadState_WHENCE_EXEC 5
 #endif
     int _whence;
 

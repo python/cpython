@@ -281,7 +281,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def __step(self, exc=None):
         if self.done():
             raise exceptions.InvalidStateError(
-                f'_step(): already done: {self!r}, {exc!r}')
+                f'__step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()
@@ -379,7 +379,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             # Don't pass the value of `future.result()` explicitly,
             # as `Future.__iter__` and `Future.__await__` don't need it.
-            # If we call `_step(value, None)` instead of `_step()`,
+            # If we call `__step(value, None)` instead of `__step()`,
             # Python eval loop would use `.send(value)` method call,
             # instead of `__next__()`, which is slower for futures
             # that return non-generator iterators from their `__iter__`.
@@ -1097,14 +1097,14 @@ _py_unregister_eager_task = _unregister_eager_task
 _py_enter_task = _enter_task
 _py_leave_task = _leave_task
 _py_swap_current_task = _swap_current_task
-
+_py_all_tasks = all_tasks
 
 try:
     from _asyncio import (_register_task, _register_eager_task,
                           _unregister_task, _unregister_eager_task,
                           _enter_task, _leave_task, _swap_current_task,
                           _scheduled_tasks, _eager_tasks, _current_tasks,
-                          current_task)
+                          current_task, all_tasks)
 except ImportError:
     pass
 else:
@@ -1116,3 +1116,4 @@ else:
     _c_enter_task = _enter_task
     _c_leave_task = _leave_task
     _c_swap_current_task = _swap_current_task
+    _c_all_tasks = all_tasks

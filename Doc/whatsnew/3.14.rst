@@ -75,6 +75,10 @@ New Features
 Other Language Changes
 ======================
 
+* Added class methods :meth:`float.from_number` and :meth:`complex.from_number`
+  to convert a number to :class:`float` or :class:`complex` type correspondingly.
+  They raise an error if the argument is a string.
+  (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
 
 New Modules
@@ -89,13 +93,63 @@ Improved Modules
 ast
 ---
 
-Added :func:`ast.compare` for comparing two ASTs.
-(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+* Added :func:`ast.compare` for comparing two ASTs.
+  (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+* Add support for :func:`copy.replace` for AST nodes.
+
+  (Contributed by Bénédikt Tran in :gh:`121141`.)
+
+os
+--
+
+* Added the :data:`os.environ.refresh() <os.environ>` method to update
+  :data:`os.environ` with changes to the environment made by :func:`os.putenv`,
+  by :func:`os.unsetenv`, or made outside Python in the same process.
+  (Contributed by Victor Stinner in :gh:`120057`.)
+
+pathlib
+-------
+
+* Add :meth:`pathlib.Path.copy`, which copies the content of one file to
+  another, like :func:`shutil.copyfile`.
+  (Contributed by Barney Gale in :gh:`73991`.)
+* Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
+  another.
+  (Contributed by Barney Gale in :gh:`73991`.)
+
+pdb
+---
+
+* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace()`) now
+  reuse the most recent :class:`~pdb.Pdb` instance that calls
+  :meth:`~pdb.Pdb.set_trace()`, instead of creating a new one each time.
+  As a result, all the instance specific data like :pdbcmd:`display` and
+  :pdbcmd:`commands` are preserved across hard-coded breakpoints.
+  (Contributed by Tian Gao in :gh:`121450`.)
+
+symtable
+--------
+
+* Expose the following :class:`symtable.Symbol` methods:
+
+  * :meth:`~symtable.Symbol.is_free_class`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_comp_cell`
+
+  (Contributed by Bénédikt Tran in :gh:`120029`.)
 
 
 Optimizations
 =============
+
+asyncio
+-------
+
+* :mod:`asyncio` now uses double linked list implementation for native tasks
+  which speeds up execution by 10% on standard pyperformance benchmarks and
+  reduces memory usage.
+  (Contributed by Kumar Aditya in :gh:`107803`.)
 
 
 
@@ -107,6 +161,11 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
+  :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
+  write new code.  The :mod:`subprocess` module is recommended instead.
+  (Contributed by Victor Stinner in :gh:`120743`.)
 
 
 Removed
@@ -147,6 +206,26 @@ ast
   Use :attr:`!ast.Constant.value` instead.
 
   (Contributed by Alex Waygood in :gh:`119562`.)
+
+asyncio
+-------
+
+* Remove the following classes and functions. They were all deprecated and
+  emitted deprecation warnings since Python 3.12:
+
+  * :class:`!asyncio.AbstractChildWatcher`
+  * :class:`!asyncio.SafeChildWatcher`
+  * :class:`!asyncio.MultiLoopChildWatcher`
+  * :class:`!asyncio.FastChildWatcher`
+  * :class:`!asyncio.ThreadedChildWatcher`
+  * :class:`!asyncio.PidfdChildWatcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
+  * :func:`!asyncio.get_child_watcher`
+  * :func:`!asyncio.set_child_watcher`
+
+  (Contributed by Kumar Aditya in :gh:`120804`.)
+
 
 collections.abc
 ---------------
@@ -244,6 +323,12 @@ Porting to Python 3.14
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
+* :class:`functools.partial` is now a method descriptor.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
 Build Changes
 =============
@@ -258,8 +343,31 @@ New Features
 * Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
   (Contributed by Sergey B Kirpichev in :gh:`116560`.)
 
+* Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str`
+  object:
+
+  * :c:func:`PyUnicodeWriter_Create`.
+  * :c:func:`PyUnicodeWriter_Discard`.
+  * :c:func:`PyUnicodeWriter_Finish`.
+  * :c:func:`PyUnicodeWriter_WriteChar`.
+  * :c:func:`PyUnicodeWriter_WriteUTF8`.
+  * :c:func:`PyUnicodeWriter_WriteUCS4`.
+  * :c:func:`PyUnicodeWriter_WriteWideChar`.
+  * :c:func:`PyUnicodeWriter_WriteStr`.
+  * :c:func:`PyUnicodeWriter_WriteRepr`.
+  * :c:func:`PyUnicodeWriter_WriteSubstring`.
+  * :c:func:`PyUnicodeWriter_Format`.
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
+
+  (Contributed by Victor Stinner in :gh:`119182`.)
+
 Porting to Python 3.14
 ----------------------
+
+* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` is now implemented as
+  an opaque function call to hide implementation details.
+  (Contributed by Victor Stinner in :gh:`120600`.)
+
 
 Deprecated
 ----------

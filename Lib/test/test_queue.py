@@ -2,7 +2,6 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
-import sys
 import threading
 import time
 import unittest

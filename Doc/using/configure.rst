@@ -427,7 +427,7 @@ Options for third-party dependencies
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
 
-   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+   C compiler and linker flags for PANEL, overriding ``pkg-config``.
 
    C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
    :mod:`curses.panel` module, overriding ``pkg-config``.
@@ -615,7 +615,7 @@ also be used to improve performance.
 
 .. option:: --without-mimalloc
 
-   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
    See also :envvar:`PYTHONMALLOC` environment variable.
