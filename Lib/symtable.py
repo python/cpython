@@ -237,6 +237,12 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
+        import warnings
+        typename = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        warnings.warn(f'{typename}.get_methods() is deprecated '
+                      f'and will be removed in Python 3.16.',
+                      DeprecationWarning, stacklevel=2)
+
         if self.__methods is None:
             d = {}
 
