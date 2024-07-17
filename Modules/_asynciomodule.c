@@ -324,7 +324,7 @@ get_event_loop(asyncio_state *state)
     PyObject *loop;
     PyObject *policy;
 
-    PyThreadState *ts = _PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     loop = Py_XNewRef(ts->asyncio_running_loop);
 
     if (loop != NULL) {
@@ -3278,7 +3278,7 @@ static PyObject *
 _asyncio__get_running_loop_impl(PyObject *module)
 /*[clinic end generated code: output=b4390af721411a0a input=0a21627e25a4bd43]*/
 {
-    PyThreadState *ts = _PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyObject *loop = Py_XNewRef(ts->asyncio_running_loop);
     if (loop == NULL) {
         /* There's no currently running event loop */
@@ -3302,7 +3302,7 @@ static PyObject *
 _asyncio__set_running_loop(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=ae56bf7a28ca189a input=4c9720233d606604]*/
 {
-    PyThreadState *ts = _PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     if (loop == Py_None) {
         loop = NULL;
     }
@@ -3344,7 +3344,7 @@ _asyncio_get_running_loop_impl(PyObject *module)
 /*[clinic end generated code: output=c247b5f9e529530e input=2a3bf02ba39f173d]*/
 {
     PyObject *loop;
-    PyThreadState *ts = _PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     loop = Py_XNewRef(ts->asyncio_running_loop);
     if (loop == NULL) {
         /* There's no currently running event loop */

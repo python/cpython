@@ -1499,7 +1499,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->previous_executor = NULL;
     tstate->dict_global_version = 0;
 
-    tstate->asyncio_running_loop = NULL;
+    _tstate->asyncio_running_loop = NULL;
 
     tstate->delete_later = NULL;
 
@@ -1702,7 +1702,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
-    Py_CLEAR(tstate->asyncio_running_loop);
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
