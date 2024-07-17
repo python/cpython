@@ -262,9 +262,7 @@ Booleans (:class:`bool`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
-   pair: object; floating point
    pair: object; floating-point
-   pair: floating point; number
    pair: floating-point; number
    pair: C; language
    pair: Java; language

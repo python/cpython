@@ -229,7 +229,7 @@ user-definable precision.)
 .. index::
    pair: numeric; literals
    pair: integer; literals
-   pair: floating point; literals
+   pair: floating-point; literals
    pair: complex number; literals
    pair: hexadecimal; literals
    pair: octal; literals
