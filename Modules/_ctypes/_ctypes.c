@@ -2288,9 +2288,14 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
             if (!meth) {
                 return -1;
             }
-            x = PyDict_SetItemString(((PyTypeObject*)self)->tp_dict,
-                                     ml->ml_name,
-                                     meth);
+            PyObject *name = PyUnicode_FromString(ml->ml_name);
+            if (name == NULL) {
+                Py_DECREF(meth);
+                return -1;
+            }
+            PyUnicode_InternInPlace(&name);
+            x = PyDict_SetItem(((PyTypeObject*)self)->tp_dict, name, meth);
+            Py_DECREF(name);
             Py_DECREF(meth);
             if (x == -1) {
                 return -1;
