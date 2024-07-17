@@ -1119,6 +1119,41 @@ class TestComplexDecorator(GetSourceBase):
     def test_parens_in_decorator(self):
         self.assertSourceEqual(self.fodderModule.complex_decorated, 273, 275)
 
+class TestGeneratorExpressionCodeObjects(GetSourceBase):
+    fodderModule = mod2
+
+    def sourcerange(self, top, bottom, left, right):
+        lines = self.source.split("\n")[top-1:bottom]
+        lines[-1] = lines[-1][:right]
+        lines[0] = lines[0][left:].rjust(len(lines[0]))
+        return "\n".join(lines) + '\n'
+
+    def assertSourceEqual(self, obj, top, bottom, left, right):
+        self.assertEqual(inspect.getsource(obj),
+                         self.sourcerange(top, bottom, left, right))
+
+    def test_getsource_gen_exp_no_co_positions(self):
+        real = self.fodderModule.genexp_1_line.gi_code
+        mock = unittest.mock.Mock(real)
+        mock.co_positions = lambda: ((None, None, None, None) for _ in range(10))
+        mock.co_filename = real.co_filename
+        mock.co_firstlineno = real.co_firstlineno
+        mock.co_name = real.co_name
+        with self.assertRaises(OSError):
+            inspect.getsource(mock)
+
+    def test_getsource_one_line_gen_exp(self):
+        self.assertSourceEqual(self.fodderModule.genexp_1_line.gi_code, 320, 320, 16, 38)
+
+    def test_getsource_multiple_gen_exp_on_same_line(self):
+        self.assertSourceEqual(self.fodderModule.genexp_left.gi_code, 323, 323, 28, 50)
+
+    def test_getsource_nested_gen_exp(self):
+        self.assertSourceEqual(self.fodderModule.genexp_inner.gi_code, 326, 326, 16, 38)
+
+    def test_getsource_multiline_gen_exp(self):
+        self.assertSourceEqual(self.fodderModule.genexp_multiline.gi_code, 330, 334, 19, 1)
+
 class _BrokenDataDescriptor(object):
     """
     A broken data descriptor. See bug #1785.

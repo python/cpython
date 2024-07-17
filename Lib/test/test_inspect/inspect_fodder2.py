@@ -315,3 +315,20 @@ else:
 class ClassWithCodeObject:
     import sys
     code = sys._getframe(0).f_code
+
+# line 319
+genexp_1_line = (x for x in range(10))
+
+# line 322
+genexp_left, genexp_right = (x for x in range(10)), (y for y in range(20))
+
+# line 325
+genexp_outer = ((x for x in range(10)) for _ in range(5))
+genexp_inner = next(genexp_outer)
+
+# line 329
+genexp_multiline = (
+    x for
+    x in
+    range(10)
+)

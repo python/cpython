@@ -1213,6 +1213,34 @@ def getblock(lines):
             pass
     return lines[:blockfinder.last]
 
+def _get_generator_expression_code_source(object, lines):
+    """Get source lines for a generator expression code object
+
+    The return lines contain only the code for the generator expression,
+    so if two generator expressions are defined on the same line then only
+    the source for this particular object will be returned.
+    Anything after the generator expression is removed and anything on the first
+    line before the generator expression is replaced with whitespace.
+    """
+
+    # get the last entry in co_positions that doesn't have None for column numbers
+    code_position = None
+    for pos in object.co_positions():
+        if pos[2] is not None and pos[3] is not None:
+            code_position = pos
+
+    # co_positions are all None, likely because CLI flag "-X no_debug_ranges" is set.
+    if code_position is None:
+        raise OSError('Cannot get source for generator expression code object without debug ranges')
+    else:
+        start_line, end_line, start_column, end_column = code_position
+
+    lines = lines[start_line-1:end_line]
+    lines[-1] = lines[-1][:end_column] + '\n'
+    lines[0] = lines[0][start_column:].rjust(len(lines[0]))
+
+    return lines
+
 def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.
 
@@ -1231,6 +1259,8 @@ def getsourcelines(object):
     if (ismodule(object) or
         (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
+    elif iscode(object) and object.co_name == '<genexpr>':
+        return _get_generator_expression_code_source(object, lines), lnum + 1
     else:
         return getblock(lines[lnum:]), lnum + 1
 
