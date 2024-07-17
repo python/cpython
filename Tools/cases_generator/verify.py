@@ -165,7 +165,7 @@ def check_for_unmarked_escapes(uop: Uop) -> None:
         if "backoff_counter" in tkn.text:
             continue
         if tkn.text not in NON_ESCAPING_FUNCTIONS:
-            print(f"Unmarked escaping function '{tkn.text}' on line {tkn.line}")
+            print(f"Unmarked escaping function '{tkn.text}' at {tkn.filename}:{tkn.line}")
             res = 1
     return res
 
