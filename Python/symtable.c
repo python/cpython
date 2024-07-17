@@ -3040,5 +3040,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
         return NULL;
     }
     assert(_PyUnicode_CheckConsistency(result, 1));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternMortal(interp, &result);
     return result;
 }
