@@ -142,8 +142,8 @@ fnmatchmodule_exec(PyObject *module)
     INTERN_STRING(st, hyphen_esc_str, "\\-");
     INTERN_STRING(st, backslash_str, "\\");
     INTERN_STRING(st, backslash_esc_str, "\\\\");
-    INTERN_STRING(st, inactive_toks_str, "([&~|])");
-    INTERN_STRING(st, inactive_toks_repl_str, "\\\\\\1");
+    INTERN_STRING(st, setops_str, "([&~|])");
+    INTERN_STRING(st, setops_repl_str, "\\\\\\1");
     return 0;
 }
 #undef INTERN_STRING
@@ -153,8 +153,8 @@ static int
 fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
-    Py_VISIT(st->inactive_toks_repl_str);
-    Py_VISIT(st->inactive_toks_str);
+    Py_VISIT(st->setops_repl_str);
+    Py_VISIT(st->setops_str);
     Py_VISIT(st->backslash_esc_str);
     Py_VISIT(st->backslash_str);
     Py_VISIT(st->hyphen_esc_str);
@@ -170,8 +170,8 @@ static int
 fnmatchmodule_clear(PyObject *m)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
-    Py_CLEAR(st->inactive_toks_repl_str);
-    Py_CLEAR(st->inactive_toks_str);
+    Py_CLEAR(st->setops_repl_str);
+    Py_CLEAR(st->setops_str);
     Py_CLEAR(st->backslash_esc_str);
     Py_CLEAR(st->backslash_str);
     Py_CLEAR(st->hyphen_esc_str);
