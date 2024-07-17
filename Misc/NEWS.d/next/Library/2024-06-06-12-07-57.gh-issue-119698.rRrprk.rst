@@ -1,3 +1,2 @@
-Fix :meth:`symtable.Class.get_methods` and document its behaviour. Due to the
-lack of interest, the method is now marked as deprecated and will be removed
-in Python 3.16. Patch by Bénédikt Tran.
+Fix :meth:`symtable.Class.get_methods` and document its behaviour. Patch by
+Bénédikt Tran.
