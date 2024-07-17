@@ -1882,8 +1882,9 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         return 0;
     }
 
-    PyObject *value = PyStackRef_AsPyObjectBorrow(frame->localsplus[i]);
-    if (frame->stackpointer > frame->localsplus) {
+    PyObject *value = NULL;
+    if (frame->stackpointer == NULL || frame->stackpointer > frame->localsplus + i) {
+        value = PyStackRef_AsPyObjectBorrow(frame->localsplus[i]);
         if (kind & CO_FAST_FREE) {
             // The cell was set by COPY_FREE_VARS.
             assert(value != NULL && PyCell_Check(value));
@@ -1900,9 +1901,6 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
                 // (unlikely) ...or it was set via the f_locals proxy.
             }
         }
-    }
-    else {
-        assert(value == NULL);
     }
     *pvalue = value;
     return 1;
