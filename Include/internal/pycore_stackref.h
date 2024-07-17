@@ -223,7 +223,6 @@ PyStackRef_DUP(_PyStackRef stackref)
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
-
     return stackref;
 }
 #else
