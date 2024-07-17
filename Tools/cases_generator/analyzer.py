@@ -352,7 +352,7 @@ def variable_used(node: parser.InstDef, name: str) -> bool:
     )
 
 def oparg_used(node: parser.InstDef) -> bool:
-    """Determine whether a variable with a given name is used in a node."""
+    """Determine whether `oparg` is used in a node."""
     return any(
         token.kind == "IDENTIFIER" and token.text == "oparg" for token in node.tokens
     )
