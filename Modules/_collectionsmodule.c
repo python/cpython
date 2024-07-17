@@ -1293,7 +1293,7 @@ deque_index_impl(dequeobject *deque, PyObject *v, Py_ssize_t start,
             index = 0;
         }
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in deque", v);
+    PyErr_SetString(PyExc_ValueError, "deque.index(x): x not in deque");
     return NULL;
 }
 
@@ -1462,7 +1462,7 @@ deque_remove_impl(dequeobject *deque, PyObject *value)
         }
     }
     if (i == n) {
-        PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
+        PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
         return NULL;
     }
     rv = deque_del_item(deque, i);
@@ -2537,12 +2537,9 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             if (key == NULL)
                 break;
 
-            if (!PyUnicode_CheckExact(key) ||
-                (hash = _PyASCIIObject_CAST(key)->hash) == -1)
-            {
-                hash = PyObject_Hash(key);
-                if (hash == -1)
-                    goto done;
+            hash = _PyObject_HashFast(key);
+            if (hash == -1) {
+                goto done;
             }
 
             oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);

@@ -10,6 +10,8 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_optimizer.h"     // _Py_GetExecutor()
+#include "pycore_opcode_metadata.h" // IS_VALID_OPCODE, OPCODE_HAS_*, etc
+#include "pycore_opcode_utils.h"
 
 /*[clinic input]
 module _opcode
@@ -81,7 +83,7 @@ static int
 _opcode_is_valid_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b0d918ea1d073f65 input=fe23e0aa194ddae0]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode);
+    return IS_VALID_OPCODE(opcode);
 }
 
 /*[clinic input]
@@ -97,8 +99,7 @@ static int
 _opcode_has_arg_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=7a062d3b2dcc0815 input=93d878ba6361db5f]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode) &&
-           _PyCompile_OpcodeHasArg(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_ARG(opcode);
 }
 
 /*[clinic input]
@@ -114,8 +115,7 @@ static int
 _opcode_has_const_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=c646d5027c634120 input=a6999e4cf13f9410]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode) &&
-           _PyCompile_OpcodeHasConst(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_CONST(opcode);
 }
 
 /*[clinic input]
@@ -131,8 +131,7 @@ static int
 _opcode_has_name_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b49a83555c2fa517 input=448aa5e4bcc947ba]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode) &&
-           _PyCompile_OpcodeHasName(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_NAME(opcode);
 }
 
 /*[clinic input]
@@ -148,9 +147,7 @@ static int
 _opcode_has_jump_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=e9c583c669f1c46a input=35f711274357a0c3]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode) &&
-           _PyCompile_OpcodeHasJump(opcode);
-
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_JUMP(opcode);
 }
 
 /*[clinic input]
@@ -171,9 +168,7 @@ static int
 _opcode_has_free_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=d81ae4d79af0ee26 input=117dcd5c19c1139b]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode) &&
-           _PyCompile_OpcodeHasFree(opcode);
-
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_FREE(opcode);
 }
 
 /*[clinic input]
@@ -189,8 +184,7 @@ static int
 _opcode_has_local_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=da5a8616b7a5097b input=9a798ee24aaef49d]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode) &&
-           _PyCompile_OpcodeHasLocal(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_LOCAL(opcode);
 }
 
 /*[clinic input]
@@ -206,8 +200,7 @@ static int
 _opcode_has_exc_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=41b68dff0ec82a52 input=db0e4bdb9bf13fa5]*/
 {
-    return _PyCompile_OpcodeIsValid(opcode) &&
-           _PyCompile_OpcodeHasExc(opcode);
+    return IS_VALID_OPCODE(opcode) && IS_BLOCK_PUSH_OPCODE(opcode);
 }
 
 /*[clinic input]
@@ -424,7 +417,7 @@ opcode_functions[] =  {
     {NULL, NULL, 0, NULL}
 };
 
-int
+static int
 _opcode_exec(PyObject *m) {
     if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
         return -1;

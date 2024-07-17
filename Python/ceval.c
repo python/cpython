@@ -742,15 +742,6 @@ _PyEval_StackIsAllLive(_PyStackRef *stack_base, _PyStackRef *stack_pointer)
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
-#if defined(_MSC_VER) && defined(_Py_USING_PGO)
-/* gh-111786: _PyEval_EvalFrameDefault is too large to optimize for speed with
-   PGO on MSVC. Disable that optimization temporarily. If this is fixed
-   upstream, we should gate this on the version of MSVC.
- */
-#  pragma optimize("t", off)
-/* This setting is reversed below following _PyEval_EvalFrameDefault */
-#endif
-
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1066,13 +1057,13 @@ enter_tier_two:
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
+    assert(next_uop->opcode == _START_EXECUTOR);
 tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (lltrace >= 3) {
-            if (next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT) {
+            if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }
             else {
@@ -1160,25 +1151,6 @@ goto_to_tier1:
     tstate->previous_executor = NULL;
     DISPATCH();
 
-exit_to_trace:
-    assert(next_uop[-1].format == UOP_FORMAT_EXIT);
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    uint32_t exit_index = next_uop[-1].exit_index;
-    assert(exit_index < current_executor->exit_count);
-    _PyExitData *exit = &current_executor->exits[exit_index];
-#ifdef Py_DEBUG
-    if (lltrace >= 2) {
-        printf("SIDE EXIT: [UOp ");
-        _PyUOpPrint(&next_uop[-1]);
-        printf(", exit %u, temp %d, target %d -> %s]\n",
-               exit_index, exit->temperature.as_counter, exit->target,
-               _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
-    }
-#endif
-    Py_INCREF(exit->executor);
-    tstate->previous_executor = (PyObject *)current_executor;
-    GOTO_TIER_TWO(exit->executor);
-
 #endif  // _Py_JIT
 
 #endif // _Py_TIER2
@@ -1189,7 +1161,6 @@ exit_to_trace:
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
-#  pragma optimize("", on)
 #endif
 
 static void
@@ -1531,13 +1502,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             u = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
         else {
-            assert(args != NULL);
-            STACKREFS_TO_PYOBJECTS((_PyStackRef *)args, argcount, args_o);
-            if (args_o == NULL) {
-                goto fail_pre_positional;
-            }
-            u = _PyTuple_FromArraySteal((args_o + n), argcount - n);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            u = _PyTuple_FromStackRefSteal(args + n, argcount - n);
         }
         if (u == NULL) {
             goto fail_post_positional;
@@ -2572,6 +2537,7 @@ _PyEval_GetBuiltinId(_Py_Identifier *name)
 PyObject *
 PyEval_GetLocals(void)
 {
+    // We need to return a borrowed reference here, so some tricks are needed
     PyThreadState *tstate = _PyThreadState_GET();
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
@@ -2579,7 +2545,37 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    PyObject *locals = _PyEval_GetFrameLocals();
+    // Be aware that this returns a new reference
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
+
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    if (PyFrameLocalsProxy_Check(locals)) {
+        PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        PyObject *ret = f->f_locals_cache;
+        if (ret == NULL) {
+            PyObject *ret = PyDict_New();
+            if (ret == NULL) {
+                Py_DECREF(locals);
+                return NULL;
+            }
+            f->f_locals_cache = ret;
+        }
+        if (PyDict_Update(ret, locals) < 0) {
+            // At this point, if the cache dict is broken, it will stay broken, as
+            // trying to clean it up or replace it will just cause other problems
+            ret = NULL;
+        }
+        Py_DECREF(locals);
+        return ret;
+    }
+
+    assert(PyMapping_Check(locals));
+    assert(Py_REFCNT(locals) > 1);
+    Py_DECREF(locals);
+
     return locals;
 }
 

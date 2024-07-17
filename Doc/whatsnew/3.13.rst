@@ -422,6 +422,10 @@ free-threaded build.
 Other Language Changes
 ======================
 
+* The :func:`exec` and :func:`eval` built-ins now accept their ``globals``
+  and ``locals`` namespace arguments as keywords.
+  (Contibuted by Raphael Gaschignard in :gh:`105879`)
+
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
 
@@ -1937,7 +1941,7 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`xml.etree.ElementTree`: Testing the truth value of an
   :class:`~xml.etree.ElementTree.Element` is deprecated. In a future release it
-  it will always return ``True``. Prefer explicit ``len(elem)`` or
+  will always return ``True``. Prefer explicit ``len(elem)`` or
   ``elem is not None`` tests instead.
 
 * :meth:`zipimport.zipimporter.load_module` is deprecated:

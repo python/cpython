@@ -613,6 +613,20 @@ _PyObject_IS_GC(PyObject *obj)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
+// Fast inlined version of PyObject_Hash()
+static inline Py_hash_t
+_PyObject_HashFast(PyObject *op)
+{
+    if (PyUnicode_CheckExact(op)) {
+        Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(
+                             _PyASCIIObject_CAST(op)->hash);
+        if (hash != -1) {
+            return hash;
+        }
+    }
+    return PyObject_Hash(op);
+}
+
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
@@ -719,13 +733,7 @@ PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
  * Third party code unintentionally rely on problematic fpcasts. The call
  * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
  */
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    _PyCFunctionWithKeywords_TrampolineCall( \
-        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
-extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
-    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
-#else
+#if !(defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE))
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     (meth)((self), (args))
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
