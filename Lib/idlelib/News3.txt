@@ -4,6 +4,9 @@ Released after 2023-10-02
 =========================
 
 
+gh-78889: Stop Shell freezes by blocking user access to non-method
+sys.stdout.shell attributes, which are all private.
+
 gh-78955: Use user-selected color theme for Help => IDLE Doc.
 
 gh-96905: In idlelib code, stop redefining built-ins 'dict' and 'object'.
