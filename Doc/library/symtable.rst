@@ -191,8 +191,6 @@ Examining Symbol Tables
 
       For example:
 
-      .. doctest:: symtable.Class.get_methods
-
          >>> import symtable
          >>> st = symtable.symtable('''
          ... def outer(): pass
@@ -215,7 +213,6 @@ Examining Symbol Tables
 
       Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
       considered as a method-like function.
-
 
 .. class:: Symbol
 
