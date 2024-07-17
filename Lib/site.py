@@ -517,6 +517,7 @@ def register_readline():
         pass
 
     if readline.get_current_history_length() == 0:
+        from _pyrepl.main import CAN_USE_PYREPL
         # If no history was loaded, default to .python_history,
         # or PYTHON_HISTORY.
         # The guard is necessary to avoid doubling history size at
@@ -524,25 +525,18 @@ def register_readline():
         # through a PYTHONSTARTUP hook, see:
         # http://bugs.python.org/issue5845#msg198636
         history = gethistoryfile()
+        if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
+            readline_module = readline
+        else:
+            readline_module = _pyrepl.readline
         try:
-            if os.getenv("PYTHON_BASIC_REPL"):
-                readline.read_history_file(history)
-            else:
-                _pyrepl.readline.read_history_file(history)
+            readline_module.read_history_file(history)
         except (OSError,* _pyrepl.unix_console._error):
             pass
 
         def write_history():
             try:
-                from _pyrepl.main import CAN_USE_PYREPL
-            except ImportError:
-                CAN_USE_PYREPL = False
-
-            try:
-                if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
-                    readline.write_history_file(history)
-                else:
-                    _pyrepl.readline.write_history_file(history)
+                readline_module.write_history_file(history)
             except (FileNotFoundError, PermissionError):
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891

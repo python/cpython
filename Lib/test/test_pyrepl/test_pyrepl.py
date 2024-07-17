@@ -884,11 +884,24 @@ class TestPasteEvent(TestCase):
 
 @skipUnless(pty, "requires pty")
 class TestMain(TestCase):
+    def setUp(self):
+        # Cleanup from PYTHON* variables to isolate from local
+        # user settings, see #121359.  Such variables should be
+        # added later in test methods to patched os.environ.
+        clean_env = os.environ.copy()
+        for k in clean_env.copy():
+            if k.startswith("PYTHON"):
+                clean_env.pop(k)
+
+        patcher = patch('os.environ', new=clean_env)
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
         pre = "['__annotations__', '__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
         if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)

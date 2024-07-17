@@ -252,7 +252,8 @@ _PyUnicode_InternedSize_Immortal(void)
     // value, to help detect bugs in optimizations.
 
     while (PyDict_Next(dict, &pos, &key, &value)) {
-       if (_Py_IsImmortal(key)) {
+        assert(PyUnicode_CHECK_INTERNED(key) != SSTATE_INTERNED_IMMORTAL_STATIC);
+        if (PyUnicode_CHECK_INTERNED(key) == SSTATE_INTERNED_IMMORTAL) {
            count++;
        }
     }
@@ -688,10 +689,14 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 
     /* Check interning state */
 #ifdef Py_DEBUG
+    // Note that we do not check `_Py_IsImmortal(op)`, since stable ABI
+    // extensions can make immortal strings mortal (but with a high enough
+    // refcount).
+    // The other way is extremely unlikely (worth a potential failed assertion
+    // in a debug build), so we do check `!_Py_IsImmortal(op)`.
     switch (PyUnicode_CHECK_INTERNED(op)) {
         case SSTATE_NOT_INTERNED:
             if (ascii->state.statically_allocated) {
-                CHECK(_Py_IsImmortal(op));
                 // This state is for two exceptions:
                 // - strings are currently checked before they're interned
                 // - the 256 one-latin1-character strings
@@ -707,11 +712,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             break;
         case SSTATE_INTERNED_IMMORTAL:
             CHECK(!ascii->state.statically_allocated);
-            CHECK(_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             CHECK(ascii->state.statically_allocated);
-            CHECK(_Py_IsImmortal(op));
             break;
         default:
             Py_UNREACHABLE();
@@ -1867,7 +1870,6 @@ static PyObject*
 get_latin1_char(Py_UCS1 ch)
 {
     PyObject *o = LATIN1(ch);
-    assert(_Py_IsImmortal(o));
     return o;
 }
 
@@ -13635,27 +13637,28 @@ int
 _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
                                 Py_ssize_t start, Py_ssize_t end)
 {
-    Py_UCS4 maxchar;
-    Py_ssize_t len;
-
     assert(0 <= start);
     assert(end <= PyUnicode_GET_LENGTH(str));
     assert(start <= end);
 
-    if (end == 0)
-        return 0;
-
     if (start == 0 && end == PyUnicode_GET_LENGTH(str))
         return _PyUnicodeWriter_WriteStr(writer, str);
 
-    if (PyUnicode_MAX_CHAR_VALUE(str) > writer->maxchar)
-        maxchar = _PyUnicode_FindMaxChar(str, start, end);
-    else
-        maxchar = writer->maxchar;
-    len = end - start;
+    Py_ssize_t len = end - start;
+    if (len == 0) {
+        return 0;
+    }
 
-    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0)
+    Py_UCS4 maxchar;
+    if (PyUnicode_MAX_CHAR_VALUE(str) > writer->maxchar) {
+        maxchar = _PyUnicode_FindMaxChar(str, start, end);
+    }
+    else {
+        maxchar = writer->maxchar;
+    }
+    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0) {
         return -1;
+    }
 
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, start, len);
@@ -15352,7 +15355,6 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
     assert(s != NULL);
     assert(_PyUnicode_CHECK(s));
     assert(_PyUnicode_STATE(s).statically_allocated);
-    assert(_Py_IsImmortal(s));
 
     switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
@@ -15493,7 +15495,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     {
         PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
         if (r != NULL) {
-            assert(_Py_IsImmortal(r));
+            assert(_PyUnicode_STATE(r).statically_allocated);
             assert(r != s);  // r must be statically_allocated; s is not
             Py_DECREF(s);
             return Py_NewRef(r);
@@ -15583,7 +15585,7 @@ void
 PyUnicode_InternInPlace(PyObject **p)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternImmortal(interp, p);
+    _PyUnicode_InternMortal(interp, p);
 }
 
 // Public-looking name kept for the stable ABI; user should not call this:
