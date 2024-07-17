@@ -1216,7 +1216,7 @@ def getblock(lines):
 def _get_generator_expression_code_source(object, lines):
     """Get source lines for a generator expression code object
 
-    The return lines contain only the code for the generator expression,
+    The returned lines contain only the code for the generator expression,
     so if two generator expressions are defined on the same line then only
     the source for this particular object will be returned.
     Anything after the generator expression is removed and anything on the first
