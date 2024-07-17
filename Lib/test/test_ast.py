@@ -1821,6 +1821,12 @@ Module(
         node = ast.parse('async def foo():\n  """spam\n  ham"""')
         self.assertEqual(ast.get_docstring(node.body[0]), 'spam\nham')
 
+        node = ast.parse('async def foo():\n  """spam\n  ham"""')
+        self.assertEqual(ast.get_docstring(node.body[0], clean=False), 'spam\n  ham')
+
+        node = ast.parse('x')
+        self.assertRaises(TypeError, ast.get_docstring, node.body[0])
+
     def test_get_docstring_none(self):
         self.assertIsNone(ast.get_docstring(ast.parse('')))
         node = ast.parse('x = "not docstring"')
@@ -1843,6 +1849,9 @@ Module(
         node = ast.parse('async def foo():\n  pass')
         self.assertIsNone(ast.get_docstring(node.body[0]))
         node = ast.parse('async def foo():\n  x = "not docstring"')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+
+        node = ast.parse('async def foo():\n  42')
         self.assertIsNone(ast.get_docstring(node.body[0]))
 
     def test_multi_line_docstring_col_offset_and_lineno_issue16806(self):
@@ -3629,7 +3638,7 @@ eval_results = [
 ('Expression', ('Subscript', (1, 0, 1, 10), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 9), ('Constant', (1, 4, 1, 5), 1, None), ('Constant', (1, 6, 1, 7), 1, None), ('Constant', (1, 8, 1, 9), 1, None)), ('Load',))),
 ('Expression', ('IfExp', (1, 0, 1, 21), ('Name', (1, 9, 1, 10), 'x', ('Load',)), ('Call', (1, 0, 1, 5), ('Name', (1, 0, 1, 3), 'foo', ('Load',)), [], []), ('Call', (1, 16, 1, 21), ('Name', (1, 16, 1, 19), 'bar', ('Load',)), [], []))),
 ('Expression', ('JoinedStr', (1, 0, 1, 6), [('FormattedValue', (1, 2, 1, 5), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, None)])),
-('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('JoinedStr', (1, 4, 1, 8), [('Constant', (1, 5, 1, 8), '.2f', None)]))])),
+('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('Constant', (1, 5, 1, 8), '.2f', None))])),
 ('Expression', ('JoinedStr', (1, 0, 1, 8), [('FormattedValue', (1, 2, 1, 7), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 114, None)])),
 ('Expression', ('JoinedStr', (1, 0, 1, 11), [('Constant', (1, 2, 1, 6), 'foo(', None), ('FormattedValue', (1, 6, 1, 9), ('Name', (1, 7, 1, 8), 'a', ('Load',)), -1, None), ('Constant', (1, 9, 1, 10), ')', None)])),
 ]
