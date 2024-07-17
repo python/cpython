@@ -1,3 +1,3 @@
-``os.read()`` now caps read size to a size which is smaller than the max
-BytesObject size. Previously, passing a size larger than max bytes object size
-would result in an OverflowError, now the call is made.
+``os.read()``  caps read size smaller than the max bytes object size to avoid
+getting an OverflowError that 'byte string is too large'. This makes it so the
+read call is attempted (although still may fail for other reasons).
