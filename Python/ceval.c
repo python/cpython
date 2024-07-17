@@ -730,15 +730,6 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
-#if defined(_MSC_VER) && defined(_Py_USING_PGO)
-/* gh-111786: _PyEval_EvalFrameDefault is too large to optimize for speed with
-   PGO on MSVC. Disable that optimization temporarily. If this is fixed
-   upstream, we should gate this on the version of MSVC.
- */
-#  pragma optimize("t", off)
-/* This setting is reversed below following _PyEval_EvalFrameDefault */
-#endif
-
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1158,7 +1149,6 @@ goto_to_tier1:
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
-#  pragma optimize("", on)
 #endif
 
 static void
@@ -2535,6 +2525,7 @@ _PyEval_GetBuiltinId(_Py_Identifier *name)
 PyObject *
 PyEval_GetLocals(void)
 {
+    // We need to return a borrowed reference here, so some tricks are needed
     PyThreadState *tstate = _PyThreadState_GET();
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
@@ -2542,7 +2533,37 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    PyObject *locals = _PyEval_GetFrameLocals();
+    // Be aware that this returns a new reference
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
+
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    if (PyFrameLocalsProxy_Check(locals)) {
+        PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        PyObject *ret = f->f_locals_cache;
+        if (ret == NULL) {
+            PyObject *ret = PyDict_New();
+            if (ret == NULL) {
+                Py_DECREF(locals);
+                return NULL;
+            }
+            f->f_locals_cache = ret;
+        }
+        if (PyDict_Update(ret, locals) < 0) {
+            // At this point, if the cache dict is broken, it will stay broken, as
+            // trying to clean it up or replace it will just cause other problems
+            ret = NULL;
+        }
+        Py_DECREF(locals);
+        return ret;
+    }
+
+    assert(PyMapping_Check(locals));
+    assert(Py_REFCNT(locals) > 1);
+    Py_DECREF(locals);
+
     return locals;
 }
 

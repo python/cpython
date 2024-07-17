@@ -312,6 +312,10 @@ def _getuserbase():
 # Same to sysconfig.get_path('purelib', os.name+'_user')
 def _get_path(userbase):
     version = sys.version_info
+    if hasattr(sys, 'abiflags') and 't' in sys.abiflags:
+        abi_thread = 't'
+    else:
+        abi_thread = ''
 
     implementation = _get_implementation()
     implementation_lower = implementation.lower()
@@ -322,7 +326,7 @@ def _get_path(userbase):
     if sys.platform == 'darwin' and sys._framework:
         return f'{userbase}/lib/{implementation_lower}/site-packages'
 
-    return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
+    return f'{userbase}/lib/python{version[0]}.{version[1]}{abi_thread}/site-packages'
 
 
 def getuserbase():
@@ -390,6 +394,10 @@ def getsitepackages(prefixes=None):
 
         implementation = _get_implementation().lower()
         ver = sys.version_info
+        if hasattr(sys, 'abiflags') and 't' in sys.abiflags:
+            abi_thread = 't'
+        else:
+            abi_thread = ''
         if os.sep == '/':
             libdirs = [sys.platlibdir]
             if sys.platlibdir != "lib":
@@ -397,7 +405,7 @@ def getsitepackages(prefixes=None):
 
             for libdir in libdirs:
                 path = os.path.join(prefix, libdir,
-                                    f"{implementation}{ver[0]}.{ver[1]}",
+                                    f"{implementation}{ver[0]}.{ver[1]}{abi_thread}",
                                     "site-packages")
                 sitepackages.append(path)
         else:
@@ -509,6 +517,7 @@ def register_readline():
         pass
 
     if readline.get_current_history_length() == 0:
+        from _pyrepl.main import CAN_USE_PYREPL
         # If no history was loaded, default to .python_history,
         # or PYTHON_HISTORY.
         # The guard is necessary to avoid doubling history size at
@@ -516,25 +525,18 @@ def register_readline():
         # through a PYTHONSTARTUP hook, see:
         # http://bugs.python.org/issue5845#msg198636
         history = gethistoryfile()
+        if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
+            readline_module = readline
+        else:
+            readline_module = _pyrepl.readline
         try:
-            if os.getenv("PYTHON_BASIC_REPL"):
-                readline.read_history_file(history)
-            else:
-                _pyrepl.readline.read_history_file(history)
+            readline_module.read_history_file(history)
         except (OSError,* _pyrepl.unix_console._error):
             pass
 
         def write_history():
             try:
-                from _pyrepl.main import CAN_USE_PYREPL
-            except ImportError:
-                CAN_USE_PYREPL = False
-
-            try:
-                if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
-                    readline.write_history_file(history)
-                else:
-                    _pyrepl.readline.write_history_file(history)
+                readline_module.write_history_file(history)
             except (FileNotFoundError, PermissionError):
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891

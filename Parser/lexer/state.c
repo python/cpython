@@ -74,6 +74,7 @@ free_fstring_expressions(struct tok_state *tok)
             mode->last_expr_buffer = NULL;
             mode->last_expr_size = 0;
             mode->last_expr_end = -1;
+            mode->in_format_spec = 0;
         }
     }
 }
