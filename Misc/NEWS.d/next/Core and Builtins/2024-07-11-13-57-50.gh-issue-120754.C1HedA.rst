@@ -1,4 +1,3 @@
-Cap read size to smaller than the max BytesObject size. read() in POSIX
-returns at most the number of requseted bytes, this updates python ``os.read``
-to do similarly, and rather than throw an OverflowError in this case, return
-a smaller than requseted byte object.
+``os.read()`` now caps read size to a size which is smaller than the max
+BytesObject size. Previously, passing a size larger than max bytes object size
+would result in an OverflowError, now the call is made.
