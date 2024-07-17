@@ -331,7 +331,8 @@ html_context = {
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
-html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime())
+html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime(html_time))
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
