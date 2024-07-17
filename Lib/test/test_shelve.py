@@ -198,7 +198,12 @@ class TestCase(unittest.TestCase):
                 s['number'] = 100
                 self.assertEqual(s['number'], 100)
 
-        with self.assertRaises(dbm.sqlite3.error):
+    def test_custom_incomplete_serializer_and_deserializer(self):
+        dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        with self.assertRaises(dbm_sqlite3.error):
             def serializer(obj, protocol=None):
                 pass
 
