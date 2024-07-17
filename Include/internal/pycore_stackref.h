@@ -53,11 +53,6 @@ typedef union _PyStackRef {
     uintptr_t bits;
 } _PyStackRef;
 
-struct _Py_stackref_entry {
-    PyObject *obj;
-    int is_live;
-};
-
 struct _Py_stackref_state {
     PyMutex lock;
     _Py_hashtable_t *entries;
@@ -118,7 +113,7 @@ PyAPI_FUNC(_PyStackRef) _PyStackRef_Dup(_PyStackRef stackref);
     static const _PyStackRef PyStackRef_None = { .bits = 3 << RESERVED_BITS };
 #   else
 #   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_DEFERRED })
-#endif
+#   endif
 #else
 #   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) })
 #endif
@@ -128,7 +123,7 @@ PyAPI_FUNC(_PyStackRef) _PyStackRef_Dup(_PyStackRef stackref);
 #ifdef Py_GIL_DISABLED
 static inline int
 PyStackRef_Is(_PyStackRef a, _PyStackRef b) {
-#   if defined(Py_STACKREF_DEBUG)
+#   ifdef Py_STACKREF_DEBUG
     // Note: stackrefs are unique. So even immortal objects will produce different stackrefs.
     return _Py_stackref_to_object_transition(a, BORROW) == _Py_stackref_to_object_transition(b, BORROW);
 #   else
@@ -136,7 +131,7 @@ PyStackRef_Is(_PyStackRef a, _PyStackRef b) {
 #   endif
 }
 #else
-#define PyStackRef_Is(a, b) ((a).bits == (b).bits)
+#   define PyStackRef_Is(a, b) ((a).bits == (b).bits)
 #endif
 
 static inline int
@@ -154,7 +149,7 @@ PyStackRef_IsNull(_PyStackRef stackref)
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
-#   if defined(Py_STACKREF_DEBUG)
+#   ifdef Py_STACKREF_DEBUG
     return _Py_stackref_to_object_transition(stackref, BORROW);
 #   else
     PyObject *cleared = ((PyObject *)((stackref).bits & (~Py_TAG_BITS)));
@@ -171,14 +166,14 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
-#ifdef Py_STACKREF_DEBUG
+#   ifdef Py_STACKREF_DEBUG
     return _Py_stackref_to_object_transition(stackref, STEAL);
-#else
+#   else
     if (!PyStackRef_IsNull(stackref) && PyStackRef_IsDeferred(stackref)) {
         return Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref));
     }
     return PyStackRef_AsPyObjectBorrow(stackref);
-#endif
+#   endif
 }
 #else
 #   define PyStackRef_AsPyObjectSteal(stackref) PyStackRef_AsPyObjectBorrow(stackref)
@@ -301,7 +296,6 @@ PyStackRef_CLOSE(_PyStackRef stackref)
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
 {
-#ifdef Py_GIL_DISABLED
 #   ifdef Py_STACKREF_DEBUG
     stackref = _PyStackRef_Dup(stackref);
 #   endif
