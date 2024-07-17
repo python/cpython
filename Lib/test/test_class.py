@@ -511,35 +511,33 @@ class ClassTests(unittest.TestCase):
         c = Custom()
 
         methods = (
-            "__new__", "__init__",
-            "__repr__", "__str__", "__format__",
-            "__eq__", "__ne__", "__lt__", "__le__", "__gt__", "__ge__",
-            "__hash__",
-            "__getattribute__", "__setattr__", "__delattr__", "__dir__",
+            '__class__', '__delattr__', '__dir__', '__eq__', '__format__',
+            '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__',
+            '__init__', '__init_subclass__', '__le__', '__lt__', '__ne__',
+            '__new__', '__reduce__', '__reduce_ex__', '__repr__',
+            '__setattr__', '__sizeof__', '__str__', '__subclasshook__'
         )
         for name in methods:
             with self.subTest(name):
-                self.assertTrue(callable(getattr(object, name)))
-                self.assertTrue(callable(getattr(o, name)))
-                self.assertTrue(callable(getattr(Custom, name)))
-                self.assertTrue(callable(getattr(c, name)))
+                self.assertTrue(callable(getattr(object, name, None)))
+                self.assertTrue(callable(getattr(o, name, None)))
+                self.assertTrue(callable(getattr(Custom, name, None)))
+                self.assertTrue(callable(getattr(c, name, None)))
 
         not_defined = [
-            "__bool__", "__bytes__", "__del__", "__getattr__", "__len__",
-            "__get__", "__set__", "__delete__", "__objclass__",
-            "__len__", "__length_hint__", "__iter__", "__reversed__",
-            "__getitem__", "__setitem__", "__delitem__",
-            "__contains__", "__missing__",
-            "__divmod__", "__rdivmod__",
-            "__neg__", "__pos__", "__abs__", "__invert__",
-            "__complex__", "__int__", "__float__", "__round__", "__index__",
-            "__enter__", "__exit__",
-            "__await__", "__aiter__", "__anext__", "__aenter__", "__aexit__",
+            '__abs__', '__aenter__', '__aexit__', '__aiter__', '__anext__',
+            '__await__', '__bool__', '__bytes__', '__ceil__',
+            '__complex__', '__contains__', '__del__', '__delete__',
+            '__delitem__', '__divmod__', '__enter__', '__exit__',
+            '__float__', '__floor__', '__get__', '__getattr__', '__getitem__',
+            '__index__', '__int__', '__invert__', '__iter__', '__len__',
+            '__length_hint__', '__missing__', '__neg__', '__next__',
+            '__objclass__', '__pos__', '__rdivmod__', '__reversed__',
+            '__round__', '__set__', '__setitem__', '__trunc__'
         ]
         augment = (
-            "add", "sub",
-            "mul", "matmul", "truediv", "floordiv", "mod", "pow",
-            "lshift", "rshift", "and", "xor",
+            'add', 'and', 'floordiv', 'lshift', 'matmul', 'mod', 'mul', 'pow',
+            'rshift', 'sub', 'truediv', 'xor'
         )
         not_defined.extend(map("__{}__".format, augment))
         not_defined.extend(map("__r{}__".format, augment))
