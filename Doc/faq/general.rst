@@ -122,6 +122,8 @@ available.  Consult `the Python Package Index <https://pypi.org>`_ to
 find packages of interest to you.
 
 
+.. _faq-version-numbering-scheme:
+
 How does the Python version numbering scheme work?
 --------------------------------------------------
 
@@ -132,8 +134,6 @@ Python versions are numbered "A.B.C" or "A.B":
 * *B* is the minor version number -- it is incremented for less earth-shattering
   changes.
 * *C* is the micro version number -- it is incremented for each bugfix release.
-
-See :pep:`6` for more information about bugfix releases.
 
 Not all releases are bugfix releases.  In the run-up to a new feature release, a
 series of development releases are made, denoted as alpha, beta, or release
@@ -157,7 +157,11 @@ unreleased versions, built directly from the CPython development repository.  In
 practice, after a final minor release is made, the version is incremented to the
 next minor version, which becomes the "a0" version, e.g. "2.4a0".
 
-See also the documentation for :data:`sys.version`, :data:`sys.hexversion`, and
+See the `Developer's Guide
+<https://devguide.python.org/developer-workflow/development-cycle/>`__
+for more information about the development cycle, and
+:pep:`387` to learn more about Python's backward compatibility policy.  See also
+the documentation for :data:`sys.version`, :data:`sys.hexversion`, and
 :data:`sys.version_info`.
 
 
@@ -180,8 +184,6 @@ information on getting the source code and compiling it.
 
 How do I get documentation on Python?
 -------------------------------------
-
-.. XXX mention py3k
 
 The standard documentation for the current stable version of Python is available
 at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions are

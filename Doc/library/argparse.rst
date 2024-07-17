@@ -1,5 +1,5 @@
-:mod:`argparse` --- Parser for command-line options, arguments and sub-commands
-===============================================================================
+:mod:`!argparse` --- Parser for command-line options, arguments and sub-commands
+================================================================================
 
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
@@ -745,7 +745,7 @@ The add_argument() method
 
 .. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], \
                            [const], [default], [type], [choices], [required], \
-                           [help], [metavar], [dest])
+                           [help], [metavar], [dest], [deprecated])
 
    Define how a single command-line argument should be parsed.  Each parameter
    has its own more detailed description below, but in short they are:
@@ -1466,7 +1466,7 @@ printed to standard error when the argument is used::
    snake.py: warning: option '--legs' is deprecated
    Namespace(legs=4)
 
-.. versionchanged:: 3.13
+.. versionadded:: 3.13
 
 
 Action classes

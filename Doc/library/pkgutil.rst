@@ -1,5 +1,5 @@
-:mod:`pkgutil` --- Package extension utility
-============================================
+:mod:`!pkgutil` --- Package extension utility
+=============================================
 
 .. module:: pkgutil
    :synopsis: Utilities for the import system.
@@ -34,9 +34,9 @@ support.
    *name* argument.  This feature is similar to :file:`\*.pth` files (see the
    :mod:`site` module for more information), except that it doesn't special-case
    lines starting with ``import``.  A :file:`\*.pkg` file is trusted at face
-   value: apart from checking for duplicates, all entries found in a
-   :file:`\*.pkg` file are added to the path, regardless of whether they exist
-   on the filesystem.  (This is a feature.)
+   value: apart from skipping blank lines and ignoring comments, all entries
+   found in a :file:`\*.pkg` file are added to the path, regardless of whether
+   they exist on the filesystem (this is a feature).
 
    If the input path is not a list (as is the case for frozen packages) it is
    returned unchanged.  The input path is not modified; an extended copy is

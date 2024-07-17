@@ -360,6 +360,8 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj);
 static inline void *
 _Py_atomic_load_ptr_relaxed(const void *obj);
 
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj);
 
 // --- _Py_atomic_store ------------------------------------------------------
 // Atomically performs `*obj = value` (sequential consistency)
@@ -452,6 +454,10 @@ _Py_atomic_store_ptr_relaxed(void *obj, void *value);
 static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value);
 
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value);
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
@@ -459,15 +465,41 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value);
 static inline void *
 _Py_atomic_load_ptr_acquire(const void *obj);
 
+static inline uintptr_t
+_Py_atomic_load_uintptr_acquire(const uintptr_t *obj);
+
 // Stores `*obj = value` (release operation)
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value);
+
+static inline void
+_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value);
+
+static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
 
 static inline void
 _Py_atomic_store_int_release(int *obj, int value);
 
 static inline int
 _Py_atomic_load_int_acquire(const int *obj);
+
+static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value);
+
+static inline void
+_Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value);
+
+static inline uint64_t
+_Py_atomic_load_uint64_acquire(const uint64_t *obj);
+
+static inline uint32_t
+_Py_atomic_load_uint32_acquire(const uint32_t *obj);
+
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
+
+
 
 
 // --- _Py_atomic_fence ------------------------------------------------------
@@ -477,6 +509,9 @@ _Py_atomic_load_int_acquire(const int *obj);
 // generally do not require explicit use of a fence.
 // See https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence
 static inline void _Py_atomic_fence_seq_cst(void);
+
+// Acquire fence
+static inline void _Py_atomic_fence_acquire(void);
 
 // Release fence
 static inline void _Py_atomic_fence_release(void);

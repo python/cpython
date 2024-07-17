@@ -875,4 +875,4 @@ by Stéphane Wirtel
 .. section: C API
 
 Add C API access to the ``datetime.timezone`` constructor and
-``datetime.timzone.UTC`` singleton.
+``datetime.timezone.UTC`` singleton.

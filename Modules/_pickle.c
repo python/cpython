@@ -9,15 +9,16 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "pycore_long.h"          // _PyLong_AsByteArray()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _PyNone_Type
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_bytesobject.h"       // _PyBytesWriter
+#include "pycore_ceval.h"             // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"              // _PyLong_AsByteArray()
+#include "pycore_moduleobject.h"      // _PyModule_GetState()
+#include "pycore_object.h"            // _PyNone_Type
+#include "pycore_pystate.h"           // _PyThreadState_GET()
+#include "pycore_runtime.h"           // _Py_ID()
+#include "pycore_setobject.h"         // _PySet_NextEntry()
+#include "pycore_sysmodule.h"         // _PySys_GetAttr()
 
 #include <stdlib.h>               // strtol()
 
@@ -1806,8 +1807,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-    _Py_DECLARE_STR(dot, ".");
-    dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
+    dotted_path = PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
     if (dotted_path == NULL)
         return NULL;
     n = PyList_GET_SIZE(dotted_path);
@@ -3413,14 +3413,20 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            Py_INCREF(item);
-            int err = save(state, self, item, 0);
+
+        int err = 0;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        while (_PySet_NextEntryRef(obj, &ppos, &item, &hash)) {
+            err = save(state, self, item, 0);
             Py_CLEAR(item);
             if (err < 0)
-                return -1;
+                break;
             if (++i == BATCHSIZE)
                 break;
+        }
+        Py_END_CRITICAL_SECTION();
+        if (err < 0) {
+            return -1;
         }
         if (_Pickler_Write(self, &additems_op, 1) < 0)
             return -1;
@@ -6518,11 +6524,13 @@ load_additems(PickleState *state, UnpicklerObject *self)
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SET_SIZE(self->stack, mark);
+                Py_DECREF(add_func);
                 return -1;
             }
             Py_DECREF(result);
         }
         Py_SET_SIZE(self->stack, mark);
+        Py_DECREF(add_func);
     }
 
     return 0;
@@ -6598,8 +6606,10 @@ load_build(PickleState *st, UnpicklerObject *self)
             /* normally the keys for instance attributes are
                interned.  we should try to do that here. */
             Py_INCREF(d_key);
-            if (PyUnicode_CheckExact(d_key))
-                PyUnicode_InternInPlace(&d_key);
+            if (PyUnicode_CheckExact(d_key)) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &d_key);
+            }
             if (PyObject_SetItem(dict, d_key, d_value) < 0) {
                 Py_DECREF(d_key);
                 goto error;
@@ -7856,6 +7866,7 @@ _pickle_exec(PyObject *m)
 static PyModuleDef_Slot pickle_slots[] = {
     {Py_mod_exec, _pickle_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

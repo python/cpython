@@ -43,6 +43,8 @@ Module Objects
    to ``None``); the caller is responsible for providing a :attr:`__file__`
    attribute.
 
+   Return ``NULL`` with an exception set on error.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.4
@@ -265,6 +267,8 @@ of the following two module creation functions:
    API version *module_api_version*.  If that version does not match the version
    of the running interpreter, a :exc:`RuntimeWarning` is emitted.
 
+   Return ``NULL`` with an exception set on error.
+
    .. note::
 
       Most uses of this function should be using :c:func:`PyModule_Create`
@@ -411,6 +415,31 @@ The available slot types are:
 
    .. versionadded:: 3.12
 
+.. c:macro:: Py_mod_gil
+
+   Specifies one of the following values:
+
+   .. c:macro:: Py_MOD_GIL_USED
+
+      The module depends on the presence of the global interpreter lock (GIL),
+      and may access global state without synchronization.
+
+   .. c:macro:: Py_MOD_GIL_NOT_USED
+
+      The module is safe to run without an active GIL.
+
+   This slot is ignored by Python builds not configured with
+   :option:`--disable-gil`.  Otherwise, it determines whether or not importing
+   this module will cause the GIL to be automatically enabled. See
+   :ref:`free-threaded-cpython` for more detail.
+
+   Multiple ``Py_mod_gil`` slots may not be specified in one module definition.
+
+   If ``Py_mod_gil`` is not specified, the import machinery defaults to
+   ``Py_MOD_GIL_USED``.
+
+   .. versionadded:: 3.13
+
 See :PEP:`489` for more details on multi-phase initialization.
 
 Low-level module creation functions
@@ -435,6 +464,8 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
    ModuleSpec *spec*, assuming the API version *module_api_version*.
    If that version does not match the version of the running interpreter,
    a :exc:`RuntimeWarning` is emitted.
+
+   Return ``NULL`` with an exception set on error.
 
    .. note::
 
@@ -486,7 +517,7 @@ state:
 
    On success, return ``0``. On error, raise an exception and return ``-1``.
 
-   Return ``NULL`` if *value* is ``NULL``. It must be called with an exception
+   Return ``-1`` if *value* is ``NULL``. It must be called with an exception
    raised in this case.
 
    Example usage::
@@ -517,6 +548,14 @@ state:
 
    Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
    this case, since *obj* can be ``NULL``.
+
+   The number of different *name* strings passed to this function
+   should be kept small, usually by only using statically allocated strings
+   as *name*.
+   For names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object.
 
    .. versionadded:: 3.10
 
@@ -576,15 +615,23 @@ state:
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
    Add an integer constant to *module* as *name*.  This convenience function can be
-   used from the module's initialization function. Return ``-1`` on error, ``0`` on
-   success.
+   used from the module's initialization function.
+   Return ``-1`` with an exception set on error, ``0`` on success.
+
+   This is a convenience function that calls :c:func:`PyLong_FromLong` and
+   :c:func:`PyModule_AddObjectRef`; see their documentation for details.
 
 
 .. c:function:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
 
    Add a string constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function.  The string *value* must be
-   ``NULL``-terminated.  Return ``-1`` on error, ``0`` on success.
+   ``NULL``-terminated.
+   Return ``-1`` with an exception set on error, ``0`` on success.
+
+   This is a convenience function that calls
+   :c:func:`PyUnicode_InternFromString` and :c:func:`PyModule_AddObjectRef`;
+   see their documentation for details.
 
 
 .. c:macro:: PyModule_AddIntMacro(module, macro)
@@ -592,7 +639,7 @@ state:
    Add an int constant to *module*. The name and the value are taken from
    *macro*. For example ``PyModule_AddIntMacro(module, AF_INET)`` adds the int
    constant *AF_INET* with the value of *AF_INET* to *module*.
-   Return ``-1`` on error, ``0`` on success.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
 
 .. c:macro:: PyModule_AddStringMacro(module, macro)
@@ -605,9 +652,22 @@ state:
    The type object is finalized by calling internally :c:func:`PyType_Ready`.
    The name of the type object is taken from the last component of
    :c:member:`~PyTypeObject.tp_name` after dot.
-   Return ``-1`` on error, ``0`` on success.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.9
+
+.. c:function:: int PyUnstable_Module_SetGIL(PyObject *module, void *gil)
+
+   Indicate that *module* does or does not support running without the global
+   interpreter lock (GIL), using one of the values from
+   :c:macro:`Py_mod_gil`. It must be called during *module*'s initialization
+   function. If this function is not called during module initialization, the
+   import machinery assumes the module does not support running without the
+   GIL. This function is only available in Python builds configured with
+   :option:`--disable-gil`.
+   Return ``-1`` with an exception set on error, ``0`` on success.
+
+   .. versionadded:: 3.13
 
 
 Module lookup
@@ -644,14 +704,14 @@ since multiple such modules can be created from a single definition.
 
    The caller must hold the GIL.
 
-   Return 0 on success or -1 on failure.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.3
 
 .. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
-   Return 0 on success or -1 on failure.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    The caller must hold the GIL.
 

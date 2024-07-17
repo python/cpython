@@ -1,1 +1,0 @@
-Set breakpoint on the first executable line of the function, instead of the line of function definition when the user do ``break func`` using :mod:`pdb`

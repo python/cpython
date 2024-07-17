@@ -15,7 +15,7 @@ Minimal fix to prevent buffer overrun in os.symlink on Windows
 
 Regexes in difflib and poplib were vulnerable to catastrophic backtracking.
 These regexes formed potential DOS vectors (REDOS). They have been
-refactored. This resolves CVE-2018-1060 and CVE-2018-1061. Patch by Jamie
+refactored. This resolves :cve:`2018-1060` and :cve:`2018-1061`. Patch by Jamie
 Davis.
 
 ..

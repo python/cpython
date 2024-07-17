@@ -1,5 +1,0 @@
-Fix a bug in Argument Clinic that generated incorrect code for methods with
-no parameters that use the :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS
-<METH_METHOD-METH_FASTCALL-METH_KEYWORDS>` calling convention. Only the
-positional parameter count was checked; any keyword argument passed would be
-silently accepted.

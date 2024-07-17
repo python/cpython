@@ -1031,8 +1031,10 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if ((preexec_fn != Py_None) && interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+    if ((preexec_fn != Py_None) &&
+        _PyInterpreterState_GetFinalizing(interp) != NULL)
+    {
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "preexec_fn not supported at interpreter shutdown");
         return NULL;
     }
@@ -1315,6 +1317,7 @@ static PyMethodDef module_methods[] = {
 
 static PyModuleDef_Slot _posixsubprocess_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
