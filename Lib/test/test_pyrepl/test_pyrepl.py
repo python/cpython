@@ -491,15 +491,23 @@ class TestPyReplOutput(TestCase):
 
     def test_stdin_is_tty(self):
         # Used during test log analysis to figure out if a TTY was available.
-        if os.isatty(sys.stdin.fileno()):
-            return
-        self.skipTest("stdin is not a tty")
+        try:
+            if os.isatty(sys.stdin.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdin tty check failed: {ose}")
+        else:
+            self.skipTest("stdin is not a tty")
 
     def test_stdout_is_tty(self):
         # Used during test log analysis to figure out if a TTY was available.
-        if os.isatty(sys.stdout.fileno()):
-            return
-        self.skipTest("stdout is not a tty")
+        try:
+            if os.isatty(sys.stdout.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdout tty check failed: {ose}")
+        else:
+            self.skipTest("stdout is not a tty")
 
     def test_basic(self):
         reader = self.prepare_reader(code_to_events("1+1\n"))
