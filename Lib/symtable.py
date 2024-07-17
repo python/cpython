@@ -227,6 +227,11 @@ class Class(SymbolTable):
                 if is_local_symbol(st.name):
                     match st.type:
                         case _symtable.TYPE_FUNCTION:
+                            # generators are of type TYPE_FUNCTION with a ".0"
+                            # parameter as a first parameter (which makes them
+                            # distinguishable from a function named 'genexpr')
+                            if st.name == 'genexpr' and '.0' in st.varnames:
+                                continue
                             d[st.name] = 1
                         case _symtable.TYPE_TYPE_PARAM:
                             # Get the function-def block in the annotation
@@ -234,7 +239,14 @@ class Class(SymbolTable):
                             scope_name = st.name
                             for c in st.children:
                                 if c.name == scope_name and c.type == _symtable.TYPE_FUNCTION:
-                                    d[st.name] = 1
+                                    # A generic generator of type TYPE_FUNCTION
+                                    # cannot be a direct child of 'st' (but it
+                                    # can be a descendant), e.g.:
+                                    #
+                                    # class A:
+                                    #   type genexpr[genexpr] = (x for x in [])
+                                    assert scope_name != 'genexpr' or '.0' not in c.varnames
+                                    d[scope_name] = 1
                                     break
             self.__methods = tuple(d)
         return self.__methods
