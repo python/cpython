@@ -709,10 +709,14 @@ _shuffle_bits(Py_uhash_t h)
    large primes with "interesting bit patterns" and that passed tests
    for good collision statistics on a variety of problematic datasets
    including powersets and graph structures (such as David Eppstein's
-   graph recipes in Lib/test/test_set.py) */
+   graph recipes in Lib/test/test_set.py).
+   
+   This hash algorithm can be used on either a frozenset or a set.
+   When it is used on a set, it computes the hash value of the equivalent
+   frozenset without creating a new frozenset object. */
 
 static Py_hash_t
-compute_setobject_hash(PyObject *self)
+frozenset_hash_impl(PyObject *self)
 {
     assert(PyAnySet_Check(self));
     PySetObject *so = (PySetObject *)self;
@@ -764,7 +768,7 @@ frozenset_hash(PyObject *self)
         return so->hash;
     }
 
-    hash = compute_setobject_hash(self);
+    hash = frozenset_hash_impl(self);
     so->hash = hash;
     return hash;
 }
@@ -2158,7 +2162,7 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
         PyErr_Clear();
         Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
-        hash = compute_setobject_hash(key);
+        hash = frozenset_hash_impl(key);
         Py_END_CRITICAL_SECTION();
         rv = set_contains_entry(so, key, hash);
     }
@@ -2223,7 +2227,7 @@ set_remove_impl(PySetObject *so, PyObject *key)
         PyErr_Clear();
         Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
-        hash = compute_setobject_hash(key);
+        hash = frozenset_hash_impl(key);
         Py_END_CRITICAL_SECTION();
         rv = set_discard_entry(so, key, hash);
         if (rv < 0)
@@ -2263,7 +2267,7 @@ set_discard_impl(PySetObject *so, PyObject *key)
         PyErr_Clear();
         Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
-        hash = compute_setobject_hash(key);
+        hash = frozenset_hash_impl(key);
         Py_END_CRITICAL_SECTION();
         rv = set_discard_entry(so, key, hash);
         if (rv < 0)
