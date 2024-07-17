@@ -473,6 +473,12 @@
             break;
         }
 
+        case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_SUBSCR: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
