@@ -1784,6 +1784,25 @@
             break;
         }
 
+        case _CHECK_AND_ALLOCATE_OBJECT: {
+            _Py_UopsSymbol *self;
+            _Py_UopsSymbol *init;
+            self = sym_new_not_null(ctx);
+            init = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1 - oparg] = init;
+            break;
+        }
+
+        case _CREATE_INIT_FRAME: {
+            _PyInterpreterFrame *init_frame;
+            init_frame = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)init_frame;
+            stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
 
         case _EXIT_INIT_CHECK: {

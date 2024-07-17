@@ -3942,6 +3942,92 @@
             break;
         }
 
+        case _CHECK_AND_ALLOCATE_OBJECT: {
+            _PyStackRef *args;
+            _PyStackRef null;
+            _PyStackRef callable;
+            _PyStackRef self;
+            _PyStackRef init;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            if (!PyStackRef_IsNull(null)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (!PyType_Check(callable_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
+            if (tp->tp_version_tag != type_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
+            PyFunctionObject *init_func = (PyFunctionObject *)cls->_spec_cache.init;
+            PyCodeObject *code = (PyCodeObject *)init_func->func_code;
+            if (code->co_argcount != oparg+1) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(CALL, hit);
+            self = PyStackRef_FromPyObjectSteal(_PyType_NewManagedObject(tp));
+            if (PyStackRef_IsNull(self)) {
+                JUMP_TO_ERROR();
+            }
+            init = PyStackRef_FromPyObjectNew(init_func);
+            PyStackRef_CLOSE(callable);
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1 - oparg] = init;
+            break;
+        }
+
+        case _CREATE_INIT_FRAME: {
+            _PyStackRef *args;
+            _PyStackRef init;
+            _PyStackRef self;
+            _PyInterpreterFrame *init_frame;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            init = stack_pointer[-1 - oparg];
+            self = stack_pointer[-2 - oparg];
+            _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
+                tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
+            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
+            /* Push self onto stack of shim */
+            shim->localsplus[0] = PyStackRef_DUP(self);
+            PyFunctionObject *init_func = (PyFunctionObject *)PyStackRef_AsPyObjectSteal(init);
+            init_frame = _PyFrame_PushUnchecked(tstate, init_func, oparg+1);
+            /* Copy self followed by args to __init__ frame */
+            init_frame->localsplus[0] = self;
+            for (int i = 0; i < oparg; i++) {
+                init_frame->localsplus[i+1] = args[i];
+            }
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            /* Link shim frame */
+            shim->previous = frame;
+            frame = shim;
+            /* Account for pushing the extra frame.
+             * We don't check recursion depth here,
+             * as it will be checked after start_frame */
+            tstate->py_recursion_remaining--;
+            stack_pointer[0].bits = (uintptr_t)init_frame;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _EXIT_INIT_CHECK: {
