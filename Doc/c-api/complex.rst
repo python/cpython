@@ -131,8 +131,7 @@ Complex Numbers as Python Objects
 
    Return the imaginary part of *op* as a C :c:expr:`double`.
 
-   Upon failure, this method returns ``-1.0`` with an exception set, so one
-   should call :c:func:`PyErr_Occurred` to check for errors.
+   This function always succeeds.
 
 
 .. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)
