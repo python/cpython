@@ -264,8 +264,12 @@ static int
 pymain_start_pyrepl_no_main(void)
 {
     int res = 0;
-    PyObject *pyrepl, *console, *empty_tuple, *kwargs, *console_result;
-    pyrepl = PyImport_ImportModule("_pyrepl.main");
+    PyObject *console = NULL;
+    PyObject *empty_tuple = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *console_result = NULL;
+
+    PyObject *pyrepl = PyImport_ImportModule("_pyrepl.main");
     if (pyrepl == NULL) {
         fprintf(stderr, "Could not import _pyrepl.main\n");
         res = pymain_exit_err_print();
