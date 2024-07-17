@@ -27,12 +27,10 @@ from __future__ import annotations
 
 import _sitebuiltins
 import linecache
-import builtins
+import functools
 import sys
 import code
-from types import ModuleType
 
-from .console import InteractiveColoredConsole
 from .readline import _get_reader, multiline_input
 
 TYPE_CHECKING = False
@@ -81,21 +79,36 @@ REPL_COMMANDS = {
 }
 
 
+def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
+    # ooh, look at the hack:
+    src = _strip_final_indent(unicodetext)
+    try:
+        code = console.compile(src, "<stdin>", "single")
+    except (OverflowError, SyntaxError, ValueError):
+        lines = src.splitlines(keepends=True)
+        if len(lines) == 1:
+            return False
+
+        last_line = lines[-1]
+        was_indented = last_line.startswith((" ", "\t"))
+        not_empty = last_line.strip() != ""
+        incomplete = not last_line.endswith("\n")
+        return (was_indented or not_empty) and incomplete
+    else:
+        return code is None
+
+
 def run_multiline_interactive_console(
-    namespace: dict[str, Any],
+    console: code.InteractiveConsole,
+    *,
     future_flags: int = 0,
-    console: code.InteractiveConsole | None = None,
 ) -> None:
     from .readline import _setup
-    _setup(namespace)
-
-    if console is None:
-        console = InteractiveColoredConsole(
-            namespace, filename="<stdin>"
-        )
+    _setup(console.locals)
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
+    more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
     def maybe_run_command(statement: str) -> bool:
@@ -121,16 +134,6 @@ def run_multiline_interactive_console(
 
         return False
 
-    def more_lines(unicodetext: str) -> bool:
-        # ooh, look at the hack:
-        src = _strip_final_indent(unicodetext)
-        try:
-            code = console.compile(src, "<stdin>", "single")
-        except (OverflowError, SyntaxError, ValueError):
-            return False
-        else:
-            return code is None
-
     while 1:
         try:
             try:
@@ -154,7 +157,15 @@ def run_multiline_interactive_console(
             assert not more
             input_n += 1
         except KeyboardInterrupt:
-            console.write("KeyboardInterrupt\n")
+            r = _get_reader()
+            if r.last_command and 'isearch' in r.last_command.__name__:
+                r.isearch_direction = ''
+                r.console.forgetinput()
+                r.pop_input_trans()
+                r.dirty = True
+            r.refresh()
+            r.in_bracketed_paste = False
+            console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")
