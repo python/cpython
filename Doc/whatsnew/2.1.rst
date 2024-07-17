@@ -644,9 +644,9 @@ New and Improved Modules
   lists the function arguments and the local variables for each frame.
 
 * Various functions in the :mod:`time` module, such as :func:`~time.asctime` and
-  :func:`~time.localtime`, require a floating point argument containing the time in
+  :func:`~time.localtime`, require a floating-point argument containing the time in
   seconds since the epoch.  The most common use of these functions is to work with
-  the current time, so the floating point argument has been made optional; when a
+  the current time, so the floating-point argument has been made optional; when a
   value isn't provided, the current time will be used.  For example, log file
   entries usually need a string containing the current time; in Python 2.1,
   ``time.asctime()`` can be used, instead of the lengthier

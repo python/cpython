@@ -3287,7 +3287,7 @@ SimpleExtendsException(PyExc_Exception, ArithmeticError,
  *    FloatingPointError extends ArithmeticError
  */
 SimpleExtendsException(PyExc_ArithmeticError, FloatingPointError,
-                       "Floating point operation failed.");
+                       "Floating-point operation failed.");
 
 
 /*

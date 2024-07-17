@@ -1493,7 +1493,7 @@ class FPTest(NumberTest):
                 self.assertEqual(a, b)
             else:
                 # On alphas treating the byte swapped bit patters as
-                # floats/doubles results in floating point exceptions
+                # floats/doubles results in floating-point exceptions
                 # => compare the 8bit string values instead
                 self.assertNotEqual(a.tobytes(), b.tobytes())
             b.byteswap()

@@ -4238,7 +4238,7 @@ harmless "malloc can't allocate region" messages spewed by test_decimal.
 .. nonce: KKsNOV
 .. section: Tests
 
-Fixed floating point precision issue in turtle tests.
+Fixed floating-point precision issue in turtle tests.
 
 ..
 

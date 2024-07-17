@@ -70,7 +70,7 @@ operations. This means that as far as floating-point operations are concerned,
 Python behaves like many popular languages including C and Java.
 
 Many numbers that can be written easily in decimal notation cannot be expressed
-exactly in binary floating-point.  For example, after::
+exactly in binary floating point.  For example, after::
 
     >>> x = 1.2
 
@@ -87,7 +87,7 @@ which is exactly::
 The typical precision of 53 bits provides Python floats with 15--16
 decimal digits of accuracy.
 
-For a fuller explanation, please see the :ref:`floating point arithmetic
+For a fuller explanation, please see the :ref:`floating-point arithmetic
 <tut-fp-issues>` chapter in the Python tutorial.
 
 

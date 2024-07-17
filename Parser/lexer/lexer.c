@@ -884,7 +884,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 return MAKE_TOKEN(ERRORTOKEN);
             }
             {
-                /* Accept floating point numbers. */
+                /* Accept floating-point numbers. */
                 if (c == '.') {
                     c = tok_nextc(tok);
         fraction:

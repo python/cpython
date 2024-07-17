@@ -1382,7 +1382,7 @@ complete list of changes, or look through the CVS logs for all the details.
   In Python 2.4, the default will change to always returning floats.
 
   Application developers should enable this feature only if all their libraries
-  work properly when confronted with floating point time stamps, or if they use
+  work properly when confronted with floating-point time stamps, or if they use
   the tuple API. If used, the feature should be activated on an application level
   instead of trying to enable it on a per-use basis.
 

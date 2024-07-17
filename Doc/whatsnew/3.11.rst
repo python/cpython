@@ -2138,7 +2138,7 @@ Build Changes
     :issue:`45440` and :issue:`46640`.)
 
   * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
-    floating point numbers.
+    floating-point numbers.
     (Contributed by Victor Stinner in :issue:`46917`.)
 
 * The :c:macro:`!Py_NO_NAN` macro has been removed.
