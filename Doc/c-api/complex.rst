@@ -131,8 +131,6 @@ Complex Numbers as Python Objects
 
    Return the imaginary part of *op* as a C :c:expr:`double`.
 
-   This function always succeeds.
-
 
 .. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)
 
