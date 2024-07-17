@@ -108,7 +108,10 @@ DECREFS = {
     "DECREF_INPUTS",
 }
 
-def check_escaping_call(tkn_iter: Iterator[Token]) -> bool:
+def error(msg: str, tkn:Token) -> None:
+    print(f"{msg} at {tkn.filename}:{tkn.line}")
+
+def check_escaping_call(tkn_iter: Iterator[Token]) -> int:
     res = 0
     assert(next(tkn_iter).kind == "LPAREN")
     parens = 1
@@ -118,16 +121,16 @@ def check_escaping_call(tkn_iter: Iterator[Token]) -> bool:
         elif tkn.kind == "RPAREN":
             parens -= 1
             if parens == 0:
-                return
+                return res
         elif tkn.kind == "GOTO":
-            print(f"`goto` in 'ESCAPING_CALL' on line {tkn.line}")
+            error("`goto` in 'ESCAPING_CALL'", tkn)
             res = 1
         elif tkn.kind == IDENTIFIER:
             if tkn.text in FLOW_CONTROL:
-                print(f"Exiting flow control in 'ESCAPING_CALL' on line {tkn.line}")
+                error("Exiting flow control in 'ESCAPING_CALL'", tkn)
                 res = 1
             if tkn.text in DECREFS:
-                print(f"DECREF in 'ESCAPING_CALL' on line {tkn.line}")
+                error("DECREF in 'ESCAPING_CALL'", tkn)
                 res = 1
     return res
 
@@ -141,7 +144,7 @@ def is_macro_name(name: str) -> bool:
 def is_getter(name: str) -> bool:
     return "GET" in name
 
-def check_for_unmarked_escapes(uop: Uop) -> None:
+def check_for_unmarked_escapes(uop: Uop) -> int:
     res = 0
     tkns = iter(uop.body)
     for tkn in tkns:
@@ -165,14 +168,14 @@ def check_for_unmarked_escapes(uop: Uop) -> None:
         if "backoff_counter" in tkn.text:
             continue
         if tkn.text not in NON_ESCAPING_FUNCTIONS:
-            print(f"Unmarked escaping function '{tkn.text}' at {tkn.filename}:{tkn.line}")
+            error(f"Unmarked escaping function '{tkn.text}'", tkn)
             res = 1
     return res
 
-def verify_uop(uop: Uop) -> None:
+def verify_uop(uop: Uop) -> int:
     return check_for_unmarked_escapes(uop)
 
-def verify(analysis: Analysis) -> None:
+def verify(analysis: Analysis) -> int:
     res = 0
     for uop in analysis.uops.values():
         res |= verify_uop(uop)
