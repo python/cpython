@@ -134,74 +134,137 @@ should_intern_string(PyObject *o)
 static PyObject *intern_one_constant(PyObject *op);
 #endif
 
-static int
-intern_strings(PyObject *tuple)
+/* Helper for intern_names and intern_constants, which create a new tuple
+ * as a copy of `orig_tuple`, with some elements possibly changed.
+ * But we optimize for cases where no change, and no copying, is necessary.
+ *
+ * This helper sets the i'th element to `new_item`.
+ * `new_item` is stolen.
+ * Return 0 on success; -1 with exception set on error.
+ *
+ * Error pass-through: If `new_item` is NULL, an exception should be set;
+ * return -1 with that exception still set.
+ *
+ * Until a copy is necessary, `*new_tuple_p` should be NULL.
+ * This function will initialize it to a new reference when needed.
+ *
+ * If `*new_tuple_p` remains NULL after all calls to _set_newtuple_item,
+ * the final result should be a new reference to `orig_tuple`.
+ */
+static inline int
+_set_newtuple_item(
+    PyObject *orig_tuple,
+    PyObject **new_tuple_p /* NULL or owned by caller */,
+    Py_ssize_t i,
+    PyObject *new_item /* Stolen. If NULL, pass error through. */)
+{
+    if (new_item == NULL) {
+        return -1;
+    }
+    if (new_item == PyTuple_GET_ITEM(orig_tuple, i)) {
+        Py_DECREF(new_item);
+        return 0;
+    }
+    PyObject *new_tuple = *new_tuple_p;
+    if (!new_tuple) {
+        Py_ssize_t size = PyTuple_GET_SIZE(orig_tuple);
+        new_tuple = PyTuple_New(size);
+        if (!new_tuple) {
+            Py_DECREF(new_item);
+            return -1;
+        }
+        for (Py_ssize_t i = size; --i >= 0; ) {
+            _PyTuple_ITEMS(new_tuple)[i] = Py_NewRef(
+                _PyTuple_ITEMS(orig_tuple)[i]);
+        }
+        *new_tuple_p = new_tuple;
+    }
+    Py_SETREF(_PyTuple_ITEMS(new_tuple)[i], new_item);
+    return 0;
+}
+
+/* Intern, and immortalize, a tuple of strings.
+   Conceptually: return a new tuple.
+   (If no changes are needed, return a new ref to the argument.)
+ */
+static PyObject*
+intern_names(PyObject *tuple)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t i;
+    PyObject *new_tuple = NULL;
 
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (v == NULL || !PyUnicode_CheckExact(v)) {
             PyErr_SetString(PyExc_SystemError,
                             "non-string found in code slot");
-            return -1;
+            return NULL;
         }
-        _PyUnicode_InternImmortal(interp, &_PyTuple_ITEMS(tuple)[i]);
+        if (PyUnicode_CHECK_INTERNED(v) && _Py_IsImmortal(v)) {
+            continue;
+        }
+        PyObject *str = Py_NewRef(v);
+        _PyUnicode_InternImmortal(interp, &str);
+        if (_set_newtuple_item(tuple, &new_tuple, i, str) < 0) {
+            return NULL;
+        }
     }
-    return 0;
+    if (new_tuple) {
+        return new_tuple;
+    }
+    return Py_NewRef(tuple);
 }
 
 /* Intern constants. In the default build, this interns selected string
    constants. In the free-threaded build, this also interns non-string
-   constants. */
-static int
-intern_constants(PyObject *tuple, int *modified)
+   constants.
+
+   Conceptually: return a new tuple.
+   (If no changes are needed, return a new ref to the argument.)
+   */
+static PyObject *
+intern_constants(PyObject *tuple)
 {
+    PyObject *new_tuple = NULL;
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
-            if (should_intern_string(v)) {
-                PyObject *w = v;
-                _PyUnicode_InternMortal(interp, &v);
-                if (w != v) {
-                    PyTuple_SET_ITEM(tuple, i, v);
-                    if (modified) {
-                        *modified = 1;
-                    }
+            if (!PyUnicode_CHECK_INTERNED(v) && should_intern_string(v)) {
+                PyObject *w = Py_NewRef(v);
+                _PyUnicode_InternMortal(interp, &w);
+                if (_set_newtuple_item(tuple, &new_tuple, i, w) < 0) {
+                    goto error;
                 }
             }
         }
         else if (PyTuple_CheckExact(v)) {
-            if (intern_constants(v, NULL) < 0) {
-                return -1;
+            if (_set_newtuple_item(tuple, &new_tuple, i,
+                                   intern_constants(v)) < 0) {
+                goto error;
             }
         }
         else if (PyFrozenSet_CheckExact(v)) {
-            PyObject *w = v;
             PyObject *tmp = PySequence_Tuple(v);
             if (tmp == NULL) {
-                return -1;
+                goto error;
             }
-            int tmp_modified = 0;
-            if (intern_constants(tmp, &tmp_modified) < 0) {
+            PyObject *interned = intern_constants(tmp);
+            if (!interned) {
                 Py_DECREF(tmp);
-                return -1;
+                goto error;
             }
-            if (tmp_modified) {
-                v = PyFrozenSet_New(tmp);
-                if (v == NULL) {
+            if (interned != tmp) {
+                PyObject *new = PyFrozenSet_New(interned);
+                if (_set_newtuple_item(tuple, &new_tuple, i, new) < 0) {
+                    Py_DECREF(interned);
                     Py_DECREF(tmp);
-                    return -1;
-                }
-
-                PyTuple_SET_ITEM(tuple, i, v);
-                Py_DECREF(w);
-                if (modified) {
-                    *modified = 1;
+                    goto error;
                 }
             }
+            Py_DECREF(interned);
             Py_DECREF(tmp);
         }
 #ifdef Py_GIL_DISABLED
@@ -209,30 +272,27 @@ intern_constants(PyObject *tuple, int *modified)
             PySliceObject *slice = (PySliceObject *)v;
             PyObject *tmp = PyTuple_New(3);
             if (tmp == NULL) {
-                return -1;
+                goto error;
             }
             PyTuple_SET_ITEM(tmp, 0, Py_NewRef(slice->start));
             PyTuple_SET_ITEM(tmp, 1, Py_NewRef(slice->stop));
             PyTuple_SET_ITEM(tmp, 2, Py_NewRef(slice->step));
-            int tmp_modified = 0;
-            if (intern_constants(tmp, &tmp_modified) < 0) {
+            PyObject *interned = intern_constants(tmp);
+            if (!interned) {
                 Py_DECREF(tmp);
-                return -1;
+                goto error;
             }
-            if (tmp_modified) {
-                v = PySlice_New(PyTuple_GET_ITEM(tmp, 0),
-                                PyTuple_GET_ITEM(tmp, 1),
-                                PyTuple_GET_ITEM(tmp, 2));
-                if (v == NULL) {
+            if (interned != tmp) {
+                PyObject *new = PySlice_New(PyTuple_GET_ITEM(interned, 0),
+                                            PyTuple_GET_ITEM(interned, 1),
+                                            PyTuple_GET_ITEM(interned, 2));
+                if (_set_newtuple_item(tuple, &new_tuple, i, new) < 0) {
+                    Py_DECREF(interned);
                     Py_DECREF(tmp);
-                    return -1;
-                }
-                PyTuple_SET_ITEM(tuple, i, v);
-                Py_DECREF(slice);
-                if (modified) {
-                    *modified = 1;
+                    goto error;
                 }
             }
+            Py_DECREF(interned);
             Py_DECREF(tmp);
         }
 
@@ -244,21 +304,20 @@ intern_constants(PyObject *tuple, int *modified)
             !PyUnicode_CheckExact(v) &&
             _Py_atomic_load_int(&tstate->interp->gc.immortalize) >= 0)
         {
-            PyObject *interned = intern_one_constant(v);
-            if (interned == NULL) {
-                return -1;
-            }
-            else if (interned != v) {
-                PyTuple_SET_ITEM(tuple, i, interned);
-                Py_SETREF(v, interned);
-                if (modified) {
-                    *modified = 1;
-                }
+            if (_set_newtuple_item(tuple, &new_tuple, i,
+                                   intern_one_constant(v)) < 0) {
+                goto error;
             }
         }
 #endif
     }
-    return 0;
+    if (new_tuple) {
+        return new_tuple;
+    }
+    return Py_NewRef(tuple);
+error:
+    Py_XDECREF(new_tuple);
+    return NULL;
 }
 
 /* Return a shallow copy of a tuple that is
@@ -450,7 +509,11 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 extern void _PyCode_Quicken(PyCodeObject *code);
 
 static void
-init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
+init_code(PyCodeObject *co,
+          struct _PyCodeConstructor *con,
+          PyObject *names_interned,
+          PyObject *consts_interned,
+          PyObject *localsplusnames_interned)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(con->localsplusnames);
     int nlocals, ncellvars, nfreevars;
@@ -472,10 +535,11 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_firstlineno = con->firstlineno;
     co->co_linetable = Py_NewRef(con->linetable);
 
-    co->co_consts = Py_NewRef(con->consts);
-    co->co_names = Py_NewRef(con->names);
 
-    co->co_localsplusnames = Py_NewRef(con->localsplusnames);
+    co->co_consts = Py_NewRef(consts_interned);
+    co->co_names = Py_NewRef(names_interned);
+
+    co->co_localsplusnames = Py_NewRef(localsplusnames_interned);
     co->co_localspluskinds = Py_NewRef(con->localspluskinds);
 
     co->co_argcount = con->argcount;
@@ -613,45 +677,17 @@ remove_column_info(PyObject *locations)
     return res;
 }
 
-static int
-intern_code_constants(struct _PyCodeConstructor *con)
-{
-#ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _py_code_state *state = &interp->code_state;
-    PyMutex_Lock(&state->mutex);
-#endif
-    if (intern_strings(con->names) < 0) {
-        goto error;
-    }
-    if (intern_constants(con->consts, NULL) < 0) {
-        goto error;
-    }
-    if (intern_strings(con->localsplusnames) < 0) {
-        goto error;
-    }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
-    return 0;
-
-error:
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
-    return -1;
-}
-
 /* The caller is responsible for ensuring that the given data is valid. */
 
 PyCodeObject *
 _PyCode_New(struct _PyCodeConstructor *con)
 {
-    if (intern_code_constants(con) < 0) {
-        return NULL;
-    }
-
+    PyCodeObject *result = NULL;
     PyObject *replacement_locations = NULL;
+    PyObject *names_interned = NULL;
+    PyObject *consts_interned = NULL;
+    PyObject *localsplusnames_interned = NULL;
+
     // Compact the linetable if we are opted out of debug
     // ranges.
     if (!_Py_GetConfig()->code_debug_ranges) {
@@ -662,6 +698,20 @@ _PyCode_New(struct _PyCodeConstructor *con)
         con->linetable = replacement_locations;
     }
 
+    // Intern constants; inern and immortalize names
+    names_interned = intern_names(con->names);
+    if (!names_interned) {
+        goto finally;
+    }
+    consts_interned = intern_constants(con->consts);
+    if (!consts_interned) {
+        goto finally;
+    }
+    localsplusnames_interned = intern_constants(con->localsplusnames);
+    if (!localsplusnames_interned) {
+        goto finally;
+    }
+
     Py_ssize_t size = PyBytes_GET_SIZE(con->code) / sizeof(_Py_CODEUNIT);
     PyCodeObject *co;
 #ifdef Py_GIL_DISABLED
@@ -669,18 +719,26 @@ _PyCode_New(struct _PyCodeConstructor *con)
 #else
     co = PyObject_NewVar(PyCodeObject, &PyCode_Type, size);
 #endif
+
     if (co == NULL) {
-        Py_XDECREF(replacement_locations);
         PyErr_NoMemory();
-        return NULL;
+        goto finally;
     }
-    init_code(co, con);
+    init_code(co, con,
+              names_interned, consts_interned, localsplusnames_interned);
+
 #ifdef Py_GIL_DISABLED
     _PyObject_SetDeferredRefcount((PyObject *)co);
     _PyObject_GC_TRACK(co);
 #endif
+
+    result = co;
+finally:
     Py_XDECREF(replacement_locations);
-    return co;
+    Py_XDECREF(names_interned);
+    Py_XDECREF(consts_interned);
+    Py_XDECREF(localsplusnames_interned);
+    return result;
 }
 
 
