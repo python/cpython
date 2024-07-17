@@ -33,7 +33,7 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 FOOTER = "#undef TIER_ONE\n"
 
-def declare_variable(var: StackItem, out: CWriter):
+def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
     if var.condition:
