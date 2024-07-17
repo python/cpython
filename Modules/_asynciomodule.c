@@ -3728,16 +3728,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 
     Py_VISIT(state->context_kwname);
 
-    // Visit freelist.
-#ifdef WITH_FREELISTS
-    struct _Py_asyncmodule_futureiter_freelist* freelist = get_futureiter_freelist();
-    PyObject *next = (PyObject*) freelist->fi_freelist;
-    while (next != NULL) {
-        PyObject *current = next;
-        Py_VISIT(current);
-        next = (PyObject*) ((futureiterobject*) current)->future;
-    }
-#endif
     return 0;
 }
 
