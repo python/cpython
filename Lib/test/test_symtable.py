@@ -390,12 +390,8 @@ class SymtableTest(unittest.TestCase):
         GENEXPRS = (
             'x = (x for x in [])',
             'x = (x async for x in [])',
-            'type x[genexpr = (x for x in [])] = (x for x in [])',
-            'type x[genexpr = (x async for x in [])] = (x async for x in [])',
             'genexpr = (x for x in [])',
             'genexpr = (x async for x in [])',
-            'type genexpr[genexpr = (x for x in [])] = (x for x in [])',
-            'type genexpr[genexpr = (x async for x in [])] = (x async for x in [])',
         )
 
         for gen in GENEXPRS:
