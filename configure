@@ -30205,7 +30205,7 @@ fi
   if test "x$py_cv_module__md5" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
+
 
 
 fi
@@ -30243,7 +30243,7 @@ fi
   if test "x$py_cv_module__sha1" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
+
 
 
 fi
@@ -30281,7 +30281,7 @@ fi
   if test "x$py_cv_module__sha2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
+
 
 
 fi
