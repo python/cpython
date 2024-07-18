@@ -810,47 +810,49 @@ _odict_keys_equal(PyODictObject *a, PyODictObject *b)
     // keep operands' state and size to detect undesired mutations
     const Py_ssize_t size_a = PyODict_SIZE(a);
     const Py_ssize_t size_b = PyODict_SIZE(b);
-    if (size_a == -1 || size_b == -1) {
-        return -1;
-    }
-    if (size_a != size_b) {
-        // dictionaries with different number of keys can never be equal
-        return 0;
-    }
-
     const size_t state_a = a->od_state;
     const size_t state_b = b->od_state;
 
     node_a = _odict_FIRST(a);
     node_b = _odict_FIRST(b);
-    while (node_a != NULL && node_b != NULL) {
-        int res = PyObject_RichCompareBool((PyObject *)_odictnode_KEY(node_a),
-                                           (PyObject *)_odictnode_KEY(node_b),
-                                           Py_EQ);
-        if (res < 0) {
-            return res;
+    while (1) {
+        if (node_a == NULL && node_b == NULL) {
+            /* success: hit the end of each at the same time */
+            return 1;
         }
-        else if (a->od_state != state_a || b->od_state != state_b) {
-            // If the size changed, then the state must also have changed
-            // since the former changes only if keys are added or removed,
-            // which in turn updates the state.
-            PyErr_SetString(PyExc_RuntimeError,
-                            (size_a != PyODict_SIZE(a) || size_b != PyODict_SIZE(b))
-                                ? "OrderedDict changed size during iteration"
-                                : "OrderedDict mutated during iteration");
-            return -1;
-        }
-        else if (res == 0) {
+        else if (node_a == NULL || node_b == NULL) {
+            /* unequal length */
             return 0;
         }
+        else {
+            PyObject *key_a = Py_NewRef(_odictnode_KEY(node_a));
+            PyObject *key_b = Py_NewRef(_odictnode_KEY(node_b));
+            int res = PyObject_RichCompareBool(key_a, key_b, Py_EQ);
+            Py_DECREF(key_a);
+            Py_DECREF(key_b);
+            if (res < 0) {
+                return res;
+            }
+            else if (a->od_state != state_a || b->od_state != state_b) {
+                // If the size changed, then the state must also have changed
+                // since the former changes only if keys are added or removed,
+                // which in turn updates the state.
+                PyErr_SetString(PyExc_RuntimeError,
+                                (size_a != PyODict_SIZE(a) || size_b != PyODict_SIZE(b))
+                                    ? "OrderedDict changed size during iteration"
+                                    : "OrderedDict mutated during iteration");
+                return -1;
+            }
+            else if (res == 0) {
+                // this check must come after the check on the state
+                return 0;
+            }
 
-        /* otherwise it must match, so move on to the next one */
-        node_a = _odictnode_NEXT(node_a);
-        node_b = _odictnode_NEXT(node_b);
+            /* otherwise it must match, so move on to the next one */
+            node_a = _odictnode_NEXT(node_a);
+            node_b = _odictnode_NEXT(node_b);
+        }
     }
-    assert(node_a == NULL && node_b == NULL);
-    /* success: hit the end of each at the same time */
-    return 1;
 }
 
 

@@ -615,62 +615,6 @@ class OrderedDictTests:
                 key = c0 + c1
                 od[key] = key
 
-    def test_issue119004_change_size(self):
-        count = 0
-        class ChangeExternSize:
-            def __eq__(self, other):
-                nonlocal count
-                if count == 1:
-                    lhs.clear()
-                    rhs.clear()
-                count += 1
-                return True
-            def __hash__(self):
-                return -1
-
-        lhs = self.OrderedDict(dict.fromkeys((0, ChangeExternSize())))
-        rhs = self.OrderedDict(dict.fromkeys((0, ChangeExternSize())))
-        msg = re.escape("OrderedDict changed size during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        # There are two calls to ChangeExternSize.__eq__: one when doing
-        # value comparisons (without order) by dict.__eq__ and one when
-        # doing key comparisons (for the order).
-        self.assertEqual(count, 2)
-        with unittest.mock.patch.object(ChangeExternSize, '__eq__') as fn:
-            self.assertDictEqual(dict(lhs), {})
-            fn.assert_not_called()
-            self.assertDictEqual(dict(rhs), {})
-            fn.assert_not_called()
-
-    def test_issue119004_change_item(self):
-        count = 0
-        class ChangeExternItem:
-            def __eq__(self, other):
-                nonlocal count
-                if count == 1:
-                    # change the layout of the underlying linked list,
-                    # but only in the second call (not in the first call)
-                    del lhs[self], rhs[other]
-                    lhs['a'] = rhs['b'] = 'c'
-                count += 1
-                return True
-            def __hash__(self):
-                return -1
-
-        lhs = self.OrderedDict(dict.fromkeys((0, ChangeExternItem())))
-        rhs = self.OrderedDict(dict.fromkeys((0, ChangeExternItem())))
-        msg = re.escape("OrderedDict mutated during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        # There are two calls to ChangeExternItem.__eq__: one when doing
-        # value comparisons (without order) by dict.__eq__ and one when
-        # doing key comparisons (for the order).
-        self.assertEqual(count, 2)
-        with unittest.mock.patch.object(ChangeExternItem, '__eq__') as fn:
-            self.assertDictEqual(dict(lhs), {0: None, 'a': 'c'})
-            fn.assert_not_called()
-            self.assertDictEqual(dict(rhs), {0: None, 'b': 'c'})
-            fn.assert_not_called()
-
     # Direct use of dict methods
 
     def test_dict_setitem(self):
@@ -799,10 +743,77 @@ class OrderedDictTests:
         # when it's mutated and returned from __next__:
         self.assertTrue(gc.is_tracked(next(it)))
 
+
+class _TriggerSideEffectOnEqual:
+    count = 0   # number of calls to __eq__
+    trigger = 1 # count value when to trigger side effect
+    # reference to non-local objects (in the test body)
+    key_lhs = key_rhs = None
+    OrderedDict = None
+
+    def __init__(self, label=None):
+        self.label = label
+
+    def __repr__(self):
+        return f'Key({self.label})'
+
+    def __eq__(self, other):
+        if self.__class__.count == self.__class__.trigger:
+            self.__class__.side_effect()
+        self.__class__.count += 1
+        return True
+
+    def __hash__(self):
+        return -1
+
+    @classmethod
+    def side_effect(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def setup(cls):
+        assert cls.OrderedDict is not None, "missing OrderedDict class"
+        assert cls.key_lhs is None, "cannot call setup twice on the same class"
+        cls.key_lhs = cls(label='a')
+        cls.key_rhs = cls(label='b')
+        lhs = cls.OrderedDict(dict.fromkeys((0, cls.key_lhs)))
+        rhs = cls.OrderedDict(dict.fromkeys((0, cls.key_rhs)))
+        return lhs, rhs
+
+    @classmethod
+    def teardown(cls):
+        cls.count = 0
+        cls.key_lhs = cls.key_rhs = None
+
+
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
     module = py_coll
     OrderedDict = py_coll.OrderedDict
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        class KeyClass(_TriggerSideEffectOnEqual):
+            OrderedDict = cls.OrderedDict
+        cls.KeyClass = KeyClass
+
+    def test_issue119004_attribute_error(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                del lhs[cls.key_lhs]
+
+        lhs, rhs = Key.setup()
+        # This causes an AttributeError due to the linked list being changed
+        msg = re.escape("'NoneType' object has no attribute 'key'")
+        self.assertRaisesRegex(AttributeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        with unittest.mock.patch.object(Key, 'side_effect') as fn:
+            self.assertDictEqual(lhs, {0: None})
+            fn.assert_not_called()
+            self.assertDictEqual(rhs, {0: None, Key(): None})
+            fn.assert_not_called()
 
 
 class CPythonBuiltinDictTests(unittest.TestCase):
@@ -824,8 +835,186 @@ for method in (
 del method
 
 
+class CPythonOrderedDictSideEffects:
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        class KeyClass(_TriggerSideEffectOnEqual):
+            OrderedDict = cls.OrderedDict
+        cls.KeyClass = KeyClass
+
+    def check_side_effect_after_eq(self, key_class, actual, expect):
+        with unittest.mock.patch.object(key_class, 'side_effect') as fn:
+            self.assertDictEqual(actual, expect)
+            fn.assert_not_called()
+
+    def test_issue119004_change_size_by_clear(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                lhs.clear()
+                rhs.clear()
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict changed size during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        # There are two calls to ChangeExternSize.__eq__: one when doing
+        # value comparisons (without order) by dict.__eq__ and one when
+        # doing key comparisons (for the order).
+        self.assertEqual(Key.count, 2)
+        self.check_side_effect_after_eq(Key, lhs, {})
+        self.check_side_effect_after_eq(Key, rhs, {})
+
+    def test_issue119004_change_size_by_clear_asymmetric(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                lhs.clear()
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict changed size during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        self.check_side_effect_after_eq(Key, lhs, {})
+        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+
+    def test_issue119004_change_size_by_delete_key(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                del lhs[cls.key_lhs]
+                del rhs[cls.key_rhs]
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict changed size during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        self.check_side_effect_after_eq(Key, lhs, {0: None})
+        self.check_side_effect_after_eq(Key, rhs, {0: None})
+
+    def test_issue119004_change_size_by_delete_key_asymmetric(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                del lhs[cls.key_lhs]
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict changed size during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        self.check_side_effect_after_eq(Key, lhs, {0: None})
+        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+
+    def test_issue119004_change_linked_list_by_clear(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                # change the layout of the underlying linked list
+                lhs.clear()
+                rhs.clear()
+                lhs['a'] = lhs['b'] = 'c'
+                rhs['a'] = rhs['b'] = 'c'
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict mutated during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        expect = {'a': 'c', 'b': 'c'}
+        self.check_side_effect_after_eq(Key, lhs, expect)
+        self.check_side_effect_after_eq(Key, rhs, expect)
+
+    def test_issue119004_change_linked_list_by_clear_asymmetric(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                # change the layout of the underlying linked list
+                lhs.clear()
+                lhs['a'] = lhs['b'] = 'c'
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict mutated during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        with unittest.mock.patch.object(Key, 'side_effect') as fn:
+            self.assertDictEqual(lhs, {'a': 'c', 'b': 'c'})
+            self.assertEqual(Key.count, 2)
+            fn.assert_not_called()
+            self.assertDictEqual(rhs, {0: None, Key(): None})
+            self.assertEqual(Key.count, 3)
+            fn.assert_not_called()
+
+    def test_issue119004_change_linked_list_by_delete_key(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                # change the layout of the underlying linked list
+                del lhs[cls.key_lhs]
+                del rhs[cls.key_rhs]
+                lhs['a'] = rhs['b'] = 'c'
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict mutated during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        self.check_side_effect_after_eq(Key, lhs, {0: None, 'a': 'c'})
+        self.check_side_effect_after_eq(Key, rhs, {0: None, 'b': 'c'})
+
+    def test_issue119004_change_linked_list_by_delete_key_asymmetric(self):
+        class Key(self.KeyClass):
+            @classmethod
+            def side_effect(cls):
+                # change the layout of the underlying linked list
+                del lhs[cls.key_lhs]
+                lhs['a'] = 'c'
+
+        lhs, rhs = Key.setup()
+        msg = re.escape("OrderedDict mutated during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        self.assertEqual(Key.count, 2)
+        self.check_side_effect_after_eq(Key, lhs, {0: None, 'a': 'c'})
+        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+
+    def test_issue119004_change_size_by_delete_key_in_dict_eq(self):
+        class Key(self.KeyClass):
+            trigger = 0
+            @classmethod
+            def side_effect(cls):
+                del lhs[cls.key_lhs]
+                del rhs[cls.key_rhs]
+
+        lhs, rhs = Key.setup()
+        self.assertEqual(Key.count, 0)
+        # the side effect is triggered in dict.__eq__ and modifies the length
+        self.assertNotEqual(lhs, rhs)
+        self.assertEqual(len(lhs), 1)
+        self.assertEqual(len(rhs), 1)
+        self.assertEqual(Key.count, 1)
+        self.check_side_effect_after_eq(Key, lhs, {0: None})
+        self.check_side_effect_after_eq(Key, rhs, {0: None})
+
+    def test_issue119004_change_size_by_delete_key_in_dict_eq_asymmetric(self):
+        class Key(self.KeyClass):
+            trigger = 0
+            @classmethod
+            def side_effect(cls):
+                del lhs[cls.key_lhs]
+
+        lhs, rhs = Key.setup()
+        self.assertEqual(Key.count, 0)
+        # the side effect is triggered in dict.__eq__ and modifies the length
+        self.assertNotEqual(lhs, rhs)
+        self.assertEqual(len(lhs), 1)
+        self.assertEqual(len(rhs), 2)
+        self.assertEqual(Key.count, 1)
+        self.check_side_effect_after_eq(Key, lhs, {0: None})
+        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+
+
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
-class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
+class CPythonOrderedDictTests(OrderedDictTests,
+                              CPythonOrderedDictSideEffects,
+                              unittest.TestCase):
 
     module = c_coll
     OrderedDict = c_coll.OrderedDict
