@@ -173,7 +173,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[0] = value;
             #endif /* Py_GIL_DISABLED */
             stack_pointer[0] = value;
@@ -3069,7 +3069,7 @@
             assert(seq);
             assert(it->it_index < PyList_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, it->it_index++));
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[0] = next;
             #endif /* Py_GIL_DISABLED */
             stack_pointer[0] = next;
@@ -3119,7 +3119,7 @@
             assert(seq);
             assert(it->it_index < PyTuple_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[0] = next;
             #endif /* Py_GIL_DISABLED */
             stack_pointer[0] = next;
@@ -3329,7 +3329,7 @@
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = PyStackRef_FromPyObjectNew(descr);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-1] = attr;
             #endif /* Py_GIL_DISABLED */
             self = owner;
@@ -3353,7 +3353,7 @@
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = PyStackRef_FromPyObjectNew(descr);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-1] = attr;
             #endif /* Py_GIL_DISABLED */
             self = owner;
@@ -3375,7 +3375,7 @@
             assert(descr != NULL);
             PyStackRef_CLOSE(owner);
             attr = PyStackRef_FromPyObjectNew(descr);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-1] = attr;
             #endif /* Py_GIL_DISABLED */
             stack_pointer[-1] = attr;
@@ -3394,7 +3394,7 @@
             assert(descr != NULL);
             PyStackRef_CLOSE(owner);
             attr = PyStackRef_FromPyObjectNew(descr);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-1] = attr;
             #endif /* Py_GIL_DISABLED */
             stack_pointer[-1] = attr;
@@ -3427,7 +3427,7 @@
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = PyStackRef_FromPyObjectNew(descr);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-1] = attr;
             #endif /* Py_GIL_DISABLED */
             self = owner;
@@ -3542,11 +3542,11 @@
             assert(PyStackRef_IsNull(null));
             assert(Py_TYPE(callable_o) == &PyMethod_Type);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-1 - oparg] = self;
             #endif /* Py_GIL_DISABLED */
             method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-2 - oparg] = method;
             #endif /* Py_GIL_DISABLED */
             stack_pointer[-2 - oparg] = method;
@@ -3646,11 +3646,11 @@
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             STAT_INC(CALL, hit);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-1 - oparg] = self;
             #endif /* Py_GIL_DISABLED */
             func = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[-2 - oparg] = func;
             #endif /* Py_GIL_DISABLED */
             PyStackRef_CLOSE(callable);
@@ -4902,7 +4902,7 @@
             _PyStackRef value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             value = PyStackRef_FromPyObjectNew(ptr);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[0] = value;
             #endif /* Py_GIL_DISABLED */
             stack_pointer[0] = value;
@@ -4937,7 +4937,7 @@
             _PyStackRef null;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             value = PyStackRef_FromPyObjectNew(ptr);
-            #ifdef Py_GIL_DISABLED /* flush specials */ 
+            #ifdef Py_GIL_DISABLED /* flush specials */
             stack_pointer[0] = value;
             #endif /* Py_GIL_DISABLED */
             null = PyStackRef_NULL;

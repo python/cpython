@@ -220,7 +220,7 @@ def emit_tokens(
             txt = stack.write_variable_to_stack(out, var_to_flush)
             if txt:
                 out.start_line()
-                out.emit("#ifdef Py_GIL_DISABLED /* flush specials */ \n")
+                out.emit("#ifdef Py_GIL_DISABLED /* flush specials */\n")
                 out.emit(txt)
                 out.emit("#endif /* Py_GIL_DISABLED */\n")
             var_to_flush = None
