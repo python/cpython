@@ -377,6 +377,11 @@ class FilterTestCaseMixin:
         self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*'),
                          [b'Python', b'Perl'])
 
+    def test_mix_bytes_str(self):
+        filter = self.fnmatch.filter
+        self.assertRaises(TypeError, filter, ['test'], b'*')
+        self.assertRaises(TypeError, filter, [b'test'], '*')
+
     def test_case(self):
         ignorecase = os.path.normcase('P') == os.path.normcase('p')
         filter = self.fnmatch.filter
@@ -392,11 +397,6 @@ class FilterTestCaseMixin:
                          ['usr/bin', 'usr\\lib'] if normsep else ['usr/bin'])
         self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr\\*'),
                          ['usr/bin', 'usr\\lib'] if normsep else ['usr\\lib'])
-
-    def test_mix_bytes_str(self):
-        filter = self.fnmatch.filter
-        self.assertRaises(TypeError, filter, ['test'], b'*')
-        self.assertRaises(TypeError, filter, [b'test'], '*')
 
 class PurePythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
     fnmatch = py_fnmatch
