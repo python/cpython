@@ -11,8 +11,9 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #include "pycore_code.h"          // STATS
+#include "pycore_stackref.h"      // _PyStackRef
 
-/* See Objects/frame_layout.md for an explanation of the frame stack
+/* See InternalDocs/frames.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
  * structs. */
 
@@ -26,6 +27,10 @@ struct _frame {
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     PyObject *f_extra_locals;   /* Dict for locals set by users using f_locals, could be NULL */
+    /* This is purely for backwards compatibility for PyEval_GetLocals.
+       PyEval_GetLocals requires a borrowed reference so the actual reference
+       is stored here */
+    PyObject *f_locals_cache;
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
@@ -63,11 +68,11 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
-    int stacktop;  /* Offset of TOS from localsplus  */
+    _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
     /* Locals and stack */
-    PyObject *localsplus[1];
+    _PyStackRef localsplus[1];
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
@@ -78,25 +83,25 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)f->f_executable;
 }
 
-static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus;
+static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
+    return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
-static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(f->localsplus[f->stacktop-1] != NULL);
-    return f->localsplus[f->stacktop-1];
+static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
+    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(!PyStackRef_IsNull(f->stackpointer[-1]));
+    return f->stackpointer[-1];
 }
 
-static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    f->stacktop--;
-    return f->localsplus[f->stacktop];
+static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
+    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    f->stackpointer--;
+    return *f->stackpointer;
 }
 
-static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
-    f->localsplus[f->stacktop] = value;
-    f->stacktop++;
+static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, _PyStackRef value) {
+    *f->stackpointer = value;
+    f->stackpointer++;
 }
 
 #define FRAME_SPECIALS_SIZE ((int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *)))
@@ -112,9 +117,12 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
     *dest = *src;
-    for (int i = 1; i < src->stacktop; i++) {
+    assert(src->stackpointer != NULL);
+    int stacktop = (int)(src->stackpointer - src->localsplus);
+    assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
+    dest->stackpointer = dest->localsplus + stacktop;
+    for (int i = 1; i < stacktop; i++) {
         dest->localsplus[i] = src->localsplus[i];
     }
     // Don't leave a dangling pointer to the old frame when creating generators
@@ -136,42 +144,43 @@ _PyFrame_Initialize(
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
     frame->f_locals = locals;
-    frame->stacktop = code->co_nlocalsplus;
+    frame->stackpointer = frame->localsplus + code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
+        frame->localsplus[i] = PyStackRef_NULL;
     }
 }
 
 /* Gets the pointer to the locals array
  * that precedes this frame.
  */
-static inline PyObject**
+static inline _PyStackRef*
 _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 {
     return frame->localsplus;
 }
 
-/* Fetches the stack pointer, and sets stacktop to -1.
-   Having stacktop <= 0 ensures that invalid
-   values are not visible to the cycle GC.
-   We choose -1 rather than 0 to assist debugging. */
-static inline PyObject**
+/* Fetches the stack pointer, and sets stackpointer to NULL.
+   Having stackpointer == NULL ensures that invalid
+   values are not visible to the cycle GC. */
+static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    PyObject **sp = frame->localsplus + frame->stacktop;
-    frame->stacktop = -1;
+    assert(frame->stackpointer != NULL);
+    _PyStackRef *sp = frame->stackpointer;
+    frame->stackpointer = NULL;
     return sp;
 }
 
 static inline void
-_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
+_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
-    frame->stacktop = (int)(stack_pointer - frame->localsplus);
+    assert(frame->stackpointer == NULL);
+    frame->stackpointer = stack_pointer;
 }
 
 /* Determine whether a frame is incomplete.
@@ -214,7 +223,7 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
  * creating it if necessary.
- * Returns a borrowed referennce */
+ * Returns a borrowed reference */
 static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
@@ -299,7 +308,8 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_globals = NULL;
 #endif
     frame->f_locals = NULL;
-    frame->stacktop = code->co_nlocalsplus + stackdepth;
+    assert(stackdepth <= code->co_stacksize);
+    frame->stackpointer = frame->localsplus + code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
@@ -307,17 +317,9 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     return frame;
 }
 
-static inline
-PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-    size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
-    return (PyGenObject *)(((char *)frame) - offset_in_gen);
-}
-
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
+                        PyObject *locals, _PyStackRef const* args,
                         size_t argcount, PyObject *kwnames);
 
 #ifdef __cplusplus

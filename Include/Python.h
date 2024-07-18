@@ -64,6 +64,7 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
+#include "lock.h"
 #include "object.h"
 #include "refcount.h"
 #include "objimpl.h"
@@ -124,12 +125,12 @@
 #include "import.h"
 #include "abstract.h"
 #include "bltinmodule.h"
+#include "critical_section.h"
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
-#include "cpython/optimizer.h"
 
 #endif /* !Py_PYTHON_H */

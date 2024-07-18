@@ -91,13 +91,20 @@ def capture_warnings(capture):
             _warnings_showwarning = None
 
 capture_warnings(True)
-tcl = tkinter.Tcl()
 
-def handle_tk_events(tcl=tcl):
-    """Process any tk events that are ready to be dispatched if tkinter
-    has been imported, a tcl interpreter has been created and tk has been
-    loaded."""
-    tcl.eval("update")
+if idlelib.testing:
+    # gh-121008: When testing IDLE, don't create a Tk object to avoid side
+    # effects such as installing a PyOS_InputHook hook.
+    def handle_tk_events():
+        pass
+else:
+    tcl = tkinter.Tcl()
+
+    def handle_tk_events(tcl=tcl):
+        """Process any tk events that are ready to be dispatched if tkinter
+        has been imported, a tcl interpreter has been created and tk has been
+        loaded."""
+        tcl.eval("update")
 
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
@@ -436,6 +443,9 @@ class StdioFile(io.TextIOBase):
 
     def __init__(self, shell, tags, encoding='utf-8', errors='strict'):
         self.shell = shell
+        # GH-78889: accessing unpickleable attributes freezes Shell.
+        # IDLE only needs methods; allow 'width' for possible use.
+        self.shell._RPCProxy__attributes = {'width': 1}
         self.tags = tags
         self._encoding = encoding
         self._errors = errors

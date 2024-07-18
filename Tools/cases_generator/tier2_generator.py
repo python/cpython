@@ -20,39 +20,45 @@ from generators_common import (
     emit_tokens,
     emit_to,
     REPLACEMENT_FUNCTIONS,
+    type_and_null,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, SizeMismatch
+from stack import Stack, StackError
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+    var: StackItem, uop: Uop, required: set[str], out: CWriter
 ) -> None:
-    if var.name in variables:
+    if var.name not in required:
         return
-    type = var.type if var.type else "PyObject *"
-    variables.add(var.name)
+    required.remove(var.name)
+    type, null = type_and_null(var)
+    space = " " if type[-1].isalnum() else ""
     if var.condition:
-        out.emit(f"{type}{var.name} = NULL;\n")
+        out.emit(f"{type}{space}{var.name} = {null};\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        out.emit(f"{type}{var.name};\n")
+        out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
-    variables = {"unused"}
+    stack = Stack()
     for var in reversed(uop.stack.inputs):
-        declare_variable(var, uop, variables, out)
+        stack.pop(var)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, variables, out)
-
+            stack.push(var)
+    required = set(stack.defined)
+    for var in reversed(uop.stack.inputs):
+        declare_variable(var, uop, required, out)
+    for var in uop.stack.outputs:
+        declare_variable(var, uop, required, out)
 
 def tier2_replace_error(
     out: CWriter,
@@ -175,8 +181,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         if uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
                 out.emit(stack.push(var))
-    except SizeMismatch as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+    except StackError as ex:
+        raise analysis_error(ex.args[0], uop.body[0]) from None
 
 
 SKIPS = ("_EXTENDED_ARG",)
