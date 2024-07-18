@@ -9,6 +9,8 @@ Configuration:
 * Set ``stable_abi_file`` to the path to stable ABI list.
 """
 
+from __future__ import annotations
+
 import csv
 import dataclasses
 from pathlib import Path
