@@ -26,12 +26,11 @@ another rational number, or from a string.
    with value ``numerator/denominator``. If *denominator* is ``0``, it
    raises a :exc:`ZeroDivisionError`.
 
-   The second version requires that
-   *number* is an instance of :class:`numbers.Rational` or is an instance
-   of :class:`numbers.Number` and has the :meth:`!as_integer_ratio` method
+   The second version requires that *number* is an instance of
+   :class:`numbers.Rational` or has the :meth:`!as_integer_ratio` method
    (this includes :class:`float` and :class:`decimal.Decimal`).
    It returns a :class:`Fraction` instance with exactly the same value.
-   Assumed, that the :meth:`~as_integer_ratio` method returns a pair
+   Assumed, that the :meth:`!as_integer_ratio` method returns a pair
    of coprime integers and last one is positive.
    Note that due to the
    usual issues with binary floating-point (see :ref:`tut-fp-issues`), the
@@ -115,7 +114,7 @@ another rational number, or from a string.
       now supports fill, alignment, sign handling, minimum width and grouping.
 
    .. versionchanged:: 3.14
-      The :class:`Fraction` constructor now accepts any numbers with the
+      The :class:`Fraction` constructor now accepts any objects with the
       :meth:`!as_integer_ratio` method.
 
    .. attribute:: numerator

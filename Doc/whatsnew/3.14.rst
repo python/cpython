@@ -103,7 +103,7 @@ ast
 fractions
 ---------
 
-Added support for converting any numbers that have the
+Added support for converting any objects that have the
 :meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
 (Contributed by Serhiy Storchaka in :gh:`82017`.)
 

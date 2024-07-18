@@ -244,7 +244,7 @@ class Fraction(numbers.Rational):
                 return self
 
             elif (isinstance(numerator, float) or
-                  (isinstance(numerator, numbers.Number) and
+                  (not isinstance(numerator, type) and
                    hasattr(numerator, 'as_integer_ratio'))):
                 # Exact conversion
                 self._numerator, self._denominator = numerator.as_integer_ratio()

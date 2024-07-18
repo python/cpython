@@ -360,22 +360,34 @@ class FractionTest(unittest.TestCase):
                 self._ratio = ratio
             def as_integer_ratio(self):
                 return self._ratio
-        class RatioNumber(Ratio):
-            pass
-        numbers.Number.register(RatioNumber)
 
-        self.assertEqual((7, 3), _components(F(RatioNumber((7, 3)))))
-        # not a number
-        self.assertRaises(TypeError, F, Ratio((7, 3)))
+        self.assertEqual((7, 3), _components(F(Ratio((7, 3)))))
+        errmsg = "argument should be a string or a number"
         # the type also has an "as_integer_ratio" attribute.
-        self.assertRaises(TypeError, F, RatioNumber)
+        self.assertRaisesRegex(TypeError, errmsg, F, Ratio)
         # bad ratio
-        self.assertRaises(TypeError, F, RatioNumber(7))
-        self.assertRaises(ValueError, F, RatioNumber((7,)))
-        self.assertRaises(ValueError, F, RatioNumber((7, 3, 1)))
+        self.assertRaises(TypeError, F, Ratio(7))
+        self.assertRaises(ValueError, F, Ratio((7,)))
+        self.assertRaises(ValueError, F, Ratio((7, 3, 1)))
         # only single-argument form
-        self.assertRaises(TypeError, F, RatioNumber((3, 7)), 11)
-        self.assertRaises(TypeError, F, 2, RatioNumber((-10, 9)))
+        self.assertRaises(TypeError, F, Ratio((3, 7)), 11)
+        self.assertRaises(TypeError, F, 2, Ratio((-10, 9)))
+
+        # as_integer_ratio not defined in a class
+        class A:
+            pass
+        a = A()
+        a.as_integer_ratio = lambda: (9, 5)
+        self.assertEqual((9, 5), _components(F(a)))
+
+        # as_integer_ratio defined in a metaclass
+        class M(type):
+            def as_integer_ratio(self):
+                return (11, 9)
+        class B(metaclass=M):
+            pass
+        self.assertRaisesRegex(TypeError, errmsg, F, B)
+        self.assertRaisesRegex(TypeError, errmsg, F, B())
 
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
