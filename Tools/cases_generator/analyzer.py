@@ -78,7 +78,7 @@ SKIP_PROPERTIES = Properties(
     uses_locals=False,
     has_free=False,
     side_exit=False,
-    pure=False,
+    pure=True,
 )
 
 
@@ -96,6 +96,20 @@ class Skip:
         return SKIP_PROPERTIES
 
 
+class Flush:
+
+    @property
+    def properties(self) -> Properties:
+        return SKIP_PROPERTIES
+
+    @property
+    def name(self) -> str:
+        return "flush"
+
+    @property
+    def size(self) -> int:
+        return 0
+
 @dataclass
 class StackItem:
     name: str
@@ -103,6 +117,7 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
+    used: bool = False
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -132,7 +147,6 @@ class CacheEntry:
 
     def __str__(self) -> str:
         return f"{self.name}/{self.size}"
-
 
 @dataclass
 class Uop:
@@ -195,7 +209,7 @@ class Uop:
         return False
 
 
-Part = Uop | Skip
+Part = Uop | Skip | Flush
 
 
 @dataclass
@@ -306,6 +320,16 @@ def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | No
     for input, output in zip(inputs, outputs):
         if input.name == output.name:
             input.peek = output.peek = True
+    if isinstance(op, parser.InstDef):
+        output_names = [out.name for out in outputs]
+        for input in inputs:
+            if (variable_used(op, input.name) or
+                variable_used(op, "DECREF_INPUTS") or
+                (not input.peek and input.name in output_names)):
+                input.used = True
+        for output in outputs:
+            if variable_used(op, output.name):
+                output.used = True
     return StackEffect(inputs, outputs)
 
 
@@ -324,7 +348,13 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens
+    )
+
+def oparg_used(node: parser.InstDef) -> bool:
+    """Determine whether `oparg` is used in a node."""
+    return any(
+        token.kind == "IDENTIFIER" and token.text == "oparg" for token in node.tokens
     )
 
 def tier_variable(node: parser.InstDef) -> int | None:
@@ -571,7 +601,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         error_without_pop=error_without_pop,
         deopts=deopts_if,
         side_exit=exits_if,
-        oparg=variable_used(op, "oparg"),
+        oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
         ends_with_eval_breaker=eval_breaker_at_end(op),
@@ -690,13 +720,16 @@ def desugar_inst(
 def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
-    parts: list[Uop | Skip] = []
+    parts: list[Part] = []
     for part in macro.uops:
         match part:
             case parser.OpName():
-                if part.name not in uops:
-                    analysis_error(f"No Uop named {part.name}", macro.tokens[0])
-                parts.append(uops[part.name])
+                if part.name == "flush":
+                    parts.append(Flush())
+                else:
+                    if part.name not in uops:
+                        raise analysis_error(f"No Uop named {part.name}", macro.tokens[0])
+                    parts.append(uops[part.name])
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:

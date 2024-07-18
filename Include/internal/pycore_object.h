@@ -15,6 +15,30 @@ extern "C" {
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
+
+#define _Py_IMMORTAL_REFCNT_LOOSE ((_Py_IMMORTAL_REFCNT >> 1) + 1)
+
+// gh-121528, gh-118997: Similar to _Py_IsImmortal() but be more loose when
+// comparing the reference count to stay compatible with C extensions built
+// with the stable ABI 3.11 or older. Such extensions implement INCREF/DECREF
+// as refcnt++ and refcnt-- without taking in account immortal objects. For
+// example, the reference count of an immortal object can change from
+// _Py_IMMORTAL_REFCNT to _Py_IMMORTAL_REFCNT+1 (INCREF) or
+// _Py_IMMORTAL_REFCNT-1 (DECREF).
+//
+// This function should only be used in assertions. Otherwise, _Py_IsImmortal()
+// must be used instead.
+static inline int _Py_IsImmortalLoose(PyObject *op)
+{
+#if defined(Py_GIL_DISABLED)
+    return _Py_IsImmortal(op);
+#else
+    return (op->ob_refcnt >= _Py_IMMORTAL_REFCNT_LOOSE);
+#endif
+}
+#define _Py_IsImmortalLoose(op) _Py_IsImmortalLoose(_PyObject_CAST(op))
+
+
 /* Check if an object is consistent. For example, ensure that the reference
    counter is greater than or equal to 1, and ensure that ob_type is not NULL.
 
@@ -134,7 +158,7 @@ PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
 {
     if (op) {
-        assert(_Py_IsImmortal(op));
+        assert(_Py_IsImmortalLoose(op));
 #ifdef Py_GIL_DISABLED
         op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = 0;
@@ -266,7 +290,7 @@ _PyObject_Init(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
     Py_SET_TYPE(op, typeobj);
-    assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortal(typeobj));
+    assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortalLoose(typeobj));
     Py_INCREF(typeobj);
     _Py_NewReference(op);
 }
@@ -733,13 +757,7 @@ PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
  * Third party code unintentionally rely on problematic fpcasts. The call
  * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
  */
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    _PyCFunctionWithKeywords_TrampolineCall( \
-        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
-extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
-    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
-#else
+#if !(defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE))
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     (meth)((self), (args))
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
