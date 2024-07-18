@@ -1,2 +1,2 @@
-Improve the performances of :func:`fnmatch.translate` by 50% and of
-:func:`fnmatch.filter` by 10%.  Patch by Bénédikt Tran.
+Improve the performances of :func:`fnmatch.translate` by 2x and of
+:func:`fnmatch.filter` by 1.1x.  Patch by Bénédikt Tran.
