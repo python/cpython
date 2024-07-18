@@ -52,7 +52,7 @@ _Py_freelists_GET(void)
 #define _Py_FREELIST_POP_MEM(NAME) \
     _PyFreeList_PopMem(&_Py_freelists_GET()->NAME)
 
-#define _Py_FREELIST_SIZE(NAME) ((_Py_freelists_GET()->NAME).size)
+#define _Py_FREELIST_SIZE(NAME) (int)((_Py_freelists_GET()->NAME).size)
 
 static inline int
 _PyFreeList_Push(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize)
