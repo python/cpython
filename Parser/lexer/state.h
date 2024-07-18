@@ -58,6 +58,7 @@ typedef struct _tokenizer_mode {
     Py_ssize_t last_expr_end;
     char* last_expr_buffer;
     int f_string_debug;
+    int in_format_spec;
 } tokenizer_mode;
 
 /* Tokenizer state */

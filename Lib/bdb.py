@@ -369,6 +369,7 @@ class Bdb:
 
         If frame is not specified, debugging starts from caller's frame.
         """
+        sys.settrace(None)
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()

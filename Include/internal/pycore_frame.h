@@ -13,7 +13,7 @@ extern "C" {
 #include "pycore_code.h"          // STATS
 #include "pycore_stackref.h"      // _PyStackRef
 
-/* See Objects/frame_layout.md for an explanation of the frame stack
+/* See InternalDocs/frames.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
  * structs. */
 
@@ -27,6 +27,10 @@ struct _frame {
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     PyObject *f_extra_locals;   /* Dict for locals set by users using f_locals, could be NULL */
+    /* This is purely for backwards compatibility for PyEval_GetLocals.
+       PyEval_GetLocals requires a borrowed reference so the actual reference
+       is stored here */
+    PyObject *f_locals_cache;
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
