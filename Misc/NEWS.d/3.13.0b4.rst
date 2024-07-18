@@ -1,0 +1,476 @@
+.. date: 2024-07-04-15-10-29
+.. gh-issue: 121084
+.. nonce: qxcd5d
+.. release date: 2024-07-18
+.. section: Tests
+
+Fix test_typing random leaks. Clear typing ABC caches when running tests for
+refleaks (``-R`` option): call ``_abc_caches_clear()`` on typing abstract
+classes and their subclasses. Patch by Victor Stinner.
+
+..
+
+.. date: 2024-07-03-14-41-00
+.. gh-issue: 121160
+.. nonce: LEtiTd
+.. section: Tests
+
+Add a test for :func:`readline.set_history_length`. Note that this test may
+fail on readline libraries.
+
+..
+
+.. date: 2024-07-01-16-15-06
+.. gh-issue: 121200
+.. nonce: 4Pc-gc
+.. section: Tests
+
+Fix ``test_expanduser_pwd2()`` of ``test_posixpath``.  Call ``getpwnam()``
+to get ``pw_dir``, since it can be different than ``getpwall()`` ``pw_dir``.
+Patch by Victor Stinner.
+
+..
+
+.. date: 2024-07-01-09-04-32
+.. gh-issue: 121188
+.. nonce: XbuTVa
+.. section: Tests
+
+When creating the JUnit XML file, regrtest now escapes characters which are
+invalid in XML, such as the chr(27) control character used in ANSI escape
+sequences. Patch by Victor Stinner.
+
+..
+
+.. date: 2024-07-14-06-24-02
+.. gh-issue: 57141
+.. nonce: C3jhDh
+.. section: Library
+
+The *shallow* argument to :class:`filecmp.dircmp` (new in Python 3.13) is
+now keyword-only.
+
+..
+
+.. date: 2024-07-13-06-23-24
+.. gh-issue: 121245
+.. nonce: RfOgf4
+.. section: Library
+
+Simplify handling of the history file in ``site.register_readline()``
+helper. The ``CAN_USE_PYREPL`` variable now will be initialized, when
+imported.  Patch by Sergey B Kirpichev.
+
+..
+
+.. date: 2024-07-03-07-25-21
+.. gh-issue: 121332
+.. nonce: Iz6FEq
+.. section: Library
+
+Fix constructor of :mod:`ast` nodes with custom ``_attributes``. Previously,
+passing custom attributes would raise a :py:exc:`DeprecationWarning`.
+Passing arguments to the constructor that are not in ``_fields`` or
+``_attributes`` remains deprecated. Patch by Jelle Zijlstra.
+
+..
+
+.. date: 2024-07-02-19-36-54
+.. gh-issue: 121279
+.. nonce: BltDo9
+.. section: Library
+
+Avoid :exc:`NameError` for the :mod:`warnings` module when accessing the
+depracated atributes of the :mod:`importlib.abc` module.
+
+..
+
+.. date: 2024-07-02-11-34-06
+.. gh-issue: 121245
+.. nonce: sSkDAr
+.. section: Library
+
+Fix a bug in the handling of the command history of the new :term:`REPL`
+that caused the history file to be wiped at REPL exit.
+
+..
+
+.. date: 2024-06-29-05-08-59
+.. gh-issue: 87744
+.. nonce: rpF6Jw
+.. section: Library
+
+Fix waitpid race while calling
+:meth:`~asyncio.subprocess.Process.send_signal` in asyncio. Patch by Kumar
+Aditya.
+
+..
+
+.. date: 2024-06-26-03-04-24
+.. gh-issue: 121018
+.. nonce: clVSc4
+.. section: Library
+
+Fixed other issues where :class:`argparse.ArgumentParser` did not honor
+``exit_on_error=False``.
+
+..
+
+.. date: 2024-06-22-17-01-56
+.. gh-issue: 120678
+.. nonce: Ik8dCg
+.. section: Library
+
+Fix regression in the new REPL that meant that globals from files passed
+using the ``-i`` argument would not be included in the REPL's global
+namespace. Patch by Alex Waygood.
+
+..
+
+.. date: 2024-06-21-12-00-16
+.. gh-issue: 120782
+.. nonce: LOE8tj
+.. section: Library
+
+Fix wrong references of the :mod:`datetime` types after reloading the
+module.
+
+..
+
+.. date: 2024-06-21-06-37-46
+.. gh-issue: 120713
+.. nonce: WBbQx4
+.. section: Library
+
+:meth:`datetime.datetime.strftime` now 0-pads years with less than four
+digits for the format specifiers ``%Y`` and ``%G`` on Linux. Patch by Ben
+Hsing
+
+..
+
+.. date: 2024-06-07-10-10-32
+.. gh-issue: 117983
+.. nonce: NeMR9n
+.. section: Library
+
+Defer the ``threading`` import in ``importlib.util`` until lazy loading is
+used.
+
+..
+
+.. date: 2024-05-20-13-48-37
+.. gh-issue: 119189
+.. nonce: dhJVs5
+.. section: Library
+
+When using the ``**`` operator or :func:`pow` with
+:class:`~fractions.Fraction` as the base and an exponent that is not
+rational, a float, or a complex, the fraction is no longer converted to a
+float.
+
+..
+
+.. date: 2024-05-07-17-38-53
+.. gh-issue: 118714
+.. nonce: XXKpVZ
+.. section: Library
+
+Allow ``restart`` in post-mortem debugging of :mod:`pdb`. Removed restart
+message when the user quits pdb from post-mortem mode.
+
+..
+
+.. date: 2023-06-17-09-07-06
+.. gh-issue: 105623
+.. nonce: 5G06od
+.. section: Library
+
+Fix performance degradation in
+:class:`logging.handlers.RotatingFileHandler`. Patch by Craig Robson.
+
+..
+
+.. date: 2024-07-16-16-57-03
+.. gh-issue: 78889
+.. nonce: U7ghFD
+.. section: IDLE
+
+Stop Shell freezes by blocking user access to non-method sys.stdout.shell
+attributes, which are all private.
+
+..
+
+.. date: 2024-07-14-11-48-10
+.. gh-issue: 121749
+.. nonce: nxHoTk
+.. section: Documentation
+
+Fix documentation for :c:func:`PyModule_AddObjectRef`.
+
+..
+
+.. date: 2024-06-05-12-36-18
+.. gh-issue: 120012
+.. nonce: f14DbQ
+.. section: Documentation
+
+Clarify the behaviours of :meth:`multiprocessing.Queue.empty` and
+:meth:`multiprocessing.SimpleQueue.empty` on closed queues. Patch by
+Bénédikt Tran.
+
+..
+
+.. date: 2024-07-16-18-23-22
+.. gh-issue: 121860
+.. nonce: -FTauD
+.. section: Core and Builtins
+
+Fix crash when rematerializing a managed dictionary after it was deleted.
+
+..
+
+.. date: 2024-07-15-20-41-06
+.. gh-issue: 121814
+.. nonce: oR2ixR
+.. section: Core and Builtins
+
+Fixed the SegFault when :c:func:`PyEval_SetTrace` is used with no Python
+frame on stack.
+
+..
+
+.. date: 2024-07-15-20-03-29
+.. gh-issue: 121295
+.. nonce: w53ucI
+.. section: Core and Builtins
+
+Fix PyREPL console getting into a blocked state after interrupting a long
+paste
+
+..
+
+.. date: 2024-07-15-16-26-32
+.. gh-issue: 121794
+.. nonce: fhBtiQ
+.. section: Core and Builtins
+
+Fix bug in free-threaded Python where a resurrected object could lead to a
+negative ref count assertion failure.
+
+..
+
+.. date: 2024-07-13-12-27-31
+.. gh-issue: 121657
+.. nonce: wgOYLw
+.. section: Core and Builtins
+
+Improve the :exc:`SyntaxError` message if the user tries to use
+:keyword:`yield from <yield>` outside a function.
+
+..
+
+.. date: 2024-07-13-09-51-44
+.. gh-issue: 121609
+.. nonce: jWsE5t
+.. section: Core and Builtins
+
+Fix pasting of characters containing unicode character joiners in the new
+REPL. Patch by Marta Gomez Macias
+
+..
+
+.. date: 2024-07-10-15-43-54
+.. gh-issue: 117482
+.. nonce: 5WYaXR
+.. section: Core and Builtins
+
+Unexpected slot wrappers are no longer created for builtin static types in
+subinterpreters.
+
+..
+
+.. date: 2024-07-09-13-53-18
+.. gh-issue: 121499
+.. nonce: rpp7il
+.. section: Core and Builtins
+
+Fix a bug affecting how multi-line history was being rendered in the new
+REPL after interacting with the new screen cache. Patch by Pablo Galindo
+
+..
+
+.. date: 2024-07-08-17-15-14
+.. gh-issue: 121497
+.. nonce: I8hMDC
+.. section: Core and Builtins
+
+Fix a bug that was preventing the REPL to correctly respect the history when
+an input hook was set. Patch by Pablo Galindo
+
+..
+
+.. date: 2024-07-08-10-31-08
+.. gh-issue: 121012
+.. nonce: M5hHk-
+.. section: Core and Builtins
+
+Tier 2 execution now ensures that list iterators remain exhausted, once they
+become exhausted.
+
+..
+
+.. date: 2024-07-08-02-24-55
+.. gh-issue: 121439
+.. nonce: jDHod3
+.. section: Core and Builtins
+
+Allow tuples of length 20 in the freelist to be reused.
+
+..
+
+.. date: 2024-07-04-23-38-30
+.. gh-issue: 121368
+.. nonce: m3EF9E
+.. section: Core and Builtins
+
+Fix race condition in ``_PyType_Lookup`` in the free-threaded build due to a
+missing memory fence.  This could lead to ``_PyType_Lookup`` returning
+incorrect results on arm64.
+
+..
+
+.. date: 2024-06-29-10-46-14
+.. gh-issue: 121130
+.. nonce: Rj66Xs
+.. section: Core and Builtins
+
+Fix f-strings with debug expressions in format specifiers. Patch by Pablo
+Galindo
+
+..
+
+.. date: 2024-06-28-10-02-58
+.. gh-issue: 121115
+.. nonce: EeSLfc
+.. section: Core and Builtins
+
+:c:func:`PyLong_AsNativeBytes` no longer uses :meth:`~object.__index__`
+methods by default. The ``Py_ASNATIVEBYTES_ALLOW_INDEX`` flag has been added
+to allow it.
+
+..
+
+.. date: 2024-07-09-15-55-20
+.. gh-issue: 89364
+.. nonce: yYYroI
+.. section: C API
+
+Export the :c:func:`PySignal_SetWakeupFd` function. Previously, the function
+was documented but it couldn't be used in 3rd party code. Patch by Victor
+Stinner.
+
+..
+
+.. date: 2024-07-04-15-41-10
+.. gh-issue: 113993
+.. nonce: cLSiWV
+.. section: C API
+
+:c:func:`PyUnicode_InternInPlace` no longer prevents its argument from being
+garbage collected.
+
+Several functions that take ``char *`` are now documented as possibly
+preventing string objects from being garbage collected; refer to their
+documentation for details: :c:func:`PyUnicode_InternFromString`,
+:c:func:`PyDict_SetItemString`, :c:func:`PyObject_SetAttrString`,
+:c:func:`PyObject_DelAttrString`, :c:func:`PyUnicode_InternFromString`, and
+``PyModule_Add*`` convenience functions.
+
+..
+
+.. date: 2024-07-04-13-23-27
+.. gh-issue: 113601
+.. nonce: K3RLqp
+.. section: C API
+
+Removed debug build assertions related to interning strings, which were
+falsely triggered by stable ABI extensions.
+
+..
+
+.. date: 2024-07-02-11-03-40
+.. gh-issue: 112136
+.. nonce: f3fiY8
+.. section: C API
+
+Restore the private ``_PyArg_Parser`` structure and the private
+``_PyArg_ParseTupleAndKeywordsFast()`` function, previously removed in
+Python 3.13 alpha 1. Patch by Victor Stinner.
+
+..
+
+.. date: 2024-07-16-12-29-54
+.. gh-issue: 120371
+.. nonce: E7x858
+.. section: Build
+
+Support WASI SDK 22 by explicitly skipping functions that are just stubs in
+wasi-libc.
+
+..
+
+.. date: 2024-07-14-01-29-47
+.. gh-issue: 121731
+.. nonce: RMPGP3
+.. section: Build
+
+Fix mimalloc compile error on GNU/Hurd
+
+..
+
+.. date: 2024-07-08-14-01-17
+.. gh-issue: 121487
+.. nonce: ekHmpR
+.. section: Build
+
+Fix deprecation warning for ATOMIC_VAR_INIT in mimalloc.
+
+..
+
+.. date: 2024-07-08-01-11-54
+.. gh-issue: 121467
+.. nonce: 3qWRQj
+.. section: Build
+
+Fix a Makefile bug that prevented mimalloc header files from being
+installed.
+
+..
+
+.. date: 2024-07-02-20-16-09
+.. gh-issue: 121103
+.. nonce: TMef9j
+.. section: Build
+
+On POSIX systems, excluding macOS framework installs, the lib directory for
+the free-threaded build now includes a "t" suffix to avoid conflicts with a
+co-located default build installation.
+
+..
+
+.. date: 2024-07-02-12-42-25
+.. gh-issue: 120831
+.. nonce: i3eIjg
+.. section: Build
+
+The default minimum iOS version was increased to 13.0.
+
+..
+
+.. date: 2024-06-02-13-23-26
+.. gh-issue: 113565
+.. nonce: 8xBlId
+.. section: Build
+
+Improve :mod:`curses` and :mod:`curses.panel` dependency checks in
+:program:`configure`.

@@ -1,2 +1,0 @@
-Fixed other issues where :class:`argparse.ArgumentParser` did not honor
-``exit_on_error=False``.

@@ -1,2 +1,0 @@
-The *shallow* argument to :class:`filecmp.dircmp` (new in Python 3.13) is
-now keyword-only.
