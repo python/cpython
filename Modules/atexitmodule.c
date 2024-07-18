@@ -288,10 +288,8 @@ atexit_unregister(PyObject *module, PyObject *func)
          * unregister one or both
          */
         PyObject *cb_func = Py_NewRef(cb->func);
-        PyObject *cur_func = Py_NewRef(func);
         int eq = PyObject_RichCompareBool(cb->func, func, Py_EQ);
         Py_DECREF(cb_func);
-        Py_DECREF(cur_func);
         if (eq < 0) {
             return NULL;
         }

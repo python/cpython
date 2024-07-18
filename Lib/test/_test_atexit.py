@@ -147,13 +147,17 @@ class GeneralTest(unittest.TestCase):
                 return
 
             def __eq__(self, o):
+                nonlocal cnt
                 cnt += 1
                 if cnt == 1:
                     self.action(o)
                 return self.eq_ret_val(o)
 
-        for action in lambda o: atexit.unregister(self), \
-                lambda o: atexit.unregister(o), lambda o: atexit._clear():
+        for action in (
+            lambda o: atexit.unregister(self),
+            lambda o: atexit.unregister(o), 
+            lambda o: atexit._clear()
+        ):
             for eq_ret_val in NotImplemented, True:
                 with self.subTest(action=action, eq_ret_val=eq_ret_val):
                     cnt = 0
