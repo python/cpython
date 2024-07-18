@@ -7705,6 +7705,7 @@ AX_CHECK_COMPILE_FLAG([-mavx],[
 
 AX_CHECK_COMPILE_FLAG([-mavx2],[
   LIBHACL_SIMD256_FLAGS="-mavx2"
+  AC_DEFINE([LIBHACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
 ], [], [-Werror])
 
 PY_STDLIB_MOD([_ctypes],
