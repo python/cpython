@@ -36,11 +36,11 @@ jobs:
         # Install clang-18
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 18
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
-        sudo update-alternatives --set clang /usr/bin/clang-18
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
-        sudo update-alternatives --set clang++ /usr/bin/clang++-18
+        sudo ./llvm.sh 17  # gh-121946: llvm-18 package is temporarily broken
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 100
+        sudo update-alternatives --set clang /usr/bin/clang-17
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-17 100
+        sudo update-alternatives --set clang++ /usr/bin/clang++-17
         # Reduce ASLR to avoid TSAN crashing
         sudo sysctl -w vm.mmap_rnd_bits=28
     - name: TSAN Option Setup
