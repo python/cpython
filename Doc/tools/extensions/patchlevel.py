@@ -1,68 +1,77 @@
-# -*- coding: utf-8 -*-
-"""
-    patchlevel.py
-    ~~~~~~~~~~~~~
+"""Extract version info from Include/patchlevel.h.
 
-    Extract version info from Include/patchlevel.h.
-    Adapted from Doc/tools/getversioninfo.
-
-    :copyright: 2007-2008 by Georg Brandl.
-    :license: Python license.
+Adapted from Doc/tools/getversioninfo.
 """
 
-from __future__ import print_function
-
-import os
 import re
 import sys
+import typing
+from pathlib import Path
 
-def get_header_version_info(srcdir):
-    patchlevel_h = os.path.join(srcdir, '..', 'Include', 'patchlevel.h')
+CPYTHON_ROOT = Path(
+    __file__,  # cpython/Doc/tools/extensions/patchlevel.py
+    '..',  # cpython/Doc/tools/extensions
+    '..',  # cpython/Doc/tools
+    '..',  # cpython/Doc
+    '..',  # cpython
+).resolve()
+PATCHLEVEL_H = CPYTHON_ROOT / 'Include' / 'patchlevel.h'
 
-    # This won't pick out all #defines, but it will pick up the ones we
-    # care about.
-    rx = re.compile(r'\s*#define\s+([a-zA-Z][a-zA-Z_0-9]*)\s+([a-zA-Z_0-9]+)')
+RELEASE_LEVELS = {
+    'PY_RELEASE_LEVEL_ALPHA': 'alpha',
+    'PY_RELEASE_LEVEL_BETA': 'beta',
+    'PY_RELEASE_LEVEL_GAMMA': 'candidate',
+    'PY_RELEASE_LEVEL_FINAL': 'final',
+}
+
+
+class version_info(typing.NamedTuple):
+    major: int  #: Major release number
+    minor: int  #: Minor release number
+    micro: int  #: Patch release number
+    releaselevel: typing.Literal['alpha', 'beta', 'candidate', 'final']
+    serial: int  #: Serial release number
+
+
+def get_header_version_info() -> version_info:
+    # Capture PY_ prefixed #defines.
+    pat = re.compile(r'\s*#define\s+(PY_\w*)\s+(\w+)', re.ASCII)
 
     d = {}
-    with open(patchlevel_h) as f:
-        for line in f:
-            m = rx.match(line)
-            if m is not None:
-                name, value = m.group(1, 2)
-                d[name] = value
+    patchlevel_h = PATCHLEVEL_H.read_text(encoding='utf-8')
+    for line in patchlevel_h.splitlines():
+        if (m := pat.match(line)) is not None:
+            name, value = m.groups()
+            d[name] = value
 
-    release = version = '%s.%s' % (d['PY_MAJOR_VERSION'], d['PY_MINOR_VERSION'])
-    micro = int(d['PY_MICRO_VERSION'])
-    release += '.' + str(micro)
-
-    level = d['PY_RELEASE_LEVEL']
-    suffixes = {
-        'PY_RELEASE_LEVEL_ALPHA': 'a',
-        'PY_RELEASE_LEVEL_BETA':  'b',
-        'PY_RELEASE_LEVEL_GAMMA': 'rc',
-        }
-    if level != 'PY_RELEASE_LEVEL_FINAL':
-        release += suffixes[level] + str(int(d['PY_RELEASE_SERIAL']))
-    return version, release
+    return version_info(
+        major=int(d['PY_MAJOR_VERSION']),
+        minor=int(d['PY_MINOR_VERSION']),
+        micro=int(d['PY_MICRO_VERSION']),
+        releaselevel=RELEASE_LEVELS[d['PY_RELEASE_LEVEL']],
+        serial=int(d['PY_RELEASE_SERIAL']),
+    )
 
 
-def get_sys_version_info():
-    major, minor, micro, level, serial = sys.version_info
-    release = version = '%s.%s' % (major, minor)
-    release += '.%s' % micro
-    if level != 'final':
-        release += '%s%s' % (level[0], serial)
+def format_version_info(info: version_info) -> tuple[str, str]:
+    version = f'{info.major}.{info.minor}'
+    release = f'{info.major}.{info.minor}.{info.micro}'
+    if info.releaselevel != 'final':
+        suffix = {'alpha': 'a', 'beta':  'b', 'candidate': 'rc'}
+        release += f'{suffix[info.releaselevel]}{info.serial}'
     return version, release
 
 
 def get_version_info():
     try:
-        return get_header_version_info('.')
-    except (IOError, OSError):
-        version, release = get_sys_version_info()
-        print('Can\'t get version info from Include/patchlevel.h, ' \
-              'using version of this interpreter (%s).' % release, file=sys.stderr)
+        info = get_header_version_info()
+        return format_version_info(info)
+    except OSError:
+        version, release = format_version_info(sys.version_info)
+        print(f"Can't get version info from Include/patchlevel.h, "
+              f"using version of this interpreter ({release}).",  file=sys.stderr)
         return version, release
 
+
 if __name__ == '__main__':
-    print(get_header_version_info('.')[1])
+    print(format_version_info(get_header_version_info())[1])

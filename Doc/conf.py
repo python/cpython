@@ -63,7 +63,7 @@ copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
-import patchlevel
+import patchlevel  # tools/extensions/patchlevel.py
 version, release = patchlevel.get_version_info()
 
 rst_epilog = f"""
