@@ -4986,6 +4986,10 @@
                        _PyOpcode_OpName[target->op.code]);
             }
             #endif
+            if (exit->executor && !exit->executor->vm_data.valid) {
+                exit->temperature = initial_temperature_backoff_counter();
+                Py_CLEAR(exit->executor);
+            }
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
