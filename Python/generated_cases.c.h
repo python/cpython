@@ -4272,10 +4272,9 @@
                     start--;
                 }
                 _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, true);
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
                 if (optimized < 0) goto error;
                 if (optimized) {
-                    executor->vm_data.depth = 0;
                     assert(tstate->previous_executor == NULL);
                     tstate->previous_executor = Py_None;
                     GOTO_TIER_TWO(executor);

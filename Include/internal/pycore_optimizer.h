@@ -35,7 +35,7 @@ typedef struct {
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
-    int depth;
+    int chain_depth;
 } _PyVMData;
 
 /* Depending on the format,
@@ -183,6 +183,12 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
 
+// The number of traces that will be stitched together via side exits for a
+// single instruction before requiring progress. In practice, this is the number
+// of different classes/functions/etc. that tier two can handle for a single
+// tier one instruction.
+#define MAX_CHAIN_DEPTH 4
+
 typedef struct _Py_UopsSymbol _Py_UopsSymbol;
 
 struct _Py_UOpsAbstractFrame {
@@ -258,7 +264,7 @@ extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyStackRef *stack_pointer, _PyExecutorObject **exec_ptr, bool progress_needed);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyStackRef *stack_pointer, _PyExecutorObject **exec_ptr, int chain_depth);
 
 static inline int is_terminator(const _PyUOpInstruction *uop)
 {

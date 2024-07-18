@@ -176,8 +176,14 @@ _Py_SetTier2Optimizer(_PyOptimizerObject *optimizer)
 int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
-    _PyStackRef *stack_pointer, _PyExecutorObject **executor_ptr, bool progress_needed)
+    _PyStackRef *stack_pointer, _PyExecutorObject **executor_ptr, int chain_depth)
 {
+    // The first instruction in a chain and the MAX_CHAIN_DEPTH'th instruction
+    // *must* make progress in order to avoid infinite loops or excessively-long
+    // side-exit chains. We can only insert the executor into the bytecode if
+    // this is true, since a deopt won't infinitely re-enter the executor:
+    chain_depth %= MAX_CHAIN_DEPTH;
+    bool progress_needed = chain_depth == 0;
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -207,6 +213,7 @@ _PyOptimizer_Optimize(
     else {
         (*executor_ptr)->vm_data.code = NULL;
     }
+    (*executor_ptr)->vm_data.chain_depth = chain_depth;
     assert((*executor_ptr)->vm_data.valid);
     return 1;
 }
