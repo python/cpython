@@ -991,7 +991,7 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
 
 static inline Py_ALWAYS_INLINE Py_ssize_t
 do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
-          Py_ssize_t (*check_lookup)(PyDictObject *, PyDictKeysObject *, void *, Py_ssize_t ix, PyObject *key, Py_hash_t))
+          int (*check_lookup)(PyDictObject *, PyDictKeysObject *, void *, Py_ssize_t ix, PyObject *key, Py_hash_t))
 {
     void *ep0 = _DK_ENTRIES(dk);
     size_t mask = DK_MASK(dk);
@@ -1001,7 +1001,7 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
     for (;;) {
         ix = dictkeys_get_index(dk, i);
         if (ix >= 0) {
-            Py_ssize_t cmp = check_lookup(mp, dk, ep0, ix, key, hash);
+            int cmp = check_lookup(mp, dk, ep0, ix, key, hash);
             if (cmp < 0) {
                 return cmp;
             } else if (cmp) {
@@ -1017,7 +1017,7 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
         // Manual loop unrolling
         ix = dictkeys_get_index(dk, i);
         if (ix >= 0) {
-            Py_ssize_t cmp = check_lookup(mp, dk, ep0, ix, key, hash);
+            int cmp = check_lookup(mp, dk, ep0, ix, key, hash);
             if (cmp < 0) {
                 return cmp;
             } else if (cmp) {
@@ -1033,7 +1033,7 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
     Py_UNREACHABLE();
 }
 
-static inline Py_ALWAYS_INLINE Py_ssize_t
+static inline int
 compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
                         void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
@@ -1068,7 +1068,7 @@ unicodekeys_lookup_generic(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key
     return do_lookup(mp, dk, key, hash, compare_unicode_generic);
 }
 
-static inline Py_ALWAYS_INLINE Py_ssize_t
+static inline int
 compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
                         void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
@@ -1089,7 +1089,7 @@ unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
     return do_lookup(NULL, dk, key, hash, compare_unicode_unicode);
 }
 
-static inline Py_ALWAYS_INLINE Py_ssize_t
+static inline int
 compare_generic(PyDictObject *mp, PyDictKeysObject *dk,
                 void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
@@ -1284,8 +1284,8 @@ ensure_shared_on_resize(PyDictObject *mp)
 
 #ifdef Py_GIL_DISABLED
 
-static inline Py_ALWAYS_INLINE
-Py_ssize_t compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
+static inline Py_ALWAYS_INLINE int
+compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                                    void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
@@ -1327,7 +1327,7 @@ unicodekeys_lookup_generic_threadsafe(PyDictObject *mp, PyDictKeysObject* dk, Py
     return do_lookup(mp, dk, key, hash, compare_unicode_generic_threadsafe);
 }
 
-static inline Py_ALWAYS_INLINE Py_ssize_t
+static inline Py_ALWAYS_INLINE int
 compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                                    void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
@@ -1361,8 +1361,8 @@ unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key, Py_ha
     return do_lookup(NULL, dk, key, hash, compare_unicode_unicode_threadsafe);
 }
 
-static inline Py_ALWAYS_INLINE
-Py_ssize_t compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
+static inline Py_ALWAYS_INLINE int
+compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                            void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictKeyEntry *ep = &((PyDictKeyEntry *)ep0)[ix];

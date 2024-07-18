@@ -2988,6 +2988,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
             excess = len(encoded_word) - remaining_space
         lines[-1] += encoded_word
         to_encode = to_encode[len(to_encode_word):]
+        leading_whitespace = ''
 
         if to_encode:
             lines.append(' ')
