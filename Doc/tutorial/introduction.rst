@@ -166,7 +166,7 @@ Alternatively, we can use the other type of quotation marks::
    >>> "\"Yes,\" they said."
    '"Yes," they said.'
    >>> '"Isn\'t," they said.'
-   '"Isn\'t," they said.'
+   '"Isn't," they said.'
 
 In the Python shell, the string definition and output string can look
 different.  The :func:`print` function produces a more readable output, by
