@@ -60,8 +60,8 @@ static bool sse, sse2, sse3, sse41, sse42, cmov, avx, avx2;
 static void detect_cpu_features(void) {
   static bool done = false;
   if (!done) {
-    int Py_UNUSED(eax1) = 0, Py_UNUSED(ebx1) = 0, ecx1 = 0, edx1 = 0;
-    int Py_UNUSED(eax7) = 0, ebx7 = 0, Py_UNUSED(ecx7) = 0, Py_UNUSED(edx7) = 0;
+    int eax1 = 0, ebx1 = 0, ecx1 = 0, edx1 = 0;
+    int eax7 = 0, ebx7 = 0, ecx7 = 0, edx7 = 0;
 #if defined(__x86_64__) && defined(__GNUC__)
     __cpuid_count(1, 0, eax1, ebx1, ecx1, edx1);
     __cpuid_count(7, 0, eax7, ebx7, ecx7, edx7);
@@ -78,6 +78,9 @@ static void detect_cpu_features(void) {
     ebx7 = info7[1];
     ecx7 = info7[2];
     edx7 = info7[3];
+#else
+    (void) eax1; (void) ebx1; (void) ecx1; (void) edx1;
+    (void) eax7; (void) ebx7; (void) ecx7; (void) edx7;
 #endif
 
     avx = (ecx1 & ECX_AVX) != 0;
