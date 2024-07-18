@@ -703,8 +703,8 @@ clear_weakrefs(struct collection_state *state)
             // freed after its function object.
             PyGenObject *gen = (PyGenObject *)op;
             struct _PyInterpreterFrame *frame = &(gen->gi_iframe);
-            for (int i = 0; i < frame->stacktop; i++) {
-                gc_visit_stackref(frame->localsplus[i]);
+            for (_PyStackRef *i = frame->localsplus; i < frame->stackpointer; i++) {
+                gc_visit_stackref(*i);
             }
         }
         if (PyWeakref_Check(op)) {
@@ -939,16 +939,14 @@ visit_decref_unreachable(PyObject *op, void *data)
 int
 _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
-    /* locals */
-    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
-    int i = 0;
+    _PyStackRef *i = frame->localsplus;
     /* locals and stack */
-    for (; i <frame->stacktop; i++) {
-        if (PyStackRef_IsDeferred(locals[i]) &&
+    for (; i < frame->stackpointer; i++) {
+        if (PyStackRef_IsDeferred(*i) &&
             (visit == visit_decref || visit == visit_decref_unreachable)) {
             continue;
         }
-        Py_VISIT(PyStackRef_AsPyObjectBorrow(locals[i]));
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(*i));
     }
     return 0;
 }

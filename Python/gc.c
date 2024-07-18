@@ -537,12 +537,10 @@ visit_decref(PyObject *op, void *parent)
 int
 _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
-    /* locals */
-    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
-    int i = 0;
+    _PyStackRef *i = frame->localsplus;
     /* locals and stack */
-    for (; i <frame->stacktop; i++) {
-        Py_VISIT(PyStackRef_AsPyObjectBorrow(locals[i]));
+    for (; i < frame->stackpointer; i++) {
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(*i));
     }
     return 0;
 }

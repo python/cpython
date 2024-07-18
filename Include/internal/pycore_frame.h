@@ -131,7 +131,7 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
 
 #ifdef Py_GIL_DISABLED
     PyCodeObject *co = (PyCodeObject *)dest->f_executable;
-    for (int i = src->stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
+    for (int i = stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
         dest->localsplus[i] = PyStackRef_NULL;
     }
 #endif

@@ -207,11 +207,23 @@ def emit_tokens(
         return
     tkn_iter = iter(tkns)
     out.start_line()
-    for tkn in tkn_iter:
+    var_to_flush = None
+    for idx, tkn in enumerate(tkn_iter):
         if tkn.kind == "IDENTIFIER" and tkn.text in replacement_functions:
             replacement_functions[tkn.text](out, tkn, tkn_iter, uop, stack, inst)
         else:
             out.emit(tkn)
+        if uop.token_requires_flush[idx]:
+            assert tkns[idx-3].kind == "IDENTIFIER"
+            var_to_flush = tkns[idx-3].text
+        if var_to_flush and tkn.kind == "SEMI":
+            txt = stack.write_variable_to_stack(out, var_to_flush)
+            if txt:
+                out.start_line()
+                out.emit("#ifdef Py_GIL_DISABLED /* flush specials */ \n")
+                out.emit(txt)
+                out.emit("#endif /* Py_GIL_DISABLED */\n")
+            var_to_flush = None
 
 
 def cflags(p: Properties) -> str:
