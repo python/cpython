@@ -9726,7 +9726,7 @@ fi
 printf "%s\n" "$ax_cv_check_cflags__Werror__fstack_protector_strong" >&6; }
 if test "x$ax_cv_check_cflags__Werror__fstack_protector_strong" = xyes
 then :
-  CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"
+  CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong" LDFLAGS="$LDFLAGS -fstack-protector-strong"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported" >&5
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
