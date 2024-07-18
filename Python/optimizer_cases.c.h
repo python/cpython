@@ -644,7 +644,11 @@
 
         /* _SEND is not a viable micro-op for tier 2 */
 
-        /* _SEND_GEN is not a viable micro-op for tier 2 */
+        case _SEND_GEN_FRAME: {
+            // We are about to hit the end of the trace:
+            ctx->done = true;
+            break;
+        }
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
@@ -787,7 +791,14 @@
 
         /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 */
 
-        /* _LOAD_NAME is not a viable micro-op for tier 2 */
+        case _LOAD_NAME: {
+            _Py_UopsSymbol *v;
+            v = sym_new_not_null(ctx);
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LOAD_GLOBAL: {
             _Py_UopsSymbol *res;
@@ -910,7 +921,14 @@
             break;
         }
 
-        /* _BUILD_SET is not a viable micro-op for tier 2 */
+        case _BUILD_SET: {
+            _Py_UopsSymbol *set;
+            set = sym_new_not_null(ctx);
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _BUILD_MAP: {
             _Py_UopsSymbol *map;
@@ -1304,6 +1322,24 @@
             _Py_UopsSymbol *b;
             b = sym_new_not_null(ctx);
             stack_pointer[-1] = b;
+            break;
+        }
+
+        case _IMPORT_NAME: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _IMPORT_FROM: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1842,6 +1878,12 @@
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _CALL_LIST_APPEND: {
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
