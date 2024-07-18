@@ -21,11 +21,11 @@ class PyEval_EvalCodeExTests(unittest.TestCase):
         eval_code_ex = _testcapi.eval_code_ex
         code = f.__code__
         self.assertEqual(eval_code_ex(code, dict(a=1)), 1)
+        self.assertEqual(eval_code_ex(code, UserDict(a=1)), 1)
 
         self.assertRaises(NameError, eval_code_ex, code, {})
-        self.assertRaises(SystemError, eval_code_ex, code, UserDict(a=1))
-        self.assertRaises(SystemError, eval_code_ex, code, [])
-        self.assertRaises(SystemError, eval_code_ex, code, 1)
+        self.assertRaises(TypeError, eval_code_ex, code, [])
+        self.assertRaises(TypeError, eval_code_ex, code, 1)
         # CRASHES eval_code_ex(code, NULL)
         # CRASHES eval_code_ex(1, {})
         # CRASHES eval_code_ex(NULL, {})

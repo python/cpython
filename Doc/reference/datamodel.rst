@@ -555,7 +555,7 @@ Special read-only attributes
      - Meaning
 
    * - .. attribute:: function.__globals__
-     - A reference to the :class:`dictionary <dict>` that holds the function's
+     - A reference to the :term:`mapping` that holds the function's
        :ref:`global variables <naming>` -- the global namespace of the module
        in which the function was defined.
 
@@ -868,15 +868,15 @@ the :ref:`import system <importsystem>` as invoked either by the
 :keyword:`import` statement, or by calling
 functions such as :func:`importlib.import_module` and built-in
 :func:`__import__`.  A module object has a namespace implemented by a
-:class:`dictionary <dict>` object (this is the dictionary referenced by the
+:term:`mapping` object (this is the mapping referenced by the
 :attr:`~function.__globals__`
 attribute of functions defined in the module).  Attribute references are
-translated to lookups in this dictionary, e.g., ``m.x`` is equivalent to
+translated to lookups in this mapping, e.g., ``m.x`` is equivalent to
 ``m.__dict__["x"]``. A module object does not contain the code object used
 to initialize the module (since it isn't needed once the initialization is
 done).
 
-Attribute assignment updates the module's namespace dictionary, e.g.,
+Attribute assignment updates the module's namespace mapping, e.g.,
 ``m.x = 1`` is equivalent to ``m.__dict__["x"] = 1``.
 
 .. index::
@@ -913,22 +913,27 @@ Predefined (writable) attributes:
 .. index:: single: __dict__ (module attribute)
 
 Special read-only attribute: :attr:`~object.__dict__` is the module's
-namespace as a dictionary object.
+namespace as a mapping object.
 
 .. impl-detail::
 
-   Because of the way CPython clears module dictionaries, the module
-   dictionary will be cleared when the module falls out of scope even if the
-   dictionary still has live references.  To avoid this, copy the dictionary
-   or keep the module around while using its dictionary directly.
+   Because of the way CPython clears module's namespace mapping, the module
+   namespace mapping will be cleared when the module falls out of scope even if
+   the namespace mapping still has live references.  To avoid this, copy the
+   namespace mapping or keep the module around while using its namespace
+   mapping directly.
+
+.. versionchanged:: 3.14
+
+   The :attr:`~object.__dict__` attribute may now be a mapping.
 
 
 Custom classes
 --------------
 
 Custom class types are typically created by class definitions (see section
-:ref:`class`).  A class has a namespace implemented by a dictionary object.
-Class attribute references are translated to lookups in this dictionary, e.g.,
+:ref:`class`).  A class has a namespace implemented by a mapping object.
+Class attribute references are translated to lookups in this mapping, e.g.,
 ``C.x`` is translated to ``C.__dict__["x"]`` (although there are a number of
 hooks which allow for other means of locating attributes). When the attribute
 name is not found there, the attribute search continues in the base classes.
@@ -958,8 +963,8 @@ retrieved from a class may differ from those actually contained in its
 
 .. index:: triple: class; attribute; assignment
 
-Class attribute assignments update the class's dictionary, never the dictionary
-of a base class.
+Class attribute assignments update the class's attribute mapping, never the
+attribute mapping of a base class.
 
 .. index:: pair: class object; call
 
@@ -985,7 +990,11 @@ Special attributes:
       The name of the module in which the class was defined.
 
    :attr:`~object.__dict__`
-      The dictionary containing the class's namespace.
+      The mapping containing the class's namespace.
+
+      .. versionchanged:: 3.14
+
+         The :attr:`~object.__dict__` attribute may now be a mapping.
 
    :attr:`~class.__bases__`
       A tuple containing the base classes, in the order of
@@ -1023,7 +1032,7 @@ Class instances
    pair: class instance; attribute
 
 A class instance is created by calling a class object (see above).  A class
-instance has a namespace implemented as a dictionary which is the first place
+instance has a namespace implemented as a mapping which is the first place
 in which attribute references are searched.  When an attribute is not found
 there, and the instance's class has an attribute by that name, the search
 continues with the class attributes.  If a class attribute is found that is a
@@ -1038,10 +1047,10 @@ the lookup.
 
 .. index:: triple: class instance; attribute; assignment
 
-Attribute assignments and deletions update the instance's dictionary, never a
-class's dictionary.  If the class has a :meth:`~object.__setattr__` or
-:meth:`~object.__delattr__` method, this is called instead of updating the instance
-dictionary directly.
+Attribute assignments and deletions update the instance's attribute mapping,
+never a class's attribute mapping.  If the class has a
+:meth:`~object.__setattr__` or :meth:`~object.__delattr__` method, this is
+called instead of updating the instance attribute mapping directly.
 
 .. index::
    pair: object; numeric
@@ -1055,8 +1064,12 @@ methods with certain special names.  See section :ref:`specialnames`.
    single: __dict__ (instance attribute)
    single: __class__ (instance attribute)
 
-Special attributes: :attr:`~object.__dict__` is the attribute dictionary;
+Special attributes: :attr:`~object.__dict__` is the attribute mapping;
 :attr:`~instance.__class__` is the instance's class.
+
+.. versionchanged:: 3.14
+
+   The :attr:`~object.__dict__` attribute may now be a mapping.
 
 
 I/O objects (also known as file objects)
@@ -1109,7 +1122,7 @@ Code objects
 
 Code objects represent *byte-compiled* executable Python code, or :term:`bytecode`.
 The difference between a code object and a function object is that the function
-object contains an explicit reference to the function's globals (the module in
+object contains an explicit reference to the function's mapping (the module in
 which it was defined), while a code object contains no context; also the default
 argument values are stored in the function object, not in the code object
 (because they represent values calculated at run-time).  Unlike function
@@ -1356,11 +1369,14 @@ Special read-only attributes
           Return a proxy for optimized scopes.
 
    * - .. attribute:: frame.f_globals
-     - The dictionary used by the frame to look up
+     - The mapping used by the frame to look up
        :ref:`global variables <naming>`
 
+       .. versionchanged:: 3.14
+          The :attr:`~frame.f_globals` attribute may now be a mapping.
+
    * - .. attribute:: frame.f_builtins
-     - The dictionary used by the frame to look up
+     - The mapping used by the frame to look up
        :ref:`built-in (intrinsic) names <naming>`
 
    * - .. attribute:: frame.f_lasti
@@ -1958,8 +1974,8 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
    reasons and because otherwise :meth:`__getattr__` would have no way to access
    other attributes of the instance.  Note that at least for instance variables,
-   you can take total control by not inserting any values in the instance attribute
-   dictionary (but instead inserting them in another object).  See the
+   you can take total control by not inserting any values in the instance
+   attribute mapping (but instead inserting them in another object).  See the
    :meth:`__getattribute__` method below for a way to actually get total control
    over attribute access.
 
@@ -1992,8 +2008,9 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 .. method:: object.__setattr__(self, name, value)
 
    Called when an attribute assignment is attempted.  This is called instead of
-   the normal mechanism (i.e. store the value in the instance dictionary).
-   *name* is the attribute name, *value* is the value to be assigned to it.
+   the normal mechanism (i.e. store the value in the instance attribute
+   mapping). *name* is the attribute name, *value* is the value to be assigned
+   to it.
 
    If :meth:`__setattr__` wants to assign to an instance attribute, it should
    call the base class method with the same name, for example,
@@ -2066,7 +2083,7 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
    Defining module ``__getattr__`` and setting module ``__class__`` only
    affect lookups made using the attribute access syntax -- directly accessing
    the module globals (whether by code within the module, or via a reference
-   to the module's globals dictionary) is unaffected.
+   to the module's globals mapping) is unaffected.
 
 .. versionchanged:: 3.5
    ``__class__`` module attribute is now writable.
@@ -2087,10 +2104,10 @@ Implementing Descriptors
 
 The following methods only apply when an instance of the class containing the
 method (a so-called *descriptor* class) appears in an *owner* class (the
-descriptor must be in either the owner's class dictionary or in the class
-dictionary for one of its parents).  In the examples below, "the attribute"
-refers to the attribute whose name is the key of the property in the owner
-class' :attr:`~object.__dict__`.
+descriptor must be in either the owner's class attribute mapping or in the
+class attribute mapping for one of its parents).  In the examples below, "the
+attribute" refers to the attribute whose name is the key of the property in the
+owner class' :attr:`~object.__dict__`.
 
 
 .. method:: object.__get__(self, instance, owner=None)
@@ -2149,9 +2166,9 @@ protocol:  :meth:`~object.__get__`, :meth:`~object.__set__`, and
 those methods are defined for an object, it is said to be a descriptor.
 
 The default behavior for attribute access is to get, set, or delete the
-attribute from an object's dictionary. For instance, ``a.x`` has a lookup chain
-starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``, and
-continuing through the base classes of ``type(a)`` excluding metaclasses.
+attribute from an object's attribute mapping. For instance, ``a.x`` has a
+lookup chain starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``,
+and continuing through the base classes of ``type(a)`` excluding metaclasses.
 
 However, if the looked-up value is an object defining one of the descriptor
 methods, then Python may override the default behavior and invoke the descriptor
@@ -2214,17 +2231,16 @@ Super Binding
 For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`~object.__get__`, :meth:`~object.__set__` and
-:meth:`~object.__delete__`.  If it does not
-define :meth:`!__get__`, then accessing the attribute will return the descriptor
-object itself unless there is a value in the object's instance dictionary.  If
-the descriptor defines :meth:`!__set__` and/or :meth:`!__delete__`, it is a data
-descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
-descriptors define both :meth:`!__get__` and :meth:`!__set__`, while non-data
-descriptors have just the :meth:`!__get__` method.  Data descriptors with
-:meth:`!__get__` and :meth:`!__set__` (and/or :meth:`!__delete__`) defined
-always override a redefinition in an
-instance dictionary.  In contrast, non-data descriptors can be overridden by
-instances.
+:meth:`~object.__delete__`.  If it does not define :meth:`!__get__`, then
+accessing the attribute will return the descriptor object itself unless there
+is a value in the object's instance attribute mapping.  If the descriptor
+defines :meth:`!__set__` and/or :meth:`!__delete__`, it is a data descriptor;
+if it defines neither, it is a non-data descriptor.  Normally, data descriptors
+define both :meth:`!__get__` and :meth:`!__set__`, while non-data descriptors
+have just the :meth:`!__get__` method.  Data descriptors with :meth:`!__get__`
+and :meth:`!__set__` (and/or :meth:`!__delete__`) defined always override a
+redefinition in an instance attribute mapping.  In contrast, non-data
+descriptors can be overridden by instances.
 
 Python methods (including those decorated with
 :func:`@staticmethod <staticmethod>` and :func:`@classmethod <classmethod>`) are
@@ -2917,8 +2933,8 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__missing__(self, key)
 
-   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
-   when key is not in the dictionary.
+   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]``
+   for dict subclasses when key is not in the dictionary.
 
 
 .. method:: object.__iter__(self)
@@ -3263,8 +3279,8 @@ Special method lookup
 
 For custom classes, implicit invocations of special methods are only guaranteed
 to work correctly if defined on an object's type, not in the object's instance
-dictionary.  That behaviour is the reason why the following code raises an
-exception::
+attribute mapping.  That behaviour is the reason why the following code raises
+an exception::
 
    >>> class C:
    ...     pass

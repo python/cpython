@@ -351,25 +351,24 @@ class ArbitraryFunctionAttrTest(FuncAttrsTest):
 class FunctionDictsTest(FuncAttrsTest):
     def test_setting_dict_to_invalid(self):
         self.cannot_set_attr(self.b, '__dict__', None, TypeError)
-        from collections import UserDict
-        d = UserDict({'known_attr': 7})
-        self.cannot_set_attr(self.fi.a.__func__, '__dict__', d, TypeError)
 
     def test_setting_dict_to_valid(self):
-        d = {'known_attr': 7}
-        self.b.__dict__ = d
-        # Test assignment
-        self.assertIs(d, self.b.__dict__)
-        # ... and on all the different ways of referencing the method's func
-        self.F.a.__dict__ = d
-        self.assertIs(d, self.fi.a.__func__.__dict__)
-        self.assertIs(d, self.fi.a.__dict__)
-        # Test value
-        self.assertEqual(self.b.known_attr, 7)
-        self.assertEqual(self.b.__dict__['known_attr'], 7)
-        # ... and again, on all the different method's names
-        self.assertEqual(self.fi.a.__func__.known_attr, 7)
-        self.assertEqual(self.fi.a.known_attr, 7)
+        from collections import UserDict
+        for d in {'known_attr': 7}, UserDict({'known_attr': 7}):
+            with self.subTest(dict=d):
+                self.b.__dict__ = d
+                # Test assignment
+                self.assertIs(d, self.b.__dict__)
+                # ... and on all the different ways of referencing the method's func
+                self.F.a.__dict__ = d
+                self.assertIs(d, self.fi.a.__func__.__dict__)
+                self.assertIs(d, self.fi.a.__dict__)
+                # Test value
+                self.assertEqual(self.b.known_attr, 7)
+                self.assertEqual(self.b.__dict__['known_attr'], 7)
+                # ... and again, on all the different method's names
+                self.assertEqual(self.fi.a.__func__.known_attr, 7)
+                self.assertEqual(self.fi.a.known_attr, 7)
 
     def test_delete___dict__(self):
         try:

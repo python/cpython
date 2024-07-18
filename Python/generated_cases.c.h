@@ -2776,15 +2776,17 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_GLOBAL);
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
+            int err;
+            _Py_DICT_OR_MAPPING_DELITEM(globals, name, err)
             // Can't use ERROR_IF here.
             if (err < 0) {
-                goto error;
-            }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                if (_PyErr_Occurred(tstate) &&
+                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        NAME_ERROR_MSG, name);
+                }
                 goto error;
             }
             DISPATCH();
@@ -4973,6 +4975,7 @@
             INSTRUCTION_STATS(LOAD_NAME);
             _PyStackRef v;
             PyObject *v_o;
+            PyObject *globals = GLOBALS();
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4984,7 +4987,9 @@
                 goto error;
             }
             if (v_o == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) {
+                int r;
+                _Py_DICT_OR_MAPPING_GETITEMREF(globals, name, &v_o, r)
+                if (r < 0) {
                     goto error;
                 }
                 if (v_o == NULL) {
@@ -6181,8 +6186,11 @@
             INSTRUCTION_STATS(STORE_GLOBAL);
             _PyStackRef v;
             v = stack_pointer[-1];
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            int err;
+            _Py_DICT_OR_MAPPING_SETITEM(globals, name,
+                                        PyStackRef_AsPyObjectBorrow(v), err)
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;

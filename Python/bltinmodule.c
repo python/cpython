@@ -960,13 +960,9 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     const char *str;
 
     if (locals != Py_None && !PyMapping_Check(locals)) {
-        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-        return NULL;
-    }
-    if (globals != Py_None && !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ?
-            "globals must be a real dict; try eval(expr, {}, mapping)"
-            : "globals must be a dict");
+        PyErr_Format(PyExc_TypeError,
+            "locals must be a mapping or None, not %.100s",
+            Py_TYPE(locals)->tp_name);
         return NULL;
     }
     if (globals == Py_None) {
@@ -993,12 +989,24 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         goto error;
     }
 
-    int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
-    if (r == 0) {
-        r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
-    }
+    int r;
+    _Py_DICT_OR_MAPPING_CONTAINS_ELSE(globals, &_Py_ID(__builtins__), r,
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "globals must be a mapping or None, not %.100s",
+                         Py_TYPE(globals)->tp_name);
+            return NULL;
+        }
+    )
     if (r < 0) {
         goto error;
+    }
+    if (r == 0) {
+        _Py_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                    PyEval_GetBuiltins(), r)
+        if (r < 0) {
+            goto error;
+        }
     }
 
     if (PyCode_Check(source)) {
@@ -1084,23 +1092,31 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_INCREF(locals);
     }
 
-    if (!PyDict_Check(globals)) {
-        PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
-                     Py_TYPE(globals)->tp_name);
-        goto error;
-    }
     if (!PyMapping_Check(locals)) {
         PyErr_Format(PyExc_TypeError,
             "locals must be a mapping or None, not %.100s",
             Py_TYPE(locals)->tp_name);
         goto error;
     }
-    int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
-    if (r == 0) {
-        r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
-    }
+
+    int r;
+    _Py_DICT_OR_MAPPING_CONTAINS_ELSE(globals, &_Py_ID(__builtins__), r,
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "globals must be a mapping or None, not %.100s",
+                         Py_TYPE(globals)->tp_name);
+            goto error;
+        }
+    )
     if (r < 0) {
         goto error;
+    }
+    if (r == 0) {
+        _Py_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                    PyEval_GetBuiltins(), r)
+        if (r < 0) {
+            goto error;
+        }
     }
 
     if (closure == Py_None) {

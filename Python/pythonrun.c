@@ -387,7 +387,7 @@ set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
         return -1;
     }
 
-    if (PyDict_SetItemString(d, "__loader__", loader) < 0) {
+    if (PyDict_SetItem(d, &_Py_ID(__loader__), loader) < 0) {
         Py_DECREF(loader);
         return -1;
     }
@@ -1273,18 +1273,23 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (!globals || !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
-        return NULL;
+    int has_builtins;
+    if (!globals) {
+        goto error;
     }
-    int has_builtins = PyDict_ContainsString(globals, "__builtins__");
-    if (has_builtins < 0) {
-        return NULL;
-    }
-    if (!has_builtins) {
-        if (PyDict_SetItemString(globals, "__builtins__",
-                                 tstate->interp->builtins) < 0)
+    else _Py_DICT_OR_MAPPING_CONTAINS_ELSE(globals, &_Py_ID(__builtins__),
+                                           has_builtins,
         {
+error:
+            PyErr_SetString(PyExc_SystemError, "globals must be a mapping");
+            return NULL;
+        }
+    )
+    if (!has_builtins) {
+        int r;
+        _Py_DICT_OR_MAPPING_SETITEM(globals, &_Py_ID(__builtins__),
+                                    tstate->interp->builtins, r)
+        if (r < 0) {
             return NULL;
         }
     }

@@ -1509,8 +1509,11 @@
             _PyStackRef v;
             oparg = CURRENT_OPARG();
             v = stack_pointer[-1];
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            int err;
+            _Py_DICT_OR_MAPPING_SETITEM(globals, name,
+                                        PyStackRef_AsPyObjectBorrow(v), err)
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1520,15 +1523,17 @@
 
         case _DELETE_GLOBAL: {
             oparg = CURRENT_OPARG();
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
+            int err;
+            _Py_DICT_OR_MAPPING_DELITEM(globals, name, err)
             // Can't use ERROR_IF here.
             if (err < 0) {
-                JUMP_TO_ERROR();
-            }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                if (_PyErr_Occurred(tstate) &&
+                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        NAME_ERROR_MSG, name);
+                }
                 JUMP_TO_ERROR();
             }
             break;

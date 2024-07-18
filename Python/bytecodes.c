@@ -1465,22 +1465,27 @@ dummy_func(
         }
 
         inst(STORE_GLOBAL, (v --)) {
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            int err;
+            _Py_DICT_OR_MAPPING_SETITEM(globals, name,
+                                        PyStackRef_AsPyObjectBorrow(v), err)
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
         inst(DELETE_GLOBAL, (--)) {
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
+            int err;
+            _Py_DICT_OR_MAPPING_DELITEM(globals, name, err)
             // Can't use ERROR_IF here.
             if (err < 0) {
-                ERROR_NO_POP();
-            }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG, name);
+                if (_PyErr_Occurred(tstate) &&
+                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                              NAME_ERROR_MSG, name);
+                }
                 ERROR_NO_POP();
             }
         }
@@ -1540,6 +1545,7 @@ dummy_func(
 
         inst(LOAD_NAME, (-- v)) {
             PyObject *v_o;
+            PyObject *globals = GLOBALS();
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1551,7 +1557,9 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v_o == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) {
+                int r;
+                _Py_DICT_OR_MAPPING_GETITEMREF(globals, name, &v_o, r)
+                if (r < 0) {
                     ERROR_NO_POP();
                 }
                 if (v_o == NULL) {

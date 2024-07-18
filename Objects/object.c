@@ -1502,7 +1502,9 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        if (PyDict_GetItemRef(dict, name, method) != 0) {
+        int r;
+        _Py_DICT_OR_MAPPING_GETITEMREF(dict, name, method, r)
+        if (r != 0) {
             // found or error
             Py_DECREF(dict);
             Py_XDECREF(descr);
@@ -1608,7 +1610,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        int rc = PyDict_GetItemRef(dict, name, &res);
+        int rc;
+        _Py_DICT_OR_MAPPING_GETITEMREF(dict, name, &res, rc)
         Py_DECREF(dict);
         if (res != NULL) {
             goto done;
@@ -1733,10 +1736,12 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
     else {
         Py_INCREF(dict);
-        if (value == NULL)
-            res = PyDict_DelItem(dict, name);
-        else
-            res = PyDict_SetItem(dict, name, value);
+        if (value == NULL) {
+            _Py_DICT_OR_MAPPING_DELITEM(dict, name, res)
+        }
+        else {
+            _Py_DICT_OR_MAPPING_SETITEM(dict, name, value, res)
+        }
         Py_DECREF(dict);
     }
   error_check:
@@ -1780,9 +1785,9 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
         PyErr_SetString(PyExc_TypeError, "cannot delete __dict__");
         return -1;
     }
-    if (!PyDict_Check(value)) {
+    if (!PyMapping_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "__dict__ must be set to a dictionary, "
+                     "__dict__ must be set to a mapping, "
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }

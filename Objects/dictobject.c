@@ -7277,8 +7277,13 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr,
     }
 
     Py_BEGIN_CRITICAL_SECTION(dict);
-    res = _PyDict_SetItem_LockHeld((PyDictObject *)dict, key, value);
-    ASSERT_CONSISTENT(dict);
+    if (PyDict_Check(dict)) {
+        res = _PyDict_SetItem_LockHeld((PyDictObject *)dict, key, value);
+        ASSERT_CONSISTENT(dict);
+    }
+    else {
+        res = PyObject_SetItem(dict, key, value);
+    }
     Py_END_CRITICAL_SECTION();
     return res;
 }

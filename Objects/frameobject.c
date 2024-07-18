@@ -2111,17 +2111,21 @@ PyFrame_GetGenerator(PyFrameObject *frame)
 PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
-    PyObject *builtins = PyDict_GetItemWithError(globals, &_Py_ID(__builtins__));
-    if (builtins) {
-        if (PyModule_Check(builtins)) {
-            builtins = _PyModule_GetDict(builtins);
-            assert(builtins != NULL);
-        }
-        return builtins;
-    }
-    if (PyErr_Occurred()) {
+    PyObject *maybe_builtins;
+    int has_builtins;
+    _Py_DICT_OR_MAPPING_GETITEMREF(globals, &_Py_ID(__builtins__),
+                                   &maybe_builtins, has_builtins)
+    if (has_builtins < 0) {
         return NULL;
     }
-
-    return _PyEval_GetBuiltins(tstate);
+    if (has_builtins) {
+        if (PyModule_Check(maybe_builtins)) {
+            PyObject *builtins = Py_XNewRef(_PyModule_GetDict(maybe_builtins));
+            Py_DECREF(maybe_builtins);
+            assert(builtins != NULL);
+            return builtins;
+        }
+        return maybe_builtins;
+    }
+    return Py_NewRef(_PyEval_GetBuiltins(tstate));
 }

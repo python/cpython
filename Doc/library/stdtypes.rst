@@ -5329,12 +5329,12 @@ foo`` does not require a module object named *foo* to exist, rather it requires
 an (external) *definition* for a module named *foo* somewhere.)
 
 A special attribute of every module is :attr:`~object.__dict__`. This is the
-dictionary containing the module's symbol table. Modifying this dictionary will
-actually change the module's symbol table, but direct assignment to the
+:term:`mapping` containing the module's symbol table. Modifying this mapping
+will actually change the module's symbol table, but direct assignment to the
 :attr:`~object.__dict__` attribute is not possible (you can write
 ``m.__dict__['a'] = 1``, which defines ``m.a`` to be ``1``, but you can't write
-``m.__dict__ = {}``).  Modifying :attr:`~object.__dict__` directly is
-not recommended.
+``m.__dict__ = {}``).  Modifying :attr:`~object.__dict__` directly is not
+recommended.
 
 Modules built into the interpreter are written like this: ``<module 'sys'
 (built-in)>``.  If loaded from a file, they are written as ``<module 'os' from
@@ -5522,9 +5522,11 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. attribute:: object.__dict__
 
-   A dictionary or other mapping object used to store an object's (writable)
-   attributes.
+   A mapping object used to store an object's (writable) attributes.
 
+   .. versionchanged:: 3.14
+
+      The :attr:`~object.__dict__` attribute may now be a mapping.
 
 .. attribute:: instance.__class__
 

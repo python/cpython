@@ -205,7 +205,8 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
     if (frame == skip_frame) {
         return 0;
     }
-    int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
+    int r;
+    _Py_DICT_OR_MAPPING_CONTAINS(globals, &_Py_ID(__lltrace__), r)
     if (r < 0) {
         return -1;
     }
@@ -602,7 +603,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         return NULL;
     }
@@ -623,6 +624,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
     Py_DECREF(func);
+    Py_DECREF(builtins);
     return res;
 }
 
@@ -1880,7 +1882,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (defaults == NULL) {
         return NULL;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         Py_DECREF(defaults);
         return NULL;
@@ -1936,6 +1938,7 @@ fail:
     Py_XDECREF(kwnames);
     PyMem_Free(newargs);
     Py_DECREF(defaults);
+    Py_DECREF(builtins);
     return res;
 }
 
