@@ -2,6 +2,7 @@ import io
 import itertools
 import os
 import pathlib
+import re
 import rlcompleter
 import select
 import subprocess
@@ -21,7 +22,8 @@ from .support import (
     more_lines,
     multiline_input,
     code_to_events,
-    clean_screen
+    clean_screen,
+    make_clean_env,
 )
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
@@ -487,6 +489,26 @@ class TestPyReplOutput(TestCase):
         reader.can_colorize = False
         return reader
 
+    def test_stdin_is_tty(self):
+        # Used during test log analysis to figure out if a TTY was available.
+        try:
+            if os.isatty(sys.stdin.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdin tty check failed: {ose}")
+        else:
+            self.skipTest("stdin is not a tty")
+
+    def test_stdout_is_tty(self):
+        # Used during test log analysis to figure out if a TTY was available.
+        try:
+            if os.isatty(sys.stdout.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdout tty check failed: {ose}")
+        else:
+            self.skipTest("stdout is not a tty")
+
     def test_basic(self):
         reader = self.prepare_reader(code_to_events("1+1\n"))
 
@@ -888,12 +910,7 @@ class TestMain(TestCase):
         # Cleanup from PYTHON* variables to isolate from local
         # user settings, see #121359.  Such variables should be
         # added later in test methods to patched os.environ.
-        clean_env = os.environ.copy()
-        for k in clean_env.copy():
-            if k.startswith("PYTHON"):
-                clean_env.pop(k)
-
-        patcher = patch('os.environ', new=clean_env)
+        patcher = patch('os.environ', new=make_clean_env())
         self.addCleanup(patcher.stop)
         patcher.start()
 
@@ -901,7 +918,7 @@ class TestMain(TestCase):
     def test_exposed_globals_in_repl(self):
         pre = "['__annotations__', '__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
         if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
@@ -919,6 +936,84 @@ class TestMain(TestCase):
         case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
+
+    def _assertMatchOK(
+            self, var: str, expected: str | re.Pattern, actual: str
+    ) -> None:
+        if isinstance(expected, re.Pattern):
+            self.assertTrue(
+                expected.match(actual),
+                f"{var}={actual} does not match {expected.pattern}",
+            )
+        else:
+            self.assertEqual(
+                actual,
+                expected,
+                f"expected {var}={expected}, got {var}={actual}",
+            )
+
+    @force_not_colorized
+    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False):
+        clean_env = make_clean_env()
+        clean_env["NO_COLOR"] = "1"  # force_not_colorized doesn't touch subprocesses
+
+        with tempfile.TemporaryDirectory() as td:
+            blue = pathlib.Path(td) / "blue"
+            blue.mkdir()
+            mod = blue / "calx.py"
+            mod.write_text("FOO = 42", encoding="utf-8")
+            commands = [
+                "print(f'{" + var + "=}')" for var in expectations
+            ] + ["exit"]
+            if as_file and as_module:
+                self.fail("as_file and as_module are mutually exclusive")
+            elif as_file:
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=[str(mod)],
+                    env=clean_env,
+                )
+            elif as_module:
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=["-m", "blue.calx"],
+                    env=clean_env,
+                    cwd=td,
+                )
+            else:
+                self.fail("Choose one of as_file or as_module")
+
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+
+        self.assertEqual(exit_code, 0)
+        for var, expected in expectations.items():
+            with self.subTest(var=var, expected=expected):
+                if m := re.search(rf"[\r\n]{var}=(.+?)[\r\n]", output):
+                    self._assertMatchOK(var, expected, actual=m.group(1))
+                else:
+                    self.fail(f"{var}= not found in output")
+
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    def test_inspect_keeps_globals_from_inspected_file(self):
+        expectations = {
+            "FOO": "42",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, as_file=True)
+
+    def test_inspect_keeps_globals_from_inspected_module(self):
+        expectations = {
+            "FOO": "42",
+            "__name__": "'__main__'",
+            "__package__": "'blue'",
+            "__file__": re.compile(r"^'.*calx.py'$"),
+        }
+        self._run_repl_globals_test(expectations, as_module=True)
 
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
@@ -981,16 +1076,27 @@ class TestMain(TestCase):
         self.assertIn("spam", output)
         self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
 
-    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+    def run_repl(
+        self,
+        repl_input: str | list[str],
+        env: dict | None = None,
+        *,
+        cmdline_args: list[str] | None = None,
+        cwd: str | None = None,
+    ) -> tuple[str, int]:
+        assert pty
         master_fd, slave_fd = pty.openpty()
         cmd = [sys.executable, "-i", "-u"]
         if env is None:
             cmd.append("-I")
+        if cmdline_args is not None:
+            cmd.extend(cmdline_args)
         process = subprocess.Popen(
             cmd,
             stdin=slave_fd,
             stdout=slave_fd,
             stderr=slave_fd,
+            cwd=cwd,
             text=True,
             close_fds=True,
             env=env if env else os.environ,

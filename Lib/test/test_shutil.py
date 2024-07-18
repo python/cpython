@@ -905,10 +905,10 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         os.mkdir(os.path.join(src_dir, 'test_dir', 'subdir'))
         write_file((src_dir, 'test_dir', 'subdir', 'test.txt'), '456')
 
-        invokations = []
+        invocations = []
 
         def _ignore(src, names):
-            invokations.append(src)
+            invocations.append(src)
             self.assertIsInstance(src, str)
             self.assertIsInstance(names, list)
             self.assertEqual(len(names), len(set(names)))
@@ -933,7 +933,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
                                     'test.txt')))
 
-        self.assertEqual(len(invokations), 9)
+        self.assertEqual(len(invocations), 9)
 
     def test_copytree_retains_permissions(self):
         tmp_dir = self.mkdtemp()
