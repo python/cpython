@@ -618,12 +618,11 @@ def compute_properties(op: parser.InstDef) -> Properties:
 
 
 def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uops: dict[str, Uop]) -> Uop:
-    stack = analyze_stack(op)
     result = Uop(
         name=name,
         context=op.context,
         annotations=op.annotations,
-        stack=stack,
+        stack=analyze_stack(op),
         caches=analyze_caches(inputs),
         body=op.block.tokens,
         properties=compute_properties(op),
@@ -636,12 +635,11 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
             if properties.oparg:
                 # May not need oparg anymore
                 properties.oparg = any(token.text == "oparg" for token in op.block.tokens)
-            stack = analyze_stack(op, bit)
             rep = Uop(
                 name=name_x,
                 context=op.context,
                 annotations=op.annotations,
-                stack=stack,
+                stack=analyze_stack(op),
                 caches=analyze_caches(inputs),
                 body=op.block.tokens,
                 properties=properties,
@@ -659,12 +657,11 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
         properties = compute_properties(op)
         properties.oparg = False
         properties.const_oparg = oparg
-        stack = analyze_stack(op)
         rep = Uop(
             name=name_x,
             context=op.context,
             annotations=op.annotations,
-            stack=stack,
+            stack=analyze_stack(op),
             caches=analyze_caches(inputs),
             body=op.block.tokens,
             properties=properties,
