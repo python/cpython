@@ -217,6 +217,7 @@ ENSUREPIP=      @ENSUREPIP@
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
+LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -640,6 +641,21 @@ LIBEXPAT_HEADERS= \
 
 LIBHACL_SHA2_OBJS= \
                 Modules/_hacl/Hacl_Hash_SHA2.o
+
+LIBHACL_BLAKE2_SIMD128_OBJ = Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o
+LIBHACL_BLAKE2_SIMD256_OBJ = Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o
+LIBHACL_BLAKE2_OBJS= \
+                Modules/_hacl/Hacl_Hash_Blake2s.o \
+                Modules/_hacl/Hacl_Hash_Blake2b.o \
+                Modules/_hacl/Lib_Memzero0.o
+
+ifneq ($(HACL_SIMD128_FLAGS),)
+LIBHACL_BLAKE2_OBJS += $(LIBHACL_BLAKE2_SIMD128_OBJ)
+endif
+
+ifneq ($(HACL_SIMD256_FLAGS),)
+LIBHACL_BLAKE2_OBJS += $(LIBHACL_BLAKE2_SIMD256_OBJ)
+endif
 
 LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
@@ -1324,15 +1340,24 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 ##########################################################################
-# Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a
+# Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a, and
+# libHacl_Blake2.a -- the contents of the latter vary depending on whether we
+# have the ability to compile vectorized versions
 LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
+Modules/_hacl/%.o: $(srcdir)/Modules/_hacl/%.c $(LIBHACL_SHA2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $<
 
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
+
+Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD128_FLAGS)
+Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD256_FLAGS)
+
+$(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_BLAKE2_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile

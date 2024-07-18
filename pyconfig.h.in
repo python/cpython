@@ -670,9 +670,6 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
-/* Define to 1 if you want to build _blake2 module with libb2 */
-#undef HAVE_LIBB2
-
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB
 
@@ -1579,6 +1576,9 @@
 
 /* Define to 1 if the system has the type `__uint128_t'. */
 #undef HAVE___UINT128_T
+
+/* HACL* library can compile SIMD128 implementations */
+#undef LIBHACL_CAN_COMPILE_SIMD128
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */

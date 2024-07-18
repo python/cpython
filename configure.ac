@@ -7349,15 +7349,6 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
-dnl libb2 for blake2. _blake2 module falls back to vendored copy.
-AS_VAR_IF([with_builtin_blake2], [yes], [
-  PKG_CHECK_MODULES([LIBB2], [libb2], [
-    have_libb2=yes
-    AC_DEFINE([HAVE_LIBB2], [1],
-              [Define to 1 if you want to build _blake2 module with libb2])
-  ], [have_libb2=no])
-])
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 AC_MSG_CHECKING([for --disable-test-modules])
@@ -7683,9 +7674,16 @@ PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
 PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
 PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2],
-  [test "$with_builtin_blake2" = yes], [],
-  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+
+AX_CHECK_COMPILE_FLAG([-mavx],[
+  LIBHACL_SIMD128_FLAGS="-mavx"
+  AC_DEFINE([LIBHACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+], [], [-Werror])
+
+AX_CHECK_COMPILE_FLAG([-mavx2],[
+  LIBHACL_SIMD256_FLAGS="-mavx2"
+], [], [-Werror])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
