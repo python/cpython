@@ -264,17 +264,12 @@ static int
 pymain_start_pyrepl_no_main(void)
 {
     int res = 0;
-    PyObject *pyrepl = NULL;
     PyObject *console = NULL;
     PyObject *empty_tuple = NULL;
     PyObject *kwargs = NULL;
     PyObject *console_result = NULL;
 
-    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
-        res = pymain_exit_err_print();
-        goto done;
-    }
-    pyrepl = PyImport_ImportModule("_pyrepl.main");
+    PyObject *pyrepl = PyImport_ImportModule("_pyrepl.main");
     if (pyrepl == NULL) {
         fprintf(stderr, "Could not import _pyrepl.main\n");
         res = pymain_exit_err_print();
@@ -596,6 +591,10 @@ pymain_repl(PyConfig *config, int *exitcode)
 
     pymain_set_inspect(config, 0);
     if (pymain_run_interactive_hook(exitcode)) {
+        return;
+    }
+
+    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
         return;
     }
 
