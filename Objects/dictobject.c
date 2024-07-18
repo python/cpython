@@ -1092,7 +1092,7 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
     Py_UNREACHABLE();
 }
 
-static inline Py_ALWAYS_INLINE int
+static inline int
 compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
                         void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
@@ -1127,7 +1127,7 @@ unicodekeys_lookup_generic(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key
     return do_lookup(mp, dk, key, hash, compare_unicode_generic);
 }
 
-static inline Py_ALWAYS_INLINE int
+static inline int
 compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
                         void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
@@ -1148,7 +1148,7 @@ unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
     return do_lookup(NULL, dk, key, hash, compare_unicode_unicode);
 }
 
-static inline Py_ALWAYS_INLINE int
+static inline int
 compare_generic(PyDictObject *mp, PyDictKeysObject *dk,
                 void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
