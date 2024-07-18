@@ -1605,10 +1605,10 @@
 #undef HAVE___UINT128_T
 
 /* HACL* library can compile SIMD128 implementations */
-#undef LIBHACL_CAN_COMPILE_SIMD128
+#undef HACL_CAN_COMPILE_SIMD128
 
 /* HACL* library can compile SIMD256 implementations */
-#undef LIBHACL_CAN_COMPILE_SIMD256
+#undef HACL_CAN_COMPILE_SIMD256
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */

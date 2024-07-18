@@ -110,8 +110,19 @@ static inline bool has_simd256(void) {
   return avx && avx2;
 }
 
+// Small mismatch between the variable names Python defines as part of configure
+// at the ones HACL* expects to be set in order to enable those headers.
+#define HACL_CAN_COMPILE_VEC128 HACL_CAN_COMPILE_SIMD128
+#define HACL_CAN_COMPILE_VEC256 HACL_CAN_COMPILE_SIMD256
+
 #include "_hacl/Hacl_Hash_Blake2b.h"
 #include "_hacl/Hacl_Hash_Blake2s.h"
+#if HACL_CAN_COMPILE_SIMD256
+#include "_hacl/Hacl_Hash_Blake2b_Simd256.h"
+#endif
+#if HACL_CAN_COMPILE_SIMD128
+#include "_hacl/Hacl_Hash_Blake2s_Simd128.h"
+#endif
 
 // MODULE TYPE SLOTS
 
@@ -292,22 +303,23 @@ static inline bool is_blake2s(blake2_impl impl) {
 }
 
 static inline blake2_impl type_to_impl(PyTypeObject *type) {
-    if (!strcmp(type->tp_name, blake2b_type_spec.name))
+    if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #ifdef HACL_CAN_COMPILE_SIMD256
       if (has_simd256())
         return Blake2b_256;
       else
 #endif
         return Blake2b;
-    else if (!strcmp(type->tp_name, blake2s_type_spec.name))
+    } else if (!strcmp(type->tp_name, blake2s_type_spec.name)) {
 #ifdef HACL_CAN_COMPILE_SIMD128
       if (has_simd128())
         return Blake2s_128;
       else
 #endif
         return Blake2s;
-    else
-        Py_UNREACHABLE();
+    } else {
+      Py_UNREACHABLE();
+    }
 }
 
 typedef struct {
@@ -319,7 +331,7 @@ typedef struct {
         Hacl_Hash_Blake2s_Simd128_state_t *blake2s_128_state;
 #endif
 #ifdef HACL_CAN_COMPILE_SIMD256
-        Hacl_Hash_Blake2b_SImd256_state_t *blake2b_256_state;
+        Hacl_Hash_Blake2b_Simd256_state_t *blake2b_256_state;
 #endif
     };
     blake2_impl impl;
@@ -652,7 +664,7 @@ _blake2_blake2b_copy_impl(Blake2Object *self)
             break;
 #endif
 #if HACL_CAN_COMPILE_SIMD128
-        case Blake2s:
+        case Blake2s_128:
             cpy->blake2s_128_state = Hacl_Hash_Blake2s_Simd128_copy(self->blake2s_128_state);
             break;
 #endif

@@ -7700,12 +7700,12 @@ PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
 AX_CHECK_COMPILE_FLAG([-mavx],[
   LIBHACL_SIMD128_FLAGS="-mavx"
-  AC_DEFINE([LIBHACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+  AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
 ], [], [-Werror])
 
 AX_CHECK_COMPILE_FLAG([-mavx2],[
   LIBHACL_SIMD256_FLAGS="-mavx2"
-  AC_DEFINE([LIBHACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+  AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
 ], [], [-Werror])
 
 PY_STDLIB_MOD([_ctypes],

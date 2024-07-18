@@ -30349,7 +30349,7 @@ then :
 
   LIBHACL_SIMD128_FLAGS="-mavx"
 
-printf "%s\n" "#define LIBHACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
 
 
 else $as_nop
@@ -30393,7 +30393,7 @@ then :
 
   LIBHACL_SIMD256_FLAGS="-mavx2"
 
-printf "%s\n" "#define LIBHACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
+printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
 
 
 else $as_nop
