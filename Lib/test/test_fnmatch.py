@@ -267,11 +267,105 @@ class TranslateTestCaseMixin:
         self.assertTrue(re.match(fatre, 'cbabcaxc'))
         self.assertFalse(re.match(fatre, 'dabccbad'))
 
+    def test_translate_wildcards(self):
+        for pattern, expect in [
+            ('ab*', r'(?s:ab.*)\Z'),
+            ('ab*cd', r'(?s:ab.*cd)\Z'),
+            ('ab*cd*', r'(?s:ab(?>.*?cd).*)\Z'),
+            ('ab*cd*12', r'(?s:ab(?>.*?cd).*12)\Z'),
+            ('ab*cd*12*', r'(?s:ab(?>.*?cd)(?>.*?12).*)\Z'),
+            ('ab*cd*12*34', r'(?s:ab(?>.*?cd)(?>.*?12).*34)\Z'),
+            ('ab*cd*12*34*', r'(?s:ab(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
+        ]:
+            translated = self.fnmatch.translate(pattern)
+            self.assertEqual(translated, expect, pattern)
+
+        for pattern, expect in [
+            ('*ab', r'(?s:.*ab)\Z'),
+            ('*ab*', r'(?s:(?>.*?ab).*)\Z'),
+            ('*ab*cd', r'(?s:(?>.*?ab).*cd)\Z'),
+            ('*ab*cd*', r'(?s:(?>.*?ab)(?>.*?cd).*)\Z'),
+            ('*ab*cd*12', r'(?s:(?>.*?ab)(?>.*?cd).*12)\Z'),
+            ('*ab*cd*12*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*)\Z'),
+            ('*ab*cd*12*34', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*34)\Z'),
+            ('*ab*cd*12*34*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
+        ]:
+            translated = self.fnmatch.translate(pattern)
+            self.assertEqual(translated, expect, pattern)
+
+    def test_translate_expressions(self):
+        '[', '[-abc]', '[[]b', '[[a]b', '[\\\\]', '[\\]', '[]-]', '[][!]',
+        '[]]b', '[]a[]b', '[^a-c]*', '[a-\\z]',
+        '[a-c]b*', '[a-y]*[^c]', '[abc-]', '\\*',
+        '[0-4-3-2]', '[b-ac-z9-1]', '[!b-ac-z9-1]', '[!]b-ac-z9-1]',
+        '[]b-ac-z9-1]', '[]b-ac-z9-1]*', '*[]b-ac-z9-1]',
+        for pattern, expect in [
+            ('[', r'(?s:\[)\Z'),
+            ('[!', r'(?s:\[!)\Z'),
+            ('[]', r'(?s:\[\])\Z'),
+            ('[abc', r'(?s:\[abc)\Z'),
+            ('[!abc', r'(?s:\[!abc)\Z'),
+            ('[abc]', r'(?s:[abc])\Z'),
+            ('[!abc]', r'(?s:[^abc])\Z'),
+            # with [[
+            ('[[', r'(?s:\[\[)\Z'),
+            ('[[a', r'(?s:\[\[a)\Z'),
+            ('[[]', r'(?s:[\[])\Z'),
+            ('[[]a', r'(?s:[\[]a)\Z'),
+            ('[[]]', r'(?s:[\[]\])\Z'),
+            ('[[]a]', r'(?s:[\[]a\])\Z'),
+            ('[[a]', r'(?s:[\[a])\Z'),
+            ('[[a]]', r'(?s:[\[a]\])\Z'),
+            ('[[a]b', r'(?s:[\[a]b)\Z'),
+            # backslashes
+            ('[\\', r'(?s:\[\\)\Z'),
+            (r'[\]', r'(?s:[\\])\Z'),
+            (r'[\\]', r'(?s:[\\\\])\Z'),
+        ]:
+            translated = self.fnmatch.translate(pattern)
+            self.assertEqual(translated, expect, pattern)
+
 class PurePythonTranslateTestCase(TranslateTestCaseMixin, unittest.TestCase):
     fnmatch = py_fnmatch
 
 class CPythonTranslateTestCase(TranslateTestCaseMixin, unittest.TestCase):
     fnmatch = c_fnmatch
+
+    @staticmethod
+    def translate_func(pattern):
+        # Pure Python implementation of translate()
+        STAR = object()
+        parts = py_fnmatch._translate(pattern, STAR, '.')
+        return py_fnmatch._join_translated_parts(parts, STAR)
+
+    def test_translate(self):
+        # We want to check that the C implementation is EXACTLY the same
+        # as the Python implementation. For that, we will need to cover
+        # a lot of cases.
+        translate = self.fnmatch.translate
+
+        for choice in itertools.combinations_with_replacement('*?.', 5):
+            for suffix in ['', '!']:
+                pat = suffix + ''.join(choice)
+                with self.subTest(pattern=pat):
+                    self.assertEqual(translate(pat), self.translate_func(pat))
+
+        for pat in [
+            '',
+            '!!a*', '!\\!a*', '!a*', '*', '**', '*******?', '*******c', '*****??', '**/',
+            '*.js', '*/man*/bash.*', '*???', '?', '?*****??', '?*****?c', '?***?****',
+            '?***?****?', '?***?****c', '?*?', '??', '???', '???*', '[!\\]',
+            '\\**', '\\*\\*', 'a*', 'a*****?c', 'a****c**?**??*****', 'a***c',
+            'a**?**cd**?**??***k', 'a**?**cd**?**??***k**', 'a**?**cd**?**??k',
+            'a**?**cd**?**??k***', 'a*[^c]',
+            'a*cd**?**??k', 'a/*', 'a/**', 'a/**/b',
+            'a/**/b/**/c', 'a/.*/c', 'a/?', 'a/??', 'a[X-]b', 'a[\\.]c',
+            'a[\\b]c', 'a[bc', 'a\\*?/*', 'a\\*b/*',
+            'ab[!de]', 'ab[cd]', 'ab[cd]ef', 'abc', 'b*/', 'foo*',
+            'man/man1/bash.1'
+        ]:
+            with self.subTest(pattern=pat):
+                self.assertEqual(translate(pat), self.translate_func(pat))
 
 class FilterTestCaseMixin:
     fnmatch = None
@@ -309,47 +403,6 @@ class PurePythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
 
 class CPythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
     fnmatch = c_fnmatch
-
-    @staticmethod
-    def translate_func(pattern):
-        # Pure Python implementation of translate()
-        STAR = object()
-        parts = py_fnmatch._translate(pattern, STAR, '.')
-        return py_fnmatch._join_translated_parts(parts, STAR)
-
-    def test_translate(self):
-        # We want to check that the C implementation is EXACTLY the same
-        # as the Python implementation. For that, we will need to cover
-        # a lot of cases.
-        translate = self.fnmatch.translate
-
-        for choice in itertools.combinations_with_replacement('*?.', 5):
-            for suffix in ['', '!']:
-                pat = suffix + ''.join(choice)
-                with self.subTest(pattern=pat):
-                    self.assertEqual(translate(pat), self.translate_func(pat))
-
-        for pat in [
-            '',
-            '!!a*', '!\\!a*', '!a*', '*', '**', '*******?', '*******c', '*****??', '**/',
-            '*.js', '*/man*/bash.*', '*???', '?', '?*****??', '?*****?c', '?***?****',
-            '?***?****?', '?***?****c', '?*?', '??', '???', '???*', '[!\\]',
-            '[*', '[-abc]', '[[]b', '[[a]b', '[\\\\]', '[\\]', '[]-]', '[][!]',
-            '[]]b', '[]a[]b', '[^a-c]*', '[a-\\z]',
-            '[a-c]b*', '[a-y]*[^c]', '[abc-]', '\\*',
-            '[0-4-3-2]', '[b-ac-z9-1]', '[!b-ac-z9-1]', '[!]b-ac-z9-1]',
-            '[]b-ac-z9-1]', '[]b-ac-z9-1]*', '*[]b-ac-z9-1]',
-            '\\**', '\\*\\*', 'a*', 'a*****?c', 'a****c**?**??*****', 'a***c',
-            'a**?**cd**?**??***k', 'a**?**cd**?**??***k**', 'a**?**cd**?**??k',
-            'a**?**cd**?**??k***', 'a*[^c]',
-            'a*cd**?**??k', 'a/*', 'a/**', 'a/**/b',
-            'a/**/b/**/c', 'a/.*/c', 'a/?', 'a/??', 'a[X-]b', 'a[\\.]c',
-            'a[\\b]c', 'a[bc', 'a\\*?/*', 'a\\*b/*',
-            'ab[!de]', 'ab[cd]', 'ab[cd]ef', 'abc', 'b*/', 'foo*',
-            'man/man1/bash.1'
-        ]:
-            with self.subTest(pattern=pat):
-                self.assertEqual(translate(pat), self.translate_func(pat))
 
 if __name__ == "__main__":
     unittest.main()
