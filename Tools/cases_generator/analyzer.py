@@ -344,6 +344,7 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
             )
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
+
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
@@ -639,7 +640,7 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
                 name=name_x,
                 context=op.context,
                 annotations=op.annotations,
-                stack=analyze_stack(op),
+                stack=analyze_stack(op, bit),
                 caches=analyze_caches(inputs),
                 body=op.block.tokens,
                 properties=properties,
