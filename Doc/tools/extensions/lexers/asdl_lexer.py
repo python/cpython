@@ -27,7 +27,7 @@ class ASDLLexer(RegexLexer):
             ),
             # Keep in line with ``builtin_types`` from Parser/asdl.py.
             # ASDL's 4 builtin types are
-            # identifier, int, string, constant
+            # constant, identifier, int, string
             ('constant|identifier|int|string', Name.Builtin),
             (r"attributes", Name.Builtin),
             (
