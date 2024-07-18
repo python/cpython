@@ -18,11 +18,10 @@ from pyspecific import SOURCE_URI
 # ---------------------
 
 extensions = [
-    'asdl_highlight',
     'c_annotations',
     'escape4chm',
     'glossary_search',
-    'peg_highlight',
+    'lexers',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
