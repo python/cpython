@@ -643,19 +643,17 @@ LIBEXPAT_HEADERS= \
 LIBHACL_SHA2_OBJS= \
                 Modules/_hacl/Hacl_Hash_SHA2.o
 
-LIBHACL_BLAKE2_SIMD128_OBJ = Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o
-LIBHACL_BLAKE2_SIMD256_OBJ = Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o
 LIBHACL_BLAKE2_OBJS= \
                 Modules/_hacl/Hacl_Hash_Blake2s.o \
                 Modules/_hacl/Hacl_Hash_Blake2b.o \
                 Modules/_hacl/Lib_Memzero0.o
 
-ifneq ($(HACL_SIMD128_FLAGS),)
-LIBHACL_BLAKE2_OBJS += $(LIBHACL_BLAKE2_SIMD128_OBJ)
+ifneq ($(LIBHACL_SIMD128_FLAGS),)
+LIBHACL_BLAKE2_OBJS += Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o
 endif
 
-ifneq ($(HACL_SIMD256_FLAGS),)
-LIBHACL_BLAKE2_OBJS += $(LIBHACL_BLAKE2_SIMD256_OBJ)
+ifneq ($(LIBHACL_SIMD256_FLAGS),)
+LIBHACL_BLAKE2_OBJS += Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o
 endif
 
 LIBHACL_HEADERS= \
@@ -671,6 +669,18 @@ LIBHACL_HEADERS= \
 LIBHACL_SHA2_HEADERS= \
                 Modules/_hacl/Hacl_Hash_SHA2.h \
                 Modules/_hacl/internal/Hacl_Hash_SHA2.h \
+		$(LIBHACL_HEADERS)
+
+LIBHACL_BLAKE2_HEADERS= \
+		Modules/_hacl/Hacl_Hash_Blake2b.h \
+		Modules/_hacl/Hacl_Hash_Blake2s.h \
+		Modules/_hacl/Hacl_Hash_Blake2s_Simd128.h \
+		Modules/_hacl/Hacl_Hash_Blake2b_Simd256.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2b.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2s.h \
+		Modules/_hacl/internal/Hacl_Impl_Blake2_Constants.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h \
 		$(LIBHACL_HEADERS)
 
 #########################################################################
@@ -1344,7 +1354,7 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a, and
 # libHacl_Blake2.a -- the contents of the latter vary depending on whether we
 # have the ability to compile vectorized versions
-LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 Modules/_hacl/%.o: $(srcdir)/Modules/_hacl/%.c $(LIBHACL_SHA2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $<
@@ -3131,13 +3141,6 @@ MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
-MODULE__BLAKE2_DEPS=$(LIBHACL_HEADERS) \
-  Modules/_hacl/Hacl_Hash_Blake2b.h Modules/_hacl/Hacl_Hash_Blake2s.h \
-  Modules/_hacl/Hacl_Hash_Blake2b_Simd256.h Modules/_hacl/Hacl_Hash_Blake2s_Simd128.h \
-  Modules/_hacl/internal/Hacl_Hash_Blake2b.h Modules/_hacl/internal/Hacl_Hash_Blake2s.h \
-  Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h \
-  Modules/_hacl/Hacl_Hash_Blake2b.c Modules/_hacl/Hacl_Hash_Blake2s.c \
-  Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_complex.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
@@ -3149,6 +3152,7 @@ MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Ha
 MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA1.h Modules/_hacl/internal/Hacl_Hash_SHA1.h Modules/_hacl/Hacl_Hash_SHA1.c
 MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_A)
 MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/internal/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_A)
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
