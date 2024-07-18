@@ -18,11 +18,10 @@ from pyspecific import SOURCE_URI
 # ---------------------
 
 extensions = [
-    'asdl_highlight',
     'c_annotations',
     'escape4chm',
     'glossary_search',
-    'peg_highlight',
+    'lexers',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
@@ -83,7 +82,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '4.2'
+needs_sphinx = '6.2.1'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
@@ -347,7 +346,8 @@ html_context = {
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
-html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime())
+html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime(html_time))
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']

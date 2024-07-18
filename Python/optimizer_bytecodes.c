@@ -658,6 +658,11 @@ dummy_func(void) {
         ctx->done = true;
     }
 
+    op(_SEND_GEN_FRAME, ( -- )) {
+        // We are about to hit the end of the trace:
+        ctx->done = true;
+    }
+
     op(_CHECK_STACK_SPACE, ( --)) {
         assert(corresponding_check_stack == NULL);
         corresponding_check_stack = this_instr;
