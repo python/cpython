@@ -17,6 +17,8 @@ The :mod:`fractions` module provides support for rational number arithmetic.
 A Fraction instance can be constructed from a pair of integers, from
 another rational number, or from a string.
 
+.. index:: single: as_integer_ratio()
+
 .. class:: Fraction(numerator=0, denominator=1)
            Fraction(number)
            Fraction(string)
