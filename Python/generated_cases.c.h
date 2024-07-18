@@ -16,8 +16,8 @@
             PREDICTED(BINARY_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef rhs;
             _PyStackRef lhs;
+            _PyStackRef rhs;
             _PyStackRef res;
             // _SPECIALIZE_BINARY_OP
             rhs = stack_pointer[-1];
@@ -59,8 +59,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
@@ -95,8 +95,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_INT
             right = stack_pointer[-1];
@@ -130,8 +130,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_UNICODE);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_UNICODE
             right = stack_pointer[-1];
@@ -165,8 +165,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_INPLACE_ADD_UNICODE);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             // _GUARD_BOTH_UNICODE
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -217,8 +217,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
@@ -253,8 +253,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_INT
             right = stack_pointer[-1];
@@ -288,8 +288,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
@@ -324,8 +324,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_INT
             right = stack_pointer[-1];
@@ -358,9 +358,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BINARY_SLICE);
-            _PyStackRef stop;
-            _PyStackRef start;
             _PyStackRef container;
+            _PyStackRef start;
+            _PyStackRef stop;
             _PyStackRef res;
             stop = stack_pointer[-1];
             start = stack_pointer[-2];
@@ -393,8 +393,8 @@
             PREDICTED(BINARY_SUBSCR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef sub;
             _PyStackRef container;
+            _PyStackRef sub;
             _PyStackRef res;
             // _SPECIALIZE_BINARY_SUBSCR
             sub = stack_pointer[-1];
@@ -433,8 +433,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_DICT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_st;
             _PyStackRef dict_st;
+            _PyStackRef sub_st;
             _PyStackRef res;
             /* Skip 1 cache entry */
             sub_st = stack_pointer[-1];
@@ -464,8 +464,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_st;
             _PyStackRef container_st;
+            _PyStackRef sub_st;
             /* Skip 1 cache entry */
             sub_st = stack_pointer[-1];
             container_st = stack_pointer[-2];
@@ -498,8 +498,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_LIST_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_st;
             _PyStackRef list_st;
+            _PyStackRef sub_st;
             _PyStackRef res;
             /* Skip 1 cache entry */
             sub_st = stack_pointer[-1];
@@ -530,8 +530,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_STR_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_st;
             _PyStackRef str_st;
+            _PyStackRef sub_st;
             _PyStackRef res;
             /* Skip 1 cache entry */
             sub_st = stack_pointer[-1];
@@ -562,8 +562,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_TUPLE_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_st;
             _PyStackRef tuple_st;
+            _PyStackRef sub_st;
             _PyStackRef res;
             /* Skip 1 cache entry */
             sub_st = stack_pointer[-1];
@@ -593,8 +593,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_CONST_KEY_MAP);
-            _PyStackRef keys;
             _PyStackRef *values;
+            _PyStackRef keys;
             _PyStackRef map;
             keys = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg];
@@ -713,9 +713,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SLICE);
-            _PyStackRef step = PyStackRef_NULL;
-            _PyStackRef stop;
             _PyStackRef start;
+            _PyStackRef stop;
+            _PyStackRef step = PyStackRef_NULL;
             _PyStackRef slice;
             if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
             stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
@@ -769,15 +769,7 @@
             _PyStackRef *values;
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                for (int _i = oparg; --_i >= 0;) {
-                    PyStackRef_CLOSE(values[_i]);
-                }
-                if (true) { stack_pointer += -oparg; goto error; }
-            }
-            PyObject *tup_o = _PyTuple_FromArraySteal(values_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
             if (tup_o == NULL) { stack_pointer += -oparg; goto error; }
             tup = PyStackRef_FromPyObjectSteal(tup_o);
             stack_pointer[-oparg] = tup;
@@ -802,15 +794,15 @@
             PREDICTED(CALL);
             _Py_CODEUNIT *this_instr = next_instr - 4;
             (void)this_instr;
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             // _SPECIALIZE_CALL
-            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             {
+                args = &stack_pointer[-oparg];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
                 #if ENABLE_SPECIALIZATION
@@ -921,9 +913,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef null;
             _PyStackRef callable;
+            _PyStackRef null;
+            _PyStackRef *args;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
@@ -985,8 +977,8 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BOUND_METHOD_EXACT_ARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef null;
             _PyStackRef callable;
+            _PyStackRef null;
             _PyStackRef func;
             _PyStackRef self;
             _PyStackRef self_or_null;
@@ -1008,16 +1000,15 @@
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 STAT_INC(CALL, hit);
-                stack_pointer[-1 - oparg] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
-                stack_pointer[-2 - oparg] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);  // This is used by CALL, upon deoptimization
-                self = stack_pointer[-1 - oparg];
-                func = stack_pointer[-2 - oparg];
+                self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
+                func = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
                 PyStackRef_CLOSE(callable);
-                // self may be unused in tier 1, so silence warnings.
-                (void)self;
             }
+            // flush
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = self;
             // _CHECK_FUNCTION_VERSION
-            callable = func;
+            callable = stack_pointer[-2 - oparg];
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -1044,7 +1035,6 @@
             }
             // _INIT_CALL_PY_EXACT_ARGS
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 int has_self = !PyStackRef_IsNull(self_or_null);
@@ -1090,12 +1080,12 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BOUND_METHOD_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef null;
             _PyStackRef callable;
+            _PyStackRef null;
             _PyStackRef method;
             _PyStackRef self;
-            _PyStackRef *args;
             _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -1120,15 +1110,17 @@
                 assert(PyStackRef_IsNull(null));
                 assert(Py_TYPE(callable_o) == &PyMethod_Type);
                 self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
-                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
                 method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
                 assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
                 PyStackRef_CLOSE(callable);
             }
+            // flush
+            stack_pointer[-2 - oparg] = method;
+            stack_pointer[-1 - oparg] = self;
             // _PY_FRAME_GENERAL
             args = &stack_pointer[-oparg];
-            self_or_null = self;
-            callable = method;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 PyObject *self_or_null_o = PyStackRef_AsPyObjectBorrow(self_or_null);
@@ -1184,9 +1176,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_CLASS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1239,9 +1231,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1300,9 +1292,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1360,9 +1352,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1412,9 +1404,9 @@
             PREDICTED(CALL_FUNCTION_EX);
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
-            _PyStackRef kwargs_st = PyStackRef_NULL;
-            _PyStackRef callargs_st;
             _PyStackRef func_st;
+            _PyStackRef callargs_st;
+            _PyStackRef kwargs_st = PyStackRef_NULL;
             _PyStackRef result;
             if (oparg & 1) { kwargs_st = stack_pointer[-(oparg & 1)]; }
             callargs_st = stack_pointer[-1 - (oparg & 1)];
@@ -1517,8 +1509,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_INTRINSIC_2);
-            _PyStackRef value1_st;
             _PyStackRef value2_st;
+            _PyStackRef value1_st;
             _PyStackRef res;
             value1_st = stack_pointer[-1];
             value2_st = stack_pointer[-2];
@@ -1541,9 +1533,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ISINSTANCE);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1585,10 +1577,10 @@
             PREDICTED(CALL_KW);
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
-            _PyStackRef kwnames;
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
+            _PyStackRef kwnames;
             _PyStackRef res;
             kwnames = stack_pointer[-1];
             args = &stack_pointer[-1 - oparg];
@@ -1691,9 +1683,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LEN);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1736,9 +1728,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LIST_APPEND);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef arg;
-            _PyStackRef self;
             _PyStackRef callable;
+            _PyStackRef self;
+            _PyStackRef arg;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             arg = stack_pointer[-1];
@@ -1769,9 +1761,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1832,9 +1824,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1895,9 +1887,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_NOARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1949,9 +1941,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2007,8 +1999,8 @@
             INSTRUCTION_STATS(CALL_NON_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
-            _PyStackRef *args;
             _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2108,7 +2100,6 @@
             }
             // _INIT_CALL_PY_EXACT_ARGS
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 int has_self = !PyStackRef_IsNull(self_or_null);
@@ -2155,8 +2146,8 @@
             INSTRUCTION_STATS(CALL_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
-            _PyStackRef *args;
             _PyStackRef self_or_null;
+            _PyStackRef *args;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -2230,9 +2221,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_STR_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef arg;
-            _PyStackRef null;
             _PyStackRef callable;
+            _PyStackRef null;
+            _PyStackRef arg;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2266,9 +2257,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TUPLE_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef arg;
-            _PyStackRef null;
             _PyStackRef callable;
+            _PyStackRef null;
+            _PyStackRef arg;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2302,9 +2293,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TYPE_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef arg;
-            _PyStackRef null;
             _PyStackRef callable;
+            _PyStackRef null;
+            _PyStackRef arg;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2329,8 +2320,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EG_MATCH);
-            _PyStackRef match_type_st;
             _PyStackRef exc_value_st;
+            _PyStackRef match_type_st;
             _PyStackRef rest;
             _PyStackRef match;
             match_type_st = stack_pointer[-1];
@@ -2365,8 +2356,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EXC_MATCH);
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef b;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -2389,9 +2380,9 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CLEANUP_THROW);
-            _PyStackRef exc_value_st;
-            _PyStackRef last_sent_val_st;
             _PyStackRef sub_iter_st;
+            _PyStackRef last_sent_val_st;
+            _PyStackRef exc_value_st;
             _PyStackRef none;
             _PyStackRef value;
             exc_value_st = stack_pointer[-1];
@@ -2426,8 +2417,8 @@
             PREDICTED(COMPARE_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _SPECIALIZE_COMPARE_OP
             right = stack_pointer[-1];
@@ -2475,8 +2466,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
@@ -2513,8 +2504,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_INT);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_INT
             right = stack_pointer[-1];
@@ -2555,8 +2546,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_STR);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef res;
             // _GUARD_BOTH_UNICODE
             right = stack_pointer[-1];
@@ -2596,12 +2587,11 @@
             PREDICTED(CONTAINS_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef b;
             // _SPECIALIZE_CONTAINS_OP
             right = stack_pointer[-1];
-            left = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
@@ -2616,6 +2606,7 @@
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _CONTAINS_OP
+            left = stack_pointer[-2];
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
@@ -2636,8 +2627,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP_DICT);
             static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef b;
             /* Skip 1 cache entry */
             right = stack_pointer[-1];
@@ -2662,8 +2653,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP_SET);
             static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef b;
             /* Skip 1 cache entry */
             right = stack_pointer[-1];
@@ -2826,8 +2817,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_SUBSCR);
-            _PyStackRef sub;
             _PyStackRef container;
+            _PyStackRef sub;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
             /* del container[sub] */
@@ -2845,9 +2836,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_MERGE);
-            _PyStackRef update;
-            _PyStackRef dict;
             _PyStackRef callable;
+            _PyStackRef dict;
+            _PyStackRef update;
             update = stack_pointer[-1];
             dict = stack_pointer[-2 - (oparg - 1)];
             callable = stack_pointer[-5 - (oparg - 1)];
@@ -2869,8 +2860,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_UPDATE);
-            _PyStackRef update;
             _PyStackRef dict;
+            _PyStackRef update;
             update = stack_pointer[-1];
             dict = stack_pointer[-2 - (oparg - 1)];
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
@@ -2895,8 +2886,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_ASYNC_FOR);
-            _PyStackRef exc_st;
             _PyStackRef awaitable_st;
+            _PyStackRef exc_st;
             exc_st = stack_pointer[-1];
             awaitable_st = stack_pointer[-2];
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
@@ -2932,8 +2923,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_SEND);
-            _PyStackRef value;
             _PyStackRef receiver;
+            _PyStackRef value;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
             (void)receiver;
@@ -3032,8 +3023,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(FORMAT_WITH_SPEC);
-            _PyStackRef fmt_spec;
             _PyStackRef value;
+            _PyStackRef fmt_spec;
             _PyStackRef res;
             fmt_spec = stack_pointer[-1];
             value = stack_pointer[-2];
@@ -3510,8 +3501,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IMPORT_NAME);
-            _PyStackRef fromlist;
             _PyStackRef level;
+            _PyStackRef fromlist;
             _PyStackRef res;
             fromlist = stack_pointer[-1];
             level = stack_pointer[-2];
@@ -3577,8 +3568,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_FOR);
-            _PyStackRef value;
             _PyStackRef receiver;
+            _PyStackRef value;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
             /* Need to create a fake StopIteration error here,
@@ -3599,8 +3590,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_SEND);
-            _PyStackRef value;
             _PyStackRef receiver;
+            _PyStackRef value;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
@@ -4017,8 +4008,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IS_OP);
-            _PyStackRef right;
             _PyStackRef left;
+            _PyStackRef right;
             _PyStackRef b;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -4102,8 +4093,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_APPEND);
-            _PyStackRef v;
             _PyStackRef list;
+            _PyStackRef v;
             v = stack_pointer[-1];
             list = stack_pointer[-2 - (oparg-1)];
             if (_PyList_AppendTakeRef((PyListObject *)PyStackRef_AsPyObjectBorrow(list),
@@ -4117,8 +4108,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_EXTEND);
-            _PyStackRef iterable_st;
             _PyStackRef list_st;
+            _PyStackRef iterable_st;
             iterable_st = stack_pointer[-1];
             list_st = stack_pointer[-2 - (oparg-1)];
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
@@ -4775,7 +4766,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST);
             _PyStackRef value;
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -5159,8 +5150,8 @@
             PREDICTED(LOAD_SUPER_ATTR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef class_st;
             _PyStackRef global_super_st;
+            _PyStackRef class_st;
             _PyStackRef self_st;
             _PyStackRef attr;
             _PyStackRef null = PyStackRef_NULL;
@@ -5236,9 +5227,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_ATTR);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
-            _PyStackRef self_st;
-            _PyStackRef class_st;
             _PyStackRef global_super_st;
+            _PyStackRef class_st;
+            _PyStackRef self_st;
             _PyStackRef attr_st;
             /* Skip 1 cache entry */
             self_st = stack_pointer[-1];
@@ -5269,9 +5260,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_METHOD);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
-            _PyStackRef self_st;
-            _PyStackRef class_st;
             _PyStackRef global_super_st;
+            _PyStackRef class_st;
+            _PyStackRef self_st;
             _PyStackRef attr;
             _PyStackRef self_or_null;
             /* Skip 1 cache entry */
@@ -5350,9 +5341,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAP_ADD);
-            _PyStackRef value;
-            _PyStackRef key;
             _PyStackRef dict_st;
+            _PyStackRef key;
+            _PyStackRef value;
             value = stack_pointer[-1];
             key = stack_pointer[-2];
             dict_st = stack_pointer[-3 - (oparg - 1)];
@@ -5370,9 +5361,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_CLASS);
-            _PyStackRef names;
-            _PyStackRef type;
             _PyStackRef subject;
+            _PyStackRef type;
+            _PyStackRef names;
             _PyStackRef attrs;
             names = stack_pointer[-1];
             type = stack_pointer[-2];
@@ -5406,8 +5397,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_KEYS);
-            _PyStackRef keys;
             _PyStackRef subject;
+            _PyStackRef keys;
             _PyStackRef values_or_none;
             keys = stack_pointer[-1];
             subject = stack_pointer[-2];
@@ -5467,7 +5458,7 @@
             exc_value = stack_pointer[-1];
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value,
-                       PyStackRef_AsPyObjectBorrow(exc_value) == Py_None
+                       PyStackRef_Is(exc_value, PyStackRef_None)
                        ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -5664,8 +5655,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RERAISE);
-            _PyStackRef exc_st;
             _PyStackRef *values;
+            _PyStackRef exc_st;
             exc_st = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg];
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
@@ -5927,8 +5918,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(SEND_GEN);
             static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
-            _PyStackRef v;
             _PyStackRef receiver;
+            _PyStackRef v;
             /* Skip 1 cache entry */
             v = stack_pointer[-1];
             receiver = stack_pointer[-2];
@@ -5979,12 +5970,12 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_ADD);
-            _PyStackRef v;
             _PyStackRef set;
+            _PyStackRef v;
             v = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
             int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectSteal(v));
+                                PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
@@ -5996,8 +5987,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_FUNCTION_ATTRIBUTE);
-            _PyStackRef func_st;
             _PyStackRef attr_st;
+            _PyStackRef func_st;
             func_st = stack_pointer[-1];
             attr_st = stack_pointer[-2];
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
@@ -6041,8 +6032,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_UPDATE);
-            _PyStackRef iterable;
             _PyStackRef set;
+            _PyStackRef iterable;
             iterable = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
             int err = _PySet_Update(PyStackRef_AsPyObjectBorrow(set),
@@ -6085,7 +6076,7 @@
             {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
-                                       name, PyStackRef_AsPyObjectSteal(v));
+                                       name, PyStackRef_AsPyObjectBorrow(v));
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(owner);
                 if (err) goto pop_2_error;
@@ -6279,8 +6270,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST_STORE_FAST);
-            _PyStackRef value1;
             _PyStackRef value2;
+            _PyStackRef value1;
             value1 = stack_pointer[-1];
             value2 = stack_pointer[-2];
             uint32_t oparg1 = oparg >> 4;
@@ -6323,9 +6314,9 @@
                 if (true) goto pop_1_error;
             }
             if (PyDict_CheckExact(ns))
-            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             else
-            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
@@ -6337,10 +6328,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_SLICE);
-            _PyStackRef stop;
-            _PyStackRef start;
-            _PyStackRef container;
             _PyStackRef v;
+            _PyStackRef container;
+            _PyStackRef start;
+            _PyStackRef stop;
             stop = stack_pointer[-1];
             start = stack_pointer[-2];
             container = stack_pointer[-3];
@@ -6352,7 +6343,7 @@
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectSteal(v));
+                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
                 Py_DECREF(slice);
             }
             PyStackRef_CLOSE(v);
@@ -6370,8 +6361,8 @@
             PREDICTED(STORE_SUBSCR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef sub;
             _PyStackRef container;
+            _PyStackRef sub;
             _PyStackRef v;
             // _SPECIALIZE_STORE_SUBSCR
             sub = stack_pointer[-1];
@@ -6393,7 +6384,7 @@
             v = stack_pointer[-3];
             {
                 /* container[sub] = v */
-                int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectSteal(sub), PyStackRef_AsPyObjectSteal(v));
+                int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectBorrow(sub), PyStackRef_AsPyObjectBorrow(v));
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(container);
                 PyStackRef_CLOSE(sub);
@@ -6409,9 +6400,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_DICT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_st;
-            _PyStackRef dict_st;
             _PyStackRef value;
+            _PyStackRef dict_st;
+            _PyStackRef sub_st;
             /* Skip 1 cache entry */
             sub_st = stack_pointer[-1];
             dict_st = stack_pointer[-2];
@@ -6433,9 +6424,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_LIST_INT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_st;
-            _PyStackRef list_st;
             _PyStackRef value;
+            _PyStackRef list_st;
+            _PyStackRef sub_st;
             /* Skip 1 cache entry */
             sub_st = stack_pointer[-1];
             list_st = stack_pointer[-2];
@@ -6465,8 +6456,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SWAP);
-            _PyStackRef top;
             _PyStackRef bottom;
+            _PyStackRef top;
             top = stack_pointer[-1];
             bottom = stack_pointer[-2 - (oparg-2)];
             assert(oparg >= 2);
@@ -6814,10 +6805,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(WITH_EXCEPT_START);
-            _PyStackRef val;
-            _PyStackRef lasti;
-            _PyStackRef exit_self;
             _PyStackRef exit_func;
+            _PyStackRef exit_self;
+            _PyStackRef lasti;
+            _PyStackRef val;
             _PyStackRef res;
             val = stack_pointer[-1];
             lasti = stack_pointer[-3];
