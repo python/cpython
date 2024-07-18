@@ -2460,6 +2460,7 @@ AS_VAR_IF([with_strict_overflow], [yes],
 # These flags should be enabled by default for all builds.
 AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
 AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [BASECFLAGS="$BASECFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])])
 
 case $GCC in
 yes)
