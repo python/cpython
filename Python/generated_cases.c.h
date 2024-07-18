@@ -1752,7 +1752,8 @@
             PyStackRef_CLOSE(callable);
             if (err) goto pop_3_error;
             #if TIER_ONE
-            // Skip POP_TOP
+            // Skip the following POP_TOP. This is done here in tier one, and
+            // during trace projection in tier two:
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
             #endif
