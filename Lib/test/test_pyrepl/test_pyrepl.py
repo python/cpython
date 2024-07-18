@@ -964,7 +964,7 @@ class TestMain(TestCase):
             mod.write_text("FOO = 42", encoding="utf-8")
             commands = [
                 "print(f'{" + var + "=}')" for var in expectations
-            ] + ["exit"]
+            ] + ["exit()"]
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
             elif as_file:
@@ -1115,6 +1115,10 @@ class TestMain(TestCase):
             except OSError:
                 break
             output.append(data)
+        else:
+            os.close(master_fd)
+            process.kill()
+            self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
 
         os.close(master_fd)
         try:
