@@ -1,55 +1,61 @@
-const GLOSSARY_PAGE = 'glossary.html';
+"use strict";
 
-document.addEventListener('DOMContentLoaded', function() {
-  fetch('_static/glossary.json')
-    .then(function(response) {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error('Failed to fetch glossary.json');
-      }
-    })
-    .then(function(glossary) {
-      const RESULT_TEMPLATE = '<div style="display: none" class="admonition seealso" id="glossary-result">' +
-                              '  <p class="topic-title">' +
-                              '    <a class="glossary-title" href="#"></a>' +
-                              '  </p>' +
-                              '  <div class="glossary-body"></div>' +
-                              '</div>';
-      let searchResults = document.getElementById('search-results');
-      searchResults.insertAdjacentHTML('afterbegin', RESULT_TEMPLATE);
+const GLOSSARY_PAGE = "glossary.html";
 
-      const params = new URLSearchParams(document.location.search).get("q");
-      if (params) {
-        const searchParam = params.toLowerCase();
-        const glossaryItem = glossary[searchParam];
-        if (glossaryItem) {
-          let resultDiv = document.getElementById('glossary-result');
+const glossary_search = async () => {
+  const response = await fetch("_static/glossary.json");
+  if (!response.ok) {
+    throw new Error("Failed to fetch glossary.json");
+  }
+  const glossary = await response.json();
 
-          // set up the title text with a link to the glossary page
-          let glossaryTitle = resultDiv.querySelector('.glossary-title');
-          glossaryTitle.textContent = 'Glossary: ' + glossaryItem.title;
-          const linkTarget = searchParam.replace(/ /g, '-');
-          glossaryTitle.href = GLOSSARY_PAGE + '#term-' + linkTarget;
+  const params = new URLSearchParams(document.location.search).get("q");
+  if (!params) {
+    return;
+  }
 
-          // rewrite any anchor links (to other glossary terms)
-          // to have a full reference to the glossary page
-          let body = document.createElement('div');
-          body.innerHTML = glossaryItem.body;
-          const anchorLinks = body.querySelectorAll('a[href^="#"]');
-          anchorLinks.forEach(function(link) {
-            const currentUrl = link.getAttribute('href');
-            link.href = GLOSSARY_PAGE + currentUrl;
-          });
-          resultDiv.querySelector('.glossary-body').appendChild(body);
+  const searchParam = params.toLowerCase();
+  const glossaryItem = glossary[searchParam];
+  if (!glossaryItem) {
+    return;
+  }
 
-          resultDiv.style.display = '';
-        } else {
-          document.getElementById('glossary-result').style.display = 'none';
-        }
-      }
-    })
-    .catch(function(error) {
-      console.error(error);
-    });
-});
+  const glossaryContainer = document.createElement("div");
+  glossaryContainer.id = "glossary-result";
+  glossaryContainer.className = "admonition seealso";
+  const result_para = glossaryContainer.appendChild(
+    document.createElement("p"),
+  );
+  result_para.className = "topic-title";
+  const glossaryTitle = result_para.appendChild(document.createElement("a"));
+  glossaryTitle.className = "glossary-title";
+  glossaryTitle.href = "#";
+  const glossaryBody = glossaryContainer.appendChild(
+    document.createElement("div"),
+  );
+  glossaryBody.className = "glossary-body";
+
+  // set up the title text with a link to the glossary page
+  glossaryTitle.textContent = "Glossary: " + glossaryItem.title;
+  const linkTarget = searchParam.replace(/ /g, "-");
+  glossaryTitle.href = GLOSSARY_PAGE + "#term-" + linkTarget;
+
+  // rewrite any anchor links (to other glossary terms)
+  // to have a full reference to the glossary page
+  const itemBody = glossaryBody.appendChild(document.createElement("div"));
+  itemBody.innerHTML = glossaryItem.body;
+  const anchorLinks = itemBody.querySelectorAll('a[href^="#"]');
+  anchorLinks.forEach(function (link) {
+    const currentUrl = link.getAttribute("href");
+    link.href = GLOSSARY_PAGE + currentUrl;
+  });
+
+  const searchResults = document.getElementById("search-results");
+  searchResults.insertAdjacentElement("afterbegin", glossaryContainer);
+};
+
+if (document.readyState !== "loading") {
+  glossary_search().catch(console.error);
+} else {
+  document.addEventListener("DOMContentLoaded", glossary_search);
+}
