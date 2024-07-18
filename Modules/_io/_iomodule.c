@@ -202,7 +202,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               const char *newline, int closefd, PyObject *opener)
 /*[clinic end generated code: output=aefafc4ce2b46dc0 input=cd034e7cdfbf4e78]*/
 {
-    unsigned i;
+    size_t i;
 
     int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
     int text = 0, binary = 0;

@@ -1,5 +1,6 @@
 import ast
 import builtins
+import copy
 import dis
 import enum
 import os
@@ -20,7 +21,7 @@ from test.support import os_helper, script_helper
 from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
-    if t is None or isinstance(t, (str, int, complex)) or t is Ellipsis:
+    if t is None or isinstance(t, (str, int, complex, float, bytes)) or t is Ellipsis:
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]
@@ -775,15 +776,6 @@ class AST_Tests(unittest.TestCase):
         x = ast.Sub()
         self.assertEqual(x._fields, ())
 
-    def test_pickling(self):
-        import pickle
-
-        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-            for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
-                with self.subTest(ast=ast, protocol=protocol):
-                    ast2 = pickle.loads(pickle.dumps(ast, protocol))
-                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
-
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
@@ -956,6 +948,15 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(ast.compare(ast.Add(), ast.Add()))
         self.assertFalse(ast.compare(ast.Sub(), ast.Add()))
 
+        # test that missing runtime fields is handled in ast.compare()
+        a1, a2 = ast.Name('a'), ast.Name('a')
+        self.assertTrue(ast.compare(a1, a2))
+        self.assertTrue(ast.compare(a1, a2))
+        del a1.id
+        self.assertFalse(ast.compare(a1, a2))
+        del a2.id
+        self.assertTrue(ast.compare(a1, a2))
+
     def test_compare_modes(self):
         for mode, sources in (
             ("exec", exec_tests),
@@ -977,6 +978,16 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(ast.compare(a, b))
         self.assertTrue(ast.compare(a, b, compare_attributes=False))
         self.assertFalse(ast.compare(a, b, compare_attributes=True))
+
+    def test_compare_attributes_option_missing_attribute(self):
+        # test that missing runtime attributes is handled in ast.compare()
+        a1, a2 = ast.Name('a', lineno=1), ast.Name('a', lineno=1)
+        self.assertTrue(ast.compare(a1, a2))
+        self.assertTrue(ast.compare(a1, a2, compare_attributes=True))
+        del a1.lineno
+        self.assertFalse(ast.compare(a1, a2, compare_attributes=True))
+        del a2.lineno
+        self.assertTrue(ast.compare(a1, a2, compare_attributes=True))
 
     def test_positional_only_feature_version(self):
         ast.parse('def foo(x, /): ...', feature_version=(3, 8))
@@ -1134,6 +1145,343 @@ class AST_Tests(unittest.TestCase):
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
 
+
+class CopyTests(unittest.TestCase):
+    """Test copying and pickling AST nodes."""
+
+    @staticmethod
+    def iter_ast_classes():
+        """Iterate over the (native) subclasses of ast.AST recursively.
+
+        This excludes the special class ast.Index since its constructor
+        returns an integer.
+        """
+        def do(cls):
+            if cls.__module__ != 'ast':
+                return
+            if cls is ast.Index:
+                return
+
+            yield cls
+            for sub in cls.__subclasses__():
+                yield from do(sub)
+
+        yield from do(ast.AST)
+
+    def test_pickling(self):
+        import pickle
+
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            for code in exec_tests:
+                with self.subTest(code=code, protocol=protocol):
+                    tree = compile(code, "?", "exec", 0x400)
+                    ast2 = pickle.loads(pickle.dumps(tree, protocol))
+                    self.assertEqual(to_tuple(ast2), to_tuple(tree))
+
+    def test_copy_with_parents(self):
+        # gh-120108
+        code = """
+        ('',)
+        while i < n:
+            if ch == '':
+                ch = format[i]
+                if ch == '':
+                    if freplace is None:
+                        '' % getattr(object)
+                elif ch == '':
+                    if zreplace is None:
+                        if hasattr:
+                            offset = object.utcoffset()
+                            if offset is not None:
+                                if offset.days < 0:
+                                    offset = -offset
+                                h = divmod(timedelta(hours=0))
+                                if u:
+                                    zreplace = '' % (sign,)
+                                elif s:
+                                    zreplace = '' % (sign,)
+                                else:
+                                    zreplace = '' % (sign,)
+                elif ch == '':
+                    if Zreplace is None:
+                        Zreplace = ''
+                        if hasattr(object):
+                            s = object.tzname()
+                            if s is not None:
+                                Zreplace = s.replace('')
+                    newformat.append(Zreplace)
+                else:
+                    push('')
+            else:
+                push(ch)
+
+        """
+        tree = ast.parse(textwrap.dedent(code))
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                child.parent = node
+        try:
+            with support.infinite_recursion(200):
+                tree2 = copy.deepcopy(tree)
+        finally:
+            # Singletons like ast.Load() are shared; make sure we don't
+            # leave them mutated after this test.
+            for node in ast.walk(tree):
+                if hasattr(node, "parent"):
+                    del node.parent
+
+        for node in ast.walk(tree2):
+            for child in ast.iter_child_nodes(node):
+                if hasattr(child, "parent") and not isinstance(child, (
+                    ast.expr_context, ast.boolop, ast.unaryop, ast.cmpop, ast.operator,
+                )):
+                    self.assertEqual(to_tuple(child.parent), to_tuple(node))
+
+    def test_replace_interface(self):
+        for klass in self.iter_ast_classes():
+            with self.subTest(klass=klass):
+                self.assertTrue(hasattr(klass, '__replace__'))
+
+            fields = set(klass._fields)
+            with self.subTest(klass=klass, fields=fields):
+                node = klass(**dict.fromkeys(fields))
+                # forbid positional arguments in replace()
+                self.assertRaises(TypeError, copy.replace, node, 1)
+                self.assertRaises(TypeError, node.__replace__, 1)
+
+    def test_replace_native(self):
+        for klass in self.iter_ast_classes():
+            fields = set(klass._fields)
+            attributes = set(klass._attributes)
+
+            with self.subTest(klass=klass, fields=fields, attributes=attributes):
+                # use of object() to ensure that '==' and 'is'
+                # behave similarly in ast.compare(node, repl)
+                old_fields = {field: object() for field in fields}
+                old_attrs = {attr: object() for attr in attributes}
+
+                # check shallow copy
+                node = klass(**old_fields)
+                repl = copy.replace(node)
+                self.assertTrue(ast.compare(node, repl, compare_attributes=True))
+                # check when passing using attributes (they may be optional!)
+                node = klass(**old_fields, **old_attrs)
+                repl = copy.replace(node)
+                self.assertTrue(ast.compare(node, repl, compare_attributes=True))
+
+                for field in fields:
+                    # check when we sometimes have attributes and sometimes not
+                    for init_attrs in [{}, old_attrs]:
+                        node = klass(**old_fields, **init_attrs)
+                        # only change a single field (do not change attributes)
+                        new_value = object()
+                        repl = copy.replace(node, **{field: new_value})
+                        for f in fields:
+                            old_value = old_fields[f]
+                            # assert that there is no side-effect
+                            self.assertIs(getattr(node, f), old_value)
+                            # check the changes
+                            if f != field:
+                                self.assertIs(getattr(repl, f), old_value)
+                            else:
+                                self.assertIs(getattr(repl, f), new_value)
+                        self.assertFalse(ast.compare(node, repl, compare_attributes=True))
+
+                for attribute in attributes:
+                    node = klass(**old_fields, **old_attrs)
+                    # only change a single attribute (do not change fields)
+                    new_attr = object()
+                    repl = copy.replace(node, **{attribute: new_attr})
+                    for a in attributes:
+                        old_attr = old_attrs[a]
+                        # assert that there is no side-effect
+                        self.assertIs(getattr(node, a), old_attr)
+                        # check the changes
+                        if a != attribute:
+                            self.assertIs(getattr(repl, a), old_attr)
+                        else:
+                            self.assertIs(getattr(repl, a), new_attr)
+                    self.assertFalse(ast.compare(node, repl, compare_attributes=True))
+
+    def test_replace_accept_known_class_fields(self):
+        nid, ctx = object(), object()
+
+        node = ast.Name(id=nid, ctx=ctx)
+        self.assertIs(node.id, nid)
+        self.assertIs(node.ctx, ctx)
+
+        new_nid = object()
+        repl = copy.replace(node, id=new_nid)
+        # assert that there is no side-effect
+        self.assertIs(node.id, nid)
+        self.assertIs(node.ctx, ctx)
+        # check the changes
+        self.assertIs(repl.id, new_nid)
+        self.assertIs(repl.ctx, node.ctx)  # no changes
+
+    def test_replace_accept_known_class_attributes(self):
+        node = ast.parse('x').body[0].value
+        self.assertEqual(node.id, 'x')
+        self.assertEqual(node.lineno, 1)
+
+        # constructor allows any type so replace() should do the same
+        lineno = object()
+        repl = copy.replace(node, lineno=lineno)
+        # assert that there is no side-effect
+        self.assertEqual(node.lineno, 1)
+        # check the changes
+        self.assertEqual(repl.id, node.id)
+        self.assertEqual(repl.ctx, node.ctx)
+        self.assertEqual(repl.lineno, lineno)
+
+        _, _, state = node.__reduce__()
+        self.assertEqual(state['id'], 'x')
+        self.assertEqual(state['ctx'], node.ctx)
+        self.assertEqual(state['lineno'], 1)
+
+        _, _, state = repl.__reduce__()
+        self.assertEqual(state['id'], 'x')
+        self.assertEqual(state['ctx'], node.ctx)
+        self.assertEqual(state['lineno'], lineno)
+
+    def test_replace_accept_known_custom_class_fields(self):
+        class MyNode(ast.AST):
+            _fields = ('name', 'data')
+            __annotations__ = {'name': str, 'data': object}
+            __match_args__ = ('name', 'data')
+
+        name, data = 'name', object()
+
+        node = MyNode(name, data)
+        self.assertIs(node.name, name)
+        self.assertIs(node.data, data)
+        # check shallow copy
+        repl = copy.replace(node)
+        # assert that there is no side-effect
+        self.assertIs(node.name, name)
+        self.assertIs(node.data, data)
+        # check the shallow copy
+        self.assertIs(repl.name, name)
+        self.assertIs(repl.data, data)
+
+        node = MyNode(name, data)
+        repl_data = object()
+        # replace custom but known field
+        repl = copy.replace(node, data=repl_data)
+        # assert that there is no side-effect
+        self.assertIs(node.name, name)
+        self.assertIs(node.data, data)
+        # check the changes
+        self.assertIs(repl.name, node.name)
+        self.assertIs(repl.data, repl_data)
+
+    def test_replace_accept_known_custom_class_attributes(self):
+        class MyNode(ast.AST):
+            x = 0
+            y = 1
+            _attributes = ('x', 'y')
+
+        node = MyNode()
+        self.assertEqual(node.x, 0)
+        self.assertEqual(node.y, 1)
+
+        y = object()
+        repl = copy.replace(node, y=y)
+        # assert that there is no side-effect
+        self.assertEqual(node.x, 0)
+        self.assertEqual(node.y, 1)
+        # check the changes
+        self.assertEqual(repl.x, 0)
+        self.assertEqual(repl.y, y)
+
+    def test_replace_ignore_known_custom_instance_fields(self):
+        node = ast.parse('x').body[0].value
+        node.extra = extra = object()  # add instance 'extra' field
+        context = node.ctx
+
+        # assert initial values
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+        # shallow copy, but drops extra fields
+        repl = copy.replace(node)
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+        # verify that the 'extra' field is not kept
+        self.assertIs(repl.id, 'x')
+        self.assertIs(repl.ctx, context)
+        self.assertRaises(AttributeError, getattr, repl, 'extra')
+
+        # change known native field
+        repl = copy.replace(node, id='y')
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+        # verify that the 'extra' field is not kept
+        self.assertIs(repl.id, 'y')
+        self.assertIs(repl.ctx, context)
+        self.assertRaises(AttributeError, getattr, repl, 'extra')
+
+    def test_replace_reject_missing_field(self):
+        # case: warn if deleted field is not replaced
+        node = ast.parse('x').body[0].value
+        context = node.ctx
+        del node.id
+
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+        msg = "Name.__replace__ missing 1 keyword argument: 'id'."
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            copy.replace(node)
+        # assert that there is no side-effect
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+
+        # case: do not raise if deleted field is replaced
+        node = ast.parse('x').body[0].value
+        context = node.ctx
+        del node.id
+
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+        repl = copy.replace(node, id='y')
+        # assert that there is no side-effect
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+        self.assertIs(repl.id, 'y')
+        self.assertIs(repl.ctx, context)
+
+    def test_replace_reject_known_custom_instance_fields_commits(self):
+        node = ast.parse('x').body[0].value
+        node.extra = extra = object()  # add instance 'extra' field
+        context = node.ctx
+
+        # explicit rejection of known instance fields
+        self.assertTrue(hasattr(node, 'extra'))
+        msg = "Name.__replace__ got an unexpected keyword argument 'extra'."
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            copy.replace(node, extra=1)
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+
+    def test_replace_reject_unknown_instance_fields(self):
+        node = ast.parse('x').body[0].value
+        context = node.ctx
+
+        # explicit rejection of unknown extra fields
+        self.assertRaises(AttributeError, getattr, node, 'unknown')
+        msg = "Name.__replace__ got an unexpected keyword argument 'unknown'."
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            copy.replace(node, unknown=1)
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertRaises(AttributeError, getattr, node, 'unknown')
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1473,6 +1821,12 @@ Module(
         node = ast.parse('async def foo():\n  """spam\n  ham"""')
         self.assertEqual(ast.get_docstring(node.body[0]), 'spam\nham')
 
+        node = ast.parse('async def foo():\n  """spam\n  ham"""')
+        self.assertEqual(ast.get_docstring(node.body[0], clean=False), 'spam\n  ham')
+
+        node = ast.parse('x')
+        self.assertRaises(TypeError, ast.get_docstring, node.body[0])
+
     def test_get_docstring_none(self):
         self.assertIsNone(ast.get_docstring(ast.parse('')))
         node = ast.parse('x = "not docstring"')
@@ -1495,6 +1849,9 @@ Module(
         node = ast.parse('async def foo():\n  pass')
         self.assertIsNone(ast.get_docstring(node.body[0]))
         node = ast.parse('async def foo():\n  x = "not docstring"')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+
+        node = ast.parse('async def foo():\n  42')
         self.assertIsNone(ast.get_docstring(node.body[0]))
 
     def test_multi_line_docstring_col_offset_and_lineno_issue16806(self):
@@ -2894,6 +3251,18 @@ class ASTConstructorTests(unittest.TestCase):
         obj = FieldsAndTypes(a=1)
         self.assertEqual(obj.a, 1)
 
+    def test_custom_attributes(self):
+        class MyAttrs(ast.AST):
+            _attributes = ("a", "b")
+
+        obj = MyAttrs(a=1, b=2)
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, 2)
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"MyAttrs.__init__ got an unexpected keyword argument 'c'."):
+            obj = MyAttrs(c=3)
+
     def test_fields_and_types_no_default(self):
         class FieldsAndTypesNoDefault(ast.AST):
             _fields = ('a',)
@@ -3269,7 +3638,7 @@ eval_results = [
 ('Expression', ('Subscript', (1, 0, 1, 10), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 9), ('Constant', (1, 4, 1, 5), 1, None), ('Constant', (1, 6, 1, 7), 1, None), ('Constant', (1, 8, 1, 9), 1, None)), ('Load',))),
 ('Expression', ('IfExp', (1, 0, 1, 21), ('Name', (1, 9, 1, 10), 'x', ('Load',)), ('Call', (1, 0, 1, 5), ('Name', (1, 0, 1, 3), 'foo', ('Load',)), [], []), ('Call', (1, 16, 1, 21), ('Name', (1, 16, 1, 19), 'bar', ('Load',)), [], []))),
 ('Expression', ('JoinedStr', (1, 0, 1, 6), [('FormattedValue', (1, 2, 1, 5), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, None)])),
-('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('JoinedStr', (1, 4, 1, 8), [('Constant', (1, 5, 1, 8), '.2f', None)]))])),
+('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('Constant', (1, 5, 1, 8), '.2f', None))])),
 ('Expression', ('JoinedStr', (1, 0, 1, 8), [('FormattedValue', (1, 2, 1, 7), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 114, None)])),
 ('Expression', ('JoinedStr', (1, 0, 1, 11), [('Constant', (1, 2, 1, 6), 'foo(', None), ('FormattedValue', (1, 6, 1, 9), ('Name', (1, 7, 1, 8), 'a', ('Load',)), -1, None), ('Constant', (1, 9, 1, 10), ')', None)])),
 ]

@@ -293,7 +293,7 @@ statements, cannot be an unpacking) and the expression list, performs the binary
 operation specific to the type of assignment on the two operands, and assigns
 the result to the original target.  The target is only evaluated once.
 
-An augmented assignment expression like ``x += 1`` can be rewritten as ``x = x +
+An augmented assignment statement like ``x += 1`` can be rewritten as ``x = x +
 1`` to achieve a similar, but not exactly equal effect. In the augmented
 version, ``x`` is only evaluated once. Also, when possible, the actual operation
 is performed *in-place*, meaning that rather than creating a new object and

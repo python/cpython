@@ -860,6 +860,20 @@ object::
     3
     >>> p.assert_called_once_with()
 
+.. caution::
+
+    If an :exc:`AttributeError` is raised by :class:`PropertyMock`,
+    it will be interpreted as a missing descriptor and
+    :meth:`~object.__getattr__` will be called on the parent mock::
+
+        >>> m = MagicMock()
+        >>> no_attribute = PropertyMock(side_effect=AttributeError)
+        >>> type(m).my_property = no_attribute
+        >>> m.my_property
+        <MagicMock name='mock.my_property' id='140165240345424'>
+
+    See :meth:`~object.__getattr__` for details.
+
 
 .. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
@@ -1624,7 +1638,8 @@ patch.dict
 .. function:: patch.dict(in_dict, values=(), clear=False, **kwargs)
 
     Patch a dictionary, or dictionary like object, and restore the dictionary
-    to its original state after the test.
+    to its original state after the test, where the restored dictionary is a
+    copy of the dictionary as it was before the test.
 
     *in_dict* can be a dictionary or a mapping like container. If it is a
     mapping then it must at least support getting, setting and deleting items
