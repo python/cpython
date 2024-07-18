@@ -1276,13 +1276,13 @@ dummy_func(
             }
         }
 
-        tier1 inst(CLEANUP_THROW, (sub_iter_st, last_sent_val_st, exc_value_st -- none, value[1])) {
+        tier1 inst(CLEANUP_THROW, (sub_iter_st, last_sent_val_st, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
 
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
-                *value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
+                value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
                 none = PyStackRef_None;
             }
@@ -1384,14 +1384,14 @@ dummy_func(
 
         macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE;
 
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- val1[1], val0[1])) {
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- val1, val0)) {
             assert(oparg == 2);
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyTuple_CheckExact(seq_o));
             DEOPT_IF(PyTuple_GET_SIZE(seq_o) != 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            *val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
-            *val1 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 1));
+            val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 1));
             DECREF_INPUTS();
         }
 
@@ -2216,7 +2216,7 @@ dummy_func(
             _LOAD_ATTR_WITH_HINT +
             unused/5;
 
-        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr[1], null if (oparg & 1))) {
+        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             char *addr = (char *)owner_o + index;
@@ -2224,7 +2224,7 @@ dummy_func(
             DEOPT_IF(attr_o == NULL);
             STAT_INC(LOAD_ATTR, hit);
             null = PyStackRef_NULL;
-            *attr = PyStackRef_FromPyObjectNew(attr_o);
+            attr = PyStackRef_FromPyObjectNew(attr_o);
             DECREF_INPUTS();
         }
 
@@ -2243,10 +2243,10 @@ dummy_func(
 
         }
 
-        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr[1], null if (oparg & 1))) {
+        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
-            *attr = PyStackRef_FromPyObjectNew(descr);
+            attr = PyStackRef_FromPyObjectNew(descr);
             null = PyStackRef_NULL;
             DECREF_INPUTS();
         }

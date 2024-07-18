@@ -705,16 +705,12 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
-            _Py_UopsSymbol **val1;
-            _Py_UopsSymbol **val0;
-            val1 = &stack_pointer[-1];
-            val0 = &stack_pointer[0];
-            for (int _i = 1; --_i >= 0;) {
-                val1[_i] = sym_new_not_null(ctx);
-            }
-            for (int _i = 1; --_i >= 0;) {
-                val0[_i] = sym_new_not_null(ctx);
-            }
+            _Py_UopsSymbol *val1;
+            _Py_UopsSymbol *val0;
+            val1 = sym_new_not_null(ctx);
+            val0 = sym_new_not_null(ctx);
+            stack_pointer[-1] = val1;
+            stack_pointer[0] = val0;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;

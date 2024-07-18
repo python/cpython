@@ -177,6 +177,35 @@ def replace_check_eval_breaker(
     if not uop.properties.ends_with_eval_breaker:
         out.emit_at("CHECK_EVAL_BREAKER();", tkn)
 
+def replace_pystackref_frompyobjectnew(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    stack: Stack,
+    inst: Instruction | None,
+) -> None:
+    out.emit(tkn)
+    emit_to(out, tkn_iter, "SEMI")
+    out.emit(";\n")
+    target = uop.body.index(tkn)
+    assert uop.body[target-1].kind == "EQUALS", (f"{uop.name} Result of a specials that is flushed"
+                                                        " must be written to a stack variable directly")
+    # Scan to look for the first thing it's assigned to
+    found_valid_assignment = ""
+    for assgn_target in reversed(uop.body[:target-1]):
+        out_names = [out.name for out in uop.stack.outputs]
+        if assgn_target.kind == "IDENTIFIER":
+            if assgn_target.text in out_names:
+                found_valid_assignment = assgn_target.text
+                break
+
+    if found_valid_assignment:
+        out.start_line()
+        out.emit("#ifdef Py_GIL_DISABLED /* flush specials */\n")
+        stack.write_variable_to_stack(out, found_valid_assignment)
+        out.emit("#endif /* flush specials */\n")
+
 
 REPLACEMENT_FUNCTIONS = {
     "EXIT_IF": replace_deopt,
@@ -186,6 +215,7 @@ REPLACEMENT_FUNCTIONS = {
     "DECREF_INPUTS": replace_decrefs,
     "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
     "SYNC_SP": replace_sync_sp,
+    "PyStackRef_FromPyObjectNew": replace_pystackref_frompyobjectnew,
 }
 
 ReplacementFunctionType = Callable[
@@ -207,23 +237,11 @@ def emit_tokens(
         return
     tkn_iter = iter(tkns)
     out.start_line()
-    var_to_flush = None
-    for idx, tkn in enumerate(tkn_iter):
+    for tkn in tkn_iter:
         if tkn.kind == "IDENTIFIER" and tkn.text in replacement_functions:
             replacement_functions[tkn.text](out, tkn, tkn_iter, uop, stack, inst)
         else:
             out.emit(tkn)
-        if uop.token_requires_flush[idx]:
-            assert tkns[idx-3].kind == "IDENTIFIER"
-            var_to_flush = tkns[idx-3].text
-        if var_to_flush and tkn.kind == "SEMI":
-            txt = stack.write_variable_to_stack(out, var_to_flush)
-            if txt:
-                out.start_line()
-                out.emit("#ifdef Py_GIL_DISABLED /* flush specials */\n")
-                out.emit(txt)
-                out.emit("#endif /* Py_GIL_DISABLED */\n")
-            var_to_flush = None
 
 
 def cflags(p: Properties) -> str:

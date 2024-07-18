@@ -213,30 +213,23 @@ class Stack:
         self.peek_offset.clear()
         out.start_line()
 
-    def write_variable_to_stack(self, out: CWriter, var: str, cast_type: str = "uintptr_t", extract_bits: bool = False) -> str:
+    def write_variable_to_stack(self, out: CWriter, var_name: str, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
         out.start_line()
-        var = [variable for variable in self.variables if variable.name == var]
-        assert len(var) == 1
+        var = [variable for variable in self.variables if variable.name == var_name]
+        assert len(var) == 1, f"{var_name} not found"
         to_write_var = var[0]
-        txt = ""
         for var in self.variables:
             if not var.peek:
                 cast = f"({cast_type})" if var.type else ""
                 bits = ".bits" if cast and not extract_bits else ""
                 if var.name not in UNUSED and not var.is_array():
-                    if var.condition:
-                        if var.condition == "0":
-                            continue
-                        elif var.condition != "1":
-                            out.emit(f"if ({var.condition}) ")
                     if var == to_write_var:
-                        txt = (
+                        out.emit(
                             f"stack_pointer[{self.base_offset.to_c()}]{bits} = {cast}{var.name};\n"
                         )
             self.base_offset.push(var)
         for var in self.variables:
             self.base_offset.pop(var)
-        return txt
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"

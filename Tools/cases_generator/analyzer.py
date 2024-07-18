@@ -156,7 +156,6 @@ class Uop:
     stack: StackEffect
     caches: list[CacheEntry]
     body: list[lexer.Token]
-    token_requires_flush: list[bool]  # bitmap to body
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
@@ -344,25 +343,6 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
                 "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
             )
     return [CacheEntry(i.name, int(i.size)) for i in caches]
-
-
-def analyze_specials_requiring_flush(name: str, op: list[lexer.Token], outputs: list[StackItem]) -> list[bool]:
-    res = []
-    for idx, token in enumerate(op):
-        if token.kind == "IDENTIFIER" and token.text == "PyStackRef_FromPyObjectNew":
-            should_flush = True
-            assert op[idx-1].kind == "EQUALS", (f"{name} Result of a specials that is flushed"
-                                                " must be written to a stack variable directly")
-            # Scan to look for the first thing it's assigned to
-            for assgn_target in reversed(op[:idx-1]):
-                out_names = [out.name for out in outputs]
-                if assgn_target.kind == "IDENTIFIER":
-                    should_flush = assgn_target.text in out_names
-                    break
-            res.append(should_flush)
-        else:
-            res.append(False)
-    return res
 
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
@@ -646,7 +626,6 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
         stack=stack,
         caches=analyze_caches(inputs),
         body=op.block.tokens,
-        token_requires_flush=analyze_specials_requiring_flush(name, op.block.tokens, stack.outputs),
         properties=compute_properties(op),
     )
     if effect_depends_on_oparg_1(op) and "split" in op.annotations:
@@ -665,7 +644,6 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
                 stack=stack,
                 caches=analyze_caches(inputs),
                 body=op.block.tokens,
-                token_requires_flush=analyze_specials_requiring_flush(name, op.block.tokens, stack.outputs),
                 properties=properties,
             )
             rep.replicates = result
@@ -689,7 +667,6 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
             stack=stack,
             caches=analyze_caches(inputs),
             body=op.block.tokens,
-            token_requires_flush=analyze_specials_requiring_flush(name, op.block.tokens, stack.outputs),
             properties=properties,
         )
         rep.replicates = result
