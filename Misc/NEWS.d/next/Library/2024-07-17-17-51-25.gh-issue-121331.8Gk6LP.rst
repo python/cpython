@@ -1,1 +1,1 @@
-:func:`inspect.getsource` now works for generator expression exp code objects
+:func:`inspect.getsource` now works for generator expression code objects
