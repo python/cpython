@@ -155,7 +155,7 @@ class GeneralTest(unittest.TestCase):
 
         for action in (
             lambda o: atexit.unregister(self),
-            lambda o: atexit.unregister(o), 
+            lambda o: atexit.unregister(o),
             lambda o: atexit._clear()
         ):
             for eq_ret_val in NotImplemented, True:
