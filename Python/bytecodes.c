@@ -3476,7 +3476,6 @@ dummy_func(
             assert(Py_TYPE(callable_o) == &PyMethod_Type);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
             method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
-            stack_pointer[-2 - oparg] = method;
             assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
             PyStackRef_CLOSE(callable);
         }
