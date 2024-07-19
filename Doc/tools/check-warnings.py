@@ -2,6 +2,7 @@
 """
 Check the output of running Sphinx in nit-picky mode (missing references).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -206,7 +207,9 @@ def annotate_diff(
 
 
 def fail_if_regression(
-    warnings: list[str], files_with_expected_nits: set[str], files_with_nits: set[str]
+    warnings: list[str],
+    files_with_expected_nits: set[str],
+    files_with_nits: set[str],
 ) -> int:
     """
     Ensure some files always pass Sphinx nit-picky mode (no missing references).
@@ -252,17 +255,11 @@ def fail_if_new_news_nit(warnings: list[str], threshold: int) -> int:
     """
     Ensure no warnings are found in the NEWS file before a given line number.
     """
-    news_nits = (
-        warning
-        for warning in warnings
-        if "/build/NEWS:" in warning
-    )
+    news_nits = (warning for warning in warnings if "/build/NEWS:" in warning)
 
     # Nits found before the threshold line
     new_news_nits = [
-        nit
-        for nit in news_nits
-        if int(nit.split(":")[1]) <= threshold
+        nit for nit in news_nits if int(nit.split(":")[1]) <= threshold
     ]
 
     if new_news_nits:
@@ -311,7 +308,8 @@ def main(argv: list[str] | None = None) -> int:
     exit_code = 0
 
     wrong_directory_msg = "Must run this script from the repo root"
-    assert Path("Doc").exists() and Path("Doc").is_dir(), wrong_directory_msg
+    if not Path("Doc").exists() or not Path("Doc").is_dir():
+        raise RuntimeError(wrong_directory_msg)
 
     with Path("Doc/sphinx-warnings.txt").open(encoding="UTF-8") as f:
         warnings = f.read().splitlines()
@@ -339,7 +337,9 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.fail_if_improved:
-        exit_code += fail_if_improved(files_with_expected_nits, files_with_nits)
+        exit_code += fail_if_improved(
+            files_with_expected_nits, files_with_nits
+        )
 
     if args.fail_if_new_news_nit:
         exit_code += fail_if_new_news_nit(warnings, args.fail_if_new_news_nit)
