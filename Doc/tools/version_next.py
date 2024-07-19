@@ -27,13 +27,11 @@ DIRECTIVE_RE = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
-basedir = (Path(__file__)
-           .parent  # cpython/Tools/doc
-           .parent  # cpython/Tools
-           .parent  # cpython
-           .resolve()
-           )
-docdir = basedir / 'Doc'
+docdir = (Path(__file__)
+          .parent  # cpython/Doc/tools
+          .parent  # cpython/Doc
+          .resolve()
+          )
 
 parser = argparse.ArgumentParser(
     description=__doc__,
