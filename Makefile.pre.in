@@ -1358,15 +1358,27 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # have the ability to compile vectorized versions
 LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/_hacl/%.o: $(srcdir)/Modules/_hacl/%.c $(LIBHACL_SHA2_HEADERS) $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $<
+Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
 
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
 
-Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128
-Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256
+Modules/_hacl/Hacl_Hash_Blake2s.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c
+
+Modules/_hacl/Hacl_Hash_Blake2b.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b.c
+
+Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c
+
+Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd256.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd256.c
+
+Modules/_hacl/Lib_Memzero0.o: $(srcdir)/Modules/_hacl/Lib_Memzero0.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Lib_Memzero0.c
 
 $(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
 	-rm -f $@
