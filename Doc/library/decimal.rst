@@ -897,6 +897,48 @@ Decimal objects
       :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the
       rounding method in either the supplied *context* or the current context.
 
+   Decimal numbers can be rounded using the :func:`.round` function:
+
+   .. describe:: round(number)
+   .. describe:: round(number, ndigits)
+
+      If *ndigits* is not given or ``None``,
+      returns the nearest :class:`int` to *number*,
+      rounding ties to even, and ignoring the rounding mode of the
+      :class:`Decimal` context.  Raises :exc:`OverflowError` if *number* is an
+      infinity or :exc:`ValueError` if it is a (quiet or signaling) NaN.
+
+      If *ndigits* is an :class:`int`, the context's rounding mode is respected
+      and a :class:`Decimal` representing *number* rounded to the nearest
+      multiple of ``Decimal('1E-ndigits')`` is returned; in this case,
+      ``round(number, ndigits)`` is equivalent to
+      ``self.quantize(Decimal('1E-ndigits'))``.  Returns ``Decimal('NaN')`` if
+      *number* is a quiet NaN.  Raises :class:`InvalidOperation` if *number*
+      is an infinity, a signaling NaN, or if the length of the coefficient after
+      the quantize operation would be greater than the current context's
+      precision.  In other words, for the non-corner cases:
+
+      * if *ndigits* is positive, return *number* rounded to *ndigits* decimal
+        places;
+      * if *ndigits* is zero, return *number* rounded to the nearest integer;
+      * if *ndigits* is negative, return *number* rounded to the nearest
+        multiple of ``10**abs(ndigits)``.
+
+      For example::
+
+          >>> from decimal import Decimal, getcontext, ROUND_DOWN
+          >>> getcontext().rounding = ROUND_DOWN
+          >>> round(Decimal('3.75'))     # context rounding ignored
+          4
+          >>> round(Decimal('3.5'))      # round-ties-to-even
+          4
+          >>> round(Decimal('3.75'), 0)  # uses the context rounding
+          Decimal('3')
+          >>> round(Decimal('3.75'), 1)
+          Decimal('3.7')
+          >>> round(Decimal('3.75'), -1)
+          Decimal('0E+1')
+
 
 .. _logical_operands_label:
 

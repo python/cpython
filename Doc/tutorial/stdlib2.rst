@@ -293,7 +293,7 @@ Many data structure needs can be met with the built-in list type. However,
 sometimes there is a need for alternative implementations with different
 performance trade-offs.
 
-The :mod:`array` module provides an :class:`~array.array()` object that is like
+The :mod:`array` module provides an :class:`~array.array` object that is like
 a list that stores only homogeneous data and stores it more compactly.  The
 following example shows an array of numbers stored as two byte unsigned binary
 numbers (typecode ``"H"``) rather than the usual 16 bytes per entry for regular
@@ -306,7 +306,7 @@ lists of Python int objects::
    >>> a[1:3]
    array('H', [10, 700])
 
-The :mod:`collections` module provides a :class:`~collections.deque()` object
+The :mod:`collections` module provides a :class:`~collections.deque` object
 that is like a list with faster appends and pops from the left side but slower
 lookups in the middle. These objects are well suited for implementing queues
 and breadth first tree searches::

@@ -450,6 +450,10 @@ Constants
       same way that ``SO_BINDTODEVICE`` is used, but with the index of a
       network interface instead of its name.
 
+   .. versionchanged:: 3.14
+      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
+      on Linux.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*

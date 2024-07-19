@@ -483,11 +483,18 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         do_decref = 1;
     }
     if (_PyLong_IsCompact(v)) {
-#if SIZEOF_LONG < SIZEOF_VOID_P
-        intptr_t tmp = _PyLong_CompactValue(v);
-        res = (long)tmp;
-        if (res != tmp) {
-            *overflow = tmp < 0 ? -1 : 1;
+#if SIZEOF_LONG < SIZEOF_SIZE_T
+        Py_ssize_t tmp = _PyLong_CompactValue(v);
+        if (tmp < LONG_MIN) {
+            *overflow = -1;
+            res = -1;
+        }
+        else if (tmp > LONG_MAX) {
+            *overflow = 1;
+            res = -1;
+        }
+        else {
+            res = (long)tmp;
         }
 #else
         res = _PyLong_CompactValue(v);
@@ -632,14 +639,15 @@ PyLong_AsUnsignedLong(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
-#if SIZEOF_LONG < SIZEOF_VOID_P
-        intptr_t tmp = _PyLong_CompactValue(v);
+#if SIZEOF_LONG < SIZEOF_SIZE_T
+        size_t tmp = (size_t)_PyLong_CompactValue(v);
         unsigned long res = (unsigned long)tmp;
         if (res != tmp) {
             goto overflow;
         }
+        return res;
 #else
-        return _PyLong_CompactValue(v);
+        return (unsigned long)(size_t)_PyLong_CompactValue(v);
 #endif
     }
     if (_PyLong_IsNegative(v)) {
@@ -685,7 +693,7 @@ PyLong_AsSize_t(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
-        return _PyLong_CompactValue(v);
+        return (size_t)_PyLong_CompactValue(v);
     }
     if (_PyLong_IsNegative(v)) {
         PyErr_SetString(PyExc_OverflowError,
@@ -722,7 +730,11 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
     }
     v = (PyLongObject *)vv;
     if (_PyLong_IsCompact(v)) {
-        return (unsigned long)_PyLong_CompactValue(v);
+#if SIZEOF_LONG < SIZEOF_SIZE_T
+        return (unsigned long)(size_t)_PyLong_CompactValue(v);
+#else
+        return (unsigned long)(long)_PyLong_CompactValue(v);
+#endif
     }
     i = _PyLong_DigitCount(v);
     int sign = _PyLong_NonCompactSign(v);
@@ -768,6 +780,18 @@ _PyLong_Sign(PyObject *vv)
         return _PyLong_CompactSign(v);
     }
     return _PyLong_NonCompactSign(v);
+}
+
+int
+PyLong_GetSign(PyObject *vv, int *sign)
+{
+    if (!PyLong_Check(vv)) {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
+        return -1;
+    }
+
+    *sign = _PyLong_Sign(vv);
+    return 0;
 }
 
 static int
@@ -1116,12 +1140,16 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
     if (PyLong_Check(vv)) {
         v = (PyLongObject *)vv;
     }
-    else {
+    else if (flags != -1 && (flags & Py_ASNATIVEBYTES_ALLOW_INDEX)) {
         v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL) {
             return -1;
         }
         do_decref = 1;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
+        return -1;
     }
 
     if ((flags != -1 && (flags & Py_ASNATIVEBYTES_REJECT_NEGATIVE))
@@ -1524,7 +1552,18 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     v = (PyLongObject*)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
         res = 0;
-        bytes = _PyLong_CompactValue(v);
+#if SIZEOF_LONG_LONG < SIZEOF_SIZE_T
+        size_t tmp = (size_t)_PyLong_CompactValue(v);
+        bytes = (unsigned long long)tmp;
+        if (bytes != tmp) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large to convert "
+                            "to C unsigned long long");
+            res = -1;
+        }
+#else
+        bytes = (unsigned long long)(size_t)_PyLong_CompactValue(v);
+#endif
     }
     else {
         res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
@@ -1555,7 +1594,11 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
     }
     v = (PyLongObject *)vv;
     if (_PyLong_IsCompact(v)) {
-        return (unsigned long long)(signed long long)_PyLong_CompactValue(v);
+#if SIZEOF_LONG_LONG < SIZEOF_SIZE_T
+        return (unsigned long long)(size_t)_PyLong_CompactValue(v);
+#else
+        return (unsigned long long)(long long)_PyLong_CompactValue(v);
+#endif
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
@@ -1627,7 +1670,22 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         do_decref = 1;
     }
     if (_PyLong_IsCompact(v)) {
+#if SIZEOF_LONG_LONG < SIZEOF_SIZE_T
+        Py_ssize_t tmp = _PyLong_CompactValue(v);
+        if (tmp < LLONG_MIN) {
+            *overflow = -1;
+            res = -1;
+        }
+        else if (tmp > LLONG_MAX) {
+            *overflow = 1;
+            res = -1;
+        }
+        else {
+            res = (long long)tmp;
+        }
+#else
         res = _PyLong_CompactValue(v);
+#endif
     }
     else {
         i = _PyLong_DigitCount(v);
@@ -3109,8 +3167,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
     PyLongObject *z;
 
     if (size_b == 0) {
-        PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer division or modulo by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -3173,7 +3230,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
 
     if (size_b == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer modulo by zero");
+                        "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -3564,7 +3621,7 @@ long_hash(PyLongObject *v)
     int sign;
 
     if (_PyLong_IsCompact(v)) {
-        x = _PyLong_CompactValue(v);
+        x = (Py_uhash_t)_PyLong_CompactValue(v);
         if (x == (Py_uhash_t)-1) {
             x = (Py_uhash_t)-2;
         }
@@ -6034,7 +6091,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 /*[clinic input]
 int.__round__
 
-    ndigits as o_ndigits: object = NULL
+    ndigits as o_ndigits: object = None
     /
 
 Rounding an Integral returns itself.
@@ -6044,7 +6101,7 @@ Rounding with an ndigits argument also returns an integer.
 
 static PyObject *
 int___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=954fda6b18875998 input=1614cf23ec9e18c3]*/
+/*[clinic end generated code: output=954fda6b18875998 input=30c2aec788263144]*/
 {
     PyObject *temp, *result, *ndigits;
 
@@ -6062,7 +6119,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
      *
      *   m - divmod_near(m, 10**n)[1].
      */
-    if (o_ndigits == NULL)
+    if (o_ndigits == Py_None)
         return long_long(self);
 
     ndigits = _PyNumber_Index(o_ndigits);
@@ -6661,12 +6718,12 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
 
 int
 PyUnstable_Long_IsCompact(const PyLongObject* op) {
-    return _PyLong_IsCompact(op);
+    return _PyLong_IsCompact((PyLongObject*)op);
 }
 
 #undef PyUnstable_Long_CompactValue
 
 Py_ssize_t
 PyUnstable_Long_CompactValue(const PyLongObject* op) {
-    return _PyLong_CompactValue(op);
+    return _PyLong_CompactValue((PyLongObject*)op);
 }

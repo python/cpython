@@ -48,6 +48,8 @@ API_ISOLATED = 3
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
+ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
+
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -403,6 +405,15 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         code = "print('\\N{digit nine}')"
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
+
+    def test_datetime_reset_strptime(self):
+        code = (
+            "import datetime;"
+            "d = datetime.datetime.strptime('2000-01-01', '%Y-%m-%d');"
+            "print(d.strftime('%Y%m%d'))"
+        )
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
@@ -1276,11 +1287,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ver = sys.version_info
             return [
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}{ver.minor}.zip'),
+                             f'python{ver.major}{ver.minor}{ABI_THREAD}.zip'),
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}'),
                 os.path.join(exec_prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}', 'lib-dynload'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}', 'lib-dynload'),
             ]
 
     @contextlib.contextmanager
@@ -1334,7 +1345,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1375,7 +1386,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1506,7 +1517,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 lib_dynload = os.path.join(pyvenv_home,
                                            sys.platlibdir,
-                                           f'python{ver.major}.{ver.minor}',
+                                           f'python{ver.major}.{ver.minor}{ABI_THREAD}',
                                            'lib-dynload')
                 os.makedirs(lib_dynload)
             else:

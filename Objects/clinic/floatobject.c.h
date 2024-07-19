@@ -227,6 +227,15 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(float_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert real number to a floating-point number.");
+
+#define FLOAT_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)float_from_number, METH_O|METH_CLASS, float_from_number__doc__},
+
 PyDoc_STRVAR(float___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
 "--\n"
@@ -318,4 +327,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c79743c8551c30d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9c8a1b6759ca073 input=a9049054013a1b77]*/

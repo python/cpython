@@ -314,7 +314,9 @@ Functions and classes provided:
 
    If the code within the :keyword:`!with` block raises a
    :exc:`BaseExceptionGroup`, suppressed exceptions are removed from the
-   group.  If any exceptions in the group are not suppressed, a group containing them is re-raised.
+   group.  Any exceptions of the group which are not suppressed are re-raised in
+   a new group which is created using the original group's :meth:`~BaseExceptionGroup.derive`
+   method.
 
    .. versionadded:: 3.4
 
@@ -796,7 +798,7 @@ executing that callback::
        if result:
            stack.pop_all()
 
-This allows the intended cleanup up behaviour to be made explicit up front,
+This allows the intended cleanup behaviour to be made explicit up front,
 rather than requiring a separate flag variable.
 
 If a particular application uses this pattern a lot, it can be simplified

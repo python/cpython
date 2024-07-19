@@ -135,6 +135,7 @@
     <ClInclude Include="..\Include\codecs.h" />
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
+    <ClInclude Include="..\Include\critical_section.h" />
     <ClInclude Include="..\Include\cpython\abstract.h" />
     <ClInclude Include="..\Include\cpython\bytearrayobject.h" />
     <ClInclude Include="..\Include\cpython\bytesobject.h" />
@@ -145,6 +146,7 @@
     <ClInclude Include="..\Include\cpython\compile.h" />
     <ClInclude Include="..\Include\cpython\complexobject.h" />
     <ClInclude Include="..\Include\cpython\context.h" />
+    <ClInclude Include="..\Include\cpython\critical_section.h" />
     <ClInclude Include="..\Include\cpython\descrobject.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
@@ -156,14 +158,15 @@
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
+    <ClInclude Include="..\Include\cpython\lock.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
     <ClInclude Include="..\Include\cpython\memoryobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
+    <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
-    <ClInclude Include="..\Include\cpython\optimizer.h" />
     <ClInclude Include="..\Include\cpython\parser_interface.h" />
     <ClInclude Include="..\Include\cpython\picklebufobject.h" />
     <ClInclude Include="..\Include\cpython\pyarena.h" />
@@ -262,6 +265,7 @@
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_object_alloc.h" />
+    <ClInclude Include="..\Include\internal\pycore_object_deferred.h" />
     <ClInclude Include="..\Include\internal\pycore_object_state.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
@@ -310,6 +314,7 @@
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
+    <ClInclude Include="..\Include\lock.h" />
     <ClInclude Include="..\Include\longobject.h" />
     <ClInclude Include="..\Include\marshal.h" />
     <ClInclude Include="..\Include\memoryobject.h" />
@@ -349,6 +354,7 @@
     <ClInclude Include="..\Include\pythread.h" />
     <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
+    <ClInclude Include="..\Include\refcount.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
     <ClInclude Include="..\Include\structmember.h" />

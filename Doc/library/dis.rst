@@ -336,9 +336,10 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_caches* and *adaptive* parameters.
 
    .. versionchanged:: 3.13
-      The *show_caches* parameter is deprecated and has no effect. The *cache_info*
-      field of each instruction is populated regardless of its value.
-
+      The *show_caches* parameter is deprecated and has no effect. The iterator
+      generates the :class:`Instruction` instances with the *cache_info*
+      field populated (regardless of the value of *show_caches*) and it no longer
+      generates separate items for the cache entries.
 
 .. function:: findlinestarts(code)
 
@@ -779,16 +780,6 @@ not have to be) the original ``STACK[-2]``.
    .. versionadded:: 3.12
 
 
-.. opcode:: BEFORE_ASYNC_WITH
-
-   Resolves ``__aenter__`` and ``__aexit__`` from ``STACK[-1]``.
-   Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack::
-
-      STACK.extend((__aexit__, __aenter__())
-
-   .. versionadded:: 3.5
-
-
 
 **Miscellaneous opcodes**
 
@@ -942,18 +933,6 @@ iterations of the loop.
 
    Pushes :func:`!builtins.__build_class__` onto the stack.  It is later called
    to construct a class.
-
-
-.. opcode:: BEFORE_WITH
-
-   This opcode performs several operations before a with block starts.  First,
-   it loads :meth:`~object.__exit__` from the context manager and pushes it onto
-   the stack for later use by :opcode:`WITH_EXCEPT_START`.  Then,
-   :meth:`~object.__enter__` is called. Finally, the result of calling the
-   ``__enter__()`` method is pushed onto the stack.
-
-   .. versionadded:: 3.11
-
 
 .. opcode:: GET_LEN
 
@@ -1666,7 +1645,7 @@ iterations of the loop.
 
    A no-op. Performs internal tracing, debugging and optimization checks.
 
-   The ``context`` oparand consists of two parts. The lowest two bits
+   The ``context`` operand consists of two parts. The lowest two bits
    indicate where the ``RESUME`` occurs:
 
    * ``0`` The start of a function, which is neither a generator, coroutine
@@ -1809,6 +1788,17 @@ iterations of the loop.
    +----------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
+
+
+.. opcode:: LOAD_SPECIAL
+
+   Performs special method lookup on ``STACK[-1]``.
+   If ``type(STACK[-1]).__xxx__`` is a method, leave
+   ``type(STACK[-1]).__xxx__; STACK[-1]`` on the stack.
+   If ``type(STACK[-1]).__xxx__`` is not a method, leave
+   ``STACK[-1].__xxx__; NULL`` on the stack.
+
+   .. versionadded:: 3.14
 
 
 **Pseudo-instructions**

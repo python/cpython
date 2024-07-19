@@ -5,7 +5,6 @@ import sys
 import sysconfig
 import os
 import pathlib
-import shutil
 from test import support
 from test.support.script_helper import (
     make_script,

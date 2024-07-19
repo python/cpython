@@ -1,11 +1,9 @@
 import copy
-import gc
 import operator
 import re
 import sys
 import textwrap
 import threading
-import types
 import unittest
 import weakref
 try:
@@ -13,8 +11,9 @@ try:
 except ImportError:
     _testcapi = None
 
+from collections.abc import Mapping
 from test import support
-from test.support import import_helper, threading_helper, Py_GIL_DISABLED
+from test.support import import_helper, threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -420,6 +419,17 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(TypeError):
             copy.deepcopy(d)
 
+    def test_is_mapping(self):
+        x = 1
+        d = sys._getframe().f_locals
+        self.assertIsInstance(d, Mapping)
+        match d:
+            case {"x": value}:
+                self.assertEqual(value, 1)
+                kind = "mapping"
+            case _:
+                kind = "other"
+        self.assertEqual(kind, "mapping")
 
 class TestFrameCApi(unittest.TestCase):
     def test_basic(self):

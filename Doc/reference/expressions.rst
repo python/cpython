@@ -83,18 +83,47 @@ exception.
    pair: name; mangling
    pair: private; names
 
-**Private name mangling:** When an identifier that textually occurs in a class
-definition begins with two or more underscore characters and does not end in two
-or more underscores, it is considered a :dfn:`private name` of that class.
-Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name, with leading underscores
-removed and a single underscore inserted, in front of the name.  For example,
-the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
-to ``_Ham__spam``.  This transformation is independent of the syntactical
-context in which the identifier is used.  If the transformed name is extremely
-long (longer than 255 characters), implementation defined truncation may happen.
-If the class name consists only of underscores, no transformation is done.
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
 
+When an identifier that textually occurs in a class definition begins with two
+or more underscore characters and does not end in two or more underscores, it
+is considered a :dfn:`private name` of that class.
+
+.. seealso::
+
+   The :ref:`class specifications <class>`.
+
+More precisely, private names are transformed to a longer form before code is
+generated for them.  If the transformed name is longer than 255 characters,
+implementation-defined truncation may happen.
+
+The transformation is independent of the syntactical context in which the
+identifier is used but only the following private identifiers are mangled:
+
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The ``__name__`` attribute of nested functions, classes, and type aliases
+  is however not mangled.
+
+- The name of imported modules, e.g., ``__spam`` in ``import __spam``.
+  If the module is part of a package (i.e., its name contains a dot),
+  the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
+  is not mangled.
+
+- The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
+
+The transformation rule is defined as follows:
+
+- The class name, with leading underscores removed and a single leading
+  underscore inserted, is inserted in front of the identifier, e.g., the
+  identifier ``__spam`` occurring in a class named ``Foo``, ``_Foo`` or
+  ``__Foo`` is transformed to ``_Foo__spam``.
+
+- If the class name consists only of underscores, the transformation is the
+  identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
+  or ``__`` is left as is.
 
 .. _atom-literals:
 
@@ -218,10 +247,12 @@ A comprehension in an :keyword:`!async def` function may consist of either a
 :keyword:`!for` or :keyword:`!async for` clause following the leading
 expression, may contain additional :keyword:`!for` or :keyword:`!async for`
 clauses, and may also use :keyword:`await` expressions.
-If a comprehension contains either :keyword:`!async for` clauses or
-:keyword:`!await` expressions or other asynchronous comprehensions it is called
-an :dfn:`asynchronous comprehension`.  An asynchronous comprehension may
-suspend the execution of the coroutine function in which it appears.
+
+If a comprehension contains :keyword:`!async for` clauses, or if it contains
+:keyword:`!await` expressions or other asynchronous comprehensions anywhere except
+the iterable expression in the leftmost :keyword:`!for` clause, it is called an
+:dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
+execution of the coroutine function in which it appears.
 See also :pep:`530`.
 
 .. versionadded:: 3.6
@@ -1211,7 +1242,8 @@ Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
 Raising a negative number to a fractional power results in a :class:`complex`
 number. (In earlier versions it raised a :exc:`ValueError`.)
 
-This operation can be customized using the special :meth:`~object.__pow__` method.
+This operation can be customized using the special :meth:`~object.__pow__` and
+:meth:`~object.__rpow__` methods.
 
 .. _unary:
 
@@ -1299,6 +1331,9 @@ This operation can be customized using the special :meth:`~object.__mul__` and
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
 
+This operation can be customized using the special :meth:`~object.__matmul__` and
+:meth:`~object.__rmatmul__` methods.
+
 .. versionadded:: 3.5
 
 .. index::
@@ -1314,8 +1349,10 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-This operation can be customized using the special :meth:`~object.__truediv__` and
-:meth:`~object.__floordiv__` methods.
+The division operation can be customized using the special :meth:`~object.__truediv__`
+and :meth:`~object.__rtruediv__` methods.
+The floor division operation can be customized using the special
+:meth:`~object.__floordiv__` and :meth:`~object.__rfloordiv__` methods.
 
 .. index::
    single: modulo
@@ -1340,7 +1377,8 @@ also overloaded by string objects to perform old-style string formatting (also
 known as interpolation).  The syntax for string formatting is described in the
 Python Library Reference, section :ref:`old-string-formatting`.
 
-The *modulo* operation can be customized using the special :meth:`~object.__mod__` method.
+The *modulo* operation can be customized using the special :meth:`~object.__mod__`
+and :meth:`~object.__rmod__` methods.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a floating
@@ -1367,7 +1405,8 @@ This operation can be customized using the special :meth:`~object.__add__` and
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
 numeric arguments are first converted to a common type.
 
-This operation can be customized using the special :meth:`~object.__sub__` method.
+This operation can be customized using the special :meth:`~object.__sub__` and
+:meth:`~object.__rsub__` methods.
 
 
 .. _shifting:
@@ -1388,8 +1427,10 @@ The shifting operations have lower priority than the arithmetic operations:
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
 
-This operation can be customized using the special :meth:`~object.__lshift__` and
-:meth:`~object.__rshift__` methods.
+The left shift operation can be customized using the special :meth:`~object.__lshift__`
+and :meth:`~object.__rlshift__` methods.
+The right shift operation can be customized using the special :meth:`~object.__rshift__`
+and :meth:`~object.__rrshift__` methods.
 
 .. index:: pair: exception; ValueError
 
