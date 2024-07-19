@@ -1030,7 +1030,7 @@ digest length). If you used `malloc_with_params_and_key`, then the expected
 length is whatever you chose for the `digest_length` field of your parameters.
 For convenience, this function returns `digest_length`. When in doubt, callers
 can pass an array of size HACL_BLAKE2S_128_OUT_BYTES, then use the return value
-to see how many bytes were actually written. 
+to see how many bytes were actually written.
 */
 uint8_t Hacl_Hash_Blake2s_Simd128_digest(Hacl_Hash_Blake2s_Simd128_state_t *s, uint8_t *dst)
 {
@@ -1209,7 +1209,7 @@ Hacl_Hash_Blake2s_Simd128_hash_with_key(
 Write the BLAKE2s digest of message `input` using key `key` and
 parameters `params` into `output`. The `key` array must be of length
 `params.key_length`. The `output` array must be of length
-`params.digest_length`. 
+`params.digest_length`.
 */
 void
 Hacl_Hash_Blake2s_Simd128_hash_with_key_and_params(

@@ -73,7 +73,7 @@
 #  if defined(__GNUC__)
 #    define KRML_ATTRIBUTE_TARGET(x) __attribute__((target(x)))
 #  else
-#    define KRML_ATTRIBUTE_TARGET(x) 
+#    define KRML_ATTRIBUTE_TARGET(x)
 #  endif
 #endif
 
