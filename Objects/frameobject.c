@@ -1626,6 +1626,7 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
+    Py_CLEAR(f->f_locals_cache);
     PyObject_GC_Del(f);
     Py_XDECREF(co);
     Py_TRASHCAN_END;
@@ -1637,6 +1638,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_trace);
     Py_VISIT(f->f_extra_locals);
+    Py_VISIT(f->f_locals_cache);
     if (f->f_frame->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
         return 0;
     }
@@ -1649,6 +1651,7 @@ frame_tp_clear(PyFrameObject *f)
 {
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
+    Py_CLEAR(f->f_locals_cache);
 
     /* locals and stack */
     PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
@@ -1786,6 +1789,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_trace_opcodes = 0;
     f->f_lineno = 0;
     f->f_extra_locals = NULL;
+    f->f_locals_cache = NULL;
     return f;
 }
 
