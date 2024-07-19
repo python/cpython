@@ -51,7 +51,7 @@ except ImportError:
 bytes_types = (bytes, bytearray)
 
 # These are purely informational; no code uses these.
-format_version = "4.0"                  # File format version we write
+format_version = "5.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
                       "1.1",            # Protocol 0 with INST added
                       "1.2",            # Original protocol 1
@@ -68,7 +68,7 @@ HIGHEST_PROTOCOL = 5
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
 # Only bump this if the oldest still supported version of Python already
 # includes it.
-DEFAULT_PROTOCOL = 4
+DEFAULT_PROTOCOL = 5
 
 class PickleError(Exception):
     """A common base class for the other pickling exceptions."""
@@ -408,7 +408,7 @@ class _Pickler:
 
         The optional *protocol* argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3, 4 and 5.
-        The default protocol is 4. It was introduced in Python 3.4, and
+        The default protocol is 5. It was introduced in Python 3.8, and
         is incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
