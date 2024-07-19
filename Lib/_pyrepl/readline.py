@@ -423,9 +423,8 @@ class _ReadlineWrapper:
         history = self.get_reader().history
 
         with open(os.path.expanduser(filename), 'rb') as f:
-            is_readline = f.readline().startswith(b"_HiStOrY_V2_")
-            if is_readline:
-                # editline history file
+            is_editline = f.readline().startswith(b"_HiStOrY_V2_")
+            if is_editline:
                 encoding = "unicode-escape"
             else:
                 f.seek(0)
