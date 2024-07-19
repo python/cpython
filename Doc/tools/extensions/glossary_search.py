@@ -17,7 +17,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def process_glossary_nodes(app: Sphinx, doctree: nodes.document, _docname: str) -> None:
+def process_glossary_nodes(
+    app: Sphinx,
+    doctree: nodes.document,
+    _docname: str,
+) -> None:
     if app.builder.format != 'html' or app.builder.embedded:
         return
 
@@ -32,7 +36,10 @@ def process_glossary_nodes(app: Sphinx, doctree: nodes.document, _docname: str) 
             definition = glossary_item[-1]
 
             rendered = app.builder.render_partial(definition)
-            terms[term.lower()] = {'title': term, 'body': rendered['html_body']}
+            terms[term.lower()] = {
+                'title': term,
+                'body': rendered['html_body'],
+            }
 
 
 def write_glossary_json(app: Sphinx, _exc: Exception) -> None:

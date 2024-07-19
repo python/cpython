@@ -342,17 +342,21 @@ html_short_title = f'{release} Documentation'
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
-repository_url = os.getenv('READTHEDOCS_GIT_CLONE_URL')
+is_deployment_preview = os.getenv('READTHEDOCS_VERSION_TYPE') == 'external'
+repository_url = os.getenv('READTHEDOCS_GIT_CLONE_URL', '')
+repository_url = repository_url.removesuffix('.git')
 html_context = {
-    'is_deployment_preview': os.getenv('READTHEDOCS_VERSION_TYPE') == 'external',
-    'repository_url': repository_url.removesuffix('.git') if repository_url else None,
+    'is_deployment_preview': is_deployment_preview,
+    'repository_url': repository_url if repository_url else None,
     'pr_id': os.getenv('READTHEDOCS_VERSION'),
     'enable_analytics': os.getenv('PYTHON_DOCS_ENABLE_ANALYTICS'),
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
 html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime(html_time))
+html_last_updated_fmt = time.strftime(
+    '%b %d, %Y (%H:%M UTC)', time.gmtime(html_time)
+)
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
@@ -441,9 +445,27 @@ latex_documents = [
         _stdauthor,
         'manual',
     ),
-    ('tutorial/index', 'tutorial.tex', 'Python Tutorial', _stdauthor, 'manual'),
-    ('using/index', 'using.tex', 'Python Setup and Usage', _stdauthor, 'manual'),
-    ('faq/index', 'faq.tex', 'Python Frequently Asked Questions', _stdauthor, 'manual'),
+    (
+        'tutorial/index',
+        'tutorial.tex',
+        'Python Tutorial',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'using/index',
+        'using.tex',
+        'Python Setup and Usage',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'faq/index',
+        'faq.tex',
+        'Python Frequently Asked Questions',
+        _stdauthor,
+        'manual',
+    ),
     (
         'whatsnew/' + version,
         'whatsnew.tex',
