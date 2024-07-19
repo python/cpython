@@ -970,9 +970,11 @@ class TestMain(TestCase):
 
     def test_readline_history_file(self):
         # skip, if readline module is not available
-        import_module("readline")
+        readline = import_module('readline')
+        if readline.backend != "editline":
+            self.skipTest("GNU readline is not affected by this issue")
 
-        hfile = tempfile.NamedTemporaryFile(delete=False)
+        hfile = tempfile.NamedTemporaryFile()
         self.addCleanup(unlink, hfile.name)
         env = os.environ.copy()
         env["PYTHON_HISTORY"] = hfile.name

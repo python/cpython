@@ -425,7 +425,7 @@ class _ReadlineWrapper:
         with open(os.path.expanduser(filename), 'rb') as f:
             is_readline = f.readline().startswith(b"_HiStOrY_V2_")
             if is_readline:
-                # GNU readline history file
+                # editline history file
                 encoding = "unicode-escape"
             else:
                 f.seek(0)
