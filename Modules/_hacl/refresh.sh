@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=d7c0909b0552239eea04f4398bbb099365b8e398
+expected_hacl_star_rev=de979606cb6eba1aa4ace1167dba5a8319af2fcf
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -147,7 +147,7 @@ $sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_n
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.
-$sed -z -i 's!#ifndef KRML_\(PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
+$sed -z -i 's!#ifndef KRML_\(HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#define  KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h

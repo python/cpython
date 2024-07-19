@@ -593,10 +593,7 @@ Lib_IntVector_Intrinsics_vec128 *Hacl_Hash_Blake2s_Simd128_malloc_with_key(void)
 }
 
 static Hacl_Hash_Blake2s_Simd128_state_t
-*malloc_raw(
-  Hacl_Hash_Blake2b_index kk,
-  K____Hacl_Impl_Blake2_Core_blake2_params___uint8_t_ key
-)
+*malloc_raw(Hacl_Hash_Blake2b_index kk, Hacl_Hash_Blake2b_params_and_key key)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(64U, sizeof (uint8_t));
   Lib_IntVector_Intrinsics_vec128
@@ -678,9 +675,7 @@ Hacl_Hash_Blake2s_Simd128_state_t
   Hacl_Hash_Blake2b_blake2_params pv = p[0U];
   Hacl_Hash_Blake2b_index
   i1 = { .key_length = pv.key_length, .digest_length = pv.digest_length, .last_node = last_node };
-  return
-    malloc_raw(i1,
-      ((K____Hacl_Impl_Blake2_Core_blake2_params___uint8_t_){ .fst = p, .snd = k }));
+  return malloc_raw(i1, ((Hacl_Hash_Blake2b_params_and_key){ .fst = p, .snd = k }));
 }
 
 /**
@@ -735,10 +730,7 @@ static Hacl_Hash_Blake2b_index index_of_state(Hacl_Hash_Blake2s_Simd128_state_t 
 }
 
 static void
-reset_raw(
-  Hacl_Hash_Blake2s_Simd128_state_t *state,
-  K____Hacl_Impl_Blake2_Core_blake2_params___uint8_t_ key
-)
+reset_raw(Hacl_Hash_Blake2s_Simd128_state_t *state, Hacl_Hash_Blake2b_params_and_key key)
 {
   Hacl_Hash_Blake2s_Simd128_state_t scrut = *state;
   uint8_t *buf = scrut.buf;
@@ -795,7 +787,7 @@ Hacl_Hash_Blake2s_Simd128_reset_with_key_and_params(
 )
 {
   index_of_state(s);
-  reset_raw(s, ((K____Hacl_Impl_Blake2_Core_blake2_params___uint8_t_){ .fst = p, .snd = k }));
+  reset_raw(s, ((Hacl_Hash_Blake2b_params_and_key){ .fst = p, .snd = k }));
 }
 
 /**
@@ -818,7 +810,7 @@ void Hacl_Hash_Blake2s_Simd128_reset_with_key(Hacl_Hash_Blake2s_Simd128_state_t 
       .personal = personal
     };
   Hacl_Hash_Blake2b_blake2_params p0 = p;
-  reset_raw(s, ((K____Hacl_Impl_Blake2_Core_blake2_params___uint8_t_){ .fst = &p0, .snd = k }));
+  reset_raw(s, ((Hacl_Hash_Blake2b_params_and_key){ .fst = &p0, .snd = k }));
 }
 
 /**
