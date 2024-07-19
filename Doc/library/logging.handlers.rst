@@ -342,7 +342,7 @@ module, supports rotation of disk log files.
    .. versionchanged:: 3.9
       The *errors* parameter was added.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       Instead of using the size of the current file plus the new record to decide,
       a rollover is done as long as the current file exceeds *maxBytes*.
 
