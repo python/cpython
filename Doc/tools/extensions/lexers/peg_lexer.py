@@ -1,8 +1,6 @@
 from pygments.lexer import RegexLexer, bygroups, include
 from pygments.token import Comment, Keyword, Name, Operator, Punctuation, Text
 
-from sphinx.highlighting import lexers
-
 
 class PEGLexer(RegexLexer):
     """Pygments Lexer for PEG grammar (.gram) files
@@ -81,8 +79,3 @@ class PEGLexer(RegexLexer):
             (r".", Text),
         ],
     }
-
-
-def setup(app):
-    lexers["peg"] = PEGLexer()
-    return {"version": "1.0", "parallel_read_safe": True}
