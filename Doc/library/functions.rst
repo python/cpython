@@ -438,6 +438,8 @@ are always available.  They are listed here in alphabetical order.
    If one of arguments is a real number, only its real component is used in
    the above expressions.
 
+   See also :meth:`complex.from_number` which only accepts a single numeric argument.
+
    If all arguments are omitted, returns ``0j``.
 
    The complex type is described in :ref:`typesnumeric`.
@@ -787,6 +789,8 @@ are always available.  They are listed here in alphabetical order.
    For a general Python object ``x``, ``float(x)`` delegates to
    ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
+
+   See also :meth:`float.from_number` which only accepts a numeric argument.
 
    If no argument is given, ``0.0`` is returned.
 
@@ -1505,7 +1509,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open file,mode,flags open
+   .. audit-event:: open path,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.

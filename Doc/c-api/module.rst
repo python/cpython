@@ -549,6 +549,14 @@ state:
    Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
    this case, since *obj* can be ``NULL``.
 
+   The number of different *name* strings passed to this function
+   should be kept small, usually by only using statically allocated strings
+   as *name*.
+   For names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object.
+
    .. versionadded:: 3.10
 
 
@@ -610,6 +618,9 @@ state:
    used from the module's initialization function.
    Return ``-1`` with an exception set on error, ``0`` on success.
 
+   This is a convenience function that calls :c:func:`PyLong_FromLong` and
+   :c:func:`PyModule_AddObjectRef`; see their documentation for details.
+
 
 .. c:function:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
 
@@ -617,6 +628,10 @@ state:
    used from the module's initialization function.  The string *value* must be
    ``NULL``-terminated.
    Return ``-1`` with an exception set on error, ``0`` on success.
+
+   This is a convenience function that calls
+   :c:func:`PyUnicode_InternFromString` and :c:func:`PyModule_AddObjectRef`;
+   see their documentation for details.
 
 
 .. c:macro:: PyModule_AddIntMacro(module, macro)

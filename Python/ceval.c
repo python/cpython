@@ -245,9 +245,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
 
-static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
-                              PyObject *, PyObject *, PyObject *);
-static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static  _PyInterpreterFrame *
@@ -764,7 +761,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     entry_frame.f_executable = Py_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
-    entry_frame.stacktop = 0;
+    entry_frame.stackpointer = entry_frame.localsplus;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.return_offset = 0;
     /* Push frame */
@@ -2525,6 +2522,7 @@ _PyEval_GetBuiltinId(_Py_Identifier *name)
 PyObject *
 PyEval_GetLocals(void)
 {
+    // We need to return a borrowed reference here, so some tricks are needed
     PyThreadState *tstate = _PyThreadState_GET();
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
@@ -2532,7 +2530,37 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    PyObject *locals = _PyEval_GetFrameLocals();
+    // Be aware that this returns a new reference
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
+
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    if (PyFrameLocalsProxy_Check(locals)) {
+        PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        PyObject *ret = f->f_locals_cache;
+        if (ret == NULL) {
+            PyObject *ret = PyDict_New();
+            if (ret == NULL) {
+                Py_DECREF(locals);
+                return NULL;
+            }
+            f->f_locals_cache = ret;
+        }
+        if (PyDict_Update(ret, locals) < 0) {
+            // At this point, if the cache dict is broken, it will stay broken, as
+            // trying to clean it up or replace it will just cause other problems
+            ret = NULL;
+        }
+        Py_DECREF(locals);
+        return ret;
+    }
+
+    assert(PyMapping_Check(locals));
+    assert(Py_REFCNT(locals) > 1);
+    Py_DECREF(locals);
+
     return locals;
 }
 
@@ -2696,8 +2724,8 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
     return 1;
 }
 
-static PyObject *
-import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
+PyObject *
+_PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
@@ -2735,8 +2763,8 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     return res;
 }
 
-static PyObject *
-import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
+PyObject *
+_PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
