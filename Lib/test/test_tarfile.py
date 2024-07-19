@@ -738,31 +738,6 @@ class MiscReadTestBase(CommonReadTest):
         finally:
             os_helper.rmtree(DIR)
 
-    def test_deprecation_if_no_filter_passed_to_extractall(self):
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
-        with (
-            os_helper.temp_dir(DIR),
-            tarfile.open(tarname, encoding="iso8859-1") as tar
-        ):
-            directories = [t for t in tar if t.isdir()]
-            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
-                tar.extractall(DIR, directories)
-            # check that the stacklevel of the deprecation warning is correct:
-            self.assertEqual(cm.filename, __file__)
-
-    def test_deprecation_if_no_filter_passed_to_extract(self):
-        dirtype = "ustar/dirtype"
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
-        with (
-            os_helper.temp_dir(DIR),
-            tarfile.open(tarname, encoding="iso8859-1") as tar
-        ):
-            tarinfo = tar.getmember(dirtype)
-            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
-                tar.extract(tarinfo, path=DIR)
-            # check that the stacklevel of the deprecation warning is correct:
-            self.assertEqual(cm.filename, __file__)
-
     def test_extractall_pathlike_dir(self):
         DIR = os.path.join(TEMPDIR, "extractall")
         with os_helper.temp_dir(DIR), \
@@ -4010,15 +3985,6 @@ class TestExtractionFilters(unittest.TestCase):
                     continue
                 self.assertIs(filtered.name, tarinfo.name)
                 self.assertIs(filtered.type, tarinfo.type)
-
-    def test_default_filter_warns(self):
-        """Ensure the default filter warns"""
-        with ArchiveMaker() as arc:
-            arc.add('foo')
-        with warnings_helper.check_warnings(
-                ('Python 3.14', DeprecationWarning)):
-            with self.check_context(arc.open(), None):
-                self.expect_file('foo')
 
     def test_change_default_filter_on_instance(self):
         tar = tarfile.TarFile(tarname, 'r')

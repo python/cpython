@@ -40,9 +40,11 @@ Some facts and figures:
    Archives are extracted using a :ref:`filter <tarfile-extraction-filter>`,
    which makes it possible to either limit surprising/dangerous features,
    or to acknowledge that they are expected and the archive is fully trusted.
-   By default, archives are fully trusted, but this default is deprecated
-   and slated to change in Python 3.14.
 
+.. versionchanged:: 3.14
+   The default extraction filter was 'fully trusted' but is now 'data' which
+   which disallows dangerous features like links to absolute paths or paths
+   outside the destination.
 
 .. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
@@ -495,18 +497,22 @@ be finalized; only the internally used file object will be closed. See the
    The *filter* argument specifies how ``members`` are modified or rejected
    before extraction.
    See :ref:`tarfile-extraction-filter` for details.
-   It is recommended to set this explicitly depending on which *tar* features
-   you need to support.
+   It is recommended to set this explicitly only if unusual *tar* features
+   are required.
 
    .. warning::
 
-      Never extract archives from untrusted sources without prior inspection.
+      The default filter is set to ``filter='data'`` to prevent the most
+      dangerous security issues, read the :ref:`tarfile-extraction-filter`
+      section for details.
+
+      Never extract archives from untrusted sources without prior inspection,
+      even when using the ``'data'`` filter, but especially if using the
+      ``'tar'`` or ``'fully_trusted'`` filters.
+
       It is possible that files are created outside of *path*, e.g. members
       that have absolute filenames starting with ``"/"`` or filenames with two
       dots ``".."``.
-
-      Set ``filter='data'`` to prevent the most dangerous security issues,
-      and read the :ref:`tarfile-extraction-filter` section for details.
 
    .. versionchanged:: 3.5
       Added the *numeric_owner* parameter.
@@ -538,8 +544,9 @@ be finalized; only the internally used file object will be closed. See the
 
       See the warning for :meth:`extractall`.
 
-      Set ``filter='data'`` to prevent the most dangerous security issues,
-      and read the :ref:`tarfile-extraction-filter` section for details.
+      The default filter is set to ``filter='data'`` to prevent the most
+      dangerous security issues, read the :ref:`tarfile-extraction-filter`
+      section for details.
 
    .. versionchanged:: 3.2
       Added the *set_attrs* parameter.
@@ -603,12 +610,7 @@ be finalized; only the internally used file object will be closed. See the
    argument to :meth:`~TarFile.extract`.
 
    If ``extraction_filter`` is ``None`` (the default),
-   calling an extraction method without a *filter* argument will raise a
-   ``DeprecationWarning``,
-   and fall back to the :func:`fully_trusted <fully_trusted_filter>` filter,
-   whose dangerous behavior matches previous versions of Python.
-
-   In Python 3.14+, leaving ``extraction_filter=None`` will cause
+   calling an extraction method without a *filter* argument will cause
    extraction methods to use the :func:`data <data_filter>` filter by default.
 
    The attribute may be set on instances or overridden in subclasses.
@@ -992,12 +994,7 @@ can be:
 
 * ``None`` (default): Use :attr:`TarFile.extraction_filter`.
 
-  If that is also ``None`` (the default), raise a ``DeprecationWarning``,
-  and fall back to the ``'fully_trusted'`` filter, whose dangerous behavior
-  matches previous versions of Python.
-
-  In Python 3.14, the ``'data'`` filter will become the default instead.
-  It's possible to switch earlier; see :attr:`TarFile.extraction_filter`.
+  If that is also ``None`` (the default), the ``'data'`` filter will be used.
 
 * A callable which will be called for each extracted member with a
   :ref:`TarInfo <tarinfo-objects>` describing the member and the destination
