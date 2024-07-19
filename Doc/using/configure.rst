@@ -907,6 +907,15 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
+.. option:: --disable-openssf-guide=[yes|no|default=no]
+
+   Disable compiler options that are recommended by `OpenSSF`_ for security reasons.
+
+   .. _OpenSSF: https://openssf.org/
+
+   .. versionadded:: 3.14
+
+
 macOS Options
 -------------
 

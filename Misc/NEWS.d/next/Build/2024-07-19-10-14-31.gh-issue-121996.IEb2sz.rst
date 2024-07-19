@@ -1,0 +1,1 @@
+Introduce ./configure --disable-openssf-guide option. Patch by Donghee Na.
