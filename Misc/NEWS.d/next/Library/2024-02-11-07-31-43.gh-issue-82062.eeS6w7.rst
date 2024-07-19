@@ -1,2 +1,0 @@
-Fix :func:`inspect.signature()` to correctly set extension module for
-built-in instance methods.
