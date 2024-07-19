@@ -29,7 +29,6 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.util.display import status_iterator
-import sphinx.domains.changeset
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
@@ -403,7 +402,7 @@ def expand_version_arg(argument, release):
     return argument
 
 
-class PyVersionChange(sphinx.domains.changeset.VersionChange):
+class PyVersionChange(VersionChange):
     def run(self):
         # Replace the 'next' special token with the current development version
         self.arguments[0] = expand_version_arg(self.arguments[0],
