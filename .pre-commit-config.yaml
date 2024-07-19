@@ -3,15 +3,15 @@ repos:
     rev: v0.3.4
     hooks:
       - id: ruff
-        name: Run Ruff (check) on Doc/
+        name: Run Ruff (lint) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
       - id: ruff
-        name: Run Ruff (check) on Lib/test/
+        name: Run Ruff (lint) on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff (check) on Argument Clinic
+        name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
       - id: ruff-format

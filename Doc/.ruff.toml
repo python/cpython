@@ -3,6 +3,7 @@ fix = true
 output-format = "full"
 extend-exclude = [
     "includes/*",
+    # Temporary exclusions:
     "tools/extensions/c_annotations.py",
     "tools/extensions/escape4chm.py",
     "tools/extensions/patchlevel.py",
@@ -37,10 +38,7 @@ ignore = [
 [format]
 preview = true
 quote-style = "single"
+docstring-code-format = true
 exclude = [
     "tools/extensions/lexers/*",
-    "tools/extensions/c_annotations.py",
-    "tools/extensions/escape4chm.py",
-    "tools/extensions/patchlevel.py",
-    "tools/extensions/pyspecific.py",
 ]
