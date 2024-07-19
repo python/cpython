@@ -415,10 +415,10 @@ class TestSysConfig(unittest.TestCase):
                 # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
                 # whereas posix_prefix does.
                 if name == 'platlib':
-                    # Replace "/lib64/python3.11/site-packages" suffix
-                    # with "/lib/python3.11/site-packages".
-                    py_version_short = sysconfig.get_python_version()
-                    suffix = f'python{py_version_short}/site-packages'
+                    # Replace "/lib64/python3.11{abi_thread}/site-packages" suffix
+                    # with "/lib/python3.11{abi_thread}/site-packages".
+                    py_version_abi = sysconfig._get_python_version_abi()
+                    suffix = f'python{py_version_abi}/site-packages'
                     expected = expected.replace(f'/{sys.platlibdir}/{suffix}',
                                                 f'/lib/{suffix}')
                 self.assertEqual(user_path, expected)
