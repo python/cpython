@@ -589,14 +589,16 @@ extlinks = {
 }
 extlinks_detect_hardcoded_links = True
 
-# Options for extensions
-# ----------------------
+# Options for c_annotations
+# -------------------------
 
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
 
-# sphinxext-opengraph config
+# Options for sphinxext-opengraph
+# -------------------------------
+
 ogp_site_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
 ogp_image = '_static/og-image.png'
