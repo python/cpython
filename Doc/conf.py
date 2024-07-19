@@ -44,7 +44,7 @@ else:
     extensions.append('sphinxext.opengraph')
 
 
-doctest_global_setup = """
+doctest_global_setup = '''
 try:
     import _tkinter
 except ImportError:
@@ -54,7 +54,7 @@ except ImportError:
 import warnings
 warnings.simplefilter('error')
 del warnings
-"""
+'''
 
 manpages_url = 'https://manpages.debian.org/{path}'
 
@@ -325,8 +325,8 @@ html_theme_options = {
     'root_include_title': False,  # We use the version switcher instead.
 }
 
-if os.getenv('READTHEDOCS'):
-    html_theme_options['hosted_on'] = (
+if os.getenv("READTHEDOCS"):
+    html_theme_options["hosted_on"] = (
         '<a href="https://about.readthedocs.com/">Read the Docs</a>'
     )
 
@@ -334,22 +334,22 @@ if os.getenv('READTHEDOCS'):
 # https://github.com/python/cpython/issues/91207
 if any('htmlhelp' in arg for arg in sys.argv):
     html_style = 'pydoctheme.css'
-    print('\nWARNING: Windows CHM Help is no longer supported.')
-    print('It may be removed in the future\n')
+    print("\nWARNING: Windows CHM Help is no longer supported.")
+    print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
 html_short_title = f'{release} Documentation'
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
-is_deployment_preview = os.getenv('READTHEDOCS_VERSION_TYPE') == 'external'
-repository_url = os.getenv('READTHEDOCS_GIT_CLONE_URL', '')
-repository_url = repository_url.removesuffix('.git')
+is_deployment_preview = os.getenv("READTHEDOCS_VERSION_TYPE") == "external"
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL", "")
+repository_url = repository_url.removesuffix(".git")
 html_context = {
-    'is_deployment_preview': is_deployment_preview,
-    'repository_url': repository_url or None,
-    'pr_id': os.getenv('READTHEDOCS_VERSION'),
-    'enable_analytics': os.getenv('PYTHON_DOCS_ENABLE_ANALYTICS'),
+    "is_deployment_preview": is_deployment_preview,
+    "repository_url": repository_url or None,
+    "pr_id": os.getenv("READTHEDOCS_VERSION"),
+    "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -397,7 +397,7 @@ latex_engine = 'xelatex'
 
 latex_elements = {
     # For the LaTeX preamble.
-    'preamble': r"""
+    'preamble': r'''
 \authoraddress{
   \sphinxstrong{Python Software Foundation}\\
   Email: \sphinxemail{docs@python.org}
@@ -405,7 +405,7 @@ latex_elements = {
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
-""",
+''',
     # The paper size ('letter' or 'a4').
     'papersize': 'a4',
     # The font size ('10pt', '11pt' or '12pt').
@@ -469,7 +469,7 @@ latex_documents = [
     (
         'whatsnew/' + version,
         'whatsnew.tex',
-        "What's New in Python",
+        'What\'s New in Python',
         'A. M. Kuchling',
         'howto',
     ),
@@ -582,10 +582,10 @@ linkcheck_ignore = [
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
-    'cve': ('https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s', 'CVE-%s'),
-    'cwe': ('https://cwe.mitre.org/data/definitions/%s.html', 'CWE-%s'),
-    'pypi': ('https://pypi.org/project/%s/', '%s'),
-    'source': (SOURCE_URI, '%s'),
+    "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
+    "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
+    "source": (SOURCE_URI, "%s"),
 }
 extlinks_detect_hardcoded_links = True
 
