@@ -675,8 +675,6 @@ def setup(app):
     app.add_directive('audit-event', AuditEvent)
     app.add_directive('audit-event-table', AuditEventListDirective)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
-    if sphinx.version_info[:2] < (7, 3):
-        app.add_directive('versionremoved', VersionChange)
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
