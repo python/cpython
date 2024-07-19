@@ -1846,8 +1846,11 @@ the use of a :class:`Filter` does not provide the desired result.
 
 .. _zeromq-handlers:
 
-Subclassing QueueHandler - a ZeroMQ example
--------------------------------------------
+Subclassing QueueHandler and QueueListener- a ZeroMQ example
+------------------------------------------------------------
+
+Subclass ``QueueHandler``
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can use a :class:`QueueHandler` subclass to send messages to other kinds
 of queues, for example a ZeroMQ 'publish' socket. In the example below,the
@@ -1885,8 +1888,8 @@ data needed by the handler to create the socket::
             self.queue.close()
 
 
-Subclassing QueueListener - a ZeroMQ example
---------------------------------------------
+Subclass ``QueueListener``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also subclass :class:`QueueListener` to get messages from other kinds
 of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
@@ -1903,24 +1906,193 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
             msg = self.queue.recv_json()
             return logging.makeLogRecord(msg)
 
+.. _pynng-handlers:
 
-.. seealso::
+Subclassing QueueHandler and QueueListener- a ``pynng`` example
+---------------------------------------------------------------
 
-   Module :mod:`logging`
-      API reference for the logging module.
+In a similar way to the above section, we can implement a listener and handler
+using :pypi:`pynng`, which is a Python binding to
+`NNG <https://nng.nanomsg.org/>`_, billed as a spiritual successor to ZeroMQ.
+The following snippets illustrate -- you can test them in an environment which has
+``pynng`` installed. Just for variety, we present the listener first.
 
-   Module :mod:`logging.config`
-      Configuration API for the logging module.
 
-   Module :mod:`logging.handlers`
-      Useful handlers included with the logging module.
+Subclass ``QueueListener``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   :ref:`A basic logging tutorial <logging-basic-tutorial>`
+.. code-block:: python
 
-   :ref:`A more advanced logging tutorial <logging-advanced-tutorial>`
+    # listener.py
+    import json
+    import logging
+    import logging.handlers
 
+    import pynng
+
+    DEFAULT_ADDR = "tcp://localhost:13232"
+
+    interrupted = False
+
+    class NNGSocketListener(logging.handlers.QueueListener):
+
+        def __init__(self, uri, /, *handlers, **kwargs):
+            # Have a timeout for interruptability, and open a
+            # subscriber socket
+            socket = pynng.Sub0(listen=uri, recv_timeout=500)
+            # The b'' subscription matches all topics
+            topics = kwargs.pop('topics', None) or b''
+            socket.subscribe(topics)
+            # We treat the socket as a queue
+            super().__init__(socket, *handlers, **kwargs)
+
+        def dequeue(self, block):
+            data = None
+            # Keep looping while not interrupted and no data received over the
+            # socket
+            while not interrupted:
+                try:
+                    data = self.queue.recv(block=block)
+                    break
+                except pynng.Timeout:
+                    pass
+                except pynng.Closed:  # sometimes happens when you hit Ctrl-C
+                    break
+            if data is None:
+                return None
+            # Get the logging event sent from a publisher
+            event = json.loads(data.decode('utf-8'))
+            return logging.makeLogRecord(event)
+
+        def enqueue_sentinel(self):
+            # Not used in this implementation, as the socket isn't really a
+            # queue
+            pass
+
+    logging.getLogger('pynng').propagate = False
+    listener = NNGSocketListener(DEFAULT_ADDR, logging.StreamHandler(), topics=b'')
+    listener.start()
+    print('Press Ctrl-C to stop.')
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        interrupted = True
+    finally:
+        listener.stop()
+
+
+Subclass ``QueueHandler``
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. currentmodule:: logging
+
+.. code-block:: python
+
+    # sender.py
+    import json
+    import logging
+    import logging.handlers
+    import time
+    import random
+
+    import pynng
+
+    DEFAULT_ADDR = "tcp://localhost:13232"
+
+    class NNGSocketHandler(logging.handlers.QueueHandler):
+
+        def __init__(self, uri):
+            socket = pynng.Pub0(dial=uri, send_timeout=500)
+            super().__init__(socket)
+
+        def enqueue(self, record):
+            # Send the record as UTF-8 encoded JSON
+            d = dict(record.__dict__)
+            data = json.dumps(d)
+            self.queue.send(data.encode('utf-8'))
+
+        def close(self):
+            self.queue.close()
+
+    logging.getLogger('pynng').propagate = False
+    handler = NNGSocketHandler(DEFAULT_ADDR)
+    # Make sure the process ID is in the output
+    logging.basicConfig(level=logging.DEBUG,
+                        handlers=[logging.StreamHandler(), handler],
+                        format='%(levelname)-8s %(name)10s %(process)6s %(message)s')
+    levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+              logging.CRITICAL)
+    logger_names = ('myapp', 'myapp.lib1', 'myapp.lib2')
+    msgno = 1
+    while True:
+        # Just randomly select some loggers and levels and log away
+        level = random.choice(levels)
+        logger = logging.getLogger(random.choice(logger_names))
+        logger.log(level, 'Message no. %5d' % msgno)
+        msgno += 1
+        delay = random.random() * 2 + 0.5
+        time.sleep(delay)
+
+You can run the above two snippets in separate command shells. If we run the
+listener in one shell and run the sender in two separate shells, we should see
+something like the following. In the first sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    CRITICAL myapp.lib2    613 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    (and so on)
+
+In the second sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+In the listener shell:
+
+.. code-block:: console
+
+    $ python listener.py
+    Press Ctrl-C to stop.
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    613 Message no.     3
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+As you can see, the logging from the two sender processes is interleaved in the
+listener's output.
+
 
 An example dictionary-based configuration
 -----------------------------------------
@@ -2778,7 +2950,7 @@ When run, this produces a file with exactly two lines:
 .. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
-    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
+    28/01/2015 07:21:23|ERROR|ZeroDivisionError: division by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: division by zero'|
 
 While the above treatment is simplistic, it points the way to how exception
 information can be formatted to your liking. The :mod:`traceback` module may be
@@ -3403,9 +3575,8 @@ A Qt GUI for logging
 
 A question that comes up from time to time is about how to log to a GUI
 application. The `Qt <https://www.qt.io/>`_ framework is a popular
-cross-platform UI framework with Python bindings using `PySide2
-<https://pypi.org/project/PySide2/>`_ or `PyQt5
-<https://pypi.org/project/PyQt5/>`_ libraries.
+cross-platform UI framework with Python bindings using :pypi:`PySide2`
+or :pypi:`PyQt5` libraries.
 
 The following example shows how to log to a Qt GUI. This introduces a simple
 ``QtHandler`` class which takes a callable, which should be a slot in the main
@@ -3418,7 +3589,7 @@ The worker thread is implemented using Qt's ``QThread`` class rather than the
 :mod:`threading` module, as there are circumstances where one has to use
 ``QThread``, which offers better integration with other ``Qt`` components.
 
-The code should work with recent releases of either ``PySide6``, ``PyQt6``,
+The code should work with recent releases of any of ``PySide6``, ``PyQt6``,
 ``PySide2`` or ``PyQt5``. You should be able to adapt the approach to earlier
 versions of Qt. Please refer to the comments in the code snippet for more
 detailed information.

@@ -277,6 +277,8 @@ class TimeTestCase(unittest.TestCase):
                           'j', 'm', 'M', 'p', 'S',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
+            if directive == 'd':
+                format += ',%Y'  # Avoid GH-70647.
             strf_output = time.strftime(format, tt)
             try:
                 time.strptime(strf_output, format)
@@ -298,6 +300,12 @@ class TimeTestCase(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             time.strptime('19', '%Y %')
         self.assertIs(e.exception.__suppress_context__, True)
+
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            time.strptime('02-07 18:28', '%m-%d %H:%M')
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))

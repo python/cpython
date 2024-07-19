@@ -122,6 +122,8 @@ available.  Consult `the Python Package Index <https://pypi.org>`_ to
 find packages of interest to you.
 
 
+.. _faq-version-numbering-scheme:
+
 How does the Python version numbering scheme work?
 --------------------------------------------------
 
@@ -182,8 +184,6 @@ information on getting the source code and compiling it.
 
 How do I get documentation on Python?
 -------------------------------------
-
-.. XXX mention py3k
 
 The standard documentation for the current stable version of Python is available
 at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions are

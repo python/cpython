@@ -145,8 +145,8 @@ module Python
 
     type_ignore = TypeIgnore(int lineno, string tag)
 
-    type_param = TypeVar(identifier name, expr? bound)
-               | ParamSpec(identifier name)
-               | TypeVarTuple(identifier name)
+    type_param = TypeVar(identifier name, expr? bound, expr? default_value)
+               | ParamSpec(identifier name, expr? default_value)
+               | TypeVarTuple(identifier name, expr? default_value)
                attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
 }

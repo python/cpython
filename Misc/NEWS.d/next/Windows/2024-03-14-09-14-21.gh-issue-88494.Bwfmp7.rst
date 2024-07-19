@@ -1,4 +1,0 @@
-On Windows, :func:`time.monotonic()` now uses the ``QueryPerformanceCounter()``
-clock to have a resolution better than 1 us, instead of the
-``GetTickCount64()`` clock which has a resolution of 15.6 ms. Patch by Victor
-Stinner.

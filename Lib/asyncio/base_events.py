@@ -279,7 +279,9 @@ class Server(events.AbstractServer):
                  ssl_handshake_timeout, ssl_shutdown_timeout=None):
         self._loop = loop
         self._sockets = sockets
-        self._active_count = 0
+        # Weak references so we don't break Transport's ability to
+        # detect abandoned transports
+        self._clients = weakref.WeakSet()
         self._waiters = []
         self._protocol_factory = protocol_factory
         self._backlog = backlog
@@ -292,14 +294,13 @@ class Server(events.AbstractServer):
     def __repr__(self):
         return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
 
-    def _attach(self):
+    def _attach(self, transport):
         assert self._sockets is not None
-        self._active_count += 1
+        self._clients.add(transport)
 
-    def _detach(self):
-        assert self._active_count > 0
-        self._active_count -= 1
-        if self._active_count == 0 and self._sockets is None:
+    def _detach(self, transport):
+        self._clients.discard(transport)
+        if len(self._clients) == 0 and self._sockets is None:
             self._wakeup()
 
     def _wakeup(self):
@@ -348,8 +349,16 @@ class Server(events.AbstractServer):
             self._serving_forever_fut.cancel()
             self._serving_forever_fut = None
 
-        if self._active_count == 0:
+        if len(self._clients) == 0:
             self._wakeup()
+
+    def close_clients(self):
+        for transport in self._clients.copy():
+            transport.close()
+
+    def abort_clients(self):
+        for transport in self._clients.copy():
+            transport.abort()
 
     async def start_serving(self):
         self._start_serving()

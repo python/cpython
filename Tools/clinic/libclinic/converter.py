@@ -7,7 +7,7 @@ from collections.abc import Callable
 import libclinic
 from libclinic import fail
 from libclinic import Sentinels, unspecified, unknown
-from libclinic.crenderdata import CRenderData, Include, TemplateDict
+from libclinic.codegen import CRenderData, Include, TemplateDict
 from libclinic.function import Function, Parameter
 
 
@@ -180,7 +180,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.name = libclinic.ensure_legal_c_identifier(name)
         self.py_name = py_name
         self.unused = unused
-        self.includes: list[Include] = []
+        self._includes: list[Include] = []
 
         if default is not unspecified:
             if (self.default_type
@@ -513,7 +513,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     def add_include(self, name: str, reason: str,
                     *, condition: str | None = None) -> None:
         include = Include(name, reason, condition)
-        self.includes.append(include)
+        self._includes.append(include)
+
+    def get_includes(self) -> list[Include]:
+        return self._includes
 
 
 ConverterType = Callable[..., CConverter]
@@ -531,3 +534,19 @@ converters: ConverterDict = {}
 # these callables follow the same rules as those for "converters" above.
 # note however that they will never be called with keyword-only parameters.
 legacy_converters: ConverterDict = {}
+
+
+def add_legacy_c_converter(
+    format_unit: str,
+    **kwargs: Any
+) -> Callable[[CConverterClassT], CConverterClassT]:
+    def closure(f: CConverterClassT) -> CConverterClassT:
+        added_f: Callable[..., CConverter]
+        if not kwargs:
+            added_f = f
+        else:
+            added_f = functools.partial(f, **kwargs)
+        if format_unit:
+            legacy_converters[format_unit] = added_f
+        return f
+    return closure

@@ -2,7 +2,7 @@ import unittest
 import sys
 from test.support import import_helper
 
-_testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
 
@@ -27,7 +27,7 @@ class CAPITest(unittest.TestCase):
 
     def test_fromencodedobject(self):
         """Test PyUnicode_FromEncodedObject()"""
-        fromencodedobject = _testcapi.unicode_fromencodedobject
+        fromencodedobject = _testlimitedcapi.unicode_fromencodedobject
 
         self.assertEqual(fromencodedobject(b'abc', NULL), 'abc')
         self.assertEqual(fromencodedobject(b'abc', 'ascii'), 'abc')
@@ -52,7 +52,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decode(self):
         """Test PyUnicode_Decode()"""
-        decode = _testcapi.unicode_decode
+        decode = _testlimitedcapi.unicode_decode
 
         self.assertEqual(decode(b'[\xe2\x82\xac]', 'utf-8'), '[\u20ac]')
         self.assertEqual(decode(b'[\xa4]', 'iso8859-15'), '[\u20ac]')
@@ -70,7 +70,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asencodedstring(self):
         """Test PyUnicode_AsEncodedString()"""
-        asencodedstring = _testcapi.unicode_asencodedstring
+        asencodedstring = _testlimitedcapi.unicode_asencodedstring
 
         self.assertEqual(asencodedstring('abc', NULL), b'abc')
         self.assertEqual(asencodedstring('abc', 'ascii'), b'abc')
@@ -93,7 +93,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeutf8(self):
         """Test PyUnicode_DecodeUTF8()"""
-        decodeutf8 = _testcapi.unicode_decodeutf8
+        decodeutf8 = _testlimitedcapi.unicode_decodeutf8
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
             b = s.encode('utf-8')
@@ -113,7 +113,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeutf8stateful(self):
         """Test PyUnicode_DecodeUTF8Stateful()"""
-        decodeutf8stateful = _testcapi.unicode_decodeutf8stateful
+        decodeutf8stateful = _testlimitedcapi.unicode_decodeutf8stateful
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
             b = s.encode('utf-8')
@@ -136,7 +136,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asutf8string(self):
         """Test PyUnicode_AsUTF8String()"""
-        asutf8string = _testcapi.unicode_asutf8string
+        asutf8string = _testlimitedcapi.unicode_asutf8string
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
             self.assertEqual(asutf8string(s), s.encode('utf-8'))
@@ -148,7 +148,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeutf16(self):
         """Test PyUnicode_DecodeUTF16()"""
-        decodeutf16 = _testcapi.unicode_decodeutf16
+        decodeutf16 = _testlimitedcapi.unicode_decodeutf16
 
         naturalbyteorder = -1 if sys.byteorder == 'little' else 1
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
@@ -192,7 +192,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeutf16stateful(self):
         """Test PyUnicode_DecodeUTF16Stateful()"""
-        decodeutf16stateful = _testcapi.unicode_decodeutf16stateful
+        decodeutf16stateful = _testlimitedcapi.unicode_decodeutf16stateful
 
         naturalbyteorder = -1 if sys.byteorder == 'little' else 1
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
@@ -238,7 +238,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asutf16string(self):
         """Test PyUnicode_AsUTF16String()"""
-        asutf16string = _testcapi.unicode_asutf16string
+        asutf16string = _testlimitedcapi.unicode_asutf16string
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
             self.assertEqual(asutf16string(s), s.encode('utf-16'))
@@ -250,7 +250,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeutf32(self):
         """Test PyUnicode_DecodeUTF8()"""
-        decodeutf32 = _testcapi.unicode_decodeutf32
+        decodeutf32 = _testlimitedcapi.unicode_decodeutf32
 
         naturalbyteorder = -1 if sys.byteorder == 'little' else 1
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
@@ -290,7 +290,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeutf32stateful(self):
         """Test PyUnicode_DecodeUTF32Stateful()"""
-        decodeutf32stateful = _testcapi.unicode_decodeutf32stateful
+        decodeutf32stateful = _testlimitedcapi.unicode_decodeutf32stateful
 
         naturalbyteorder = -1 if sys.byteorder == 'little' else 1
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
@@ -342,7 +342,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asutf32string(self):
         """Test PyUnicode_AsUTF32String()"""
-        asutf32string = _testcapi.unicode_asutf32string
+        asutf32string = _testlimitedcapi.unicode_asutf32string
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
             self.assertEqual(asutf32string(s), s.encode('utf-32'))
@@ -354,7 +354,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodelatin1(self):
         """Test PyUnicode_DecodeLatin1()"""
-        decodelatin1 = _testcapi.unicode_decodelatin1
+        decodelatin1 = _testlimitedcapi.unicode_decodelatin1
 
         self.assertEqual(decodelatin1(b'abc'), 'abc')
         self.assertEqual(decodelatin1(b'abc', 'strict'), 'abc')
@@ -365,7 +365,7 @@ class CAPITest(unittest.TestCase):
 
     def test_aslatin1string(self):
         """Test PyUnicode_AsLatin1String()"""
-        aslatin1string = _testcapi.unicode_aslatin1string
+        aslatin1string = _testlimitedcapi.unicode_aslatin1string
 
         self.assertEqual(aslatin1string('abc'), b'abc')
         self.assertEqual(aslatin1string('\xa1\xa2'), b'\xa1\xa2')
@@ -377,7 +377,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeascii(self):
         """Test PyUnicode_DecodeASCII()"""
-        decodeascii = _testcapi.unicode_decodeascii
+        decodeascii = _testlimitedcapi.unicode_decodeascii
 
         self.assertEqual(decodeascii(b'abc'), 'abc')
         self.assertEqual(decodeascii(b'abc', 'strict'), 'abc')
@@ -392,7 +392,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asasciistring(self):
         """Test PyUnicode_AsASCIIString()"""
-        asasciistring = _testcapi.unicode_asasciistring
+        asasciistring = _testlimitedcapi.unicode_asasciistring
 
         self.assertEqual(asasciistring('abc'), b'abc')
 
@@ -403,7 +403,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodecharmap(self):
         """Test PyUnicode_DecodeCharmap()"""
-        decodecharmap = _testcapi.unicode_decodecharmap
+        decodecharmap = _testlimitedcapi.unicode_decodecharmap
 
         self.assertEqual(decodecharmap(b'\3\0\7', {0: 'a', 3: 'b', 7: 'c'}), 'bac')
         self.assertEqual(decodecharmap(b'\1\0\2', ['a', 'b', 'c']), 'bac')
@@ -426,7 +426,7 @@ class CAPITest(unittest.TestCase):
 
     def test_ascharmapstring(self):
         """Test PyUnicode_AsCharmapString()"""
-        ascharmapstring = _testcapi.unicode_ascharmapstring
+        ascharmapstring = _testlimitedcapi.unicode_ascharmapstring
 
         self.assertEqual(ascharmapstring('abc', {97: 3, 98: 0, 99: 7}), b'\3\0\7')
         self.assertEqual(ascharmapstring('\xa1\xa2\xa3', {0xa1: 3, 0xa2: 0, 0xa3: 7}), b'\3\0\7')
@@ -443,7 +443,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decodeunicodeescape(self):
         """Test PyUnicode_DecodeUnicodeEscape()"""
-        decodeunicodeescape = _testcapi.unicode_decodeunicodeescape
+        decodeunicodeescape = _testlimitedcapi.unicode_decodeunicodeescape
 
         self.assertEqual(decodeunicodeescape(b'abc'), 'abc')
         self.assertEqual(decodeunicodeescape(br'\t\n\r\x0b\x0c\x00\\'), '\t\n\r\v\f\0\\')
@@ -467,7 +467,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asunicodeescapestring(self):
         """Test PyUnicode_AsUnicodeEscapeString()"""
-        asunicodeescapestring = _testcapi.unicode_asunicodeescapestring
+        asunicodeescapestring = _testlimitedcapi.unicode_asunicodeescapestring
 
         self.assertEqual(asunicodeescapestring('abc'), b'abc')
         self.assertEqual(asunicodeescapestring('\t\n\r\v\f\0\\'), br'\t\n\r\x0b\x0c\x00\\')
@@ -481,7 +481,7 @@ class CAPITest(unittest.TestCase):
 
     def test_decoderawunicodeescape(self):
         """Test PyUnicode_DecodeRawUnicodeEscape()"""
-        decoderawunicodeescape = _testcapi.unicode_decoderawunicodeescape
+        decoderawunicodeescape = _testlimitedcapi.unicode_decoderawunicodeescape
 
         self.assertEqual(decoderawunicodeescape(b'abc'), 'abc')
         self.assertEqual(decoderawunicodeescape(b'\t\n\r\v\f\0\\'), '\t\n\r\v\f\0\\')
@@ -503,7 +503,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asrawunicodeescapestring(self):
         """Test PyUnicode_AsRawUnicodeEscapeString()"""
-        asrawunicodeescapestring = _testcapi.unicode_asrawunicodeescapestring
+        asrawunicodeescapestring = _testlimitedcapi.unicode_asrawunicodeescapestring
 
         self.assertEqual(asrawunicodeescapestring('abc'), b'abc')
         self.assertEqual(asrawunicodeescapestring('\t\n\r\v\f\0\\'), b'\t\n\r\v\f\0\\')

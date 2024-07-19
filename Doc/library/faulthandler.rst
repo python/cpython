@@ -1,5 +1,5 @@
-:mod:`faulthandler` --- Dump the Python traceback
-=================================================
+:mod:`!faulthandler` --- Dump the Python traceback
+==================================================
 
 .. module:: faulthandler
    :synopsis: Dump the Python traceback.
@@ -10,14 +10,15 @@
 
 This module contains functions to dump Python tracebacks explicitly, on a fault,
 after a timeout, or on a user signal. Call :func:`faulthandler.enable` to
-install fault handlers for the :const:`SIGSEGV`, :const:`SIGFPE`,
-:const:`SIGABRT`, :const:`SIGBUS`, and :const:`SIGILL` signals. You can also
+install fault handlers for the :const:`~signal.SIGSEGV`,
+:const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`, and
+:const:`~signal.SIGILL` signals. You can also
 enable them at startup by setting the :envvar:`PYTHONFAULTHANDLER` environment
 variable or by using the :option:`-X` ``faulthandler`` command line option.
 
 The fault handler is compatible with system fault handlers like Apport or the
 Windows fault handler. The module uses an alternative stack for signal handlers
-if the :c:func:`sigaltstack` function is available. This allows it to dump the
+if the :c:func:`!sigaltstack` function is available. This allows it to dump the
 traceback even on a stack overflow.
 
 The fault handler is called on catastrophic cases and therefore can only use
@@ -70,8 +71,9 @@ Fault handler state
 
 .. function:: enable(file=sys.stderr, all_threads=True)
 
-   Enable the fault handler: install handlers for the :const:`SIGSEGV`,
-   :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL`
+   Enable the fault handler: install handlers for the :const:`~signal.SIGSEGV`,
+   :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`
+   and :const:`~signal.SIGILL`
    signals to dump the Python traceback. If *all_threads* is ``True``,
    produce tracebacks for every running thread. Otherwise, dump only the current
    thread.
@@ -106,8 +108,8 @@ Dumping the tracebacks after a timeout
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
-   :c:func:`_exit` with status=1 after dumping the tracebacks.  (Note
-   :c:func:`_exit` exits the process immediately, which means it doesn't do any
+   :c:func:`!_exit` with status=1 after dumping the tracebacks.  (Note
+   :c:func:`!_exit` exits the process immediately, which means it doesn't do any
    cleanup like flushing file buffers.) If the function is called twice, the new
    call replaces previous parameters and resets the timeout. The timer has a
    sub-second resolution.

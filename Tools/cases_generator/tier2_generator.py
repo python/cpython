@@ -4,16 +4,12 @@ Writes the cases to executor_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
@@ -24,39 +20,45 @@ from generators_common import (
     emit_tokens,
     emit_to,
     REPLACEMENT_FUNCTIONS,
+    type_and_null,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from stack import Stack, StackError
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+    var: StackItem, uop: Uop, required: set[str], out: CWriter
 ) -> None:
-    if var.name in variables:
+    if var.name not in required:
         return
-    type = var.type if var.type else "PyObject *"
-    variables.add(var.name)
+    required.remove(var.name)
+    type, null = type_and_null(var)
+    space = " " if type[-1].isalnum() else ""
     if var.condition:
-        out.emit(f"{type}{var.name} = NULL;\n")
+        out.emit(f"{type}{space}{var.name} = {null};\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        out.emit(f"{type}{var.name};\n")
+        out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
-    variables = {"unused"}
+    stack = Stack()
     for var in reversed(uop.stack.inputs):
-        declare_variable(var, uop, variables, out)
+        stack.pop(var)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, variables, out)
-
+            stack.push(var)
+    required = set(stack.defined)
+    for var in reversed(uop.stack.inputs):
+        declare_variable(var, uop, required, out)
+    for var in uop.stack.outputs:
+        declare_variable(var, uop, required, out)
 
 def tier2_replace_error(
     out: CWriter,
@@ -72,21 +74,21 @@ def tier2_replace_error(
     label = next(tkn_iter).text
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
-    out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
-    try:
-        offset = -int(c_offset)
-        close = ";\n"
-    except ValueError:
-        offset = None
-        out.emit(f"{{ stack_pointer += {c_offset}; ")
-        close = "; }\n"
-    out.emit("goto ")
-    if offset:
-        out.emit(f"pop_{offset}_")
-    out.emit(label + "_tier_two")
-    out.emit(close)
+    out.emit(") JUMP_TO_ERROR();\n")
 
+
+def tier2_replace_error_no_pop(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    stack: Stack,
+    inst: Instruction | None,
+) -> None:
+    next(tkn_iter)  # LPAREN
+    next(tkn_iter)  # RPAREN
+    next(tkn_iter)  # Semi colon
+    out.emit_at("JUMP_TO_ERROR();", tkn)
 
 def tier2_replace_deopt(
     out: CWriter,
@@ -100,7 +102,10 @@ def tier2_replace_deopt(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") goto deoptimize;\n")
+    out.emit(") {\n")
+    out.emit("UOP_STAT_INC(uopcode, miss);\n")
+    out.emit("JUMP_TO_JUMP_TARGET();\n");
+    out.emit("}\n")
 
 
 def tier2_replace_exit_if(
@@ -115,7 +120,10 @@ def tier2_replace_exit_if(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") goto side_exit;\n")
+    out.emit(") {\n")
+    out.emit("UOP_STAT_INC(uopcode, miss);\n")
+    out.emit("JUMP_TO_JUMP_TARGET();\n")
+    out.emit("}\n")
 
 
 def tier2_replace_oparg(
@@ -141,6 +149,7 @@ def tier2_replace_oparg(
 
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
+TIER2_REPLACEMENT_FUNCTIONS["ERROR_NO_POP"] = tier2_replace_error_no_pop
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
 TIER2_REPLACEMENT_FUNCTIONS["oparg"] = tier2_replace_oparg
 TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
@@ -172,8 +181,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         if uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
                 out.emit(stack.push(var))
-    except SizeMismatch as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+    except StackError as ex:
+        raise analysis_error(ex.args[0], uop.body[0]) from None
 
 
 SKIPS = ("_EXTENDED_ARG",)
@@ -201,8 +210,9 @@ def generate_tier2(
             continue
         if uop.is_super():
             continue
-        if not uop.is_viable():
-            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 */\n\n")
+        why_not_viable = uop.why_not_viable()
+        if why_not_viable is not None:
+            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n")
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)

@@ -631,15 +631,6 @@ class SubprocessMixin:
         # the transport was not notified yet
         self.assertFalse(killed)
 
-        # Unlike SafeChildWatcher, FastChildWatcher does not pop the
-        # callbacks if waitpid() is called elsewhere. Let's clear them
-        # manually to avoid a warning when the watcher is detached.
-        if (sys.platform != 'win32' and
-                isinstance(self, SubprocessFastWatcherTests)):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.get_child_watcher()._callbacks.clear()
-
     async def _test_popen_error(self, stdin):
         if sys.platform == 'win32':
             target = 'asyncio.windows_utils.Popen'
@@ -873,12 +864,25 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
+    @unittest.skipIf(sys.platform != 'linux', "Linux only")
+    def test_subprocess_send_signal_race(self):
+        # See https://github.com/python/cpython/issues/87744
+        async def main():
+            for _ in range(10):
+                proc = await asyncio.create_subprocess_exec('sleep', '0.1')
+                await asyncio.sleep(0.1)
+                try:
+                    proc.send_signal(signal.SIGUSR1)
+                except ProcessLookupError:
+                    pass
+                self.assertNotEqual(await proc.wait(), 255)
+
+        self.loop.run_until_complete(main())
+
 
 if sys.platform != 'win32':
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
-
-        Watcher = None
 
         def setUp(self):
             super().setUp()
@@ -886,47 +890,21 @@ if sys.platform != 'win32':
             self.loop = policy.new_event_loop()
             self.set_event_loop(self.loop)
 
-            watcher = self._get_watcher()
-            watcher.attach_loop(self.loop)
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                policy.set_child_watcher(watcher)
+        def test_watcher_implementation(self):
+            loop = self.loop
+            watcher = loop._watcher
+            if unix_events.can_use_pidfd():
+                self.assertIsInstance(watcher, unix_events._PidfdChildWatcher)
+            else:
+                self.assertIsInstance(watcher, unix_events._ThreadedChildWatcher)
 
-        def tearDown(self):
-            super().tearDown()
-            policy = asyncio.get_event_loop_policy()
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                watcher = policy.get_child_watcher()
-                policy.set_child_watcher(None)
-            watcher.attach_loop(None)
-            watcher.close()
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
-
-        def _get_watcher(self):
-            return unix_events.ThreadedChildWatcher()
-
-    class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
-                                     test_utils.TestCase):
-
-        def _get_watcher(self):
-            with self.assertWarns(DeprecationWarning):
-                return unix_events.SafeChildWatcher()
-
-    class MultiLoopChildWatcherTests(test_utils.TestCase):
-
-        def test_warns(self):
-            with self.assertWarns(DeprecationWarning):
-                unix_events.MultiLoopChildWatcher()
-
-    class SubprocessFastWatcherTests(SubprocessWatcherMixin,
-                                     test_utils.TestCase):
-
-        def _get_watcher(self):
-            with self.assertWarns(DeprecationWarning):
-                return unix_events.FastChildWatcher()
+        def setUp(self):
+            # Force the use of the threaded child watcher
+            unix_events.can_use_pidfd = mock.Mock(return_value=False)
+            super().setUp()
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),
@@ -935,70 +913,8 @@ if sys.platform != 'win32':
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
                                       test_utils.TestCase):
 
-        def _get_watcher(self):
-            return unix_events.PidfdChildWatcher()
+        pass
 
-
-    class GenericWatcherTests(test_utils.TestCase):
-
-        def test_create_subprocess_fails_with_inactive_watcher(self):
-            watcher = mock.create_autospec(asyncio.AbstractChildWatcher)
-            watcher.is_active.return_value = False
-
-            async def execute():
-                asyncio.set_child_watcher(watcher)
-
-                with self.assertRaises(RuntimeError):
-                    await subprocess.create_subprocess_exec(
-                        os_helper.FakePath(sys.executable), '-c', 'pass')
-
-                watcher.add_child_handler.assert_not_called()
-
-            with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    self.assertIsNone(runner.run(execute()))
-            self.assertListEqual(watcher.mock_calls, [
-                mock.call.__enter__(),
-                mock.call.is_active(),
-                mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
-            ], watcher.mock_calls)
-
-
-        @unittest.skipUnless(
-            unix_events.can_use_pidfd(),
-            "operating system does not support pidfds",
-        )
-        def test_create_subprocess_with_pidfd(self):
-            async def in_thread():
-                proc = await asyncio.create_subprocess_exec(
-                    *PROGRAM_CAT,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                )
-                stdout, stderr = await proc.communicate(b"some data")
-                return proc.returncode, stdout
-
-            async def main():
-                # asyncio.Runner did not call asyncio.set_event_loop()
-                with warnings.catch_warnings():
-                    warnings.simplefilter('error', DeprecationWarning)
-                    # get_event_loop() raises DeprecationWarning if
-                    # set_event_loop() was never called and RuntimeError if
-                    # it was called at least once.
-                    with self.assertRaises((RuntimeError, DeprecationWarning)):
-                        asyncio.get_event_loop_policy().get_event_loop()
-                return await asyncio.to_thread(asyncio.run, in_thread())
-            with self.assertWarns(DeprecationWarning):
-                asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
-            try:
-                with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
-                    returncode, stdout = runner.run(main())
-                self.assertEqual(returncode, 0)
-                self.assertEqual(stdout, b'some data')
-            finally:
-                with self.assertWarns(DeprecationWarning):
-                    asyncio.set_child_watcher(None)
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):

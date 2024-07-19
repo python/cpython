@@ -167,7 +167,7 @@ class BaseContext(object):
         '''
         # This is undocumented.  In previous versions of multiprocessing
         # its only effect was to make socket objects inheritable on Windows.
-        from . import connection
+        from . import connection  # noqa: F401
 
     def set_executable(self, executable):
         '''Sets the path to a python.exe or pythonw.exe binary used to run
