@@ -23,7 +23,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, SizeMismatch
+from stack import Stack, StackError
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
@@ -141,7 +141,7 @@ def write_uop(
                     out.emit(stack.push(var))
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
-    except SizeMismatch as ex:
+    except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
 
