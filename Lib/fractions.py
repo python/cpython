@@ -279,7 +279,8 @@ class Fraction(numbers.Rational):
                     numerator = -numerator
 
             else:
-                raise TypeError("argument should be a string or a number")
+                raise TypeError("argument should be a string or a Rational "
+                                "instance or have the as_integer_ratio() method")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
@@ -318,11 +319,14 @@ class Fraction(numbers.Rational):
         elif isinstance(number, numbers.Rational):
             return cls._from_coprime_ints(number.numerator, number.denominator)
 
-        elif isinstance(number, (float, Decimal)):
+        elif (isinstance(number, float) or
+              (not isinstance(number, type) and
+               hasattr(number, 'as_integer_ratio'))):
             return cls._from_coprime_ints(*number.as_integer_ratio())
 
         else:
-            raise TypeError("argument should be a Rational instance")
+            raise TypeError("argument should be a Rational instance or "
+                            "have the as_integer_ratio() method")
 
     @classmethod
     def from_float(cls, f):

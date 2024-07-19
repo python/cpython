@@ -168,9 +168,10 @@ another rational number, or from a string.
 
    .. classmethod:: from_number(number)
 
-      Alternative constructor which only accepts a numeric argument
-      (instances of :class:`numbers.Integral`, :class:`numbers.Rational`,
-      :class:`float` or :class:`decimal.Decimal`), but not strings.
+      Alternative constructor which only accepts instances of
+      :class:`numbers.Integral`, :class:`numbers.Rational`,
+      :class:`float` or :class:`decimal.Decimal`, and objects with
+      the :meth:`!as_integer_ratio` method, but not strings.
 
       .. versionadded:: 3.14
 
