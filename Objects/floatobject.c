@@ -1602,12 +1602,12 @@ float.__new__ as float_new
     x: object(c_default="NULL") = 0
     /
 
-Convert a string or number to a floating point number, if possible.
+Convert a string or number to a floating-point number, if possible.
 [clinic start generated code]*/
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=f43661b7de03e9d8]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=55909f888aa0c8a6]*/
 {
     if (type != &PyFloat_Type) {
         if (x == NULL) {
@@ -1670,6 +1670,36 @@ float_vectorcall(PyObject *type, PyObject * const*args,
 
 
 /*[clinic input]
+@classmethod
+float.from_number
+
+    number: object
+    /
+
+Convert real number to a floating-point number.
+[clinic start generated code]*/
+
+static PyObject *
+float_from_number(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=bbcf05529fe907a3 input=1f8424d9bc11866a]*/
+{
+    if (PyFloat_CheckExact(number) && type == &PyFloat_Type) {
+        Py_INCREF(number);
+        return number;
+    }
+    double x = PyFloat_AsDouble(number);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyObject *result = PyFloat_FromDouble(x);
+    if (type != &PyFloat_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
+    }
+    return result;
+}
+
+
+/*[clinic input]
 float.__getnewargs__
 [clinic start generated code]*/
 
@@ -1703,13 +1733,13 @@ You probably don't want to use this function.
 It exists mainly to be used in Python's test suite.
 
 This function returns whichever of 'unknown', 'IEEE, big-endian' or 'IEEE,
-little-endian' best describes the format of floating point numbers used by the
+little-endian' best describes the format of floating-point numbers used by the
 C type named by typestr.
 [clinic start generated code]*/
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=d5a52600f835ad67]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=90d5e246409a246e]*/
 {
     float_format_type r;
 
@@ -1782,6 +1812,7 @@ float___format___impl(PyObject *self, PyObject *format_spec)
 }
 
 static PyMethodDef float_methods[] = {
+    FLOAT_FROM_NUMBER_METHODDEF
     FLOAT_CONJUGATE_METHODDEF
     FLOAT___TRUNC___METHODDEF
     FLOAT___FLOOR___METHODDEF
@@ -1895,7 +1926,7 @@ _init_global_state(void)
     float_format_type detected_double_format, detected_float_format;
 
     /* We attempt to determine if this machine is using IEEE
-       floating point formats by peering at the bits of some
+       floating-point formats by peering at the bits of some
        carefully chosen values.  If it looks like we are on an
        IEEE platform, the float packing/unpacking routines can
        just copy bits, if not they resort to arithmetic & shifts

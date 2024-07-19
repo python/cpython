@@ -6,7 +6,7 @@ on:
         required: true
         type: string
       free-threading:
-        description: Whether to use no-GIL mode
+        description: Whether to compile CPython in free-threading mode
         required: false
         type: boolean
         default: false
