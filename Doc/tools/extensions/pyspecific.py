@@ -406,7 +406,8 @@ def expand_version_arg(argument, release):
 class PyVersionChange(sphinx.domains.changeset.VersionChange):
     def run(self):
         # Replace the 'next' special token with the current development version
-        self.arguments[0] = expand_version_arg(self.arguments[0], self.config.release)
+        self.arguments[0] = expand_version_arg(self.arguments[0],
+                                               self.config.release)
         return super().run()
 
 
