@@ -9,6 +9,7 @@
 import os
 import sys
 import time
+
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
@@ -30,13 +31,13 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 try:
-    import notfound.extension
+    import notfound.extension  # noqa: F401
 except ImportError:
     pass
 else:
     extensions.append('notfound.extension')
 try:
-    import sphinxext.opengraph
+    import sphinxext.opengraph  # noqa: F401
 except ImportError:
     pass
 else:
@@ -63,7 +64,8 @@ copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
-import patchlevel
+import patchlevel  # noqa: E402
+
 version, release = patchlevel.get_version_info()
 
 rst_epilog = f"""
@@ -298,7 +300,8 @@ del role, name
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
-    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
+    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'],
+    'builders': ['man', 'text'],
 }
 
 # Avoid a warning with Sphinx >= 4.0
@@ -319,11 +322,13 @@ html_theme_options = {
     'collapsiblesidebar': True,
     'issues_url': '/bugs.html',
     'license_url': '/license.html',
-    'root_include_title': False   # We use the version switcher instead.
+    'root_include_title': False,  # We use the version switcher instead.
 }
 
 if os.getenv("READTHEDOCS"):
-    html_theme_options["hosted_on"] = '<a href="https://about.readthedocs.com/">Read the Docs</a>'
+    html_theme_options["hosted_on"] = (
+        '<a href="https://about.readthedocs.com/">Read the Docs</a>'
+    )
 
 # Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
 # https://github.com/python/cpython/issues/91207
@@ -337,17 +342,21 @@ html_short_title = f'{release} Documentation'
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
-repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
+is_deployment_preview = os.getenv("READTHEDOCS_VERSION_TYPE") == "external"
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL", "")
+repository_url = repository_url.removesuffix(".git")
 html_context = {
-    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
-    "repository_url": repository_url.removesuffix(".git") if repository_url else None,
+    "is_deployment_preview": is_deployment_preview,
+    "repository_url": repository_url or None,
     "pr_id": os.getenv("READTHEDOCS_VERSION"),
     "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
 html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime(html_time))
+html_last_updated_fmt = time.strftime(
+    '%b %d, %Y (%H:%M UTC)', time.gmtime(html_time)
+)
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
@@ -407,30 +416,70 @@ latex_elements = {
 # (source start file, target name, title, author, document class [howto/manual]).
 _stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
-    ('c-api/index', 'c-api.tex',
-     'The Python/C API', _stdauthor, 'manual'),
-    ('extending/index', 'extending.tex',
-     'Extending and Embedding Python', _stdauthor, 'manual'),
-    ('installing/index', 'installing.tex',
-     'Installing Python Modules', _stdauthor, 'manual'),
-    ('library/index', 'library.tex',
-     'The Python Library Reference', _stdauthor, 'manual'),
-    ('reference/index', 'reference.tex',
-     'The Python Language Reference', _stdauthor, 'manual'),
-    ('tutorial/index', 'tutorial.tex',
-     'Python Tutorial', _stdauthor, 'manual'),
-    ('using/index', 'using.tex',
-     'Python Setup and Usage', _stdauthor, 'manual'),
-    ('faq/index', 'faq.tex',
-     'Python Frequently Asked Questions', _stdauthor, 'manual'),
-    ('whatsnew/' + version, 'whatsnew.tex',
-     'What\'s New in Python', 'A. M. Kuchling', 'howto'),
+    ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
+    (
+        'extending/index',
+        'extending.tex',
+        'Extending and Embedding Python',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'installing/index',
+        'installing.tex',
+        'Installing Python Modules',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'library/index',
+        'library.tex',
+        'The Python Library Reference',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'reference/index',
+        'reference.tex',
+        'The Python Language Reference',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'tutorial/index',
+        'tutorial.tex',
+        'Python Tutorial',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'using/index',
+        'using.tex',
+        'Python Setup and Usage',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'faq/index',
+        'faq.tex',
+        'Python Frequently Asked Questions',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'whatsnew/' + version,
+        'whatsnew.tex',
+        'What\'s New in Python',
+        'A. M. Kuchling',
+        'howto',
+    ),
 ]
 # Collect all HOWTOs individually
-latex_documents.extend(('howto/' + fn[:-4], 'howto-' + fn[:-4] + '.tex',
-                        '', _stdauthor, 'howto')
-                       for fn in os.listdir('howto')
-                       if fn.endswith('.rst') and fn != 'index.rst')
+latex_documents.extend(
+    ('howto/' + fn[:-4], 'howto-' + fn[:-4] + '.tex', '', _stdauthor, 'howto')
+    for fn in os.listdir('howto')
+    if fn.endswith('.rst') and fn != 'index.rst'
+)
 
 # Documents to append as an appendix to all manuals.
 latex_appendices = ['glossary', 'about', 'license', 'copyright']
@@ -458,8 +507,7 @@ coverage_ignore_functions = [
     'test($|_)',
 ]
 
-coverage_ignore_classes = [
-]
+coverage_ignore_classes = []
 
 # Glob patterns for C source files for C API coverage, relative to this directory.
 coverage_c_path = [
@@ -476,7 +524,7 @@ coverage_c_regexes = {
 # The coverage checker will ignore all C items whose names match these regexes
 # (using re.match) -- the keys must be the same as in coverage_c_regexes.
 coverage_ignore_c_items = {
-#    'cfunction': [...]
+    # 'cfunction': [...]
 }
 
 
