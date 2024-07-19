@@ -2,6 +2,11 @@
 """
 Replace `.. versionchanged:: next` lines in docs files by the given version.
 
+Run this at release time to replace `next` with the just-released version
+in the sources.
+
+No backups are made; add/commit to Git before running the script.
+
 Applies to all the VersionChange directives. For deprecated-removed, only
 handle the first argument (deprecation version, not the removal version).
 
