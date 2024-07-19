@@ -1587,11 +1587,11 @@
           "checksumValue": "e31e4ca10da91c585793c0eaf1b98aee3cb43e3a58d3d8d478593e5a6bd82927"
         }
       ],
-      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0.zip",
+      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/de979606cb6eba1aa4ace1167dba5a8319af2fcf.zip",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:de979606cb6eba1aa4ace1167dba5a8319af2fcf:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1599,7 +1599,7 @@
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0"
+      "versionInfo": "de979606cb6eba1aa4ace1167dba5a8319af2fcf"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-libb2",
