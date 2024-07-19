@@ -310,7 +310,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             @property
             def __bases__(self):
                 return self.__bases__
-        with support.infinite_recursion():
+        with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
             self.assertRaises(RecursionError, issubclass, int, X())
             self.assertRaises(RecursionError, isinstance, 1, X())
@@ -352,7 +352,7 @@ def blowstack(fxn, arg, compare_to):
     # Make sure that calling isinstance with a deeply nested tuple for its
     # argument will raise RecursionError eventually.
     tuple_arg = (compare_to,)
-    for cnt in range(support.EXCEEDS_RECURSION_LIMIT):
+    for cnt in range(support.exceeds_recursion_limit()):
         tuple_arg = (tuple_arg,)
         fxn(arg, tuple_arg)
 

@@ -1,1 +1,0 @@
-A jump leaving an exception handler back to normal code no longer checks the eval breaker.

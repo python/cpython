@@ -1011,13 +1011,19 @@ validate_typeparam(struct validator *state, type_param_ty tp)
         case TypeVar_kind:
             ret = validate_name(tp->v.TypeVar.name) &&
                 (!tp->v.TypeVar.bound ||
-                 validate_expr(state, tp->v.TypeVar.bound, Load));
+                 validate_expr(state, tp->v.TypeVar.bound, Load)) &&
+                (!tp->v.TypeVar.default_value ||
+                 validate_expr(state, tp->v.TypeVar.default_value, Load));
             break;
         case ParamSpec_kind:
-            ret = validate_name(tp->v.ParamSpec.name);
+            ret = validate_name(tp->v.ParamSpec.name) &&
+                (!tp->v.ParamSpec.default_value ||
+                 validate_expr(state, tp->v.ParamSpec.default_value, Load));
             break;
         case TypeVarTuple_kind:
-            ret = validate_name(tp->v.TypeVarTuple.name);
+            ret = validate_name(tp->v.TypeVarTuple.name) &&
+                (!tp->v.TypeVarTuple.default_value ||
+                 validate_expr(state, tp->v.TypeVarTuple.default_value, Load));
             break;
     }
     return ret;
@@ -1037,10 +1043,6 @@ validate_type_params(struct validator *state, asdl_type_param_seq *tps)
     return 1;
 }
 
-
-/* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 2
-
 int
 _PyAST_Validate(mod_ty mod)
 {
@@ -1057,9 +1059,9 @@ _PyAST_Validate(mod_ty mod)
     }
     /* Be careful here to prevent overflow. */
     int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
+    starting_recursion_depth = recursion_depth;
     state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    state.recursion_limit = Py_C_RECURSION_LIMIT;
 
     switch (mod->kind) {
     case Module_kind:

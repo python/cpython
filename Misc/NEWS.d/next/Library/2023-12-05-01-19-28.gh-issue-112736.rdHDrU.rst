@@ -1,1 +1,0 @@
-The use of del-safe symbols in ``subprocess`` was refactored to allow for use in cross-platform build environments.

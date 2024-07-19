@@ -1,1 +1,0 @@
-Fixed a bug in :class:`fractions.Fraction` where an invalid string using ``d`` in the decimals part creates a different error compared to other invalid letters/characters. Patch by Jeremiah Gabriel Pascual.

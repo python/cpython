@@ -1,5 +1,0 @@
-Add the following constants to module :mod:`stat`: ``UF_SETTABLE``,
-``UF_TRACKED``, ``UF_DATAVAULT``, ``SF_SUPPORTED``, ``SF_SETTABLE``,
-``SF_SYNTHETIC``, ``SF_RESTRICTED``, ``SF_FIRMLINK`` and ``SF_DATALESS``.
-The values ``UF_SETTABLE``, ``SF_SUPPORTED``, ``SF_SETTABLE`` and
-``SF_SYNTHETIC`` are only available on macOS.

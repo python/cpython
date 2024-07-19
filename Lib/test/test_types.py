@@ -2,7 +2,7 @@
 
 from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
 import collections.abc
-from collections import namedtuple
+from collections import namedtuple, UserDict
 import copy
 import _datetime
 import gc
@@ -10,6 +10,7 @@ import inspect
 import pickle
 import locale
 import sys
+import textwrap
 import types
 import unittest.mock
 import weakref
@@ -712,6 +713,26 @@ class UnionTests(unittest.TestCase):
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
         self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
+
+    def test_union_of_unhashable(self):
+        class UnhashableMeta(type):
+            __hash__ = None
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        self.assertEqual((A | B).__args__, (A, B))
+        union1 = A | B
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = int | B
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = A | int
+        with self.assertRaises(TypeError):
+            hash(union3)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
@@ -1735,21 +1756,50 @@ class ClassCreationTests(unittest.TestCase):
 class SimpleNamespaceTests(unittest.TestCase):
 
     def test_constructor(self):
-        ns1 = types.SimpleNamespace()
-        ns2 = types.SimpleNamespace(x=1, y=2)
-        ns3 = types.SimpleNamespace(**dict(x=1, y=2))
+        def check(ns, expected):
+            self.assertEqual(len(ns.__dict__), len(expected))
+            self.assertEqual(vars(ns), expected)
+            # check order
+            self.assertEqual(list(vars(ns).items()), list(expected.items()))
+            for name in expected:
+                self.assertEqual(getattr(ns, name), expected[name])
+
+        check(types.SimpleNamespace(), {})
+        check(types.SimpleNamespace(x=1, y=2), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace(**dict(x=1, y=2)), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}, x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]], x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace(UserDict({'x': 1, 'y': 2}), x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]]), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([], x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace({}, x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace([]), {})
+        check(types.SimpleNamespace({}), {})
 
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(1, 2, 3)
+            types.SimpleNamespace([], [])  # too many positional arguments
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(**{1: 2})
-
-        self.assertEqual(len(ns1.__dict__), 0)
-        self.assertEqual(vars(ns1), {})
-        self.assertEqual(len(ns2.__dict__), 2)
-        self.assertEqual(vars(ns2), {'y': 2, 'x': 1})
-        self.assertEqual(len(ns3.__dict__), 2)
-        self.assertEqual(vars(ns3), {'y': 2, 'x': 1})
+            types.SimpleNamespace(1)  # not a mapping or iterable
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([1])  # non-iterable
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x']])  # not a pair
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x', 'y', 'z']])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(**{1: 2})  # non-string key
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace({1: 2})
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[1, 2]])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(UserDict({1: 2}))
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[[], 2]])  # non-hashable key
 
     def test_unbound(self):
         ns1 = vars(types.SimpleNamespace())
@@ -2294,6 +2344,41 @@ class FunctionTests(unittest.TestCase):
             types.FunctionType(
                 ex.__code__, {}, "func", None, None, 3,
             )
+
+
+class SubinterpreterTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        global interpreters
+        try:
+            from test.support import interpreters
+        except ModuleNotFoundError:
+            raise unittest.SkipTest('subinterpreters required')
+        import test.support.interpreters.channels
+
+    @cpython_only
+    def test_slot_wrappers(self):
+        rch, sch = interpreters.channels.create()
+
+        # For now it's sufficient to check int.__str__.
+        # See https://github.com/python/cpython/issues/117482
+        # and https://github.com/python/cpython/pull/117660.
+        script = textwrap.dedent('''
+            text = repr(int.__str__)
+            sch.send_nowait(text)
+            ''')
+
+        exec(script)
+        expected = rch.recv()
+
+        interp = interpreters.create()
+        interp.exec('from test.support import interpreters')
+        interp.prepare_main(sch=sch)
+        interp.exec(script)
+        results = rch.recv()
+
+        self.assertEqual(results, expected)
 
 
 if __name__ == '__main__':

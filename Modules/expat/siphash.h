@@ -106,7 +106,7 @@
  * if this code is included and compiled as C++; related GCC warning is:
  * warning: use of C++11 long long integer constant [-Wlong-long]
  */
-#define _SIP_ULL(high, low) ((((uint64_t)high) << 32) | (low))
+#define SIP_ULL(high, low) ((((uint64_t)high) << 32) | (low))
 
 #define SIP_ROTL(x, b) (uint64_t)(((x) << (b)) | ((x) >> (64 - (b))))
 
@@ -190,10 +190,10 @@ sip_round(struct siphash *H, const int rounds) {
 
 static struct siphash *
 sip24_init(struct siphash *H, const struct sipkey *key) {
-  H->v0 = _SIP_ULL(0x736f6d65U, 0x70736575U) ^ key->k[0];
-  H->v1 = _SIP_ULL(0x646f7261U, 0x6e646f6dU) ^ key->k[1];
-  H->v2 = _SIP_ULL(0x6c796765U, 0x6e657261U) ^ key->k[0];
-  H->v3 = _SIP_ULL(0x74656462U, 0x79746573U) ^ key->k[1];
+  H->v0 = SIP_ULL(0x736f6d65U, 0x70736575U) ^ key->k[0];
+  H->v1 = SIP_ULL(0x646f7261U, 0x6e646f6dU) ^ key->k[1];
+  H->v2 = SIP_ULL(0x6c796765U, 0x6e657261U) ^ key->k[0];
+  H->v3 = SIP_ULL(0x74656462U, 0x79746573U) ^ key->k[1];
 
   H->p = H->buf;
   H->c = 0;

@@ -13,10 +13,13 @@ extern PyObject *_Py_make_paramspec(PyThreadState *, PyObject *);
 extern PyObject *_Py_make_typevartuple(PyThreadState *, PyObject *);
 extern PyObject *_Py_make_typealias(PyThreadState *, PyObject *);
 extern PyObject *_Py_subscript_generic(PyThreadState *, PyObject *);
+extern PyObject *_Py_set_typeparam_default(PyThreadState *, PyObject *, PyObject *);
 extern int _Py_initialize_generic(PyInterpreterState *);
 extern void _Py_clear_generic_types(PyInterpreterState *);
 
 extern PyTypeObject _PyTypeAlias_Type;
+extern PyTypeObject _PyNoDefault_Type;
+extern PyObject _Py_NoDefaultStruct;
 
 #ifdef __cplusplus
 }

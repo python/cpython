@@ -1,5 +1,5 @@
-:mod:`ctypes` --- A foreign function library for Python
-=======================================================
+:mod:`!ctypes` --- A foreign function library for Python
+========================================================
 
 .. module:: ctypes
    :synopsis: A foreign function library for Python.
@@ -93,7 +93,6 @@ Accessing functions from loaded dlls
 
 Functions are accessed as attributes of dll objects::
 
-   >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
    >>> print(windll.kernel32.GetModuleHandleA)  # doctest: +WINDOWS
@@ -200,7 +199,7 @@ calls).
 Python objects that can directly be used as parameters in these function calls.
 ``None`` is passed as a C ``NULL`` pointer, bytes objects and strings are passed
 as pointer to the memory block that contains their data (:c:expr:`char *` or
-:c:expr:`wchar_t *`).  Python integers are passed as the platforms default C
+:c:expr:`wchar_t *`).  Python integers are passed as the platform's default C
 :c:expr:`int` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
@@ -266,6 +265,20 @@ Fundamental data types
 
 (1)
    The constructor accepts any object with a truth value.
+
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
+complex types are available:
+
++----------------------------------+---------------------------------+-----------------+
+| ctypes type                      | C type                          | Python type     |
++==================================+=================================+=================+
+| :class:`c_float_complex`         | :c:expr:`float complex`         | complex         |
++----------------------------------+---------------------------------+-----------------+
+| :class:`c_double_complex`        | :c:expr:`double complex`        | complex         |
++----------------------------------+---------------------------------+-----------------+
+| :class:`c_longdouble_complex`    | :c:expr:`long double complex`   | complex         |
++----------------------------------+---------------------------------+-----------------+
+
 
 All these types can be created by calling them with an optional initializer of
 the correct type and value::
@@ -662,14 +675,22 @@ for debugging because they can provide useful information::
    guaranteed by the library to work in the general case.  Unions and
    structures with bit-fields should always be passed to functions by pointer.
 
-Structure/union alignment and byte order
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Structure/union layout, alignment and byte order
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, Structure and Union fields are aligned in the same way the C
-compiler does it. It is possible to override this behavior by specifying a
-:attr:`~Structure._pack_` class attribute in the subclass definition.
-This must be set to a positive integer and specifies the maximum alignment for the fields.
-This is what ``#pragma pack(n)`` also does in MSVC.
+By default, Structure and Union fields are laid out in the same way the C
+compiler does it.  It is possible to override this behavior entirely by specifying a
+:attr:`~Structure._layout_` class attribute in the subclass definition; see
+the attribute documentation for details.
+
+It is possible to specify the maximum alignment for the fields by setting
+the :attr:`~Structure._pack_` class attribute to a positive integer.
+This matches what ``#pragma pack(n)`` does in MSVC.
+
+It is also possible to set a minimum alignment for how the subclass itself is packed in the
+same way ``#pragma align(n)`` works in MSVC.
+This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -1113,10 +1134,6 @@ api::
    >>> print(hex(version.value))
    0x30c00a0
 
-If the interpreter would have been started with :option:`-O`, the sample would
-have printed ``c_long(1)``, or ``c_long(2)`` if :option:`-OO` would have been
-specified.
-
 An extended example which also demonstrates the use of pointers accesses the
 :c:data:`PyImport_FrozenModules` pointer exported by Python.
 
@@ -1335,8 +1352,9 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS, :func:`~ctypes.util.find_library` tries several predefined naming schemes and paths
-to locate the library, and returns a full pathname if successful::
+On macOS and Android, :func:`~ctypes.util.find_library` uses the system's
+standard naming schemes and paths to locate the library, and returns a full
+pathname if successful::
 
    >>> from ctypes.util import find_library
    >>> find_library("c")
@@ -1441,7 +1459,7 @@ function exported by these libraries, and reacquired afterwards.
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
 an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platforms :c:func:`!dlopen` or
+parameter, otherwise the underlying platform's :c:func:`!dlopen` or
 :c:func:`!LoadLibrary` function is used to load the library into
 the process, and to get a handle to it.
 
@@ -1452,7 +1470,7 @@ configurable.
 
 The *use_errno* parameter, when set to true, enables a ctypes mechanism that
 allows accessing the system :data:`errno` error number in a safe way.
-:mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
+:mod:`ctypes` maintains a thread-local copy of the system's :data:`errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
 :data:`errno` value before the function call is swapped with the ctypes private
 copy, the same happens immediately after the function call.
@@ -2077,13 +2095,13 @@ Utility functions
    Does the same as the C ``sizeof`` operator.
 
 
-.. function:: string_at(address, size=-1)
+.. function:: string_at(ptr, size=-1)
 
-   This function returns the C string starting at memory address *address* as a bytes
-   object. If size is specified, it is used as size, otherwise the string is assumed
+   Return the byte string at *void \*ptr*.
+   If *size* is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
 
-   .. audit-event:: ctypes.string_at address,size ctypes.string_at
+   .. audit-event:: ctypes.string_at ptr,size ctypes.string_at
 
 
 .. function:: WinError(code=None, descr=None)
@@ -2099,14 +2117,14 @@ Utility functions
       alias of :exc:`OSError`.
 
 
-.. function:: wstring_at(address, size=-1)
+.. function:: wstring_at(ptr, size=-1)
 
-   This function returns the wide character string starting at memory address
-   *address* as a string.  If *size* is specified, it is used as the number of
+   Return the wide-character string at *void \*ptr*.
+   If *size* is specified, it is used as the number of
    characters of the string, otherwise the string is assumed to be
    zero-terminated.
 
-   .. audit-event:: ctypes.wstring_at address,size ctypes.wstring_at
+   .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
 
 
 .. _ctypes-data-types:
@@ -2278,6 +2296,30 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`float` datatype.  The constructor accepts an
    optional float initializer.
+
+
+.. class:: c_double_complex
+
+   Represents the C :c:expr:`double complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
+
+
+.. class:: c_float_complex
+
+   Represents the C :c:expr:`float complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
+
+
+.. class:: c_longdouble_complex
+
+   Represents the C :c:expr:`long double complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
 
 
 .. class:: c_int
@@ -2533,6 +2575,37 @@ fields, or any other data types containing pointer type fields.
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
       Setting this attribute to 0 is the same as not setting it at all.
 
+
+   .. attribute:: _align_
+
+      An optional small integer that allows overriding the alignment of
+      the structure when being packed or unpacked to/from memory.
+      Setting this attribute to 0 is the same as not setting it at all.
+
+   .. attribute:: _layout_
+
+      An optional string naming the struct/union layout. It can currently
+      be set to:
+
+      - ``"ms"``: the layout used by the Microsoft compiler (MSVC).
+        On GCC and Clang, this layout can be selected with
+        ``__attribute__((ms_struct))``.
+      - ``"gcc-sysv"``: the layout used by GCC with the System V or “SysV-like”
+        data model, as used on Linux and macOS.
+        With this layout, :attr:`~Structure._pack_` must be unset or zero.
+
+      If not set explicitly, ``ctypes`` will use a default that
+      matches the platform conventions. This default may change in future
+      Python releases (for example, when a new platform gains official support,
+      or when a difference between similar platforms is found).
+      Currently the default will be:
+
+      - On Windows: ``"ms"``
+      - When :attr:`~Structure._pack_` is specified: ``"ms"``
+      - Otherwise: ``"gcc-sysv"``
+
+      :attr:`!_layout_` must already be defined when
+      :attr:`~Structure._fields_` is assigned, otherwise it will have no effect.
 
    .. attribute:: _anonymous_
 

@@ -75,11 +75,6 @@ class StackEffect(Node):
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
-    # Optional `(type, refinement)`
-    type_prop: None | tuple[str, None | str] = field(
-        default_factory=lambda: None, init=True, compare=False, hash=False
-    )
-
     def __repr__(self) -> str:
         items = [self.name, self.type, self.cond, self.size]
         while items and items[-1] == "":
@@ -143,6 +138,8 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
+    inputs: list[InputEffect]
+    outputs: list[OutputEffect]
     flags: list[str]  # instr flags to set on the pseudo instruction
     targets: list[str]  # opcodes this can be replaced by
 
@@ -184,7 +181,13 @@ class Parser(PLexer):
         # | annotation* op(NAME, (inputs -- outputs))
         annotations = []
         while anno := self.expect(lx.ANNOTATION):
-            annotations.append(anno.text)
+            if anno.text == "replicate":
+                self.require(lx.LPAREN)
+                times = self.require(lx.NUMBER)
+                self.require(lx.RPAREN)
+                annotations.append(f"replicate({times.text})")
+            else:
+                annotations.append(anno.text)
         tkn = self.expect(lx.INST)
         if not tkn:
             tkn = self.expect(lx.OP)
@@ -260,25 +263,14 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' [IDENTIFIER [TIMES]] ['&' '(' IDENTIFIER ['+' IDENTIFIER] ')']] ['if' '(' expression ')']
+        # IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
-            type_prop = None
             if self.expect(lx.COLON):
-                if i := self.expect(lx.IDENTIFIER):
-                    type_text = i.text.strip()
-                    if self.expect(lx.TIMES):
-                        type_text += " *"
-                if self.expect(lx.AND):
-                    consumed_bracket = self.expect(lx.LPAREN) is not None
-                    type_prop_text = self.require(lx.IDENTIFIER).text.strip()
-                    refinement = None
-                    if self.expect(lx.PLUS):
-                        refinement = self.require(lx.IDENTIFIER).text.strip()
-                    type_prop = (type_prop_text, refinement)
-                    if consumed_bracket:
-                        self.require(lx.RPAREN)
+                type_text = self.require(lx.IDENTIFIER).text.strip()
+                if self.expect(lx.TIMES):
+                    type_text += " *"
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
@@ -293,9 +285,8 @@ class Parser(PLexer):
                 if not (size := self.expression()):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
-                type_text = "PyObject **"
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, cond_text, size_text, type_prop)
+            return StackEffect(tkn.text, type_text, cond_text, size_text)
         return None
 
     @contextual
@@ -419,16 +410,18 @@ class Parser(PLexer):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.COMMA):
-                        flags = self.flags()
-                    else:
-                        flags = []
-                    if self.expect(lx.RPAREN):
-                        if self.expect(lx.EQUALS):
-                            if not self.expect(lx.LBRACE):
-                                raise self.make_syntax_error("Expected {")
-                            if members := self.members():
-                                if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
-                                    return Pseudo(tkn.text, flags, members)
+                        inp, outp = self.io_effect()
+                        if self.expect(lx.COMMA):
+                            flags = self.flags()
+                        else:
+                            flags = []
+                        if self.expect(lx.RPAREN):
+                            if self.expect(lx.EQUALS):
+                                if not self.expect(lx.LBRACE):
+                                    raise self.make_syntax_error("Expected {")
+                                if members := self.members():
+                                    if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
+                                        return Pseudo(tkn.text, inp, outp, flags, members)
         return None
 
     def members(self) -> list[str] | None:
