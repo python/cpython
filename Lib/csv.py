@@ -47,7 +47,7 @@ SETTINGS:
             field contains either the quotechar or the delimiter
         csv.QUOTE_ALL means that quotes are always placed around fields.
         csv.QUOTE_NONNUMERIC means that quotes are always placed around
-            fields which do not parse as integers or floating point
+            fields which do not parse as integers or floating-point
             numbers.
         csv.QUOTE_STRINGS means that quotes are always placed around
             fields which are strings.  Note that the Python value None

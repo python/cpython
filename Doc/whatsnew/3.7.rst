@@ -339,7 +339,7 @@ PEP 564: New Time Functions With Nanosecond Resolution
 ------------------------------------------------------
 
 The resolution of clocks in modern systems can exceed the limited precision
-of a floating point number returned by the :func:`time.time` function
+of a floating-point number returned by the :func:`time.time` function
 and its variants.  To avoid loss of precision, :pep:`564` adds six new
 "nanosecond" variants of the existing timer functions to the :mod:`time`
 module:

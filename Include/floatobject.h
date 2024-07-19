@@ -2,7 +2,7 @@
 /* Float object interface */
 
 /*
-PyFloatObject represents a (double precision) floating point number.
+PyFloatObject represents a (double precision) floating-point number.
 */
 
 #ifndef Py_FLOATOBJECT_H

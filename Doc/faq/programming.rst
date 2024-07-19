@@ -869,7 +869,7 @@ How do I convert a string to a number?
 --------------------------------------
 
 For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
-== 144``.  Similarly, :func:`float` converts to floating-point,
+== 144``.  Similarly, :func:`float` converts to a floating-point number,
 e.g. ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==

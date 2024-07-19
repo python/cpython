@@ -236,7 +236,7 @@ class FaultHandlerTests(unittest.TestCase):
             faulthandler._sigfpe()
             """,
             3,
-            'Floating point exception')
+            'Floating-point exception')
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')

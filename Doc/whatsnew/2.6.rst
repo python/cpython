@@ -3051,7 +3051,7 @@ Changes to Python's build process and to the C API include:
 
 * Several functions return information about the platform's
   floating-point support.  :c:func:`PyFloat_GetMax` returns
-  the maximum representable floating point value,
+  the maximum representable floating-point value,
   and :c:func:`PyFloat_GetMin` returns the minimum
   positive value.  :c:func:`PyFloat_GetInfo` returns an object
   containing more information from the :file:`float.h` file, such as

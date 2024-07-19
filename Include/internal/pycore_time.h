@@ -6,7 +6,7 @@
 // Time formats:
 //
 // * Seconds.
-// * Seconds as a floating point number (C double).
+// * Seconds as a floating-point number (C double).
 // * Milliseconds (10^-3 seconds).
 // * Microseconds (10^-6 seconds).
 // * 100 nanoseconds (10^-7 seconds), used on Windows.

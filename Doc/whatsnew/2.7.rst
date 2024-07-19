@@ -1198,7 +1198,7 @@ changes, or look through the Subversion logs for all the details.
   of the operands.  Previously such comparisons would fall back to
   Python's default rules for comparing objects, which produced arbitrary
   results based on their type.  Note that you still cannot combine
-  :class:`!Decimal` and floating-point in other operations such as addition,
+  :class:`!Decimal` and floating point in other operations such as addition,
   since you should be explicitly choosing how to convert between float and
   :class:`!Decimal`.  (Fixed by Mark Dickinson; :issue:`2531`.)
 

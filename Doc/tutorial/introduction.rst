@@ -62,7 +62,7 @@ For example::
    20
    >>> (50 - 5*6) / 4
    5.0
-   >>> 8 / 5  # division always returns a floating point number
+   >>> 8 / 5  # division always returns a floating-point number
    1.6
 
 The integer numbers (e.g. ``2``, ``4``, ``20``) have type :class:`int`,
@@ -544,7 +544,7 @@ This example introduces several new features.
 * The :func:`print` function writes the value of the argument(s) it is given.
   It differs from just writing the expression you want to write (as we did
   earlier in the calculator examples) in the way it handles multiple arguments,
-  floating point quantities, and strings.  Strings are printed without quotes,
+  floating-point quantities, and strings.  Strings are printed without quotes,
   and a space is inserted between items, so you can format things nicely, like
   this::
 

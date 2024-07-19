@@ -138,7 +138,7 @@ Mathematics
 ===========
 
 The :mod:`math` module gives access to the underlying C library functions for
-floating point math::
+floating-point math::
 
    >>> import math
    >>> math.cos(math.pi / 4)

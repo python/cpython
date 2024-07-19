@@ -1249,7 +1249,7 @@ Some of the more notable changes are:
 
 * The :func:`pow` built-in function no longer supports 3 arguments when
   floating-point numbers are supplied. ``pow(x, y, z)`` returns ``(x**y) % z``,
-  but this is never useful for floating point numbers, and the final result varies
+  but this is never useful for floating-point numbers, and the final result varies
   unpredictably depending on the platform.  A call such as ``pow(2.0, 8.0, 7.0)``
   will now raise a :exc:`TypeError` exception.
 
