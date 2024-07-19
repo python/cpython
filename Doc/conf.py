@@ -18,11 +18,10 @@ from pyspecific import SOURCE_URI
 # ---------------------
 
 extensions = [
-    'asdl_highlight',
     'c_annotations',
     'escape4chm',
     'glossary_search',
-    'peg_highlight',
+    'lexers',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
@@ -83,7 +82,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '4.2'
+needs_sphinx = '6.2.1'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.

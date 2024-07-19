@@ -16,10 +16,9 @@ from time import asctime
 from pprint import pformat
 
 import sphinx
-from docutils import nodes, utils
+from docutils import nodes
 from docutils.io import StringOutput
-from docutils.parsers.rst import Directive
-from docutils.utils import new_document
+from docutils.utils import new_document, unescape
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.domains.changeset import VersionChange, versionlabels, versionlabel_classes
@@ -54,7 +53,7 @@ std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
 # Support for marking up and linking to bugs.python.org issues
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
-    issue = utils.unescape(text)
+    issue = unescape(text)
     # sanity check: there are no bpo issues within these two values
     if 47261 < int(issue) < 400000:
         msg = inliner.reporter.error(f'The BPO ID {text!r} seems too high -- '
@@ -69,7 +68,7 @@ def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 # Support for marking up and linking to GitHub issues
 
 def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
-    issue = utils.unescape(text)
+    issue = unescape(text)
     # sanity check: all GitHub issues have ID >= 32426
     # even though some of them are also valid BPO IDs
     if int(issue) < 32426:
@@ -84,7 +83,7 @@ def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 
 # Support for marking up implementation details
 
-class ImplementationDetail(Directive):
+class ImplementationDetail(SphinxDirective):
 
     has_content = True
     final_argument_whitespace = True
@@ -216,7 +215,7 @@ def audit_events_merge(app, env, docnames, other):
             env.all_audit_events[name] = value
 
 
-class AuditEvent(Directive):
+class AuditEvent(SphinxDirective):
 
     has_content = True
     required_arguments = 1
@@ -246,15 +245,14 @@ class AuditEvent(Directive):
         text = label.format(name="``{}``".format(name),
                             args=", ".join("``{}``".format(a) for a in args if a))
 
-        env = self.state.document.settings.env
-        if not hasattr(env, 'all_audit_events'):
-            env.all_audit_events = {}
+        if not hasattr(self.env, 'all_audit_events'):
+            self.env.all_audit_events = {}
 
         new_info = {
             'source': [],
             'args': args
         }
-        info = env.all_audit_events.setdefault(name, new_info)
+        info = self.env.all_audit_events.setdefault(name, new_info)
         if info is not new_info:
             if not self._do_args_match(info['args'], new_info['args']):
                 self.logger.warning(
@@ -274,7 +272,7 @@ class AuditEvent(Directive):
             )
             ids.append(target)
 
-        info['source'].append((env.docname, target))
+        info['source'].append((self.env.docname, target))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
         pnode.line = self.lineno
@@ -312,7 +310,7 @@ class audit_event_list(nodes.General, nodes.Element):
     pass
 
 
-class AuditEventListDirective(Directive):
+class AuditEventListDirective(SphinxDirective):
 
     def run(self):
         return [audit_event_list('')]
@@ -434,7 +432,7 @@ gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
-class MiscNews(Directive):
+class MiscNews(SphinxDirective):
     has_content = False
     required_arguments = 1
     optional_arguments = 0
@@ -449,7 +447,7 @@ class MiscNews(Directive):
         if not source_dir:
             source_dir = path.dirname(path.abspath(source))
         fpath = path.join(source_dir, fname)
-        self.state.document.settings.record_dependencies.add(fpath)
+        self.env.note_dependency(path.abspath(fpath))
         try:
             with io.open(fpath, encoding='utf-8') as fp:
                 content = fp.read()
