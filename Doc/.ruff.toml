@@ -15,7 +15,6 @@ select = [
     "C4",  # flake8-comprehensions
     "B",   # flake8-bugbear
     "E",   # pycodestyle
-    "EM",  # flake8-errmsg
     "F",   # pyflakes
     "FA",  # flake8-future-annotations
     "FLY", # flynt
