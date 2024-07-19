@@ -675,7 +675,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
    that you choose (see :ref:`profile-calibration`).  For most machines, a timer
    that returns a lone integer value will provide the best results in terms of
    low overhead during profiling.  (:func:`os.times` is *pretty* bad, as it
-   returns a tuple of floating point values).  If you want to substitute a
+   returns a tuple of floating-point values).  If you want to substitute a
    better timer in the cleanest fashion, derive a class and hardwire a
    replacement dispatch method that best handles your timer call, along with the
    appropriate calibration constant.

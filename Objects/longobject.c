@@ -6251,7 +6251,7 @@ PyDoc_STRVAR(long_doc,
 int(x, base=10) -> integer\n\
 \n\
 Convert a number or string to an integer, or return 0 if no arguments\n\
-are given.  If x is a number, return x.__int__().  For floating point\n\
+are given.  If x is a number, return x.__int__().  For floating-point\n\
 numbers, this truncates towards zero.\n\
 \n\
 If x is not a number or if base is given, then x must be a string,\n\

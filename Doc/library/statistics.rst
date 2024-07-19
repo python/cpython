@@ -73,7 +73,7 @@ or sample.
 
 =======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
-:func:`fmean`            Fast, floating point arithmetic mean, with optional weighting.
+:func:`fmean`            Fast, floating-point arithmetic mean, with optional weighting.
 :func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.

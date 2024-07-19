@@ -261,7 +261,7 @@ allowed.
 
 The :ref:`string formatting <formatspec>` language also now has support
 for the ``'_'`` option to signal the use of an underscore for a thousands
-separator for floating point presentation types and for integer
+separator for floating-point presentation types and for integer
 presentation type ``'d'``.  For integer presentation types ``'b'``,
 ``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
 digits::

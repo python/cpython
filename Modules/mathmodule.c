@@ -106,7 +106,7 @@ typedef struct{ double hi; double lo; } DoubleLength;
 static DoubleLength
 dl_fast_sum(double a, double b)
 {
-    /* Algorithm 1.1. Compensated summation of two floating point numbers. */
+    /* Algorithm 1.1. Compensated summation of two floating-point numbers. */
     assert(fabs(a) >= fabs(b));
     double x = a + b;
     double y = (a - x) + b;
@@ -1347,14 +1347,14 @@ math.fsum
     seq: object
     /
 
-Return an accurate floating point sum of values in the iterable seq.
+Return an accurate floating-point sum of values in the iterable seq.
 
-Assumes IEEE-754 floating point arithmetic.
+Assumes IEEE-754 floating-point arithmetic.
 [clinic start generated code]*/
 
 static PyObject *
 math_fsum(PyObject *module, PyObject *seq)
-/*[clinic end generated code: output=ba5c672b87fe34fc input=c51b7d8caf6f6e82]*/
+/*[clinic end generated code: output=ba5c672b87fe34fc input=4506244ded6057dc]*/
 {
     PyObject *item, *iter, *sum = NULL;
     Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
@@ -2411,7 +2411,7 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [4]  On an Apple M1 Max, hypot(*vec)
+floating-point throughput. [4]  On an Apple M1 Max, hypot(*vec)
 takes only 3.33 µsec when len(vec) == 1000.
 
 The square root differential correction is needed because a
@@ -3093,7 +3093,7 @@ math.isclose -> bool
         maximum difference for being considered "close", regardless of the
         magnitude of the input values
 
-Determine whether two floating point numbers are close in value.
+Determine whether two floating-point numbers are close in value.
 
 Return True if a is close in value to b, and False otherwise.
 
@@ -3108,7 +3108,7 @@ only close to themselves.
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
                   double abs_tol)
-/*[clinic end generated code: output=b73070207511952d input=f28671871ea5bfba]*/
+/*[clinic end generated code: output=b73070207511952d input=12d41764468bfdb8]*/
 {
     double diff = 0.0;
 
