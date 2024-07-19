@@ -42,7 +42,7 @@ Some facts and figures:
    or to acknowledge that they are expected and the archive is fully trusted.
 
 .. versionchanged:: 3.14
-   The default extraction filter was 'fully trusted' but is now 'data' which
+   The default extraction filter was :func:`fully_trusted <fully_trusted_filter>` but is now :func:`data <data_filter>` which
    which disallows dangerous features like links to absolute paths or paths
    outside the destination.
 
