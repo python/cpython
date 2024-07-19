@@ -1,0 +1,2 @@
+Skip inaccessible registry keys in the WinAPI mimetype implementation (similar to the
+behavior of the WinReg implementation)
