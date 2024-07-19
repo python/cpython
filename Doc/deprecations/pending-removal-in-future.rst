@@ -1,7 +1,7 @@
 Pending Removal in Future Versions
 ----------------------------------
 
-The following APIs were will be removed in the future,
+The following APIs will be removed in the future,
 although there is currently no date scheduled for their removal.
 
 * :mod:`argparse`: Nesting argument groups and nesting mutually exclusive
@@ -140,7 +140,7 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`xml.etree.ElementTree`: Testing the truth value of an
   :class:`~xml.etree.ElementTree.Element` is deprecated. In a future release it
-  it will always return ``True``. Prefer explicit ``len(elem)`` or
+  will always return ``True``. Prefer explicit ``len(elem)`` or
   ``elem is not None`` tests instead.
 
 * :meth:`zipimport.zipimporter.load_module` is deprecated:
