@@ -991,13 +991,13 @@ class BaseBytesTest:
         self.assertEqual(c, b'hllo')
 
     def test_sq_item(self):
-        _testcapi = import_helper.import_module('_testcapi')
+        _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
         obj = self.type2test((42,))
         with self.assertRaises(IndexError):
-            _testcapi.sequence_getitem(obj, -2)
+            _testlimitedcapi.sequence_getitem(obj, -2)
         with self.assertRaises(IndexError):
-            _testcapi.sequence_getitem(obj, 1)
-        self.assertEqual(_testcapi.sequence_getitem(obj, 0), 42)
+            _testlimitedcapi.sequence_getitem(obj, 1)
+        self.assertEqual(_testlimitedcapi.sequence_getitem(obj, 0), 42)
 
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
@@ -1256,7 +1256,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
 
-    _testcapi = import_helper.import_module('_testcapi')
+    _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
     def test_getitem_error(self):
         b = bytearray(b'python')
@@ -1354,7 +1354,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b[i] = val
 
         def setitem_as_sequence(b, i, val):
-            self._testcapi.sequence_setitem(b, i, val)
+            self._testlimitedcapi.sequence_setitem(b, i, val)
 
         def do_tests(setitem):
             b = bytearray([1, 2, 3])
@@ -1401,7 +1401,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             del b[i]
 
         def del_as_sequence(b, i):
-            self._testcapi.sequence_delitem(b, i)
+            self._testlimitedcapi.sequence_delitem(b, i)
 
         def do_tests(delete):
             b = bytearray(range(10))
@@ -1810,7 +1810,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         with self.subTest("tp_as_sequence"):
             b = bytearray(b'Now you see me...')
             with self.assertRaises(IndexError):
-                self._testcapi.sequence_setitem(b, 0, Boom())
+                self._testlimitedcapi.sequence_setitem(b, 0, Boom())
 
 
 class AssortedBytesTest(unittest.TestCase):

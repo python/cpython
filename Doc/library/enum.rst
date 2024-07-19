@@ -1,5 +1,5 @@
-:mod:`enum` --- Support for enumerations
-========================================
+:mod:`!enum` --- Support for enumerations
+=========================================
 
 .. module:: enum
    :synopsis: Implementation of an enumeration class.
@@ -279,6 +279,8 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~Enum.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
@@ -286,13 +288,18 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
+
    .. attribute:: Enum._name_
 
       Name of the member.
 
    .. attribute:: Enum._value_
 
-      Value of the member, can be set in :meth:`~object.__new__`.
+      Value of the member, can be set in :meth:`~Enum.__new__`.
 
    .. attribute:: Enum._order_
 
@@ -395,13 +402,15 @@ Data Types
       in the member assignment will be passed; e.g.
 
          >>> from enum import Enum
-         >>> class MyIntEnum(Enum):
-         ...     SEVENTEEN = '1a', 16
+         >>> class MyIntEnum(int, Enum):
+         ...     TWENTYSIX = '1a', 16
 
-      results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
+      results in the call ``int('1a', 16)`` and a value of ``26`` for the member.
 
-      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
-               call the appropriate ``__new__`` instead.
+      .. note::
+
+         When writing a custom ``__new__``, do not use ``super().__new__`` --
+         call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
@@ -518,7 +527,7 @@ Data Types
 
    ``Flag`` is the same as :class:`Enum`, but its members support the bitwise
    operators ``&`` (*AND*), ``|`` (*OR*), ``^`` (*XOR*), and ``~`` (*INVERT*);
-   the results of those operators are members of the enumeration.
+   the results of those operations are (aliases of) members of the enumeration.
 
    .. method:: __contains__(self, value)
 
@@ -620,7 +629,7 @@ Data Types
       of two, starting with ``1``.
 
    .. versionchanged:: 3.11 The *repr()* of zero-valued flags has changed.  It
-      is now::
+      is now:
 
          >>> Color(0) # doctest: +SKIP
          <Color: 0>
@@ -820,7 +829,7 @@ Supported ``__dunder__`` names
 :attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`~object.__new__`, if specified, must create and return the enum members;
+:meth:`~Enum.__new__`, if specified, must create and return the enum members;
 it is also a very good idea to set the member's :attr:`!_value_` appropriately.
 Once all the members are created it is no longer used.
 
@@ -852,9 +861,15 @@ Supported ``_sunder_`` names
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
 
+- While ``_sunder_`` names are generally reserved for the further development
+  of the :class:`Enum` class and can not be used, some are explicitly allowed:
+
+  - ``_repr_*`` (e.g. ``_repr_html_``), as used in `IPython's rich display`_
+
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
-.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``, ``_repr_*``
+.. _`IPython's rich display`: https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display
 
 ---------------
 

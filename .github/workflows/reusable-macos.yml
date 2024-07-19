@@ -8,10 +8,13 @@ on:
         required: false
         type: boolean
         default: false
+      os-matrix:
+        required: false
+        type: string
 
 jobs:
   build_macos:
-    name: 'build and test'
+    name: build and test (${{ matrix.os }})
     timeout-minutes: 60
     env:
       HOMEBREW_NO_ANALYTICS: 1
@@ -19,13 +22,18 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
     strategy:
       fail-fast: false
       matrix:
-        os: [
-          "macos-14",  # M1
-          "macos-13",  # Intel
-        ]
+        os: ${{fromJson(inputs.os-matrix)}}
+        is-fork:
+          - ${{ github.repository_owner != 'python' }}
+        exclude:
+          - os: "ghcr.io/cirruslabs/macos-runner:sonoma"
+            is-fork: true
+          - os: "macos-14"
+            is-fork: false
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -49,7 +57,7 @@ jobs:
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
-      run: make -j4
+      run: make -j8
     - name: Display build info
       run: make pythoninfo
     - name: Tests

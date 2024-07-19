@@ -372,32 +372,26 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
 {
-    PyObject *attrib_str = PyUnicode_FromString("attrib");
-    if (attrib_str == NULL) {
+    PyObject *attrib;
+    if (PyDict_PopString(kwds, "attrib", &attrib) < 0) {
         return NULL;
     }
-    PyObject *attrib = PyDict_GetItemWithError(kwds, attrib_str);
 
     if (attrib) {
         /* If attrib was found in kwds, copy its value and remove it from
          * kwds
          */
         if (!PyDict_Check(attrib)) {
-            Py_DECREF(attrib_str);
             PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
                          Py_TYPE(attrib)->tp_name);
+            Py_DECREF(attrib);
             return NULL;
         }
-        attrib = PyDict_Copy(attrib);
-        if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
-            Py_SETREF(attrib, NULL);
-        }
+        Py_SETREF(attrib, PyDict_Copy(attrib));
     }
-    else if (!PyErr_Occurred()) {
+    else {
         attrib = PyDict_New();
     }
-
-    Py_DECREF(attrib_str);
 
     if (attrib != NULL && PyDict_Update(attrib, kwds) < 0) {
         Py_DECREF(attrib);
@@ -1508,7 +1502,7 @@ element_bool(PyObject* self_)
 {
     ElementObject* self = (ElementObject*) self_;
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Testing an element's truth value will raise an exception "
+                     "Testing an element's truth value will always return True "
                      "in future versions.  Use specific 'len(elem)' or "
                      "'elem is not None' test instead.",
                      1) < 0) {
@@ -4469,6 +4463,7 @@ error:
 static struct PyModuleDef_Slot elementtree_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

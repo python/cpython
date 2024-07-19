@@ -1,2 +1,0 @@
-``urllib.request`` no longer resolves the hostname before checking it
-against the system's proxy bypass list on macOS and Windows.

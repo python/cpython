@@ -1,3 +1,5 @@
+import platform
+import re
 import unittest
 import sys
 import os
@@ -6,7 +8,11 @@ import shutil
 from copy import copy
 
 from test.support import (
-    captured_stdout, PythonSymlink, requires_subprocess, is_wasi
+    captured_stdout,
+    is_apple_mobile,
+    is_wasi,
+    PythonSymlink,
+    requires_subprocess,
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
@@ -151,7 +157,7 @@ class TestSysConfig(unittest.TestCase):
         binpath = 'bin'
         incpath = 'include'
         libpath = os.path.join('lib',
-                               'python%d.%d' % sys.version_info[:2],
+                               f'python{sysconfig._get_python_version_abi()}',
                                'site-packages')
 
         # Resolve the paths in an imaginary venv/ directory
@@ -226,6 +232,11 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(cvars)
 
     def test_get_platform(self):
+        # Check the actual platform returns something reasonable.
+        actual_platform = get_platform()
+        self.assertIsInstance(actual_platform, str)
+        self.assertTrue(actual_platform)
+
         # windows XP, 32bits
         os.name = 'nt'
         sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
@@ -341,9 +352,26 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertEqual(get_platform(), 'linux-i686')
 
+        # Android
+        os.name = 'posix'
+        sys.platform = 'android'
+        get_config_vars()['ANDROID_API_LEVEL'] = 9
+        for machine, abi in {
+            'x86_64': 'x86_64',
+            'i686': 'x86',
+            'aarch64': 'arm64_v8a',
+            'armv7l': 'armeabi_v7a',
+        }.items():
+            with self.subTest(machine):
+                self._set_uname(('Linux', 'localhost', '3.18.91+',
+                                '#1 Tue Jan 9 20:35:43 UTC 2018', machine))
+                self.assertEqual(get_platform(), f'android-9-{abi}')
+
         # XXX more platforms to tests here
 
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
+    @unittest.skipIf(is_apple_mobile,
+                     f"{sys.platform} doesn't distribute header files in the runtime environment")
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
         self.assertTrue(os.path.isfile(config_h), config_h)
@@ -421,6 +449,9 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue(library.startswith(f'python{major}{minor}'))
             self.assertTrue(library.endswith('.dll'))
             self.assertEqual(library, ldlibrary)
+        elif is_apple_mobile:
+            framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
+            self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
             self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
             self.assertTrue(library.endswith('.a'))
@@ -474,6 +505,8 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(my_platform, test_platform)
 
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
+    @unittest.skipIf(is_apple_mobile,
+                     f"{sys.platform} doesn't include config folder at runtime")
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
@@ -516,12 +549,9 @@ class TestSysConfig(unittest.TestCase):
         vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
-    @unittest.skipUnless(sys.platform == 'linux' and
-                         hasattr(sys.implementation, '_multiarch'),
-                         'multiarch-specific test')
-    def test_triplet_in_ext_suffix(self):
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
+    def test_linux_ext_suffix(self):
         ctypes = import_module('ctypes')
-        import platform, re
         machine = platform.machine()
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         if re.match('(aarch64|arm|mips|ppc|powerpc|s390|sparc)', machine):
@@ -534,6 +564,19 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue(suffix.endswith(expected_suffixes),
                             f'unexpected suffix {suffix!r}')
 
+    @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
+    def test_android_ext_suffix(self):
+        machine = platform.machine()
+        suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        expected_triplet = {
+            "x86_64": "x86_64-linux-android",
+            "i686": "i686-linux-android",
+            "aarch64": "aarch64-linux-android",
+            "armv7l": "arm-linux-androideabi",
+        }[machine]
+        self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
+                        f"{machine=}, {suffix=}")
+
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
@@ -544,6 +587,8 @@ class MakefileTests(unittest.TestCase):
     @unittest.skipIf(sys.platform.startswith('win'),
                      'Test is not Windows compatible')
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
+    @unittest.skipIf(is_apple_mobile,
+                     f"{sys.platform} doesn't include config folder at runtime")
     def test_get_makefile_filename(self):
         makefile = sysconfig.get_makefile_filename()
         self.assertTrue(os.path.isfile(makefile), makefile)

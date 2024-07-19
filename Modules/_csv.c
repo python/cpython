@@ -731,7 +731,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         }
         /* normal character - handle as START_FIELD */
         self->state = START_FIELD;
-        /* fallthru */
+        _Py_FALLTHROUGH;
     case START_FIELD:
         /* expecting field */
         self->unquoted_field = true;
@@ -785,7 +785,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
     case AFTER_ESCAPED_CRNL:
         if (c == EOL)
             break;
-        /*fallthru*/
+        _Py_FALLTHROUGH;
 
     case IN_FIELD:
         /* in unquoted field */
@@ -1606,10 +1606,12 @@ _csv_unregister_dialect_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=0813ebca6c058df4 input=6b5c1557bf60c7e7]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    if (PyDict_DelItem(module_state->dialects, name) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Format(module_state->error_obj, "unknown dialect");
-        }
+    int rc = PyDict_Pop(module_state->dialects, name, NULL);
+    if (rc < 0) {
+        return NULL;
+    }
+    if (rc == 0) {
+        PyErr_Format(module_state->error_obj, "unknown dialect");
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1794,6 +1796,7 @@ csv_exec(PyObject *module) {
 static PyModuleDef_Slot csv_slots[] = {
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

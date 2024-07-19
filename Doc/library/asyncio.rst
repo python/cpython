@@ -1,5 +1,5 @@
-:mod:`asyncio` --- Asynchronous I/O
-===================================
+:mod:`!asyncio` --- Asynchronous I/O
+====================================
 
 .. module:: asyncio
    :synopsis: Asynchronous I/O.

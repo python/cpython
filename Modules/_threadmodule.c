@@ -12,7 +12,6 @@
 #include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
-#include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
@@ -20,7 +19,6 @@
 
 // ThreadError is just an alias to PyExc_RuntimeError
 #define ThreadError PyExc_RuntimeError
-
 
 // Forward declarations
 static struct PyModuleDef thread_module;
@@ -32,6 +30,10 @@ typedef struct {
     PyTypeObject *local_type;
     PyTypeObject *local_dummy_type;
     PyTypeObject *thread_handle_type;
+
+    // Linked list of handles to all non-daemon threads created by the
+    // threading module. We wait for these to finish at shutdown.
+    struct llist_node shutdown_handles;
 } thread_module_state;
 
 static inline thread_module_state*
@@ -44,76 +46,148 @@ get_thread_state(PyObject *module)
 
 // _ThreadHandle type
 
-// Handles transition from RUNNING to one of JOINED, DETACHED, or INVALID (post
-// fork).
+// Handles state transitions according to the following diagram:
+//
+//     NOT_STARTED -> STARTING -> RUNNING -> DONE
+//                       |                    ^
+//                       |                    |
+//                       +----- error --------+
 typedef enum {
-    THREAD_HANDLE_RUNNING = 1,
-    THREAD_HANDLE_JOINED = 2,
-    THREAD_HANDLE_DETACHED = 3,
-    THREAD_HANDLE_INVALID = 4,
+    THREAD_HANDLE_NOT_STARTED = 1,
+    THREAD_HANDLE_STARTING = 2,
+    THREAD_HANDLE_RUNNING = 3,
+    THREAD_HANDLE_DONE = 4,
 } ThreadHandleState;
 
-// A handle around an OS thread.
+// A handle to wait for thread completion.
 //
-// The OS thread is either joined or detached after the handle is destroyed.
+// This may be used to wait for threads that were spawned by the threading
+// module as well as for the "main" thread of the threading module. In the
+// former case an OS thread, identified by the `os_handle` field, will be
+// associated with the handle. The handle "owns" this thread and ensures that
+// the thread is either joined or detached after the handle is destroyed.
 //
-// Joining the handle is idempotent; the underlying OS thread is joined or
-// detached only once. Concurrent join operations are serialized until it is
-// their turn to execute or an earlier operation completes successfully. Once a
-// join has completed successfully all future joins complete immediately.
+// Joining the handle is idempotent; the underlying OS thread, if any, is
+// joined or detached only once. Concurrent join operations are serialized
+// until it is their turn to execute or an earlier operation completes
+// successfully. Once a join has completed successfully all future joins
+// complete immediately.
+//
+// This must be separately reference counted because it may be destroyed
+// in `thread_run()` after the PyThreadState has been destroyed.
 typedef struct {
-    PyObject_HEAD
     struct llist_node node;  // linked list node (see _pythread_runtime_state)
 
-    // The `ident` and `handle` fields are immutable once the object is visible
-    // to threads other than its creator, thus they do not need to be accessed
-    // atomically.
+    // linked list node (see thread_module_state)
+    struct llist_node shutdown_node;
+
+    // The `ident`, `os_handle`, `has_os_handle`, and `state` fields are
+    // protected by `mutex`.
     PyThread_ident_t ident;
-    PyThread_handle_t handle;
+    PyThread_handle_t os_handle;
+    int has_os_handle;
 
     // Holds a value from the `ThreadHandleState` enum.
     int state;
+
+    PyMutex mutex;
 
     // Set immediately before `thread_run` returns to indicate that the OS
     // thread is about to exit. This is used to avoid false positives when
     // detecting self-join attempts. See the comment in `ThreadHandle_join()`
     // for a more detailed explanation.
-    _PyEventRc *thread_is_exiting;
+    PyEvent thread_is_exiting;
 
-    // Serializes calls to `join`.
+    // Serializes calls to `join` and `set_done`.
     _PyOnceFlag once;
-} ThreadHandleObject;
+
+    Py_ssize_t refcount;
+} ThreadHandle;
 
 static inline int
-get_thread_handle_state(ThreadHandleObject *handle)
+get_thread_handle_state(ThreadHandle *handle)
 {
-    return _Py_atomic_load_int(&handle->state);
+    PyMutex_Lock(&handle->mutex);
+    int state = handle->state;
+    PyMutex_Unlock(&handle->mutex);
+    return state;
 }
 
 static inline void
-set_thread_handle_state(ThreadHandleObject *handle, ThreadHandleState state)
+set_thread_handle_state(ThreadHandle *handle, ThreadHandleState state)
 {
-    _Py_atomic_store_int(&handle->state, state);
+    PyMutex_Lock(&handle->mutex);
+    handle->state = state;
+    PyMutex_Unlock(&handle->mutex);
 }
 
-static ThreadHandleObject*
-new_thread_handle(thread_module_state* state)
+static PyThread_ident_t
+ThreadHandle_ident(ThreadHandle *handle)
 {
-    _PyEventRc *event = _PyEventRc_New();
-    if (event == NULL) {
+    PyMutex_Lock(&handle->mutex);
+    PyThread_ident_t ident = handle->ident;
+    PyMutex_Unlock(&handle->mutex);
+    return ident;
+}
+
+static int
+ThreadHandle_get_os_handle(ThreadHandle *handle, PyThread_handle_t *os_handle)
+{
+    PyMutex_Lock(&handle->mutex);
+    int has_os_handle = handle->has_os_handle;
+    if (has_os_handle) {
+        *os_handle = handle->os_handle;
+    }
+    PyMutex_Unlock(&handle->mutex);
+    return has_os_handle;
+}
+
+static void
+add_to_shutdown_handles(thread_module_state *state, ThreadHandle *handle)
+{
+    HEAD_LOCK(&_PyRuntime);
+    llist_insert_tail(&state->shutdown_handles, &handle->shutdown_node);
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
+clear_shutdown_handles(thread_module_state *state)
+{
+    HEAD_LOCK(&_PyRuntime);
+    struct llist_node *node;
+    llist_for_each_safe(node, &state->shutdown_handles) {
+        llist_remove(node);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
+remove_from_shutdown_handles(ThreadHandle *handle)
+{
+    HEAD_LOCK(&_PyRuntime);
+    if (handle->shutdown_node.next != NULL) {
+        llist_remove(&handle->shutdown_node);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static ThreadHandle *
+ThreadHandle_new(void)
+{
+    ThreadHandle *self =
+        (ThreadHandle *)PyMem_RawCalloc(1, sizeof(ThreadHandle));
+    if (self == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    ThreadHandleObject* self = PyObject_New(ThreadHandleObject, state->thread_handle_type);
-    if (self == NULL) {
-        _PyEventRc_Decref(event);
-        return NULL;
-    }
     self->ident = 0;
-    self->handle = 0;
-    self->thread_is_exiting = event;
+    self->os_handle = 0;
+    self->has_os_handle = 0;
+    self->thread_is_exiting = (PyEvent){0};
+    self->mutex = (PyMutex){_Py_UNLOCKED};
     self->once = (_PyOnceFlag){0};
-    self->state = THREAD_HANDLE_INVALID;
+    self->state = THREAD_HANDLE_NOT_STARTED;
+    self->refcount = 1;
 
     HEAD_LOCK(&_PyRuntime);
     llist_insert_tail(&_PyRuntime.threads.handles, &self->node);
@@ -123,9 +197,34 @@ new_thread_handle(thread_module_state* state)
 }
 
 static void
-ThreadHandle_dealloc(ThreadHandleObject *self)
+ThreadHandle_incref(ThreadHandle *self)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    _Py_atomic_add_ssize(&self->refcount, 1);
+}
+
+static int
+detach_thread(ThreadHandle *self)
+{
+    if (!self->has_os_handle) {
+        return 0;
+    }
+    // This is typically short so no need to release the GIL
+    if (PyThread_detach_thread(self->os_handle)) {
+        fprintf(stderr, "detach_thread: failed detaching thread\n");
+        return -1;
+    }
+    return 0;
+}
+
+// NB: This may be called after the PyThreadState in `thread_run` has been
+// deleted; it cannot call anything that relies on a valid PyThreadState
+// existing.
+static void
+ThreadHandle_decref(ThreadHandle *self)
+{
+    if (_Py_atomic_add_ssize(&self->refcount, -1) > 1) {
+        return;
+    }
 
     // Remove ourself from the global list of handles
     HEAD_LOCK(&_PyRuntime);
@@ -134,23 +233,17 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
     }
     HEAD_UNLOCK(&_PyRuntime);
 
+    assert(self->shutdown_node.next == NULL);
+
     // It's safe to access state non-atomically:
     //   1. This is the destructor; nothing else holds a reference.
-    //   2. The refcount going to zero is a "synchronizes-with" event;
-    //      all changes from other threads are visible.
-    if (self->state == THREAD_HANDLE_RUNNING) {
-        // This is typically short so no need to release the GIL
-        if (PyThread_detach_thread(self->handle)) {
-            PyErr_SetString(ThreadError, "Failed detaching thread");
-            PyErr_WriteUnraisable(tp);
-        }
-        else {
-            self->state = THREAD_HANDLE_DETACHED;
-        }
+    //   2. The refcount going to zero is a "synchronizes-with" event; all
+    //      changes from other threads are visible.
+    if (self->state == THREAD_HANDLE_RUNNING && !detach_thread(self)) {
+        self->state = THREAD_HANDLE_DONE;
     }
-    _PyEventRc_Decref(self->thread_is_exiting);
-    PyObject_Free(self);
-    Py_DECREF(tp);
+
+    PyMem_RawFree(self);
 }
 
 void
@@ -164,55 +257,229 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
 
     struct llist_node *node;
     llist_for_each_safe(node, &state->handles) {
-        ThreadHandleObject *hobj = llist_data(node, ThreadHandleObject, node);
-        if (hobj->ident == current) {
+        ThreadHandle *handle = llist_data(node, ThreadHandle, node);
+        if (handle->ident == current) {
             continue;
         }
 
-        // Disallow calls to join() as they could crash. We are the only
-        // thread; it's safe to set this without an atomic.
-        hobj->state = THREAD_HANDLE_INVALID;
+        // Mark all threads as done. Any attempts to join or detach the
+        // underlying OS thread (if any) could crash. We are the only thread;
+        // it's safe to set this non-atomically.
+        handle->state = THREAD_HANDLE_DONE;
+        handle->once = (_PyOnceFlag){_Py_ONCE_INITIALIZED};
+        handle->mutex = (PyMutex){_Py_UNLOCKED};
+        _PyEvent_Notify(&handle->thread_is_exiting);
         llist_remove(node);
+        remove_from_shutdown_handles(handle);
     }
 }
 
-static PyObject *
-ThreadHandle_repr(ThreadHandleObject *self)
+// bootstate is used to "bootstrap" new threads. Any arguments needed by
+// `thread_run()`, which can only take a single argument due to platform
+// limitations, are contained in bootstate.
+struct bootstate {
+    PyThreadState *tstate;
+    PyObject *func;
+    PyObject *args;
+    PyObject *kwargs;
+    ThreadHandle *handle;
+    PyEvent handle_ready;
+};
+
+static void
+thread_bootstate_free(struct bootstate *boot, int decref)
 {
-    return PyUnicode_FromFormat("<%s object: ident=%" PY_FORMAT_THREAD_IDENT_T ">",
-                                Py_TYPE(self)->tp_name, self->ident);
+    if (decref) {
+        Py_DECREF(boot->func);
+        Py_DECREF(boot->args);
+        Py_XDECREF(boot->kwargs);
+    }
+    ThreadHandle_decref(boot->handle);
+    PyMem_RawFree(boot);
 }
 
-static PyObject *
-ThreadHandle_get_ident(ThreadHandleObject *self, void *ignored)
+static void
+thread_run(void *boot_raw)
 {
-    return PyLong_FromUnsignedLongLong(self->ident);
+    struct bootstate *boot = (struct bootstate *) boot_raw;
+    PyThreadState *tstate = boot->tstate;
+
+    // Wait until the handle is marked as running
+    PyEvent_Wait(&boot->handle_ready);
+
+    // `handle` needs to be manipulated after bootstate has been freed
+    ThreadHandle *handle = boot->handle;
+    ThreadHandle_incref(handle);
+
+    // gh-108987: If _thread.start_new_thread() is called before or while
+    // Python is being finalized, thread_run() can called *after*.
+    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
+    // threads must exit, except of the thread calling Py_Finalize() whch holds
+    // the GIL and must not exit.
+    //
+    // At this stage, tstate can be a dangling pointer (point to freed memory),
+    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
+    if (_PyThreadState_MustExit(tstate)) {
+        // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
+        // These functions are called on tstate indirectly by Py_Finalize()
+        // which calls _PyInterpreterState_Clear().
+        //
+        // Py_DECREF() cannot be called because the GIL is not held: leak
+        // references on purpose. Python is being finalized anyway.
+        thread_bootstate_free(boot, 0);
+        goto exit;
+    }
+
+    _PyThreadState_Bind(tstate);
+    PyEval_AcquireThread(tstate);
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
+
+    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
+    if (res == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_SystemExit))
+            /* SystemExit is ignored silently */
+            PyErr_Clear();
+        else {
+            PyErr_FormatUnraisable(
+                "Exception ignored in thread started by %R", boot->func);
+        }
+    }
+    else {
+        Py_DECREF(res);
+    }
+
+    thread_bootstate_free(boot, 1);
+
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
+    PyThreadState_Clear(tstate);
+    _PyThreadState_DeleteCurrent(tstate);
+
+exit:
+    // Don't need to wait for this thread anymore
+    remove_from_shutdown_handles(handle);
+
+    _PyEvent_Notify(&handle->thread_is_exiting);
+    ThreadHandle_decref(handle);
+
+    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
+    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
+    // to open the libgcc_s.so library (ex: EMFILE error).
+    return;
 }
 
 static int
-join_thread(ThreadHandleObject *handle)
+force_done(ThreadHandle *handle)
 {
-    assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
-
-    int err;
-    Py_BEGIN_ALLOW_THREADS
-    err = PyThread_join_thread(handle->handle);
-    Py_END_ALLOW_THREADS
-    if (err) {
-        PyErr_SetString(ThreadError, "Failed joining thread");
-        return -1;
-    }
-    set_thread_handle_state(handle, THREAD_HANDLE_JOINED);
+    assert(get_thread_handle_state(handle) == THREAD_HANDLE_STARTING);
+    _PyEvent_Notify(&handle->thread_is_exiting);
+    set_thread_handle_state(handle, THREAD_HANDLE_DONE);
     return 0;
 }
 
-static PyObject *
-ThreadHandle_join(ThreadHandleObject *self, void* ignored)
+static int
+ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
+                   PyObject *kwargs)
 {
-    if (get_thread_handle_state(self) == THREAD_HANDLE_INVALID) {
-        PyErr_SetString(PyExc_ValueError,
-                        "the handle is invalid and thus cannot be joined");
-        return NULL;
+    // Mark the handle as starting to prevent any other threads from doing so
+    PyMutex_Lock(&self->mutex);
+    if (self->state != THREAD_HANDLE_NOT_STARTED) {
+        PyMutex_Unlock(&self->mutex);
+        PyErr_SetString(ThreadError, "thread already started");
+        return -1;
+    }
+    self->state = THREAD_HANDLE_STARTING;
+    PyMutex_Unlock(&self->mutex);
+
+    // Do all the heavy lifting outside of the mutex. All other operations on
+    // the handle should fail since the handle is in the starting state.
+
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
+    if (boot == NULL) {
+        PyErr_NoMemory();
+        goto start_failed;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
+    if (boot->tstate == NULL) {
+        PyMem_RawFree(boot);
+        if (!PyErr_Occurred()) {
+            PyErr_NoMemory();
+        }
+        goto start_failed;
+    }
+    boot->func = Py_NewRef(func);
+    boot->args = Py_NewRef(args);
+    boot->kwargs = Py_XNewRef(kwargs);
+    boot->handle = self;
+    ThreadHandle_incref(self);
+    boot->handle_ready = (PyEvent){0};
+
+    PyThread_ident_t ident;
+    PyThread_handle_t os_handle;
+    if (PyThread_start_joinable_thread(thread_run, boot, &ident, &os_handle)) {
+        PyThreadState_Clear(boot->tstate);
+        thread_bootstate_free(boot, 1);
+        PyErr_SetString(ThreadError, "can't start new thread");
+        goto start_failed;
+    }
+
+    // Mark the handle running
+    PyMutex_Lock(&self->mutex);
+    assert(self->state == THREAD_HANDLE_STARTING);
+    self->ident = ident;
+    self->has_os_handle = 1;
+    self->os_handle = os_handle;
+    self->state = THREAD_HANDLE_RUNNING;
+    PyMutex_Unlock(&self->mutex);
+
+    // Unblock the thread
+    _PyEvent_Notify(&boot->handle_ready);
+
+    return 0;
+
+start_failed:
+    _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)force_done, self);
+    return -1;
+}
+
+static int
+join_thread(ThreadHandle *handle)
+{
+    assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
+    PyThread_handle_t os_handle;
+    if (ThreadHandle_get_os_handle(handle, &os_handle)) {
+        int err = 0;
+        Py_BEGIN_ALLOW_THREADS
+        err = PyThread_join_thread(os_handle);
+        Py_END_ALLOW_THREADS
+        if (err) {
+            PyErr_SetString(ThreadError, "Failed joining thread");
+            return -1;
+        }
+    }
+    set_thread_handle_state(handle, THREAD_HANDLE_DONE);
+    return 0;
+}
+
+static int
+check_started(ThreadHandle *self)
+{
+    ThreadHandleState state = get_thread_handle_state(self);
+    if (state < THREAD_HANDLE_RUNNING) {
+        PyErr_SetString(ThreadError, "thread not started");
+        return -1;
+    }
+    return 0;
+}
+
+static int
+ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
+{
+    if (check_started(self) < 0) {
+        return -1;
     }
 
     // We want to perform this check outside of the `_PyOnceFlag` to prevent
@@ -225,45 +492,208 @@ ThreadHandle_join(ThreadHandleObject *self, void* ignored)
     // To work around this, we set `thread_is_exiting` immediately before
     // `thread_run` returns.  We can be sure that we are not attempting to join
     // ourselves if the handle's thread is about to exit.
-    if (!_PyEvent_IsSet(&self->thread_is_exiting->event) &&
-        self->ident == PyThread_get_thread_ident_ex()) {
+    if (!_PyEvent_IsSet(&self->thread_is_exiting) &&
+        ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
         // PyThread_join_thread() would deadlock or error out.
         PyErr_SetString(ThreadError, "Cannot join current thread");
-        return NULL;
+        return -1;
+    }
+
+    // Wait until the deadline for the thread to exit.
+    PyTime_t deadline = timeout_ns != -1 ? _PyDeadline_Init(timeout_ns) : 0;
+    int detach = 1;
+    while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns, detach)) {
+        if (deadline) {
+            // _PyDeadline_Get will return a negative value if the deadline has
+            // been exceeded.
+            timeout_ns = Py_MAX(_PyDeadline_Get(deadline), 0);
+        }
+
+        if (timeout_ns) {
+            // Interrupted
+            if (Py_MakePendingCalls() < 0) {
+                return -1;
+            }
+        }
+        else {
+            // Timed out
+            return 0;
+        }
     }
 
     if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)join_thread,
                              self) == -1) {
+        return -1;
+    }
+    assert(get_thread_handle_state(self) == THREAD_HANDLE_DONE);
+    return 0;
+}
+
+static int
+set_done(ThreadHandle *handle)
+{
+    assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
+    if (detach_thread(handle) < 0) {
+        PyErr_SetString(ThreadError, "failed detaching handle");
+        return -1;
+    }
+    _PyEvent_Notify(&handle->thread_is_exiting);
+    set_thread_handle_state(handle, THREAD_HANDLE_DONE);
+    return 0;
+}
+
+static int
+ThreadHandle_set_done(ThreadHandle *self)
+{
+    if (check_started(self) < 0) {
+        return -1;
+    }
+
+    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)set_done, self) ==
+        -1) {
+        return -1;
+    }
+    assert(get_thread_handle_state(self) == THREAD_HANDLE_DONE);
+    return 0;
+}
+
+// A wrapper around a ThreadHandle.
+typedef struct {
+    PyObject_HEAD
+
+    ThreadHandle *handle;
+} PyThreadHandleObject;
+
+static PyThreadHandleObject *
+PyThreadHandleObject_new(PyTypeObject *type)
+{
+    ThreadHandle *handle = ThreadHandle_new();
+    if (handle == NULL) {
         return NULL;
     }
-    assert(get_thread_handle_state(self) == THREAD_HANDLE_JOINED);
+
+    PyThreadHandleObject *self =
+        (PyThreadHandleObject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        ThreadHandle_decref(handle);
+        return NULL;
+    }
+
+    self->handle = handle;
+
+    return self;
+}
+
+static PyObject *
+PyThreadHandleObject_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    return (PyObject *)PyThreadHandleObject_new(type);
+}
+
+static int
+PyThreadHandleObject_traverse(PyThreadHandleObject *self, visitproc visit,
+                              void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static void
+PyThreadHandleObject_dealloc(PyThreadHandleObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    ThreadHandle_decref(self->handle);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyObject *
+PyThreadHandleObject_repr(PyThreadHandleObject *self)
+{
+    PyThread_ident_t ident = ThreadHandle_ident(self->handle);
+    return PyUnicode_FromFormat("<%s object: ident=%" PY_FORMAT_THREAD_IDENT_T ">",
+                                Py_TYPE(self)->tp_name, ident);
+}
+
+static PyObject *
+PyThreadHandleObject_get_ident(PyThreadHandleObject *self,
+                               PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromUnsignedLongLong(ThreadHandle_ident(self->handle));
+}
+
+static PyObject *
+PyThreadHandleObject_join(PyThreadHandleObject *self, PyObject *args)
+{
+    PyObject *timeout_obj = NULL;
+    if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
+        return NULL;
+    }
+
+    PyTime_t timeout_ns = -1;
+    if (timeout_obj != NULL && timeout_obj != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
+                                      _PyTime_ROUND_TIMEOUT) < 0) {
+            return NULL;
+        }
+    }
+
+    if (ThreadHandle_join(self->handle, timeout_ns) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+PyThreadHandleObject_is_done(PyThreadHandleObject *self,
+                             PyObject *Py_UNUSED(ignored))
+{
+    if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+static PyObject *
+PyThreadHandleObject_set_done(PyThreadHandleObject *self,
+                              PyObject *Py_UNUSED(ignored))
+{
+    if (ThreadHandle_set_done(self->handle) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
 static PyGetSetDef ThreadHandle_getsetlist[] = {
-    {"ident", (getter)ThreadHandle_get_ident, NULL, NULL},
+    {"ident", (getter)PyThreadHandleObject_get_ident, NULL, NULL},
     {0},
 };
 
-static PyMethodDef ThreadHandle_methods[] =
-{
-    {"join", (PyCFunction)ThreadHandle_join, METH_NOARGS},
+static PyMethodDef ThreadHandle_methods[] = {
+    {"join", (PyCFunction)PyThreadHandleObject_join, METH_VARARGS, NULL},
+    {"_set_done", (PyCFunction)PyThreadHandleObject_set_done, METH_NOARGS, NULL},
+    {"is_done", (PyCFunction)PyThreadHandleObject_is_done, METH_NOARGS, NULL},
     {0, 0}
 };
 
 static PyType_Slot ThreadHandle_Type_slots[] = {
-    {Py_tp_dealloc, (destructor)ThreadHandle_dealloc},
-    {Py_tp_repr, (reprfunc)ThreadHandle_repr},
+    {Py_tp_dealloc, (destructor)PyThreadHandleObject_dealloc},
+    {Py_tp_repr, (reprfunc)PyThreadHandleObject_repr},
     {Py_tp_getset, ThreadHandle_getsetlist},
+    {Py_tp_traverse, PyThreadHandleObject_traverse},
     {Py_tp_methods, ThreadHandle_methods},
+    {Py_tp_new, PyThreadHandleObject_tp_new},
     {0, 0}
 };
 
 static PyType_Spec ThreadHandle_Type_spec = {
     "_thread._ThreadHandle",
-    sizeof(ThreadHandleObject),
+    sizeof(PyThreadHandleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     ThreadHandle_Type_slots,
 };
 
@@ -371,8 +801,8 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(acquire_doc,
-"acquire(blocking=True, timeout=-1) -> bool\n\
-(acquire_lock() is an obsolete synonym)\n\
+"acquire($self, /, blocking=True, timeout=-1)\n\
+--\n\
 \n\
 Lock the lock.  Without argument, this blocks if the lock is already\n\
 locked (even by the same thread), waiting for another thread to release\n\
@@ -380,6 +810,18 @@ the lock, and return True once the lock is acquired.\n\
 With an argument, this will only block if the argument is true,\n\
 and the return value reflects whether the lock is acquired.\n\
 The blocking operation is interruptible.");
+
+PyDoc_STRVAR(acquire_lock_doc,
+"acquire_lock($self, /, blocking=True, timeout=-1)\n\
+--\n\
+\n\
+An obsolete synonym of acquire().");
+
+PyDoc_STRVAR(enter_doc,
+"__enter__($self, /)\n\
+--\n\
+\n\
+Lock the lock.");
 
 static PyObject *
 lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
@@ -390,18 +832,30 @@ lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    PyThread_release_lock(self->lock_lock);
     self->locked = 0;
+    PyThread_release_lock(self->lock_lock);
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(release_doc,
-"release()\n\
-(release_lock() is an obsolete synonym)\n\
+"release($self, /)\n\
+--\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
 but it needn't be locked by the same thread that unlocks it.");
+
+PyDoc_STRVAR(release_lock_doc,
+"release_lock($self, /)\n\
+--\n\
+\n\
+An obsolete synonym of release().");
+
+PyDoc_STRVAR(lock_exit_doc,
+"__exit__($self, /, *exc_info)\n\
+--\n\
+\n\
+Release the lock.");
 
 static PyObject *
 lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
@@ -410,10 +864,16 @@ lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(locked_doc,
-"locked() -> bool\n\
-(locked_lock() is an obsolete synonym)\n\
+"locked($self, /)\n\
+--\n\
 \n\
 Return whether the lock is in the locked state.");
+
+PyDoc_STRVAR(locked_lock_doc,
+"locked_lock($self, /)\n\
+--\n\
+\n\
+An obsolete synonym of locked().");
 
 static PyObject *
 lock_repr(lockobject *self)
@@ -461,21 +921,21 @@ error:
 
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, acquire_lock_doc},
     {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"release_lock", (PyCFunction)lock_PyThread_release_lock,
-     METH_NOARGS, release_doc},
+     METH_NOARGS, release_lock_doc},
     {"release",      (PyCFunction)lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
     {"locked_lock",  (PyCFunction)lock_locked_lock,
-     METH_NOARGS, locked_doc},
+     METH_NOARGS, locked_lock_doc},
     {"locked",       (PyCFunction)lock_locked_lock,
      METH_NOARGS, locked_doc},
     {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, enter_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
-     METH_VARARGS, release_doc},
+     METH_VARARGS, lock_exit_doc},
 #ifdef HAVE_FORK
     {"_at_fork_reinit",    (PyCFunction)lock__at_fork_reinit,
      METH_NOARGS, NULL},
@@ -484,7 +944,10 @@ static PyMethodDef lock_methods[] = {
 };
 
 PyDoc_STRVAR(lock_doc,
-"A lock object is a synchronization primitive.  To create a lock,\n\
+"lock()\n\
+--\n\
+\n\
+A lock object is a synchronization primitive.  To create a lock,\n\
 call threading.Lock().  Methods are:\n\
 \n\
 acquire() -- lock the lock, possibly blocking until it can be obtained\n\
@@ -600,7 +1063,8 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(rlock_acquire_doc,
-"acquire(blocking=True) -> bool\n\
+"acquire($self, /, blocking=True, timeout=-1)\n\
+--\n\
 \n\
 Lock the lock.  `blocking` indicates whether we should wait\n\
 for the lock to be available or not.  If `blocking` is False\n\
@@ -614,6 +1078,12 @@ In all other cases, the method will return True immediately.\n\
 Precisely, if the current thread already holds the lock, its\n\
 internal counter is simply incremented. If nobody holds the lock,\n\
 the lock is taken and its internal counter initialized to 1.");
+
+PyDoc_STRVAR(rlock_enter_doc,
+"__enter__($self, /)\n\
+--\n\
+\n\
+Lock the lock.");
 
 static PyObject *
 rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
@@ -633,7 +1103,8 @@ rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_release_doc,
-"release()\n\
+"release($self, /)\n\
+--\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
@@ -643,6 +1114,12 @@ and must be locked by the same thread that unlocks it; otherwise a\n\
 Do note that if the lock was acquire()d several times in a row by the\n\
 current thread, release() needs to be called as many times for the lock\n\
 to be available for other threads.");
+
+PyDoc_STRVAR(rlock_exit_doc,
+"__exit__($self, /, *exc_info)\n\
+--\n\
+\n\
+Release the lock.");
 
 static PyObject *
 rlock_acquire_restore(rlockobject *self, PyObject *args)
@@ -671,7 +1148,8 @@ rlock_acquire_restore(rlockobject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(rlock_acquire_restore_doc,
-"_acquire_restore(state) -> None\n\
+"_acquire_restore($self, state, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -696,7 +1174,8 @@ rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_release_save_doc,
-"_release_save() -> tuple\n\
+"_release_save($self, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -710,7 +1189,8 @@ rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_recursion_count_doc,
-"_recursion_count() -> int\n\
+"_recursion_count($self, /)\n\
+--\n\
 \n\
 For internal use by reentrancy checks.");
 
@@ -726,7 +1206,8 @@ rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_is_owned_doc,
-"_is_owned() -> bool\n\
+"_is_owned($self, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -794,9 +1275,9 @@ static PyMethodDef rlock_methods[] = {
     {"_recursion_count", (PyCFunction)rlock_recursion_count,
      METH_NOARGS, rlock_recursion_count_doc},
     {"__enter__",    _PyCFunction_CAST(rlock_acquire),
-     METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, rlock_enter_doc},
     {"__exit__",    (PyCFunction)rlock_release,
-     METH_VARARGS, rlock_release_doc},
+     METH_VARARGS, rlock_exit_doc},
 #ifdef HAVE_FORK
     {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
      METH_NOARGS, NULL},
@@ -1197,7 +1678,7 @@ static PyType_Slot local_type_slots[] = {
     {Py_tp_dealloc, (destructor)local_dealloc},
     {Py_tp_getattro, (getattrofunc)local_getattro},
     {Py_tp_setattro, (setattrofunc)local_setattro},
-    {Py_tp_doc, "Thread-local data"},
+    {Py_tp_doc, "_local()\n--\n\nThread-local data"},
     {Py_tp_traverse, (traverseproc)local_traverse},
     {Py_tp_clear, (inquiry)local_clear},
     {Py_tp_new, local_new},
@@ -1262,111 +1743,15 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
     if (self->dummies != NULL) {
-        PyObject *ldict;
-        ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
-        if (ldict != NULL) {
-            PyDict_DelItem(self->dummies, dummyweakref);
-        }
-        if (PyErr_Occurred())
+        if (PyDict_Pop(self->dummies, dummyweakref, NULL) < 0) {
             PyErr_WriteUnraisable((PyObject*)self);
+        }
     }
     Py_DECREF(self);
     Py_RETURN_NONE;
 }
 
 /* Module functions */
-
-// bootstate is used to "bootstrap" new threads. Any arguments needed by
-// `thread_run()`, which can only take a single argument due to platform
-// limitations, are contained in bootstate.
-struct bootstate {
-    PyThreadState *tstate;
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-    _PyEventRc *thread_is_exiting;
-};
-
-
-static void
-thread_bootstate_free(struct bootstate *boot, int decref)
-{
-    if (decref) {
-        Py_DECREF(boot->func);
-        Py_DECREF(boot->args);
-        Py_XDECREF(boot->kwargs);
-    }
-    if (boot->thread_is_exiting != NULL) {
-        _PyEventRc_Decref(boot->thread_is_exiting);
-    }
-    PyMem_RawFree(boot);
-}
-
-
-static void
-thread_run(void *boot_raw)
-{
-    struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate = boot->tstate;
-
-    // `thread_is_exiting` needs to be set after bootstate has been freed
-    _PyEventRc *thread_is_exiting = boot->thread_is_exiting;
-    boot->thread_is_exiting = NULL;
-
-    // gh-108987: If _thread.start_new_thread() is called before or while
-    // Python is being finalized, thread_run() can called *after*.
-    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
-    // threads must exit, except of the thread calling Py_Finalize() whch holds
-    // the GIL and must not exit.
-    //
-    // At this stage, tstate can be a dangling pointer (point to freed memory),
-    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
-    if (_PyThreadState_MustExit(tstate)) {
-        // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
-        // These functions are called on tstate indirectly by Py_Finalize()
-        // which calls _PyInterpreterState_Clear().
-        //
-        // Py_DECREF() cannot be called because the GIL is not held: leak
-        // references on purpose. Python is being finalized anyway.
-        thread_bootstate_free(boot, 0);
-        goto exit;
-    }
-
-    _PyThreadState_Bind(tstate);
-    PyEval_AcquireThread(tstate);
-    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
-
-    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_SystemExit))
-            /* SystemExit is ignored silently */
-            PyErr_Clear();
-        else {
-            PyErr_FormatUnraisable(
-                "Exception ignored in thread started by %R", boot->func);
-        }
-    }
-    else {
-        Py_DECREF(res);
-    }
-
-    thread_bootstate_free(boot, 1);
-
-    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
-    PyThreadState_Clear(tstate);
-    _PyThreadState_DeleteCurrent(tstate);
-
-exit:
-    if (thread_is_exiting != NULL) {
-        _PyEvent_Notify(&thread_is_exiting->event);
-        _PyEventRc_Decref(thread_is_exiting);
-    }
-
-    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
-    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
-    // to open the libgcc_s.so library (ex: EMFILE error).
-    return;
-}
 
 static PyObject *
 thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -1381,17 +1766,15 @@ thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(daemon_threads_allowed_doc,
-"daemon_threads_allowed()\n\
+"daemon_threads_allowed($module, /)\n\
+--\n\
 \n\
 Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
 
 static int
-do_start_new_thread(thread_module_state* state,
-                    PyObject *func, PyObject* args, PyObject* kwargs,
-                    int joinable,
-                    PyThread_ident_t* ident, PyThread_handle_t* handle,
-                    _PyEventRc *thread_is_exiting)
+do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
+                    PyObject *kwargs, ThreadHandle *handle, int daemon)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
@@ -1399,50 +1782,26 @@ do_start_new_thread(thread_module_state* state,
                         "thread is not supported for isolated subinterpreters");
         return -1;
     }
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't create new thread at interpreter shutdown");
         return -1;
     }
 
-    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
-    // because it should be possible to call thread_bootstate_free()
-    // without holding the GIL.
-    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
-    if (boot == NULL) {
-        PyErr_NoMemory();
-        return -1;
+    if (!daemon) {
+        // Add the handle before starting the thread to avoid adding a handle
+        // to a thread that has already finished (i.e. if the thread finishes
+        // before the call to `ThreadHandle_start()` below returns).
+        add_to_shutdown_handles(state, handle);
     }
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
-    if (boot->tstate == NULL) {
-        PyMem_RawFree(boot);
-        if (!PyErr_Occurred()) {
-            PyErr_NoMemory();
+
+    if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
+        if (!daemon) {
+            remove_from_shutdown_handles(handle);
         }
         return -1;
     }
-    boot->func = Py_NewRef(func);
-    boot->args = Py_NewRef(args);
-    boot->kwargs = Py_XNewRef(kwargs);
-    boot->thread_is_exiting = thread_is_exiting;
-    if (thread_is_exiting != NULL) {
-        _PyEventRc_Incref(thread_is_exiting);
-    }
 
-    int err;
-    if (joinable) {
-        err = PyThread_start_joinable_thread(thread_run, (void*) boot, ident, handle);
-    } else {
-        *handle = 0;
-        *ident = PyThread_start_new_thread(thread_run, (void*) boot);
-        err = (*ident == PYTHREAD_INVALID_THREAD_ID);
-    }
-    if (err) {
-        PyErr_SetString(ThreadError, "can't start new thread");
-        PyThreadState_Clear(boot->tstate);
-        thread_bootstate_free(boot, 1);
-        return -1;
-    }
     return 0;
 }
 
@@ -1476,18 +1835,25 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
         return NULL;
     }
 
-    PyThread_ident_t ident = 0;
-    PyThread_handle_t handle;
-    if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
-                            &ident, &handle, NULL)) {
+    ThreadHandle *handle = ThreadHandle_new();
+    if (handle == NULL) {
         return NULL;
     }
+
+    int st =
+        do_start_new_thread(state, func, args, kwargs, handle, /*daemon=*/1);
+    if (st < 0) {
+        ThreadHandle_decref(handle);
+        return NULL;
+    }
+    PyThread_ident_t ident = ThreadHandle_ident(handle);
+    ThreadHandle_decref(handle);
     return PyLong_FromUnsignedLongLong(ident);
 }
 
-PyDoc_STRVAR(start_new_doc,
-"start_new_thread(function, args[, kwargs])\n\
-(start_new() is an obsolete synonym)\n\
+PyDoc_STRVAR(start_new_thread_doc,
+"start_new_thread($module, function, args, kwargs={}, /)\n\
+--\n\
 \n\
 Start a new thread and return its identifier.\n\
 \n\
@@ -1496,12 +1862,28 @@ tuple args and keyword arguments taken from the optional dictionary\n\
 kwargs.  The thread exits when the function returns; the return value\n\
 is ignored.  The thread will also exit when the function raises an\n\
 unhandled exception; a stack trace will be printed unless the exception\n\
-is SystemExit.\n");
+is SystemExit.");
+
+PyDoc_STRVAR(start_new_doc,
+"start_new($module, function, args, kwargs={}, /)\n\
+--\n\
+\n\
+An obsolete synonym of start_new_thread().");
 
 static PyObject *
-thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
+thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
+                                      PyObject *fkwargs)
 {
+    static char *keywords[] = {"function", "handle", "daemon", NULL};
+    PyObject *func = NULL;
+    int daemon = 1;
     thread_module_state *state = get_thread_state(module);
+    PyObject *hobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(fargs, fkwargs,
+                                     "O|Op:start_joinable_thread", keywords,
+                                     &func, &hobj, &daemon)) {
+        return NULL;
+    }
 
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1509,32 +1891,46 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
         return NULL;
     }
 
-    if (PySys_Audit("_thread.start_joinable_thread", "O", func) < 0) {
+    if (hobj == NULL) {
+        hobj = Py_None;
+    }
+    else if (hobj != Py_None && !Py_IS_TYPE(hobj, state->thread_handle_type)) {
+        PyErr_SetString(PyExc_TypeError, "'handle' must be a _ThreadHandle");
         return NULL;
+    }
+
+    if (PySys_Audit("_thread.start_joinable_thread", "OiO", func, daemon,
+                    hobj) < 0) {
+        return NULL;
+    }
+
+    if (hobj == Py_None) {
+        hobj = (PyObject *)PyThreadHandleObject_new(state->thread_handle_type);
+        if (hobj == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(hobj);
     }
 
     PyObject* args = PyTuple_New(0);
     if (args == NULL) {
         return NULL;
     }
-    ThreadHandleObject* hobj = new_thread_handle(state);
-    if (hobj == NULL) {
-        Py_DECREF(args);
-        return NULL;
-    }
-    if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
-                            &hobj->ident, &hobj->handle, hobj->thread_is_exiting)) {
-        Py_DECREF(args);
+    int st = do_start_new_thread(state, func, args,
+                                 /*kwargs=*/ NULL, ((PyThreadHandleObject*)hobj)->handle, daemon);
+    Py_DECREF(args);
+    if (st < 0) {
         Py_DECREF(hobj);
         return NULL;
     }
-    set_thread_handle_state(hobj, THREAD_HANDLE_RUNNING);
-    Py_DECREF(args);
-    return (PyObject*) hobj;
+    return (PyObject *) hobj;
 }
 
 PyDoc_STRVAR(start_joinable_doc,
-"start_joinable_thread(function)\n\
+"start_joinable_thread($module, /, function, handle=None, daemon=True)\n\
+--\n\
 \n\
 *For internal use only*: start a new thread.\n\
 \n\
@@ -1542,7 +1938,9 @@ Like start_new_thread(), this starts a new thread calling the given function.\n\
 Unlike start_new_thread(), this returns a handle object with methods to join\n\
 or detach the given thread.\n\
 This function is not for third-party code, please use the\n\
-`threading` module instead.\n");
+`threading` module instead. During finalization the runtime will not wait for\n\
+the thread to exit if daemon is True. If handle is provided it must be a\n\
+newly created thread._ThreadHandle instance.");
 
 static PyObject *
 thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1552,11 +1950,17 @@ thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(exit_doc,
-"exit()\n\
-(exit_thread() is an obsolete synonym)\n\
+"exit($module, /)\n\
+--\n\
 \n\
 This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
+
+PyDoc_STRVAR(exit_thread_doc,
+"exit_thread($module, /)\n\
+--\n\
+\n\
+An obsolete synonym of exit().");
 
 static PyObject *
 thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
@@ -1574,7 +1978,8 @@ thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(interrupt_doc,
-"interrupt_main(signum=signal.SIGINT, /)\n\
+"interrupt_main($module, signum=signal.SIGINT, /)\n\
+--\n\
 \n\
 Simulate the arrival of the given signal in the main thread,\n\
 where the corresponding signal handler will be executed.\n\
@@ -1590,12 +1995,18 @@ thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
     return (PyObject *) newlockobject(module);
 }
 
-PyDoc_STRVAR(allocate_doc,
-"allocate_lock() -> lock object\n\
-(allocate() is an obsolete synonym)\n\
+PyDoc_STRVAR(allocate_lock_doc,
+"allocate_lock($module, /)\n\
+--\n\
 \n\
 Create a new lock object. See help(type(threading.Lock())) for\n\
 information about locks.");
+
+PyDoc_STRVAR(allocate_doc,
+"allocate($module, /)\n\
+--\n\
+\n\
+An obsolete synonym of allocate_lock().");
 
 static PyObject *
 thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1609,7 +2020,8 @@ thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_ident_doc,
-"get_ident() -> integer\n\
+"get_ident($module, /)\n\
+--\n\
 \n\
 Return a non-zero integer that uniquely identifies the current thread\n\
 amongst other threads that exist simultaneously.\n\
@@ -1628,7 +2040,8 @@ thread_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_native_id_doc,
-"get_native_id() -> integer\n\
+"get_native_id($module, /)\n\
+--\n\
 \n\
 Return a non-negative integer identifying the thread as reported\n\
 by the OS (kernel). This may be used to uniquely identify a\n\
@@ -1643,9 +2056,9 @@ thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_count_doc,
-"_count() -> integer\n\
+"_count($module, /)\n\
+--\n\
 \n\
-\
 Return the number of currently running Python threads, excluding\n\
 the main thread. The returned number comprises all threads created\n\
 through `start_new_thread()` as well as `threading.Thread`, and not\n\
@@ -1653,67 +2066,6 @@ yet finished.\n\
 \n\
 This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
-
-static void
-release_sentinel(void *weakref_raw)
-{
-    PyObject *weakref = _PyObject_CAST(weakref_raw);
-
-    /* Tricky: this function is called when the current thread state
-       is being deleted.  Therefore, only simple C code can safely
-       execute here. */
-    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
-    if (lock != NULL) {
-        if (lock->locked) {
-            PyThread_release_lock(lock->lock_lock);
-            lock->locked = 0;
-        }
-        Py_DECREF(lock);
-    }
-
-    /* Deallocating a weakref with a NULL callback only calls
-       PyObject_GC_Del(), which can't call any Python code. */
-    Py_DECREF(weakref);
-}
-
-static PyObject *
-thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *wr;
-    PyThreadState *tstate = _PyThreadState_GET();
-    lockobject *lock;
-
-    if (tstate->on_delete_data != NULL) {
-        /* We must support the re-creation of the lock from a
-           fork()ed child. */
-        assert(tstate->on_delete == &release_sentinel);
-        wr = (PyObject *) tstate->on_delete_data;
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-        Py_DECREF(wr);
-    }
-    lock = newlockobject(module);
-    if (lock == NULL)
-        return NULL;
-    /* The lock is owned by whoever called _set_sentinel(), but the weakref
-       hangs to the thread state. */
-    wr = PyWeakref_NewRef((PyObject *) lock, NULL);
-    if (wr == NULL) {
-        Py_DECREF(lock);
-        return NULL;
-    }
-    tstate->on_delete_data = (void *) wr;
-    tstate->on_delete = &release_sentinel;
-    return (PyObject *) lock;
-}
-
-PyDoc_STRVAR(_set_sentinel_doc,
-"_set_sentinel() -> lock\n\
-\n\
-Set a sentinel lock that will be released when the current thread\n\
-state is finalized (after it is untied from the interpreter).\n\
-\n\
-This is a private API for the threading module.");
 
 static PyObject *
 thread_stack_size(PyObject *self, PyObject *args)
@@ -1750,7 +2102,8 @@ thread_stack_size(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(stack_size_doc,
-"stack_size([size]) -> size\n\
+"stack_size($module, size=0, /)\n\
+--\n\
 \n\
 Return the thread stack size used when creating new threads.  The\n\
 optional size argument specifies the stack size (in bytes) to be used\n\
@@ -1905,7 +2258,8 @@ thread_excepthook(PyObject *module, PyObject *args)
 }
 
 PyDoc_STRVAR(excepthook_doc,
-"excepthook(exc_type, exc_value, exc_traceback, thread)\n\
+"_excepthook($module, (exc_type, exc_value, exc_traceback, thread), /)\n\
+--\n\
 \n\
 Handle uncaught Thread.run() exception.");
 
@@ -1917,25 +2271,117 @@ thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(thread__is_main_interpreter_doc,
-"_is_main_interpreter()\n\
+"_is_main_interpreter($module, /)\n\
+--\n\
 \n\
 Return True if the current interpreter is the main Python interpreter.");
 
+static PyObject *
+thread_shutdown(PyObject *self, PyObject *args)
+{
+    PyThread_ident_t ident = PyThread_get_thread_ident_ex();
+    thread_module_state *state = get_thread_state(self);
+
+    for (;;) {
+        ThreadHandle *handle = NULL;
+
+        // Find a thread that's not yet finished.
+        HEAD_LOCK(&_PyRuntime);
+        struct llist_node *node;
+        llist_for_each_safe(node, &state->shutdown_handles) {
+            ThreadHandle *cur = llist_data(node, ThreadHandle, shutdown_node);
+            if (cur->ident != ident) {
+                ThreadHandle_incref(cur);
+                handle = cur;
+                break;
+            }
+        }
+        HEAD_UNLOCK(&_PyRuntime);
+
+        if (!handle) {
+            // No more threads to wait on!
+            break;
+        }
+
+        // Wait for the thread to finish. If we're interrupted, such
+        // as by a ctrl-c we print the error and exit early.
+        if (ThreadHandle_join(handle, -1) < 0) {
+            PyErr_WriteUnraisable(NULL);
+            ThreadHandle_decref(handle);
+            Py_RETURN_NONE;
+        }
+
+        ThreadHandle_decref(handle);
+    }
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(shutdown_doc,
+"_shutdown($module, /)\n\
+--\n\
+\n\
+Wait for all non-daemon threads (other than the calling thread) to stop.");
+
+static PyObject *
+thread__make_thread_handle(PyObject *module, PyObject *identobj)
+{
+    thread_module_state *state = get_thread_state(module);
+    if (!PyLong_Check(identobj)) {
+        PyErr_SetString(PyExc_TypeError, "ident must be an integer");
+        return NULL;
+    }
+    PyThread_ident_t ident = PyLong_AsUnsignedLongLong(identobj);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    PyThreadHandleObject *hobj =
+        PyThreadHandleObject_new(state->thread_handle_type);
+    if (hobj == NULL) {
+        return NULL;
+    }
+    PyMutex_Lock(&hobj->handle->mutex);
+    hobj->handle->ident = ident;
+    hobj->handle->state = THREAD_HANDLE_RUNNING;
+    PyMutex_Unlock(&hobj->handle->mutex);
+    return (PyObject*) hobj;
+}
+
+PyDoc_STRVAR(thread__make_thread_handle_doc,
+"_make_thread_handle($module, ident, /)\n\
+--\n\
+\n\
+Internal only. Make a thread handle for threads not spawned\n\
+by the _thread or threading module.");
+
+static PyObject *
+thread__get_main_thread_ident(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromUnsignedLongLong(_PyRuntime.main_thread);
+}
+
+PyDoc_STRVAR(thread__get_main_thread_ident_doc,
+"_get_main_thread_ident($module, /)\n\
+--\n\
+\n\
+Internal only. Return a non-zero integer that uniquely identifies the main thread\n\
+of the main interpreter.");
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS, start_new_doc},
+     METH_VARARGS, start_new_thread_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
-    {"start_joinable_thread",   (PyCFunction)thread_PyThread_start_joinable_thread,
-     METH_O, start_joinable_doc},
+    {"start_joinable_thread",   _PyCFunction_CAST(thread_PyThread_start_joinable_thread),
+     METH_VARARGS | METH_KEYWORDS, start_joinable_doc},
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
-     METH_NOARGS, allocate_doc},
+     METH_NOARGS, allocate_lock_doc},
     {"allocate",                thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
     {"exit_thread",             thread_PyThread_exit_thread,
-     METH_NOARGS, exit_doc},
+     METH_NOARGS, exit_thread_doc},
     {"exit",                    thread_PyThread_exit_thread,
      METH_NOARGS, exit_doc},
     {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
@@ -1950,12 +2396,16 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
-    {"_set_sentinel",           thread__set_sentinel,
-     METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
     {"_is_main_interpreter",    thread__is_main_interpreter,
      METH_NOARGS, thread__is_main_interpreter_doc},
+    {"_shutdown",               thread_shutdown,
+     METH_NOARGS, shutdown_doc},
+    {"_make_thread_handle", thread__make_thread_handle,
+     METH_O, thread__make_thread_handle_doc},
+    {"_get_main_thread_ident", thread__get_main_thread_ident,
+     METH_NOARGS, thread__get_main_thread_ident_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -2045,6 +2495,8 @@ thread_module_exec(PyObject *module)
         return -1;
     }
 
+    llist_init(&state->shutdown_handles);
+
     return 0;
 }
 
@@ -2070,6 +2522,10 @@ thread_module_clear(PyObject *module)
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);
     Py_CLEAR(state->thread_handle_type);
+    // Remove any remaining handles (e.g. if shutdown exited early due to
+    // interrupt) so that attempts to unlink the handle after our module state
+    // is destroyed do not crash.
+    clear_shutdown_handles(state);
     return 0;
 }
 
@@ -2088,6 +2544,7 @@ The 'threading' module provides a more convenient interface.");
 static PyModuleDef_Slot thread_module_slots[] = {
     {Py_mod_exec, thread_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

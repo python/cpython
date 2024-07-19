@@ -63,7 +63,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._called_connection_lost = False
         self._eof_written = False
         if self._server is not None:
-            self._server._attach()
+            self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
@@ -167,7 +167,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._sock = None
             server = self._server
             if server is not None:
-                server._detach()
+                server._detach(self)
                 self._server = None
             self._called_connection_lost = True
 
@@ -721,6 +721,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return await self._proactor.sendto(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return await self._proactor.connect(sock, address)
 
     async def sock_accept(self, sock):

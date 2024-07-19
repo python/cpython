@@ -306,6 +306,7 @@ do_mkvalue(const char **p_format, va_list *p_va)
             return PyLong_FromSsize_t(va_arg(*p_va, Py_ssize_t));
 #endif
             /* Fall through from 'n' to 'l' if Py_ssize_t is long */
+            _Py_FALLTHROUGH;
         case 'l':
             return PyLong_FromLong(va_arg(*p_va, long));
 

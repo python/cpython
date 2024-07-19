@@ -83,7 +83,7 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
     switch (num_args) {
         case 3:
             step = args[2];
-            /* fallthrough */
+            _Py_FALLTHROUGH;
         case 2:
             /* Convert borrowed refs to owned refs */
             start = PyNumber_Index(args[0]);
@@ -655,7 +655,7 @@ range_index(rangeobject *r, PyObject *ob)
     }
 
     /* object is not in the range */
-    PyErr_Format(PyExc_ValueError, "%R is not in range", ob);
+    PyErr_SetString(PyExc_ValueError, "range.index(x): x not in range");
     return NULL;
 }
 
@@ -751,7 +751,7 @@ PyDoc_STRVAR(index_doc,
 
 static PyMethodDef range_methods[] = {
     {"__reversed__",    range_reverse,              METH_NOARGS, reverse_doc},
-    {"__reduce__",      (PyCFunction)range_reduce,  METH_VARARGS},
+    {"__reduce__",      (PyCFunction)range_reduce,  METH_NOARGS},
     {"count",           (PyCFunction)range_count,   METH_O,      count_doc},
     {"index",           (PyCFunction)range_index,   METH_O,      index_doc},
     {NULL,              NULL}           /* sentinel */

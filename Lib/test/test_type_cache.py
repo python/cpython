@@ -10,8 +10,9 @@ except ImportError:
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module("_testcapi")
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 type_get_version = _testcapi.type_get_version
-type_assign_specific_version_unsafe = _testcapi.type_assign_specific_version_unsafe
+type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_version_unsafe
 type_assign_version = _testcapi.type_assign_version
 type_modified = _testcapi.type_modified
 
@@ -92,6 +93,21 @@ class TypeCacheTests(unittest.TestCase):
         new_version = type_get_version(C)
         self.assertEqual(new_version, 0)
 
+    def test_119462(self):
+
+        class Holder:
+            value = None
+
+            @classmethod
+            def set_value(cls):
+                cls.value = object()
+
+        class HolderSub(Holder):
+            pass
+
+        for _ in range(1050):
+            Holder.set_value()
+            HolderSub.value
 
 @support.cpython_only
 @requires_specialization
@@ -105,8 +121,10 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         if type_get_version(type_) == 0:
             self.skipTest("Could not assign valid type version")
 
-    def _assign_and_check_version_0(self, user_type):
+    def _no_more_versions(self, user_type):
         type_modified(user_type)
+        for _ in range(1001):
+            type_assign_specific_version_unsafe(user_type, 1000_000_000)
         type_assign_specific_version_unsafe(user_type, 0)
         self.assertEqual(type_get_version(user_type), 0)
 
@@ -135,7 +153,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(load_foo_1, A, "LOAD_ATTR", should_specialize=True)
         del load_foo_1
 
-        self._assign_and_check_version_0(A)
+        self._no_more_versions(A)
 
         def load_foo_2(type_):
             return type_.foo
@@ -186,7 +204,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(load_x_1, G(), "LOAD_ATTR", should_specialize=True)
         del load_x_1
 
-        self._assign_and_check_version_0(G)
+        self._no_more_versions(G)
 
         def load_x_2(instance):
             instance.x
@@ -205,7 +223,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(store_bar_1, B(), "STORE_ATTR", should_specialize=True)
         del store_bar_1
 
-        self._assign_and_check_version_0(B)
+        self._no_more_versions(B)
 
         def store_bar_2(type_):
             type_.bar = 10
@@ -225,7 +243,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(call_class_1, F, "CALL", should_specialize=True)
         del call_class_1
 
-        self._assign_and_check_version_0(F)
+        self._no_more_versions(F)
 
         def call_class_2(type_):
             type_()
@@ -244,7 +262,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(to_bool_1, H(), "TO_BOOL", should_specialize=True)
         del to_bool_1
 
-        self._assign_and_check_version_0(H)
+        self._no_more_versions(H)
 
         def to_bool_2(instance):
             not instance
