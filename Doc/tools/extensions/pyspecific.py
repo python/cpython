@@ -15,11 +15,13 @@ from os import getenv, path
 from time import asctime
 from pprint import pformat
 
+import sphinx
 from docutils import nodes
 from docutils.io import StringOutput
 from docutils.utils import new_document, unescape
 from sphinx import addnodes
 from sphinx.builders import Builder
+from sphinx.domains.changeset import VersionChange, versionlabels, versionlabel_classes
 from sphinx.domains.python import PyFunction, PyMethod
 from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
@@ -393,56 +395,34 @@ class PyAbstractMethod(PyMethod):
 
 # Support for documenting version of removal in deprecations
 
-class DeprecatedRemoved(SphinxDirective):
-    has_content = True
+class DeprecatedRemoved(VersionChange):
     required_arguments = 2
-    optional_arguments = 1
-    final_argument_whitespace = True
-    option_spec = {}
 
-    _deprecated_label = sphinx_gettext('Deprecated since version {deprecated}, will be removed in version {removed}')
-    _removed_label = sphinx_gettext('Deprecated since version {deprecated}, removed in version {removed}')
+    _deprecated_label = sphinx_gettext('Deprecated since version %s, will be removed in version %s')
+    _removed_label = sphinx_gettext('Deprecated since version %s, removed in version %s')
 
     def run(self):
-        node = addnodes.versionmodified()
-        node.document = self.state.document
-        node['type'] = 'deprecated-removed'
-        version = (self.arguments[0], self.arguments[1])
-        node['version'] = version
-        current_version = tuple(int(e) for e in self.config.version.split('.'))
-        removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
-        if current_version < removed_version:
-            label = self._deprecated_label
-        else:
-            label = self._removed_label
+        # Replace the first two arguments (deprecated version and removed version)
+        # with a single tuple of both versions.
+        version_deprecated = self.arguments[0]
+        version_removed = self.arguments.pop(1)
+        self.arguments[0] = version_deprecated, version_removed
 
-        text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
-        if len(self.arguments) == 3:
-            inodes, messages = self.state.inline_text(self.arguments[2],
-                                                      self.lineno+1)
-            para = nodes.paragraph(self.arguments[2], '', *inodes, translatable=False)
-            node.append(para)
+        # Set the label based on if we have reached the removal version
+        current_version = tuple(map(int, self.config.version.split('.')))
+        removed_version = tuple(map(int,  version_removed.split('.')))
+        if current_version < removed_version:
+            versionlabels[self.name] = self._deprecated_label
+            versionlabel_classes[self.name] = 'deprecated'
         else:
-            messages = []
-        if self.content:
-            self.state.nested_parse(self.content, self.content_offset, node)
-        if len(node):
-            if isinstance(node[0], nodes.paragraph) and node[0].rawsource:
-                content = nodes.inline(node[0].rawsource, translatable=True)
-                content.source = node[0].source
-                content.line = node[0].line
-                content += node[0].children
-                node[0].replace_self(nodes.paragraph('', '', content, translatable=False))
-            node[0].insert(0, nodes.inline('', '%s: ' % text,
-                                           classes=['versionmodified']))
-        else:
-            para = nodes.paragraph('', '',
-                                   nodes.inline('', '%s.' % text,
-                                                classes=['versionmodified']),
-                                   translatable=False)
-            node.append(para)
-        self.env.get_domain('changeset').note_changeset(node)
-        return [node] + messages
+            versionlabels[self.name] = self._removed_label
+            versionlabel_classes[self.name] = 'removed'
+        try:
+            return super().run()
+        finally:
+            # reset versionlabels and versionlabel_classes
+            versionlabels[self.name] = ''
+            versionlabel_classes[self.name] = ''
 
 
 # Support for including Misc/NEWS
