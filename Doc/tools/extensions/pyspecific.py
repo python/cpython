@@ -425,7 +425,8 @@ class DeprecatedRemoved(Directive):
         node = addnodes.versionmodified()
         node.document = self.state.document
         node['type'] = 'deprecated-removed'
-        release = self.state.document.settings.env.config.release
+        env = self.state.document.settings.env
+        release = env.config.release
         deprecated = expand_version_arg(self.arguments[0], release)
         version = (deprecated, self.arguments[1])
         node['version'] = version
@@ -461,7 +462,6 @@ class DeprecatedRemoved(Directive):
                                                 classes=['versionmodified']),
                                    translatable=False)
             node.append(para)
-        env = self.state.document.settings.env
         env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
