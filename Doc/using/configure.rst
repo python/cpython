@@ -907,6 +907,25 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
+.. option:: --disable-safty
+
+   Disable compiler options that are recommended by `OpenSSF`_ for security reasons with no performance overhead.
+   If this option is not enabled, CPython will be built based on safty compiler options with no slow down.
+
+   .. _OpenSSF: https://openssf.org/
+
+   .. versionadded:: 3.14
+
+.. option:: --enable-slower-safty
+
+   Enable compiler options that are recommended by `OpenSSF`_ for security reasons which require overhead.
+   If this option is not enabled, CPython will not be built based on safty compiler options which performance impact.
+
+   .. _OpenSSF: https://openssf.org/
+
+   .. versionadded:: 3.14
+
+
 macOS Options
 -------------
 

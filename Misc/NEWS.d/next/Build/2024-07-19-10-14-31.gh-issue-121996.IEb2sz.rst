@@ -1,0 +1,2 @@
+Introduce ./configure --disable-safty and --enable-slower-safty options.
+Patch by Donghee Na.
