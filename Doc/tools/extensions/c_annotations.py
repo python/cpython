@@ -41,7 +41,8 @@ class RefCountEntry:
     #: Name of the function.
     name: str
     #: List of (argument name, type, refcount effect) tuples.
-    args: list[tuple[str, str, int | None]] = dataclasses.field(default_factory=list)
+    # (Currently not used. If it was, a dataclass might work better.)
+    args: list = dataclasses.field(default_factory=list)
     #: Return type of the function.
     result_type: str = ''
     #: Reference count effect for the return value.
