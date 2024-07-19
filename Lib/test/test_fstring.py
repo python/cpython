@@ -896,6 +896,7 @@ x = (
                              "f'{:2}'",
                              "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
+                             "F'{[F'{:'}[F'{:'}]]]",
                              ])
 
         self.assertAllRaise(SyntaxError,
