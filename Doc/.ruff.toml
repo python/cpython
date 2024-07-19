@@ -38,7 +38,7 @@ ignore = [
 
 [format]
 preview = true
-quote-style = "single"
+quote-style = "preserve"
 docstring-code-format = true
 exclude = [
     "tools/extensions/lexers/*",

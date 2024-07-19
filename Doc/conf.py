@@ -347,7 +347,7 @@ repository_url = os.getenv('READTHEDOCS_GIT_CLONE_URL', '')
 repository_url = repository_url.removesuffix('.git')
 html_context = {
     'is_deployment_preview': is_deployment_preview,
-    'repository_url': repository_url if repository_url else None,
+    'repository_url': repository_url or None,
     'pr_id': os.getenv('READTHEDOCS_VERSION'),
     'enable_analytics': os.getenv('PYTHON_DOCS_ENABLE_ANALYTICS'),
 }
@@ -524,7 +524,7 @@ coverage_c_regexes = {
 # The coverage checker will ignore all C items whose names match these regexes
 # (using re.match) -- the keys must be the same as in coverage_c_regexes.
 coverage_ignore_c_items = {
-    #    'cfunction': [...]
+    # 'cfunction': [...]
 }
 
 
