@@ -655,7 +655,7 @@ LIBHACL_BLAKE2_OBJS += Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o
 endif
 
 ifneq ($(LIBHACL_SIMD256_FLAGS),)
-LIBHACL_BLAKE2_OBJS += Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o
+LIBHACL_BLAKE2_OBJS += Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o
 endif
 
 LIBHACL_HEADERS= \
@@ -1366,7 +1366,7 @@ $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
 
 Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128
-Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256
+Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256
 
 $(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
 	-rm -f $@
