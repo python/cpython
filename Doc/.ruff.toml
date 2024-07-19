@@ -1,0 +1,55 @@
+target-version = "py312"  # align with the version in oldest_supported_sphinx
+fix = true
+output-format = "full"
+extend-exclude = [
+    "includes/*",
+    "tools/extensions/c_annotations.py",
+    "tools/extensions/escape4chm.py",
+    "tools/extensions/patchlevel.py",
+    "tools/extensions/pyspecific.py",
+]
+
+[lint]
+preview = true
+select = [
+    "C4",  # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "E",   # pycodestyle
+    "EM",  # flake8-errmsg
+    "F",   # pyflakes
+    "FA",  # flake8-future-annotations
+    "FLY", # flynt
+    "FURB",# refurb
+    "G",   # flake8-logging-format
+    "I",   # isort
+    "LOG", # flake8-logging
+    "N",   # pep8-naming
+    "PERF",# perflint
+    "PGH", # pygrep-hooks
+    "PT",  # flake8-pytest-style
+    "TCH", # flake8-type-checking
+    "UP",  # pyupgrade
+    "W",   # pycodestyle
+]
+
+[lint.per-file-ignores]
+"tools/extensions/lexers/peg_lexer.py" =[
+    "E501",
+]
+"tools/extensions/c_annotations.py" =[
+    "E501",
+]
+"tools/extensions/pyspecific.py" =[
+    "E501",
+]
+
+[format]
+preview = true
+quote-style = "single"
+exclude = [
+    "tools/extensions/lexers/*",
+    "tools/extensions/c_annotations.py",
+    "tools/extensions/escape4chm.py",
+    "tools/extensions/patchlevel.py",
+    "tools/extensions/pyspecific.py",
+]
