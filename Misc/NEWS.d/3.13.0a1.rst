@@ -2888,9 +2888,9 @@ documented and were not intended to be used externally.
 .. nonce: vMbmj_
 .. section: Library
 
-:data:`opcode.ENABLE_SPECIALIZATION` (which was added in 3.12 but never
+:data:`!opcode.ENABLE_SPECIALIZATION` (which was added in 3.12 but never
 documented or intended for external usage) is moved to
-:data:`_opcode.ENABLE_SPECIALIZATION` where tests can access it.
+:data:`!_opcode.ENABLE_SPECIALIZATION` where tests can access it.
 
 ..
 
@@ -3053,7 +3053,7 @@ Donghee Na.
 .. nonce: U9nD_B
 .. section: Library
 
-Optimize :meth:`_PollLikeSelector.select` for many iteration case.
+Optimize :meth:`!_PollLikeSelector.select` for many iteration case.
 
 ..
 
@@ -3173,7 +3173,7 @@ Disable tab completion in multiline mode of :mod:`pdb`
 .. nonce: pYSwMj
 .. section: Library
 
-Expose opcode metadata through :mod:`_opcode`.
+Expose opcode metadata through :mod:`!_opcode`.
 
 ..
 
@@ -3735,7 +3735,7 @@ overwritten.
 .. nonce: _sZilh
 .. section: Library
 
-Fix bugs in :mod:`_ctypes` where exceptions could end up being overwritten.
+Fix bugs in :mod:`!_ctypes` where exceptions could end up being overwritten.
 
 ..
 

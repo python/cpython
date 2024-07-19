@@ -184,14 +184,14 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
   found_unused_or_dummy:
     if (freeslot == NULL)
         goto found_unused;
-    so->used++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
     freeslot->key = key;
     freeslot->hash = hash;
     return 0;
 
   found_unused:
     so->fill++;
-    so->used++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
     entry->key = key;
     entry->hash = hash;
     if ((size_t)so->fill*5 < mask*3)
@@ -357,7 +357,7 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     old_key = entry->key;
     entry->key = dummy;
     entry->hash = -1;
-    so->used--;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
     Py_DECREF(old_key);
     return DISCARD_FOUND;
 }
@@ -397,7 +397,7 @@ set_empty_to_minsize(PySetObject *so)
 {
     memset(so->smalltable, 0, sizeof(so->smalltable));
     so->fill = 0;
-    so->used = 0;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, 0);
     so->mask = PySet_MINSIZE - 1;
     so->table = so->smalltable;
     so->hash = -1;
@@ -615,7 +615,7 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
             }
         }
         so->fill = other->fill;
-        so->used = other->used;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, other->used);
         return 0;
     }
 
@@ -624,7 +624,7 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
         setentry *newtable = so->table;
         size_t newmask = (size_t)so->mask;
         so->fill = other->used;
-        so->used = other->used;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, other->used);
         for (i = other->mask + 1; i > 0 ; i--, other_entry++) {
             key = other_entry->key;
             if (key != NULL && key != dummy) {
@@ -678,7 +678,7 @@ set_pop_impl(PySetObject *so)
     key = entry->key;
     entry->key = dummy;
     entry->hash = -1;
-    so->used--;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
     so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
@@ -1173,7 +1173,9 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     Py_hash_t h;
 
     t = a->fill;     a->fill   = b->fill;        b->fill  = t;
-    t = a->used;     a->used   = b->used;        b->used  = t;
+    t = a->used;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(a->used, b->used);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(b->used, t);
     t = a->mask;     a->mask   = b->mask;        b->mask  = t;
 
     u = a->table;

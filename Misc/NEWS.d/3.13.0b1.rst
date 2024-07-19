@@ -354,16 +354,6 @@ asend().throw()
 
 ..
 
-.. date: 2024-04-13-18-59-25
-.. gh-issue: 115874
-.. nonce: c3xG-E
-.. section: Core and Builtins
-
-Fixed a possible segfault during garbage collection of
-``_asyncio.FutureIter`` objects
-
-..
-
 .. date: 2024-04-13-16-55-53
 .. gh-issue: 117536
 .. nonce: xkVbfv
@@ -666,7 +656,7 @@ by :pep:`738`.
 .. section: Library
 
 Allow to specify the signature of custom callable instances of extension
-type by the :attr:`__text_signature__` attribute. Specify signatures of
+type by the ``__text_signature__`` attribute. Specify signatures of
 :class:`operator.attrgetter`, :class:`operator.itemgetter`, and
 :class:`operator.methodcaller` instances.
 
@@ -687,10 +677,10 @@ padding is not detected when no padding is necessary.
 .. nonce: 5N2Xcy
 .. section: Library
 
-Add the :class:`!PhotoImage` methods :meth:`~tkinter.PhotoImage.read` to
-read an image from a file and :meth:`~tkinter.PhotoImage.data` to get the
+Add the :class:`!PhotoImage` methods :meth:`!read` to
+read an image from a file and :meth:`!data` to get the
 image data. Add *background* and *grayscale* parameters to
-:class:`!PhotoImage` method :meth:`~tkinter.PhotoImage.write`.
+:class:`!PhotoImage` method :meth:`!write`.
 
 ..
 
@@ -855,7 +845,7 @@ is used to bind indexed, nameless placeholders. See also :gh:`100668`.
 .. nonce: RstWg-
 .. section: Library
 
-Fix TypeError in :func:`email.Message.get_payload` when the charset is
+Fix TypeError in :func:`email.message.Message.get_payload` when the charset is
 :rfc:`2231` encoded.
 
 ..
@@ -880,6 +870,16 @@ relating to PEP 706. If a ``filter`` argument is not provided to
 ``extract()`` or ``extractall``, the deprecation warning now points to the
 line in the user's code where the relevant function was called. Patch by
 Alex Waygood.
+
+..
+
+.. date: 2024-04-13-18-59-25
+.. gh-issue: 115874
+.. nonce: c3xG-E
+.. section: Library
+
+Fixed a possible segfault during garbage collection of
+``_asyncio.FutureIter`` objects. Patch by Savannah Ostrowski.
 
 ..
 
@@ -953,7 +953,7 @@ Speed up :meth:`pathlib.Path.walk` by working with strings internally.
 .. nonce: oxIUEI
 .. section: Library
 
-Change the new multi-separator support in :meth:`asyncio.Stream.readuntil`
+Change the new multi-separator support in :meth:`asyncio.StreamReader.readuntil`
 to only accept tuples of separators rather than arbitrary iterables.
 
 ..
@@ -1260,7 +1260,7 @@ Support opcode events in :mod:`bdb`
 .. nonce: YoI8TV
 .. section: Library
 
-:mod:`ncurses`: fixed a crash that could occur on macOS 13 or earlier when
+:mod:`!ncurses`: fixed a crash that could occur on macOS 13 or earlier when
 Python was built with Apple Xcode 15's SDK.
 
 ..
@@ -1315,7 +1315,7 @@ Hamdan.
 .. section: Library
 
 Adjust ``logging.LogRecord`` to use ``time.time_ns()`` and fix minor bug
-related to floating point math.
+related to floating-point math.
 
 ..
 
@@ -1347,13 +1347,13 @@ urllib.
 .. nonce: du4UKW
 .. section: Library
 
-Setting the :mod:`!tkinter` module global :data:`~tkinter.wantobject` to ``2``
+Setting the :mod:`!tkinter` module global :data:`!wantobjects` to ``2``
 before creating the :class:`~tkinter.Tk` object or call the
-:meth:`~tkinter.Tk.wantobject` method of the :class:`!Tk` object with argument
+:meth:`!wantobjects` method of the :class:`!Tk` object with argument
 ``2`` makes now arguments to callbacks registered in the :mod:`tkinter` module
 to be passed as various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
 depending on their internal representation in Tcl, instead of always ``str``.
-:data:`!tkinter.wantobject` is now set to ``2`` by default.
+:data:`!tkinter.wantobjects` is now set to ``2`` by default.
 
 ..
 
