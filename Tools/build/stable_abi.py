@@ -236,7 +236,11 @@ ITEM_KIND_TO_DOC_ROLE = {
 
 @generator("doc_list", 'Doc/data/stable_abi.dat')
 def gen_doc_annotations(manifest, args, outfile):
-    """Generate/check the stable ABI list for documentation annotations"""
+    """Generate/check the stable ABI list for documentation annotations
+
+    See ``StableABIEntry`` in ``Doc/tools/extensions/c_annotations.py``
+    for a description of each field.
+    """
     writer = csv.DictWriter(
         outfile,
         ['role', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],

@@ -38,33 +38,33 @@ ROLE_TO_OBJECT_TYPE = {
 
 @dataclasses.dataclass(slots=True)
 class RefCountEntry:
-    #: Name of the function.
+    # Name of the function.
     name: str
-    #: List of (argument name, type, refcount effect) tuples.
+    # List of (argument name, type, refcount effect) tuples.
     # (Currently not used. If it was, a dataclass might work better.)
     args: list = dataclasses.field(default_factory=list)
-    #: Return type of the function.
+    # Return type of the function.
     result_type: str = ''
-    #: Reference count effect for the return value.
+    # Reference count effect for the return value.
     result_refs: int | None = None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class StableABIEntry:
-    #: Role of the object.
-    #: Source: Each [item_kind] in stable_abi.toml is mapped to a C Domain role.
+    # Role of the object.
+    # Source: Each [item_kind] in stable_abi.toml is mapped to a C Domain role.
     role: str
-    #: Name of the object.
-    #: Source: [<item_kind>.*] in stable_abi.toml.
+    # Name of the object.
+    # Source: [<item_kind>.*] in stable_abi.toml.
     name: str
-    #: Version when the object was added to the stable ABI.
-    #: (Source: [<item_kind>.*.added] in stable_abi.toml.
+    # Version when the object was added to the stable ABI.
+    # (Source: [<item_kind>.*.added] in stable_abi.toml.
     added: str
-    #: An explananatory blurb for the ifdef.
-    #: Source: ``feature_macro.*.doc`` in stable_abi.toml.
+    # An explananatory blurb for the ifdef.
+    # Source: ``feature_macro.*.doc`` in stable_abi.toml.
     ifdef_note: str
-    #: Defines how much of the struct is exposed. Only relevant for structs.
-    #: Source: [<item_kind>.*.struct_abi_kind] in stable_abi.toml.
+    # Defines how much of the struct is exposed. Only relevant for structs.
+    # Source: [<item_kind>.*.struct_abi_kind] in stable_abi.toml.
     struct_abi_kind: str
 
 
