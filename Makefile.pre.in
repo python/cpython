@@ -219,6 +219,8 @@ LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
+LIBHACL_SIMD128_FLAGS=@LIBHACL_SIMD128_FLAGS@
+LIBHACL_SIMD256_FLAGS=@LIBHACL_SIMD256_FLAGS@
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -1356,15 +1358,15 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # have the ability to compile vectorized versions
 LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/_hacl/%.o: $(srcdir)/Modules/_hacl/%.c $(LIBHACL_SHA2_HEADERS)
+Modules/_hacl/%.o: $(srcdir)/Modules/_hacl/%.c $(LIBHACL_SHA2_HEADERS) $(LIBHACL_BLAKE2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $<
 
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
 
-Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD128_FLAGS)
-Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD256_FLAGS)
+Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128
+Modules/_hacl/Hacl_Hash_Blake2s_Simd256.o: LIBHACL_CFLAGS += $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256
 
 $(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
 	-rm -f $@

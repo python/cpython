@@ -713,6 +713,8 @@ MODULE__CURSES_FALSE
 MODULE__CURSES_TRUE
 MODULE__CTYPES_FALSE
 MODULE__CTYPES_TRUE
+LIBHACL_SIMD256_FLAGS
+LIBHACL_SIMD128_FLAGS
 MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
 MODULE__SHA3_FALSE
@@ -30357,6 +30359,8 @@ else $as_nop
 fi
 
 
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}
@@ -30399,6 +30403,8 @@ printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
 else $as_nop
   :
 fi
+
+
 
 
 

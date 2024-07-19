@@ -110,11 +110,6 @@ static inline bool has_simd256(void) {
   return avx && avx2;
 }
 
-// Small mismatch between the variable names Python defines as part of configure
-// at the ones HACL* expects to be set in order to enable those headers.
-#define HACL_CAN_COMPILE_VEC128 HACL_CAN_COMPILE_SIMD128
-#define HACL_CAN_COMPILE_VEC256 HACL_CAN_COMPILE_SIMD256
-
 #include "_hacl/Hacl_Hash_Blake2b.h"
 #include "_hacl/Hacl_Hash_Blake2s.h"
 #if HACL_CAN_COMPILE_SIMD256
