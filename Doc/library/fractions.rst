@@ -35,7 +35,7 @@ another rational number, or from a string.
    Assumed, that the :meth:`!as_integer_ratio` method returns a pair
    of coprime integers and last one is positive.
    Note that due to the
-   usual issues with binary floating-point (see :ref:`tut-fp-issues`), the
+   usual issues with binary point (see :ref:`tut-fp-issues`), the
    argument to ``Fraction(1.1)`` is not exactly equal to 11/10, and so
    ``Fraction(1.1)`` does *not* return ``Fraction(11, 10)`` as one might expect.
    (But see the documentation for the :meth:`limit_denominator` method below.)
