@@ -1153,7 +1153,7 @@ ConfigParser Objects
    .. method:: getfloat(section, option, *, raw=False, vars=None[, fallback])
 
       A convenience method which coerces the *option* in the specified *section*
-      to a floating point number.  See :meth:`get` for explanation of *raw*,
+      to a floating-point number.  See :meth:`get` for explanation of *raw*,
       *vars* and *fallback*.
 
 

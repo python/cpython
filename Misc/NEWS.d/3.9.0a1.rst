@@ -299,7 +299,7 @@ Check the error from the system's underlying ``crypt`` or ``crypt_r``.
 .. section: Core and Builtins
 
 On FreeBSD, Python no longer calls ``fedisableexcept()`` at startup to
-control the floating point control mode. The call became useless since
+control the floating-point control mode. The call became useless since
 FreeBSD 6: it became the default mode.
 
 ..

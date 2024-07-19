@@ -33,7 +33,7 @@ implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
 
-* otherwise, if either argument is a floating point number, the other is
+* otherwise, if either argument is a floating-point number, the other is
   converted to floating point;
 
 * otherwise, both must be integers and no conversion is necessary.
@@ -139,8 +139,8 @@ Python supports string and bytes literals and various numeric literals:
           : | `integer` | `floatnumber` | `imagnumber`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
-integer, floating point number, complex number) with the given value.  The value
-may be approximated in the case of floating point and imaginary (complex)
+integer, floating-point number, complex number) with the given value.  The value
+may be approximated in the case of floating-point and imaginary (complex)
 literals.  See section :ref:`literals` for details.
 
 .. index::
@@ -1354,7 +1354,7 @@ The floor division operation can be customized using the special
 The ``%`` (modulo) operator yields the remainder from the division of the first
 argument by the second.  The numeric arguments are first converted to a common
 type.  A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
-arguments may be floating point numbers, e.g., ``3.14%0.7`` equals ``0.34``
+arguments may be floating-point numbers, e.g., ``3.14%0.7`` equals ``0.34``
 (since ``3.14`` equals ``4*0.7 + 0.34``.)  The modulo operator always yields a
 result with the same sign as its second operand (or zero); the absolute value of
 the result is strictly smaller than the absolute value of the second operand
@@ -1374,8 +1374,8 @@ The *modulo* operation can be customized using the special :meth:`~object.__mod_
 and :meth:`~object.__rmod__` methods.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
-function are not defined for complex numbers.  Instead, convert to a floating
-point number using the :func:`abs` function if appropriate.
+function are not defined for complex numbers.  Instead, convert to a
+floating-point number using the :func:`abs` function if appropriate.
 
 .. index::
    single: addition

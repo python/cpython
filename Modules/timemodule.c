@@ -159,7 +159,7 @@ time_time(PyObject *self, PyObject *unused)
 
 
 PyDoc_STRVAR(time_doc,
-"time() -> floating point number\n\
+"time() -> floating-point number\n\
 \n\
 Return the current time in seconds since the Epoch.\n\
 Fractions of a second may be present if the system clock provides them.");
@@ -373,7 +373,7 @@ time_clock_getres(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(clock_getres_doc,
-"clock_getres(clk_id) -> floating point number\n\
+"clock_getres(clk_id) -> floating-point number\n\
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
 
@@ -432,7 +432,7 @@ PyDoc_STRVAR(sleep_doc,
 "sleep(seconds)\n\
 \n\
 Delay execution for a given number of seconds.  The argument may be\n\
-a floating point number for subsecond precision.");
+a floating-point number for subsecond precision.");
 
 static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_year", "year, for example, 1993"},
@@ -1123,7 +1123,7 @@ time_mktime(PyObject *module, PyObject *tm_tuple)
 }
 
 PyDoc_STRVAR(mktime_doc,
-"mktime(tuple) -> floating point number\n\
+"mktime(tuple) -> floating-point number\n\
 \n\
 Convert a time tuple in local time to seconds since the Epoch.\n\
 Note that mktime(gmtime(0)) will not generally return zero for most\n\
@@ -1913,7 +1913,7 @@ PyDoc_STRVAR(module_doc,
 \n\
 There are two standard representations of time.  One is the number\n\
 of seconds since the Epoch, in UTC (a.k.a. GMT).  It may be an integer\n\
-or a floating point number (to represent fractions of seconds).\n\
+or a floating-point number (to represent fractions of seconds).\n\
 The epoch is the point where the time starts, the return value of time.gmtime(0).\n\
 It is January 1, 1970, 00:00:00 (UTC) on all platforms.\n\
 \n\

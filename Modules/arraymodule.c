@@ -2739,7 +2739,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 PyDoc_STRVAR(module_doc,
 "This module defines an object type which can efficiently represent\n\
-an array of basic values: characters, integers, floating point\n\
+an array of basic values: characters, integers, floating-point\n\
 numbers.  Arrays are sequence types and behave very much like lists,\n\
 except that the type of objects stored in them is constrained.\n");
 
@@ -2767,8 +2767,8 @@ The following type codes are defined:\n\
     'L'         unsigned integer   4\n\
     'q'         signed integer     8 (see note)\n\
     'Q'         unsigned integer   8 (see note)\n\
-    'f'         floating point     4\n\
-    'd'         floating point     8\n\
+    'f'         floating-point     4\n\
+    'd'         floating-point     8\n\
 \n\
 NOTE: The 'u' typecode corresponds to Python's unicode character. On\n\
 narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\

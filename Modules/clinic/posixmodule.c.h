@@ -5985,7 +5985,7 @@ PyDoc_STRVAR(os_times__doc__,
 "\n"
 "The object returned behaves like a named tuple with these fields:\n"
 "  (utime, stime, cutime, cstime, elapsed_time)\n"
-"All fields are floating point numbers.");
+"All fields are floating-point numbers.");
 
 #define OS_TIMES_METHODDEF    \
     {"times", (PyCFunction)os_times, METH_NOARGS, os_times__doc__},
@@ -12002,4 +12002,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=e2cf3ab750346780 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f0c08f692891c72 input=a9049054013a1b77]*/

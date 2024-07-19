@@ -24,7 +24,7 @@ PyDoc_STRVAR(select_select__doc__,
 "gotten from a fileno() method call on one of those.\n"
 "\n"
 "The optional 4th argument specifies a timeout in seconds; it may be\n"
-"a floating point number to specify fractions of seconds.  If it is absent\n"
+"a floating-point number to specify fractions of seconds.  If it is absent\n"
 "or None, the call will never time out.\n"
 "\n"
 "The return value is a tuple of three lists corresponding to the first three\n"
@@ -1309,4 +1309,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=64516114287e894d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d031b2402ee40e7 input=a9049054013a1b77]*/

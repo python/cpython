@@ -824,7 +824,7 @@ class UtimeTests(unittest.TestCase):
         return (ns * 1e-9) + 0.5e-9
 
     def test_utime_by_indexed(self):
-        # pass times as floating point seconds as the second indexed parameter
+        # pass times as floating-point seconds as the second indexed parameter
         def set_time(filename, ns):
             atime_ns, mtime_ns = ns
             atime = self.ns_to_sec(atime_ns)

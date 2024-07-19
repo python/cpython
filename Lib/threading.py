@@ -332,7 +332,7 @@ class Condition:
         awakened or timed out, it re-acquires the lock and returns.
 
         When the timeout argument is present and not None, it should be a
-        floating point number specifying a timeout for the operation in seconds
+        floating-point number specifying a timeout for the operation in seconds
         (or fractions thereof).
 
         When the underlying lock is an RLock, it is not released using its
@@ -642,7 +642,7 @@ class Event:
         the optional timeout occurs.
 
         When the timeout argument is present and not None, it should be a
-        floating point number specifying a timeout for the operation in seconds
+        floating-point number specifying a timeout for the operation in seconds
         (or fractions thereof).
 
         This method returns the internal flag on exit, so it will always return
@@ -1120,7 +1120,7 @@ class Thread:
         or until the optional timeout occurs.
 
         When the timeout argument is present and not None, it should be a
-        floating point number specifying a timeout for the operation in seconds
+        floating-point number specifying a timeout for the operation in seconds
         (or fractions thereof). As join() always returns None, you must call
         is_alive() after join() to decide whether a timeout happened -- if the
         thread is still alive, the join() call timed out.

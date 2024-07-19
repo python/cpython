@@ -10056,12 +10056,12 @@ Return a collection containing process timing information.
 
 The object returned behaves like a named tuple with these fields:
   (utime, stime, cutime, cstime, elapsed_time)
-All fields are floating point numbers.
+All fields are floating-point numbers.
 [clinic start generated code]*/
 
 static PyObject *
 os_times_impl(PyObject *module)
-/*[clinic end generated code: output=35f640503557d32a input=2bf9df3d6ab2e48b]*/
+/*[clinic end generated code: output=35f640503557d32a input=8dbfe33a2dcc3df3]*/
 #ifdef MS_WINDOWS
 {
     FILETIME create, exit, kernel, user;

@@ -233,7 +233,7 @@ def k(x):
     """)
 
     def test_float(self):
-        # Floating point numbers
+        # Floating-point numbers
         self.check_tokenize("x = 3.14159", """\
     NAME       'x'           (1, 0) (1, 1)
     OP         '='           (1, 2) (1, 3)

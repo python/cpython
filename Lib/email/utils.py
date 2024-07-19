@@ -128,7 +128,7 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
 
     Fri, 09 Nov 2001 01:08:47 -0000
 
-    Optional timeval if given is a floating point time value as accepted by
+    Optional timeval if given is a floating-point time value as accepted by
     gmtime() and localtime(), otherwise the current time is used.
 
     Optional localtime is a flag that when True, interprets timeval, and
