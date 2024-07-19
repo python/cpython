@@ -40,7 +40,7 @@ class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" ""
    already includes it. */
 enum {
     HIGHEST_PROTOCOL = 5,
-    DEFAULT_PROTOCOL = 4
+    DEFAULT_PROTOCOL = 5
 };
 
 #ifdef MS_WINDOWS
@@ -4692,7 +4692,7 @@ This takes a binary file for writing a pickle data stream.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -4725,7 +4725,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=a7c969699bf5dad3]*/
+/*[clinic end generated code: output=0abedc50590d259b input=cddc50f66b770002]*/
 {
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
@@ -7507,7 +7507,7 @@ be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7533,7 +7533,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=5ed6653da99cd97c]*/
+/*[clinic end generated code: output=706186dba996490c input=b89ce8d0e911fd46]*/
 {
     PickleState *state = _Pickle_GetState(module);
     PicklerObject *pickler = _Pickler_New(state);
@@ -7578,7 +7578,7 @@ Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7598,7 +7598,7 @@ into *file* as part of the pickle stream.  It is an error if
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports, PyObject *buffer_callback)
-/*[clinic end generated code: output=fbab0093a5580fdf input=e543272436c6f987]*/
+/*[clinic end generated code: output=fbab0093a5580fdf input=139fc546886c63ac]*/
 {
     PyObject *result;
     PickleState *state = _Pickle_GetState(module);
