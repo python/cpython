@@ -396,19 +396,17 @@ class PyAbstractMethod(PyMethod):
 
 # Support for documenting version of changes, additions, deprecations
 
-def expand_version_arg(argument, env):
+def expand_version_arg(argument, release):
     """Expand "next" to the current version"""
     if argument == 'next':
-        return sphinx_gettext('{} (unreleased)').format(env.config.release)
+        return sphinx_gettext('{} (unreleased)').format(release)
     return argument
 
 
-class PyVersionChange(sphinx.directives.other.VersionChange):
+class PyVersionChange(sphinx.domains.changeset.VersionChange):
     def run(self):
-        env = self.state.document.settings.env
-        self.arguments = (
-            expand_version_arg(self.arguments[0], env),
-            *self.arguments[1:])
+        # Replace the 'next' special token with the current development version
+        self.arguments[0] = expand_version_arg(self.arguments[0], self.config.release)
         return super().run()
 
 
@@ -426,8 +424,8 @@ class DeprecatedRemoved(Directive):
         node = addnodes.versionmodified()
         node.document = self.state.document
         node['type'] = 'deprecated-removed'
-        env = self.state.document.settings.env
-        deprecated = expand_version_arg(self.arguments[0], env)
+        release = self.state.document.settings.env.config.release
+        deprecated = expand_version_arg(self.arguments[0], release)
         version = (deprecated, self.arguments[1])
         node['version'] = version
         current_version = tuple(int(e) for e in env.config.version.split('.'))
