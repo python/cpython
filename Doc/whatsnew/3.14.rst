@@ -100,6 +100,13 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+fractions
+---------
+
+Added support for converting any objects that have the
+:meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
+(Contributed by Serhiy Storchaka in :gh:`82017`.)
+
 os
 --
 
