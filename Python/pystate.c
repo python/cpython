@@ -1499,6 +1499,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->previous_executor = NULL;
     tstate->dict_global_version = 0;
 
+    _tstate->asyncio_running_loop = NULL;
+
     tstate->delete_later = NULL;
 
     llist_init(&_tstate->mem_free_queue);
@@ -1699,6 +1701,11 @@ PyThreadState_Clear(PyThreadState *tstate)
     // XXX Deal with the possibility of problematic finalizers.
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
+
+    Py_CLEAR(tstate->threading_local_key);
+    Py_CLEAR(tstate->threading_local_sentinel);
+
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);

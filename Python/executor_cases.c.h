@@ -1227,7 +1227,33 @@
 
         /* _SEND is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        /* _SEND_GEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        case _SEND_GEN_FRAME: {
+            _PyStackRef v;
+            _PyStackRef receiver;
+            _PyInterpreterFrame *gen_frame;
+            oparg = CURRENT_OPARG();
+            v = stack_pointer[-1];
+            receiver = stack_pointer[-2];
+            PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(receiver);
+            if (Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (gen->gi_frame_state >= FRAME_EXECUTING) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(SEND, hit);
+            gen_frame = &gen->gi_iframe;
+            _PyFrame_StackPush(gen_frame, v);
+            gen->gi_frame_state = FRAME_EXECUTING;
+            gen->gi_exc_state.previous_item = tstate->exc_info;
+            tstate->exc_info = &gen->gi_exc_state;
+            assert(1 + INLINE_CACHE_ENTRIES_SEND + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+            stack_pointer[-1].bits = (uintptr_t)gen_frame;
+            break;
+        }
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 because it is instrumented */
 
@@ -1551,7 +1577,36 @@
 
         /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        /* _LOAD_NAME is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _LOAD_NAME: {
+            _PyStackRef v;
+            oparg = CURRENT_OPARG();
+            PyObject *v_o;
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) JUMP_TO_ERROR();
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v_o) < 0) JUMP_TO_ERROR();
+            if (v_o == NULL) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) JUMP_TO_ERROR();
+                if (v_o == NULL) {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) JUMP_TO_ERROR();
+                    if (v_o == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                            tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                        if (true) JUMP_TO_ERROR();
+                    }
+                }
+            }
+            v = PyStackRef_FromPyObjectSteal(v_o);
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LOAD_GLOBAL: {
             _PyStackRef res;
@@ -1890,7 +1945,36 @@
             break;
         }
 
-        /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _BUILD_SET: {
+            _PyStackRef *values;
+            _PyStackRef set;
+            oparg = CURRENT_OPARG();
+            values = &stack_pointer[-oparg];
+            PyObject *set_o = PySet_New(NULL);
+            if (set_o == NULL) {
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(values[_i]);
+                }
+                if (true) JUMP_TO_ERROR();
+            }
+            int err = 0;
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
+                if (err == 0) {
+                    err = PySet_Add(set_o, item);
+                }
+                Py_DECREF(item);
+            }
+            if (err != 0) {
+                Py_DECREF(set_o);
+                if (true) JUMP_TO_ERROR();
+            }
+            set = PyStackRef_FromPyObjectSteal(set_o);
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _BUILD_MAP: {
             _PyStackRef *values;
@@ -2843,6 +2927,42 @@
             break;
         }
 
+        case _IMPORT_NAME: {
+            _PyStackRef fromlist;
+            _PyStackRef level;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            fromlist = stack_pointer[-1];
+            level = stack_pointer[-2];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
+                PyStackRef_AsPyObjectBorrow(fromlist),
+                PyStackRef_AsPyObjectBorrow(level));
+            PyStackRef_CLOSE(level);
+            PyStackRef_CLOSE(fromlist);
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _IMPORT_FROM: {
+            _PyStackRef from;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            from = stack_pointer[-1];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 because it is replaced */
 
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is replaced */
@@ -3527,7 +3647,6 @@
             assert(PyStackRef_IsNull(null));
             assert(Py_TYPE(callable_o) == &PyMethod_Type);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
-            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
             method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
             assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
             PyStackRef_CLOSE(callable);
@@ -3624,13 +3743,9 @@
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             STAT_INC(CALL, hit);
-            stack_pointer[-1 - oparg] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
-            stack_pointer[-2 - oparg] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);  // This is used by CALL, upon deoptimization
-            self = stack_pointer[-1 - oparg];
-            func = stack_pointer[-2 - oparg];
+            self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
+            func = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
             PyStackRef_CLOSE(callable);
-            // self may be unused in tier 1, so silence warnings.
-            (void)self;
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = self;
             break;
@@ -4252,6 +4367,43 @@
             PyStackRef_CLOSE(callable);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _CALL_LIST_APPEND: {
+            _PyStackRef arg;
+            _PyStackRef self;
+            _PyStackRef callable;
+            oparg = CURRENT_OPARG();
+            arg = stack_pointer[-1];
+            self = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            assert(oparg == 1);
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
+            PyInterpreterState *interp = tstate->interp;
+            if (callable_o != interp->callable_cache.list_append) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(self_o != NULL);
+            if (!PyList_Check(self_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(CALL, hit);
+            int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            PyStackRef_CLOSE(self);
+            PyStackRef_CLOSE(callable);
+            if (err) JUMP_TO_ERROR();
+            #if TIER_ONE
+            // Skip the following POP_TOP. This is done here in tier one, and
+            // during trace projection in tier two:
+            assert(next_instr->op.code == POP_TOP);
+            SKIP_OVER(1);
+            #endif
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
