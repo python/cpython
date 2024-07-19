@@ -197,7 +197,7 @@ PyDoc_STRVAR(float_new__doc__,
 "float(x=0, /)\n"
 "--\n"
 "\n"
-"Convert a string or number to a floating point number, if possible.");
+"Convert a string or number to a floating-point number, if possible.");
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x);
@@ -256,7 +256,7 @@ PyDoc_STRVAR(float___getformat____doc__,
 "It exists mainly to be used in Python\'s test suite.\n"
 "\n"
 "This function returns whichever of \'unknown\', \'IEEE, big-endian\' or \'IEEE,\n"
-"little-endian\' best describes the format of floating point numbers used by the\n"
+"little-endian\' best describes the format of floating-point numbers used by the\n"
 "C type named by typestr.");
 
 #define FLOAT___GETFORMAT___METHODDEF    \
@@ -318,4 +318,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c79743c8551c30d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8bbcd83977d516f input=a9049054013a1b77]*/
