@@ -464,6 +464,7 @@ class DeprecatedRemoved(Directive):
         env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
+
 # Support for including Misc/NEWS
 
 issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
