@@ -31,13 +31,13 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 try:
-    import notfound.extension  # NoQA: F401
+    import notfound.extension  # noqa: F401
 except ImportError:
     pass
 else:
     extensions.append('notfound.extension')
 try:
-    import sphinxext.opengraph  # NoQA: F401
+    import sphinxext.opengraph  # noqa: F401
 except ImportError:
     pass
 else:
@@ -64,7 +64,7 @@ copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
-import patchlevel  # NoQA: E402
+import patchlevel  # noqa: E402
 
 version, release = patchlevel.get_version_info()
 
