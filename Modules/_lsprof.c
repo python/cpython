@@ -856,6 +856,7 @@ static int
 profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(op));
+    Py_VISIT(op->externalTimer);
     return 0;
 }
 
