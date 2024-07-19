@@ -1,19 +1,23 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.5.3
     hooks:
       - id: ruff
-        name: Run Ruff on Doc/
+        name: Run Ruff (check) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
       - id: ruff
-        name: Run Ruff on Lib/test/
+        name: Run Ruff (check) on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff on Argument Clinic
+        name: Run Ruff (check) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
+      - id: ruff-format
+        name: Run Ruff (format) on Doc/
+        args: [--exit-non-zero-on-fix]
+        files: ^Doc/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 24.4.2
