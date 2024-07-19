@@ -231,7 +231,7 @@ or on combining URL components into a URL string.
       query parameter separator. This has been changed to allow only a single
       separator key, with ``&`` as the default separator.
 
-   .. deprecated:: 3.13
+   .. deprecated:: 3.14
       Accepting objects with false values (like ``0`` and ``[]``) except empty
       strings and byte-like objects and ``None`` is now deprecated.
 
@@ -741,7 +741,7 @@ task isn't already covered by the URL parsing functions above.
    .. versionchanged:: 3.5
       Added the *quote_via* parameter.
 
-   .. deprecated:: 3.13
+   .. deprecated:: 3.14
       Accepting objects with false values (like ``0`` and ``[]``) except empty
       strings and byte-like objects and ``None`` is now deprecated.
 
