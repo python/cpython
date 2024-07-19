@@ -316,9 +316,7 @@ Literals
                             args=[
                                 Name(id='a', ctx=Load())]),
                         conversion=-1,
-                        format_spec=JoinedStr(
-                            values=[
-                                Constant(value='.3')]))]))
+                        format_spec=Constant(value='.3'))]))
 
 
 .. class:: List(elts, ctx)

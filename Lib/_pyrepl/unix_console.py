@@ -383,6 +383,8 @@ class UnixConsole(Console):
         Returns:
         - Event: Event object from the event queue.
         """
+        if not block and not self.wait(timeout=0):
+            return None
         while self.event_queue.empty():
             while True:
                 try:
@@ -397,8 +399,6 @@ class UnixConsole(Console):
                         raise
                 else:
                     break
-            if not block:
-                break
         return self.event_queue.get()
 
     def wait(self, timeout: float | None = None) -> bool:

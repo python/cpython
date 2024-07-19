@@ -272,7 +272,11 @@ complex types are available:
 +----------------------------------+---------------------------------+-----------------+
 | ctypes type                      | C type                          | Python type     |
 +==================================+=================================+=================+
+| :class:`c_float_complex`         | :c:expr:`float complex`         | complex         |
++----------------------------------+---------------------------------+-----------------+
 | :class:`c_double_complex`        | :c:expr:`double complex`        | complex         |
++----------------------------------+---------------------------------+-----------------+
+| :class:`c_longdouble_complex`    | :c:expr:`long double complex`   | complex         |
 +----------------------------------+---------------------------------+-----------------+
 
 
@@ -2300,6 +2304,22 @@ These are the fundamental ctypes data types:
    constructor accepts an optional :class:`complex` initializer.
 
    .. versionadded:: next
+
+
+.. class:: c_float_complex
+
+   Represents the C :c:expr:`float complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
+
+
+.. class:: c_longdouble_complex
+
+   Represents the C :c:expr:`long double complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
 
 
 .. class:: c_int
