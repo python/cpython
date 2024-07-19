@@ -146,6 +146,12 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+pickle
+------
+
+* Set the default protocol version on the :mod:`pickle` module to 5.
+  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
+
 
 Optimizations
 =============
@@ -157,7 +163,6 @@ asyncio
   which speeds up execution by 10% on standard pyperformance benchmarks and
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
-
 
 
 
