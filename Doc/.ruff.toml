@@ -31,16 +31,8 @@ select = [
     "UP",  # pyupgrade
     "W",   # pycodestyle
 ]
-
-[lint.per-file-ignores]
-"tools/extensions/lexers/peg_lexer.py" =[
-    "E501",
-]
-"tools/extensions/c_annotations.py" =[
-    "E501",
-]
-"tools/extensions/pyspecific.py" =[
-    "E501",
+ignore = [
+    "E501",  # We use auto-formatting, so ignore line length errors
 ]
 
 [format]

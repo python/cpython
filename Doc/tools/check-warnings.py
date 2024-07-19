@@ -39,7 +39,7 @@ WARNING_PATTERN = re.compile(
 
 # Regex pattern to match the line numbers in a Git unified diff
 DIFF_PATTERN = re.compile(
-    r'^@@ -(?P<linea>\d+)(?:,(?P<removed>\d+))? \+(?P<lineb>\d+)(?:,(?P<added>\d+))? @@',  # NoQA: E501
+    r'^@@ -(?P<linea>\d+)(?:,(?P<removed>\d+))? \+(?P<lineb>\d+)(?:,(?P<added>\d+))? @@',
     flags=re.MULTILINE,
 )
 
