@@ -53,7 +53,7 @@ def main(argv):
     for path in Path(args.directory).glob('**/*.rst'):
         num_changed_lines = 0
         lines = []
-        with open(path) as file:
+        with open(path, encoding='utf-8') as file:
             for lineno, line in enumerate(file, start=1):
                 if match := DIRECTIVE_RE.fullmatch(line):
                     line = match['before'] + version + match['after']
@@ -63,7 +63,7 @@ def main(argv):
             if args.verbose:
                 print(f'Updating file {path} ({num_changed_lines} changes)',
                     file=sys.stderr)
-            with open(path, 'w') as file:
+            with open(path, 'w', encoding='utf-8') as file:
                 file.writelines(lines)
         else:
             if args.verbose > 1:
