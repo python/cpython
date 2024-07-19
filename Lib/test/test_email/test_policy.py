@@ -424,5 +424,34 @@ class TestConcretePolicies(unittest.TestCase):
                           instance.header_store_parse,
                           'Subject', h)
 
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'From',
+                          "External Sender <sender@them.example.com> =?UTF-8?Q?embedded_newline=0A?=Smuggled-Data: Bad")
+
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Content-Type',
+                          "text/html; charset=UTF-8=?UTF-8?Q?embedded_newline=0A?=Smuggled-Data: Bad")
+
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Content-Transfer-Encoding',
+                          "External Sender <sender@them.example.com> =?UTF-8?Q?embedded_newline=0A?=Smuggled-Data: Bad")
+
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'Message-Id',
+                          "1212334141-321313=?UTF-8?Q?embedded_newline=0A?=Smuggled-Data: Bad")
+
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'content-disposition',
+                          "inline=?UTF-8?Q?embedded_newline=0A?=Smuggled-Data: Bad")
+
+        # date and mime headers don't have embedded newlines, nor errors
+
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -9,6 +9,7 @@ from email.utils import _has_surrogates
 from email.headerregistry import HeaderRegistry as HeaderRegistry
 from email.contentmanager import raw_data_manager
 from email.message import EmailMessage
+from email.errors import NonPrintableDefect
 
 __all__ = [
     'Compat32',
@@ -143,7 +144,14 @@ class EmailPolicy(Policy):
         else:
             header_value = self.header_factory(name, value)
 
-        if linesep_splitter.search(str(header_value)):
+        np = [
+            non_printable
+            for defect in header_value.defects
+            if isinstance(defect, NonPrintableDefect)
+            for non_printable in defect.non_printables
+        ]
+
+        if linesep_splitter.search(str(header_value)) or '\n' in np or '\r' in np:
             raise ValueError("Header values may not contain linefeed "
                              "or carriage return characters")
 
