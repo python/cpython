@@ -874,6 +874,7 @@ Element Objects
 
 .. module:: xml.etree.ElementTree
    :noindex:
+   :no-index:
 
 .. class:: Element(tag, attrib={}, **extra)
 
