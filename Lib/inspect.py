@@ -519,7 +519,7 @@ def iscode(object):
                             | 256=iterable_coroutine | 512=async_generator
         co_freevars         tuple of names of free variables
         co_posonlyargcount  number of positional only arguments
-        co_positions        returns an iterator of source code positions for each bytecode instruction 
+        co_positions        returns an iterator of source code positions for each bytecode instruction
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
         co_lnotab           encoded mapping of line numbers to bytecode indices
         co_lines            returns an iterator that yields successive bytecode ranges
