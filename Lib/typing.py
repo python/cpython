@@ -1060,15 +1060,24 @@ class ForwardRef(_Final, _root=True):
                 globalns = getattr(
                     sys.modules.get(self.__forward_module__, None), '__dict__', globalns
                 )
+
+            # type parameters require some special handling,
+            # as they exist in their own scope
+            # but `eval()` does not have a dedicated parameter for that scope.
+            # For classes, names in type parameter scopes should override
+            # names in the global scope (which here are called `localns`!),
+            # but should in turn be overridden by names in the class scope
+            # (which here are called `globalns`!)
             if type_params:
-                # "Inject" type parameters into the local namespace
-                # (unless they are shadowed by assignments *in* the local namespace),
-                # as a way of emulating annotation scopes when calling `eval()`
-                locals_to_pass = {param.__name__: param for param in type_params} | localns
-            else:
-                locals_to_pass = localns
+                globalns, localns = dict(globalns), dict(localns)
+                for param in type_params:
+                    param_name = param.__name__
+                    if not self.__forward_is_class__ or param_name not in globalns:
+                        globalns[param_name] = param
+                        localns.pop(param_name, None)
+
             type_ = _type_check(
-                eval(self.__forward_code__, globalns, locals_to_pass),
+                eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
                 allow_special_forms=self.__forward_is_class__,
@@ -2412,7 +2421,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
             else:
                 base_globals = globalns
-            ann = base.__dict__.get('__annotations__', {})
+            ann = getattr(base, '__annotations__', {})
             if isinstance(ann, types.GetSetDescriptorType):
                 ann = {}
             base_locals = dict(vars(base)) if localns is None else localns
@@ -2970,7 +2979,12 @@ class NamedTupleMeta(type):
                 raise TypeError(
                     'can only inherit from a NamedTuple type and Generic')
         bases = tuple(tuple if base is _NamedTuple else base for base in bases)
-        types = ns.get('__annotations__', {})
+        if "__annotations__" in ns:
+            types = ns["__annotations__"]
+        elif "__annotate__" in ns:
+            types = ns["__annotate__"](1)  # VALUE
+        else:
+            types = {}
         default_names = []
         for field_name in types:
             if field_name in ns:
@@ -3131,7 +3145,12 @@ class _TypedDictMeta(type):
             tp_dict.__orig_bases__ = bases
 
         annotations = {}
-        own_annotations = ns.get('__annotations__', {})
+        if "__annotations__" in ns:
+            own_annotations = ns["__annotations__"]
+        elif "__annotate__" in ns:
+            own_annotations = ns["__annotate__"](1)  # VALUE
+        else:
+            own_annotations = {}
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         own_annotations = {
             n: _type_check(tp, msg, module=tp_dict.__module__)
@@ -3143,7 +3162,12 @@ class _TypedDictMeta(type):
         mutable_keys = set()
 
         for base in bases:
-            annotations.update(base.__dict__.get('__annotations__', {}))
+            # TODO: Avoid eagerly evaluating annotations in VALUE format.
+            # Instead, evaluate in FORWARDREF format to figure out which
+            # keys have Required/NotRequired/ReadOnly qualifiers, and create
+            # a new __annotate__ function for the resulting TypedDict that
+            # combines the annotations from this class and its parents.
+            annotations.update(base.__annotations__)
 
             base_required = base.__dict__.get('__required_keys__', set())
             required_keys |= base_required

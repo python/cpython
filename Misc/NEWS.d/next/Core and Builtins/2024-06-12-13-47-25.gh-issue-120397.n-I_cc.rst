@@ -1,0 +1,2 @@
+Improve the throughput by up to two times for the :meth:`str.count`, :meth:`bytes.count` and :meth:`bytearray.count`
+methods for counting single characters.

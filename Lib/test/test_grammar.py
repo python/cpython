@@ -306,16 +306,6 @@ the \'lazy\' dog.\n\
 
 var_annot_global: int # a global annotated is necessary for test_var_annot
 
-# custom namespace for testing __annotations__
-
-class CNS:
-    def __init__(self):
-        self._dct = {}
-    def __setitem__(self, item, value):
-        self._dct[item.lower()] = value
-    def __getitem__(self, item):
-        return self._dct[item]
-
 
 class GrammarTests(unittest.TestCase):
 
@@ -446,22 +436,12 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(E.__annotations__, {})
         self.assertEqual(F.__annotations__, {})
 
-
-    def test_var_annot_metaclass_semantics(self):
-        class CMeta(type):
-            @classmethod
-            def __prepare__(metacls, name, bases, **kwds):
-                return {'__annotations__': CNS()}
-        class CC(metaclass=CMeta):
-            XX: 'ANNOT'
-        self.assertEqual(CC.__annotations__['xx'], 'ANNOT')
-
     def test_var_annot_module_semantics(self):
         self.assertEqual(test.__annotations__, {})
         self.assertEqual(ann_module.__annotations__,
-                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
+                         {'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
         self.assertEqual(ann_module.M.__annotations__,
-                              {'123': 123, 'o': type})
+                         {'o': type})
         self.assertEqual(ann_module2.__annotations__, {})
 
     def test_var_annot_in_module(self):
@@ -476,51 +456,12 @@ class GrammarTests(unittest.TestCase):
             ann_module3.D_bad_ann(5)
 
     def test_var_annot_simple_exec(self):
-        gns = {}; lns= {}
+        gns = {}; lns = {}
         exec("'docstring'\n"
-             "__annotations__[1] = 2\n"
              "x: int = 5\n", gns, lns)
-        self.assertEqual(lns["__annotations__"], {1: 2, 'x': int})
+        self.assertEqual(lns["__annotate__"](1), {'x': int})
         with self.assertRaises(KeyError):
-            gns['__annotations__']
-
-    def test_var_annot_custom_maps(self):
-        # tests with custom locals() and __annotations__
-        ns = {'__annotations__': CNS()}
-        exec('X: int; Z: str = "Z"; (w): complex = 1j', ns)
-        self.assertEqual(ns['__annotations__']['x'], int)
-        self.assertEqual(ns['__annotations__']['z'], str)
-        with self.assertRaises(KeyError):
-            ns['__annotations__']['w']
-        nonloc_ns = {}
-        class CNS2:
-            def __init__(self):
-                self._dct = {}
-            def __setitem__(self, item, value):
-                nonlocal nonloc_ns
-                self._dct[item] = value
-                nonloc_ns[item] = value
-            def __getitem__(self, item):
-                return self._dct[item]
-        exec('x: int = 1', {}, CNS2())
-        self.assertEqual(nonloc_ns['__annotations__']['x'], int)
-
-    def test_var_annot_refleak(self):
-        # complex case: custom locals plus custom __annotations__
-        # this was causing refleak
-        cns = CNS()
-        nonloc_ns = {'__annotations__': cns}
-        class CNS2:
-            def __init__(self):
-                self._dct = {'__annotations__': cns}
-            def __setitem__(self, item, value):
-                nonlocal nonloc_ns
-                self._dct[item] = value
-                nonloc_ns[item] = value
-            def __getitem__(self, item):
-                return self._dct[item]
-        exec('X: str', {}, CNS2())
-        self.assertEqual(nonloc_ns['__annotations__']['x'], str)
+            gns['__annotate__']
 
     def test_var_annot_rhs(self):
         ns = {}
