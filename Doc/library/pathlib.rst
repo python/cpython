@@ -1557,7 +1557,8 @@ Copying, renaming and deleting
    .. versionadded:: 3.14
 
 
-.. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False, \
+.. method:: Path.copytree(target, *, follow_symlinks=True, \
+                          preserve_metadata=False, dirs_exist_ok=False, \
                           ignore=None, on_error=None)
 
    Recursively copy this directory tree to the given destination.
@@ -1565,6 +1566,13 @@ Copying, renaming and deleting
    If a symlink is encountered in the source tree, and *follow_symlinks* is
    true (the default), the symlink's target is copied. Otherwise, the symlink
    is recreated in the destination tree.
+
+   If *preserve_metadata* is false (the default), only the directory structure
+   and file data are guaranteed to be copied. Set *preserve_metadata* to true
+   to ensure that file and directory permissions, flags, last access and
+   modification times, and extended attributes are copied where supported.
+   This argument has no effect on Windows, where metadata is always preserved
+   when copying.
 
    If the destination is an existing directory and *dirs_exist_ok* is false
    (the default), a :exc:`FileExistsError` is raised. Otherwise, the copying
