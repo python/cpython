@@ -6,7 +6,6 @@ extend-exclude = [
     "includes/*",
     # Temporary exclusions:
     "tools/extensions/escape4chm.py",
-    "tools/extensions/patchlevel.py",
     "tools/extensions/pyspecific.py",
 ]
 
