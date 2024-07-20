@@ -1,58 +1,72 @@
 """
-Escape the `body` part of .chm source file to 7-bit ASCII, to fix visual
-effect on some MBCS Windows systems.
+Escape the `body` part of .chm source file to 7-bit ASCII,
+to fix visual effects on some MBCS Windows systems.
 
-https://bugs.python.org/issue32174
+https://github.com/python/cpython/issues/76355
 """
 
-import pathlib
+from __future__ import annotations
+
 import re
 from html.entities import codepoint2name
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-from sphinx.util.logging import getLogger
+from sphinx.application import Sphinx
+from sphinx.util import logging
 
-# escape the characters which codepoint > 0x7F
-def _process(string):
-    def escape(matchobj):
-        codepoint = ord(matchobj.group(0))
+if TYPE_CHECKING:
+    from typing import Any
 
-        name = codepoint2name.get(codepoint)
-        if name is None:
-            return '&#%d;' % codepoint
-        else:
-            return '&%s;' % name
+    from docutils import nodes
+    from sphinx.application import Sphinx
+    from sphinx.util.typing import ExtensionMetadata
 
-    return re.sub(r'[^\x00-\x7F]', escape, string)
+logger = logging.getLogger(__name__)
 
-def escape_for_chm(app, pagename, templatename, context, doctree):
+
+def escape_for_chm(
+    app: Sphinx,
+    _page_name: str,
+    _template_name: str,
+    context: dict[str, Any],
+    _doctree: nodes.document,
+) -> None:
+    """Escape the characters with a codepoint over ``0x7F``."""
     # only works for .chm output
-    if getattr(app.builder, 'name', '') != 'htmlhelp':
+    if app.builder.name != "htmlhelp":
         return
 
     # escape the `body` part to 7-bit ASCII
-    body = context.get('body')
+    body = context.get("body")
     if body is not None:
-        context['body'] = _process(body)
+        context["body"] = re.sub(r"[^\x00-\x7F]", _escape, body)
 
-def fixup_keywords(app, exception):
+
+def _escape(match: re.Match[str]) -> str:
+    codepoint = ord(match.group(0))
+    if codepoint in codepoint2name:
+        return f"&{codepoint2name[codepoint]};"
+    return f"&#{codepoint};"
+
+
+def fixup_keywords(app: Sphinx, exception: Exception) -> None:
     # only works for .chm output
-    if getattr(app.builder, 'name', '') != 'htmlhelp' or exception:
+    if exception or app.builder.name != "htmlhelp":
         return
 
-    getLogger(__name__).info('fixing HTML escapes in keywords file...')
-    outdir = pathlib.Path(app.builder.outdir)
-    outname = app.builder.config.htmlhelp_basename
-    with open(outdir / (outname + '.hhk'), 'rb') as f:
-        index = f.read()
-    with open(outdir / (outname + '.hhk'), 'wb') as f:
-        f.write(index.replace(b'&#x27;', b'&#39;'))
+    logger.info("Fixing HTML escapes in keywords file...")
+    keywords_path = Path(app.outdir) / f"{app.config.htmlhelp_basename}.hhk"
+    index = keywords_path.read_bytes()
+    keywords_path.write_bytes(index.replace(b"&#x27;", b"&#39;"))
 
-def setup(app):
-    # `html-page-context` event emitted when the HTML builder has
-    # created a context dictionary to render a template with.
-    app.connect('html-page-context', escape_for_chm)
-    # `build-finished` event emitted when all the files have been
-    # output.
-    app.connect('build-finished', fixup_keywords)
 
-    return {'version': '1.0', 'parallel_read_safe': True}
+def setup(app: Sphinx) -> ExtensionMetadata:
+    app.connect("html-page-context", escape_for_chm)
+    app.connect("build-finished", fixup_keywords)
+
+    return {
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }
