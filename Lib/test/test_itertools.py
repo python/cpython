@@ -1594,7 +1594,7 @@ for iterator_str, result in test_cases:
             self.assertAlmostEqual(value, float(str_value), msg=msg)
         else:
             raise NotImplementedError
-    
+
     @staticmethod
     def parse_code_block(code_block):
         lines = code_block.split('\n')
