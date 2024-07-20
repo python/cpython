@@ -722,6 +722,28 @@ class MiscReadTestBase(CommonReadTest):
             tar.close()
             os_helper.rmtree(DIR)
 
+    @staticmethod
+    @unittest.mock.patch("tarfile.data_filter", wraps=tarfile.data_filter)
+    @unittest.mock.patch("tarfile.tar_filter", wraps=tarfile.tar_filter)
+    @unittest.mock.patch("tarfile.fully_trusted_filter", wraps=tarfile.fully_trusted_filter)
+    def test_extractall_default_filter(mock_ft_filter: unittest.mock.Mock,
+                                       mock_tar_filter: unittest.mock.Mock,
+                                       mock_data_filter: unittest.mock.Mock):
+        tar = tarfile.open(tarname, encoding="iso8859-1")
+        DIR = os.path.join(TEMPDIR, "extractall_default_filter")
+        os.mkdir(DIR)
+        try:
+            directories = [t for t in tar if t.isdir()]
+            tar.extractall(DIR, directories)
+
+            # Test that the default filter is now "data", and the other filter types are not used.
+            mock_data_filter.assert_called()
+            mock_ft_filter.assert_not_called()
+            mock_tar_filter.assert_not_called()
+        finally:
+            tar.close()
+            os_helper.rmtree(DIR)
+
     @os_helper.skip_unless_working_chmod
     def test_extract_directory(self):
         dirtype = "ustar/dirtype"
