@@ -31,6 +31,9 @@ typedef union {
     _Py_BackoffCounter counter;  // First cache entry of specializable op
 } _Py_CODEUNIT;
 
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
+
 
 /* These macros only remain defined for compatibility. */
 #define _Py_OPCODE(word) ((word).op.code)
@@ -535,7 +538,7 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
-static_assert(COLD_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
+static_assert(SIDE_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
     "Cold exit value should be larger than adaptive cooldown value");
 
 static inline _Py_BackoffCounter

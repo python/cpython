@@ -285,7 +285,6 @@ class Parser(PLexer):
                 if not (size := self.expression()):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
-                type_text = "_PyStackRef *"
                 size_text = size.text.strip()
             return StackEffect(tkn.text, type_text, cond_text, size_text)
         return None

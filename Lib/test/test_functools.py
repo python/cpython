@@ -405,9 +405,7 @@ class TestPartial:
         self.assertEqual(A.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
         self.assertEqual(A.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
         self.assertEqual(A.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
-        with self.assertWarns(FutureWarning) as w:
-            self.assertEqual(a.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
-        self.assertEqual(w.filename, __file__)
+        self.assertEqual(a.meth(3, b=4), ((1, a, 3), {'a': 2, 'b': 4}))
         self.assertEqual(a.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
         self.assertEqual(a.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
 
