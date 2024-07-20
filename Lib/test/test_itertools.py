@@ -16,6 +16,8 @@ import struct
 import threading
 import gc
 import warnings
+import os
+import re
 
 def pickle_deprecated(testfunc):
     """ Run the test three times.
@@ -1561,6 +1563,78 @@ class TestExamples(unittest.TestCase):
 
 
 class TestPurePythonRoughEquivalents(unittest.TestCase):
+
+    docs = os.path.join(__file__.rsplit(os.sep, 3)[0], 'Doc/library/itertools.rst')
+    code_test = '''
+for iterator_str, result in test_cases:
+    iterator_str = iterator_str.strip()
+    result = result.strip()
+    iterator = iter(eval(iterator_str))
+    for i in result.split(' '):
+        if i == '...':
+            next(iterator)
+            break
+        value = next(iterator)
+        self.compare(value, i, f'{name} {iterator_str!r} does not return {result!r}')
+    else:
+        msg = f'{name} {iterator_str!r} returns more elements than {result!r}'
+        with self.assertRaises(StopIteration, msg=msg):
+            next(iterator)
+'''
+
+    def compare(self, value, str_value, msg=None):
+        if isinstance(value, str):
+            self.assertEqual(value, str_value, msg=msg)
+        elif isinstance(value, int):
+            self.assertEqual(value, int(str_value), msg=msg)
+        elif isinstance(value, (tuple, list)):
+            self.assertEqual(len(value), len(str_value), msg=msg)
+            self.assertEqual(''.join(map(str, value)), str_value, msg=msg)
+        elif isinstance(value, float):
+            self.assertAlmostEqual(value, float(str_value), msg=msg)
+        else:
+            raise NotImplementedError
+    
+    @staticmethod
+    def parse_code_block(code_block):
+        lines = code_block.split('\n')
+        indent_length = 400
+        test_cases = []
+        test_case_pattern = re.compile(r' *# *(.*)→(.*)')
+        for line in lines:
+            if not line:
+                continue
+            for i, char in enumerate(line):
+                if char != ' ':
+                    indent_length = min(indent_length, i)
+                    break
+            if match := test_case_pattern.search(line):
+                test_cases.append(match.groups())
+        indent = ' ' * indent_length
+        for i in range(len(lines)):
+            lines[i] = lines[i].removeprefix(indent)
+        return '\n'.join(lines), test_cases
+
+    def test_all_rough_equivalents_in_docs(self):
+        pattern = re.compile(r'''
+            \n(?P<indent>\ *).*
+            roughly\s+equivalent\s+to(?s:.)*?::\n
+            (?P<code>(((?P=indent)\ +.*)?\n)*)  # match 'more indented' line or empty line
+            ''', re.IGNORECASE | re.VERBOSE)
+        with open(self.docs, encoding='utf-8') as f:
+            for match in pattern.finditer(f.read()):
+                code_block = match.group('code')
+                implementation, test_cases = self.parse_code_block(code_block)
+                g = {'self': self, 'test_cases': test_cases, 'operator': operator}
+                # test itertool module
+                g['name'] = 'itertools module'
+                exec('from itertools import *', g)
+                exec(self.code_test, g)
+                # test pure Python roughly equivalent implementation
+                g['name'] = 'roughly equivalent'
+                exec(implementation, g)
+                exec(self.code_test, g)
+
 
     def test_batched_recipe(self):
         def batched_recipe(iterable, n):

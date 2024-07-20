@@ -118,6 +118,7 @@ loops that truncate the stream.
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
 
+
             iterator = iter(iterable)
             total = initial
             if initial is None:
@@ -218,10 +219,12 @@ loops that truncate the stream.
    Alternate constructor for :func:`chain`.  Gets chained inputs from a
    single iterable argument that is evaluated lazily.  Roughly equivalent to::
 
-      def from_iterable(iterables):
-          # chain.from_iterable(['ABC', 'DEF']) → A B C D E F
-          for iterable in iterables:
-              yield from iterable
+      class chain:
+          @classmethod
+          def from_iterable(cls, iterables):
+              # chain.from_iterable(['ABC', 'DEF']) → A B C D E F
+              for iterable in iterables:
+                  yield from iterable
 
 
 .. function:: combinations(iterable, r)
