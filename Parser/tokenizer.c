@@ -2607,6 +2607,9 @@ letter_quote:
 
     if (INSIDE_FSTRING(tok)) {
       current_tok->curly_bracket_depth--;
+      if (current_tok->curly_bracket_depth < 0) {
+        return MAKE_TOKEN(syntaxerror(tok, "f-string: unmatched '%c'", c));
+      }
       if (c == '}' && current_tok->curly_bracket_depth ==
                           current_tok->curly_bracket_expr_start_depth) {
         current_tok->curly_bracket_expr_start_depth--;
