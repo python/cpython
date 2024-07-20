@@ -1,12 +1,9 @@
-"""Extract version info from Include/patchlevel.h.
-
-Adapted from Doc/tools/getversioninfo.
-"""
+"""Extract version information from Include/patchlevel.h."""
 
 import re
 import sys
-import typing
 from pathlib import Path
+from typing import Literal, NamedTuple
 
 CPYTHON_ROOT = Path(
     __file__,  # cpython/Doc/tools/extensions/patchlevel.py
@@ -25,11 +22,11 @@ RELEASE_LEVELS = {
 }
 
 
-class version_info(typing.NamedTuple):  # noqa: N801
+class version_info(NamedTuple):  # noqa: N801
     major: int  #: Major release number
     minor: int  #: Minor release number
     micro: int  #: Patch release number
-    releaselevel: typing.Literal["alpha", "beta", "candidate", "final"]
+    releaselevel: Literal["alpha", "beta", "candidate", "final"]
     serial: int  #: Serial release number
 
 
@@ -37,19 +34,19 @@ def get_header_version_info() -> version_info:
     # Capture PY_ prefixed #defines.
     pat = re.compile(r"\s*#define\s+(PY_\w*)\s+(\w+)", re.ASCII)
 
-    d = {}
+    defines = {}
     patchlevel_h = PATCHLEVEL_H.read_text(encoding="utf-8")
     for line in patchlevel_h.splitlines():
         if (m := pat.match(line)) is not None:
             name, value = m.groups()
-            d[name] = value
+            defines[name] = value
 
     return version_info(
-        major=int(d["PY_MAJOR_VERSION"]),
-        minor=int(d["PY_MINOR_VERSION"]),
-        micro=int(d["PY_MICRO_VERSION"]),
-        releaselevel=RELEASE_LEVELS[d["PY_RELEASE_LEVEL"]],
-        serial=int(d["PY_RELEASE_SERIAL"]),
+        major=int(defines["PY_MAJOR_VERSION"]),
+        minor=int(defines["PY_MINOR_VERSION"]),
+        micro=int(defines["PY_MICRO_VERSION"]),
+        releaselevel=RELEASE_LEVELS[defines["PY_RELEASE_LEVEL"]],
+        serial=int(defines["PY_RELEASE_SERIAL"]),
     )
 
 
@@ -69,7 +66,7 @@ def get_version_info():
     except OSError:
         version, release = format_version_info(sys.version_info)
         print(
-            f"Can't get version info from Include/patchlevel.h, "
+            f"Failed to get version info from Include/patchlevel.h, "
             f"using version of this interpreter ({release}).",
             file=sys.stderr,
         )
