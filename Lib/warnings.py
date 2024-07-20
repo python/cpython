@@ -132,7 +132,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
                    append=False):
     """Insert an entry into the list of warnings filters (at the front).
 
-    'action' -- one of "error", "ignore", "always", "default", "module",
+    'action' -- one of "error", "ignore", "always", "all", "default", "module",
                 or "once"
     'message' -- a regex that the warning message must match
     'category' -- a class that the warning must be a subclass of
@@ -140,7 +140,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    if action not in {"error", "ignore", "always", "default", "module", "once"}:
+    if action not in {"error", "ignore", "always", "all", "default", "module", "once"}:
         raise ValueError(f"invalid action: {action!r}")
     if not isinstance(message, str):
         raise TypeError("message must be a string")
@@ -171,13 +171,13 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
 
     A simple filter matches all modules and messages.
-    'action' -- one of "error", "ignore", "always", "default", "module",
+    'action' -- one of "error", "ignore", "always", "all", "default", "module",
                 or "once"
     'category' -- a class that the warning must be a subclass of
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    if action not in {"error", "ignore", "always", "default", "module", "once"}:
+    if action not in {"error", "ignore", "always", "all", "default", "module", "once"}:
         raise ValueError(f"invalid action: {action!r}")
     if not isinstance(lineno, int):
         raise TypeError("lineno must be an int")
@@ -248,8 +248,7 @@ def _setoption(arg):
 def _getaction(action):
     if not action:
         return "default"
-    if action == "all": return "always" # Alias
-    for a in ('default', 'always', 'ignore', 'module', 'once', 'error'):
+    for a in ('default', 'always', 'all', 'ignore', 'module', 'once', 'error'):
         if a.startswith(action):
             return a
     raise _OptionError("invalid action: %r" % (action,))
@@ -397,7 +396,7 @@ def warn_explicit(message, category, filename, lineno,
         if onceregistry.get(oncekey):
             return
         onceregistry[oncekey] = 1
-    elif action == "always":
+    elif action in {"always", "all"}:
         pass
     elif action == "module":
         registry[key] = 1
@@ -690,7 +689,7 @@ def _warn_unawaited_coroutine(coro):
 
 # filters contains a sequence of filter 5-tuples
 # The components of the 5-tuple are:
-# - an action: error, ignore, always, default, module, or once
+# - an action: error, ignore, always, all, default, module, or once
 # - a compiled regex that must match the warning message
 # - a class representing the warning category
 # - a compiled regex that must match the module that is being warned

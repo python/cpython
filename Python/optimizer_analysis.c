@@ -21,7 +21,6 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
-#include "cpython/optimizer.h"
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
 #include "pycore_dict.h"
@@ -301,6 +300,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
+#define STACK_SIZE()      ((int)(ctx->frame->stack_len))
+
+#define WITHIN_STACK_BOUNDS() \
+    (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE())
+
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 

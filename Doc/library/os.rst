@@ -1724,10 +1724,27 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Added support for pipes on Windows.
 
 
-.. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
+.. function:: splice(src, dst, count, offset_src=None, offset_dst=None, flags=0)
 
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+
+   The splicing behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
+
+   * If :const:`SPLICE_F_MOVE` is specified,
+     the kernel is asked to move pages instead of copying,
+     but pages may still be copied if the kernel cannot move the pages from the pipe.
+
+   * If :const:`SPLICE_F_NONBLOCK` is specified,
+     the kernel is asked to not block on I/O.
+     This makes the splice pipe operations nonblocking,
+     but splice may nevertheless block because the spliced file descriptors may block.
+
+   * If :const:`SPLICE_F_MORE` is specified,
+     it hints to the kernel that more data will be coming in a subsequent splice.
+
    At least one of the file descriptors must refer to a pipe. If *offset_src*
    is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
@@ -1745,6 +1762,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    pipe, then this means that there was no data to transfer, and it would not
    make sense to block because there are no writers connected to the write end
    of the pipe.
+
+   .. seealso:: The :manpage:`splice(2)` man page.
 
    .. availability:: Linux >= 2.6.17 with glibc >= 2.5
 
@@ -4642,6 +4661,10 @@ written in Python, such as a mail server's external command delivery program.
       Use :class:`subprocess.Popen` or :func:`subprocess.run` to
       control options like encodings.
 
+   .. deprecated:: 3.14
+      The function is :term:`soft deprecated` and should no longer be used to
+      write new code. The :mod:`subprocess` module is recommended instead.
+
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
@@ -4868,6 +4891,10 @@ written in Python, such as a mail server's external command delivery program.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. deprecated:: 3.14
+      These functions are :term:`soft deprecated` and should no longer be used
+      to write new code. The :mod:`subprocess` module is recommended instead.
+
 
 .. data:: P_NOWAIT
           P_NOWAITO
@@ -4972,7 +4999,7 @@ written in Python, such as a mail server's external command delivery program.
    shell documentation.
 
    The :mod:`subprocess` module provides more powerful facilities for spawning
-   new processes and retrieving their results; using that module is preferable
+   new processes and retrieving their results; using that module is recommended
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
