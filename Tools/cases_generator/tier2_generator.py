@@ -53,7 +53,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
     for var in reversed(uop.stack.inputs):
         stack.pop(var)
     for var in uop.stack.outputs:
-        stack.push(var)
+            stack.push(var)
     required = set(stack.defined)
     for var in reversed(uop.stack.inputs):
         declare_variable(var, uop, required, out)
