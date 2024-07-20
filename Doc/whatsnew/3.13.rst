@@ -424,7 +424,7 @@ Other Language Changes
 
 * The :func:`exec` and :func:`eval` built-ins now accept their ``globals``
   and ``locals`` namespace arguments as keywords.
-  (Contibuted by Raphael Gaschignard in :gh:`105879`)
+  (Contributed by Raphael Gaschignard in :gh:`105879`)
 
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
