@@ -656,8 +656,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_copy_file_preserve_metadata(self):
         base = self.cls(self.base)
         source = base / 'fileA'
-        if hasattr(os, 'setxattr'):
-            os.setxattr(source, b'user.foo', b'42')
         if hasattr(os, 'chmod'):
             os.chmod(source, stat.S_IRWXU | stat.S_IRWXO)
         if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
@@ -670,11 +668,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         target_st = target.stat()
         self.assertLessEqual(source_st.st_atime, target_st.st_atime)
         self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
-        if hasattr(os, 'getxattr'):
-            self.assertEqual(os.getxattr(target, b'user.foo'), b'42')
         self.assertEqual(source_st.st_mode, target_st.st_mode)
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
+
+    @os_helper.skip_unless_xattr
+    def test_copy_file_preserve_metadata_xattrs(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        os.setxattr(source, b'user.foo', b'42')
+        target = base / 'copyA'
+        source.copy(target, preserve_metadata=True)
+        self.assertEqual(os.getxattr(target, b'user.foo'), b'42')
 
     @needs_symlinks
     def test_copy_link_preserve_metadata(self):
