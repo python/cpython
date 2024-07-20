@@ -118,7 +118,6 @@ loops that truncate the stream.
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
 
-
             iterator = iter(iterable)
             total = initial
             if initial is None:
