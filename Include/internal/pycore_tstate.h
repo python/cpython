@@ -14,19 +14,14 @@ extern "C" {
 #include "pycore_qsbr.h"          // struct qsbr
 
 
-static inline void
-_PyThreadState_SetWhence(PyThreadState *tstate, int whence)
-{
-    tstate->_whence = whence;
-}
-
-
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
 // are intended to be private. The _PyThreadStateImpl fields not exposed.
 typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
+
+    PyObject *asyncio_running_loop; // Strong reference
 
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue

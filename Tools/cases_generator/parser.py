@@ -1,4 +1,4 @@
-from parsing import (
+from parsing import (  # noqa: F401
     InstDef,
     Macro,
     Pseudo,

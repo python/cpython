@@ -266,6 +266,20 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
+complex types are available:
+
++----------------------------------+---------------------------------+-----------------+
+| ctypes type                      | C type                          | Python type     |
++==================================+=================================+=================+
+| :class:`c_float_complex`         | :c:expr:`float complex`         | complex         |
++----------------------------------+---------------------------------+-----------------+
+| :class:`c_double_complex`        | :c:expr:`double complex`        | complex         |
++----------------------------------+---------------------------------+-----------------+
+| :class:`c_longdouble_complex`    | :c:expr:`long double complex`   | complex         |
++----------------------------------+---------------------------------+-----------------+
+
+
 All these types can be created by calling them with an optional initializer of
 the correct type and value::
 
@@ -2282,6 +2296,30 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`float` datatype.  The constructor accepts an
    optional float initializer.
+
+
+.. class:: c_double_complex
+
+   Represents the C :c:expr:`double complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
+
+
+.. class:: c_float_complex
+
+   Represents the C :c:expr:`float complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
+
+
+.. class:: c_longdouble_complex
+
+   Represents the C :c:expr:`long double complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
 
 
 .. class:: c_int

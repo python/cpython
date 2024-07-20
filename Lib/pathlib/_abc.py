@@ -16,21 +16,13 @@ import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-
-
-__all__ = ["UnsupportedOperation"]
+from ._os import UnsupportedOperation, copyfileobj
 
 
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
-
-class UnsupportedOperation(NotImplementedError):
-    """An exception that is raised when an unsupported operation is called on
-    a path object.
-    """
-    pass
 
 
 class ParserBase:
@@ -563,6 +555,15 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
+    def _samefile_safe(self, other_path):
+        """
+        Like samefile(), but returns False rather than raising OSError.
+        """
+        try:
+            return self.samefile(other_path)
+        except (OSError, ValueError):
+            return False
+
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -779,6 +780,90 @@ class PathBase(PurePathBase):
         Create a new directory at this given path.
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
+
+    # Metadata keys supported by this path type.
+    _readable_metadata = _writable_metadata = frozenset()
+
+    def _read_metadata(self, keys=None, *, follow_symlinks=True):
+        """
+        Returns path metadata as a dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
+
+    def _write_metadata(self, metadata, *, follow_symlinks=True):
+        """
+        Sets path metadata from the given dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
+
+    def _copy_metadata(self, target, *, follow_symlinks=True):
+        """
+        Copies metadata (permissions, timestamps, etc) from this path to target.
+        """
+        # Metadata types supported by both source and target.
+        keys = self._readable_metadata & target._writable_metadata
+        if keys:
+            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
+            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
+
+    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+        """
+        Copy the contents of this file to the given target. If this file is a
+        symlink and follow_symlinks is false, a symlink will be created at the
+        target.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
+        if not follow_symlinks and self.is_symlink():
+            target.symlink_to(self.readlink())
+            if preserve_metadata:
+                self._copy_metadata(target, follow_symlinks=False)
+            return
+        with self.open('rb') as source_f:
+            try:
+                with target.open('wb') as target_f:
+                    copyfileobj(source_f, target_f)
+            except IsADirectoryError as e:
+                if not target.exists():
+                    # Raise a less confusing exception.
+                    raise FileNotFoundError(
+                        f'Directory does not exist: {target}') from e
+                else:
+                    raise
+        if preserve_metadata:
+            self._copy_metadata(target)
+
+    def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
+                 ignore=None, on_error=None):
+        """
+        Recursively copy this directory tree to the given destination.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if on_error is None:
+            def on_error(err):
+                raise err
+        stack = [(self, target)]
+        while stack:
+            source_dir, target_dir = stack.pop()
+            try:
+                sources = source_dir.iterdir()
+                target_dir.mkdir(exist_ok=dirs_exist_ok)
+                for source in sources:
+                    if ignore and ignore(source):
+                        continue
+                    try:
+                        if source.is_dir(follow_symlinks=follow_symlinks):
+                            stack.append((source, target_dir.joinpath(source.name)))
+                        else:
+                            source.copy(target_dir.joinpath(source.name),
+                                        follow_symlinks=follow_symlinks)
+                    except OSError as err:
+                        on_error(err)
+            except OSError as err:
+                on_error(err)
 
     def rename(self, target):
         """

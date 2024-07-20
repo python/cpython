@@ -496,8 +496,9 @@ class LongTests(unittest.TestCase):
                     "PyLong_AsNativeBytes(v, <unknown>, 0, -1)")
                 self.assertEqual(buffer, b"\x5a",
                     "buffer overwritten when it should not have been")
-                # Also check via the __index__ path
-                self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, -1),
+                # Also check via the __index__ path.
+                # We pass Py_ASNATIVEBYTES_NATIVE_ENDIAN | ALLOW_INDEX
+                self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, 3 | 16),
                     "PyLong_AsNativeBytes(Index(v), <unknown>, 0, -1)")
                 self.assertEqual(buffer, b"\x5a",
                     "buffer overwritten when it should not have been")
@@ -606,6 +607,12 @@ class LongTests(unittest.TestCase):
         # Ensure Py_ASNATIVEBYTES_REJECT_NEGATIVE raises on negative value
         with self.assertRaises(ValueError):
             asnativebytes(-1, buffer, 0, 8)
+
+        # Ensure omitting Py_ASNATIVEBYTES_ALLOW_INDEX raises on __index__ value
+        with self.assertRaises(TypeError):
+            asnativebytes(Index(1), buffer, 0, -1)
+        with self.assertRaises(TypeError):
+            asnativebytes(Index(1), buffer, 0, 3)
 
         # Check a few error conditions. These are validated in code, but are
         # unspecified in docs, so if we make changes to the implementation, it's

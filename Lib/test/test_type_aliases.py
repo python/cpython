@@ -1,5 +1,4 @@
 import pickle
-import textwrap
 import types
 import unittest
 from test.support import check_syntax_error, run_code

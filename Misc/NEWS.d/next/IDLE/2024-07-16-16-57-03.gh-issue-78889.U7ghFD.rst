@@ -1,0 +1,2 @@
+Stop Shell freezes by blocking user access to non-method sys.stdout.shell attributes,
+which are all private.

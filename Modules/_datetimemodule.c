@@ -1851,12 +1851,22 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     const char *ptoappend;      /* ptr to string to append to output buffer */
     Py_ssize_t ntoappend;       /* # of bytes to append to output buffer */
 
+#ifdef Py_NORMALIZE_CENTURY
+    /* Buffer of maximum size of formatted year permitted by long. */
+    char buf[SIZEOF_LONG*5/2+2];
+#endif
+
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
     /* Convert the input format to a C string and size */
     pin = PyUnicode_AsUTF8AndSize(format, &flen);
     if (!pin)
         return NULL;
+
+    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
+        goto Done;
+    }
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
@@ -1939,8 +1949,47 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = PyBytes_AS_STRING(freplacement);
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
+#ifdef Py_NORMALIZE_CENTURY
+        else if (ch == 'Y' || ch == 'G') {
+            /* 0-pad year with century as necessary */
+            PyObject *item = PyTuple_GET_ITEM(timetuple, 0);
+            long year_long = PyLong_AsLong(item);
+
+            if (year_long == -1 && PyErr_Occurred()) {
+                goto Done;
+            }
+            /* Note that datetime(1000, 1, 1).strftime('%G') == '1000' so year
+               1000 for %G can go on the fast path. */
+            if (year_long >= 1000) {
+                goto PassThrough;
+            }
+            if (ch == 'G') {
+                PyObject *year_str = PyObject_CallFunction(strftime, "sO",
+                                                           "%G", timetuple);
+                if (year_str == NULL) {
+                    goto Done;
+                }
+                PyObject *year = PyNumber_Long(year_str);
+                Py_DECREF(year_str);
+                if (year == NULL) {
+                    goto Done;
+                }
+                year_long = PyLong_AsLong(year);
+                Py_DECREF(year);
+                if (year_long == -1 && PyErr_Occurred()) {
+                    goto Done;
+                }
+            }
+
+            ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+            ptoappend = buf;
+        }
+#endif
         else {
             /* percent followed by something else */
+#ifdef Py_NORMALIZE_CENTURY
+ PassThrough:
+#endif
             ptoappend = pin - 2;
             ntoappend = 2;
         }
@@ -1972,17 +2021,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     {
         PyObject *format;
-        PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
 
-        if (strftime == NULL)
-            goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
         if (format != NULL) {
             result = PyObject_CallFunctionObjArgs(strftime,
                                                    format, timetuple, NULL);
             Py_DECREF(format);
         }
-        Py_DECREF(strftime);
     }
  Done:
     Py_XDECREF(freplacement);
@@ -1990,6 +2035,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(newfmt);
+    Py_XDECREF(strftime);
     return result;
 }
 
@@ -3090,7 +3136,7 @@ static PyDateTime_Delta *
 look_up_delta(int days, int seconds, int microseconds, PyTypeObject *type)
 {
     if (days == 0 && seconds == 0 && microseconds == 0
-            && type == zero_delta.ob_base.ob_type)
+            && type == Py_TYPE(&zero_delta))
     {
         return &zero_delta;
     }
@@ -7129,37 +7175,6 @@ clear_state(datetime_state *st)
 }
 
 
-/* ---------------------------------------------------------------------------
- * Global module state.
- */
-
-// If we make _PyStaticType_*ForExtension() public
-// then all this should be managed by the runtime.
-
-static struct {
-    PyMutex mutex;
-    int64_t interp_count;
-} _globals = {0};
-
-static void
-callback_for_interp_exit(void *Py_UNUSED(data))
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-
-    assert(_globals.interp_count > 0);
-    PyMutex_Lock(&_globals.mutex);
-    _globals.interp_count -= 1;
-    int final = !_globals.interp_count;
-    PyMutex_Unlock(&_globals.mutex);
-
-    /* They must be done in reverse order so subclasses are finalized
-     * before base classes. */
-    for (size_t i = Py_ARRAY_LENGTH(capi_types); i > 0; i--) {
-        PyTypeObject *type = capi_types[i-1];
-        _PyStaticType_FiniForExtension(interp, type, final);
-    }
-}
-
 static int
 init_static_types(PyInterpreterState *interp, int reloading)
 {
@@ -7180,19 +7195,6 @@ init_static_types(PyInterpreterState *interp, int reloading)
         if (_PyStaticType_InitForExtension(interp, type) < 0) {
             return -1;
         }
-    }
-
-    PyMutex_Lock(&_globals.mutex);
-    assert(_globals.interp_count >= 0);
-    _globals.interp_count += 1;
-    PyMutex_Unlock(&_globals.mutex);
-
-    /* It could make sense to add a separate callback
-     * for each of the types.  However, for now we can take the simpler
-     * approach of a single callback. */
-    if (PyUnstable_AtExit(interp, callback_for_interp_exit, NULL) < 0) {
-        callback_for_interp_exit(NULL);
-        return -1;
     }
 
     return 0;
@@ -7340,6 +7342,12 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
+    if (reloading) {
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
+            PyType_Modified(capi_types[i]);
+        }
+    }
+
     if (set_current_module(interp, module) < 0) {
         goto error;
     }
@@ -7379,8 +7387,8 @@ module_clear(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     clear_current_module(interp, mod);
 
-    // We take care of the static types via an interpreter atexit hook.
-    // See callback_for_interp_exit() above.
+    // The runtime takes care of the static types for us.
+    // See _PyTypes_FiniExtTypes()..
 
     return 0;
 }

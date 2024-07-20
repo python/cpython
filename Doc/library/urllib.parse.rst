@@ -173,7 +173,7 @@ or on combining URL components into a URL string.
       Added IPv6 URL parsing capabilities.
 
    .. versionchanged:: 3.3
-      The fragment is now parsed for all URL schemes (unless *allow_fragment* is
+      The fragment is now parsed for all URL schemes (unless *allow_fragments* is
       false), in accordance with :rfc:`3986`.  Previously, an allowlist of
       schemes that support fragments existed.
 
