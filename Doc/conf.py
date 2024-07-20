@@ -6,6 +6,7 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
+import importlib
 import os
 import sys
 import time
@@ -58,9 +59,8 @@ copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
-import patchlevel  # noqa: E402
-
-version, release = patchlevel.get_version_info()
+# See Doc/tools/extensions/patchlevel.py
+version, release = importlib.import_module('patchlevel').get_version_info()
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
