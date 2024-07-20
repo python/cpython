@@ -1,13 +1,9 @@
 /*
- * C accelerator for the 'fnmatch' module.
+ * This file contains helper prototypes and structures.
  */
 
-#ifndef _FNMATCHMODULE_H
-#define _FNMATCHMODULE_H
-
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
+#ifndef _FNMATCH_UTIL_H
+#define _FNMATCH_UTIL_H
 
 #include "Python.h"
 
@@ -41,43 +37,20 @@ get_fnmatchmodule_state(PyObject *module)
 // ==== Helper prototypes =====================================================
 
 /*
- * Test whether a name matches a compiled RE pattern.
- *
- * Parameters
- *
- *  matcher     A reference to the 'match()' method of a compiled pattern.
- *  string      The string to match (str or bytes object).
- *
- * Returns
- *
- *  -1  if the call 'matcher(string)' failed (e.g., invalid type),
- *   0  if the 'string' does NOT match the pattern,
- *   1  if the 'string' matches the pattern.
- */
-extern int
-_Py_fnmatch_match(PyObject *matcher, PyObject *string);
-
-/*
  * Returns a list of matched names, or NULL if an error occurred.
  *
  * Parameters
  *
  *  matcher     A reference to the 'match()' method of a compiled pattern.
  *  names       An iterable of strings (str or bytes objects) to match.
- */
-extern PyObject *
-_Py_fnmatch_filter(PyObject *matcher, PyObject *names);
-
-/*
- * Similar to _Py_fnmatch_filter() but matches os.path.normcase(name)
- * instead. The returned values are however a sub-sequence of 'names'.
+ *  normalizer  Optional normalization function.
  *
- * The 'normcase' argument is a callable implementing os.path.normcase().
+ *  This is equivalent to:
+ *
+ *      [name for name in names if matcher(normalizer(name))]
  */
 extern PyObject *
-_Py_fnmatch_filter_normalized(PyObject *matcher,
-                              PyObject *names,
-                              PyObject *normcase);
+_Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normalizer);
 
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.
@@ -90,4 +63,4 @@ _Py_fnmatch_filter_normalized(PyObject *matcher,
 extern PyObject *
 _Py_fnmatch_translate(PyObject *module, PyObject *pattern);
 
-#endif // _FNMATCHMODULE_H
+#endif // _FNMATCH_UTIL_H

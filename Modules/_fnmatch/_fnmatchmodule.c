@@ -1,6 +1,35 @@
-#include "_fnmatchmodule.h"
+/*
+ * C accelerator for the 'fnmatch' module.
+ *
+ * Currently, the following inconsistencies in the Python implementation exist:
+ *
+ * - fnmatch.filter(NAMES, PATTERN) works with pathlib.Path() instances
+ *   in NAMES on Windows but raises a TypeError on POSIX platforms.
+ *
+ * The reason is that os.path.normcase() is called on each NAME in NAMES
+ * but not on POSIX platforms. In particular, os.fspath() is never called:
+ *
+ *      POSIX       fnmatch.filter([Path("a")], "*") -> TypeError
+ *      Windows     fnmatch.filter([Path("a")], "*") -> [Path("a")]
+ *
+ * - Case normalization uses the runtime value of os.path.normcase(),
+ *   forcing us to query the attribute each time.
+ *
+ * The C implementation of fnmatch.filter() uses the same os.path.normcase()
+ * when iterating over NAMES, ignoring side-effects on os.path.normcase()
+ * that may occur when processing a NAME in NAMES.
+ *
+ * More generally, os.path.normcase() is retrieved at most once per call
+ * to fnmatch.filter() or fnmatch.fnmatch().
+ */
 
-#include "pycore_runtime.h" // _Py_ID()
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
+#include "util.h"                       // prototypes
+
+#include "pycore_runtime.h"             // for _Py_ID()
 
 #include "clinic/_fnmatchmodule.c.h"
 
@@ -26,9 +55,13 @@ get_matcher_function_impl(PyObject *module, PyObject *pattern)
     }
     fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     // compile the pattern
-    PyObject *compiled = PyObject_CallMethodOneArg(st->re_module,
-                                                   &_Py_ID(compile),
-                                                   translated);
+    PyObject *compile_func = PyObject_GetAttr(st->re_module, &_Py_ID(compile));
+    if (compile_func == NULL) {
+        Py_DECREF(translated);
+        return NULL;
+    }
+    PyObject *compiled = PyObject_CallOneArg(compile_func, translated);
+    Py_DECREF(compile_func);
     Py_DECREF(translated);
     if (compiled == NULL) {
         return NULL;
@@ -41,7 +74,7 @@ get_matcher_function_impl(PyObject *module, PyObject *pattern)
 
 static PyMethodDef get_matcher_function_def = {
     "get_matcher_function",
-    (PyCFunction)(get_matcher_function_impl),
+    get_matcher_function_impl,
     METH_O,
     NULL
 };
@@ -55,25 +88,25 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
     if (maxsize == NULL) {
         return -1;
     }
-    PyObject *lru_cache = _PyImport_GetModuleAttrString("functools",
-                                                        "lru_cache");
-    if (lru_cache == NULL) {
+    PyObject *cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    if (cache == NULL) {
         Py_DECREF(maxsize);
         return -1;
     }
-    PyObject *decorator = PyObject_CallFunctionObjArgs(
-        lru_cache, maxsize, Py_True, NULL);
-    Py_DECREF(lru_cache);
+    PyObject *args[3] = {NULL, maxsize, Py_True};
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *wrapper = PyObject_Vectorcall(cache, &args[1], nargsf, NULL);
     Py_DECREF(maxsize);
-    if (decorator == NULL) {
+    Py_DECREF(cache);
+    if (wrapper == NULL) {
         return -1;
     }
     assert(module != NULL);
-    PyObject *decorated = PyCFunction_New(&get_matcher_function_def, module);
+    PyObject *wrapped = PyCFunction_New(&get_matcher_function_def, module);
     // reference on 'translator' will be removed upon module cleanup
-    st->translator = PyObject_CallOneArg(decorator, decorated);
-    Py_DECREF(decorated);
-    Py_DECREF(decorator);
+    st->translator = PyObject_CallOneArg(wrapper, wrapped);
+    Py_DECREF(wrapped);
+    Py_DECREF(wrapper);
     if (st->translator == NULL) {
         return -1;
     }
@@ -100,7 +133,7 @@ get_platform_normcase_function(PyObject *module, bool *isposix)
     }
     PyObject *normcase = PyObject_GetAttr(os_path, &_Py_ID(normcase));
     if (isposix != NULL) {
-        *isposix = (bool)Py_Is(os_path, st->posixpath_module);
+        *isposix = Py_Is(os_path, st->posixpath_module);
     }
     Py_DECREF(os_path);
     return normcase;
@@ -208,10 +241,6 @@ static PyObject *
 fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pattern)
 /*[clinic end generated code: output=1a68530a2e3cf7d0 input=7ac729daad3b1404]*/
 {
-    // filter() always calls os.path.normcase() on the pattern,
-    // but not on the names being mathed if os.path is posixmodule
-    // XXX: maybe this should be changed in Python as well?
-    // Note: the Python implementation uses the *runtime* os.path.normcase.
     bool isposix = 0;
     PyObject *normcase = get_platform_normcase_function(module, &isposix);
     if (normcase == NULL) {
@@ -229,9 +258,8 @@ fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pattern)
         Py_DECREF(normcase);
         return NULL;
     }
-    PyObject *filtered = isposix
-        ? _Py_fnmatch_filter(matcher, names)
-        : _Py_fnmatch_filter_normalized(matcher, names, normcase);
+    PyObject *normalizer = isposix ? NULL : normcase;
+    PyObject *filtered = _Py_fnmatch_filter(matcher, names, normalizer);
     Py_DECREF(matcher);
     Py_DECREF(normcase);
     return filtered;
@@ -308,8 +336,12 @@ fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pattern)
     if (matcher == NULL) {
         return -1;
     }
-    int matching = _Py_fnmatch_match(matcher, name);
+    // If 'name' is of incorrect type, it will be detected when calling
+    // the matcher function (we check 're.compile(pattern).match(name)').
+    PyObject *match = PyObject_CallOneArg(matcher, name);
     Py_DECREF(matcher);
+    int matching = match == NULL ? -1 : !Py_IsNone(match);
+    Py_XDECREF(match);
     return matching;
 }
 
