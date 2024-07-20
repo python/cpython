@@ -1626,7 +1626,7 @@ for iterator_str, result in test_cases:
                 code_block = match.group('code')
                 implementation, test_cases = self.parse_code_block(code_block)
                 g = {'self': self, 'test_cases': test_cases, 'operator': operator}
-                # test itertool module
+                # test itertools module
                 g['name'] = 'itertools module'
                 exec('from itertools import *', g)
                 exec(self.code_test, g)
