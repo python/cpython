@@ -704,9 +704,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     }
 
     /* Store in the registry that we've been here, *except* when the action
-       is "always". */
+       is "always" or "all". */
     rc = 0;
-    if (!_PyUnicode_EqualToASCIIString(action, "always")) {
+    if (!_PyUnicode_EqualToASCIIString(action, "always") && !_PyUnicode_EqualToASCIIString(action, "all")) {
         if (registry != NULL && registry != Py_None &&
             PyDict_SetItem(registry, key, Py_True) < 0)
         {

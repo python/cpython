@@ -2117,7 +2117,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(s), },
+        .ob_item = { _Py_LATIN1_CHR('s'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -6348,7 +6348,7 @@ PyDoc_STRVAR(os_times__doc__,
 "\n"
 "The object returned behaves like a named tuple with these fields:\n"
 "  (utime, stime, cutime, cstime, elapsed_time)\n"
-"All fields are floating point numbers.");
+"All fields are floating-point numbers.");
 
 #define OS_TIMES_METHODDEF    \
     {"times", (PyCFunction)os_times, METH_NOARGS, os_times__doc__},
@@ -12837,4 +12837,4 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=5ae2e5ffcd9c8a84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2fafa0d2814948f8 input=a9049054013a1b77]*/

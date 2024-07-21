@@ -17,7 +17,6 @@ import threading
 import time
 import types
 import unittest
-import warnings
 import weakref
 import operator
 from test import support
