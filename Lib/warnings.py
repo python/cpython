@@ -28,6 +28,7 @@ def _showwarnmsg_impl(msg):
     text = _formatwarnmsg(msg)
     try:
         file.write(text)
+        file.flush()
     except OSError:
         # the file (probably stderr) is invalid - this warning gets lost.
         pass
