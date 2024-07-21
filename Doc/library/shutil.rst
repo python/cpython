@@ -714,13 +714,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. warning::
 
-      Never extract archives from untrusted sources without prior inspection,
-      even when using the ``'data'`` filter, but especially if using the
-      ``'tar'`` or ``'fully_trusted'`` filters.
-
+      Never extract archives from untrusted sources without prior inspection.
       It is possible that files are created outside of the path specified in
       the *extract_dir* argument, e.g. members that have absolute filenames
       starting with "/" or filenames with two dots "..".
+
+      The default filter is set to ``filter='data'`` to prevent the most
+      dangerous security issues. Read the :ref:`tarfile-extraction-filter`
+      section for details.
 
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
