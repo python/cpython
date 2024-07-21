@@ -248,10 +248,10 @@ always available.
    function so that you can choose which debugger gets used.
 
    The signature of this function is dependent on what it calls.  For example,
-   the default binding (e.g. ``pdb.set_trace()``) expects no arguments, but
-   you might bind it to a function that expects additional arguments
-   (positional and/or keyword).  The built-in ``breakpoint()`` function passes
-   its ``*args`` and ``**kws`` straight through.  Whatever
+   the default binding (e.g. ``pdb.set_trace()``) expects only an optional keyword
+   argument `header`, but you might bind it to a function that expects additional
+   arguments (positional and/or keyword).  The built-in ``breakpoint()`` function
+   passes its ``*args`` and ``**kws`` straight through.  Whatever
    ``breakpointhooks()`` returns is returned from ``breakpoint()``.
 
    The default implementation first consults the environment variable
