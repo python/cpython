@@ -1,0 +1,1 @@
+When a mail header content is too long, the RFC demands to fold it over multiple lines, finding a sweet spot (e.g. between two words) where to split the line. When the sweet-spot was inside of a quoted-string, the quotation marks were wrongly removed which led to invalid header values.
