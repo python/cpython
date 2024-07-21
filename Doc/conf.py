@@ -90,6 +90,9 @@ needs_sphinx = '6.2.1'
 # attributes, etc.). Default is True.
 toc_object_entries = False
 
+# Hide versionadded and versionchanged in the output older than this version
+min_version_show_changes = '3.6'
+
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
