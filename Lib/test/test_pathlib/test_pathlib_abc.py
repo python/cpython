@@ -1503,7 +1503,9 @@ class DummyPath(PathBase):
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         path = str(self.resolve())
-        if path in self._directories:
+        if path in self._files:
+            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
+        elif path in self._directories:
             if exist_ok:
                 return
             else:
@@ -1991,6 +1993,23 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(source_text, target.read_text())
 
+    def test_move_file_to_existing_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        source_text = source.read_text()
+        target = base / 'dirB' / 'fileB'
+        result = source.move(target)
+        self.assertEqual(result, target)
+        self.assertFalse(source.exists())
+        self.assertTrue(target.exists())
+        self.assertEqual(source_text, target.read_text())
+
+    def test_move_file_to_directory(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'dirB'
+        self.assertRaises(IsADirectoryError, source.move, target)
+
     def test_move_dir(self):
         base = self.cls(self.base)
         source = base / 'dirC'
@@ -2006,6 +2025,20 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').is_file())
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
+
+    def test_move_dir_to_file(self):
+        base = self.cls(self.base)
+        source = base / 'dirB'
+        target = base / 'fileA'
+        self.assertRaises(NotADirectoryError, source.move, target)
+
+    def test_move_dir_to_existing_dir(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'dirB'
+        with self.assertRaises(OSError) as cm:
+            source.move(target)
+        self.assertIn(cm.exception.errno, (errno.ENOTEMPTY, errno.EEXIST))
 
     def test_move_dir_into_itself(self):
         base = self.cls(self.base)
