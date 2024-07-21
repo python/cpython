@@ -1993,7 +1993,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(source_text, target.read_text())
 
-    def test_move_file_to_existing_file(self):
+    def test_move_file_to_file(self):
         base = self.cls(self.base)
         source = base / 'fileA'
         source_text = source.read_text()
@@ -2004,10 +2004,17 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(source_text, target.read_text())
 
-    def test_move_file_to_directory(self):
+    def test_move_file_to_dir(self):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirB'
+        self.assertRaises(IsADirectoryError, source.move, target)
+
+    def test_move_file_to_empty_dir(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'fileA_moved'
+        target.mkdir()
         self.assertRaises(IsADirectoryError, source.move, target)
 
     def test_move_dir(self):
@@ -2032,13 +2039,30 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'fileA'
         self.assertRaises(NotADirectoryError, source.move, target)
 
-    def test_move_dir_to_existing_dir(self):
+    def test_move_dir_to_dir(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'dirB'
         with self.assertRaises(OSError) as cm:
             source.move(target)
-        self.assertIn(cm.exception.errno, (errno.ENOTEMPTY, errno.EEXIST))
+        self.assertEqual(cm.exception.errno, errno.ENOTEMPTY)
+
+    def test_move_dir_to_empty_dir(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'dirC_moved'
+        target.mkdir()
+        result = source.move(target)
+        self.assertEqual(result, target)
+        self.assertFalse(source.exists())
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
 
     def test_move_dir_into_itself(self):
         base = self.cls(self.base)
@@ -2059,7 +2083,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(source_readlink, target.readlink())
 
     @needs_symlinks
-    def test_move_directory_symlink(self):
+    def test_move_dir_symlink(self):
         base = self.cls(self.base)
         source = base / 'linkB'
         source_readlink = source.readlink()
