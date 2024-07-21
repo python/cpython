@@ -1,3 +1,4 @@
-``@warnings.deprecated`` now copies to coroutine flag of functions and
-methods so that ``inspect.iscoroutinefunction()`` returns the correct
+:func:`@warnings.deprecated <warnings.deprecated>` now copies the
+:data:`coroutine flag <inspect.CO_COROUTINE>` flag of functions and
+methods so that :func:`inspect.iscoroutinefunction` returns the correct
 result.
