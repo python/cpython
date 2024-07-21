@@ -856,9 +856,7 @@ class Path(PathBase, PurePath):
         """
 
         try:
-            target = self.with_segments(target)
-            os.rename(self, target)
-            return target
+            return self.rename(target)
         except TypeError:
             if not isinstance(target, PathBase):
                 raise
