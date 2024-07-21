@@ -1008,10 +1008,10 @@ find and load modules.
 
 .. class:: NamespacePath(name, path, path_finder)
 
-   Represents a namespace package's path.  It uses the module name to find its
+   Represents a namespace package's path.  It uses the module *name* to find its
    parent module, and from there it looks up the parent's ``__path__``.  When
-   this changes, the module's own path is recomputed, using path_finder. For
-   top-level modules, the parent module's path is :py:data:`sys.path`.
+   this changes, the module's own path is recomputed, using *path_finder*. For
+   top-level modules, the parent module's path is :data:`sys.path`.
 
 
 .. class:: SourceFileLoader(fullname, path)
