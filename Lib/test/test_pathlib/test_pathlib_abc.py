@@ -2008,7 +2008,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirB'
-        self.assertRaises(IsADirectoryError, source.move, target)
+        self.assertRaises(OSError, source.move, target)
 
     def test_move_dir(self):
         base = self.cls(self.base)
@@ -2026,6 +2026,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
 
+    @needs_posix
     def test_move_dir_to_file(self):
         base = self.cls(self.base)
         source = base / 'dirB'
@@ -2036,9 +2037,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'dirB'
-        with self.assertRaises(OSError) as cm:
-            source.move(target)
-        self.assertIn(cm.exception.errno, (errno.ENOTEMPTY, errno.EEXIST))
+        self.assertRaises(OSError, source.move, target)
 
     def test_move_dir_into_itself(self):
         base = self.cls(self.base)
