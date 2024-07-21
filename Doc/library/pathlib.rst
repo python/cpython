@@ -1557,7 +1557,8 @@ Copying, renaming and deleting
    .. versionadded:: 3.14
 
 
-.. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False, \
+.. method:: Path.copytree(target, *, follow_symlinks=True, \
+                          preserve_metadata=False, dirs_exist_ok=False, \
                           ignore=None, on_error=None)
 
    Recursively copy this directory tree to the given destination.
@@ -1565,6 +1566,13 @@ Copying, renaming and deleting
    If a symlink is encountered in the source tree, and *follow_symlinks* is
    true (the default), the symlink's target is copied. Otherwise, the symlink
    is recreated in the destination tree.
+
+   If *preserve_metadata* is false (the default), only the directory structure
+   and file data are guaranteed to be copied. Set *preserve_metadata* to true
+   to ensure that file and directory permissions, flags, last access and
+   modification times, and extended attributes are copied where supported.
+   This argument has no effect on Windows, where metadata is always preserved
+   when copying.
 
    If the destination is an existing directory and *dirs_exist_ok* is false
    (the default), a :exc:`FileExistsError` is raised. Otherwise, the copying
@@ -1643,6 +1651,34 @@ Copying, renaming and deleting
 .. method:: Path.rmdir()
 
    Remove this directory.  The directory must be empty.
+
+
+.. method:: Path.rmtree(ignore_errors=False, on_error=None)
+
+   Recursively delete this entire directory tree. The path must not refer to a symlink.
+
+   If *ignore_errors* is true, errors resulting from failed removals will be
+   ignored. If *ignore_errors* is false or omitted, and a function is given to
+   *on_error*, it will be called each time an exception is raised. If neither
+   *ignore_errors* nor *on_error* are supplied, exceptions are propagated to
+   the caller.
+
+   .. note::
+
+      On platforms that support the necessary fd-based functions, a symlink
+      attack-resistant version of :meth:`~Path.rmtree` is used by default. On
+      other platforms, the :func:`~Path.rmtree` implementation is susceptible
+      to a symlink attack: given proper timing and circumstances, attackers
+      can manipulate symlinks on the filesystem to delete files they would not
+      be able to access otherwise.
+
+   If the optional argument *on_error* is specified, it should be a callable;
+   it will be called with one argument of type :exc:`OSError`. The
+   callable can handle the error to continue the deletion process or re-raise
+   it to stop. Note that the filename is available as the :attr:`~OSError.filename`
+   attribute of the exception object.
+
+   .. versionadded:: 3.14
 
 
 Permissions and ownership

@@ -1,15 +1,6 @@
-import sys
-from pathlib import Path
+from pygments.lexer import RegexLexer, bygroups, include
+from pygments.token import Comment, Keyword, Name, Operator, Punctuation, Text
 
-CPYTHON_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-sys.path.append(str(CPYTHON_ROOT / "Parser"))
-
-from pygments.lexer import RegexLexer, bygroups, include, words
-from pygments.token import (Comment, Keyword, Name, Operator,
-                            Punctuation, Text)
-
-from asdl import builtin_types
-from sphinx.highlighting import lexers
 
 class ASDLLexer(RegexLexer):
     name = "ASDL"
@@ -34,7 +25,10 @@ class ASDLLexer(RegexLexer):
                 r"(\w+)(\*\s|\?\s|\s)(\w+)",
                 bygroups(Name.Builtin.Pseudo, Operator, Name),
             ),
-            (words(builtin_types), Name.Builtin),
+            # Keep in line with ``builtin_types`` from Parser/asdl.py.
+            # ASDL's 4 builtin types are
+            # constant, identifier, int, string
+            ("constant|identifier|int|string", Name.Builtin),
             (r"attributes", Name.Builtin),
             (
                 _name + _text_ws + "(=)",
@@ -46,8 +40,3 @@ class ASDLLexer(RegexLexer):
             (r".", Text),
         ],
     }
-
-
-def setup(app):
-    lexers["asdl"] = ASDLLexer()
-    return {'version': '1.0', 'parallel_read_safe': True}
