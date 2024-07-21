@@ -1,0 +1,3 @@
+``@warnings.deprecated`` now copies to coroutine flag of functions and
+methods so that ``inspect.iscoroutinefunction()`` returns the correct
+result.
