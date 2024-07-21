@@ -1,3 +1,4 @@
+import errno
 import io
 import ntpath
 import operator
@@ -848,6 +849,23 @@ class Path(PathBase, PurePath):
             onexc = None
         import shutil
         shutil.rmtree(str(self), ignore_errors, onexc=onexc)
+
+    def move(self, target):
+        """
+        Recursively move this file or directory tree to the given destination.
+        """
+
+        try:
+            target = self.with_segments(target)
+            os.rename(self, target)
+            return target
+        except TypeError:
+            if not isinstance(target, PathBase):
+                raise
+        except OSError as err:
+            if err.errno != errno.EXDEV:
+                raise
+        return PathBase.move(self, target)
 
     def rename(self, target):
         """

@@ -1536,8 +1536,8 @@ Creating files and directories
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-Copying, renaming and deleting
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Copying, moving and deleting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: Path.copy(target, *, follow_symlinks=True, preserve_metadata=False)
 
@@ -1588,6 +1588,18 @@ Copying, renaming and deleting
    instance of :exc:`OSError`. The callable may re-raise the exception or do
    nothing, in which case the copying operation continues. If *on_error* isn't
    given, exceptions are propagated to the caller.
+
+   .. versionadded:: 3.14
+
+
+.. method:: Path.move(target)
+
+   Recursively move this file or directory tree to the given *target*, and
+   return a new :class:`!Path` instance pointing to *target*.
+
+   If both paths are on the same filesystem, the move is performed with
+   :func:`os.rename`. Otherwise, this path is copied (preserving metadata and
+   symlinks) and then deleted.
 
    .. versionadded:: 3.14
 

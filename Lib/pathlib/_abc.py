@@ -846,6 +846,11 @@ class PathBase(PurePathBase):
         if on_error is None:
             def on_error(err):
                 raise err
+        if target.is_relative_to(self):
+            try:
+                raise OSError(f"Cannot copy {self!r} inside itself: {target!r}")
+            except OSError as err:
+                on_error(err)
         stack = [(self, target)]
         while stack:
             source_dir, target_dir = stack.pop()
@@ -868,6 +873,22 @@ class PathBase(PurePathBase):
                         on_error(err)
             except OSError as err:
                 on_error(err)
+
+    def move(self, target):
+        """
+        Recursively move this file or directory tree to the given destination.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if self.is_dir(follow_symlinks=False):
+            copy_self = self.copytree
+            delete_self = self.rmtree
+        else:
+            copy_self = self.copy
+            delete_self = self.unlink
+        copy_self(target, follow_symlinks=False, preserve_metadata=True)
+        delete_self()
+        return target
 
     def rename(self, target):
         """
