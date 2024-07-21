@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import linecache
 import os
+import inspect
 from io import StringIO
 import re
 import sys
@@ -1685,8 +1686,6 @@ class DeprecatedTests(unittest.TestCase):
         ))
 
     def test_inspect(self):
-        import inspect
-
         @deprecated("depr")
         def sync():
             pass
