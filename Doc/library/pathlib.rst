@@ -1598,7 +1598,7 @@ Copying, moving and deleting
    return a new :class:`!Path` instance pointing to *target*.
 
    If both paths are on the same filesystem, the move is performed with
-   :func:`os.rename`. Otherwise, this path is copied (preserving metadata and
+   :func:`os.replace`. Otherwise, this path is copied (preserving metadata and
    symlinks) and then deleted.
 
    .. versionadded:: 3.14

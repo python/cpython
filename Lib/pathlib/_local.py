@@ -856,7 +856,7 @@ class Path(PathBase, PurePath):
         """
 
         try:
-            return self.rename(target)
+            return self.replace(target)
         except TypeError:
             if not isinstance(target, PathBase):
                 raise
