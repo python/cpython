@@ -1,1 +1,2 @@
-Update tarfile library to use 'data' filter by default when extracting
+The default extraction filter for the :mod:`tarfile` module is now
+set to :func:`'data' <tarfile.data_filter>`.

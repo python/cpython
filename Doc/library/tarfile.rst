@@ -42,9 +42,10 @@ Some facts and figures:
    or to acknowledge that they are expected and the archive is fully trusted.
 
 .. versionchanged:: 3.14
-   The default extraction filter was :func:`fully_trusted <fully_trusted_filter>` but is now :func:`data <data_filter>` which
-   which disallows dangerous features like links to absolute paths or paths
-   outside the destination.
+   Set the default extraction filter to :func:`data <data_filter>`,
+   which disallows dangerous features such as links to absolute paths
+   or paths outside of the destination. Previously, the filter strategy
+   was :func:`fully_trusted <fully_trusted_filter>`.
 
 .. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
@@ -503,7 +504,7 @@ be finalized; only the internally used file object will be closed. See the
    .. warning::
 
       The default filter is set to ``filter='data'`` to prevent the most
-      dangerous security issues, read the :ref:`tarfile-extraction-filter`
+      dangerous security issues. Read the :ref:`tarfile-extraction-filter`
       section for details.
 
       Never extract archives from untrusted sources without prior inspection,
@@ -545,7 +546,7 @@ be finalized; only the internally used file object will be closed. See the
       See the warning for :meth:`extractall`.
 
       The default filter is set to ``filter='data'`` to prevent the most
-      dangerous security issues, read the :ref:`tarfile-extraction-filter`
+      dangerous security issues. Read the :ref:`tarfile-extraction-filter`
       section for details.
 
    .. versionchanged:: 3.2
