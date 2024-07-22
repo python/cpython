@@ -881,14 +881,11 @@ class PathBase(PurePathBase):
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
         if self.is_dir(follow_symlinks=False):
-            delete_target = target.rmdir
             copy_source = self.copytree
             delete_source = self.rmtree
         else:
-            delete_target = target.unlink
             copy_source = self.copy
             delete_source = self.unlink
-        delete_target(missing_ok=True)
         copy_source(target, follow_symlinks=False, preserve_metadata=True)
         delete_source()
         return target
