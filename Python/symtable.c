@@ -70,10 +70,10 @@
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
-#define ASYNC_WITH_OUTISDE_ASYNC_FUNC \
+#define ASYNC_WITH_OUTSIDE_ASYNC_FUNC \
 "'async with' outside async function"
 
-#define ASYNC_FOR_OUTISDE_ASYNC_FUNC \
+#define ASYNC_FOR_OUTSIDE_ASYNC_FUNC \
 "'async for' outside async function"
 
 #define LOCATION(x) SRC_LOCATION_FROM_AST(x)
@@ -81,6 +81,8 @@
 #define SET_ERROR_LOCATION(FNAME, L) \
     PyErr_RangedSyntaxLocationObject((FNAME), \
         (L).lineno, (L).col_offset + 1, (L).end_lineno, (L).end_col_offset + 1)
+
+#define IS_ASYNC_DEF(st) ((st)->st_cur->ste_type == FunctionBlock && (st)->st_cur->ste_coroutine)
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
@@ -1660,12 +1662,18 @@ check_import_from(struct symtable *st, stmt_ty s)
     return 1;
 }
 
+static bool
+allows_top_level_await(struct symtable *st)
+{
+    return (st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+            st->st_cur->ste_type == ModuleBlock;
+}
+
+
 static void
 maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
 {
-    if ((st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
-        (st->st_cur->ste_type == ModuleBlock))
-    {
+    if (allows_top_level_await(st)) {
         st->st_cur->ste_coroutine = 1;
     }
 }
@@ -2054,7 +2062,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     case AsyncWith_kind:
         maybe_set_ste_coroutine_for_module(st, s);
-        if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             VISIT_QUIT(st, 0);
         }
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
@@ -2062,7 +2070,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case AsyncFor_kind:
         maybe_set_ste_coroutine_for_module(st, s);
-        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             VISIT_QUIT(st, 0);
         }
         VISIT(st, expr, s->v.AsyncFor.target);
@@ -2278,6 +2286,20 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Await_kind:
         if (!symtable_raise_if_annotation_block(st, "await expression", e)) {
             VISIT_QUIT(st, 0);
+        }
+        if (!allows_top_level_await(st)) {
+            if (!_PyST_IsFunctionLike(st->st_cur)) {
+                PyErr_SetString(PyExc_SyntaxError,
+                                "'await' outside function");
+                SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
+                VISIT_QUIT(st, 0);
+            }
+            if (!IS_ASYNC_DEF(st) && st->st_cur->ste_comprehension == NoComprehension) {
+                PyErr_SetString(PyExc_SyntaxError,
+                                "'await' outside async function");
+                SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
+                VISIT_QUIT(st, 0);
+            }
         }
         VISIT(st, expr, e->v.Await.value);
         st->st_cur->ste_coroutine = 1;
@@ -2796,6 +2818,16 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     st->st_cur->ste_generator = is_generator;
     int is_async = st->st_cur->ste_coroutine && !is_generator;
     if (!symtable_exit_block(st)) {
+        return 0;
+    }
+    if (is_async &&
+        !IS_ASYNC_DEF(st) &&
+        st->st_cur->ste_comprehension == NoComprehension &&
+        !allows_top_level_await(st))
+    {
+        PyErr_SetString(PyExc_SyntaxError, "asynchronous comprehension outside of "
+                                           "an asynchronous function");
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
         return 0;
     }
     if (is_async) {

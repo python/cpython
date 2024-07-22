@@ -5675,14 +5675,16 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL, NO_LABEL};
     comprehension_ty outermost;
+#ifndef NDEBUG
     int scope_type = c->u->u_scope_type;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
+#endif
     PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c), (void *)e);
     if (entry == NULL) {
         goto error;
     }
     int is_inlined = entry->ste_comp_inlined;
-    int is_async_generator = entry->ste_coroutine;
+    int is_async_comprehension = entry->ste_coroutine;
 
     location loc = LOC(e);
 
@@ -5697,22 +5699,17 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     else {
         if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                                (void *)e, e->lineno, NULL) < 0)
-        {
+                                (void *)e, e->lineno, NULL) < 0) {
             goto error;
         }
     }
     Py_CLEAR(entry);
 
-    if (is_async_generator && type != COMP_GENEXP &&
-        scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-        scope_type != COMPILER_SCOPE_COMPREHENSION &&
-        !is_top_level_await)
-    {
-        compiler_error(c, loc, "asynchronous comprehension outside of "
-                               "an asynchronous function");
-        goto error_in_scope;
-    }
+    assert (!is_async_comprehension ||
+            type == COMP_GENEXP ||
+            scope_type == COMPILER_SCOPE_ASYNC_FUNCTION ||
+            scope_type == COMPILER_SCOPE_COMPREHENSION ||
+            is_top_level_await);
 
     if (type != COMP_GENEXP) {
         int op;
@@ -5777,7 +5774,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     ADDOP_I(c, loc, CALL, 0);
 
-    if (is_async_generator && type != COMP_GENEXP) {
+    if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
@@ -6138,16 +6135,10 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        if (!IS_TOP_LEVEL_AWAIT(c)){
-            if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
-                return compiler_error(c, loc, "'await' outside function");
-            }
-
-            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-                    c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION) {
-                return compiler_error(c, loc, "'await' outside async function");
-            }
-        }
+        assert(IS_TOP_LEVEL_AWAIT(c) || (_PyST_IsFunctionLike(SYMTABLE_ENTRY(c)) && (
+            c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION ||
+            c->u->u_scope_type == COMPILER_SCOPE_COMPREHENSION
+        )));
 
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
