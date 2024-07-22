@@ -180,9 +180,12 @@ def lazycache(filename, module_globals):
         loader = getattr(spec, 'loader', None)
         if loader is None:
             loader = module_globals.get('__loader__')
-        wrong_name = hasattr(loader, "get_filename") and loader.get_filename() != filename
-        if wrong_name:
-            return False
+        try:
+            wrong_name = hasattr(loader, "get_filename") and loader.get_filename() != filename
+            if wrong_name:
+                return False
+        except:
+            pass
         get_source = getattr(loader, 'get_source', None)
 
         if name and get_source:
