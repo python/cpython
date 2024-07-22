@@ -16,8 +16,8 @@ Features and minimum versions required to build CPython:
 
 * On Windows, Microsoft Visual Studio 2017 or later is required.
 
-* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
-  point numbers and `floating point Not-a-Number (NaN)
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
+  floating-point numbers and `floating-point Not-a-Number (NaN)
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
 * Support for threads.
@@ -427,7 +427,7 @@ Options for third-party dependencies
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
 
-   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+   C compiler and linker flags for PANEL, overriding ``pkg-config``.
 
    C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
    :mod:`curses.panel` module, overriding ``pkg-config``.
@@ -615,7 +615,7 @@ also be used to improve performance.
 
 .. option:: --without-mimalloc
 
-   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
    See also :envvar:`PYTHONMALLOC` environment variable.
