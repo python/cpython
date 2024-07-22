@@ -45,7 +45,7 @@
 */
 
 #include "Python.h"
-#include "pycore_hashtable.h"
+#include "pycore_hashtable.h"     // export _Py_hashtable_new()
 #include "pycore_pyhash.h"        // _Py_HashPointerRaw()
 
 #define HASHTABLE_MIN_SIZE 16

@@ -196,7 +196,7 @@ write_str(stringio *self, PyObject *obj)
     }
     if (self->writenl) {
         PyObject *translated = PyUnicode_Replace(
-            decoded, &_Py_STR(newline), self->writenl, -1);
+            decoded, _Py_LATIN1_CHR('\n'), self->writenl, -1);
         Py_SETREF(decoded, translated);
     }
     if (decoded == NULL)
@@ -1037,15 +1037,15 @@ static struct PyMethodDef stringio_methods[] = {
 };
 
 static PyGetSetDef stringio_getset[] = {
-    _IO_STRINGIO_CLOSED_GETTERDEF
-    _IO_STRINGIO_NEWLINES_GETTERDEF
+    _IO_STRINGIO_CLOSED_GETSETDEF
+    _IO_STRINGIO_NEWLINES_GETSETDEF
     /*  (following comments straight off of the original Python wrapper:)
         XXX Cruft to support the TextIOWrapper API. This would only
         be meaningful if StringIO supported the buffer attribute.
         Hopefully, a better solution, than adding these pseudo-attributes,
         will be found.
     */
-    _IO_STRINGIO_LINE_BUFFERING_GETTERDEF
+    _IO_STRINGIO_LINE_BUFFERING_GETSETDEF
     {NULL}
 };
 

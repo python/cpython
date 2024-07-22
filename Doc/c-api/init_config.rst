@@ -509,7 +509,7 @@ PyConfig
       The :c:func:`PyConfig_Read` function only parses
       :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv`
       is set to ``2`` after arguments are parsed. Since Python arguments are
-      strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+      stripped from :c:member:`PyConfig.argv`, parsing arguments twice would
       parse the application options as Python options.
 
       :ref:`Preinitialize Python <c-preinit>` if needed.
@@ -1041,7 +1041,7 @@ PyConfig
       The :c:func:`PyConfig_Read` function only parses
       :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv`
       is set to ``2`` after arguments are parsed. Since Python arguments are
-      strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+      stripped from :c:member:`PyConfig.argv`, parsing arguments twice would
       parse the application options as Python options.
 
       Default: ``1`` in Python mode, ``0`` in isolated mode.
@@ -1250,8 +1250,11 @@ PyConfig
       If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
       for more information.
 
-      Set by :option:`-X perf <-X>` command line option and by the
-      :envvar:`PYTHONPERFSUPPORT` environment variable.
+      Set by :option:`-X perf <-X>` command-line option and by the
+      :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf support
+      with stack pointers and :option:`-X perf_jit <-X>` command-line option
+      and by the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf
+      support with DWARF JIT information.
 
       Default: ``-1``.
 

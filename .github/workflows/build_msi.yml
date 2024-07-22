@@ -32,6 +32,8 @@ jobs:
     strategy:
       matrix:
         type: [x86, x64, arm64]
+    env:
+      IncludeFreethreaded: true
     steps:
     - uses: actions/checkout@v4
     - name: Build CPython installer

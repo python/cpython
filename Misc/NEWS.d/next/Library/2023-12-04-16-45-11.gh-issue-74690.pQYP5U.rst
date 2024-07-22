@@ -1,2 +1,0 @@
-Speedup :func:`issubclass` checks against simple :func:`runtime-checkable
-protocols <typing.runtime_checkable>` by around 6%. Patch by Alex Waygood.

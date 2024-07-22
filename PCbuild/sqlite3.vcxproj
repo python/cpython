@@ -69,12 +69,12 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A1A295E5-463C-437F-81CA-1F32367685DA}</ProjectGuid>
     <RootNamespace>sqlite3</RootNamespace>
-    <TargetExt>.pyd</TargetExt>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetExt>$(PyStdlibPydExt)</TargetExt>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>

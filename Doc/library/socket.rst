@@ -1,5 +1,5 @@
-:mod:`socket` --- Low-level networking interface
-================================================
+:mod:`!socket` --- Low-level networking interface
+=================================================
 
 .. module:: socket
    :synopsis: Low-level networking interface.
@@ -311,7 +311,7 @@ Exceptions
    The accompanying value is a pair ``(error, string)`` representing an error
    returned by a library call.  *string* represents the description of
    *error*, as returned by the :c:func:`gai_strerror` C function.  The
-   numeric *error* value will match one of the :const:`EAI_\*` constants
+   numeric *error* value will match one of the :const:`!EAI_\*` constants
    defined in this module.
 
    .. versionchanged:: 3.3
@@ -444,6 +444,15 @@ Constants
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
       Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
       ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
+
+   .. versionchanged:: 3.13
+      Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
+      same way that ``SO_BINDTODEVICE`` is used, but with the index of a
+      network interface instead of its name.
+
+   .. versionchanged:: 3.14
+      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
+      on Linux.
 
 .. data:: AF_CAN
           PF_CAN
@@ -1208,7 +1217,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       Most Unix platforms.
 
@@ -1231,7 +1240,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       most Unix platforms.
 
@@ -1271,7 +1280,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1298,7 +1307,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1315,7 +1324,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1332,7 +1341,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1346,7 +1355,7 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1517,7 +1526,7 @@ to sockets.
 .. method:: socket.getsockopt(level, optname[, buflen])
 
    Return the value of the given socket option (see the Unix man page
-   :manpage:`getsockopt(2)`).  The needed symbolic constants (:const:`SO_\*` etc.)
+   :manpage:`getsockopt(2)`).  The needed symbolic constants (:ref:`SO_\* etc. <socket-unix-constants>`)
    are defined in this module.  If *buflen* is absent, an integer option is assumed
    and its integer value is returned by the function.  If *buflen* is present, it
    specifies the maximum length of the buffer used to receive the option in, and
@@ -1584,7 +1593,8 @@ to sockets.
    Return a :term:`file object` associated with the socket.  The exact returned
    type depends on the arguments given to :meth:`makefile`.  These arguments are
    interpreted the same way as by the built-in :func:`open` function, except
-   the only supported *mode* values are ``'r'`` (default), ``'w'`` and ``'b'``.
+   the only supported *mode* values are ``'r'`` (default), ``'w'``, ``'b'``, or
+   a combination of those.
 
    The socket must be in blocking mode; it can have a timeout, but the file
    object's internal buffer may end up in an inconsistent state if a timeout
@@ -1605,8 +1615,9 @@ to sockets.
 
    Receive data from the socket.  The return value is a bytes object representing the
    data received.  The maximum amount of data to be received at once is specified
-   by *bufsize*.  See the Unix manual page :manpage:`recv(2)` for the meaning of
-   the optional argument *flags*; it defaults to zero.
+   by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
+   See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
+   *flags*; it defaults to zero.
 
    .. note::
 
@@ -1915,7 +1926,7 @@ to sockets.
 .. method:: socket.settimeout(value)
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative floating point number expressing seconds, or ``None``.
+   nonnegative floating-point number expressing seconds, or ``None``.
    If a non-zero value is given, subsequent socket operations will raise a
    :exc:`timeout` exception if the timeout period *value* has elapsed before
    the operation has completed.  If zero is given, the socket is put in
@@ -1937,8 +1948,8 @@ to sockets.
    .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
-   :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
-   :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer,
+   :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in this
+   module (:ref:`!SO_\* etc. <socket-unix-constants>`).  The value can be an integer,
    ``None`` or a :term:`bytes-like object` representing a buffer. In the later
    case it is up to the caller to ensure that the bytestring contains the
    proper bits (see the optional built-in module :mod:`struct` for a way to

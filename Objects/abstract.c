@@ -425,6 +425,12 @@ PyObject_AsWriteBuffer(PyObject *obj,
 int
 PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 {
+    if (flags != PyBUF_SIMPLE) {  /* fast path */
+        if (flags == PyBUF_READ || flags == PyBUF_WRITE) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+    }
     PyBufferProcs *pb = Py_TYPE(obj)->tp_as_buffer;
 
     if (pb == NULL || pb->bf_getbuffer == NULL) {
@@ -761,11 +767,17 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
         return -1;
     }
 
-    if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
-        (readonly == 1)) {
-        PyErr_SetString(PyExc_BufferError,
-                        "Object is not writable.");
-        return -1;
+    if (flags != PyBUF_SIMPLE) {  /* fast path */
+        if (flags == PyBUF_READ || flags == PyBUF_WRITE) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+        if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
+            (readonly == 1)) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Object is not writable.");
+            return -1;
+        }
     }
 
     view->obj = Py_XNewRef(obj);
@@ -1378,7 +1390,7 @@ _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
     }
 
 UNARY_FUNC(PyNumber_Negative, nb_negative, __neg__, "unary -")
-UNARY_FUNC(PyNumber_Positive, nb_positive, __pow__, "unary +")
+UNARY_FUNC(PyNumber_Positive, nb_positive, __pos__, "unary +")
 UNARY_FUNC(PyNumber_Invert, nb_invert, __invert__, "unary ~")
 UNARY_FUNC(PyNumber_Absolute, nb_absolute, __abs__, "abs()")
 
@@ -1509,7 +1521,6 @@ PyNumber_Long(PyObject *o)
 {
     PyObject *result;
     PyNumberMethods *m;
-    PyObject *trunc_func;
     Py_buffer view;
 
     if (o == NULL) {
@@ -1551,37 +1562,6 @@ PyNumber_Long(PyObject *o)
     if (m && m->nb_index) {
         return PyNumber_Index(o);
     }
-    trunc_func = _PyObject_LookupSpecial(o, &_Py_ID(__trunc__));
-    if (trunc_func) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "The delegation of int() to __trunc__ is deprecated.", 1)) {
-            Py_DECREF(trunc_func);
-            return NULL;
-        }
-        result = _PyObject_CallNoArgs(trunc_func);
-        Py_DECREF(trunc_func);
-        if (result == NULL || PyLong_CheckExact(result)) {
-            return result;
-        }
-        if (PyLong_Check(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-            return result;
-        }
-        /* __trunc__ is specified to return an Integral type,
-           but int() needs to return an int. */
-        if (!PyIndex_Check(result)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "__trunc__ returned non-Integral (type %.200s)",
-                Py_TYPE(result)->tp_name);
-            Py_DECREF(result);
-            return NULL;
-        }
-        Py_SETREF(result, PyNumber_Index(result));
-        return result;
-    }
-    if (PyErr_Occurred())
-        return NULL;
 
     if (PyUnicode_Check(o))
         /* The below check is done in PyLong_FromUnicodeObject(). */
@@ -2161,7 +2141,7 @@ PySequence_Fast(PyObject *v, const char *m)
    PY_ITERSEARCH_COUNT:  -1 if error, else # of times obj appears in seq.
    PY_ITERSEARCH_INDEX:  0-based index of first occurrence of obj in seq;
     set ValueError and return -1 if none found; also return -1 on error.
-   Py_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on error.
+   PY_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on error.
 */
 Py_ssize_t
 _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
@@ -2178,7 +2158,15 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
     it = PyObject_GetIter(seq);
     if (it == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            type_error("argument of type '%.200s' is not iterable", seq);
+            if (operation == PY_ITERSEARCH_CONTAINS) {
+                type_error(
+                    "argument of type '%.200s' is not a container or iterable",
+                    seq
+                    );
+            }
+            else {
+                type_error("argument of type '%.200s' is not iterable", seq);
+            }
         }
         return -1;
     }
