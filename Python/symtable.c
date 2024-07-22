@@ -82,6 +82,8 @@
     PyErr_RangedSyntaxLocationObject((FNAME), \
         (L).lineno, (L).col_offset + 1, (L).end_lineno, (L).end_col_offset + 1)
 
+#define IS_ASYNC_DEF(st) ((st)->st_cur->ste_type == FunctionBlock && (st)->st_cur->ste_coroutine)
+
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         void *key, _Py_SourceLocation loc)
@@ -2292,11 +2294,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
                 SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
                 VISIT_QUIT(st, 0);
             }
-            bool is_async_def = (
-                st->st_cur->ste_type == FunctionBlock &&
-                st->st_cur->ste_coroutine
-            );
-            if (!is_async_def && st->st_cur->ste_comprehension == NoComprehension) {
+            if (!IS_ASYNC_DEF(st) && st->st_cur->ste_comprehension == NoComprehension) {
                 PyErr_SetString(PyExc_SyntaxError,
                                 "'await' outside async function");
                 SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
@@ -2823,7 +2821,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         return 0;
     }
     if (is_async &&
-        !(st->st_cur->ste_type == FunctionBlock && st->st_cur->ste_coroutine) &&
+        !IS_ASYNC_DEF(st) &&
         st->st_cur->ste_comprehension == NoComprehension &&
         !allows_top_level_await(st))
     {
