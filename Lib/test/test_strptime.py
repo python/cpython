@@ -8,11 +8,10 @@ import os
 import sys
 from test import support
 from test.support import skip_if_buggy_ucrt_strfptime, warnings_helper
+from test.support.parameterize import parameterize
 from datetime import date as datetime_date
 
 import _strptime
-
-from Lib.test.test_zipfile._path._test_params import parameterize
 
 
 class getlang_Tests(unittest.TestCase):
