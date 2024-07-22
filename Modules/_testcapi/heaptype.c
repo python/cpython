@@ -419,6 +419,15 @@ create_type_with_token(PyObject *module, PyObject *args)
         return NULL;
     }
 
+    /* Calling this with Py_TP_USE_SPEC breaks the invariant that spec must be
+     * statically allocated! (Or at least: the pointer must outlive the class.)
+     *
+     * Strictly for the purposes of this test, that's OK. But type-checking
+     * this class using `PyType_GetBaseByToken` would be unreliable!
+     * (Technically, we rely on the fact that nothing *else* uses
+     * Py_TP_USE_SPEC with a stack-allocated spec.)
+     */
+
     void *token = PyLong_AsVoidPtr(py_token);
     PyType_Slot slots[] = {
         {Py_tp_token, token},
