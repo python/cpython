@@ -159,7 +159,7 @@ class TestFileMethods(LargeFileTest):
         # Seek which doesn't change position should readall successfully.
         with self.open(TESTFN, 'rb') as f:
             self.assertEqual(f.seek(0, os.SEEK_CUR), 0)
-            self.assertEqual(len(f.read()), size+1)
+            self.assertEqual(len(f.read()), size + 1)
 
         # Seek which changes (or might change) position should readall
         # successfully.
