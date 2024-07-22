@@ -599,7 +599,7 @@ conflict.
 
    .. audit-event:: cpython.run_stdin "" ""
 
-   .. versionchanged:: 3.9.20 (also 3.8.20)
+   .. versionchanged:: 3.8.20
       Emits audit events.
 
 
