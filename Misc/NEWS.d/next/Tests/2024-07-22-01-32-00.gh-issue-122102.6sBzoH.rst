@@ -1,0 +1,2 @@
+Improve the tests for :func:`inspect.ismethoddescriptor` and
+:func:`inspect.isdatadescriptor`.  Patch by Jan Kaliszewski.
