@@ -264,6 +264,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # the client gets back when sending a malformed request line.
     # Most web servers default to HTTP 0.9, i.e. don't send a status line.
     default_request_version = "HTTP/0.9"
+    default_content_type = "application/octet-stream"
 
     def parse_request(self):
         """Parse a request (internal).
@@ -901,7 +902,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         guess, _ = mimetypes.guess_file_type(path)
         if guess:
             return guess
-        return 'application/octet-stream'
+        return self.default_content_type
 
 
 # Utilities for CGIHTTPRequestHandler
@@ -1257,7 +1258,8 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None):
+         protocol="HTTP/1.0", port=8000, bind=None,
+         content_type=BaseHTTPRequestHandler.default_content_type):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1265,6 +1267,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
+    HandlerClass.default_content_type = content_type
     with ServerClass(addr, HandlerClass) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
@@ -1295,6 +1298,9 @@ if __name__ == '__main__':
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
+    parser.add_argument('--content-type',  # parsed into content_type
+                        default=BaseHTTPRequestHandler.default_content_type,
+                        help='sets default content type for unknown extensions')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
@@ -1324,4 +1330,5 @@ if __name__ == '__main__':
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        content_type=args.content_type
     )
