@@ -42,11 +42,13 @@ parser = argparse.ArgumentParser(
     description=__doc__,
     formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument('version',
-                    help='String to replace "next" with.')
+                    help='String to replace "next" with. Usually `x.y`, '
+                        + 'but can be anything.')
 parser.add_argument('directory', type=Path, nargs='?',
-                    help=f'Directory to process. Default: {docdir}',
-                    default=docdir)
-parser.add_argument('--verbose', '-v', action='count', default=0)
+                    help=f'Directory to process. Default: {doc_dir}',
+                    default=doc_dir)
+parser.add_argument('--verbose', '-v', action='count', default=0,
+                    help='Increase verbosity. Can be repeated (`-vv`).')
 
 
 def main(argv):
