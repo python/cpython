@@ -56,7 +56,11 @@ Additionally, there are **low-level** APIs for
 * :ref:`bridge <asyncio-futures>` callback-based libraries and code
   with async/await syntax.
 
+.. include:: ../includes/wasm-notavail.rst
+
 .. _asyncio-cli:
+
+.. rubric:: asyncio REPL
 
 You can experiment with an ``asyncio`` concurrent context in the REPL:
 
@@ -70,7 +74,10 @@ You can experiment with an ``asyncio`` concurrent context in the REPL:
    >>> await asyncio.sleep(10, result='hello')
    'hello'
 
-.. include:: ../includes/wasm-notavail.rst
+.. audit-event:: cpython.run_stdin "" ""
+
+.. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+   Emits audit events.
 
 .. We use the "rubric" directive here to avoid creating
    the "Reference" subsection in the TOC.
