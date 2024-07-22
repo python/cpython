@@ -1602,28 +1602,6 @@
       "versionInfo": "bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0"
     },
     {
-      "SPDXID": "SPDXRef-PACKAGE-libb2",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "53626fddce753c454a3fea581cbbc7fe9bbcf0bc70416d48fdbbf5d87ef6c72e"
-        }
-      ],
-      "downloadLocation": "https://github.com/BLAKE2/libb2/releases/download/v0.98.1/libb2-0.98.1.tar.gz",
-      "externalRefs": [
-        {
-          "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:blake2:libb2:0.98.1:*:*:*:*:*:*:*",
-          "referenceType": "cpe23Type"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "libb2",
-      "originator": "Organization: BLAKE2 - fast secure hashing",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "0.98.1"
-    },
-    {
       "SPDXID": "SPDXRef-PACKAGE-macholib",
       "checksums": [
         {
