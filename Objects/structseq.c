@@ -292,9 +292,7 @@ structseq_repr(PyStructSequence *obj)
         /* Write "name=repr" */
         const char *name_utf8 = typ->tp_members[i].name;
         if (name_utf8 == NULL) {
-            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %zd name is NULL"
-                         " for type %.500s", i, typ->tp_name);
-            goto error;
+            continue;
         }
 
         PyObject *name = PyUnicode_DecodeUTF8(name_utf8, strlen(name_utf8), NULL);
