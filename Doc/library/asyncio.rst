@@ -76,7 +76,7 @@ You can experiment with an ``asyncio`` concurrent context in the REPL:
 
 .. audit-event:: cpython.run_stdin "" ""
 
-.. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+.. versionchanged:: 3.11.10 (also 3.10.15, 3.9.20, and 3.8.20)
    Emits audit events.
 
 .. We use the "rubric" directive here to avoid creating
