@@ -821,11 +821,11 @@ class CPythonOrderedDictSideEffects:
     def test_issue119004_change_size_by_delete_key(self):
         class Key(_TriggerSideEffectOnEqual):
             def side_effect(self):
-                del dict1[key1]
+                del dict1[TODEL]
 
-        key1, key2 = Key(), Key()
-        dict1 = self.OrderedDict(dict.fromkeys((0, key1, 4.2)))
-        dict2 = self.OrderedDict(dict.fromkeys((0, key2, 4.2)))
+        TODEL = Key()
+        dict1 = self.OrderedDict(dict.fromkeys((0, TODEL, 4.2)))
+        dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
         self.check_runtime_error_issue119004(dict1, dict2)
         self.assertEqual(Key.count, 2)
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
