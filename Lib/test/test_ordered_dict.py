@@ -9,7 +9,6 @@ from random import randrange, shuffle
 import struct
 import sys
 import unittest
-import unittest.mock
 import weakref
 from collections.abc import MutableMapping
 from test import mapping_tests, support
