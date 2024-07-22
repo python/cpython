@@ -18,11 +18,12 @@ from pprint import pformat
 import sphinx
 from docutils import nodes
 from docutils.io import StringOutput
+from docutils.parsers.rst import directives
 from docutils.utils import new_document, unescape
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.domains.changeset import VersionChange, versionlabels, versionlabel_classes
-from sphinx.domains.python import PyFunction, PyMethod
+from sphinx.domains.python import PyFunction, PyMethod, PyModule
 from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
@@ -48,6 +49,9 @@ Body.enum.converters['loweralpha'] = \
 from sphinx.domains import std
 
 std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
+
+# backport :no-index:
+PyModule.option_spec['no-index'] = directives.flag
 
 
 # Support for marking up and linking to bugs.python.org issues
