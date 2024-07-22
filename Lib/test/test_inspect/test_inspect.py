@@ -4955,6 +4955,95 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
 
+    def check_bound_arg(self, *, bound_arg, follow_wrapped):
+        def decorator(func):
+            @functools.wraps(func)  # set `__wrapper__` attribute
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+
+        def func(self, arg: int) -> None: ...
+        @decorator
+        def decorated(self, arg: int) -> None: ...
+
+        class My:
+            def method(self, arg: int) -> None: ...
+            @decorator
+            def decorated(self, arg: int) -> None: ...
+            @classmethod
+            def cl(cls, arg2: str) -> None: ...
+            @staticmethod
+            def st(arg1: str) -> bool: ...
+
+        if bound_arg:
+            signatures = [
+                (My().method, '(self, arg: int) -> None'),
+                (My().decorated, (
+                    '(self, arg: int) -> None'
+                    if follow_wrapped else
+                    '(*args, **kwargs) -> None'
+                )),
+                (My.cl, '(cls, arg2: str) -> None'),
+                (My().cl, '(cls, arg2: str) -> None'),
+            ]
+        else:
+            signatures = [
+                (My().method, '(arg: int) -> None'),
+                (My().decorated, (
+                    '(arg: int) -> None'
+                    if follow_wrapped else
+                    '(*args, **kwargs) -> None'
+                )),
+                (My.cl, '(arg2: str) -> None'),
+                (My().cl, '(arg2: str) -> None'),
+            ]
+
+        common_signatures = [
+            (func, '(self, arg: int) -> None'),
+            (decorated, (
+                '(self, arg: int) -> None'
+                if follow_wrapped else
+                '(*args, **kwargs) -> None'
+            )),
+            (My.method, '(self, arg: int) -> None'),
+            (My.decorated, (
+                '(self, arg: int) -> None'
+                if follow_wrapped else
+                '(*args, **kwargs) -> None'
+            )),
+            (My.st, '(arg1: str) -> bool'),
+            (My().st, '(arg1: str) -> bool'),
+        ]
+        signatures.extend(common_signatures)
+
+        for signature_func in (
+            inspect.signature,
+            inspect.Signature.from_callable,
+        ):
+            for callable, text_sig in signatures:
+                with self.subTest(
+                    callable=callable,
+                    text_sig=text_sig,
+                    signature_func=signature_func,
+                    follow_wrapped=follow_wrapped,
+                    bound_arg=bound_arg,
+                ):
+                    sig = signature_func(
+                        callable,
+                        follow_wrapped=follow_wrapped,
+                        bound_arg=bound_arg,
+                    )
+                    self.assertEqual(str(sig), text_sig)
+
+    def test_signature_bound_arg_method(self):
+        for bound_arg in (True, False):
+            for follow_wrapped in (True, False):
+                self.check_bound_arg(
+                    bound_arg=bound_arg,
+                    follow_wrapped=follow_wrapped,
+                )
+
+
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
         P = inspect.Parameter

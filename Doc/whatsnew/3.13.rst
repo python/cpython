@@ -817,6 +817,15 @@ io
   built on debug mode <debug-build>`.
   (Contributed by Victor Stinner in :gh:`62948`.)
 
+inspect
+-------
+
+* Add *bound_arg* parameter to :func:`inspect.Signature.from_callable`
+  and :func:`inspect.signature`: keep the ``self`` parameter
+  in the method signature if *bound_arg* is True.
+  :pypi:`inspect313` package has a backport of this feature.
+  (Contributed by Nikita Sobolev in :gh:`108901`.)
+
 ipaddress
 ---------
 
