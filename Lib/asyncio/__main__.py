@@ -89,6 +89,8 @@ class REPLThread(threading.Thread):
 
 
 if __name__ == '__main__':
+    sys.audit("cpython.run_stdin")
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
