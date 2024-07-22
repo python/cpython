@@ -450,7 +450,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
-      wrapped function is a :term:`asynchronous generator` function.
+      wrapped function is an :term:`asynchronous generator` function.
 
 
 .. function:: isasyncgen(object)
@@ -909,7 +909,7 @@ function.
 
    .. attribute:: Parameter.kind.description
 
-      Describes a enum value of :attr:`Parameter.kind`.
+      Describes an enum value of :attr:`Parameter.kind`.
 
       .. versionadded:: 3.8
 

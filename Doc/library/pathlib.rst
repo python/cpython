@@ -907,7 +907,7 @@ Querying file type and status
 
 .. method:: Path.stat(*, follow_symlinks=True)
 
-   Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
+   Return an :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
 
    This method normally follows symlinks; to stat a symlink add the argument

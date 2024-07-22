@@ -1697,7 +1697,7 @@ to speed up repeated connections from the same clients.
    IDN-encoded internationalized domain name, the *server_name_callback*
    receives a decoded U-label (``"pythön.org"``).
 
-   If there is an decoding error on the server name, the TLS connection will
+   If there is a decoding error on the server name, the TLS connection will
    terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
    alert message to the client.
 
