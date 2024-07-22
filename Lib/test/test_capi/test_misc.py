@@ -1201,9 +1201,9 @@ class CAPITest(unittest.TestCase):
         found = get_base_by_token(Z, tokenA1)
         self.assertIs(found, A1)
 
-        # NULL finds nothing
-        found = get_base_by_token(Z, 0)
-        self.assertIs(found, None)
+        # searching for NULL token is an error
+        with self.assertRaises(SystemError):
+            get_base_by_token(Z, 0)
 
         # share the token with A1
         C1 = create_type('_testcapi.C1', tokenA1)
@@ -1216,6 +1216,10 @@ class CAPITest(unittest.TestCase):
         # B1 not found
         found = get_base_by_token(Z, get_token(B1))
         self.assertIs(found, None)
+
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getbasebytoken(
+                'not a type', id(self), True, False)
 
     def test_gen_get_code(self):
         def genf(): yield
