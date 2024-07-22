@@ -2538,7 +2538,21 @@ differences between platforms in handling of unsupported format specifiers.
    ``%G``, ``%u`` and ``%V`` were added.
 
 .. versionadded:: 3.12
-   ``%:z`` was added.
+   ``%:z`` was added for :meth:`~.datetime.strftime`
+
+.. versionadded:: 3.13
+   ``%:z`` was added for :meth:`~.datetime.strptime`
+
+.. warning::
+
+   Since version 3.12, when ``%z`` directive is used in :meth:`~.datetime.strptime`,
+   strings formatted according ``%z`` directive are accepted and parsed correctly,
+   as well as strings formatted according to ``%:z``.
+   The later part of the behavior is unintended but it's still kept for backwards
+   compatibility.
+   Nonetheless, it's encouraged to use ``%z`` directive only to parse strings
+   formatted according to ``%z`` directive, while using ``%:z`` directive
+   for strings formatted according to ``%:z``.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^

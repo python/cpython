@@ -1,0 +1,1 @@
+Accept "%:z" in strptime
