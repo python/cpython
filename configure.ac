@@ -2459,24 +2459,24 @@ AS_VAR_IF([with_strict_overflow], [yes],
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
 
-AC_MSG_CHECKING([for --disable-safty])
-AC_ARG_ENABLE([safty],
-  [AS_HELP_STRING([--disable-safty], [disable usage of the security compiler options with no performance overhead])],
-  [AS_VAR_IF([enable_safty], [yes], [disable_safty=no], [disable_safty=yes])], [disable_safty=no])
-AC_MSG_RESULT([$disable_safty])
+AC_MSG_CHECKING([for --disable-safety])
+AC_ARG_ENABLE([safety],
+  [AS_HELP_STRING([--disable-safety], [disable usage of the security compiler options with no performance overhead])],
+  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_saftey=yes])], [disable_saftey=no])
+AC_MSG_RESULT([$disable_safety])
 
-if test "$disable_safty" = "no"
+if test "$disable_safety" = "no"
 then
   AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
 fi
 
-AC_MSG_CHECKING([for --enable-slower-safty])
-AC_ARG_ENABLE([slower-safty],
-  [AS_HELP_STRING([--enable-slower-safty], [enable usage of the security compiler options with performance overhead])],[])
-AC_MSG_RESULT([$enable_slower_safty])
+AC_MSG_CHECKING([for --enable-slower-safety])
+AC_ARG_ENABLE([slower-safety],
+  [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],[])
+AC_MSG_RESULT([$enable_slower_safety])
 
-if test "$enable_slower_safty" = "yes"
+if test "$enable_slower_safety" = "yes"
 then
   AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [BASECFLAGS="$BASECFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])])
 fi
