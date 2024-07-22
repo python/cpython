@@ -594,6 +594,10 @@ pymain_repl(PyConfig *config, int *exitcode)
         return;
     }
 
+    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
+        return;
+    }
+
     if (!isatty(fileno(stdin))
         || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
