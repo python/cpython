@@ -331,7 +331,7 @@ def _EndRecData(fpin):
     # number does not appear in the comment.
     maxCommentStart = max(filesize - ZIP_MAX_COMMENT - sizeEndCentDir, 0)
     fpin.seek(maxCommentStart, 0)
-    data = fpin.read(ZIP_MAX_COMMENT + sizeEndCentDir + 1)
+    data = fpin.read(ZIP_MAX_COMMENT + sizeEndCentDir)
     start = data.rfind(stringEndArchive)
     if start >= 0:
         # found the magic number; attempt to unpack and interpret
