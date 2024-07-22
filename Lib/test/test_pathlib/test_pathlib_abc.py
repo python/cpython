@@ -2008,14 +2008,22 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirB'
-        self.assertRaises(OSError, source.move, target)
+        if self.cls.parser is posixpath:
+            exc_type = IsADirectoryError
+        else:
+            exc_type = PermissionError
+        self.assertRaises(exc_type, source.move, target)
 
     def test_move_file_to_empty_dir(self):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'fileA_moved'
         target.mkdir()
-        self.assertRaises(OSError, source.move, target)
+        if self.cls.parser is posixpath:
+            exc_type = IsADirectoryError
+        else:
+            exc_type = PermissionError
+        self.assertRaises(exc_type, source.move, target)
 
     def test_move_dir(self):
         base = self.cls(self.base)
@@ -2037,13 +2045,22 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'dirB'
         target = base / 'fileA'
-        self.assertRaises(OSError, source.move, target)
+        if self.cls.parser is posixpath:
+            exc_type = NotADirectoryError
+        else:
+            exc_type = PermissionError
+        self.assertRaises(exc_type, source.move, target)
 
     def test_move_dir_to_dir(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'dirB'
-        self.assertRaises(OSError, source.move, target)
+        with self.assertRaises(OSError) as cm:
+            source.move(target)
+        if self.cls.parser is posixpath:
+            self.assertEqual(cm.exception.errno, errno.ENOTEMPTY)
+        else:
+            self.assertEqual(cm.exception.winerror, 5)  # ERROR_ACCESS_DENIED
 
     def test_move_dir_to_empty_dir(self):
         base = self.cls(self.base)
