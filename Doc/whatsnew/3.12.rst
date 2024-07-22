@@ -652,14 +652,14 @@ asyncio
   making some use-cases 2x to 5x faster.
   (Contributed by Jacob Bower & Itamar Oren in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
 
-* On Linux, :mod:`asyncio` uses :class:`asyncio.PidfdChildWatcher` by default
+* On Linux, :mod:`asyncio` uses :class:`!asyncio.PidfdChildWatcher` by default
   if :func:`os.pidfd_open` is available and functional instead of
-  :class:`asyncio.ThreadedChildWatcher`.
+  :class:`!asyncio.ThreadedChildWatcher`.
   (Contributed by Kumar Aditya in :gh:`98024`.)
 
 * The event loop now uses the best available child watcher for each platform
-  (:class:`asyncio.PidfdChildWatcher` if supported and
-  :class:`asyncio.ThreadedChildWatcher` otherwise), so manually
+  (:class:`!asyncio.PidfdChildWatcher` if supported and
+  :class:`!asyncio.ThreadedChildWatcher` otherwise), so manually
   configuring a child watcher is not recommended.
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
@@ -1162,15 +1162,15 @@ Deprecated
 
 * :mod:`asyncio`:
 
-  * The child watcher classes :class:`asyncio.MultiLoopChildWatcher`,
-    :class:`asyncio.FastChildWatcher`, :class:`asyncio.AbstractChildWatcher`
-    and :class:`asyncio.SafeChildWatcher` are deprecated and
+  * The child watcher classes :class:`!asyncio.MultiLoopChildWatcher`,
+    :class:`!asyncio.FastChildWatcher`, :class:`!asyncio.AbstractChildWatcher`
+    and :class:`!asyncio.SafeChildWatcher` are deprecated and
     will be removed in Python 3.14.
     (Contributed by Kumar Aditya in :gh:`94597`.)
 
-  * :func:`asyncio.set_child_watcher`, :func:`asyncio.get_child_watcher`,
-    :meth:`asyncio.AbstractEventLoopPolicy.set_child_watcher` and
-    :meth:`asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
+  * :func:`!asyncio.set_child_watcher`, :func:`!asyncio.get_child_watcher`,
+    :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher` and
+    :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
     and will be removed in Python 3.14.
     (Contributed by Kumar Aditya in :gh:`94597`.)
 

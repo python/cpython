@@ -1,0 +1,2 @@
+Correctly set the bytecode position on return instructions within lambdas.
+Patch by Jelle Zijlstra.

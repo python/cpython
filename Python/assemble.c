@@ -369,17 +369,17 @@ write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 24) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 3:
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 16) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 2:
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 8) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 1:
             codestr->op.code = opcode;
             codestr->op.arg = oparg & 0xFF;

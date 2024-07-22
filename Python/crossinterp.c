@@ -969,7 +969,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
 {
     assert(!PyErr_Occurred());
     switch (code) {
-    case _PyXI_ERR_NO_ERROR:  // fall through
+    case _PyXI_ERR_NO_ERROR: _Py_FALLTHROUGH;
     case _PyXI_ERR_UNCAUGHT_EXCEPTION:
         // There is nothing to apply.
 #ifdef Py_DEBUG
@@ -1544,8 +1544,7 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
     PyThreadState *tstate = PyThreadState_Get();
     PyThreadState *prev = tstate;
     if (interp != tstate->interp) {
-        tstate = PyThreadState_New(interp);
-        _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_EXEC);
+        tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
         // XXX Possible GILState issues?
         session->prev_tstate = PyThreadState_Swap(tstate);
         assert(session->prev_tstate == prev);
@@ -1895,8 +1894,7 @@ _PyXI_EndInterpreter(PyInterpreterState *interp,
             tstate = cur_tstate;
         }
         else {
-            tstate = PyThreadState_New(interp);
-            _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_INTERP);
+            tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
             assert(tstate != NULL);
             save_tstate = PyThreadState_Swap(tstate);
         }
