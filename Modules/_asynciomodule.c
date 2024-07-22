@@ -2031,18 +2031,9 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
     return _PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash);
 }
 
-
 static int
-leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
-/*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
+leave_task_predicate(PyObject *item, void *task)
 {
-    PyObject *item;
-    Py_hash_t hash;
-    hash = PyObject_Hash(loop);
-    if (hash == -1) {
-        return -1;
-    }
-    item = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
     if (item != task) {
         if (item == NULL) {
             /* Not entered, replace with None */
@@ -2054,7 +2045,15 @@ leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
             task, item, NULL);
         return -1;
     }
-    return _PyDict_DelItem_KnownHash(state->current_tasks, loop, hash);
+    return 1;
+}
+
+static int
+leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
+/*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
+{
+    return _PyDict_DelItemIf(state->current_tasks, loop, leave_task_predicate,
+                             task);
 }
 
 static PyObject *

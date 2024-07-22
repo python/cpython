@@ -2608,7 +2608,8 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 
 static int
 delitemif_lock_held(PyObject *op, PyObject *key,
-                    int (*predicate)(PyObject *value))
+                    int (*predicate)(PyObject *value, void *arg),
+                    void *arg)
 {
     Py_ssize_t ix;
     PyDictObject *mp;
@@ -2618,10 +2619,6 @@ delitemif_lock_held(PyObject *op, PyObject *key,
 
     ASSERT_DICT_LOCKED(op);
 
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     assert(key);
     hash = PyObject_Hash(key);
     if (hash == -1)
@@ -2630,12 +2627,8 @@ delitemif_lock_held(PyObject *op, PyObject *key,
     ix = _Py_dict_lookup(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         return -1;
-    if (ix == DKIX_EMPTY || old_value == NULL) {
-        _PyErr_SetKeyError(key);
-        return -1;
-    }
 
-    res = predicate(old_value);
+    res = predicate(old_value, arg);
     if (res == -1)
         return -1;
 
@@ -2655,11 +2648,16 @@ delitemif_lock_held(PyObject *op, PyObject *key,
  */
 int
 _PyDict_DelItemIf(PyObject *op, PyObject *key,
-                  int (*predicate)(PyObject *value))
+                  int (*predicate)(PyObject *value, void *arg),
+                  void *arg)
 {
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
     int res;
     Py_BEGIN_CRITICAL_SECTION(op);
-    res = delitemif_lock_held(op, key, predicate);
+    res = delitemif_lock_held(op, key, predicate, arg);
     Py_END_CRITICAL_SECTION();
     return res;
 }

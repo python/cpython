@@ -14,8 +14,10 @@ extern "C" {
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 
-extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
-                             int (*predicate)(PyObject *value));
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_DelItemIf(PyObject *mp, PyObject *key,
+                                  int (*predicate)(PyObject *value, void *arg),
+                                  void *arg);
 
 // "KnownHash" variants
 // Export for '_asyncio' shared extension
