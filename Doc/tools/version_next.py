@@ -32,11 +32,11 @@ DIRECTIVE_RE = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
-docdir = (Path(__file__)
-          .parent  # cpython/Doc/tools
-          .parent  # cpython/Doc
-          .resolve()
-          )
+doc_dir = (Path(__file__)
+           .parent  # cpython/Doc/tools
+           .parent  # cpython/Doc
+           .resolve()
+           )
 
 parser = argparse.ArgumentParser(
     description=__doc__,
@@ -47,6 +47,7 @@ parser.add_argument('directory', type=Path, nargs='?',
                     help=f'Directory to process. Default: {docdir}',
                     default=docdir)
 parser.add_argument('--verbose', '-v', action='count', default=0)
+
 
 def main(argv):
     args = parser.parse_args(argv)
@@ -67,7 +68,7 @@ def main(argv):
         if num_changed_lines:
             if args.verbose:
                 print(f'Updating file {path} ({num_changed_lines} changes)',
-                    file=sys.stderr)
+                      file=sys.stderr)
             with open(path, 'w', encoding='utf-8') as file:
                 file.writelines(lines)
         else:
