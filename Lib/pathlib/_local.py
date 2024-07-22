@@ -861,11 +861,7 @@ class Path(PathBase, PurePath):
             if not isinstance(target, PathBase):
                 raise
         except OSError as err:
-            if err.errno == errno.EXDEV:
-                pass  # target is on another filesystem.
-            elif os.name == 'nt' and err.winerror == 5:  # ERROR_ACCESS_DENIED
-                pass  # target may have the wrong type.
-            else:
+            if err.errno != errno.EXDEV:
                 raise
         return PathBase.move(self, target)
 
