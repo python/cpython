@@ -63,10 +63,14 @@ def main(argv):
         lines = []
         with open(path, encoding='utf-8') as file:
             for lineno, line in enumerate(file, start=1):
-                if match := DIRECTIVE_RE.fullmatch(line):
-                    line = match['before'] + version + match['after']
-                    num_changed_lines += 1
-                lines.append(line)
+                try:
+                    if match := DIRECTIVE_RE.fullmatch(line):
+                        line = match['before'] + version + match['after']
+                        num_changed_lines += 1
+                    lines.append(line)
+                except Exception as exc:
+                    exc.add_note(f'processing line {path}:{lineno}')
+                    raise
         if num_changed_lines:
             if args.verbose:
                 print(f'Updating file {path} ({num_changed_lines} changes)',
