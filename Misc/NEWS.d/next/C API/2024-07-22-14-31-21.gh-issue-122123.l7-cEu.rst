@@ -1,6 +1,1 @@
-# Write your Misc/NEWS entry below.  It should be a simple ReST paragraph. #
-Don't start with "- Issue #<n>: " or "- gh-issue-<n>: " or that sort of
-stuff.
-###########################################################################
-
 The repr for ``PyStructSequence`` objects now includes all named fields.
