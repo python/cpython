@@ -800,18 +800,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_move_dir_into_itself_other_fs(self):
         self.test_move_dir_into_itself()
 
-    @needs_symlinks
     @patch_replace
+    @needs_symlinks
     def test_move_file_symlink_other_fs(self):
         self.test_move_file_symlink()
 
-    @needs_symlinks
     @patch_replace
+    @needs_symlinks
     def test_move_dir_symlink_other_fs(self):
         self.test_move_dir_symlink()
 
-    @needs_symlinks
     @patch_replace
+    @needs_symlinks
     def test_move_dangling_symlink_other_fs(self):
         self.test_move_dangling_symlink()
 

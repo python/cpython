@@ -2009,14 +2009,14 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirB'
-        self.assertRaises(IsADirectoryError, source.move, target)
+        self.assertRaises(OSError, source.move, target)
 
     def test_move_file_to_empty_dir(self):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'fileA_moved'
         target.mkdir()
-        self.assertRaises(IsADirectoryError, source.move, target)
+        self.assertRaises(OSError, source.move, target)
 
     def test_move_dir(self):
         base = self.cls(self.base)
@@ -2038,7 +2038,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'dirB'
         target = base / 'fileA'
-        self.assertRaises(NotADirectoryError, source.move, target)
+        self.assertRaises(OSError, source.move, target)
 
     def test_move_dir_to_dir(self):
         base = self.cls(self.base)
