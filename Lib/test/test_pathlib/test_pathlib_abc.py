@@ -1536,13 +1536,14 @@ class DummyPath(PathBase):
         elif not missing_ok:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
-    def rmdir(self):
+    def rmdir(self, missing_ok=False):
         path_obj = self.parent.resolve(strict=True) / self.name
         path = str(path_obj)
         if path in self._files or path in self._symlinks:
             raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
         elif path not in self._directories:
-            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+            if not missing_ok:
+                raise FileNotFoundError(errno.ENOENT, "File not found", path)
         elif self._directories[path]:
             raise OSError(errno.ENOTEMPTY, "Directory not empty", path)
         else:
@@ -2008,22 +2009,14 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirB'
-        if self.cls.parser is posixpath:
-            exc_type = IsADirectoryError
-        else:
-            exc_type = PermissionError
-        self.assertRaises(exc_type, source.move, target)
+        self.assertRaises(IsADirectoryError, source.move, target)
 
     def test_move_file_to_empty_dir(self):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'fileA_moved'
         target.mkdir()
-        if self.cls.parser is posixpath:
-            exc_type = IsADirectoryError
-        else:
-            exc_type = PermissionError
-        self.assertRaises(exc_type, source.move, target)
+        self.assertRaises(IsADirectoryError, source.move, target)
 
     def test_move_dir(self):
         base = self.cls(self.base)
@@ -2045,22 +2038,13 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'dirB'
         target = base / 'fileA'
-        if self.cls.parser is posixpath:
-            exc_type = NotADirectoryError
-        else:
-            exc_type = PermissionError
-        self.assertRaises(exc_type, source.move, target)
+        self.assertRaises(NotADirectoryError, source.move, target)
 
     def test_move_dir_to_dir(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'dirB'
-        with self.assertRaises(OSError) as cm:
-            source.move(target)
-        if self.cls.parser is posixpath:
-            self.assertEqual(cm.exception.errno, errno.ENOTEMPTY)
-        else:
-            self.assertEqual(cm.exception.winerror, 5)  # ERROR_ACCESS_DENIED
+        self.assertRaises(OSError, source.move, target)
 
     def test_move_dir_to_empty_dir(self):
         base = self.cls(self.base)

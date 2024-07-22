@@ -882,19 +882,15 @@ class PathBase(PurePathBase):
             target = self.with_segments(target)
         if self.is_dir(follow_symlinks=False):
             delete_target = target.rmdir
-            copy_self = self.copytree
-            delete_self = self.rmtree
+            copy_source = self.copytree
+            delete_source = self.rmtree
         else:
             delete_target = target.unlink
-            copy_self = self.copy
-            delete_self = self.unlink
-        try:
-            # Ensure we get an appropriate OSError if the target exists.
-            delete_target()
-        except FileNotFoundError:
-            pass
-        copy_self(target, follow_symlinks=False, preserve_metadata=True)
-        delete_self()
+            copy_source = self.copy
+            delete_source = self.unlink
+        delete_target(missing_ok=True)
+        copy_source(target, follow_symlinks=False, preserve_metadata=True)
+        delete_source()
         return target
 
     def rename(self, target):
@@ -941,7 +937,7 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('unlink()'))
 
-    def rmdir(self):
+    def rmdir(self, missing_ok=False):
         """
         Remove this directory.  The directory must be empty.
         """
