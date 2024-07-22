@@ -998,7 +998,7 @@ _Py_atomic_store_uint8_release(uint8_t *obj, uint8_t value)
     _Py_atomic_ASSERT_ARG_TYPE(unsigned __int8);
     __stlr8((unsigned __int8 volatile *)obj, (unsigned __int8)value);
 #else
-#  error "no implementation of _Py_atomic_store_uint32_release"
+#  error "no implementation of _Py_atomic_store_uint8_release"
 #endif
 }
 
