@@ -2423,7 +2423,6 @@ class PtyTests(unittest.TestCase):
     def test_input_tty(self):
         # Test input() functionality when wired to a tty (the code path
         # is different and invokes GNU readline if available).
-        return
         self.check_input_tty("prompt", b"quux")
 
     def skip_if_readline(self):
