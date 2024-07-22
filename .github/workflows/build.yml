@@ -267,17 +267,20 @@ jobs:
       os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
 
   build_ubuntu:
-    name: 'Ubuntu'
+    name: >-
+      Ubuntu
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        free-threading:
+        - false
+        # - true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --with-openssl=$OPENSSL_DIR
+      free-threading: ${{ matrix.free-threading }}
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
