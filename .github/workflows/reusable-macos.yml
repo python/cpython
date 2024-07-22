@@ -26,15 +26,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - "macos-10.15"
-          - "macos-11"
+        os: ${{fromJson(inputs.os-matrix)}}
         is-fork:
           - ${{ github.repository_owner != 'python' }}
         exclude:
           - os: "ghcr.io/cirruslabs/macos-runner:sonoma"
             is-fork: true
-          - os: "macos-10.15"
+          - os: "macos-14"
             is-fork: false
     runs-on: ${{ matrix.os }}
     steps:
