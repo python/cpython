@@ -720,6 +720,11 @@ conflict.
    This variable can also be modified by Python code using :data:`os.environ`
    to force inspect mode on program termination.
 
+   .. audit-event:: cpython.run_stdin "" ""
+
+   .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+      Emits audit events.
+
 
 .. envvar:: PYTHONUNBUFFERED
 
