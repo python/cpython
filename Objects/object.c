@@ -10,6 +10,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
@@ -808,20 +809,54 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
-void
-_PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization)
+#ifdef WITH_FREELISTS
+static void
+clear_freelist(struct _Py_freelist *freelist, int is_finalization,
+               freefunc dofree)
 {
+    void *ptr;
+    while ((ptr = _PyFreeList_PopNoStats(freelist)) != NULL) {
+        dofree(ptr);
+    }
+    assert(freelist->size == 0 || freelist->size == -1);
+    assert(freelist->freelist == NULL);
+    if (is_finalization) {
+        freelist->size = -1;
+    }
+}
+
+static void
+free_object(void *obj)
+{
+    PyObject *op = (PyObject *)obj;
+    Py_TYPE(op)->tp_free(op);
+}
+
+#endif
+
+void
+_PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
+{
+#ifdef WITH_FREELISTS
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
-    _PyFloat_ClearFreeList(freelists, is_finalization);
-    _PyTuple_ClearFreeList(freelists, is_finalization);
-    _PyList_ClearFreeList(freelists, is_finalization);
-    _PyDict_ClearFreeList(freelists, is_finalization);
-    _PyContext_ClearFreeList(freelists, is_finalization);
-    _PyAsyncGen_ClearFreeLists(freelists, is_finalization);
-    // Only be cleared if is_finalization is true.
-    _PyObjectStackChunk_ClearFreeList(freelists, is_finalization);
-    _PySlice_ClearFreeList(freelists, is_finalization);
+    clear_freelist(&freelists->floats, is_finalization, free_object);
+    for (Py_ssize_t i = 0; i < PyTuple_MAXSAVESIZE; i++) {
+        clear_freelist(&freelists->tuples[i], is_finalization, free_object);
+    }
+    clear_freelist(&freelists->lists, is_finalization, free_object);
+    clear_freelist(&freelists->dicts, is_finalization, free_object);
+    clear_freelist(&freelists->dictkeys, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->slices, is_finalization, free_object);
+    clear_freelist(&freelists->contexts, is_finalization, free_object);
+    clear_freelist(&freelists->async_gens, is_finalization, free_object);
+    clear_freelist(&freelists->async_gen_asends, is_finalization, free_object);
+    if (is_finalization) {
+        // Only clear object stack chunks during finalization. We use object
+        // stacks during GC, so emptying the free-list is counterproductive.
+        clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
+    }
+#endif
 }
 
 /*

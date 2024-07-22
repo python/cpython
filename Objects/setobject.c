@@ -709,17 +709,19 @@ _shuffle_bits(Py_uhash_t h)
    large primes with "interesting bit patterns" and that passed tests
    for good collision statistics on a variety of problematic datasets
    including powersets and graph structures (such as David Eppstein's
-   graph recipes in Lib/test/test_set.py) */
+   graph recipes in Lib/test/test_set.py).
+
+   This hash algorithm can be used on either a frozenset or a set.
+   When it is used on a set, it computes the hash value of the equivalent
+   frozenset without creating a new frozenset object. */
 
 static Py_hash_t
-frozenset_hash(PyObject *self)
+frozenset_hash_impl(PyObject *self)
 {
+    assert(PyAnySet_Check(self));
     PySetObject *so = (PySetObject *)self;
     Py_uhash_t hash = 0;
     setentry *entry;
-
-    if (so->hash != -1)
-        return so->hash;
 
     /* Xor-in shuffled bits from every entry's hash field because xor is
        commutative and a frozenset hash should be independent of order.
@@ -753,6 +755,20 @@ frozenset_hash(PyObject *self)
     if (hash == (Py_uhash_t)-1)
         hash = 590923713UL;
 
+    return (Py_hash_t)hash;
+}
+
+static Py_hash_t
+frozenset_hash(PyObject *self)
+{
+    PySetObject *so = (PySetObject *)self;
+    Py_uhash_t hash;
+
+    if (so->hash != -1) {
+        return so->hash;
+    }
+
+    hash = frozenset_hash_impl(self);
     so->hash = hash;
     return hash;
 }
@@ -2137,7 +2153,6 @@ set_add_impl(PySetObject *so, PyObject *key)
 static int
 set_contains_lock_held(PySetObject *so, PyObject *key)
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_contains_key(so, key);
@@ -2145,11 +2160,11 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return -1;
-        rv = set_contains_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_contains_entry(so, key, hash);
     }
     return rv;
 }
@@ -2203,7 +2218,6 @@ static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=0b9134a2a2200363 input=893e1cb1df98227a]*/
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2211,11 +2225,11 @@ set_remove_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
@@ -2244,7 +2258,6 @@ static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=eec3b687bf32759e input=861cb7fb69b4def0]*/
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2252,11 +2265,11 @@ set_discard_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
