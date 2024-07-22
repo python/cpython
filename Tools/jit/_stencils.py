@@ -40,8 +40,6 @@ class HoleValue(enum.Enum):
     JUMP_TARGET = enum.auto()
     # The base address of the machine code for the error jump target (exposed as _JIT_ERROR_TARGET):
     ERROR_TARGET = enum.auto()
-    # The index of the exit to be jumped through (exposed as _JIT_EXIT_INDEX):
-    EXIT_INDEX = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
 
@@ -107,7 +105,6 @@ _HOLE_EXPRS = {
     HoleValue.TARGET: "instruction->target",
     HoleValue.JUMP_TARGET: "instruction_starts[instruction->jump_target]",
     HoleValue.ERROR_TARGET: "instruction_starts[instruction->error_target]",
-    HoleValue.EXIT_INDEX: "instruction->exit_index",
     HoleValue.ZERO: "",
 }
 
@@ -187,7 +184,7 @@ class Stencil:
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> None:
+    def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> Hole:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
         assert hole.symbol is not None
         reuse_trampoline = hole.symbol in self.trampolines
@@ -197,44 +194,28 @@ class Stencil:
         else:
             self.pad(alignment)
             base = len(self.body)
-        where = slice(hole.offset, hole.offset + 4)
-        instruction = int.from_bytes(self.body[where], sys.byteorder)
-        instruction &= 0xFC000000
-        instruction |= ((base - hole.offset) >> 2) & 0x03FFFFFF
-        self.body[where] = instruction.to_bytes(4, sys.byteorder)
+        new_hole = hole.replace(addend=base, symbol=None, value=HoleValue.DATA)
 
         if reuse_trampoline:
-            return
+            return new_hole
 
         self.disassembly += [
-            f"{base + 4 * 0:x}: d2800008      mov     x8, #0x0",
-            f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
-            f"{base + 4 * 1:x}: f2a00008      movk    x8, #0x0, lsl #16",
-            f"{base + 4 * 1:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
-            f"{base + 4 * 2:x}: f2c00008      movk    x8, #0x0, lsl #32",
-            f"{base + 4 * 2:016x}:  R_AARCH64_MOVW_UABS_G2_NC    {hole.symbol}",
-            f"{base + 4 * 3:x}: f2e00008      movk    x8, #0x0, lsl #48",
-            f"{base + 4 * 3:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
-            f"{base + 4 * 4:x}: d61f0100      br      x8",
+            f"{base + 4 * 0:x}: 58000048      ldr     x8, 8",
+            f"{base + 4 * 1:x}: d61f0100      br      x8",
+            f"{base + 4 * 2:x}: 00000000",
+            f"{base + 4 * 2:016x}:  R_AARCH64_ABS64    {hole.symbol}",
+            f"{base + 4 * 3:x}: 00000000",
         ]
         for code in [
-            0xD2800008.to_bytes(4, sys.byteorder),
-            0xF2A00008.to_bytes(4, sys.byteorder),
-            0xF2C00008.to_bytes(4, sys.byteorder),
-            0xF2E00008.to_bytes(4, sys.byteorder),
+            0x58000048.to_bytes(4, sys.byteorder),
             0xD61F0100.to_bytes(4, sys.byteorder),
+            0x00000000.to_bytes(4, sys.byteorder),
+            0x00000000.to_bytes(4, sys.byteorder),
         ]:
             self.body.extend(code)
-        for i, kind in enumerate(
-            [
-                "R_AARCH64_MOVW_UABS_G0_NC",
-                "R_AARCH64_MOVW_UABS_G1_NC",
-                "R_AARCH64_MOVW_UABS_G2_NC",
-                "R_AARCH64_MOVW_UABS_G3",
-            ]
-        ):
-            self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
+        self.holes.append(hole.replace(offset=base + 8, kind="R_AARCH64_ABS64"))
         self.trampolines[hole.symbol] = base
+        return new_hole
 
     def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
@@ -310,8 +291,9 @@ class StencilGroup:
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
             ):
-                self.code.emit_aarch64_trampoline(hole, alignment)
+                new_hole = self.data.emit_aarch64_trampoline(hole, alignment)
                 self.code.holes.remove(hole)
+                self.code.holes.append(new_hole)
         self.code.remove_jump(alignment=alignment)
         self.code.pad(alignment)
         self.data.pad(8)
