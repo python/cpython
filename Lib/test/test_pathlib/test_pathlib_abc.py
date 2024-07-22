@@ -1536,14 +1536,13 @@ class DummyPath(PathBase):
         elif not missing_ok:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
-    def rmdir(self, missing_ok=False):
+    def rmdir(self):
         path_obj = self.parent.resolve(strict=True) / self.name
         path = str(path_obj)
         if path in self._files or path in self._symlinks:
             raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
         elif path not in self._directories:
-            if not missing_ok:
-                raise FileNotFoundError(errno.ENOENT, "File not found", path)
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
         elif self._directories[path]:
             raise OSError(errno.ENOTEMPTY, "Directory not empty", path)
         else:
