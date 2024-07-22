@@ -2032,18 +2032,20 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
 }
 
 static int
+err_leave_task(PyObject *item, PyObject *task)
+{
+    PyErr_Format(
+        PyExc_RuntimeError,
+        "Leaving task %R does not match the current task %R.",
+        task, item);
+    return -1;
+}
+
+static int
 leave_task_predicate(PyObject *item, void *task)
 {
     if (item != task) {
-        if (item == NULL) {
-            /* Not entered, replace with None */
-            item = Py_None;
-        }
-        PyErr_Format(
-            PyExc_RuntimeError,
-            "Leaving task %R does not match the current task %R.",
-            task, item, NULL);
-        return -1;
+        return err_leave_task(item, (PyObject *)task);
     }
     return 1;
 }
@@ -2052,8 +2054,13 @@ static int
 leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
-    return _PyDict_DelItemIf(state->current_tasks, loop, leave_task_predicate,
-                             task);
+    int res = _PyDict_DelItemIf(state->current_tasks, loop,
+                                leave_task_predicate, task);
+    if (res == 0) {
+        // task was not found
+        return err_leave_task(Py_None, task);
+    }
+    return res;
 }
 
 static PyObject *
