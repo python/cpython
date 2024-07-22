@@ -694,11 +694,10 @@ class MiscReadTestBase(CommonReadTest):
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
-        with (
-            os_helper.temp_dir(DIR),
-            tarfile.open(tarname, encoding="iso8859-1") as tar
-        ):
+        tar = tarfile.open(tarname, encoding="iso8859-1")
+        DIR = os.path.join(TEMPDIR, "extractall")
+        os.mkdir(DIR)
+        try:
             directories = [t for t in tar if t.isdir()]
             tar.extractall(DIR, directories, filter='fully_trusted')
             for tarinfo in directories:
@@ -719,6 +718,9 @@ class MiscReadTestBase(CommonReadTest):
                     format_mtime(file_mtime),
                     path)
                 self.assertEqual(tarinfo.mtime, file_mtime, errmsg)
+        finally:
+            tar.close()
+            os_helper.rmtree(DIR)
 
     @staticmethod
     def test_extractall_default_filter():
