@@ -118,11 +118,15 @@ os
 pathlib
 -------
 
-* Add :meth:`pathlib.Path.copy`, which copies the content of one file to
-  another, like :func:`shutil.copyfile`.
-  (Contributed by Barney Gale in :gh:`73991`.)
-* Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
-  another.
+* Add methods to :class:`pathlib.Path` to recursively copy or remove files:
+
+  * :meth:`~pathlib.Path.copy` copies the content of one file to another, like
+    :func:`shutil.copyfile`.
+  * :meth:`~pathlib.Path.copytree` copies one directory tree to another, like
+    :func:`shutil.copytree`.
+  * :meth:`~pathlib.Path.rmtree` recursively removes a directory tree, like
+    :func:`shutil.rmtree`.
+
   (Contributed by Barney Gale in :gh:`73991`.)
 
 pdb
