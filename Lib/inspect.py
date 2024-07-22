@@ -378,6 +378,8 @@ def isfunction(object):
     Function objects provide these attributes:
         __doc__         documentation string
         __name__        name with which this function was defined
+        __qualname__    fully qualified name of this function
+        __module__      name of the module the function was defined in or None
         __code__        code object containing compiled function bytecode
         __defaults__    tuple of any default values for arguments
         __globals__     global namespace in which this function was defined
@@ -385,8 +387,6 @@ def isfunction(object):
         __kwdefaults__  dict of keyword only parameters with defaults
         __dict__        namespace which is supporting arbitrary function attributes
         __closure__     None or tuple of cells
-        __qualname__    fully qualified name of this function
-        __module__      name of the module the function was defined in or None
         __type_params__ tuple of type parameters"""
     return isinstance(object, types.FunctionType)
 
@@ -459,7 +459,7 @@ def isgenerator(object):
         gi_frame        frame object or possibly None once the generator has
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
-        gi_yieldfrom    is object being iterater by yield from?
+        gi_yieldfrom    object being iterated by yield from or None
         send            resumes the generator and "sends" a value that becomes
                         the result of the current yield-expression
         throw           used to raise an exception inside the generator"""
@@ -490,7 +490,6 @@ def isframe(object):
     """Return true if the object is a frame object.
 
     Frame objects provide these attributes:
-        clear           used to clear all references to local variables
         f_back          next outer frame object (this frame's caller)
         f_builtins      built-in namespace seen by this frame
         f_code          code object being executed in this frame
@@ -500,7 +499,9 @@ def isframe(object):
         f_locals        local namespace seen by this frame
         f_trace         tracing function for this frame, or None
         f_trace_lines   is a tracing event triggered for each source line?
-        f_trace_opcodes are per-opcode events being requested?"""
+        f_trace_opcodes are per-opcode events being requested?
+
+        clear           used to clear all references to local variables"""
     return isinstance(object, types.FrameType)
 
 def iscode(object):
@@ -519,17 +520,18 @@ def iscode(object):
                             | 256=iterable_coroutine | 512=async_generator
         co_freevars         tuple of names of free variables
         co_posonlyargcount  number of positional only arguments
-        co_positions        returns an iterator of source code positions for each bytecode instruction
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
         co_lnotab           encoded mapping of line numbers to bytecode indices
-        co_lines            returns an iterator that yields successive bytecode ranges
         co_name             name with which this code object was defined
         co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
         co_stacksize        virtual machine stack space required
         co_varnames         tuple of names of arguments and local variables
         co_qualname         fully qualified function name
-        replace             return a copy of the code object with new new values"""
+
+        co_lines            returns an iterator that yields successive bytecode ranges
+        co_positions        returns an iterator of source code positions for each bytecode instruction
+        replace             return a copy of the code object with a new values"""
     return isinstance(object, types.CodeType)
 
 def isbuiltin(object):
