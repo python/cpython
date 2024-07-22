@@ -26,13 +26,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{fromJson(inputs.os-matrix)}}
+        os:
+          - "macos-10.15"
+          - "macos-11"
         is-fork:
           - ${{ github.repository_owner != 'python' }}
         exclude:
           - os: "ghcr.io/cirruslabs/macos-runner:sonoma"
             is-fork: true
-          - os: "macos-14"
+          - os: "macos-10.15"
             is-fork: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -58,8 +60,10 @@ jobs:
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
-      run: make -j8
+      run: make -j8 &> compiler_output.txt
     - name: Display build info
       run: make pythoninfo
+    - name: Check compiler warnings
+      run: python Tools/build/check_warnings.py --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output.txt --warning-ignore-file-path ${GITHUB_WORKSPACE}/Tools/build/.warningignore_macos
     - name: Tests
       run: make test
