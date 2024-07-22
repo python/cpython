@@ -807,9 +807,7 @@ _odict_keys_equal(PyODictObject *a, PyODictObject *b)
 {
     _ODictNode *node_a, *node_b;
 
-    // keep operands' state and size to detect undesired mutations
-    const Py_ssize_t size_a = PyODict_SIZE(a);
-    const Py_ssize_t size_b = PyODict_SIZE(b);
+    // keep operands' state to detect undesired mutations
     const size_t state_a = a->od_state;
     const size_t state_b = b->od_state;
 
@@ -834,17 +832,13 @@ _odict_keys_equal(PyODictObject *a, PyODictObject *b)
                 return res;
             }
             else if (a->od_state != state_a || b->od_state != state_b) {
-                // If the size changed, then the state must also have changed
-                // since the former changes only if keys are added or removed,
-                // which in turn updates the state.
                 PyErr_SetString(PyExc_RuntimeError,
-                                (size_a != PyODict_SIZE(a) || size_b != PyODict_SIZE(b))
-                                    ? "OrderedDict changed size during iteration"
-                                    : "OrderedDict mutated during iteration");
+                                "OrderedDict mutated during iteration");
                 return -1;
             }
             else if (res == 0) {
-                // this check must come after the check on the state
+                // This check comes after the check on the state
+                // in order for the exception to be set correctly.
                 return 0;
             }
 
