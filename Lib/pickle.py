@@ -1110,11 +1110,34 @@ class _Pickler:
             self.save(module_name)
             self.save(name)
             write(STACK_GLOBAL)
-        elif parent is not module:
-            self.save_reduce(getattr, (parent, lastname))
-        elif self.proto >= 3:
-            write(GLOBAL + bytes(module_name, "utf-8") + b'\n' +
-                  bytes(name, "utf-8") + b'\n')
+        elif '.' in name:
+            dotted_path = name.split('.')
+            name = dotted_path.pop(0)
+            write = self.write
+            save = self.save
+            for attrname in dotted_path:
+                save(getattr)
+                if self.proto < 2:
+                    write(MARK)
+            self._save_by_name(module_name, name)
+            for attrname in dotted_path:
+                save(attrname)
+                if self.proto < 2:
+                    write(TUPLE)
+                else:
+                    write(TUPLE2)
+                write(REDUCE)
+        else:
+            self._save_by_name(module_name, name)
+
+        self.memoize(obj)
+
+    def _save_by_name(self, module_name, name):
+        write = self.write
+        if self.proto >= 3:
+            # Non-ASCII identifiers are supported only with protocols >= 3.
+            self.write(GLOBAL + bytes(module_name, "utf-8") + b'\n' +
+                       bytes(name, "utf-8") + b'\n')
         else:
             if self.fix_imports:
                 r_name_mapping = _compat_pickle.REVERSE_NAME_MAPPING
@@ -1130,8 +1153,6 @@ class _Pickler:
                 raise PicklingError(
                     "can't pickle global identifier '%s.%s' using "
                     "pickle protocol %i" % (module, name, self.proto)) from None
-
-        self.memoize(obj)
 
     def save_type(self, obj):
         if obj is type(None):

@@ -1829,27 +1829,22 @@ get_dotted_path(PyObject *obj, PyObject *name)
 }
 
 static PyObject *
-get_deep_attribute(PyObject *obj, PyObject *names, PyObject **pparent)
+get_deep_attribute(PyObject *obj, PyObject *names)
 {
     Py_ssize_t i, n;
-    PyObject *parent = NULL;
 
     assert(PyList_CheckExact(names));
     Py_INCREF(obj);
     n = PyList_GET_SIZE(names);
     for (i = 0; i < n; i++) {
         PyObject *name = PyList_GET_ITEM(names, i);
-        Py_XSETREF(parent, obj);
+        PyObject *parent = obj;
         (void)PyObject_GetOptionalAttr(parent, name, &obj);
+        Py_DECREF(parent);
         if (obj == NULL) {
-            Py_DECREF(parent);
             return NULL;
         }
     }
-    if (pparent != NULL)
-        *pparent = parent;
-    else
-        Py_XDECREF(parent);
     return obj;
 }
 
@@ -1863,7 +1858,7 @@ getattribute(PyObject *obj, PyObject *name, int allow_qualname)
         dotted_path = get_dotted_path(obj, name);
         if (dotted_path == NULL)
             return NULL;
-        attr = get_deep_attribute(obj, dotted_path, NULL);
+        attr = get_deep_attribute(obj, dotted_path);
         Py_DECREF(dotted_path);
     }
     else {
@@ -1888,7 +1883,7 @@ _checkmodule(PyObject *module_name, PyObject *module,
         return -1;
     }
 
-    PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
+    PyObject *candidate = get_deep_attribute(module, dotted_path);
     if (candidate == NULL) {
         return -1;
     }
@@ -3590,9 +3585,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     PyObject *global_name = NULL;
     PyObject *module_name = NULL;
     PyObject *module = NULL;
-    PyObject *parent = NULL;
     PyObject *dotted_path = NULL;
-    PyObject *lastname = NULL;
     PyObject *cls;
     int status = 0;
 
@@ -3633,10 +3626,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
                      obj, module_name);
         goto error;
     }
-    lastname = Py_NewRef(PyList_GET_ITEM(dotted_path,
-                         PyList_GET_SIZE(dotted_path) - 1));
-    cls = get_deep_attribute(module, dotted_path, &parent);
-    Py_CLEAR(dotted_path);
+    cls = get_deep_attribute(module, dotted_path);
     if (cls == NULL) {
         PyErr_Format(st->PicklingError,
                      "Can't pickle %R: attribute lookup %S on %S failed",
@@ -3723,9 +3713,6 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     }
     else {
   gen_global:
-        if (parent == module) {
-            Py_SETREF(global_name, Py_NewRef(lastname));
-        }
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;
 
@@ -3737,17 +3724,22 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             if (_Pickler_Write(self, &stack_global_op, 1) < 0)
                 goto error;
         }
-        else if (parent != module) {
-            PyObject *reduce_value = Py_BuildValue("(O(OO))",
-                                        st->getattr, parent, lastname);
-            if (reduce_value == NULL)
-                goto error;
-            status = save_reduce(st, self, reduce_value, NULL);
-            Py_DECREF(reduce_value);
-            if (status < 0)
-                goto error;
-        }
         else {
+            const char mark_op = MARK;
+            const char tupletwo_op = (self->proto < 2) ? TUPLE : TUPLE2;
+            const char reduce_op = REDUCE;
+            Py_ssize_t i;
+            if (PyList_GET_SIZE(dotted_path) > 1) {
+                Py_SETREF(global_name, Py_NewRef(PyList_GET_ITEM(dotted_path, 0)));
+            }
+            for (i = 1; i < PyList_GET_SIZE(dotted_path); i++) {
+                if (save(st, self, st->getattr, 0) < 0 ||
+                    (self->proto < 2 && _Pickler_Write(self, &mark_op, 1) < 0))
+                {
+                    goto error;
+                }
+            }
+
             /* Generate a normal global opcode if we are using a pickle
                protocol < 4, or if the object is not registered in the
                extension registry. */
@@ -3812,6 +3804,15 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             Py_DECREF(encoded);
             if (_Pickler_Write(self, "\n", 1) < 0)
                 goto error;
+
+            for (i = 1; i < PyList_GET_SIZE(dotted_path); i++) {
+                if (save(st, self, PyList_GET_ITEM(dotted_path, i), 0) < 0 ||
+                    _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
+                    _Pickler_Write(self, &reduce_op, 1) < 0)
+                {
+                    goto error;
+                }
+            }
         }
         /* Memoize the object. */
         if (memo_put(st, self, obj) < 0)
@@ -3825,9 +3826,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     Py_XDECREF(module_name);
     Py_XDECREF(global_name);
     Py_XDECREF(module);
-    Py_XDECREF(parent);
     Py_XDECREF(dotted_path);
-    Py_XDECREF(lastname);
 
     return status;
 }
