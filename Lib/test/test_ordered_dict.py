@@ -747,73 +747,56 @@ class OrderedDictTests:
 class _TriggerSideEffectOnEqual:
     count = 0   # number of calls to __eq__
     trigger = 1 # count value when to trigger side effect
-    # reference to non-local objects (in the test body)
-    key_lhs = key_rhs = None
     OrderedDict = None
-
-    def __init__(self, label=None):
-        self.label = label
-
-    def __repr__(self):
-        return f'Key({self.label})'
+    # reference to non-local objects (in the test body)
+    d1 = d2 = None  # d1, d2 are ordered dictionaries
+    k1 = k2 = None  # k1, k2 are instances of _TriggerSideEffectOnEqual()
 
     def __eq__(self, other):
         if self.__class__.count == self.__class__.trigger:
-            self.__class__.side_effect()
+            self.side_effect()
         self.__class__.count += 1
         return True
 
     def __hash__(self):
+        # all instances represent the same key
         return -1
 
-    @classmethod
-    def side_effect(cls):
+    def side_effect(self):
         raise NotImplementedError
 
     @classmethod
-    def setup(cls):
+    @contextlib.contextmanager
+    def test_context(cls):
         assert cls.OrderedDict is not None, "missing OrderedDict class"
-        assert cls.key_lhs is None, "cannot call setup twice on the same class"
-        cls.key_lhs = cls(label='a')
-        cls.key_rhs = cls(label='b')
-        lhs = cls.OrderedDict(dict.fromkeys((0, cls.key_lhs)))
-        rhs = cls.OrderedDict(dict.fromkeys((0, cls.key_rhs)))
-        return lhs, rhs
 
-    @classmethod
-    def teardown(cls):
-        cls.count = 0
-        cls.key_lhs = cls.key_rhs = None
-
+        try:
+            cls.k1, cls.k2 = k1, k2 = cls(), cls()
+            cls.d1 = d1 = cls.OrderedDict(dict.fromkeys((0, k1, 4.2)))
+            cls.d2 = d2 = cls.OrderedDict(dict.fromkeys((0, k2, 4.2)))
+            yield d1, d2
+        finally:
+            cls.count = 0
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
     module = py_coll
     OrderedDict = py_coll.OrderedDict
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        class KeyClass(_TriggerSideEffectOnEqual):
-            OrderedDict = cls.OrderedDict
-        cls.KeyClass = KeyClass
-
     def test_issue119004_attribute_error(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                del lhs[cls.key_lhs]
+        class Key(_TriggerSideEffectOnEqual):
+            OrderedDict = self.OrderedDict
 
-        lhs, rhs = Key.setup()
-        # This causes an AttributeError due to the linked list being changed
-        msg = re.escape("'NoneType' object has no attribute 'key'")
-        self.assertRaisesRegex(AttributeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
-        with unittest.mock.patch.object(Key, 'side_effect') as fn:
-            self.assertDictEqual(lhs, {0: None})
-            fn.assert_not_called()
-            self.assertDictEqual(rhs, {0: None, Key(): None})
-            fn.assert_not_called()
+            def side_effect(self):
+                del self.d1[self.k1]
+
+        with Key.test_context() as (d1, d2):
+            # This causes an AttributeError due to the linked list being changed
+            msg = re.escape("'NoneType' object has no attribute 'key'")
+            self.assertRaisesRegex(AttributeError, msg, operator.eq, d1, d2)
+            self.assertEqual(Key.count, 2)
+            self.assertDictEqual(d1, dict.fromkeys((0, 4.2)))
+            self.assertDictEqual(d2, dict.fromkeys((0, Key(), 4.2)))
 
 
 class CPythonBuiltinDictTests(unittest.TestCase):
@@ -840,175 +823,125 @@ class CPythonOrderedDictSideEffects:
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        class KeyClass(_TriggerSideEffectOnEqual):
-            OrderedDict = cls.OrderedDict
-        cls.KeyClass = KeyClass
 
-    def check_side_effect_after_eq(self, key_class, actual, expect):
-        with unittest.mock.patch.object(key_class, 'side_effect') as fn:
-            self.assertDictEqual(actual, expect)
-            fn.assert_not_called()
+        class Key(_TriggerSideEffectOnEqual):
+            OrderedDict = cls.OrderedDict
+        cls.Key = Key
+
+    def _test_issue119004(self, keyclass, expect1, expect2):
+        assert issubclass(keyclass, _TriggerSideEffectOnEqual)
+        with keyclass.test_context() as (d1, d2):
+            msg = re.escape("OrderedDict mutated during iteration")
+            self.assertRaisesRegex(RuntimeError, msg, operator.eq, d1, d2)
+            # There are two calls to KeyClass.__eq__: one when doing
+            # value comparisons (without order) by dict.__eq__ and
+            # one when doing key comparisons (for the order).
+            self.assertEqual(keyclass.count, 2)
+            self.assertDictEqual(d1, expect1)
+            self.assertDictEqual(d2, expect2)
 
     def test_issue119004_change_size_by_clear(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                lhs.clear()
-                rhs.clear()
+        class Key(self.Key):
+            def side_effect(self):
+                self.d1.clear()
+                self.d2.clear()
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict changed size during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        # There are two calls to ChangeExternSize.__eq__: one when doing
-        # value comparisons (without order) by dict.__eq__ and one when
-        # doing key comparisons (for the order).
-        self.assertEqual(Key.count, 2)
-        self.check_side_effect_after_eq(Key, lhs, {})
-        self.check_side_effect_after_eq(Key, rhs, {})
+        self._test_issue119004(Key, {}, {})
 
     def test_issue119004_change_size_by_clear_asymmetric(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                lhs.clear()
+        class Key(self.Key):
+            def side_effect(self):
+                self.d1.clear()
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict changed size during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
-        self.check_side_effect_after_eq(Key, lhs, {})
-        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+        expect2 = dict.fromkeys((0, Key(), 4.2))
+        self._test_issue119004(Key, {}, expect2)
 
     def test_issue119004_change_size_by_delete_key(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                del lhs[cls.key_lhs]
-                del rhs[cls.key_rhs]
+        class Key(self.Key):
+            def side_effect(self):
+                del self.d1[self.k1], self.d2[self.k2]
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict changed size during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
-        self.check_side_effect_after_eq(Key, lhs, {0: None})
-        self.check_side_effect_after_eq(Key, rhs, {0: None})
+        expect = dict.fromkeys((0, 4.2))
+        self._test_issue119004(Key, expect, expect)
 
     def test_issue119004_change_size_by_delete_key_asymmetric(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                del lhs[cls.key_lhs]
+        class Key(self.Key):
+            def side_effect(self):
+                del self.d1[self.k1]
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict changed size during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
-        self.check_side_effect_after_eq(Key, lhs, {0: None})
-        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+        expect1 = dict.fromkeys((0, 4.2))
+        expect2 = dict.fromkeys((0, Key(), 4.2))
+        self._test_issue119004(Key, expect1, expect2)
 
     def test_issue119004_change_linked_list_by_clear(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                # change the layout of the underlying linked list
-                lhs.clear()
-                rhs.clear()
-                lhs['a'] = lhs['b'] = 'c'
-                rhs['a'] = rhs['b'] = 'c'
+        class Key(self.Key):
+            def side_effect(self):
+                self.d1.clear()
+                self.d1['a'] = self.d1['b'] = 'c'
+                self.d2.clear()
+                self.d2['a'] = self.d2['b'] = 'c'
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict mutated during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
         expect = {'a': 'c', 'b': 'c'}
-        self.check_side_effect_after_eq(Key, lhs, expect)
-        self.check_side_effect_after_eq(Key, rhs, expect)
+        self._test_issue119004(Key, expect, expect)
 
     def test_issue119004_change_linked_list_by_clear_asymmetric(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                # change the layout of the underlying linked list
-                lhs.clear()
-                lhs['a'] = lhs['b'] = 'c'
+        class Key(self.Key):
+            def side_effect(self):
+                self.d1.clear()
+                self.d1['a'] = self.d1['b'] = 'c'
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict mutated during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
-        with unittest.mock.patch.object(Key, 'side_effect') as fn:
-            self.assertDictEqual(lhs, {'a': 'c', 'b': 'c'})
-            self.assertEqual(Key.count, 2)
-            fn.assert_not_called()
-            self.assertDictEqual(rhs, {0: None, Key(): None})
-            self.assertEqual(Key.count, 3)
-            fn.assert_not_called()
+        expect1 = dict.fromkeys(('a', 'b'), 'c')
+        expect2 = dict.fromkeys((0, Key(), 4.2))
+        self._test_issue119004(Key, expect1, expect2)
 
     def test_issue119004_change_linked_list_by_delete_key(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                # change the layout of the underlying linked list
-                del lhs[cls.key_lhs]
-                del rhs[cls.key_rhs]
-                lhs['a'] = rhs['b'] = 'c'
+        class Key(self.Key):
+            def side_effect(self):
+                del self.d1[self.k1], self.d2[self.k2]
+                self.d1['a'] = self.d2['b'] = 'c'
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict mutated during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
-        self.check_side_effect_after_eq(Key, lhs, {0: None, 'a': 'c'})
-        self.check_side_effect_after_eq(Key, rhs, {0: None, 'b': 'c'})
+        expect1 = {0: None, 'a': 'c', 4.2: None}
+        expect2 = {0: None, 'b': 'c', 4.2: None}
+        self._test_issue119004(Key, expect1, expect2)
 
     def test_issue119004_change_linked_list_by_delete_key_asymmetric(self):
-        class Key(self.KeyClass):
-            @classmethod
-            def side_effect(cls):
-                # change the layout of the underlying linked list
-                del lhs[cls.key_lhs]
-                lhs['a'] = 'c'
+        class Key(self.Key):
+            def side_effect(self):
+                del self.d1[self.k1]
+                self.d1['a'] = 'c'
 
-        lhs, rhs = Key.setup()
-        msg = re.escape("OrderedDict mutated during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
-        self.assertEqual(Key.count, 2)
-        self.check_side_effect_after_eq(Key, lhs, {0: None, 'a': 'c'})
-        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+        expect1 = {0: None, 'a': 'c', 4.2: None}
+        expect2 = dict.fromkeys((0, Key(), 4.2))
+        self._test_issue119004(Key, expect1, expect2)
 
     def test_issue119004_change_size_by_delete_key_in_dict_eq(self):
-        class Key(self.KeyClass):
+        class Key(self.Key):
             trigger = 0
-            @classmethod
-            def side_effect(cls):
-                del lhs[cls.key_lhs]
-                del rhs[cls.key_rhs]
+            def side_effect(self):
+                del self.d1[self.k1]
+                del self.d2[self.k2]
 
-        lhs, rhs = Key.setup()
-        self.assertEqual(Key.count, 0)
-        # the side effect is triggered in dict.__eq__ and modifies the length
-        self.assertNotEqual(lhs, rhs)
-        self.assertEqual(len(lhs), 1)
-        self.assertEqual(len(rhs), 1)
-        self.assertEqual(Key.count, 1)
-        self.check_side_effect_after_eq(Key, lhs, {0: None})
-        self.check_side_effect_after_eq(Key, rhs, {0: None})
+        with Key.test_context() as (d1, d2):
+            self.assertEqual(Key.count, 0)
+            # the side effect is in dict.__eq__ and modifies the length
+            self.assertNotEqual(d1, d2)
+            self.assertEqual(Key.count, 1)
+            self.assertDictEqual(d1, dict.fromkeys((0, 4.2)))
+            self.assertDictEqual(d2, dict.fromkeys((0, 4.2)))
 
     def test_issue119004_change_size_by_delete_key_in_dict_eq_asymmetric(self):
-        class Key(self.KeyClass):
+        class Key(self.Key):
             trigger = 0
-            @classmethod
-            def side_effect(cls):
-                del lhs[cls.key_lhs]
+            def side_effect(self):
+                del self.d1[self.k1]
 
-        lhs, rhs = Key.setup()
-        self.assertEqual(Key.count, 0)
-        # the side effect is triggered in dict.__eq__ and modifies the length
-        self.assertNotEqual(lhs, rhs)
-        self.assertEqual(len(lhs), 1)
-        self.assertEqual(len(rhs), 2)
-        self.assertEqual(Key.count, 1)
-        self.check_side_effect_after_eq(Key, lhs, {0: None})
-        self.check_side_effect_after_eq(Key, rhs, {0: None, Key(): None})
+        with Key.test_context() as (d1, d2):
+            self.assertEqual(Key.count, 0)
+            # the side effect is in dict.__eq__ and modifies the length
+            self.assertNotEqual(d1, d2)
+            self.assertEqual(Key.count, 2)
+            self.assertDictEqual(d1, dict.fromkeys((0, 4.2)))
+            self.assertDictEqual(d2, dict.fromkeys((0, Key(), 4.2)))
 
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
