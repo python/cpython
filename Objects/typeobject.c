@@ -10867,6 +10867,8 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
 {
     PyObject *typeobj = (PyObject *)type;
     if (slot == (void *)&type->tp_init) {
+        /* This is a best-effort list of builtin exception types
+           that have their own tp_init function. */
         if (typeobj != PyExc_BaseException
             && typeobj != PyExc_BaseExceptionGroup
             && typeobj != PyExc_ImportError
@@ -10881,6 +10883,8 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
         }
     }
     else if (slot == (void *)&type->tp_str) {
+        /* This is a best-effort list of builtin exception types
+           that have their own tp_str function. */
         if (typeobj == PyExc_AttributeError || typeobj == PyExc_NameError) {
             return 1;
         }
@@ -10888,6 +10892,8 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
     else if (slot == (void *)&type->tp_getattr
              || slot == (void *)&type->tp_getattro)
     {
+        /* This is a best-effort list of builtin types
+           that have their own tp_getattr function. */
         if (typeobj == PyExc_BaseException
             || type == &PyBool_Type
             || type == &PyByteArray_Type
