@@ -989,7 +989,7 @@ class TestMain(TestCase):
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
             with self.subTest(var=var, expected=expected):
-                if m := re.search(rf"[\r\n]{var}=(.+?)[\r\n]", output):
+                if m := re.search(rf"[^{{]{var}=(.+?)[\r\n]", output):
                     self._assertMatchOK(var, expected, actual=m.group(1))
                 else:
                     self.fail(f"{var}= not found in output")
@@ -1126,4 +1126,4 @@ class TestMain(TestCase):
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "\n".join(output), exit_code
+        return "".join(output), exit_code
