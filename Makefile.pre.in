@@ -221,6 +221,8 @@ LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
 LIBHACL_SIMD128_FLAGS=@LIBHACL_SIMD128_FLAGS@
 LIBHACL_SIMD256_FLAGS=@LIBHACL_SIMD256_FLAGS@
+LIBHACL_SIMD128_OBJS=@LIBHACL_SIMD128_OBJS@
+LIBHACL_SIMD256_OBJS=@LIBHACL_SIMD256_OBJS@
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -648,15 +650,9 @@ LIBHACL_SHA2_OBJS= \
 LIBHACL_BLAKE2_OBJS= \
                 Modules/_hacl/Hacl_Hash_Blake2s.o \
                 Modules/_hacl/Hacl_Hash_Blake2b.o \
-                Modules/_hacl/Lib_Memzero0.o
-
-ifneq ($(LIBHACL_SIMD128_FLAGS),)
-LIBHACL_BLAKE2_OBJS += Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o
-endif
-
-ifneq ($(LIBHACL_SIMD256_FLAGS),)
-LIBHACL_BLAKE2_OBJS += Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o
-endif
+                Modules/_hacl/Lib_Memzero0.o \
+		$(LIBHACL_SIMD128_OBJS) \
+		$(LIBHACL_SIMD256_OBJS)
 
 LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/FStar_UInt128_Verified.h \

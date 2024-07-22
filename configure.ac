@@ -7698,19 +7698,24 @@ PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
+dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
 AX_CHECK_COMPILE_FLAG([-mavx],[
   [LIBHACL_SIMD128_FLAGS="-mavx"]
+  [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
   AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
 ], [], [-Werror])
 
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
+AC_SUBST([LIBHACL_SIMD128_OBJS])
 
 AX_CHECK_COMPILE_FLAG([-mavx2],[
   [LIBHACL_SIMD256_FLAGS="-mavx2"]
+  [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
   AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
 ], [], [-Werror])
 
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
+AC_SUBST([LIBHACL_SIMD256_OBJS])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
