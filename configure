@@ -9656,6 +9656,8 @@ UNIVERSAL_ARCH_FLAGS=
 
 
 
+
+
 # tweak BASECFLAGS based on compiler and platform
 if test "x$with_strict_overflow" = xyes
 then :
@@ -9666,25 +9668,18 @@ fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-case $ac_sys_system/$CC in
-   AIX*/gcc*)
-   # In AIX with GCC, the compile check passes with -fstack-protector-strong
-   # even though it is not supported and is exposed only by a run/link check.
-   # So disable it.
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported in AIX with gcc" >&5
-printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported in AIX with gcc" >&2;}
-   ;;
-   *)
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
-printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
-if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if we can add -fstack-protector-strong" >&5
+printf %s "checking if we can add -fstack-protector-strong... " >&6; }
+if test ${ac_cv_enable_stack_protector_strong_flag+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -fstack-protector-strong"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS " -fstack-protector-strong -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -9695,26 +9690,29 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
-  ax_cv_check_cflags__Werror__fstack_protector_strong=yes
+  ac_cv_enable_stack_protector_strong_flag=yes
 else $as_nop
-  ax_cv_check_cflags__Werror__fstack_protector_strong=no
+  ac_cv_enable_stack_protector_strong_flag=no
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+    CFLAGS=$py_cflags
+
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__fstack_protector_strong" >&5
-printf "%s\n" "$ax_cv_check_cflags__Werror__fstack_protector_strong" >&6; }
-if test "x$ax_cv_check_cflags__Werror__fstack_protector_strong" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_stack_protector_strong_flag" >&5
+printf "%s\n" "$ac_cv_enable_stack_protector_strong_flag" >&6; }
+
+
+if test "x$ac_cv_enable_stack_protector_strong_flag" = xyes
 then :
   BASECFLAGS="$BASECFLAGS -fstack-protector-strong"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported" >&5
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
-
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
 then :
