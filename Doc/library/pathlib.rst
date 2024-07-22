@@ -1598,8 +1598,9 @@ Copying, moving and deleting
    return a new :class:`!Path` instance pointing to *target*.
 
    If the *target* doesn't exist it will be created. If both this path and the
-   *target* are existing files, then the target is overwritten. If the
-   *target* is a non-empty directory, :exc:`OSError` is raised.
+   *target* are existing files, then the target is overwritten. If both paths
+   point to the same file or directory, or the *target* is a non-empty
+   directory, then :exc:`OSError` is raised.
 
    If both paths are on the same filesystem, the move is performed with
    :func:`os.replace`. Otherwise, this path is copied (preserving metadata and

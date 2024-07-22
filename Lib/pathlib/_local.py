@@ -854,7 +854,8 @@ class Path(PathBase, PurePath):
         """
         Recursively move this file or directory tree to the given destination.
         """
-
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
         try:
             return self.replace(target)
         except TypeError:
