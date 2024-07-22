@@ -1151,9 +1151,6 @@ compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
     }
     ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
 
-    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        loc.lineno = -1;
-    }
     return SUCCESS;
 }
 
@@ -1459,15 +1456,6 @@ compiler_leave_annotations_scope(struct compiler *c, location loc,
 static int
 compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 {
-
-    /* Set current line number to the line number of first statement.
-       This way line number for SETUP_ANNOTATIONS will always
-       coincide with the line number of first "real" statement in module.
-       If body is empty, then lineno will be set later in optimize_and_assemble. */
-    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE && asdl_seq_LEN(stmts)) {
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-        loc = LOC(st);
-    }
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
      * Else __annotate__ is created when necessary. */
@@ -1545,31 +1533,51 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     return SUCCESS;
 }
 
+static location
+start_location(asdl_stmt_seq *stmts)
+{
+    if (asdl_seq_LEN(stmts) > 0) {
+        /* Set current line number to the line number of first statement.
+         * This way line number for SETUP_ANNOTATIONS will always
+         * coincide with the line number of first "real" statement in module.
+         * If body is empty, then lineno will be set later in optimize_and_assemble.
+         */
+        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        return LOC(st);
+    }
+    return LOCATION(1, 1, 0, 0);
+}
+
 static int
 compiler_codegen(struct compiler *c, mod_ty mod)
 {
-    location loc = LOCATION(1, 1, 0, 0);
+    assert(c->u->u_scope_type == COMPILER_SCOPE_MODULE);
     switch (mod->kind) {
-    case Module_kind:
-        if (compiler_body(c, loc, mod->v.Module.body) < 0) {
+    case Module_kind: {
+        asdl_stmt_seq *stmts = mod->v.Module.body;
+        if (compiler_body(c, start_location(stmts), stmts) < 0) {
             return ERROR;
         }
         break;
-    case Interactive_kind:
+    }
+    case Interactive_kind: {
         c->c_interactive = 1;
-        if (compiler_body(c, loc, mod->v.Interactive.body) < 0) {
+        asdl_stmt_seq *stmts = mod->v.Interactive.body;
+        if (compiler_body(c, start_location(stmts), stmts) < 0) {
             return ERROR;
         }
         break;
-    case Expression_kind:
+    }
+    case Expression_kind: {
         VISIT(c, expr, mod->v.Expression.body);
         break;
-    default:
+    }
+    default: {
         PyErr_Format(PyExc_SystemError,
                      "module kind %d should not be possible",
                      mod->kind);
         return ERROR;
-    }
+    }}
     return SUCCESS;
 }
 
