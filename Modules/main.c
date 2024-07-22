@@ -546,6 +546,10 @@ pymain_repl(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
         return;
     }
 
+    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
+        return;
+    }
+
     int res = PyRun_AnyFileFlags(stdin, "<stdin>", cf);
     *exitcode = (res != 0);
 }
