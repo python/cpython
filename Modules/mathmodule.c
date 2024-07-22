@@ -2236,7 +2236,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), const char* err_msg)
+loghelper(PyObject* arg, double (*func)(double), const char *err_msg)
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
