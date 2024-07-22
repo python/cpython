@@ -1,0 +1,2 @@
+Made manually defined ``__getstate__`` and ``__setstate__`` work more similarly to the default ones (which don't work for frozen classes).
+This means the frozen dataclasses that derive slots, or define slots manually and not by calling ``dataclass`` with ``slots=True`` are now picklable.
