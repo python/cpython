@@ -336,6 +336,39 @@ Miscellaneous
    feature set.
 
 
+Information about the version of the lzma library in use is available through
+the following constants:
+
+
+.. data:: LZMA_VERSION
+.. data:: LZMA_VERSION_STRING
+
+   The version of the lzma C library actually loaded at runtime, in both
+   integer and string forms.
+
+   .. versionadded:: 3.13
+
+.. data:: LZMA_HEADER_VERSION
+.. data:: LZMA_HEADER_VERSION_STRING
+
+   The version of the lzma library that was used for building the module, in
+   both integer and string forms.  This may be different from the lzma library
+   actually used at runtime.
+
+   .. versionadded:: 3.13
+
+The version number and string formats are as defined in by C library. The
+integer is represented in decimal digits as ``jmmmppps`` where ``j`` is the
+major version, ``mmm`` is the minor version, ``ppp`` is the patch level, and
+``s`` is the "stability indicator" (2 means stable)::
+
+   >>> import lzma
+   >>> lzma.LZMA_VERSION
+   50020052
+   >>> lzma.LZMA_VERSION_STRING
+   '5.2.5'
+
+
 .. _filter-chain-specs:
 
 Specifying custom filter chains
@@ -357,12 +390,26 @@ options. Valid filter IDs are as follows:
 
 * Branch-Call-Jump (BCJ) filters:
 
-  * :const:`FILTER_X86`
-  * :const:`FILTER_IA64`
-  * :const:`FILTER_ARM`
-  * :const:`FILTER_ARMTHUMB`
-  * :const:`FILTER_POWERPC`
-  * :const:`FILTER_SPARC`
+  * :const:`!FILTER_X86`
+  * :const:`!FILTER_IA64`
+  * :const:`!FILTER_ARM`
+  * :const:`!FILTER_ARMTHUMB`
+  * :const:`!FILTER_POWERPC`
+  * :const:`!FILTER_SPARC`
+
+    The above work on all lzma runtime library versions.
+
+  * :const:`!FILTER_ARM64`
+
+    Only works if the lzma version is 5.4.0 or later.
+
+    .. versionadded:: 3.13
+
+  * :const:`!FILTER_RISCV`
+
+    Only works if the lzma version is 5.6.0 or later.
+
+    .. versionadded:: 3.13
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
