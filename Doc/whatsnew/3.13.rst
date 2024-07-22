@@ -817,6 +817,11 @@ io
   built on debug mode <debug-build>`.
   (Contributed by Victor Stinner in :gh:`62948`.)
 
+inspect
+-------
+
+* Add :meth:`inspect.Signature.from_frame` to get signatures from frame objects.
+
 ipaddress
 ---------
 
