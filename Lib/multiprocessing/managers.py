@@ -478,6 +478,12 @@ class State(object):
     STARTED = 1
     SHUTDOWN = 2
 
+    def __getstate__(self):
+        return self.value
+
+    def __setstate__(self, state):
+        self.value = state
+
 #
 # Mapping from serializer name to Listener and Client types
 #
@@ -736,6 +742,15 @@ class BaseManager(object):
                 return proxy
             temp.__name__ = typeid
             setattr(cls, typeid, temp)
+
+    def __getstate__(self):
+        state = vars(self).copy()
+        state['shutdown'] = state['shutdown']._key
+        return state
+
+    def __setstate__(self, state):
+        vars(self).update(state)
+        self.shutdown = util._finalizer_registry[self.shutdown]
 
 #
 # Subclass of set which get cleared after a fork

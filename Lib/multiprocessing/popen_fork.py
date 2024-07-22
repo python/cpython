@@ -85,3 +85,12 @@ class Popen(object):
     def close(self):
         if self.finalizer is not None:
             self.finalizer()
+
+    def __getstate__(self):
+        state = vars(self).copy()
+        state['finalizer'] = state['finalizer']._key
+        return state
+
+    def __setstate__(self, state):
+        vars(self).update(state)
+        self.finalizer = util._finalizer_registry[self.finalizer]
