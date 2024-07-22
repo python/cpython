@@ -1261,7 +1261,7 @@ FUNC1(sqrt, sqrt, 0,
       "sqrt($module, x, /)\n--\n\n"
       "Return the square root of x.",
       "math.sqrt() expects a nonnegative input, got '%R'.\n"
-      "See cmath.sqrt() for a variation that supports complex numbers")
+      "See cmath.sqrt() for a variant that supports complex numbers")
 FUNC1(tan, tan, 0,
       "tan($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in radians).",
