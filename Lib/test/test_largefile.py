@@ -165,7 +165,7 @@ class TestFileMethods(LargeFileTest):
         # successfully.
         with self.open(TESTFN, 'rb') as f:
             self.assertEqual(f.seek(20, os.SEEK_SET), 20)
-            self.assertEqual(len(f.read()), size-19)
+            self.assertEqual(len(f.read()), size - 19)
 
         with self.open(TESTFN, 'rb') as f:
             self.assertEqual(f.seek(-3, os.SEEK_END), size - 2)
