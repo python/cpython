@@ -1191,10 +1191,6 @@ anywhere a regular dictionary is used.
 .. versionchanged:: 3.9
    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
 
-.. versionchanged:: 3.14
-   Mutating :class:`OrderedDict` objects during an equality comparison raises
-   a :exc:`RuntimeError`.
-
 
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

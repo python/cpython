@@ -699,7 +699,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
 
     _odictnode_KEY(node) = key;
     _odictnode_HASH(node) = hash;
-    _odict_add_tail(od, node); // this updates 'od_state'
+    _odict_add_tail(od, node);
     od->od_fast_nodes[i] = node;
     return 0;
 }
@@ -773,7 +773,7 @@ _odict_clear_node(PyODictObject *od, _ODictNode *node, PyObject *key,
 
     // Now clear the node.
     od->od_fast_nodes[i] = NULL;
-    _odict_remove_node(od, node); // this updates 'od_state'
+    _odict_remove_node(od, node);
     _odictnode_DEALLOC(node);
     return 0;
 }

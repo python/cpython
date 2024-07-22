@@ -314,13 +314,6 @@ class OrderedDict(dict):
         while comparison to a regular mapping is order-insensitive.
 
         '''
-        # The Python implementation differs from the C implementation in the
-        # sense that it does not track mutations occurring in __eq__() of keys
-        # or values.
-        #
-        # Since it was decided not to change the Python implementation,
-        # calling ``del self[key]`` in the ``key.__class__.__eq__`` may
-        # raise an AttributeError during iteration.
         if isinstance(other, OrderedDict):
             return dict.__eq__(self, other) and all(map(_eq, self, other))
         return dict.__eq__(self, other)
