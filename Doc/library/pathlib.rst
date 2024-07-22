@@ -1597,6 +1597,10 @@ Copying, moving and deleting
    Recursively move this file or directory tree to the given *target*, and
    return a new :class:`!Path` instance pointing to *target*.
 
+   If the *target* doesn't exist it will be created. If both this path and the
+   *target* are existing files, then the target is overwritten. If the
+   *target* is a non-empty directory, :exc:`OSError` is raised.
+
    If both paths are on the same filesystem, the move is performed with
    :func:`os.replace`. Otherwise, this path is copied (preserving metadata and
    symlinks) and then deleted.

@@ -777,24 +777,12 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.test_move_file_to_dir()
 
     @patch_replace
-    def test_move_file_to_empty_dir_other_fs(self):
-        self.test_move_file_to_empty_dir()
-
-    @patch_replace
     def test_move_dir_other_fs(self):
         self.test_move_dir()
 
     @patch_replace
-    def test_move_dir_to_file_other_fs(self):
-        self.test_move_dir_to_file()
-
-    @patch_replace
     def test_move_dir_to_dir_other_fs(self):
         self.test_move_dir_to_dir()
-
-    @patch_replace
-    def test_move_dir_to_empty_dir_other_fs(self):
-        self.test_move_dir_to_empty_dir()
 
     @patch_replace
     def test_move_dir_into_itself_other_fs(self):

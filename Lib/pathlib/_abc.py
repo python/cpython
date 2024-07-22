@@ -934,7 +934,7 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('unlink()'))
 
-    def rmdir(self, missing_ok=False):
+    def rmdir(self):
         """
         Remove this directory.  The directory must be empty.
         """

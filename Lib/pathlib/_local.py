@@ -825,15 +825,11 @@ class Path(PathBase, PurePath):
             if not missing_ok:
                 raise
 
-    def rmdir(self, missing_ok=False):
+    def rmdir(self):
         """
         Remove this directory.  The directory must be empty.
         """
-        try:
-            os.rmdir(self)
-        except FileNotFoundError:
-            if not missing_ok:
-                raise
+        os.rmdir(self)
 
     def rmtree(self, ignore_errors=False, on_error=None):
         """

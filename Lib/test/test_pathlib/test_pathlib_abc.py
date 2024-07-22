@@ -2011,13 +2011,6 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'dirB'
         self.assertRaises(OSError, source.move, target)
 
-    def test_move_file_to_empty_dir(self):
-        base = self.cls(self.base)
-        source = base / 'fileA'
-        target = base / 'fileA_moved'
-        target.mkdir()
-        self.assertRaises(OSError, source.move, target)
-
     def test_move_dir(self):
         base = self.cls(self.base)
         source = base / 'dirC'
@@ -2034,23 +2027,10 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
 
-    def test_move_dir_to_file(self):
-        base = self.cls(self.base)
-        source = base / 'dirB'
-        target = base / 'fileA'
-        self.assertRaises(OSError, source.move, target)
-
     def test_move_dir_to_dir(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'dirB'
-        self.assertRaises(OSError, source.move, target)
-
-    def test_move_dir_to_empty_dir(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'dirC_moved'
-        target.mkdir()
         self.assertRaises(OSError, source.move, target)
 
     def test_move_dir_into_itself(self):
