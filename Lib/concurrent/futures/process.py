@@ -59,6 +59,7 @@ from functools import partial
 import itertools
 import sys
 from traceback import format_exception
+import signal
 
 
 _threads_wakeups = weakref.WeakKeyDictionary()
@@ -127,6 +128,9 @@ class _RemoteTraceback(Exception):
         self.tb = tb
     def __str__(self):
         return self.tb
+    @classmethod
+    def from_lines(cls, lines, delimchar="'"):
+        return cls(f"\n{delimchar * 3}\n{''.join(lines)}{delimchar * 3}")
 
 class _ExceptionWithTraceback:
     def __init__(self, exc, tb):
@@ -177,7 +181,7 @@ class _SafeQueue(Queue):
     def _on_queue_feeder_error(self, e, obj):
         if isinstance(obj, _CallItem):
             tb = format_exception(type(e), e, e.__traceback__)
-            e.__cause__ = _RemoteTraceback('\n"""\n{}"""'.format(''.join(tb)))
+            e.__cause__ = _RemoteTraceback.from_lines(tb, delimchar='"')
             work_item = self.pending_work_items.pop(obj.work_id, None)
             with self.shutdown_lock:
                 self.thread_wakeup.wakeup()
@@ -338,7 +342,7 @@ class _ExecutorManagerThread(threading.Thread):
                 self.add_call_item_to_queue()
             except BaseException as exc:
                 cause = format_exception(exc)
-                self.terminate_broken(cause)
+                self.terminate_broken(_RemoteTraceback.from_lines(cause))
                 return
 
             result_item, is_broken, cause = self.wait_result_broken_or_wakeup()
@@ -429,6 +433,19 @@ class _ExecutorManagerThread(threading.Thread):
         elif wakeup_reader in ready:
             is_broken = False
 
+        if cause is not None:
+            cause = _RemoteTraceback.from_lines(cause)
+
+        elif is_broken and any(s in ready for s in worker_sentinels):
+            exitcodes_and_signals = (
+                signal.Signals(-p.exitcode) if p.exitcode < 0 else p.exitcode
+                for p in self.processes.values()
+                if p.sentinel in ready
+            )
+            reasons = (str(c) for c in exitcodes_and_signals)
+            cause = mp.ProcessError(f"Processes exited with codes: "
+                                    f"{', '.join(reasons)}")
+
         # No need to hold the _shutdown_lock here because:
         # 1. we're the only thread to use the wakeup reader
         # 2. we're also the only thread to call thread_wakeup.close()
@@ -481,8 +498,7 @@ class _ExecutorManagerThread(threading.Thread):
                                 "terminated abruptly while the future was "
                                 "running or pending.")
         if cause is not None:
-            bpe.__cause__ = _RemoteTraceback(
-                f"\n'''\n{''.join(cause)}'''")
+            bpe.__cause__ = cause
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
