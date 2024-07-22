@@ -4,6 +4,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_dict.h"          // _PyDictViewObject
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
@@ -22,16 +23,6 @@ class list "PyListObject *" "&PyList_Type"
 #include "clinic/listobject.c.h"
 
 _Py_DECLARE_STR(list_err, "list index out of range");
-
-#ifdef WITH_FREELISTS
-static struct _Py_list_freelist *
-get_list_freelist(void)
-{
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    assert(freelists != NULL);
-    return &freelists->lists;
-}
-#endif
 
 #ifdef Py_GIL_DISABLED
 typedef struct {
@@ -205,55 +196,28 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     return 0;
 }
 
-void
-_PyList_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-#ifdef WITH_FREELISTS
-    struct _Py_list_freelist *state = &freelists->lists;
-    while (state->numfree > 0) {
-        PyListObject *op = state->items[--state->numfree];
-        assert(PyList_CheckExact(op));
-        PyObject_GC_Del(op);
-    }
-    if (is_finalization) {
-        state->numfree = -1;
-    }
-#endif
-}
-
 /* Print summary info about the state of the optimized allocator */
 void
 _PyList_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_list_freelist *list_freelist = get_list_freelist();
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
-                           list_freelist->numfree, sizeof(PyListObject));
+                            _Py_FREELIST_SIZE(lists),
+                           sizeof(PyListObject));
 #endif
 }
 
 PyObject *
 PyList_New(Py_ssize_t size)
 {
-    PyListObject *op;
-
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
-#ifdef WITH_FREELISTS
-    struct _Py_list_freelist *list_freelist = get_list_freelist();
-    if (PyList_MAXFREELIST && list_freelist->numfree > 0) {
-        list_freelist->numfree--;
-        op = list_freelist->items[list_freelist->numfree];
-        OBJECT_STAT_INC(from_freelist);
-        _Py_NewReference((PyObject *)op);
-    }
-    else
-#endif
-    {
+    PyListObject *op = _Py_FREELIST_POP(PyListObject, lists);
+    if (op == NULL) {
         op = PyObject_GC_New(PyListObject, &PyList_Type);
         if (op == NULL) {
             return NULL;
@@ -548,16 +512,11 @@ list_dealloc(PyObject *self)
         }
         free_list_items(op->ob_item, false);
     }
-#ifdef WITH_FREELISTS
-    struct _Py_list_freelist *list_freelist = get_list_freelist();
-    if (list_freelist->numfree < PyList_MAXFREELIST && list_freelist->numfree >= 0 && PyList_CheckExact(op)) {
-        list_freelist->items[list_freelist->numfree++] = op;
-        OBJECT_STAT_INC(to_freelist);
+    if (PyList_CheckExact(op)) {
+        _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);
     }
-    else
-#endif
-    {
-        Py_TYPE(op)->tp_free((PyObject *)op);
+    else {
+        PyObject_GC_Del(op);
     }
     Py_TRASHCAN_END
 }
