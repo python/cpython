@@ -1832,14 +1832,11 @@ class TestIsMethodDescriptor(unittest.TestCase):
             MethodDescriptorWithGetNone,
             MethodDescriptorSub,
         ]:
-            self.assertTrue(
-                inspect.ismethoddescriptor(cls()),
-                f"an object {cls.__doc__} is a method descriptor",
-            )
-            self.assertFalse(
-                inspect.ismethoddescriptor(cls),
-                f'a class of a method descriptor is not a method descriptor',
-            )
+            with self.subTest(f"a descriptor {cls.__doc__}"):
+                self.assertTrue(inspect.ismethoddescriptor(cls()))
+            with self.subTest(f"a descriptor class {cls.__doc__} "
+                              f"(not a descriptor itself)"):
+                self.assertFalse(inspect.ismethoddescriptor(cls))
 
         # Custom data descriptors:
 
@@ -1911,14 +1908,11 @@ class TestIsMethodDescriptor(unittest.TestCase):
             DataDescriptorSub6,
             DataDescriptorSub7,
         ]:
-            self.assertFalse(
-                inspect.ismethoddescriptor(cls()),
-                f"an object {cls.__doc__} is not a method descriptor",
-            )
-            self.assertFalse(
-                inspect.ismethoddescriptor(cls),
-                f'a class of a data descriptor is not a method descriptor',
-            )
+            with self.subTest(f"a descriptor {cls.__doc__}"):
+                self.assertFalse(inspect.ismethoddescriptor(cls()))
+            with self.subTest(f"a descriptor class {cls.__doc__} "
+                              f"(not a descriptor itself)"):
+                self.assertFalse(inspect.ismethoddescriptor(cls))
 
     def test_builtin_descriptors(self):
         builtin_slot_wrapper = int.__add__  # This one is mentioned in docs.
@@ -2031,14 +2025,11 @@ class TestIsDataDescriptor(unittest.TestCase):
             MethodDescriptorWithGetNone,
             MethodDescriptorSub,
         ]:
-            self.assertFalse(
-                inspect.isdatadescriptor(cls()),
-                f"object {cls.__doc__} is not a data descriptor",
-            )
-            self.assertFalse(
-                inspect.isdatadescriptor(cls),
-                f'class of a method descriptor is not a data descriptor',
-            )
+            with self.subTest(f"a descriptor {cls.__doc__}"):
+                self.assertFalse(inspect.isdatadescriptor(cls()))
+            with self.subTest(f"a descriptor class {cls.__doc__} "
+                              f"(not a descriptor itself)"):
+                self.assertFalse(inspect.isdatadescriptor(cls))
 
         # Custom data descriptors:
 
@@ -2138,14 +2129,11 @@ class TestIsDataDescriptor(unittest.TestCase):
             DataDescriptorSub14,
             DataDescriptorSub15,
         ]:
-            self.assertTrue(
-                inspect.isdatadescriptor(cls()),
-                f'object {cls.__doc__} is a data descriptor',
-            )
-            self.assertFalse(
-                inspect.isdatadescriptor(cls),
-                f'class of a data descriptor is not a data descriptor',
-            )
+            with self.subTest(f"a descriptor {cls.__doc__}"):
+                self.assertTrue(inspect.isdatadescriptor(cls()))
+            with self.subTest(f"a descriptor class {cls.__doc__} "
+                              f"(not a descriptor itself)"):
+                self.assertFalse(inspect.isdatadescriptor(cls))
 
     def test_builtin_descriptors(self):
         builtin_slot_wrapper = int.__add__
