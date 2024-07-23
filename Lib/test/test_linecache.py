@@ -280,6 +280,7 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(linecache.getlines(filename, module_globals),
                          ['source for x.y.z\n'])
 
+    @unittest.skipUnless(support.MS_WINDOWS, "Test only relevant in Windows.")
     def test_filename_too_long(self):
         self.assertEqual(linecache.updatecache("s" * 999999), [])
 
