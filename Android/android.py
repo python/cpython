@@ -32,11 +32,6 @@ adb = Path(
     f"{android_home}/platform-tools/adb"
     + (".exe" if os.name == "nt" else "")
 )
-if not adb.exists():
-    sys.exit(
-        f"{adb} does not exist. Install the Platform Tools package using the "
-        f"Android SDK manager."
-    )
 
 
 def delete_if_exists(path):
@@ -90,6 +85,7 @@ def run(command, *, host=None, env=None, **kwargs):
             raise ValueError(f"Found no variables in {env_script.name} output:\n"
                              + env_output)
 
+    print(">", " ".join(map(str, command)))
     try:
         subprocess.run(command, check=True, env=env, **kwargs)
     except subprocess.CalledProcessError as e:
@@ -417,6 +413,12 @@ async def gradle_task(context):
 
 
 async def run_testbed(context):
+    if not adb.exists():
+        sys.exit(
+            f"{adb} does not exist. Install the Platform Tools package using "
+            f"the Android SDK manager."
+        )
+
     if not (TESTBED_DIR / "gradlew").exists():
         setup_testbed(context)
 
