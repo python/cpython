@@ -29,6 +29,26 @@ def clear_typing_caches():
         f()
 
 
+def iter_builtin_types():
+    for obj in __builtins__.values():
+        if not isinstance(obj, type):
+            continue
+        cls = obj
+        if cls.__module__ != 'builtins':
+            continue
+        yield cls
+
+
+@cpython_only
+def iter_own_slot_wrappers(cls):
+    for name, value in vars(cls).items():
+        if not name.startswith('__') or not name.endswith('__'):
+            continue
+        if 'slot wrapper' not in str(value):
+            continue
+        yield name
+
+
 class TypesTests(unittest.TestCase):
 
     def test_truth_values(self):
@@ -2362,24 +2382,33 @@ class SubinterpreterTests(unittest.TestCase):
     def test_slot_wrappers(self):
         rch, sch = interpreters.channels.create()
 
-        # For now it's sufficient to check int.__str__.
-        # See https://github.com/python/cpython/issues/117482
-        # and https://github.com/python/cpython/pull/117660.
-        script = textwrap.dedent('''
-            text = repr(int.__str__)
-            sch.send_nowait(text)
-            ''')
+        slots = []
+        script = ''
+        for cls in iter_builtin_types():
+            for slot in iter_own_slot_wrappers(cls):
+                slots.append((cls, slot))
+                script += textwrap.dedent(f"""
+                    text = repr({cls.__name__}.{slot})
+                    sch.send_nowait(({cls.__name__!r}, {slot!r}, text))
+                    """)
 
         exec(script)
-        expected = rch.recv()
+        all_expected = []
+        for cls, slot in slots:
+            result = rch.recv()
+            assert result == (cls.__name__, slot, result[2]), (cls, slot, result)
+            all_expected.append(result)
 
         interp = interpreters.create()
         interp.exec('from test.support import interpreters')
         interp.prepare_main(sch=sch)
         interp.exec(script)
-        results = rch.recv()
 
-        self.assertEqual(results, expected)
+        for i, _ in enumerate(slots):
+            with self.subTest(cls=cls, slot=slot):
+                expected = all_expected[i]
+                result = rch.recv()
+                self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':
