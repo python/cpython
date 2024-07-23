@@ -1,0 +1,2 @@
+Handle long filenames in :mod:`linecache` on Windows platforms.
+Patch by Bénédikt Tran.
