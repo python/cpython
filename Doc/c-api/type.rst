@@ -264,15 +264,6 @@ Type Objects
 
    .. versionadded:: 3.11
 
-.. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
-
-   Attempt to assign a version tag to the given type.
-
-   Returns 1 if the type already had a valid version tag or a new one was
-   assigned, or 0 if a new tag could not be assigned.
-
-   .. versionadded:: 3.12
-
 .. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 
    Find the first superclass in *type*'s :term:`method resolution order` whose
@@ -290,6 +281,15 @@ Type Objects
    The *token* argument may not be ``NULL``.
 
    .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
+
+   Attempt to assign a version tag to the given type.
+
+   Returns 1 if the type already had a valid version tag or a new one was
+   assigned, or 0 if a new tag could not be assigned.
+
+   .. versionadded:: 3.12
 
 
 Creating Heap-Allocated Types
