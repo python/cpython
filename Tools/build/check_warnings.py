@@ -36,6 +36,9 @@ def extract_warnings_from_compiler_output_json(compiler_output: str) -> list[dic
     Compiler output as a whole is not a valid json document, but includes many json
     objects and may include other output that is not json.
     """
+    print("######")
+    print(compiler_output)
+    print("&&&&&")
 
     # Regex to find json arrays at the top level of the file in the compiler output
     json_arrays = re.findall(r'\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\]', compiler_output)
