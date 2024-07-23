@@ -21,7 +21,6 @@ from pyspecific import SOURCE_URI
 
 extensions = [
     'c_annotations',
-    'escape4chm',
     'glossary_search',
     'lexers',
     'pyspecific',
