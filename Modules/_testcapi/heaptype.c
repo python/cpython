@@ -457,7 +457,7 @@ create_type_with_token(PyObject *module, PyObject *args)
     if (!type) {
         return NULL;
     }
-    return (PyObject *)type;
+    return type;
 }
 
 static PyObject *
