@@ -2656,10 +2656,7 @@ _PyDict_DelItemIf(PyObject *op, PyObject *key,
                   int (*predicate)(PyObject *value, void *arg),
                   void *arg)
 {
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
+    assert(PyDict_Check(op));
     int res;
     Py_BEGIN_CRITICAL_SECTION(op);
     res = delitemif_lock_held(op, key, predicate, arg);
