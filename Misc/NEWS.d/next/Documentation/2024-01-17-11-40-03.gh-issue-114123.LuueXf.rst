@@ -1,7 +1,0 @@
-Move the :mod:`csv` module docstring to the :mod:`!csv` module
-instead of reexporting it from the internal :mod:`!_csv` module,
-and remove ``__doc__`` from ``csv.__all__``.
-
-Move :attr:`!csv.__version__` to the :mod:`!csv` module
-instead of reexporting it from the internal :mod:`!_csv` module,
-and remove ``__version__`` from ``csv.__all__``.

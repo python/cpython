@@ -1,0 +1,2 @@
+Fix a bug that caused the tokenizer to not correctly identify mismatched
+parentheses inside f-strings in some situations. Patch by Pablo Galindo

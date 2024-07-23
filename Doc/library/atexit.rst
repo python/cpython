@@ -1,11 +1,11 @@
-:mod:`atexit` --- Exit handlers
-===============================
+:mod:`!atexit` --- Exit handlers
+================================
 
 .. module:: atexit
    :synopsis: Register and execute cleanup functions.
 
-.. moduleauthor:: Skip Montanaro <skip@pobox.com>
-.. sectionauthor:: Skip Montanaro <skip@pobox.com>
+.. moduleauthor:: Skip Montanaro <skip.montanaro@gmail.com>
+.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 

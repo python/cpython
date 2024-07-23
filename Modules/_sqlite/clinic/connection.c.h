@@ -744,7 +744,7 @@ pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls,
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -837,14 +837,14 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(progress_handler), &_Py_ID(n), },
+        .ob_item = { &_Py_ID(progress_handler), _Py_LATIN1_CHR('n'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -925,7 +925,7 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1204,21 +1204,67 @@ pysqlite_connection_interrupt(pysqlite_Connection *self, PyObject *Py_UNUSED(ign
 }
 
 PyDoc_STRVAR(pysqlite_connection_iterdump__doc__,
-"iterdump($self, /)\n"
+"iterdump($self, /, *, filter=None)\n"
 "--\n"
 "\n"
-"Returns iterator to the dump of the database in an SQL text format.");
+"Returns iterator to the dump of the database in an SQL text format.\n"
+"\n"
+"  filter\n"
+"    An optional LIKE pattern for database objects to dump");
 
 #define PYSQLITE_CONNECTION_ITERDUMP_METHODDEF    \
-    {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS, pysqlite_connection_iterdump__doc__},
+    {"iterdump", _PyCFunction_CAST(pysqlite_connection_iterdump), METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_iterdump__doc__},
 
 static PyObject *
-pysqlite_connection_iterdump_impl(pysqlite_Connection *self);
+pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
+                                  PyObject *filter);
 
 static PyObject *
-pysqlite_connection_iterdump(pysqlite_Connection *self, PyObject *Py_UNUSED(ignored))
+pysqlite_connection_iterdump(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return pysqlite_connection_iterdump_impl(self);
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(filter), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"filter", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "iterdump",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *filter = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    filter = args[0];
+skip_optional_kwonly:
+    return_value = pysqlite_connection_iterdump_impl(self, filter);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_connection_backup__doc__,
@@ -1551,7 +1597,9 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1818,4 +1866,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=90b5b9c14261b8d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d4d7e4abe17b164 input=a9049054013a1b77]*/

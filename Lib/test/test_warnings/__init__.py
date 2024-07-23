@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import linecache
 import os
+import inspect
 from io import StringIO
 import re
 import sys
@@ -12,6 +13,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import warnings_helper
+from test.support import force_not_colorized
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_warnings.data import package_helper
@@ -154,40 +156,42 @@ class FilterTests(BaseTest):
             f()
             self.assertEqual(len(w), 1)
 
-    def test_always(self):
-        with original_warnings.catch_warnings(record=True,
-                module=self.module) as w:
-            self.module.resetwarnings()
-            self.module.filterwarnings("always", category=UserWarning)
-            message = "FilterTests.test_always"
-            def f():
-                self.module.warn(message, UserWarning)
-            f()
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 2)
-            self.assertEqual(w[-1].message.args[0], message)
+    def test_always_and_all(self):
+        for mode in {"always", "all"}:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                self.module.filterwarnings(mode, category=UserWarning)
+                message = "FilterTests.test_always_and_all"
+                def f():
+                    self.module.warn(message, UserWarning)
+                f()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 2)
+                self.assertEqual(w[-1].message.args[0], message)
 
-    def test_always_after_default(self):
-        with original_warnings.catch_warnings(record=True,
-                module=self.module) as w:
-            self.module.resetwarnings()
-            message = "FilterTests.test_always_after_ignore"
-            def f():
-                self.module.warn(message, UserWarning)
-            f()
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 1)
-            self.module.filterwarnings("always", category=UserWarning)
-            f()
-            self.assertEqual(len(w), 2)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 3)
-            self.assertEqual(w[-1].message.args[0], message)
+    def test_always_and_all_after_default(self):
+        for mode in {"always", "all"}:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                message = "FilterTests.test_always_and_all_after_ignore"
+                def f():
+                    self.module.warn(message, UserWarning)
+                f()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 1)
+                self.module.filterwarnings(mode, category=UserWarning)
+                f()
+                self.assertEqual(len(w), 2)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 3)
+                self.assertEqual(w[-1].message.args[0], message)
 
     def test_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -489,7 +493,7 @@ class WarnTests(BaseTest):
 
                 warning_tests.inner("spam7", stacklevel=9999)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "sys")
+                                    "<sys>")
 
     def test_stacklevel_import(self):
         # Issue #24305: With stacklevel=2, module-level warnings should work.
@@ -498,7 +502,7 @@ class WarnTests(BaseTest):
             with original_warnings.catch_warnings(record=True,
                     module=self.module) as w:
                 self.module.simplefilter('always')
-                import test.test_warnings.data.import_warning
+                import test.test_warnings.data.import_warning  # noqa: F401
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].filename, __file__)
 
@@ -1239,6 +1243,7 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
+    @force_not_colorized
     def test_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
@@ -1247,6 +1252,7 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
+    @force_not_colorized
     def test_conflicting_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
@@ -1388,7 +1394,7 @@ a=A()
         # Issue #21925: Emitting a ResourceWarning late during the Python
         # shutdown must be logged.
 
-        expected = b"sys:1: ResourceWarning: unclosed file "
+        expected = b"<sys>:0: ResourceWarning: unclosed file "
 
         # don't import the warnings module
         # (_warnings will try to import it)
@@ -1678,6 +1684,29 @@ class DeprecatedTests(unittest.TestCase):
         self.assertFalse(any(
             isinstance(cell.cell_contents, deprecated) for cell in d.__closure__
         ))
+
+    def test_inspect(self):
+        @deprecated("depr")
+        def sync():
+            pass
+
+        @deprecated("depr")
+        async def coro():
+            pass
+
+        class Cls:
+            @deprecated("depr")
+            def sync(self):
+                pass
+
+            @deprecated("depr")
+            async def coro(self):
+                pass
+
+        self.assertFalse(inspect.iscoroutinefunction(sync))
+        self.assertTrue(inspect.iscoroutinefunction(coro))
+        self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
+        self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
 
 def setUpModule():
     py_warnings.onceregistry.clear()

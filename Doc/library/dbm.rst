@@ -1,5 +1,5 @@
-:mod:`dbm` --- Interfaces to Unix "databases"
-=============================================
+:mod:`!dbm` --- Interfaces to Unix "databases"
+==============================================
 
 .. module:: dbm
    :synopsis: Interfaces to various Unix "database" formats.
@@ -8,12 +8,18 @@
 
 --------------
 
-:mod:`dbm` is a generic interface to variants of the DBM database ---
-:mod:`dbm.gnu` or :mod:`dbm.ndbm`.  If none of these modules is installed, the
+:mod:`dbm` is a generic interface to variants of the DBM database:
+
+* :mod:`dbm.sqlite3`
+* :mod:`dbm.gnu`
+* :mod:`dbm.ndbm`
+
+If none of these modules are installed, the
 slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
 
+.. include:: ../includes/wasm-ios-notavail.rst
 
 .. exception:: error
 
@@ -25,8 +31,8 @@ the Oracle Berkeley DB.
 .. function:: whichdb(filename)
 
    This function attempts to guess which of the several simple database modules
-   available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
-   be used to open a given file.
+   available --- :mod:`dbm.sqlite3`, :mod:`dbm.gnu`, :mod:`dbm.ndbm`,
+   or :mod:`dbm.dumb` --- should be used to open a given file.
 
    Return one of the following values:
 
@@ -52,9 +58,9 @@ the Oracle Berkeley DB.
 .. |flag_n| replace::
    Always create a new, empty database, open for reading and writing.
 
-.. |incompat_note| replace::
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
-   and can not be used interchangeably.
+.. |mode_param_doc| replace::
+   The Unix file access mode of the file (default: octal ``0o666``),
+   used only when the database has to be created.
 
 .. function:: open(file, flag='r', mode=0o666)
 
@@ -69,14 +75,13 @@ the Oracle Berkeley DB.
    :type file: :term:`path-like object`
 
    :param str flag:
-      * ``'r'`` (default), |flag_r|
-      * ``'w'``, |flag_w|
-      * ``'c'``, |flag_c|
-      * ``'n'``, |flag_n|
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
 
    :param int mode:
-      The Unix file access mode of the file (default: octal ``0o666``),
-      used only when the database has to be created.
+      |mode_param_doc|
 
    .. versionchanged:: 3.11
       *file* accepts a :term:`path-like object`.
@@ -141,6 +146,46 @@ then prints out the contents of the database::
 
 The individual submodules are described in the following sections.
 
+:mod:`dbm.sqlite3` --- SQLite backend for dbm
+---------------------------------------------
+
+.. module:: dbm.sqlite3
+   :platform: All
+   :synopsis: SQLite backend for dbm
+
+.. versionadded:: 3.13
+
+**Source code:** :source:`Lib/dbm/sqlite3.py`
+
+--------------
+
+This module uses the standard library :mod:`sqlite3` module to provide an
+SQLite backend for the :mod:`dbm` module.
+The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
+or any other SQLite browser, including the SQLite CLI.
+
+.. function:: open(filename, /, flag="r", mode=0o666)
+
+   Open an SQLite database.
+   The returned object behaves like a :term:`mapping`,
+   implements a :meth:`!close` method,
+   and supports a "closing" context manager via the :keyword:`with` keyword.
+
+   :param filename:
+      The path to the database to be opened.
+   :type filename: :term:`path-like object`
+
+   :param str flag:
+
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
+
+   :param mode:
+      The Unix file access mode of the file (default: octal ``0o666``),
+      used only when the database has to be created.
+
 
 :mod:`dbm.gnu` --- GNU database manager
 ---------------------------------------
@@ -157,11 +202,10 @@ The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
-:class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always converted to :class:`bytes` before storing,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
+.. note::
 
-.. note:: |incompat_note|
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
 
 .. exception:: error
 
@@ -171,47 +215,46 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 .. function:: open(filename, flag="r", mode=0o666, /)
 
-   Open a GDBM database and return a :class:`!gdbm` object.  The *filename*
-   argument is the name of the database file.
+   Open a GDBM database and return a :class:`!gdbm` object.
 
-   The optional *flag* argument can be:
+   :param filename:
+      The database file to open.
+   :type filename: :term:`path-like object`
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+   :param str flag:
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
 
-      ``'r'`` (default), |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'``, |flag_c|
-      ``'n'``, |flag_n|
+      The following additional characters may be appended
+      to control how the database is opened:
 
-   The following additional characters may be appended to the flag to control
-   how the database is opened:
+      * ``'f'``: Open the database in fast mode.
+        Writes to the database will not be synchronized.
+      * ``'s'``: Synchronized mode.
+        Changes to the database will be written immediately to the file.
+      * ``'u'``: Do not lock database.
 
-   +---------+--------------------------------------------+
-   | Value   | Meaning                                    |
-   +=========+============================================+
-   | ``'f'`` | Open the database in fast mode.  Writes    |
-   |         | to the database will not be synchronized.  |
-   +---------+--------------------------------------------+
-   | ``'s'`` | Synchronized mode. This will cause changes |
-   |         | to the database to be immediately written  |
-   |         | to the file.                               |
-   +---------+--------------------------------------------+
-   | ``'u'`` | Do not lock database.                      |
-   +---------+--------------------------------------------+
+      Not all flags are valid for all versions of GDBM.
+      See the :data:`open_flags` member for a list of supported flag characters.
 
-   Not all flags are valid for all versions of GDBM.  The module constant
-   :const:`open_flags` is a string of supported flag characters.  The exception
-   :exc:`error` is raised if an invalid flag is specified.
+   :param int mode:
+      |mode_param_doc|
 
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666``.
-
-   In addition to the dictionary-like methods, :class:`gdbm` objects have the
-   following methods:
+   :raises error:
+      If an invalid *flag* argument is passed.
 
    .. versionchanged:: 3.11
-      Accepts :term:`path-like object` for filename.
+      *filename* accepts a :term:`path-like object`.
+
+   .. data:: open_flags
+
+      A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
+
+   :class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. method:: gdbm.firstkey()
 
@@ -268,14 +311,13 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 The :mod:`dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
-:class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always stored as :class:`bytes`,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
-
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
-.. note:: |incompat_note|
+.. note::
+
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
 
 .. warning::
 
@@ -298,25 +340,24 @@ This module can be used with the "classic" NDBM interface or the
 .. function:: open(filename, flag="r", mode=0o666, /)
 
    Open an NDBM database and return an :class:`!ndbm` object.
-   The *filename* argument is the name of the database file
-   (without the :file:`.dir` or :file:`.pag` extensions).
 
-   The optional *flag* argument must be one of these values:
+   :param filename:
+      The basename of the database file
+      (without the :file:`.dir` or :file:`.pag` extensions).
+   :type filename: :term:`path-like object`
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+   :param str flag:
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
 
-      ``'r'`` (default), |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'``, |flag_c|
-      ``'n'``, |flag_n|
+   :param int mode:
+      |mode_param_doc|
 
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666`` (and will be
-   modified by the prevailing umask).
-
-   In addition to the dictionary-like methods, :class:`!ndbm` objects
-   provide the following method:
+   :class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
@@ -355,8 +396,6 @@ The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
 Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
-As with other :mod:`dbm` backends,
-the keys and values are always stored as :class:`bytes`.
 
 The :mod:`!dbm.dumb` module defines the following:
 
@@ -382,17 +421,13 @@ The :mod:`!dbm.dumb` module defines the following:
    :type database: :term:`path-like object`
 
    :param str flag:
-      .. csv-table::
-         :header: "Value", "Meaning"
-
-         ``'r'``, |flag_r|
-         ``'w'``, |flag_w|
-         ``'c'`` (default), |flag_c|
-         ``'n'``, |flag_n|
+      * ``'r'``: |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'`` (default): |flag_c|
+      * ``'n'``: |flag_n|
 
    :param int mode:
-      The Unix file access mode of the file (default: ``0o666``),
-      used only when the database has to be created.
+      |mode_param_doc|
 
    .. warning::
       It is possible to crash the Python interpreter when loading a database
@@ -400,7 +435,7 @@ The :mod:`!dbm.dumb` module defines the following:
       Python's AST compiler.
 
    .. versionchanged:: 3.5
-      :func:`open` always creates a new database when *flag* is ``'n'``.
+      :func:`~dbm.dumb.open` always creates a new database when *flag* is ``'n'``.
 
    .. versionchanged:: 3.8
       A database opened read-only if *flag* is ``'r'``.
@@ -421,4 +456,3 @@ The :mod:`!dbm.dumb` module defines the following:
    .. method:: dumbdbm.close()
 
       Close the database.
-

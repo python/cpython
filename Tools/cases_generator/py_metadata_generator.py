@@ -1,6 +1,6 @@
-"""Generate uop metedata.
+"""Generate opcode metadata for Python.
 Reads the instruction definitions from bytecodes.c.
-Writes the metadata to pycore_uop_metadata.h by default.
+Writes the metadata to _opcode_metadata.py by default.
 """
 
 import argparse
@@ -12,7 +12,6 @@ from analyzer import (
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
-    root_relative_path,
     write_header,
 )
 from cwriter import CWriter

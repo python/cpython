@@ -5,7 +5,6 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_hamt.h"          // PyHamtObject
 
 
@@ -14,7 +13,6 @@ extern PyTypeObject _PyContextTokenMissing_Type;
 /* runtime lifecycle */
 
 PyStatus _PyContext_Init(PyInterpreterState *);
-void _PyContext_Fini(_PyFreeListState *);
 
 
 /* other API */
@@ -36,9 +34,11 @@ struct _pycontextvarobject {
     PyObject_HEAD
     PyObject *var_name;
     PyObject *var_default;
+#ifndef Py_GIL_DISABLED
     PyObject *var_cached;
     uint64_t var_cached_tsid;
     uint64_t var_cached_tsver;
+#endif
     Py_hash_t var_hash;
 };
 

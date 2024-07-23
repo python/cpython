@@ -8,24 +8,11 @@
 extern _PyObjectStackChunk *_PyObjectStackChunk_New(void);
 extern void _PyObjectStackChunk_Free(_PyObjectStackChunk *);
 
-static struct _Py_object_stack_state *
-get_state(void)
-{
-    _PyFreeListState *state = _PyFreeListState_GET();
-    return &state->object_stacks;
-}
-
 _PyObjectStackChunk *
 _PyObjectStackChunk_New(void)
 {
-    _PyObjectStackChunk *buf;
-    struct _Py_object_stack_state *state = get_state();
-    if (state->numfree > 0) {
-        buf = state->free_list;
-        state->free_list = buf->prev;
-        state->numfree--;
-    }
-    else {
+    _PyObjectStackChunk *buf = _Py_FREELIST_POP_MEM(object_stack_chunks);
+    if (buf == NULL) {
         // NOTE: we use PyMem_RawMalloc() here because this is used by the GC
         // during mimalloc heap traversal. In that context, it is not safe to
         // allocate mimalloc memory, such as via PyMem_Malloc().
@@ -43,17 +30,7 @@ void
 _PyObjectStackChunk_Free(_PyObjectStackChunk *buf)
 {
     assert(buf->n == 0);
-    struct _Py_object_stack_state *state = get_state();
-    if (state->numfree >= 0 &&
-        state->numfree < _PyObjectStackChunk_MAXFREELIST)
-    {
-        buf->prev = state->free_list;
-        state->free_list = buf;
-        state->numfree++;
-    }
-    else {
-        PyMem_RawFree(buf);
-    }
+    _Py_FREELIST_FREE(object_stack_chunks, buf, PyMem_RawFree);
 }
 
 void
@@ -68,20 +45,22 @@ _PyObjectStack_Clear(_PyObjectStack *queue)
 }
 
 void
-_PyObjectStackChunk_ClearFreeList(_PyFreeListState *free_lists, int is_finalization)
+_PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src)
 {
-    if (!is_finalization) {
-        // Ignore requests to clear the free list during GC. We use object
-        // stacks during GC, so emptying the free-list is counterproductive.
+    if (src->head == NULL) {
         return;
     }
 
-    struct _Py_object_stack_state *state = &free_lists->object_stacks;
-    while (state->numfree > 0) {
-        _PyObjectStackChunk *buf = state->free_list;
-        state->free_list = buf->prev;
-        state->numfree--;
-        PyMem_RawFree(buf);
+    if (dst->head != NULL) {
+        // First, append dst to the bottom of src
+        _PyObjectStackChunk *last = src->head;
+        while (last->prev != NULL) {
+            last = last->prev;
+        }
+        last->prev = dst->head;
     }
-    state->numfree = -1;
+
+    // Now that src has all the chunks, set dst to src
+    dst->head = src->head;
+    src->head = NULL;
 }

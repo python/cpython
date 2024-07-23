@@ -116,7 +116,7 @@ inf
 >>> 0 ** -1
 Traceback (most recent call last):
 ...
-ZeroDivisionError: 0.0 cannot be raised to a negative power
+ZeroDivisionError: zero to a negative power
 >>> pow(0, NAN)
 nan
 

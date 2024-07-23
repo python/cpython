@@ -1,0 +1,3 @@
+Fixes ``py.exe`` handling of shebangs like ``/usr/bin/env python3.12``,
+which were previously interpreted as ``python3.exe`` instead of
+``python3.12.exe``.

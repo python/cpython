@@ -225,9 +225,9 @@ def gen_python3dll(manifest, args, outfile):
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
-REST_ROLES = {
-    'function': 'function',
-    'data': 'var',
+ITEM_KIND_TO_DOC_ROLE = {
+    'function': 'func',
+    'data': 'data',
     'struct': 'type',
     'macro': 'macro',
     # 'const': 'const',  # all undocumented
@@ -236,22 +236,28 @@ REST_ROLES = {
 
 @generator("doc_list", 'Doc/data/stable_abi.dat')
 def gen_doc_annotations(manifest, args, outfile):
-    """Generate/check the stable ABI list for documentation annotations"""
+    """Generate/check the stable ABI list for documentation annotations
+
+    See ``StableABIEntry`` in ``Doc/tools/extensions/c_annotations.py``
+    for a description of each field.
+    """
     writer = csv.DictWriter(
         outfile,
         ['role', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],
         lineterminator='\n')
     writer.writeheader()
-    for item in manifest.select(REST_ROLES.keys(), include_abi_only=False):
+    kinds = set(ITEM_KIND_TO_DOC_ROLE)
+    for item in manifest.select(kinds, include_abi_only=False):
         if item.ifdef:
             ifdef_note = manifest.contents[item.ifdef].doc
         else:
             ifdef_note = None
         row = {
-            'role': REST_ROLES[item.kind],
+            'role': ITEM_KIND_TO_DOC_ROLE[item.kind],
             'name': item.name,
             'added': item.added,
-            'ifdef_note': ifdef_note}
+            'ifdef_note': ifdef_note,
+        }
         rows = [row]
         if item.kind == 'struct':
             row['struct_abi_kind'] = item.struct_abi_kind
@@ -259,7 +265,8 @@ def gen_doc_annotations(manifest, args, outfile):
                 rows.append({
                     'role': 'member',
                     'name': f'{item.name}.{member_name}',
-                    'added': item.added})
+                    'added': item.added,
+                })
         writer.writerows(rows)
 
 @generator("ctypes_test", 'Lib/test/test_stable_abi_ctypes.py')
@@ -275,9 +282,19 @@ def gen_ctypes_test(manifest, args, outfile):
         import sys
         import unittest
         from test.support.import_helper import import_module
-        from _testcapi import get_feature_macros
+        try:
+            from _testcapi import get_feature_macros
+        except ImportError:
+            raise unittest.SkipTest("requires _testcapi")
 
         feature_macros = get_feature_macros()
+
+        # Stable ABI is incompatible with Py_TRACE_REFS builds due to PyObject
+        # layout differences.
+        # See https://github.com/python/cpython/issues/88299#issuecomment-1113366226
+        if feature_macros['Py_TRACE_REFS']:
+            raise unittest.SkipTest("incompatible with Py_TRACE_REFS.")
+
         ctypes_test = import_module('ctypes')
 
         class TestStableABIAvailability(unittest.TestCase):
@@ -308,16 +325,11 @@ def gen_ctypes_test(manifest, args, outfile):
         {'function', 'data'},
         include_abi_only=True,
     )
-    optional_items = {}
+    feature_macros = list(manifest.select({'feature_macro'}))
+    optional_items = {m.name: [] for m in feature_macros}
     for item in items:
-        if item.name in (
-                # Some symbols aren't exported on all platforms.
-                # This is a bug: https://bugs.python.org/issue44133
-                'PyModule_Create2', 'PyModule_FromDefAndSpec2',
-            ):
-            continue
         if item.ifdef:
-            optional_items.setdefault(item.ifdef, []).append(item.name)
+            optional_items[item.ifdef].append(item.name)
         else:
             write(f'    "{item.name}",')
     write(")")
@@ -328,7 +340,6 @@ def gen_ctypes_test(manifest, args, outfile):
             write(f"        {name!r},")
         write("    )")
     write("")
-    feature_macros = list(manifest.select({'feature_macro'}))
     feature_names = sorted(m.name for m in feature_macros)
     write(f"EXPECTED_FEATURE_MACROS = set({pprint.pformat(feature_names)})")
 
@@ -600,7 +611,7 @@ def check_private_names(manifest):
         if name.startswith('_') and not item.abi_only:
             raise ValueError(
                 f'`{name}` is private (underscore-prefixed) and should be '
-                + 'removed from the stable ABI list or or marked `abi_only`')
+                + 'removed from the stable ABI list or marked `abi_only`')
 
 def check_dump(manifest, filename):
     """Check that manifest.dump() corresponds to the data.

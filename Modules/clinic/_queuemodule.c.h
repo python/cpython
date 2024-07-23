@@ -278,7 +278,7 @@ _queue_SimpleQueue_get_nowait(simplequeueobject *self, PyTypeObject *cls, PyObje
 {
     PyObject *return_value = NULL;
 
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_nowait() takes no arguments");
         goto exit;
     }
@@ -349,4 +349,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=242950edc8f7dfd7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44a718f40072018a input=a9049054013a1b77]*/

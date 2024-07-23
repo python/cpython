@@ -595,7 +595,7 @@ Add asyncio.get_running_loop() function.
 .. section: Library
 
 All class and static methods of builtin types now are correctly classified
-by inspect.classify_class_attrs() and grouped in pydoc ouput. Added
+by inspect.classify_class_attrs() and grouped in pydoc output. Added
 types.ClassMethodDescriptorType for unbound class methods of builtin types.
 
 ..
