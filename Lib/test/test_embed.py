@@ -5,6 +5,7 @@ import unittest
 
 from collections import namedtuple
 import contextlib
+import io
 import json
 import os
 import os.path
@@ -388,6 +389,33 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         code = "print('\\N{digit nine}')"
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
+
+    def test_static_types_inherited_slots(self):
+        slots = []
+        script = ['import sys']
+        from test.test_types import iter_builtin_types, iter_own_slot_wrappers
+        for cls in iter_builtin_types():
+            for slot in iter_own_slot_wrappers(cls):
+                slots.append((cls, slot))
+                attr = f'{cls.__name__}.{slot}'
+                script.append(f'print("{attr}:", {attr}, file=sys.stderr)')
+            script.append('')
+        script = os.linesep.join(script)
+
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            exec(script)
+        expected = stderr.getvalue().splitlines()
+
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", script)
+        results = err.split('--- Loop #')[1:]
+        results = [res.rpartition(' ---\n')[-1] for res in results]
+
+        self.maxDiff = None
+        for i, result in enumerate(results, start=1):
+            with self.subTest(loop=i):
+                self.assertEqual(result.splitlines(), expected)
+        self.assertEqual(out, '')
+
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
