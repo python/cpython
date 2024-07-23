@@ -92,6 +92,10 @@ class ForwardRef:
         if type_params is None and owner is None:
             raise TypeError("Either 'type_params' or 'owner' must be provided")
 
+        if self.__forward_module__ is not None:
+            globals = getattr(
+                sys.modules.get(self.__forward_module__, None), "__dict__", globals
+            )
         if globals is None:
             globals = self.__globals__
         if globals is None:
@@ -105,10 +109,6 @@ class ForwardRef:
                 globals = getattr(owner, "__dict__", None)
             elif callable(owner):
                 globals = getattr(owner, "__globals__", None)
-        if self.__forward_module__ is not None:
-            globals = getattr(
-                sys.modules.get(self.__forward_module__, None), "__dict__", globals
-            )
 
         if locals is None:
             locals = {}

@@ -88,7 +88,7 @@ class TestSourceFormat(unittest.TestCase):
     def test_expressions(self):
         def f(
             add: a + b,
-            sub: a + b,
+            sub: a - b,
             mul: a * b,
             matmul: a @ b,
             truediv: a / b,
@@ -121,7 +121,7 @@ class TestSourceFormat(unittest.TestCase):
             anno,
             {
                 "add": "a + b",
-                "sub": "a + b",
+                "sub": "a - b",
                 "mul": "a * b",
                 "matmul": "a @ b",
                 "truediv": "a / b",
@@ -327,7 +327,7 @@ class TestGetAnnotations(unittest.TestCase):
 
     def test_custom_object_with_annotations(self):
         class C:
-            def __init__(self, x: int = 0, y: str = ""):
+            def __init__(self):
                 self.__annotations__ = {"x": int, "y": str}
 
         self.assertEqual(annotationlib.get_annotations(C()), {"x": int, "y": str})
