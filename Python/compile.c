@@ -1611,22 +1611,23 @@ finally:
 static int
 compiler_get_ref_type(struct compiler *c, PyObject *name)
 {
-    int scope;
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
         (_PyUnicode_EqualToASCIIString(name, "__class__") ||
          _PyUnicode_EqualToASCIIString(name, "__classdict__"))) {
         return CELL;
     }
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
-    scope = _PyST_GetScope(ste, name);
+    int scope = _PyST_GetScope(ste, name);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
                      "_PyST_GetScope(name=%R) failed: "
                      "unknown scope in unit %S (%R); "
-                     "symbols: %R; locals: %R; globals: %R",
+                     "symbols: %R; locals: %R; "
+                     "globals: %R",
                      name,
                      c->u->u_metadata.u_name, ste->ste_id,
-                     ste->ste_symbols, c->u->u_metadata.u_varnames, c->u->u_metadata.u_names);
+                     ste->ste_symbols, c->u->u_metadata.u_varnames,
+                     c->u->u_metadata.u_names);
         return ERROR;
     }
     return scope;
