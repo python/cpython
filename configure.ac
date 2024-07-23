@@ -2518,10 +2518,6 @@ AC_ARG_ENABLE([slower-safety],
   [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],[])
 AC_MSG_RESULT([$enable_slower_safety])
 
-if test "$enable_slower_safety" = "yes"
-then
-fi
-
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
