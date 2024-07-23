@@ -521,10 +521,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    attributes varies.  A :attr:`~definition.__name__` attribute is usually
    sensible, and :attr:`!__doc__` often is.
 
-   Method descriptors that also pass any of the other tests mentioned above
-   (:func:`isclass`, :func:`ismethod` or :func:`isfunction`) make this function
-   return ``False``, simply because the other tests promise more -- you can, e.g.,
-   count on having the :attr:`~method.__func__` attribute when an object passes
+   Method descriptors that also pass any of the other tests (:func:`isclass`,
+   :func:`ismethod` or :func:`isfunction`) make this function return ``False``,
+   simply because those other tests promise more -- you can, e.g., count on
+   having the :attr:`~method.__func__` attribute when an object passes
    :func:`ismethod`.
 
    .. versionchanged:: 3.13
@@ -542,15 +542,14 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    a :meth:`~object.__delete__` method.  Optionally, they may also have a
    :meth:`~object.__get__` method.
 
-   Examples of data descriptors are :func:`properties <property>`, getset
-   descriptors and member descriptors.  Note that for the latter two (which can
-   be defined only at the C level, in extension modules) more specific tests
-   are available: :func:`isgetsetdescriptor` and :func:`ismemberdescriptor`,
-   respectively.
+   Examples of data descriptors are :func:`properties <property>`, getsets and
+   member descriptors.  Note that for the latter two (defined only in C extension
+   modules) more specific tests are available: :func:`isgetsetdescriptor` and
+   :func:`ismemberdescriptor`, respectively.
 
-   Typically, data descriptors have also :attr:`~definition.__name__` and
-   :attr:`!__doc__` attributes (properties, getsets and member descriptors have
-   them), but this is not guaranteed.
+   While data descriptors may have also :attr:`~definition.__name__` and
+   :attr:`!__doc__` attributes (as properties, getsets and member descriptors
+   do), this is not necessarily the case in general.
 
    .. versionchanged:: 3.8
       Now this function reports objects with only a :meth:`~object.__set__` method
