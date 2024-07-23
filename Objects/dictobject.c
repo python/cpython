@@ -395,44 +395,6 @@ static int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
 #include "clinic/dictobject.c.h"
 
 
-#ifdef WITH_FREELISTS
-static struct _Py_dict_freelist *
-get_dict_freelist(void)
-{
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    return &freelists->dicts;
-}
-
-static struct _Py_dictkeys_freelist *
-get_dictkeys_freelist(void)
-{
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    return &freelists->dictkeys;
-}
-#endif
-
-
-void
-_PyDict_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-#ifdef WITH_FREELISTS
-    struct _Py_dict_freelist *freelist = &freelists->dicts;
-    while (freelist->numfree > 0) {
-        PyDictObject *op = freelist->items[--freelist->numfree];
-        assert(PyDict_CheckExact(op));
-        PyObject_GC_Del(op);
-    }
-    struct _Py_dictkeys_freelist *keys_freelist = &freelists->dictkeys;
-    while (keys_freelist->numfree > 0) {
-        PyMem_Free(keys_freelist->items[--keys_freelist->numfree]);
-    }
-    if (is_finalization) {
-        freelist->numfree = -1;
-        keys_freelist->numfree = -1;
-    }
-#endif
-}
-
 static inline Py_hash_t
 unicode_get_hash(PyObject *o)
 {
@@ -445,12 +407,12 @@ void
 _PyDict_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_dict_freelist *dict_freelist = get_dict_freelist();
     _PyDebugAllocatorStats(out, "free PyDictObject",
-                           dict_freelist->numfree, sizeof(PyDictObject));
-    struct _Py_dictkeys_freelist *dictkeys_freelist = get_dictkeys_freelist();
+                           _Py_FREELIST_SIZE(dicts),
+                           sizeof(PyDictObject));
     _PyDebugAllocatorStats(out, "free PyDictKeysObject",
-                           dictkeys_freelist->numfree, sizeof(PyDictKeysObject));
+                           _Py_FREELIST_SIZE(dictkeys),
+                           sizeof(PyDictKeysObject));
 #endif
 }
 
@@ -785,7 +747,6 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
 static PyDictKeysObject*
 new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
 {
-    PyDictKeysObject *dk;
     Py_ssize_t usable;
     int log2_bytes;
     size_t entry_size = unicode ? sizeof(PyDictUnicodeEntry) : sizeof(PyDictKeyEntry);
@@ -808,15 +769,11 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
         log2_bytes = log2_size + 2;
     }
 
-#ifdef WITH_FREELISTS
-    struct _Py_dictkeys_freelist *freelist = get_dictkeys_freelist();
-    if (log2_size == PyDict_LOG_MINSIZE && unicode && freelist->numfree > 0) {
-        dk = freelist->items[--freelist->numfree];
-        OBJECT_STAT_INC(from_freelist);
+    PyDictKeysObject *dk = NULL;
+    if (log2_size == PyDict_LOG_MINSIZE && unicode) {
+        dk = _Py_FREELIST_POP_MEM(dictkeys);
     }
-    else
-#endif
-    {
+    if (dk == NULL) {
         dk = PyMem_Malloc(sizeof(PyDictKeysObject)
                           + ((size_t)1 << log2_bytes)
                           + entry_size * usable);
@@ -852,18 +809,12 @@ free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
         return;
     }
 #endif
-#ifdef WITH_FREELISTS
-    struct _Py_dictkeys_freelist *freelist = get_dictkeys_freelist();
-    if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE
-            && freelist->numfree < PyDict_MAXFREELIST
-            && freelist->numfree >= 0
-            && DK_IS_UNICODE(keys)) {
-        freelist->items[freelist->numfree++] = keys;
-        OBJECT_STAT_INC(to_freelist);
-        return;
+    if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE && keys->dk_kind == DICT_KEYS_UNICODE) {
+        _Py_FREELIST_FREE(dictkeys, keys, PyMem_Free);
     }
-#endif
-    PyMem_Free(keys);
+    else {
+        PyMem_Free(keys);
+    }
 }
 
 static size_t
@@ -912,20 +863,9 @@ new_dict(PyInterpreterState *interp,
          PyDictKeysObject *keys, PyDictValues *values,
          Py_ssize_t used, int free_values_on_failure)
 {
-    PyDictObject *mp;
     assert(keys != NULL);
-#ifdef WITH_FREELISTS
-    struct _Py_dict_freelist *freelist = get_dict_freelist();
-    if (freelist->numfree > 0) {
-        mp = freelist->items[--freelist->numfree];
-        assert (mp != NULL);
-        assert (Py_IS_TYPE(mp, &PyDict_Type));
-        OBJECT_STAT_INC(from_freelist);
-        _Py_NewReference((PyObject *)mp);
-    }
-    else
-#endif
-    {
+    PyDictObject *mp = _Py_FREELIST_POP(PyDictObject, dicts);
+    if (mp == NULL) {
         mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (mp == NULL) {
             dictkeys_decref(interp, keys, false);
@@ -935,6 +875,7 @@ new_dict(PyInterpreterState *interp,
             return NULL;
         }
     }
+    assert(Py_IS_TYPE(mp, &PyDict_Type));
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = used;
@@ -2567,7 +2508,7 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     values->size = size;
 }
 
-static int
+static void
 delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
                PyObject *old_value, uint64_t new_version)
 {
@@ -2609,7 +2550,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     Py_DECREF(old_value);
 
     ASSERT_CONSISTENT(mp);
-    return 0;
 }
 
 int
@@ -2652,7 +2592,8 @@ delitem_knownhash_lock_held(PyObject *op, PyObject *key, Py_hash_t hash)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     uint64_t new_version = _PyDict_NotifyEvent(
             interp, PyDict_EVENT_DELETED, mp, key, NULL);
-    return delitem_common(mp, hash, ix, old_value, new_version);
+    delitem_common(mp, hash, ix, old_value, new_version);
+    return 0;
 }
 
 int
@@ -2667,7 +2608,8 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 
 static int
 delitemif_lock_held(PyObject *op, PyObject *key,
-                    int (*predicate)(PyObject *value))
+                    int (*predicate)(PyObject *value, void *arg),
+                    void *arg)
 {
     Py_ssize_t ix;
     PyDictObject *mp;
@@ -2677,24 +2619,20 @@ delitemif_lock_held(PyObject *op, PyObject *key,
 
     ASSERT_DICT_LOCKED(op);
 
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     assert(key);
     hash = PyObject_Hash(key);
     if (hash == -1)
         return -1;
     mp = (PyDictObject *)op;
     ix = _Py_dict_lookup(mp, key, hash, &old_value);
-    if (ix == DKIX_ERROR)
-        return -1;
-    if (ix == DKIX_EMPTY || old_value == NULL) {
-        _PyErr_SetKeyError(key);
+    if (ix == DKIX_ERROR) {
         return -1;
     }
+    if (ix == DKIX_EMPTY || old_value == NULL) {
+        return 0;
+    }
 
-    res = predicate(old_value);
+    res = predicate(old_value, arg);
     if (res == -1)
         return -1;
 
@@ -2702,7 +2640,8 @@ delitemif_lock_held(PyObject *op, PyObject *key,
         PyInterpreterState *interp = _PyInterpreterState_GET();
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_DELETED, mp, key, NULL);
-        return delitem_common(mp, hash, ix, old_value, new_version);
+        delitem_common(mp, hash, ix, old_value, new_version);
+        return 1;
     } else {
         return 0;
     }
@@ -2714,11 +2653,13 @@ delitemif_lock_held(PyObject *op, PyObject *key,
  */
 int
 _PyDict_DelItemIf(PyObject *op, PyObject *key,
-                  int (*predicate)(PyObject *value))
+                  int (*predicate)(PyObject *value, void *arg),
+                  void *arg)
 {
+    assert(PyDict_Check(op));
     int res;
     Py_BEGIN_CRITICAL_SECTION(op);
-    res = delitemif_lock_held(op, key, predicate);
+    res = delitemif_lock_held(op, key, predicate, arg);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -3153,16 +3094,10 @@ dict_dealloc(PyObject *self)
         assert(keys->dk_refcnt == 1 || keys == Py_EMPTY_KEYS);
         dictkeys_decref(interp, keys, false);
     }
-#ifdef WITH_FREELISTS
-    struct _Py_dict_freelist *freelist = get_dict_freelist();
-    if (freelist->numfree < PyDict_MAXFREELIST && freelist->numfree >=0 &&
-        Py_IS_TYPE(mp, &PyDict_Type)) {
-        freelist->items[freelist->numfree++] = mp;
-        OBJECT_STAT_INC(to_freelist);
+    if (Py_IS_TYPE(mp, &PyDict_Type)) {
+        _Py_FREELIST_FREE(dicts, mp, Py_TYPE(mp)->tp_free);
     }
-    else
-#endif
-    {
+    else {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
     Py_TRASHCAN_END

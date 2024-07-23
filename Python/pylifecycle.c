@@ -9,6 +9,7 @@
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
@@ -1843,7 +1844,7 @@ finalize_interp_types(PyInterpreterState *interp)
 #ifndef Py_GIL_DISABLED
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
 #endif
 
