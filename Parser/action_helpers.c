@@ -1594,7 +1594,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     for (i = 0; i < n_flattened_elements; i++) {
         expr_ty elem = asdl_seq_GET(flattened, i);
 
-        /* The concatenation of a FormattedValue and an empty Contant should
+        /* The concatenation of a FormattedValue and an empty Constant should
            lead to the FormattedValue itself. Thus, we will not take any empty
            constants into account, just as in `_PyPegen_joined_str` */
         if (f_string_found && elem->kind == Constant_kind &&

@@ -131,7 +131,7 @@ class EmitVisitor(asdl.VisitorBase):
     def metadata(self):
         if self._metadata is None:
             raise ValueError(
-                "%s was expecting to be annnotated with metadata"
+                "%s was expecting to be annotated with metadata"
                 % type(self).__name__
             )
         return self._metadata
