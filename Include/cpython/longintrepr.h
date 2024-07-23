@@ -161,13 +161,14 @@ typedef struct PyLongLayout {
     int8_t array_endian;
 } PyLongLayout;
 
-PyAPI_DATA(const PyLongLayout) PyLong_LAYOUT;
+PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
 
 typedef struct PyLong_DigitArray {
     PyObject *obj;
     int negative;
     Py_ssize_t ndigits;
     const Py_digit *digits;
+    const PyLongLayout *layout;
 } PyLong_DigitArray;
 
 PyAPI_FUNC(int) PyLong_AsDigitArray(
@@ -184,7 +185,8 @@ typedef struct PyLongWriter PyLongWriter;
 PyAPI_FUNC(PyLongWriter*) PyLongWriter_Create(
     int negative,
     Py_ssize_t ndigits,
-    Py_digit **digits);
+    Py_digit **digits,
+    const PyLongLayout *layout);
 PyAPI_FUNC(PyObject*) PyLongWriter_Finish(PyLongWriter *writer);
 
 #ifdef __cplusplus

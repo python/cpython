@@ -568,14 +568,17 @@ Export API
    Its size depend on the :c:macro:`!PYLONG_BITS_IN_DIGIT` macro:
    see the ``configure`` :option:`--enable-big-digits` option.
 
-   See :c:member:`PyLong_LAYOUT.bits_per_digit` for the number of bits per
-   digit and :c:member:`PyLong_LAYOUT.digit_size` for the size of a digit (in
+   See :c:member:`PyLongLayout.bits_per_digit` for the number of bits per
+   digit and :c:member:`PyLongLayout.digit_size` for the size of a digit (in
    bytes).
 
 
-.. c:struct:: PyLong_LAYOUT
+.. c:struct:: PyLongLayout
 
    Layout of an array of digits, used by Python :class:`int` object.
+
+   Use :c:func:`PyLong_GetNativeLayout` to get the native layout of Python
+   :class:`int` objects.
 
    See also :attr:`sys.int_info` which exposes similar information to Python.
 
@@ -602,11 +605,16 @@ Export API
       - ``-1`` for least significant first (little endian)
 
 
+.. c:function:: const PyLongLayout* PyLong_GetNativeLayout(void)
+
+   Get the native layout of Python :class:`int` objects.
+
+   See the :c:struct:`PyLongLayout` structure.
+
+
 .. c:struct:: PyLong_DigitArray
 
    A Python :class:`int` object exported as an array of digits.
-
-   See :c:struct:`PyLong_LAYOUT` for the :c:member:`digits` layout.
 
    .. c:member:: PyObject *obj
 
@@ -623,6 +631,10 @@ Export API
    .. c:member:: const Py_digit *digits
 
       Read-only array of unsigned digits.
+
+   .. c:member:: const PyLongLayout *layout
+
+      Layout of the :c:member:`digits`.
 
 
 .. c:function:: int PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
@@ -658,7 +670,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    The instance must be destroyed by :c:func:`PyLongWriter_Finish`.
 
 
-.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, Py_digit **digits)
+.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, Py_digit **digits, const PyLongLayout *layout)
 
    Create a :c:type:`PyLongWriter`.
 
@@ -675,7 +687,8 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    in the range [``0``; ``PyLong_BASE - 1``]. Unused digits must be set to
    ``0``.
 
-   See :c:struct:`PyLong_LAYOUT` for the layout of an array of digits.
+   *layout* is the layout of *digits*: it must be equal to
+   :c:func:`PyLong_GetNativeLayout`.
 
 
 .. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)

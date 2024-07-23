@@ -6736,6 +6736,12 @@ const PyLongLayout PyLong_LAYOUT = {
 };
 
 
+const PyLongLayout* PyLong_GetNativeLayout(void)
+{
+    return &PyLong_LAYOUT;
+}
+
+
 int
 PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
 {
@@ -6752,6 +6758,7 @@ PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
         array->ndigits = 1;
     }
     array->digits = self->long_value.ob_digit;
+    array->layout = &PyLong_LAYOUT;
     return 0;
 }
 
@@ -6768,13 +6775,21 @@ PyLong_FreeDigitArray(PyLong_DigitArray *array)
 
 /* --- PyLongWriter API --------------------------------------------------- */
 
-PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, Py_digit **digits)
+PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, Py_digit **digits,
+                                  const PyLongLayout *layout)
 {
     if (ndigits < 0) {
         PyErr_SetString(PyExc_ValueError, "ndigits must be positive");
         return NULL;
     }
     assert(digits != NULL);
+    // First, compare pointers (fast-path) since it's faster
+    if (layout != &PyLong_LAYOUT
+        && (memcmp(layout, &PyLong_LAYOUT, sizeof(*layout)) != 0))
+    {
+        PyErr_SetString(PyExc_ValueError, "only the native layout is supported");
+        return NULL;
+    }
 
     PyLongObject *obj = _PyLong_New(ndigits);
     if (obj == NULL) {
