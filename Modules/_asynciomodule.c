@@ -2009,14 +2009,11 @@ static int
 enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *item;
-    Py_hash_t hash;
-    hash = PyObject_Hash(loop);
-    if (hash == -1) {
+    int res = PyDict_SetDefaultRef(state->current_tasks, loop, task, &item);
+    if (res < 0) {
         return -1;
     }
-    item = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
-    if (item != NULL) {
-        Py_INCREF(item);
+    else if (res == 1) {
         PyErr_Format(
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
@@ -2025,10 +2022,8 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
         Py_DECREF(item);
         return -1;
     }
-    if (PyErr_Occurred()) {
-        return -1;
-    }
-    return _PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash);
+    Py_DECREF(item);
+    return 0;
 }
 
 
