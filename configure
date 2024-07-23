@@ -9823,10 +9823,6 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_slower_safety" >&5
 printf "%s\n" "$enable_slower_safety" >&6; }
 
-if test "$enable_slower_safety" = "yes"
-then
-fi
-
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
