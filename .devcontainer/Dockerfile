@@ -2,7 +2,7 @@ FROM docker.io/library/fedora:40
 
 ENV CC=clang
 
-ENV WASI_SDK_VERSION=21
+ENV WASI_SDK_VERSION=22
 ENV WASI_SDK_PATH=/opt/wasi-sdk
 
 ENV WASMTIME_HOME=/opt/wasmtime

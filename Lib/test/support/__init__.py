@@ -2595,14 +2595,18 @@ def force_not_colorized(func):
     def wrapper(*args, **kwargs):
         import _colorize
         original_fn = _colorize.can_colorize
-        variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
+        variables: dict[str, str | None] = {
+            "PYTHON_COLORS": None, "FORCE_COLOR": None, "NO_COLOR": None
+        }
         try:
             for key in variables:
                 variables[key] = os.environ.pop(key, None)
+            os.environ["NO_COLOR"] = "1"
             _colorize.can_colorize = lambda: False
             return func(*args, **kwargs)
         finally:
             _colorize.can_colorize = original_fn
+            del os.environ["NO_COLOR"]
             for key, value in variables.items():
                 if value is not None:
                     os.environ[key] = value

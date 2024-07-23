@@ -710,8 +710,6 @@ AC_ARG_WITH(
         Darwin|iOS)
           # iOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
           ;;
         *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
       esac
@@ -719,8 +717,6 @@ AC_ARG_WITH(
       ;;
     *)
       APP_STORE_COMPLIANCE_PATCH="${withval}"
-      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-      APP_STORE_COMPLIANCE_PATCH_FLAGS=
       AC_MSG_RESULT([applying custom app store compliance patch])
       ;;
     esac
@@ -729,29 +725,16 @@ AC_ARG_WITH(
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([applying default app store compliance patch])
         ;;
-      Darwin)
-        # Always *check* the compliance patch on macOS
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
-        AC_MSG_RESULT([checking (not applying) default app store compliance patch])
-        ;;
       *)
-        # No app compliance patching on any other platform
+        # No default app compliance patching on any other platform
         APP_STORE_COMPLIANCE_PATCH=
-        APP_STORE_COMPLIANCE_PATCH_TARGET=
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([not patching for app store compliance])
         ;;
     esac
 ])
 AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_TARGET])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_FLAGS])
 
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then

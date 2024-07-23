@@ -294,6 +294,19 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
+    def test_defaults_handle_spaces_when_encoded_words_is_folded_in_middle(self):
+        source = ('A very long long long long long long long long long long long long '
+                  'long long long long long long long long long long long súmmäry')
+        expected = ('Subject: A very long long long long long long long long long long long long\n'
+                    ' long long long long long long long long long long long =?utf-8?q?s=C3=BAmm?=\n'
+                    ' =?utf-8?q?=C3=A4ry?=\n\n').encode('ascii')
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
     def test_defaults_handle_spaces_at_start_of_subject(self):
         source = " Уведомление"
         expected = b"Subject:  =?utf-8?b?0KPQstC10LTQvtC80LvQtdC90LjQtQ==?=\n\n"

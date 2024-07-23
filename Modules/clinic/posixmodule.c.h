@@ -6348,7 +6348,7 @@ PyDoc_STRVAR(os_times__doc__,
 "\n"
 "The object returned behaves like a named tuple with these fields:\n"
 "  (utime, stime, cutime, cstime, elapsed_time)\n"
-"All fields are floating point numbers.");
+"All fields are floating-point numbers.");
 
 #define OS_TIMES_METHODDEF    \
     {"times", (PyCFunction)os_times, METH_NOARGS, os_times__doc__},
@@ -12819,4 +12819,4 @@ os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=cebab1ef718b4878 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a1d88bd90c7a28b input=a9049054013a1b77]*/
