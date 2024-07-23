@@ -3275,6 +3275,17 @@ class TestStack(unittest.TestCase):
             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
         )
 
+    def test_traceback_empty_ast(self):
+        # see gh-122145
+        fs = traceback.FrameSummary("?", 1, "s", lookup_line=False,
+                                    locals=None, end_lineno=1, colno=0,
+                                    end_colno=10, line="#123456789")
+        self.assertListEqual(
+            traceback.StackSummary().format_frame_summary(fs).splitlines(),
+            ['  File "?", line 1, in s', '    #123456789']
+        )
+
+
 class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
