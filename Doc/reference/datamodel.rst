@@ -2859,24 +2859,21 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. note::
 
-   Slicing is done exclusively with the following three methods.  A call like ::
+   Slicing is done exclusively with the following three methods.
+   :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__`.
+   Expressions like: ::
 
-      a[1:2] = b
-
-   is translated to ::
-
-      a[slice(1, 2, None)] = b
-
-   and so forth.  Missing slice items are always filled in with ``None``.
-   Key can be a tuple, and a calls like ::
-
-      a[0,] = b
-      a[1:2, 3:5] = b
+      a[1:2]
+      a[1:2,]
+      a[1:2, 2:3]
 
    are translated into:. ::
 
-      a[(0,)] = b
-      a[(slice(1, 2, None), slice(3, 5, None)] = b
+      a[slice(1, 2, None)]
+      a[(slice(1, 2, None),)]
+      a[(slice(1, 2, None), slice(2, 3, None))]
+
+   Missing slice items are always filled in with ``None``.
 
 
 .. method:: object.__getitem__(self, key)
@@ -2894,6 +2891,7 @@ through the object's keys; for sequences, it should iterate through the values.
    stoping the iteration. :func:`reversed` will also call ``len(self)`` and
    request only items at non-negative keys. However, if class passes as
    :class:`collections.abc.Sequence`, ``__getitem__`` should also:.
+
    1. Accept negative integer keys, for indexing from the end of the sequence.
    2. For all integer keys outside of bounds ``-len(self) <= key < len(self)``,
       raise :exc:`TypeError`.
@@ -2906,6 +2904,14 @@ through the object's keys; for sequences, it should iterate through the values.
    Second, there is expected behaviour for :term:`mapping` types:.
    ``__getitem__`` should return element for given *key*, if *key* is missing
    (not in the container), :exc:`KeyError` should be raised.
+   To avoid silent errors, ``__getitem__`` should only implement mapping
+   (or not implement it at all), but if needed, it could be extended
+   for *keys* of different type. For implicit (ABC) children of
+   :class:`collections.abc.Mapping`, static type checkers are allowed to
+   deduce *keys* type as all types accepted by ``__getitem__``.
+   To avoid such errors, :term:`mapping` types with extended ``__getitem__``
+   need to override this behaviour by explicitly deriving from
+   :ref:`types-genericalias` of :class:`collections.abc.Mapping`.
 
    Lastly, here is an example of possible implementation for ``Matrix``,
    that is also a ``Sequence[Sequence]``:. ::
