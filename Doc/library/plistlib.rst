@@ -117,7 +117,7 @@ This module defines the following functions:
    when a key of a dictionary is not a string, otherwise such keys are skipped.
 
    When *aware_datetime* is true and any field with type ``datetime.datetime``
-   is set as a :ref:`aware object <datetime-naive-aware>`, it will convert to
+   is set as an :ref:`aware object <datetime-naive-aware>`, it will convert to
    UTC timezone before writing it.
 
    A :exc:`TypeError` will be raised if the object is of an unsupported type or
