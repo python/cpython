@@ -52,7 +52,7 @@ the setsockopt() and getsockopt() methods.
 import _socket
 from _socket import *
 
-import os, sys, io, selectors, time
+import os, sys, io, selectors
 from enum import IntEnum, IntFlag
 
 try:
