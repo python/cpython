@@ -1,5 +1,5 @@
-:mod:`unittest` --- Unit testing framework
-==========================================
+:mod:`!unittest` --- Unit testing framework
+===========================================
 
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
@@ -1880,8 +1880,8 @@ Loading and running tests
       Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
-      the start directory is not the top level directory then the top level
-      directory must be specified separately.
+      the start directory is not the top level directory then *top_level_dir*
+      must be specified separately.
 
       If importing a module fails, for example due to a syntax error, then
       this will be recorded as a single error and discovery will continue.  If
@@ -1901,9 +1901,11 @@ Loading and running tests
       package.
 
       The pattern is deliberately not stored as a loader attribute so that
-      packages can continue discovery themselves. *top_level_dir* is stored so
-      ``load_tests`` does not need to pass this argument in to
-      ``loader.discover()``.
+      packages can continue discovery themselves.
+
+      *top_level_dir* is stored internally, and used as a default to any
+      nested calls to ``discover()``. That is, if a package's ``load_tests``
+      calls ``loader.discover()``, it does not need to pass this argument.
 
       *start_dir* can be a dotted module name as well as a directory.
 
@@ -1929,6 +1931,9 @@ Loading and running tests
       .. versionchanged:: 3.11
          *start_dir* can not be a :term:`namespace packages <namespace package>`.
          It has been broken since Python 3.7 and Python 3.11 officially remove it.
+
+      .. versionchanged:: 3.13
+         *top_level_dir* is only stored for the duration of *discover* call.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by
@@ -2196,8 +2201,8 @@ Loading and running tests
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.12
-      Added *durations* keyword argument.
+   .. versionchanged:: 3.12
+      Added the *durations* keyword parameter.
 
 .. data:: defaultTestLoader
 
@@ -2290,7 +2295,7 @@ Loading and running tests
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
    an exit code indicating success (0) or failure (1) of the tests run.
-   An exit code of 5 indicates that no tests were run.
+   An exit code of 5 indicates that no tests were run or skipped.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.
@@ -2311,8 +2316,8 @@ Loading and running tests
    (see :ref:`Warning control <using-on-warnings>`),
    otherwise it will be set to ``'default'``.
 
-   Calling ``main`` actually returns an instance of the ``TestProgram`` class.
-   This stores the result of the tests run as the ``result`` attribute.
+   Calling ``main`` returns an object with the ``result`` attribute that contains
+   the result of the tests run as a :class:`unittest.TestResult`.
 
    .. versionchanged:: 3.1
       The *exit* parameter was added.

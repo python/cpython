@@ -267,7 +267,7 @@ typedef struct {
 LOCAL(int)
 create_extra(ElementObject* self, PyObject* attrib)
 {
-    self->extra = PyObject_Malloc(sizeof(ElementObjectExtra));
+    self->extra = PyMem_Malloc(sizeof(ElementObjectExtra));
     if (!self->extra) {
         PyErr_NoMemory();
         return -1;
@@ -295,10 +295,11 @@ dealloc_extra(ElementObjectExtra *extra)
     for (i = 0; i < extra->length; i++)
         Py_DECREF(extra->children[i]);
 
-    if (extra->children != extra->_children)
-        PyObject_Free(extra->children);
+    if (extra->children != extra->_children) {
+        PyMem_Free(extra->children);
+    }
 
-    PyObject_Free(extra);
+    PyMem_Free(extra);
 }
 
 LOCAL(void)
@@ -371,32 +372,26 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
 {
-    PyObject *attrib_str = PyUnicode_FromString("attrib");
-    if (attrib_str == NULL) {
+    PyObject *attrib;
+    if (PyDict_PopString(kwds, "attrib", &attrib) < 0) {
         return NULL;
     }
-    PyObject *attrib = PyDict_GetItemWithError(kwds, attrib_str);
 
     if (attrib) {
         /* If attrib was found in kwds, copy its value and remove it from
          * kwds
          */
         if (!PyDict_Check(attrib)) {
-            Py_DECREF(attrib_str);
             PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
                          Py_TYPE(attrib)->tp_name);
+            Py_DECREF(attrib);
             return NULL;
         }
-        attrib = PyDict_Copy(attrib);
-        if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
-            Py_SETREF(attrib, NULL);
-        }
+        Py_SETREF(attrib, PyDict_Copy(attrib));
     }
-    else if (!PyErr_Occurred()) {
+    else {
         attrib = PyDict_New();
     }
-
-    Py_DECREF(attrib_str);
 
     if (attrib != NULL && PyDict_Update(attrib, kwds) < 0) {
         Py_DECREF(attrib);
@@ -495,14 +490,16 @@ element_resize(ElementObject* self, Py_ssize_t extra)
              * "children", which needs at least 4 bytes. Although it's a
              * false alarm always assume at least one child to be safe.
              */
-            children = PyObject_Realloc(self->extra->children,
-                                        size * sizeof(PyObject*));
-            if (!children)
+            children = PyMem_Realloc(self->extra->children,
+                                     size * sizeof(PyObject*));
+            if (!children) {
                 goto nomemory;
+            }
         } else {
-            children = PyObject_Malloc(size * sizeof(PyObject*));
-            if (!children)
+            children = PyMem_Malloc(size * sizeof(PyObject*));
+            if (!children) {
                 goto nomemory;
+            }
             /* copy existing children from static area to malloc buffer */
             memcpy(children, self->extra->children,
                    self->extra->length * sizeof(PyObject*));
@@ -1505,7 +1502,7 @@ element_bool(PyObject* self_)
 {
     ElementObject* self = (ElementObject*) self_;
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Testing an element's truth value will raise an exception "
+                     "Testing an element's truth value will always return True "
                      "in future versions.  Use specific 'len(elem)' or "
                      "'elem is not None' test instead.",
                      1) < 0) {
@@ -3044,7 +3041,7 @@ _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
 #define EXPAT(st, func) ((st)->expat_capi->func)
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
-    PyObject_Malloc, PyObject_Realloc, PyObject_Free};
+    PyMem_Malloc, PyMem_Realloc, PyMem_Free};
 
 typedef struct {
     PyObject_HEAD
@@ -3892,6 +3889,40 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
 }
 
 /*[clinic input]
+_elementtree.XMLParser.flush
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_XMLParser_flush_impl(XMLParserObject *self)
+/*[clinic end generated code: output=42fdb8795ca24509 input=effbecdb28715949]*/
+{
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
+
+    elementtreestate *st = self->state;
+
+    if (EXPAT(st, SetReparseDeferralEnabled) == NULL) {
+        Py_RETURN_NONE;
+    }
+
+    // NOTE: The Expat parser in the C implementation of ElementTree is not
+    //       exposed to the outside; as a result we known that reparse deferral
+    //       is currently enabled, or we would not even have access to function
+    //       XML_SetReparseDeferralEnabled in the first place (which we checked
+    //       for, a few lines up).
+
+    EXPAT(st, SetReparseDeferralEnabled)(self->parser, XML_FALSE);
+
+    PyObject *res = expat_parse(st, self, "", 0, XML_FALSE);
+
+    EXPAT(st, SetReparseDeferralEnabled)(self->parser, XML_TRUE);
+
+    return res;
+}
+
+/*[clinic input]
 _elementtree.XMLParser.feed
 
     data: object
@@ -4285,6 +4316,7 @@ static PyType_Spec treebuilder_spec = {
 static PyMethodDef xmlparser_methods[] = {
     _ELEMENTTREE_XMLPARSER_FEED_METHODDEF
     _ELEMENTTREE_XMLPARSER_CLOSE_METHODDEF
+    _ELEMENTTREE_XMLPARSER_FLUSH_METHODDEF
     _ELEMENTTREE_XMLPARSER__PARSE_WHOLE_METHODDEF
     _ELEMENTTREE_XMLPARSER__SETEVENTS_METHODDEF
     {NULL, NULL}
@@ -4431,6 +4463,7 @@ error:
 static struct PyModuleDef_Slot elementtree_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

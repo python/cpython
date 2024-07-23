@@ -220,6 +220,9 @@ def compile_c_extension(
         )
     else:
         objects = compiler.object_filenames(extension.sources, output_dir=cmd.build_temp)
+    # The cmd.get_libraries() call needs a valid compiler attribute or we will
+    # get an incorrect library name on the free-threaded Windows build.
+    cmd.compiler = compiler
     # Now link the object files together into a "shared object"
     compiler.link_shared_object(
         objects,

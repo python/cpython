@@ -1,5 +1,5 @@
-:mod:`select` --- Waiting for I/O completion
-============================================
+:mod:`!select` --- Waiting for I/O completion
+=============================================
 
 .. module:: select
    :synopsis: Wait for I/O completion on multiple streams.
@@ -129,7 +129,7 @@ The module defines the following:
 
    Empty iterables are allowed, but acceptance of three empty iterables is
    platform-dependent. (It is known to work on Unix but not on Windows.)  The
-   optional *timeout* argument specifies a time-out as a floating point number
+   optional *timeout* argument specifies a time-out as a floating-point number
    in seconds.  When the *timeout* argument is omitted the function blocks until
    at least one file descriptor is ready.  A time-out value of zero specifies a
    poll and never blocks.
@@ -185,8 +185,8 @@ The module defines the following:
 -----------------------------
 
 Solaris and derivatives have ``/dev/poll``. While :c:func:`!select` is
-O(highest file descriptor) and :c:func:`!poll` is O(number of file
-descriptors), ``/dev/poll`` is O(active file descriptors).
+*O*\ (*highest file descriptor*) and :c:func:`!poll` is *O*\ (*number of file
+descriptors*), ``/dev/poll`` is *O*\ (*active file descriptors*).
 
 ``/dev/poll`` behaviour is very close to the standard :c:func:`!poll`
 object.
@@ -381,8 +381,8 @@ scalability for network servers that service many, many clients at the same
 time. :c:func:`!poll` scales better because the system call only requires listing
 the file descriptors of interest, while :c:func:`!select` builds a bitmap, turns
 on bits for the fds of interest, and then afterward the whole bitmap has to be
-linearly scanned again. :c:func:`!select` is O(highest file descriptor), while
-:c:func:`!poll` is O(number of file descriptors).
+linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), while
+:c:func:`!poll` is *O*\ (*number of file descriptors*).
 
 
 .. method:: poll.register(fd[, eventmask])

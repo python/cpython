@@ -1,0 +1,1 @@
+Bump :mod:`pickle` default protocol to ``5``.

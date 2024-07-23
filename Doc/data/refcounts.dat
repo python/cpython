@@ -402,6 +402,21 @@ PyContextVar_Reset:int:::
 PyContextVar_Reset:PyObject*:var:0:
 PyContextVar_Reset:PyObject*:token:-1:
 
+PyCFunction_New:PyObject*::+1:
+PyCFunction_New:PyMethodDef*:ml::
+PyCFunction_New:PyObject*:self:+1:
+
+PyCFunction_NewEx:PyObject*::+1:
+PyCFunction_NewEx:PyMethodDef*:ml::
+PyCFunction_NewEx:PyObject*:self:+1:
+PyCFunction_NewEx:PyObject*:module:+1:
+
+PyCMethod_New:PyObject*::+1:
+PyCMethod_New:PyMethodDef*:ml::
+PyCMethod_New:PyObject*:self:+1:
+PyCMethod_New:PyObject*:module:+1:
+PyCMethod_New:PyObject*:cls:+1:
+
 PyDate_Check:int:::
 PyDate_Check:PyObject*:ob:0:
 
@@ -775,6 +790,12 @@ PyEval_GetGlobals:PyObject*::0:
 
 PyEval_GetFrame:PyObject*::0:
 
+PyEval_GetFrameBuiltins:PyObject*::+1:
+
+PyEval_GetFrameLocals:PyObject*::+1:
+
+PyEval_GetFrameGlobals:PyObject*::+1:
+
 PyEval_GetFuncDesc:const char*:::
 PyEval_GetFuncDesc:PyObject*:func:0:
 
@@ -900,6 +921,32 @@ PyFloat_FromString:PyObject*:str:0:
 
 PyFloat_GetInfo:PyObject*::+1:
 PyFloat_GetInfo::void::
+
+PyFrame_GetBack:PyObject*::+1:
+PyFrame_GetBack:PyFrameObject*:frame:0:
+
+PyFrame_GetBuiltins:PyObject*::+1:
+PyFrame_GetBuiltins:PyFrameObject*:frame:0:
+
+PyFrame_GetCode:PyObject*::+1:
+PyFrame_GetCode:PyFrameObject*:frame:0:
+
+PyFrame_GetGenerator:PyObject*::+1:
+PyFrame_GetGenerator:PyFrameObject*:frame:0:
+
+PyFrame_GetGlobals:PyObject*::+1:
+PyFrame_GetGlobals:PyFrameObject*:frame:0:
+
+PyFrame_GetLocals:PyObject*::+1:
+PyFrame_GetLocals:PyFrameObject*:frame:0:
+
+PyFrame_GetVar:PyObject*::+1:
+PyFrame_GetVar:PyFrameObject*:frame:0:
+PyFrame_GetVar:PyObject*:name:0:
+
+PyFrame_GetVarString:PyObject*::+1:
+PyFrame_GetVarString:PyFrameObject*:frame:0:
+PyFrame_GetVarString:const char*:name::
 
 PyFrozenSet_Check:int:::
 PyFrozenSet_Check:PyObject*:p:0:
@@ -1117,6 +1164,10 @@ PyList_GET_SIZE:PyObject*:list:0:
 PyList_GetItem:PyObject*::0:
 PyList_GetItem:PyObject*:list:0:
 PyList_GetItem:Py_ssize_t:index::
+
+PyList_GetItemRef:PyObject*::+1:
+PyList_GetItemRef:PyObject*:list:0:
+PyList_GetItemRef:Py_ssize_t:index::
 
 PyList_GetSlice:PyObject*::+1:
 PyList_GetSlice:PyObject*:list:0:
@@ -1588,6 +1639,13 @@ PyObject_Call:PyObject*::+1:
 PyObject_Call:PyObject*:callable_object:0:
 PyObject_Call:PyObject*:args:0:
 PyObject_Call:PyObject*:kw:0:
+
+PyObject_CallNoArgs:PyObject*::+1:
+PyObject_CallNoArgs:PyObject*:callable_object:0:
+
+PyObject_CallOneArg:PyObject*::+1:
+PyObject_CallOneArg:PyObject*:callable_object:0:
+PyObject_CallOneArg:PyObject*:arg:0:
 
 PyObject_CallFunction:PyObject*::+1:
 PyObject_CallFunction:PyObject*:callable_object:0:

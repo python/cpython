@@ -1,11 +1,15 @@
-from test.support import verbose, reap_children
+import unittest
+from test.support import (
+    is_android, is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
+)
 from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
 
-# Skip these tests if termios or fcntl are not available
+# Skip these tests if termios is not available
 import_module('termios')
-# fcntl is a proxy for not being one of the wasm32 platforms even though we
-# don't use this module... a proper check for what crashes those is needed.
-import_module("fcntl")
+
+if is_android or is_apple_mobile or is_emscripten or is_wasi:
+    raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
 import os
@@ -16,7 +20,6 @@ import select
 import signal
 import socket
 import io # readline
-import unittest
 import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -292,7 +295,26 @@ class PtyTest(unittest.TestCase):
         self.assertEqual(data, b"")
 
     def test_spawn_doesnt_hang(self):
-        pty.spawn([sys.executable, '-c', 'print("hi there")'])
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, 'wb') as f:
+            STDOUT_FILENO = 1
+            dup_stdout = os.dup(STDOUT_FILENO)
+            os.dup2(f.fileno(), STDOUT_FILENO)
+            buf = b''
+            def master_read(fd):
+                nonlocal buf
+                data = os.read(fd, 1024)
+                buf += data
+                return data
+            try:
+                pty.spawn([sys.executable, '-c', 'print("hi there")'],
+                          master_read)
+            finally:
+                os.dup2(dup_stdout, STDOUT_FILENO)
+                os.close(dup_stdout)
+        self.assertEqual(buf, b'hi there\r\n')
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'hi there\r\n')
 
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""

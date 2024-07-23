@@ -1,5 +1,5 @@
-:mod:`json` --- JSON encoder and decoder
-========================================
+:mod:`!json` --- JSON encoder and decoder
+=========================================
 
 .. module:: json
    :synopsis: Encode and decode the JSON format.
@@ -106,7 +106,7 @@ Extending :class:`JSONEncoder`::
     ...         if isinstance(obj, complex):
     ...             return [obj.real, obj.imag]
     ...         # Let the base class default method raise the TypeError
-    ...         return json.JSONEncoder.default(self, obj)
+    ...         return super().default(obj)
     ...
     >>> json.dumps(2 + 1j, cls=ComplexEncoder)
     '[2.0, 1.0]'
@@ -504,7 +504,7 @@ Encoders and Decoders
             else:
                 return list(iterable)
             # Let the base class default method raise the TypeError
-            return json.JSONEncoder.default(self, o)
+            return super().default(o)
 
 
    .. method:: encode(o)

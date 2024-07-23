@@ -1,7 +1,5 @@
 """Extract, format and print information about Python stack traces."""
 
-import os
-import io
 import collections.abc
 import itertools
 import linecache
@@ -9,6 +7,8 @@ import sys
 import textwrap
 import warnings
 from contextlib import suppress
+import _colorize
+from _colorize import ANSIColors
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -21,7 +21,6 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
 # Formatting and printing lists of traceback lines.
 #
 
-_COLORIZE = True
 
 def print_list(extracted_list, file=None):
     """Print the list of tuples as returned by extract_tb() or
@@ -133,40 +132,15 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 
 BUILTIN_EXCEPTION_LIMIT = object()
 
-def _can_colorize():
-    if sys.platform == "win32":
-        try:
-            import nt
-            if not nt._supports_virtual_terminal():
-                return False
-        except (ImportError, AttributeError):
-            return False
-
-    if os.environ.get("PYTHON_COLORS") == "0":
-        return False
-    if os.environ.get("PYTHON_COLORS") == "1":
-        return True
-    if "NO_COLOR" in os.environ:
-        return False
-    if not _COLORIZE:
-        return False
-    if "FORCE_COLOR" in os.environ:
-        return True
-    if os.environ.get("TERM") == "dumb":
-        return False
-    try:
-        return os.isatty(sys.stderr.fileno())
-    except io.UnsupportedOperation:
-        return sys.stderr.isatty()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _can_colorize()
+    colorize = _colorize.can_colorize()
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
 def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
-                     chain=True):
+                     chain=True, **kwargs):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -175,12 +149,13 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
+    colorize = kwargs.get("colorize", False)
     value, tb = _parse_value_tb(exc, value, tb)
     te = TracebackException(type(value), value, tb, limit=limit, compact=True)
-    return list(te.format(chain=chain))
+    return list(te.format(chain=chain, colorize=colorize))
 
 
-def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
+def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs):
     """Format the exception part of a traceback.
 
     The return value is a list of strings, each ending in a newline.
@@ -195,10 +170,11 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
     :exc:`BaseExceptionGroup`, the nested exceptions are included as
     well, recursively, with indentation relative to their nesting depth.
     """
+    colorize = kwargs.get("colorize", False)
     if value is _sentinel:
         value = exc
     te = TracebackException(type(value), value, None, compact=True)
-    return list(te.format_exception_only(show_group=show_group))
+    return list(te.format_exception_only(show_group=show_group, colorize=colorize))
 
 
 # -- not official API but folk probably use these two functions.
@@ -208,15 +184,16 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     end_char = "\n" if insert_final_newline else ""
     if colorize:
         if value is None or not valuestr:
-            line = f"{_ANSIColors.BOLD_MAGENTA}{etype}{_ANSIColors.RESET}{end_char}"
+            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}{end_char}"
         else:
-            line = f"{_ANSIColors.BOLD_MAGENTA}{etype}{_ANSIColors.RESET}: {_ANSIColors.MAGENTA}{valuestr}{_ANSIColors.RESET}{end_char}"
+            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}: {ANSIColors.MAGENTA}{valuestr}{ANSIColors.RESET}{end_char}"
     else:
         if value is None or not valuestr:
             line = f"{etype}{end_char}"
         else:
             line = f"{etype}: {valuestr}{end_char}"
     return line
+
 
 def _safe_string(value, what, func=str):
     try:
@@ -443,13 +420,6 @@ def _get_code_position(code, instruction_index):
 
 _RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 
-class _ANSIColors:
-    RED = '\x1b[31m'
-    BOLD_RED = '\x1b[1;31m'
-    MAGENTA = '\x1b[35m'
-    BOLD_MAGENTA = '\x1b[1;35m'
-    GREY = '\x1b[90m'
-    RESET = '\x1b[0m'
 
 class StackSummary(list):
     """A list of FrameSummary objects, representing a stack of frames."""
@@ -554,15 +524,15 @@ class StackSummary(list):
             filename = "<stdin>"
         if colorize:
             row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.MAGENTA,
                     filename,
-                    _ANSIColors.RESET,
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.RESET,
+                    ANSIColors.MAGENTA,
                     frame_summary.lineno,
-                    _ANSIColors.RESET,
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.RESET,
+                    ANSIColors.MAGENTA,
                     frame_summary.name,
-                    _ANSIColors.RESET,
+                    ANSIColors.RESET,
                     )
             )
         else:
@@ -607,13 +577,10 @@ class StackSummary(list):
 
                 # attempt to parse for anchors
                 anchors = None
+                show_carets = False
                 with suppress(Exception):
                     anchors = _extract_caret_anchors_from_line_segment(segment)
-
-                # only use carets if there are anchors or the carets do not span all lines
-                show_carets = False
-                if anchors or all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
-                    show_carets = True
+                show_carets = self._should_show_carets(start_offset, end_offset, all_lines, anchors)
 
                 result = []
 
@@ -689,11 +656,11 @@ class StackSummary(list):
                         for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
                             caret_group = list(group)
                             if color == "^":
-                                colorized_line_parts.append(_ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + _ANSIColors.RESET)
-                                colorized_carets_parts.append(_ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + _ANSIColors.RESET)
+                                colorized_line_parts.append(ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
+                                colorized_carets_parts.append(ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
                             elif color == "~":
-                                colorized_line_parts.append(_ANSIColors.RED + "".join(char for char, _ in caret_group) + _ANSIColors.RESET)
-                                colorized_carets_parts.append(_ANSIColors.RED + "".join(caret for _, caret in caret_group) + _ANSIColors.RESET)
+                                colorized_line_parts.append(ANSIColors.RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
+                                colorized_carets_parts.append(ANSIColors.RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
                             else:
                                 colorized_line_parts.append("".join(char for char, _ in caret_group))
                                 colorized_carets_parts.append("".join(caret for _, caret in caret_group))
@@ -726,6 +693,37 @@ class StackSummary(list):
                 row.append('    {name} = {value}\n'.format(name=name, value=value))
 
         return ''.join(row)
+
+    def _should_show_carets(self, start_offset, end_offset, all_lines, anchors):
+        with suppress(SyntaxError, ImportError):
+            import ast
+            tree = ast.parse('\n'.join(all_lines))
+            statement = tree.body[0]
+            value = None
+            def _spawns_full_line(value):
+                return (
+                    value.lineno == 1
+                    and value.end_lineno == len(all_lines)
+                    and value.col_offset == start_offset
+                    and value.end_col_offset == end_offset
+                )
+            match statement:
+                case ast.Return(value=ast.Call()):
+                    if isinstance(statement.value.func, ast.Name):
+                        value = statement.value
+                case ast.Assign(value=ast.Call()):
+                    if (
+                        len(statement.targets) == 1 and
+                        isinstance(statement.targets[0], ast.Name)
+                    ):
+                        value = statement.value
+            if value is not None and _spawns_full_line(value):
+                return False
+        if anchors:
+            return True
+        if all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
+            return True
+        return False
 
     def format(self, **kwargs):
         """Format the stack ready for printing.
@@ -1051,7 +1049,11 @@ class TracebackException:
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _safe_string(exc_value, 'exception')
-        self.__notes__ = getattr(exc_value, '__notes__', None)
+        try:
+            self.__notes__ = getattr(exc_value, '__notes__', None)
+        except Exception as e:
+            self.__notes__ = [
+                f'Ignored error getting __notes__: {_safe_string(e, '__notes__', repr)}']
 
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
@@ -1265,12 +1267,12 @@ class TracebackException:
         if self.lineno is not None:
             if colorize:
                 yield '  File {}"{}"{}, line {}{}{}\n'.format(
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.MAGENTA,
                     self.filename or "<string>",
-                    _ANSIColors.RESET,
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.RESET,
+                    ANSIColors.MAGENTA,
                     self.lineno,
-                    _ANSIColors.RESET,
+                    ANSIColors.RESET,
                     )
             else:
                 yield '  File "{}", line {}\n'.format(
@@ -1310,11 +1312,11 @@ class TracebackException:
                         # colorize from colno to end_colno
                         ltext = (
                             ltext[:colno] +
-                            _ANSIColors.BOLD_RED + ltext[colno:end_colno] + _ANSIColors.RESET +
+                            ANSIColors.BOLD_RED + ltext[colno:end_colno] + ANSIColors.RESET +
                             ltext[end_colno:]
                         )
-                        start_color = _ANSIColors.BOLD_RED
-                        end_color = _ANSIColors.RESET
+                        start_color = ANSIColors.BOLD_RED
+                        end_color = ANSIColors.RESET
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
                         "".join(caretspace),
@@ -1327,12 +1329,12 @@ class TracebackException:
         msg = self.msg or "<no detail available>"
         if colorize:
             yield "{}{}{}: {}{}{}{}\n".format(
-                _ANSIColors.BOLD_MAGENTA,
+                ANSIColors.BOLD_MAGENTA,
                 stype,
-                _ANSIColors.RESET,
-                _ANSIColors.MAGENTA,
+                ANSIColors.RESET,
+                ANSIColors.MAGENTA,
                 msg,
-                _ANSIColors.RESET,
+                ANSIColors.RESET,
                 filename_suffix)
         else:
             yield "{}: {}{}\n".format(stype, msg, filename_suffix)
@@ -1468,12 +1470,23 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         obj = exc_value.obj
         try:
             d = dir(obj)
+            hide_underscored = (wrong_name[:1] != '_')
+            if hide_underscored and tb is not None:
+                while tb.tb_next is not None:
+                    tb = tb.tb_next
+                frame = tb.tb_frame
+                if 'self' in frame.f_locals and frame.f_locals['self'] is obj:
+                    hide_underscored = False
+            if hide_underscored:
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
             d = dir(mod)
+            if wrong_name[:1] != '_':
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     else:
@@ -1496,6 +1509,13 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             self = frame.f_locals['self']
             if hasattr(self, wrong_name):
                 return f"self.{wrong_name}"
+
+    try:
+        import _suggestions
+    except ImportError:
+        pass
+    else:
+        return _suggestions._generate_suggestions(d, wrong_name)
 
     # Compute closest match
 

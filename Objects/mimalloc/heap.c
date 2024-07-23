@@ -26,7 +26,7 @@ typedef bool (heap_page_visitor_fun)(mi_heap_t* heap, mi_page_queue_t* pq, mi_pa
 // Visit all pages in a heap; returns `false` if break was called.
 static bool mi_heap_visit_pages(mi_heap_t* heap, heap_page_visitor_fun* fn, void* arg1, void* arg2)
 {
-  if (heap==NULL || heap->page_count==0) return 0;
+  if (heap==NULL || heap->page_count==0) return true;
 
   // visit all pages
   #if MI_DEBUG>1
@@ -98,7 +98,10 @@ static bool mi_heap_page_collect(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t
   if (mi_page_all_free(page)) {
     // no more used blocks, free the page.
     // note: this will free retired pages as well.
-    _mi_page_free(page, pq, collect >= MI_FORCE);
+    bool freed = _PyMem_mi_page_maybe_free(page, pq, collect >= MI_FORCE);
+    if (!freed && collect == MI_ABANDON) {
+      _mi_page_abandon(page, pq);
+    }
   }
   else if (collect == MI_ABANDON) {
     // still used blocks but the thread is done; abandon the page
@@ -152,6 +155,9 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
 
   // collect retired pages
   _mi_heap_collect_retired(heap, force);
+
+  // free pages that were delayed with QSBR
+  _PyMem_mi_heap_collect_qsbr(heap);
 
   // collect all pages owned by this thread
   mi_heap_visit_pages(heap, &mi_heap_page_collect, &collect, NULL);
@@ -209,7 +215,7 @@ mi_heap_t* mi_heap_get_backing(void) {
   return bheap;
 }
 
-void _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id)
+void _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id, bool no_reclaim, uint8_t tag)
 {
   _mi_memcpy_aligned(heap, &_mi_heap_empty, sizeof(mi_heap_t));
   heap->tld = tld;
@@ -224,17 +230,19 @@ void _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id)
   heap->cookie = _mi_heap_random_next(heap) | 1;
   heap->keys[0] = _mi_heap_random_next(heap);
   heap->keys[1] = _mi_heap_random_next(heap);
+  heap->no_reclaim = no_reclaim;
+  heap->tag = tag;
+  // push on the thread local heaps list
+  heap->next = heap->tld->heaps;
+  heap->tld->heaps = heap;
 }
 
 mi_decl_nodiscard mi_heap_t* mi_heap_new_in_arena(mi_arena_id_t arena_id) {
   mi_heap_t* bheap = mi_heap_get_backing();
   mi_heap_t* heap = mi_heap_malloc_tp(bheap, mi_heap_t);  // todo: OS allocate in secure mode?
   if (heap == NULL) return NULL;
-  _mi_heap_init_ex(heap, bheap->tld, arena_id);
-  heap->no_reclaim = true;  // don't reclaim abandoned pages or otherwise destroy is unsafe
-  // push on the thread local heaps list
-  heap->next = heap->tld->heaps;
-  heap->tld->heaps = heap;
+  // don't reclaim abandoned pages or otherwise destroy is unsafe
+  _mi_heap_init_ex(heap, bheap->tld, arena_id, true, 0);
   return heap;
 }
 
@@ -438,7 +446,7 @@ void mi_heap_delete(mi_heap_t* heap)
   if (heap==NULL || !mi_heap_is_initialized(heap)) return;
 
   if (!mi_heap_is_backing(heap)) {
-    // tranfer still used pages to the backing heap
+    // transfer still used pages to the backing heap
     mi_heap_absorb(heap->tld->heap_backing, heap);
   }
   else {
@@ -519,15 +527,23 @@ typedef struct mi_heap_area_ex_s {
   mi_page_t*     page;
 } mi_heap_area_ex_t;
 
-static bool mi_heap_area_visit_blocks(const mi_heap_area_ex_t* xarea, mi_block_visit_fun* visitor, void* arg) {
-  mi_assert(xarea != NULL);
-  if (xarea==NULL) return true;
-  const mi_heap_area_t* area = &xarea->area;
-  mi_page_t* page = xarea->page;
+static void mi_fast_divisor(size_t divisor, size_t* magic, size_t* shift) {
+  mi_assert_internal(divisor > 0 && divisor <= UINT32_MAX);
+  *shift = MI_INTPTR_BITS - mi_clz(divisor - 1);
+  *magic = (size_t)(((1ULL << 32) * ((1ULL << *shift) - divisor)) / divisor + 1);
+}
+
+static size_t mi_fast_divide(size_t n, size_t magic, size_t shift) {
+  mi_assert_internal(n <= UINT32_MAX);
+  return ((((uint64_t) n * magic) >> 32) + n) >> shift;
+}
+
+bool _mi_heap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t *page, mi_block_visit_fun* visitor, void* arg) {
+  mi_assert(area != NULL);
+  if (area==NULL) return true;
   mi_assert(page != NULL);
   if (page == NULL) return true;
 
-  _mi_page_free_collect(page,true);
   mi_assert_internal(page->local_free == NULL);
   if (page->used == 0) return true;
 
@@ -535,17 +551,39 @@ static bool mi_heap_area_visit_blocks(const mi_heap_area_ex_t* xarea, mi_block_v
   const size_t ubsize = mi_page_usable_block_size(page); // without padding
   size_t   psize;
   uint8_t* pstart = _mi_page_start(_mi_page_segment(page), page, &psize);
+  mi_heap_t* heap = mi_page_heap(page);
 
   if (page->capacity == 1) {
     // optimize page with one block
     mi_assert_internal(page->used == 1 && page->free == NULL);
-    return visitor(mi_page_heap(page), area, pstart, ubsize, arg);
+    return visitor(heap, area, pstart, ubsize, arg);
+  }
+
+  if (page->used == page->capacity) {
+    // optimize full pages
+    uint8_t* block = pstart;
+    for (size_t i = 0; i < page->capacity; i++) {
+        if (!visitor(heap, area, block, ubsize, arg)) return false;
+        block += bsize;
+    }
+    return true;
   }
 
   // create a bitmap of free blocks.
   #define MI_MAX_BLOCKS   (MI_SMALL_PAGE_SIZE / sizeof(void*))
-  uintptr_t free_map[MI_MAX_BLOCKS / sizeof(uintptr_t)];
-  memset(free_map, 0, sizeof(free_map));
+  uintptr_t free_map[MI_MAX_BLOCKS / MI_INTPTR_BITS];
+  size_t bmapsize = (page->capacity + MI_INTPTR_BITS - 1) / MI_INTPTR_BITS;
+  memset(free_map, 0, bmapsize * sizeof(uintptr_t));
+
+  if (page->capacity % MI_INTPTR_BITS != 0) {
+    size_t shift = (page->capacity % MI_INTPTR_BITS);
+    uintptr_t mask = (UINTPTR_MAX << shift);
+    free_map[bmapsize-1] = mask;
+  }
+
+  // fast repeated division by the block size
+  size_t magic, shift;
+  mi_fast_divisor(bsize, &magic, &shift);
 
   #if MI_DEBUG>1
   size_t free_count = 0;
@@ -557,10 +595,11 @@ static bool mi_heap_area_visit_blocks(const mi_heap_area_ex_t* xarea, mi_block_v
     mi_assert_internal((uint8_t*)block >= pstart && (uint8_t*)block < (pstart + psize));
     size_t offset = (uint8_t*)block - pstart;
     mi_assert_internal(offset % bsize == 0);
-    size_t blockidx = offset / bsize;  // Todo: avoid division?
-    mi_assert_internal( blockidx < MI_MAX_BLOCKS);
-    size_t bitidx = (blockidx / sizeof(uintptr_t));
-    size_t bit = blockidx - (bitidx * sizeof(uintptr_t));
+    size_t blockidx = mi_fast_divide(offset, magic, shift);
+    mi_assert_internal(blockidx == offset / bsize);
+    mi_assert_internal(blockidx < MI_MAX_BLOCKS);
+    size_t bitidx = (blockidx / MI_INTPTR_BITS);
+    size_t bit = blockidx - (bitidx * MI_INTPTR_BITS);
     free_map[bitidx] |= ((uintptr_t)1 << bit);
   }
   mi_assert_internal(page->capacity == (free_count + page->used));
@@ -569,19 +608,29 @@ static bool mi_heap_area_visit_blocks(const mi_heap_area_ex_t* xarea, mi_block_v
   #if MI_DEBUG>1
   size_t used_count = 0;
   #endif
-  for (size_t i = 0; i < page->capacity; i++) {
-    size_t bitidx = (i / sizeof(uintptr_t));
-    size_t bit = i - (bitidx * sizeof(uintptr_t));
-    uintptr_t m = free_map[bitidx];
-    if (bit == 0 && m == UINTPTR_MAX) {
-      i += (sizeof(uintptr_t) - 1); // skip a run of free blocks
+  uint8_t* block = pstart;
+  for (size_t i = 0; i < bmapsize; i++) {
+    if (free_map[i] == 0) {
+      // every block is in use
+      for (size_t j = 0; j < MI_INTPTR_BITS; j++) {
+        #if MI_DEBUG>1
+        used_count++;
+        #endif
+        if (!visitor(heap, area, block, ubsize, arg)) return false;
+        block += bsize;
+      }
     }
-    else if ((m & ((uintptr_t)1 << bit)) == 0) {
-      #if MI_DEBUG>1
-      used_count++;
-      #endif
-      uint8_t* block = pstart + (i * bsize);
-      if (!visitor(mi_page_heap(page), area, block, ubsize, arg)) return false;
+    else {
+      uintptr_t m = ~free_map[i];
+      while (m) {
+        #if MI_DEBUG>1
+        used_count++;
+        #endif
+        size_t bitidx = mi_ctz(m);
+        if (!visitor(heap, area, block + (bitidx * bsize), ubsize, arg)) return false;
+        m &= m - 1;
+      }
+      block += bsize * MI_INTPTR_BITS;
     }
   }
   mi_assert_internal(page->used == used_count);
@@ -590,21 +639,25 @@ static bool mi_heap_area_visit_blocks(const mi_heap_area_ex_t* xarea, mi_block_v
 
 typedef bool (mi_heap_area_visit_fun)(const mi_heap_t* heap, const mi_heap_area_ex_t* area, void* arg);
 
+void _mi_heap_area_init(mi_heap_area_t* area, mi_page_t* page) {
+  _mi_page_free_collect(page,true);
+  const size_t bsize = mi_page_block_size(page);
+  const size_t ubsize = mi_page_usable_block_size(page);
+  area->reserved = page->reserved * bsize;
+  area->committed = page->capacity * bsize;
+  area->blocks = _mi_page_start(_mi_page_segment(page), page, NULL);
+  area->used = page->used;   // number of blocks in use (#553)
+  area->block_size = ubsize;
+  area->full_block_size = bsize;
+}
 
 static bool mi_heap_visit_areas_page(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t* page, void* vfun, void* arg) {
   MI_UNUSED(heap);
   MI_UNUSED(pq);
   mi_heap_area_visit_fun* fun = (mi_heap_area_visit_fun*)vfun;
   mi_heap_area_ex_t xarea;
-  const size_t bsize = mi_page_block_size(page);
-  const size_t ubsize = mi_page_usable_block_size(page);
   xarea.page = page;
-  xarea.area.reserved = page->reserved * bsize;
-  xarea.area.committed = page->capacity * bsize;
-  xarea.area.blocks = _mi_page_start(_mi_page_segment(page), page, NULL);
-  xarea.area.used = page->used;   // number of blocks in use (#553)
-  xarea.area.block_size = ubsize;
-  xarea.area.full_block_size = bsize;
+  _mi_heap_area_init(&xarea.area, page);
   return fun(heap, &xarea, arg);
 }
 
@@ -625,7 +678,7 @@ static bool mi_heap_area_visitor(const mi_heap_t* heap, const mi_heap_area_ex_t*
   mi_visit_blocks_args_t* args = (mi_visit_blocks_args_t*)arg;
   if (!args->visitor(heap, &xarea->area, NULL, xarea->area.block_size, args->arg)) return false;
   if (args->visit_blocks) {
-    return mi_heap_area_visit_blocks(xarea, args->visitor, args->arg);
+    return _mi_heap_area_visit_blocks(&xarea->area, xarea->page, args->visitor, args->arg);
   }
   else {
     return true;
@@ -635,5 +688,6 @@ static bool mi_heap_area_visitor(const mi_heap_t* heap, const mi_heap_area_ex_t*
 // Visit all blocks in a heap
 bool mi_heap_visit_blocks(const mi_heap_t* heap, bool visit_blocks, mi_block_visit_fun* visitor, void* arg) {
   mi_visit_blocks_args_t args = { visit_blocks, visitor, arg };
+  _mi_heap_delayed_free_partial((mi_heap_t *)heap);
   return mi_heap_visit_areas(heap, &mi_heap_area_visitor, &args);
 }

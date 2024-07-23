@@ -106,8 +106,8 @@ class VariablesTreeItem(ObjectTreeItem):
                 value = self.object[key]
             except KeyError:
                 continue
-            def setfunction(value, key=key, object=self.object):
-                object[key] = value
+            def setfunction(value, key=key, object_=self.object):
+                object_[key] = value
             item = make_objecttreeitem(key + " =", value, setfunction)
             sublist.append(item)
         return sublist

@@ -214,6 +214,58 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(gc_set_threshold__doc__,
+"set_threshold(threshold0, [threshold1, [threshold2]])\n"
+"Set the collection thresholds (the collection frequency).\n"
+"\n"
+"Setting \'threshold0\' to zero disables collection.");
+
+#define GC_SET_THRESHOLD_METHODDEF    \
+    {"set_threshold", (PyCFunction)gc_set_threshold, METH_VARARGS, gc_set_threshold__doc__},
+
+static PyObject *
+gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
+                      int threshold1, int group_right_2, int threshold2);
+
+static PyObject *
+gc_set_threshold(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int threshold0;
+    int group_right_1 = 0;
+    int threshold1 = 0;
+    int group_right_2 = 0;
+    int threshold2 = 0;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "i:set_threshold", &threshold0)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "ii:set_threshold", &threshold0, &threshold1)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "iii:set_threshold", &threshold0, &threshold1, &threshold2)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            group_right_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "gc.set_threshold requires 1 to 3 arguments");
+            goto exit;
+    }
+    return_value = gc_set_threshold_impl(module, threshold0, group_right_1, threshold1, group_right_2, threshold2);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gc_get_threshold__doc__,
 "get_threshold($module, /)\n"
 "--\n"
@@ -248,6 +300,76 @@ static PyObject *
 gc_get_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return gc_get_count_impl(module);
+}
+
+PyDoc_STRVAR(gc_get_referrers__doc__,
+"get_referrers($module, /, *objs)\n"
+"--\n"
+"\n"
+"Return the list of objects that directly refer to any of \'objs\'.");
+
+#define GC_GET_REFERRERS_METHODDEF    \
+    {"get_referrers", _PyCFunction_CAST(gc_get_referrers), METH_FASTCALL, gc_get_referrers__doc__},
+
+static PyObject *
+gc_get_referrers_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("get_referrers", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = gc_get_referrers_impl(module, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(gc_get_referents__doc__,
+"get_referents($module, /, *objs)\n"
+"--\n"
+"\n"
+"Return the list of objects that are directly referred to by \'objs\'.");
+
+#define GC_GET_REFERENTS_METHODDEF    \
+    {"get_referents", _PyCFunction_CAST(gc_get_referents), METH_FASTCALL, gc_get_referents__doc__},
+
+static PyObject *
+gc_get_referents_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("get_referents", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = gc_get_referents_impl(module, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
 }
 
 PyDoc_STRVAR(gc_get_objects__doc__,
@@ -347,6 +469,25 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
 
+static int
+gc_is_tracked_impl(PyObject *module, PyObject *obj);
+
+static PyObject *
+gc_is_tracked(PyObject *module, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = gc_is_tracked_impl(module, obj);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gc_is_finalized__doc__,
 "is_finalized($module, obj, /)\n"
 "--\n"
@@ -355,6 +496,25 @@ PyDoc_STRVAR(gc_is_finalized__doc__,
 
 #define GC_IS_FINALIZED_METHODDEF    \
     {"is_finalized", (PyCFunction)gc_is_finalized, METH_O, gc_is_finalized__doc__},
+
+static int
+gc_is_finalized_impl(PyObject *module, PyObject *obj);
+
+static PyObject *
+gc_is_finalized(PyObject *module, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = gc_is_finalized_impl(module, obj);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(gc_freeze__doc__,
 "freeze($module, /)\n"
@@ -425,4 +585,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c345e7b4ce6085a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a7e91917adcb937 input=a9049054013a1b77]*/

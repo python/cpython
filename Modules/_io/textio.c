@@ -1719,16 +1719,26 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         bytes_len = PyBytes_GET_SIZE(b);
     }
 
-    if (self->pending_bytes == NULL) {
-        self->pending_bytes_count = 0;
-        self->pending_bytes = b;
-    }
-    else if (self->pending_bytes_count + bytes_len > self->chunk_size) {
-        // Prevent to concatenate more than chunk_size data.
-        if (_textiowrapper_writeflush(self) < 0) {
-            Py_DECREF(b);
-            return NULL;
+    // We should avoid concatinating huge data.
+    // Flush the buffer before adding b to the buffer if b is not small.
+    // https://github.com/python/cpython/issues/87426
+    if (bytes_len >= self->chunk_size) {
+        // _textiowrapper_writeflush() calls buffer.write().
+        // self->pending_bytes can be appended during buffer->write()
+        // or other thread.
+        // We need to loop until buffer becomes empty.
+        // https://github.com/python/cpython/issues/118138
+        // https://github.com/python/cpython/issues/119506
+        while (self->pending_bytes != NULL) {
+            if (_textiowrapper_writeflush(self) < 0) {
+                Py_DECREF(b);
+                return NULL;
+            }
         }
+    }
+
+    if (self->pending_bytes == NULL) {
+        assert(self->pending_bytes_count == 0);
         self->pending_bytes = b;
     }
     else if (!PyList_CheckExact(self->pending_bytes)) {
@@ -1737,6 +1747,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
             Py_DECREF(b);
             return NULL;
         }
+        // Since Python 3.12, allocating GC object won't trigger GC and release
+        // GIL. See https://github.com/python/cpython/issues/97922
+        assert(!PyList_CheckExact(self->pending_bytes));
         PyList_SET_ITEM(list, 0, self->pending_bytes);
         PyList_SET_ITEM(list, 1, b);
         self->pending_bytes = list;
@@ -1762,8 +1775,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         }
     }
 
-    textiowrapper_set_decoded_chars(self, NULL);
-    Py_CLEAR(self->snapshot);
+    if (self->snapshot != NULL) {
+        textiowrapper_set_decoded_chars(self, NULL);
+        Py_CLEAR(self->snapshot);
+    }
 
     if (self->decoder) {
         ret = PyObject_CallMethodNoArgs(self->decoder, &_Py_ID(reset));
@@ -1999,8 +2014,10 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (result == NULL)
             goto fail;
 
-        textiowrapper_set_decoded_chars(self, NULL);
-        Py_CLEAR(self->snapshot);
+        if (self->snapshot != NULL) {
+            textiowrapper_set_decoded_chars(self, NULL);
+            Py_CLEAR(self->snapshot);
+        }
         return result;
     }
     else {
@@ -2389,7 +2406,7 @@ textiowrapper_parse_cookie(cookie_type *cookie, PyObject *cookieObj)
         return -1;
 
     if (_PyLong_AsByteArray(cookieLong, buffer, sizeof(buffer),
-                            PY_LITTLE_ENDIAN, 0) < 0) {
+                            PY_LITTLE_ENDIAN, 0, 1) < 0) {
         Py_DECREF(cookieLong);
         return -1;
     }
@@ -2944,10 +2961,11 @@ textiowrapper_repr(textio *self)
 {
     PyObject *nameobj, *modeobj, *res, *s;
     int status;
+    const char *type_name = Py_TYPE(self)->tp_name;
 
     CHECK_INITIALIZED(self);
 
-    res = PyUnicode_FromString("<_io.TextIOWrapper");
+    res = PyUnicode_FromFormat("<%.100s", type_name);
     if (res == NULL)
         return NULL;
 
@@ -2955,8 +2973,8 @@ textiowrapper_repr(textio *self)
     if (status != 0) {
         if (status > 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "reentrant call inside %s.__repr__",
-                         Py_TYPE(self)->tp_name);
+                         "reentrant call inside %.100s.__repr__",
+                         type_name);
         }
         goto error;
     }
@@ -3332,8 +3350,8 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
     _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
     {NULL, NULL}
 };
 

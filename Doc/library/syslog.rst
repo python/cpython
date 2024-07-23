@@ -1,5 +1,5 @@
-:mod:`syslog` --- Unix syslog library routines
-==============================================
+:mod:`!syslog` --- Unix syslog library routines
+===============================================
 
 .. module:: syslog
    :platform: Unix
@@ -11,7 +11,7 @@ This module provides an interface to the Unix ``syslog`` library routines.
 Refer to the Unix manual pages for a detailed description of the ``syslog``
 facility.
 
-.. availability:: Unix, not Emscripten, not WASI.
+.. availability:: Unix, not WASI, not iOS.
 
 This module wraps the system ``syslog`` family of routines.  A pure Python
 library that can speak to a syslog server is available in the

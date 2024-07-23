@@ -1122,7 +1122,7 @@ dispatch:
             /* install new repeat context */
             /* TODO(https://github.com/python/cpython/issues/67877): Fix this
              * potential memory leak. */
-            ctx->u.rep = (SRE_REPEAT*) PyObject_Malloc(sizeof(*ctx->u.rep));
+            ctx->u.rep = (SRE_REPEAT*) PyMem_Malloc(sizeof(*ctx->u.rep));
             if (!ctx->u.rep) {
                 PyErr_NoMemory();
                 RETURN_FAILURE;
@@ -1136,7 +1136,7 @@ dispatch:
             state->ptr = ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, pattern+pattern[0]);
             state->repeat = ctx->u.rep->prev;
-            PyObject_Free(ctx->u.rep);
+            PyMem_Free(ctx->u.rep);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);

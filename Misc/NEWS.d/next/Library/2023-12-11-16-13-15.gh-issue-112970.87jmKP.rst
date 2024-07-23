@@ -1,1 +1,0 @@
-Use :c:func:`!closefrom` on Linux where available (e.g. glibc-2.34), rather than only FreeBSD.
