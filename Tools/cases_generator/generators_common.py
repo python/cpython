@@ -92,9 +92,9 @@ def replace_error(
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
     out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
+    c_offset = stack.peek_offset()
     try:
-        offset = -int(c_offset)
+        offset = int(c_offset)
         close = ";\n"
     except ValueError:
         offset = None
@@ -102,7 +102,8 @@ def replace_error(
         close = "; }\n"
     out.emit("goto ")
     if offset:
-        out.emit(f"pop_{offset}_")
+        assert offset < 0
+        out.emit(f"pop_{-offset}_")
     out.emit(label)
     out.emit(close)
 
