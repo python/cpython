@@ -280,6 +280,28 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(linecache.getlines(filename, module_globals),
                          ['source for x.y.z\n'])
 
+    def test_long_filename(self):
+        # For POSIX platforms, an OSError will be raised and will take
+        # the usual path handling. For Windows platforms, a ValueError
+        # is raised instead but linecache will handle it as if it were
+        # an OSError in this case.
+        #
+        # See: https://github.com/python/cpython/issues/122170
+
+        linecache.clearcache()
+        lines = linecache.updatecache('a' * 9999)
+        self.assertListEqual(lines, [])
+        self.assertNotIn('a' * 9999, linecache.cache)
+
+        # hack into the cache (it shouldn't be allowed
+        # but we never know what people do...)
+        linecache.cache['smallname'] = (0, 1234, [], 'a' * 9999)
+        linecache.checkcache('smallname')
+        self.assertNotIn('smallname', linecache.cache)
+
+        # just to be sure that we did not mess with cache
+        linecache.clearcache()
+
 
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):

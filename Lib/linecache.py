@@ -73,6 +73,15 @@ def checkcache(filename=None):
         except OSError:
             cache.pop(filename, None)
             continue
+        except ValueError:
+            # ValueError may happen on Windows platforms for long paths.
+            # In this case, we assume that we could not just read the file.
+            #
+            # See: https://github.com/python/cpython/issues/122170.
+            if os.name == 'nt':
+                cache.pop(filename, None)
+                continue
+            raise  # this should not happen on other platforms
         if size != stat.st_size or mtime != stat.st_mtime:
             cache.pop(filename, None)
 
@@ -137,8 +146,15 @@ def updatecache(filename, module_globals=None):
                 break
             except OSError:
                 pass
+            except ValueError:
+                if os.name != 'nt':
+                    raise  # this should not happen on other platforms
         else:
             return []
+    except ValueError:
+        if os.name != 'nt':
+            raise  # this should not happen on other platforms
+        return []
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()
