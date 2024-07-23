@@ -2368,6 +2368,26 @@ class CustomListener(logging.handlers.QueueListener):
 class CustomQueue(queue.Queue):
     pass
 
+class CustomQueueProtocol:
+    def __init__(self, maxsize=0):
+        self.queue = queue.Queue(maxsize)
+
+    def __getattr__(self, attribute):
+        queue = object.__getattribute__(self, 'queue')
+        return getattr(queue, attribute)
+
+class FuzzyCustomQueueProtocol(CustomQueueProtocol):
+    # An object implementing the Queue API (incorrect signatures).
+    # The object will be considered a valid queue class since we
+    # do not check the signatures (only callability of methods)
+    # but will NOT be usable in production since a ValueError will
+    # be raised due to a missing argument.
+    def empty(self, x):
+        pass
+
+class BadCustomQueueProtocol(CustomQueueProtocol):
+    empty = None
+
 def queueMaker():
     return queue.Queue()
 
@@ -3901,18 +3921,16 @@ class ConfigDictTest(BaseTest):
     @threading_helper.requires_working_threading()
     @support.requires_subprocess()
     def test_config_queue_handler(self):
-        q = CustomQueue()
-        dq = {
-            '()': __name__ + '.CustomQueue',
-            'maxsize': 10
-        }
+        qs = [CustomQueue(), CustomQueueProtocol()]
+        dqs = [{'()': f'{__name__}.{cls}', 'maxsize': 10}
+               for cls in ['CustomQueue', 'CustomQueueProtocol']]
         dl = {
             '()': __name__ + '.listenerMaker',
             'arg1': None,
             'arg2': None,
             'respect_handler_level': True
         }
-        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', dq, q)
+        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', *dqs, *qs)
         lvalues = (None, __name__ + '.CustomListener', dl, CustomListener)
         for qspec, lspec in itertools.product(qvalues, lvalues):
             self.do_queuehandler_configuration(qspec, lspec)
@@ -3932,15 +3950,21 @@ class ConfigDictTest(BaseTest):
     @support.requires_subprocess()
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
-        # gh-120868
+        # gh-120868, gh-121723
 
         from multiprocessing import Queue as MQ
 
         q1 = {"()": "queue.Queue", "maxsize": -1}
         q2 = MQ()
         q3 = queue.Queue()
+        # FuzzyCustomQueueProtocol pass the checks but will not be usable
+        # since the signatures are incompatible. Checking the Queue API
+        # without testing the type of the actual queue is a trade-off
+        # between usability and the work we need to do in order to safely
+        # check that the queue object is a valid queue object.
+        q4 = FuzzyCustomQueueProtocol()
 
-        for qspec in (q1, q2, q3):
+        for qspec in (q1, q2, q3, q4):
             self.apply_config(
                 {
                     "version": 1,
@@ -3956,21 +3980,22 @@ class ConfigDictTest(BaseTest):
 
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
-        # gh-120868
+        # gh-120868, gh-121723
 
-        with self.assertRaises(ValueError):
-            self.apply_config(
-                {
-                    "version": 1,
-                    "handlers": {
-                        "queue_listener": {
-                            "class": "logging.handlers.QueueHandler",
-                            "queue": object(),
+        for qspec in [object(), BadCustomQueueProtocol()]:
+            with self.assertRaises(ValueError):
+                self.apply_config(
+                    {
+                        "version": 1,
+                        "handlers": {
+                            "queue_listener": {
+                                "class": "logging.handlers.QueueHandler",
+                                "queue": qspec,
+                            },
                         },
-                    },
-                }
-            )
-        manager.assert_not_called()
+                    }
+                )
+            manager.assert_not_called()
 
     @skip_if_tsan_fork
     @support.requires_subprocess()
