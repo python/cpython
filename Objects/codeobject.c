@@ -184,6 +184,10 @@ _set_newtuple_item(
 }
 
 /* Intern, and immortalize, a tuple of strings.
+
+   Convert string subclasses to exact strings and error out if
+   a non-string is found (that is, handle arbitrary user input).
+
    Conceptually: return a new tuple.
    (If no changes are needed, return a new ref to the argument.)
  */
@@ -196,15 +200,33 @@ intern_names(PyObject *tuple)
 
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
-        if (v == NULL || !PyUnicode_CheckExact(v)) {
+        if (v == NULL) {
             PyErr_SetString(PyExc_SystemError,
-                            "non-string found in code slot");
-            return NULL;
+                            "NULL found in code name tuple");
+            goto error;
         }
-        if (PyUnicode_CHECK_INTERNED(v) && _Py_IsImmortal(v)) {
-            continue;
+        PyObject *str;
+        if (PyUnicode_CheckExact(v)) {
+            if (PyUnicode_CHECK_INTERNED(v) && _Py_IsImmortal(v)) {
+                continue;
+            }
+            str = Py_NewRef(v);
         }
-        PyObject *str = Py_NewRef(v);
+        else {
+            if (PyUnicode_Check(v)) {
+                str = _PyUnicode_Copy(v);
+                if (str == NULL) {
+                    goto error;
+                }
+            }
+            else {
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "name tuples must contain only strings, not '%T'",
+                    v);
+                goto error;
+            }
+        }
         _PyUnicode_InternImmortal(interp, &str);
         if (_set_newtuple_item(tuple, &new_tuple, i, str) < 0) {
             return NULL;
@@ -214,6 +236,9 @@ intern_names(PyObject *tuple)
         return new_tuple;
     }
     return Py_NewRef(tuple);
+error:
+    Py_XDECREF(new_tuple);
+    return NULL;
 }
 
 /* Intern constants. In the default build, this interns selected string
@@ -318,48 +343,6 @@ intern_constants(PyObject *tuple)
 error:
     Py_XDECREF(new_tuple);
     return NULL;
-}
-
-/* Return a shallow copy of a tuple that is
-   guaranteed to contain exact strings, by converting string subclasses
-   to exact strings and complaining if a non-string is found. */
-static PyObject*
-validate_and_copy_tuple(PyObject *tup)
-{
-    PyObject *newtuple;
-    PyObject *item;
-    Py_ssize_t i, len;
-
-    len = PyTuple_GET_SIZE(tup);
-    newtuple = PyTuple_New(len);
-    if (newtuple == NULL)
-        return NULL;
-
-    for (i = 0; i < len; i++) {
-        item = PyTuple_GET_ITEM(tup, i);
-        if (PyUnicode_CheckExact(item)) {
-            Py_INCREF(item);
-        }
-        else if (!PyUnicode_Check(item)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "name tuples must contain only "
-                "strings, not '%.500s'",
-                Py_TYPE(item)->tp_name);
-            Py_DECREF(newtuple);
-            return NULL;
-        }
-        else {
-            item = _PyUnicode_Copy(item);
-            if (item == NULL) {
-                Py_DECREF(newtuple);
-                return NULL;
-            }
-        }
-        PyTuple_SET_ITEM(newtuple, i, item);
-    }
-
-    return newtuple;
 }
 
 static int
@@ -1815,20 +1798,20 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
         goto cleanup;
     }
 
-    ournames = validate_and_copy_tuple(names);
+    ournames = intern_names(names);
     if (ournames == NULL)
         goto cleanup;
-    ourvarnames = validate_and_copy_tuple(varnames);
+    ourvarnames = intern_names(varnames);
     if (ourvarnames == NULL)
         goto cleanup;
     if (freevars)
-        ourfreevars = validate_and_copy_tuple(freevars);
+        ourfreevars = intern_names(freevars);
     else
         ourfreevars = PyTuple_New(0);
     if (ourfreevars == NULL)
         goto cleanup;
     if (cellvars)
-        ourcellvars = validate_and_copy_tuple(cellvars);
+        ourcellvars = intern_names(cellvars);
     else
         ourcellvars = PyTuple_New(0);
     if (ourcellvars == NULL)
