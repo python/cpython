@@ -1191,7 +1191,7 @@ class KDFTests(unittest.TestCase):
             def readable(self):
                 return True
 
-        with self.assertRaises(BlockingIOError): 
+        with self.assertRaises(BlockingIOError):
             hashlib.file_digest(NonBlocking(), hashlib.sha256)
 
 
