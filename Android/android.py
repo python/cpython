@@ -285,20 +285,33 @@ async def list_devices():
     return serials
 
 
-async def find_device(context, initial_devices):
-    if context.connected:
-        return context.connected
+# Before boot is completed, `pm list` will fail with the error "Can't find
+# service: package".
+async def boot_completed(serial):
+    return (await async_check_output(
+        adb, "-s", serial, "shell", "getprop", "sys.boot_completed"
+    )).strip() == "1"
 
-    while True:
-        new_devices = set(await list_devices()).difference(initial_devices)
-        if len(new_devices) == 0:
-            await asyncio.sleep(1)
-        elif len(new_devices) == 1:
-            device = new_devices.pop()
-            print(f"Found device: {device}")
-            return device
-        else:
-            exit(f"Found more than one new device: {new_devices}")
+
+async def find_device(context, initial_devices):
+    if context.managed:
+        serial = None
+        while serial is None:
+            new_devices = set(await list_devices()).difference(initial_devices)
+            if len(new_devices) == 0:
+                await asyncio.sleep(1)
+            elif len(new_devices) == 1:
+                serial = new_devices.pop()
+            else:
+                exit(f"Found more than one new device: {new_devices}")
+    else:
+        serial = context.connected
+
+    print(f"Serial: {serial}")
+    while not await boot_completed(serial):
+        await asyncio.sleep(1)
+    print("Boot completed")
+    return serial
 
 
 async def find_uid(serial):
@@ -316,7 +329,7 @@ async def find_uid(serial):
                 raise ValueError(f"failed to parse {lines[0]!r}")
             package, uid = match.groups()
             if package == testbed_package:
-                print(f"Found UID: {uid}")
+                print(f"UID: {uid}")
                 return uid
 
         await asyncio.sleep(1)
@@ -330,9 +343,7 @@ async def logcat_task(context, initial_devices):
     # timestamp or PID.
     uid = await find_uid(serial)
     async with async_process(
-        adb, "-s", serial, "logcat",
-        "--uid", uid,
-        "--format", "tag",
+        adb, "-s", serial, "logcat", "--uid", uid,  "--format", "tag",
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     ) as process:
@@ -376,11 +387,11 @@ async def logcat_task(context, initial_devices):
 
 async def gradle_task(context):
     env = os.environ.copy()
-    if context.connected:
+    if context.managed:
+        task_prefix = context.managed
+    else:
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
-    else:
-        task_prefix = context.managed
 
     async with async_process(
         "./gradlew",

@@ -80,18 +80,29 @@ call. For example, if you want a pydebug build that also caches the results from
 
 ## Testing
 
-To run the Python test suite on Android:
+Before running the test suite, follow the instructions in the previous section
+to build for all supported architectures.
 
-* Install Android Studio, if you don't already have it.
-* Follow the instructions in the previous section to build all supported
-  architectures.
-* Run `./android.py setup-testbed` to download the Gradle wrapper.
-* Open the `testbed` directory in Android Studio.
-* In the *Device Manager* dock, connect a device or start an emulator.
-  Then select it from the drop-down list in the toolbar.
-* Click the "Run" button in the toolbar.
-* The testbed app displays nothing on screen while running. To see its output,
-  open the [Logcat window](https://developer.android.com/studio/debug/logcat).
+The test suite can be run in two modes:
 
-To run specific tests, or pass any other arguments to the test suite, edit the
-command line in testbed/app/src/main/python/main.py.
+* In `--connected` mode, it's run on a device or emulator you have already
+  connected to the build machine. For example:
+
+  ```sh
+  ./android.py test --connected emulator-5554
+  ```
+
+* In `--managed` mode, it's run on a Gradle-managed device. These are defined in
+  `managedDevices` in testbed/app/build.gradle.kts. This mode is slower, but
+  more reproducible. For example:
+
+  ```sh
+  ./android.py test --managed targetSdk
+  ```
+
+By default, the only messages the script will show are Python's own stdout and
+stderr. Add the `-v` option to also show Gradle output, and non-Python logcat
+messages.
+
+Any other arguments on the `android.py test` command line will be passed through
+to `python -m test`. Use `--` to separate them from android.py's own options.
