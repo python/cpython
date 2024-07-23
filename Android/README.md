@@ -85,16 +85,16 @@ to build for all supported architectures.
 
 The test suite can be run in two modes:
 
-* In `--connected` mode, it's run on a device or emulator you have already
+* In `--connected` mode, it runs on a device or emulator you have already
   connected to the build machine. For example:
 
   ```sh
   ./android.py test --connected emulator-5554
   ```
 
-* In `--managed` mode, it's run on a Gradle-managed device. These are defined in
-  `managedDevices` in testbed/app/build.gradle.kts. This mode is slower, but
-  more reproducible. For example:
+* In `--managed` mode, it uses a temporary emulator defined in the
+  `managedDevices` section of testbed/app/build.gradle.kts. This mode is slower,
+  but more reproducible. For example:
 
   ```sh
   ./android.py test --managed targetSdk

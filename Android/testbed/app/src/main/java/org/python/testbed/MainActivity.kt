@@ -9,8 +9,8 @@ import java.io.*
 
 
 // Launching the tests from an activity is OK for a quick check, but for
-// anything more complicated it'll be more use `android.py test` to launch the
-// tests via PythonSuite.
+// anything more complicated it'll be more convenient to use `android.py test`
+// to launch the tests via PythonSuite.
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
