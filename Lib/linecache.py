@@ -98,7 +98,7 @@ def updatecache(filename, module_globals=None):
     fullname = filename
     try:
         stat = os.stat(fullname)
-    except OSError:
+    except (OSError, ValueError):
         basename = filename
 
         # Realise a lazy loader based lookup if there is one
