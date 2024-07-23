@@ -9695,6 +9695,8 @@ printf "%s\n" "$disable_safety" >&6; }
 
 if test "$disable_safety" = "no"
 then
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if we can add -fstack-protector-strong" >&5
 printf %s "checking if we can add -fstack-protector-strong... " >&6; }
 if test ${ac_cv_enable_stack_protector_strong_flag+y}
@@ -9730,14 +9732,14 @@ fi
 printf "%s\n" "$ac_cv_enable_stack_protector_strong_flag" >&6; }
 
 
-if test "x$ac_cv_enable_stack_protector_strong_flag" = xyes
+  if test "x$ac_cv_enable_stack_protector_strong_flag" = xyes
 then :
   BASECFLAGS="$BASECFLAGS -fstack-protector-strong"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported" >&5
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
 then :
