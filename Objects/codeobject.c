@@ -229,7 +229,7 @@ intern_names(PyObject *tuple)
         }
         _PyUnicode_InternImmortal(interp, &str);
         if (_set_newtuple_item(tuple, &new_tuple, i, str) < 0) {
-            return NULL;
+            goto error;
         }
     }
     if (new_tuple) {
