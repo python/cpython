@@ -49,7 +49,7 @@ class StackOffset:
     def empty() -> "StackOffset":
         return StackOffset([], [])
 
-    def copy(self):
+    def copy(self) -> "StackOffset":
         return StackOffset(self.popped[:], self.pushed[:])
 
     def pop(self, item: StackItem) -> None:
@@ -212,7 +212,7 @@ class Stack:
         self.top_offset.clear()
         out.start_line()
 
-    def peek_offset(self):
+    def peek_offset(self) -> str:
         peek = self.base_offset.copy()
         for var in self.variables:
             if not var.peek:
