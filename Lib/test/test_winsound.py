@@ -1,11 +1,13 @@
 # Ridiculously simple test of the winsound module for Windows.
 
 import functools
+import os
 import time
 import unittest
 
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 
 
 support.requires('audio')
@@ -115,6 +117,20 @@ class PlaySoundTest(unittest.TestCase):
     def test_snd_filename(self):
         fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
         safe_PlaySound(fn, winsound.SND_FILENAME | winsound.SND_NODEFAULT)
+
+    def test_snd_filepath(self):
+        fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
+        path = os_helper.FakePath(fn)
+        safe_PlaySound(path, winsound.SND_FILENAME | winsound.SND_NODEFAULT)
+
+    def test_snd_filepath_as_bytes(self):
+        fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
+        self.assertRaises(
+            TypeError,
+            winsound.PlaySound,
+            os_helper.FakePath(os.fsencode(fn)),
+            winsound.SND_FILENAME | winsound.SND_NODEFAULT
+        )
 
     def test_aliases(self):
         aliases = [

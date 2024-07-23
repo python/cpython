@@ -1,8 +1,14 @@
 """Selector and proactor event loops for Windows."""
 
+import sys
+
+if sys.platform != 'win32':  # pragma: no cover
+    raise ImportError('win32 only')
+
 import _overlapped
 import _winapi
 import errno
+from functools import partial
 import math
 import msvcrt
 import socket
@@ -24,12 +30,12 @@ from .log import logger
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
     'DefaultEventLoopPolicy', 'WindowsSelectorEventLoopPolicy',
-    'WindowsProactorEventLoopPolicy',
+    'WindowsProactorEventLoopPolicy', 'EventLoop',
 )
 
 
-NULL = 0
-INFINITE = 0xffffffff
+NULL = _winapi.NULL
+INFINITE = _winapi.INFINITE
 ERROR_CONNECTION_REFUSED = 1225
 ERROR_CONNECTION_ABORTED = 1236
 
@@ -309,24 +315,25 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             proactor = IocpProactor()
         super().__init__(proactor)
 
-    def run_forever(self):
-        try:
-            assert self._self_reading_future is None
-            self.call_soon(self._loop_self_reading)
-            super().run_forever()
-        finally:
-            if self._self_reading_future is not None:
-                ov = self._self_reading_future._ov
-                self._self_reading_future.cancel()
-                # self_reading_future was just cancelled so if it hasn't been
-                # finished yet, it never will be (it's possible that it has
-                # already finished and its callback is waiting in the queue,
-                # where it could still happen if the event loop is restarted).
-                # Unregister it otherwise IocpProactor.close will wait for it
-                # forever
-                if ov is not None:
-                    self._proactor._unregister(ov)
-                self._self_reading_future = None
+    def _run_forever_setup(self):
+        assert self._self_reading_future is None
+        self.call_soon(self._loop_self_reading)
+        super()._run_forever_setup()
+
+    def _run_forever_cleanup(self):
+        super()._run_forever_cleanup()
+        if self._self_reading_future is not None:
+            ov = self._self_reading_future._ov
+            self._self_reading_future.cancel()
+            # self_reading_future always uses IOCP, so even though it's
+            # been cancelled, we need to make sure that the IOCP message
+            # is received so that the kernel is not holding on to the
+            # memory, possibly causing memory corruption later. Only
+            # unregister it if IO is complete in all respects. Otherwise
+            # we need another _poll() later to complete the IO.
+            if ov is not None and not ov.pending:
+                self._proactor._unregister(ov)
+            self._self_reading_future = None
 
     async def create_pipe_connection(self, protocol_factory, address):
         f = self._proactor.connect_pipe(address)
@@ -361,6 +368,10 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                     return
 
                 f = self._proactor.accept_pipe(pipe)
+            except BrokenPipeError:
+                if pipe and pipe.fileno() != -1:
+                    pipe.close()
+                self.call_soon(loop_accept_pipe)
             except OSError as exc:
                 if pipe and pipe.fileno() != -1:
                     self.call_exception_handler({
@@ -372,6 +383,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                 elif self._debug:
                     logger.warning("Accept pipe failed on pipe %r",
                                    pipe, exc_info=True)
+                self.call_soon(loop_accept_pipe)
             except exceptions.CancelledError:
                 if pipe:
                     pipe.close()
@@ -405,7 +417,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
 class IocpProactor:
     """Proactor implementation using IOCP."""
 
-    def __init__(self, concurrency=0xffffffff):
+    def __init__(self, concurrency=INFINITE):
         self._loop = None
         self._results = []
         self._iocp = _overlapped.CreateIoCompletionPort(
@@ -434,12 +446,39 @@ class IocpProactor:
             self._poll(timeout)
         tmp = self._results
         self._results = []
-        return tmp
+        try:
+            return tmp
+        finally:
+            # Needed to break cycles when an exception occurs.
+            tmp = None
 
     def _result(self, value):
         fut = self._loop.create_future()
         fut.set_result(value)
         return fut
+
+    @staticmethod
+    def finish_socket_func(trans, key, ov):
+        try:
+            return ov.getresult()
+        except OSError as exc:
+            if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                _overlapped.ERROR_OPERATION_ABORTED):
+                raise ConnectionResetError(*exc.args)
+            else:
+                raise
+
+    @classmethod
+    def _finish_recvfrom(cls, trans, key, ov, *, empty_result):
+        try:
+            return cls.finish_socket_func(trans, key, ov)
+        except OSError as exc:
+            # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the same
+            # socket is used to send to an address that is not listening.
+            if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
+                return empty_result, None
+            else:
+                raise
 
     def recv(self, conn, nbytes, flags=0):
         self._register_with_iocp(conn)
@@ -452,17 +491,7 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result(b'')
 
-        def finish_recv(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
-
-        return self._register(ov, conn, finish_recv)
+        return self._register(ov, conn, self.finish_socket_func)
 
     def recv_into(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -475,17 +504,7 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result(0)
 
-        def finish_recv(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
-
-        return self._register(ov, conn, finish_recv)
+        return self._register(ov, conn, self.finish_socket_func)
 
     def recvfrom(self, conn, nbytes, flags=0):
         self._register_with_iocp(conn)
@@ -495,17 +514,19 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((b'', None))
 
-        def finish_recv(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
+        return self._register(ov, conn, partial(self._finish_recvfrom,
+                                                empty_result=b''))
 
-        return self._register(ov, conn, finish_recv)
+    def recvfrom_into(self, conn, buf, flags=0):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+        try:
+            ov.WSARecvFromInto(conn.fileno(), buf, flags)
+        except BrokenPipeError:
+            return self._result((0, None))
+
+        return self._register(ov, conn, partial(self._finish_recvfrom,
+                                                empty_result=0))
 
     def sendto(self, conn, buf, flags=0, addr=None):
         self._register_with_iocp(conn)
@@ -513,17 +534,7 @@ class IocpProactor:
 
         ov.WSASendTo(conn.fileno(), buf, flags, addr)
 
-        def finish_send(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
-
-        return self._register(ov, conn, finish_send)
+        return self._register(ov, conn, self.finish_socket_func)
 
     def send(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -533,17 +544,7 @@ class IocpProactor:
         else:
             ov.WriteFile(conn.fileno(), buf)
 
-        def finish_send(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
-
-        return self._register(ov, conn, finish_send)
+        return self._register(ov, conn, self.finish_socket_func)
 
     def accept(self, listener):
         self._register_with_iocp(listener)
@@ -614,16 +615,7 @@ class IocpProactor:
                         offset_low, offset_high,
                         count, 0, 0)
 
-        def finish_sendfile(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
-        return self._register(ov, sock, finish_sendfile)
+        return self._register(ov, sock, self.finish_socket_func)
 
     def accept_pipe(self, pipe):
         self._register_with_iocp(pipe)
@@ -816,6 +808,8 @@ class IocpProactor:
                 else:
                     f.set_result(value)
                     self._results.append(f)
+                finally:
+                    f = None
 
         # Remove unregistered futures
         for ov in self._unregistered:
@@ -834,7 +828,7 @@ class IocpProactor:
             return
 
         # Cancel remaining registered operations.
-        for address, (fut, ov, obj, callback) in list(self._cache.items()):
+        for fut, ov, obj, callback in list(self._cache.values()):
             if fut.cancelled():
                 # Nothing to do with cancelled futures
                 pass
@@ -906,3 +900,4 @@ class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
 
 DefaultEventLoopPolicy = WindowsProactorEventLoopPolicy
+EventLoop = ProactorEventLoop

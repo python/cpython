@@ -1,0 +1,5 @@
+Support single-dot file extensions in :attr:`pathlib.PurePath.suffix` and
+related attributes and methods. For example, the
+:attr:`~pathlib.PurePath.suffixes` of ``PurePath('foo.bar.')`` are now
+``['.bar', '.']`` rather than ``[]``. This brings file extension splitting
+in line with :func:`os.path.splitext`.

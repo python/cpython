@@ -51,7 +51,7 @@ except ImportError:
 bytes_types = (bytes, bytearray)
 
 # These are purely informational; no code uses these.
-format_version = "4.0"                  # File format version we write
+format_version = "5.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
                       "1.1",            # Protocol 0 with INST added
                       "1.2",            # Original protocol 1
@@ -68,7 +68,7 @@ HIGHEST_PROTOCOL = 5
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
 # Only bump this if the oldest still supported version of Python already
 # includes it.
-DEFAULT_PROTOCOL = 4
+DEFAULT_PROTOCOL = 5
 
 class PickleError(Exception):
     """A common base class for the other pickling exceptions."""
@@ -97,12 +97,6 @@ class UnpicklingError(PickleError):
 class _Stop(Exception):
     def __init__(self, value):
         self.value = value
-
-# Jython has PyStringMap; it's a dict subclass with string keys
-try:
-    from org.python.core import PyStringMap
-except ImportError:
-    PyStringMap = None
 
 # Pickle opcodes.  See pickletools.py for extensive docs.  The listing
 # here is in kind-of alphabetical order of 1-character pickle code.
@@ -402,6 +396,8 @@ def decode_long(data):
     return int.from_bytes(data, byteorder='little', signed=True)
 
 
+_NoValue = object()
+
 # Pickling machinery
 
 class _Pickler:
@@ -412,7 +408,7 @@ class _Pickler:
 
         The optional *protocol* argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3, 4 and 5.
-        The default protocol is 4. It was introduced in Python 3.4, and
+        The default protocol is 5. It was introduced in Python 3.8, and
         is incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
@@ -548,8 +544,8 @@ class _Pickler:
             return
 
         rv = NotImplemented
-        reduce = getattr(self, "reducer_override", None)
-        if reduce is not None:
+        reduce = getattr(self, "reducer_override", _NoValue)
+        if reduce is not _NoValue:
             rv = reduce(obj)
 
         if rv is NotImplemented:
@@ -562,8 +558,8 @@ class _Pickler:
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
-            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
-            if reduce is not None:
+            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t, _NoValue)
+            if reduce is not _NoValue:
                 rv = reduce(obj)
             else:
                 # Check for a class with a custom metaclass; treat as regular
@@ -573,12 +569,12 @@ class _Pickler:
                     return
 
                 # Check for a __reduce_ex__ method, fall back to __reduce__
-                reduce = getattr(obj, "__reduce_ex__", None)
-                if reduce is not None:
+                reduce = getattr(obj, "__reduce_ex__", _NoValue)
+                if reduce is not _NoValue:
                     rv = reduce(self.proto)
                 else:
-                    reduce = getattr(obj, "__reduce__", None)
-                    if reduce is not None:
+                    reduce = getattr(obj, "__reduce__", _NoValue)
+                    if reduce is not _NoValue:
                         rv = reduce()
                     else:
                         raise PicklingError("Can't pickle %r object: %r" %
@@ -619,7 +615,7 @@ class _Pickler:
                     "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
-                    dictitems=None, state_setter=None, obj=None):
+                    dictitems=None, state_setter=None, *, obj=None):
         # This API is called by some subclasses
 
         if not isinstance(args, tuple):
@@ -786,14 +782,10 @@ class _Pickler:
             self.write(FLOAT + repr(obj).encode("ascii") + b'\n')
     dispatch[float] = save_float
 
-    def save_bytes(self, obj):
-        if self.proto < 3:
-            if not obj: # bytes object is empty
-                self.save_reduce(bytes, (), obj=obj)
-            else:
-                self.save_reduce(codecs.encode,
-                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
-            return
+    def _save_bytes_no_memo(self, obj):
+        # helper for writing bytes objects for protocol >= 3
+        # without memoizing them
+        assert self.proto >= 3
         n = len(obj)
         if n <= 0xff:
             self.write(SHORT_BINBYTES + pack("<B", n) + obj)
@@ -803,8 +795,28 @@ class _Pickler:
             self._write_large_bytes(BINBYTES + pack("<I", n), obj)
         else:
             self.write(BINBYTES + pack("<I", n) + obj)
+
+    def save_bytes(self, obj):
+        if self.proto < 3:
+            if not obj: # bytes object is empty
+                self.save_reduce(bytes, (), obj=obj)
+            else:
+                self.save_reduce(codecs.encode,
+                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
+            return
+        self._save_bytes_no_memo(obj)
         self.memoize(obj)
     dispatch[bytes] = save_bytes
+
+    def _save_bytearray_no_memo(self, obj):
+        # helper for writing bytearray objects for protocol >= 5
+        # without memoizing them
+        assert self.proto >= 5
+        n = len(obj)
+        if n >= self.framer._FRAME_SIZE_TARGET:
+            self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
+        else:
+            self.write(BYTEARRAY8 + pack("<Q", n) + obj)
 
     def save_bytearray(self, obj):
         if self.proto < 5:
@@ -813,11 +825,8 @@ class _Pickler:
             else:
                 self.save_reduce(bytearray, (bytes(obj),), obj=obj)
             return
-        n = len(obj)
-        if n >= self.framer._FRAME_SIZE_TARGET:
-            self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
-        else:
-            self.write(BYTEARRAY8 + pack("<Q", n) + obj)
+        self._save_bytearray_no_memo(obj)
+        self.memoize(obj)
     dispatch[bytearray] = save_bytearray
 
     if _HAVE_PICKLE_BUFFER:
@@ -835,10 +844,18 @@ class _Pickler:
                 if in_band:
                     # Write data in-band
                     # XXX The C implementation avoids a copy here
+                    buf = m.tobytes()
+                    in_memo = id(buf) in self.memo
                     if m.readonly:
-                        self.save_bytes(m.tobytes())
+                        if in_memo:
+                            self._save_bytes_no_memo(buf)
+                        else:
+                            self.save_bytes(buf)
                     else:
-                        self.save_bytearray(m.tobytes())
+                        if in_memo:
+                            self._save_bytearray_no_memo(buf)
+                        else:
+                            self.save_bytearray(buf)
                 else:
                     # Write data out-of-band
                     self.write(NEXT_BUFFER)
@@ -860,13 +877,13 @@ class _Pickler:
             else:
                 self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
-            obj = obj.replace("\\", "\\u005c")
-            obj = obj.replace("\0", "\\u0000")
-            obj = obj.replace("\n", "\\u000a")
-            obj = obj.replace("\r", "\\u000d")
-            obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
-            self.write(UNICODE + obj.encode('raw-unicode-escape') +
-                       b'\n')
+            # Escape what raw-unicode-escape doesn't, but memoize the original.
+            tmp = obj.replace("\\", "\\u005c")
+            tmp = tmp.replace("\0", "\\u0000")
+            tmp = tmp.replace("\n", "\\u000a")
+            tmp = tmp.replace("\r", "\\u000d")
+            tmp = tmp.replace("\x1a", "\\u001a")  # EOF on DOS
+            self.write(UNICODE + tmp.encode('raw-unicode-escape') + b'\n')
         self.memoize(obj)
     dispatch[str] = save_str
 
@@ -971,8 +988,6 @@ class _Pickler:
         self._batch_setitems(obj.items())
 
     dispatch[dict] = save_dict
-    if PyStringMap is not None:
-        dispatch[PyStringMap] = save_dict
 
     def _batch_setitems(self, items):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
@@ -1172,7 +1187,7 @@ class _Unpickler:
         used in Python 3.  The *encoding* and *errors* tell pickle how
         to decode 8-bit string instances pickled by Python 2; these
         default to 'ASCII' and 'strict', respectively. *encoding* can be
-        'bytes' to read theses 8-bit string instances as bytes objects.
+        'bytes' to read these 8-bit string instances as bytes objects.
         """
         self._buffers = iter(buffers) if buffers is not None else None
         self._file_readline = file.readline
@@ -1488,7 +1503,7 @@ class _Unpickler:
                 value = klass(*args)
             except TypeError as err:
                 raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), sys.exc_info()[2])
+                                (klass.__name__, str(err)), err.__traceback__)
         else:
             value = klass.__new__(klass)
         self.append(value)
@@ -1712,8 +1727,8 @@ class _Unpickler:
         stack = self.stack
         state = stack.pop()
         inst = stack[-1]
-        setstate = getattr(inst, "__setstate__", None)
-        if setstate is not None:
+        setstate = getattr(inst, "__setstate__", _NoValue)
+        if setstate is not _NoValue:
             setstate(state)
             return
         slotstate = None
@@ -1798,7 +1813,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files')
     parser.add_argument(
-        'pickle_file', type=argparse.FileType('br'),
+        'pickle_file',
         nargs='*', help='the pickle file')
     parser.add_argument(
         '-t', '--test', action='store_true',
@@ -1814,6 +1829,10 @@ if __name__ == "__main__":
             parser.print_help()
         else:
             import pprint
-            for f in args.pickle_file:
-                obj = load(f)
+            for fn in args.pickle_file:
+                if fn == '-':
+                    obj = load(sys.stdin.buffer)
+                else:
+                    with open(fn, 'rb') as f:
+                        obj = load(f)
                 pprint.pprint(obj)

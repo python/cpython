@@ -30,6 +30,7 @@ ESCAPE_DCT = {
 for i in range(0x20):
     ESCAPE_DCT.setdefault(chr(i), '\\u{0:04x}'.format(i))
     #ESCAPE_DCT.setdefault(chr(i), '\\u%04x' % (i,))
+del i
 
 INFINITY = float('inf')
 
@@ -71,7 +72,7 @@ encode_basestring_ascii = (
     c_encode_basestring_ascii or py_encode_basestring_ascii)
 
 class JSONEncoder(object):
-    """Extensible JSON <http://json.org> encoder for Python data structures.
+    """Extensible JSON <https://json.org> encoder for Python data structures.
 
     Supports the following objects and types by default:
 
@@ -116,7 +117,7 @@ class JSONEncoder(object):
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
-        prevent an infinite recursion (which would cause an OverflowError).
+        prevent an infinite recursion (which would cause an RecursionError).
         Otherwise, no such check takes place.
 
         If allow_nan is true, then NaN, Infinity, and -Infinity will be
@@ -173,7 +174,7 @@ class JSONEncoder(object):
                 else:
                     return list(iterable)
                 # Let the base class default method raise the TypeError
-                return JSONEncoder.default(self, o)
+                return super().default(o)
 
         """
         raise TypeError(f'Object of type {o.__class__.__name__} '
@@ -243,15 +244,18 @@ class JSONEncoder(object):
             return text
 
 
-        if (_one_shot and c_make_encoder is not None
-                and self.indent is None):
+        if self.indent is None or isinstance(self.indent, str):
+            indent = self.indent
+        else:
+            indent = ' ' * self.indent
+        if _one_shot and c_make_encoder is not None:
             _iterencode = c_make_encoder(
-                markers, self.default, _encoder, self.indent,
+                markers, self.default, _encoder, indent,
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, self.allow_nan)
         else:
             _iterencode = _make_iterencode(
-                markers, self.default, _encoder, self.indent, floatstr,
+                markers, self.default, _encoder, indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, _one_shot)
         return _iterencode(o, 0)
@@ -270,9 +274,6 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         tuple=tuple,
         _intstr=int.__repr__,
     ):
-
-    if _indent is not None and not isinstance(_indent, str):
-        _indent = ' ' * _indent
 
     def _iterencode_list(lst, _current_indent_level):
         if not lst:

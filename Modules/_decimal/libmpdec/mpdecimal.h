@@ -40,6 +40,7 @@
   #include <cstdint>
   #include <cstdio>
   #include <cstdlib>
+  #define MPD_UINT8_C(x) (static_cast<uint8_t>(x))
 extern "C" {
 #else
   #include <inttypes.h>
@@ -47,6 +48,7 @@ extern "C" {
   #include <stdint.h>
   #include <stdio.h>
   #include <stdlib.h>
+  #define MPD_UINT8_C(x) ((uint8_t)x)
 #endif
 
 
@@ -62,7 +64,6 @@ extern "C" {
 #endif
 
 #if defined(_MSC_VER)
-  #include "vccompat.h"
   #define EXTINLINE extern inline
 #else
   #define EXTINLINE
@@ -74,25 +75,15 @@ extern "C" {
 MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
 
 
-#if !defined(LEGACY_COMPILER)
-  #if !defined(UINT64_MAX)
-    /* The following #error is just a warning. If the compiler indeed does
-     * not have uint64_t, it is perfectly safe to comment out the #error. */
-    #error "Warning: Compiler without uint64_t. Comment out this line."
-    #define LEGACY_COMPILER
-  #endif
-#endif
-
-
 /******************************************************************************/
 /*                                  Version                                   */
 /******************************************************************************/
 
 #define MPD_MAJOR_VERSION 2
 #define MPD_MINOR_VERSION 5
-#define MPD_MICRO_VERSION 0
+#define MPD_MICRO_VERSION 1
 
-#define MPD_VERSION "2.5.0"
+#define MPD_VERSION "2.5.1"
 
 #define MPD_VERSION_HEX ((MPD_MAJOR_VERSION << 24) | \
                          (MPD_MINOR_VERSION << 16) | \
@@ -162,6 +153,7 @@ typedef int64_t mpd_ssize_t;
 #define MPD_EXP_INF 2000000000000000001LL
 #define MPD_EXP_CLAMP (-4000000000000000001LL)
 #define MPD_MAXIMPORT 105263157894736842L /* ceil((2*MPD_MAX_PREC)/MPD_RDIGITS) */
+#define MPD_IEEE_CONTEXT_MAX_BITS 512     /* 16*(log2(MPD_MAX_EMAX / 3)-3) */
 
 /* conversion specifiers */
 #define PRI_mpd_uint_t PRIu64
@@ -203,9 +195,10 @@ typedef int32_t mpd_ssize_t;
 #define MPD_MAX_EMAX 425000000L        /* ELIMIT-1 */
 #define MPD_MIN_EMIN (-425000000L)     /* -EMAX */
 #define MPD_MIN_ETINY (MPD_MIN_EMIN-(MPD_MAX_PREC-1))
-#define MPD_EXP_INF 1000000001L      /* allows for emax=999999999 in the tests */
-#define MPD_EXP_CLAMP (-2000000001L) /* allows for emin=-999999999 in the tests */
-#define MPD_MAXIMPORT 94444445L      /* ceil((2*MPD_MAX_PREC)/MPD_RDIGITS) */
+#define MPD_EXP_INF 1000000001L       /* allows for emax=999999999 in the tests */
+#define MPD_EXP_CLAMP (-2000000001L)  /* allows for emin=-999999999 in the tests */
+#define MPD_MAXIMPORT 94444445L       /* ceil((2*MPD_MAX_PREC)/MPD_RDIGITS) */
+#define MPD_IEEE_CONTEXT_MAX_BITS 256 /* 16*(log2(MPD_MAX_EMAX / 3)-3) */
 
 /* conversion specifiers */
 #define PRI_mpd_uint_t PRIu32
@@ -242,8 +235,8 @@ enum {
 
 enum { MPD_CLAMP_DEFAULT, MPD_CLAMP_IEEE_754, MPD_CLAMP_GUARD };
 
-extern const char *mpd_round_string[MPD_ROUND_GUARD];
-extern const char *mpd_clamp_string[MPD_CLAMP_GUARD];
+extern const char * const mpd_round_string[MPD_ROUND_GUARD];
+extern const char * const mpd_clamp_string[MPD_CLAMP_GUARD];
 
 
 typedef struct mpd_context_t {
@@ -300,7 +293,6 @@ typedef struct mpd_context_t {
 #define MPD_Insufficient_storage MPD_Malloc_error
 
 /* IEEE 754 interchange format contexts */
-#define MPD_IEEE_CONTEXT_MAX_BITS 512 /* 16*(log2(MPD_MAX_EMAX / 3)-3) */
 #define MPD_DECIMAL32 32
 #define MPD_DECIMAL64 64
 #define MPD_DECIMAL128 128
@@ -345,16 +337,16 @@ void mpd_addstatus_raise(mpd_context_t *ctx, uint32_t flags);
 /******************************************************************************/
 
 /* mpd_t flags */
-#define MPD_POS                 ((uint8_t)0)
-#define MPD_NEG                 ((uint8_t)1)
-#define MPD_INF                 ((uint8_t)2)
-#define MPD_NAN                 ((uint8_t)4)
-#define MPD_SNAN                ((uint8_t)8)
+#define MPD_POS                 MPD_UINT8_C(0)
+#define MPD_NEG                 MPD_UINT8_C(1)
+#define MPD_INF                 MPD_UINT8_C(2)
+#define MPD_NAN                 MPD_UINT8_C(4)
+#define MPD_SNAN                MPD_UINT8_C(8)
 #define MPD_SPECIAL (MPD_INF|MPD_NAN|MPD_SNAN)
-#define MPD_STATIC              ((uint8_t)16)
-#define MPD_STATIC_DATA         ((uint8_t)32)
-#define MPD_SHARED_DATA         ((uint8_t)64)
-#define MPD_CONST_DATA          ((uint8_t)128)
+#define MPD_STATIC              MPD_UINT8_C(16)
+#define MPD_STATIC_DATA         MPD_UINT8_C(32)
+#define MPD_SHARED_DATA         MPD_UINT8_C(64)
+#define MPD_CONST_DATA          MPD_UINT8_C(128)
 #define MPD_DATAFLAGS (MPD_STATIC_DATA|MPD_SHARED_DATA|MPD_CONST_DATA)
 
 /* mpd_t */
@@ -366,9 +358,6 @@ typedef struct mpd_t {
     mpd_ssize_t alloc;
     mpd_uint_t *data;
 } mpd_t;
-
-
-typedef unsigned char uchar;
 
 
 /******************************************************************************/
@@ -442,7 +431,7 @@ void mpd_qset_string_exact(mpd_t *dec, const char *s, uint32_t *status);
 /* set to NaN with error flags */
 void mpd_seterror(mpd_t *result, uint32_t flags, uint32_t *status);
 /* set a special with sign and type */
-void mpd_setspecial(mpd_t *dec, uint8_t sign, uint8_t type);
+void mpd_setspecial(mpd_t *result, uint8_t sign, uint8_t type);
 /* set coefficient to zero or all nines */
 void mpd_zerocoeff(mpd_t *result);
 void mpd_qmaxcoeff(mpd_t *result, const mpd_context_t *ctx, uint32_t *status);
@@ -835,16 +824,16 @@ void *mpd_sh_alloc(mpd_size_t struct_size, mpd_size_t nmemb, mpd_size_t size);
 
 mpd_t *mpd_qnew(void);
 mpd_t *mpd_new(mpd_context_t *ctx);
-mpd_t *mpd_qnew_size(mpd_ssize_t size);
+mpd_t *mpd_qnew_size(mpd_ssize_t nwords);
 EXTINLINE void mpd_del(mpd_t *dec);
 
 EXTINLINE void mpd_uint_zero(mpd_uint_t *dest, mpd_size_t len);
-EXTINLINE int mpd_qresize(mpd_t *result, mpd_ssize_t size, uint32_t *status);
-EXTINLINE int mpd_qresize_zero(mpd_t *result, mpd_ssize_t size, uint32_t *status);
+EXTINLINE int mpd_qresize(mpd_t *result, mpd_ssize_t nwords, uint32_t *status);
+EXTINLINE int mpd_qresize_zero(mpd_t *result, mpd_ssize_t nwords, uint32_t *status);
 EXTINLINE void mpd_minalloc(mpd_t *result);
 
-int mpd_resize(mpd_t *result, mpd_ssize_t size, mpd_context_t *ctx);
-int mpd_resize_zero(mpd_t *result, mpd_ssize_t size, mpd_context_t *ctx);
+int mpd_resize(mpd_t *result, mpd_ssize_t nwords, mpd_context_t *ctx);
+int mpd_resize_zero(mpd_t *result, mpd_ssize_t nwords, mpd_context_t *ctx);
 
 
 MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */

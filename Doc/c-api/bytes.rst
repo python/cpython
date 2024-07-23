@@ -5,10 +5,10 @@
 Bytes Objects
 -------------
 
-These functions raise :exc:`TypeError` when expecting a bytes parameter and are
+These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 
-.. index:: object: bytes
+.. index:: pair: object; bytes
 
 
 .. c:type:: PyBytesObject
@@ -58,48 +58,45 @@ called with a non-bytes parameter.
 
    .. % XXX: This should be exactly the same as the table in PyErr_Format.
    .. % One should just refer to the other.
-   .. % XXX: The descriptions for %zd and %zu are wrong, but the truth is complicated
-   .. % because not all compilers support the %z width modifier -- we fake it
-   .. % when necessary via interpolating PY_FORMAT_SIZE_T.
 
    .. tabularcolumns:: |l|l|L|
 
    +-------------------+---------------+--------------------------------+
    | Format Characters | Type          | Comment                        |
    +===================+===============+================================+
-   | :attr:`%%`        | *n/a*         | The literal % character.       |
+   | ``%%``            | *n/a*         | The literal % character.       |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%c`        | int           | A single byte,                 |
+   | ``%c``            | int           | A single byte,                 |
    |                   |               | represented as a C int.        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%d`        | int           | Equivalent to                  |
+   | ``%d``            | int           | Equivalent to                  |
    |                   |               | ``printf("%d")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%u`        | unsigned int  | Equivalent to                  |
+   | ``%u``            | unsigned int  | Equivalent to                  |
    |                   |               | ``printf("%u")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%ld`       | long          | Equivalent to                  |
+   | ``%ld``           | long          | Equivalent to                  |
    |                   |               | ``printf("%ld")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long | Equivalent to                  |
+   | ``%lu``           | unsigned long | Equivalent to                  |
    |                   |               | ``printf("%lu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t    | Equivalent to                  |
-   |                   |               | ``printf("%zd")``. [1]_        |
+   | ``%zd``           | :c:type:`\    | Equivalent to                  |
+   |                   | Py_ssize_t`   | ``printf("%zd")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zu`       | size_t        | Equivalent to                  |
+   | ``%zu``           | size_t        | Equivalent to                  |
    |                   |               | ``printf("%zu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%i`        | int           | Equivalent to                  |
+   | ``%i``            | int           | Equivalent to                  |
    |                   |               | ``printf("%i")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%x`        | int           | Equivalent to                  |
+   | ``%x``            | int           | Equivalent to                  |
    |                   |               | ``printf("%x")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%s`        | const char\*  | A null-terminated C character  |
+   | ``%s``            | const char\*  | A null-terminated C character  |
    |                   |               | array.                         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%p`        | const void\*  | The hex representation of a C  |
+   | ``%p``            | const void\*  | The hex representation of a C  |
    |                   |               | pointer. Mostly equivalent to  |
    |                   |               | ``printf("%p")`` except that   |
    |                   |               | it is guaranteed to start with |
@@ -134,7 +131,7 @@ called with a non-bytes parameter.
 
 .. c:function:: Py_ssize_t PyBytes_GET_SIZE(PyObject *o)
 
-   Macro form of :c:func:`PyBytes_Size` but without error checking.
+   Similar to :c:func:`PyBytes_Size`, but without error checking.
 
 
 .. c:function:: char* PyBytes_AsString(PyObject *o)
@@ -151,13 +148,14 @@ called with a non-bytes parameter.
 
 .. c:function:: char* PyBytes_AS_STRING(PyObject *string)
 
-   Macro form of :c:func:`PyBytes_AsString` but without error checking.
+   Similar to :c:func:`PyBytes_AsString`, but without error checking.
 
 
 .. c:function:: int PyBytes_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
 
    Return the null-terminated contents of the object *obj*
    through the output variables *buffer* and *length*.
+   Returns ``0`` on success.
 
    If *length* is ``NULL``, the bytes object
    may not contain embedded null bytes;
@@ -187,16 +185,16 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*.  This version decrements the reference count of
-   *newpart*.
+   appended to *bytes*.  This version releases the :term:`strong reference`
+   to *newpart* (i.e. decrements its reference count).
 
 
 .. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
 
-   A way to resize a bytes object even though it is "immutable". Only use this
-   to build up a brand new bytes object; don't use this if the bytes may already
-   be known in other parts of the code.  It is an error to call this function if
-   the refcount on the input bytes object is not one. Pass the address of an
+   Resize a bytes object. *newsize* will be the new length of the bytes object.
+   You can think of it as creating a new bytes object and destroying the old
+   one, only more efficiently.
+   Pass the address of an
    existing bytes object as an lvalue (it may be written into), and the new size
    desired.  On success, *\*bytes* holds the resized bytes object and ``0`` is
    returned; the address in *\*bytes* may differ from its input value.  If the

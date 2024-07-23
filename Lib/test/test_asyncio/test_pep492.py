@@ -77,7 +77,7 @@ class LockTests(BaseTest):
             self.assertFalse(lock.locked())
             with self.assertRaisesRegex(
                 TypeError,
-                "can't be used in 'await' expression"
+                "can't be awaited"
             ):
                 with await lock:
                     pass
@@ -119,23 +119,15 @@ class CoroutineTests(BaseTest):
 
         self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
+    def test_iscoroutine_generator(self):
+        def foo(): yield
+
+        self.assertFalse(asyncio.iscoroutine(foo()))
+
+
     def test_iscoroutinefunction(self):
         async def foo(): pass
         self.assertTrue(asyncio.iscoroutinefunction(foo))
-
-    def test_function_returning_awaitable(self):
-        class Awaitable:
-            def __await__(self):
-                return ('spam',)
-
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def func():
-                return Awaitable()
-
-        coro = func()
-        self.assertEqual(coro.send(None), 'spam')
-        coro.close()
 
     def test_async_def_coroutines(self):
         async def bar():

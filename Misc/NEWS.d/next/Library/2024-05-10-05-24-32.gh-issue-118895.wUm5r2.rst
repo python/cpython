@@ -1,0 +1,2 @@
+Setting attributes on :data:`typing.NoDefault` now raises
+:exc:`AttributeError` instead of :exc:`TypeError`.

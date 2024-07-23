@@ -2,10 +2,6 @@
 
 This module provides an implementation of the HeaderRegistry API.
 The implementation is designed to flexibly follow RFC5322 rules.
-
-Eventually HeaderRegistry will be a public API, but it isn't yet,
-and will probably change some before that happens.
-
 """
 from types import MappingProxyType
 
@@ -222,7 +218,7 @@ class BaseHeader(str):
                 self.__class__.__bases__,
                 str(self),
             ),
-            self.__dict__)
+            self.__getstate__())
 
     @classmethod
     def _reconstruct(cls, value):

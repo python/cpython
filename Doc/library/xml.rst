@@ -60,23 +60,33 @@ circumvent firewalls.
 The following table gives an overview of the known attacks and whether
 the various modules are vulnerable to them.
 
-=========================  ==============   ===============   ==============   ==============   ==============
-kind                       sax              etree             minidom          pulldom          xmlrpc
-=========================  ==============   ===============   ==============   ==============   ==============
-billion laughs             **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
-quadratic blowup           **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
-external entity expansion  Safe (4)         Safe    (1)       Safe    (2)      Safe (4)         Safe    (3)
-`DTD`_ retrieval           Safe (4)         Safe              Safe             Safe (4)         Safe
-decompression bomb         Safe             Safe              Safe             Safe             **Vulnerable**
-=========================  ==============   ===============   ==============   ==============   ==============
+=========================  ==================  ==================  ==================  ==================  ==================
+kind                       sax                 etree               minidom             pulldom             xmlrpc
+=========================  ==================  ==================  ==================  ==================  ==================
+billion laughs             **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
+quadratic blowup           **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
+external entity expansion  Safe (5)            Safe (2)            Safe (3)            Safe (5)            Safe (4)
+`DTD`_ retrieval           Safe (5)            Safe                Safe                Safe (5)            Safe
+decompression bomb         Safe                Safe                Safe                Safe                **Vulnerable**
+large tokens               **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)
+=========================  ==================  ==================  ==================  ==================  ==================
 
-1. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
-   :exc:`ParserError` when an entity occurs.
-2. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
+1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
+   "quadratic blowup" vulnerabilities. Items still listed as vulnerable due to
+   potential reliance on system-provided libraries. Check
+   :const:`!pyexpat.EXPAT_VERSION`.
+2. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
+   :exc:`~xml.etree.ElementTree.ParseError` when an entity occurs.
+3. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
    the unexpanded entity verbatim.
-3. :mod:`xmlrpclib` doesn't expand external entities and omits them.
-4. Since Python 3.7.1, external general entities are no longer processed by
+4. :mod:`xmlrpc.client` doesn't expand external entities and omits them.
+5. Since Python 3.7.1, external general entities are no longer processed by
    default.
+6. Expat 2.6.0 and newer is not vulnerable to denial of service
+   through quadratic runtime caused by parsing large tokens.
+   Items still listed as vulnerable due to
+   potential reliance on system-provided libraries. Check
+   :const:`!pyexpat.EXPAT_VERSION`.
 
 
 billion laughs / exponential entity expansion
@@ -91,7 +101,7 @@ quadratic blowup entity expansion
   entity expansion, too. Instead of nested entities it repeats one large entity
   with a couple of thousand chars over and over again. The attack isn't as
   efficient as the exponential case but it avoids triggering parser countermeasures
-  that forbid deeply-nested entities.
+  that forbid deeply nested entities.
 
 external entity expansion
   Entity declarations can contain more than just text for replacement. They can
@@ -110,22 +120,27 @@ decompression bomb
   files. For an attacker it can reduce the amount of transmitted data by three
   magnitudes or more.
 
-The documentation for `defusedxml`_ on PyPI has further information about
+large tokens
+  Expat needs to re-parse unfinished tokens; without the protection
+  introduced in Expat 2.6.0, this can lead to quadratic runtime that can
+  be used to cause denial of service in the application parsing XML.
+  The issue is known as :cve:`2023-52425`.
+
+The documentation for :pypi:`defusedxml` on PyPI has further information about
 all known attack vectors with examples and references.
 
 .. _defusedxml-package:
 
-The :mod:`defusedxml` Package
-------------------------------------------------------
+The :mod:`!defusedxml` Package
+------------------------------
 
-`defusedxml`_ is a pure Python package with modified subclasses of all stdlib
+:pypi:`defusedxml` is a pure Python package with modified subclasses of all stdlib
 XML parsers that prevent any potentially malicious operation. Use of this
 package is recommended for any server code that parses untrusted XML data. The
 package also ships with example exploits and extended documentation on more
 XML exploits such as XPath injection.
 
 
-.. _defusedxml: https://pypi.org/project/defusedxml/
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _DTD: https://en.wikipedia.org/wiki/Document_type_definition

@@ -1,5 +1,5 @@
-:mod:`xml.sax.handler` --- Base classes for SAX handlers
-========================================================
+:mod:`!xml.sax.handler` --- Base classes for SAX handlers
+=========================================================
 
 .. module:: xml.sax.handler
    :synopsis: Base classes for SAX event handlers.
@@ -50,7 +50,7 @@ module :mod:`xml.sax.handler`, so that all methods get default implementations.
 
 .. class:: LexicalHandler
 
-   Interface used by the parser to represent low freqency events which may not
+   Interface used by the parser to represent low frequency events which may not
    be of interest to many applications.
 
 In addition to these classes, :mod:`xml.sax.handler` provides symbolic constants
@@ -147,7 +147,7 @@ for the feature and property names.
 .. data:: property_xml_string
 
    | value: ``"http://xml.org/sax/properties/xml-string"``
-   | data type: String
+   | data type: Bytes
    | description: The literal string of characters that was the source for the
      current event.
    | access: read-only
@@ -393,7 +393,7 @@ implements this interface, then register the object with your
 :class:`~xml.sax.xmlreader.XMLReader`, the parser
 will call the methods in your object to report all warnings and errors. There
 are three levels of errors available: warnings, (possibly) recoverable errors,
-and unrecoverable errors.  All methods take a :exc:`SAXParseException` as the
+and unrecoverable errors.  All methods take a :exc:`~xml.sax.SAXParseException` as the
 only parameter.  Errors and warnings may be converted to an exception by raising
 the passed-in exception object.
 

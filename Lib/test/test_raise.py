@@ -12,8 +12,8 @@ import unittest
 def get_tb():
     try:
         raise OSError()
-    except:
-        return sys.exc_info()[2]
+    except OSError as e:
+        return e.__traceback__
 
 
 class Context:
@@ -185,6 +185,20 @@ class TestCause(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
+    def test_class_cause_nonexception_result(self):
+        class ConstructsNone(BaseException):
+            @classmethod
+            def __new__(*args, **kwargs):
+                return None
+        try:
+            raise IndexError from ConstructsNone
+        except TypeError as e:
+            self.assertIn("should have returned an instance of BaseException", str(e))
+        except IndexError:
+            self.fail("Wrong kind of exception raised")
+        else:
+            self.fail("No exception raised")
+
     def test_instance_cause(self):
         cause = KeyError()
         try:
@@ -303,7 +317,7 @@ class TestContext(unittest.TestCase):
             except:
                 raise OSError()
         except OSError as e:
-            self.assertEqual(e.__context__, context)
+            self.assertIs(e.__context__, context)
         else:
             self.fail("No exception raised")
 
@@ -315,7 +329,7 @@ class TestContext(unittest.TestCase):
             except:
                 raise OSError()
         except OSError as e:
-            self.assertNotEqual(e.__context__, context)
+            self.assertIsNot(e.__context__, context)
             self.assertIsInstance(e.__context__, context)
         else:
             self.fail("No exception raised")
@@ -328,7 +342,7 @@ class TestContext(unittest.TestCase):
             except:
                 raise OSError
         except OSError as e:
-            self.assertNotEqual(e.__context__, context)
+            self.assertIsNot(e.__context__, context)
             self.assertIsInstance(e.__context__, context)
         else:
             self.fail("No exception raised")
@@ -415,6 +429,22 @@ class TestContext(unittest.TestCase):
         except NameError as e:
             self.assertIsNone(e.__context__.__context__)
 
+    def test_not_last(self):
+        # Context is not necessarily the last exception
+        context = Exception("context")
+        try:
+            raise context
+        except Exception:
+            try:
+                raise Exception("caught")
+            except Exception:
+                pass
+            try:
+                raise Exception("new")
+            except Exception as exc:
+                raised = exc
+        self.assertIs(raised.__context__, context)
+
     def test_3118(self):
         # deleting the generator caused the __context__ to be cleared
         def gen():
@@ -438,6 +468,7 @@ class TestContext(unittest.TestCase):
         f()
 
     def test_3611(self):
+        import gc
         # A re-raised exception in a __del__ caused the __context__
         # to be cleared
         class C:
@@ -451,9 +482,11 @@ class TestContext(unittest.TestCase):
             x = C()
             try:
                 try:
-                    x.x
+                    f.x
                 except AttributeError:
+                    # make x.__del__ trigger
                     del x
+                    gc.collect()  # For PyPy or other GCs.
                     raise TypeError
             except Exception as e:
                 self.assertNotEqual(e.__context__, None)

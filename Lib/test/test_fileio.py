@@ -9,9 +9,15 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.support import (run_unittest, cpython_only, swap_attr)
-from test.support.os_helper import (TESTFN, TESTFN_UNICODE, make_bad_fd)
+from test.support import (
+    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi,
+    infinite_recursion,
+)
+from test.support.os_helper import (
+    TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
+    )
 from test.support.warnings_helper import check_warnings
+from test.support.import_helper import import_module
 from collections import UserList
 
 import _io  # C implementation of io
@@ -36,6 +42,7 @@ class AutoFileTests:
         self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'tell')
 
     def testSeekTell(self):
@@ -64,6 +71,7 @@ class AutoFileTests:
             self.assertRaises((AttributeError, TypeError),
                               setattr, f, attr, 'oops')
 
+    @unittest.skipIf(is_wasi, "WASI does not expose st_blksize.")
     def testBlksize(self):
         # test private _blksize attribute
         blksize = io.DEFAULT_BUFFER_SIZE
@@ -167,6 +175,16 @@ class AutoFileTests:
         self.assertEqual(repr(self.f),
                          "<%s.FileIO [closed]>" % (self.modulename,))
 
+    def test_subclass_repr(self):
+        class TestSubclass(self.FileIO):
+            pass
+
+        f = TestSubclass(TESTFN)
+        with f:
+            self.assertIn(TestSubclass.__name__, repr(f))
+
+        self.assertIn(TestSubclass.__name__, repr(f))
+
     def testReprNoCloseFD(self):
         fd = os.open(TESTFN, os.O_RDONLY)
         try:
@@ -177,6 +195,7 @@ class AutoFileTests:
         finally:
             os.close(fd)
 
+    @infinite_recursion(25)
     def testRecursiveRepr(self):
         # Issue #25455
         with swap_attr(self.f, 'name', self.f):
@@ -372,7 +391,7 @@ class OtherFileTests:
             self.assertEqual(f.isatty(), False)
             f.close()
 
-            if sys.platform != "win32":
+            if sys.platform != "win32" and not is_emscripten:
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:
@@ -427,18 +446,15 @@ class OtherFileTests:
 
     def testBytesOpen(self):
         # Opening a bytes filename
-        try:
-            fn = TESTFN.encode("ascii")
-        except UnicodeEncodeError:
-            self.skipTest('could not encode %r to ascii' % TESTFN)
+        fn = TESTFN_ASCII.encode("ascii")
         f = self.FileIO(fn, "w")
         try:
             f.write(b"abc")
             f.close()
-            with open(TESTFN, "rb") as f:
+            with open(TESTFN_ASCII, "rb") as f:
                 self.assertEqual(f.read(), b"abc")
         finally:
-            os.unlink(TESTFN)
+            os.unlink(TESTFN_ASCII)
 
     @unittest.skipIf(sys.getfilesystemencoding() != 'utf-8',
                      "test only works for utf-8 filesystems")
@@ -468,6 +484,14 @@ class OtherFileTests:
         if sys.platform == 'win32':
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
+
+    def testBooleanFd(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor') as cm:
+                f = self.FileIO(fd, closefd=False)
+            f.close()
+            self.assertEqual(cm.filename, __file__)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
@@ -499,7 +523,7 @@ class OtherFileTests:
 
     def testTruncateOnWindows(self):
         def bug801631():
-            # SF bug <http://www.python.org/sf/801631>
+            # SF bug <https://bugs.python.org/issue801631>
             # "file.truncate fault on windows"
             f = self.FileIO(TESTFN, 'w')
             f.write(bytes(range(11)))
@@ -574,7 +598,7 @@ class COtherFileTests(OtherFileTests, unittest.TestCase):
     @cpython_only
     def testInvalidFd_overflow(self):
         # Issue 15989
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MAX + 1)
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MIN - 1)
 
@@ -605,15 +629,12 @@ class PyOtherFileTests(OtherFileTests, unittest.TestCase):
             self.assertNotEqual(w.warnings, [])
 
 
-def test_main():
+def tearDownModule():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
-    try:
-        run_unittest(CAutoFileTests, PyAutoFileTests,
-                     COtherFileTests, PyOtherFileTests)
-    finally:
-        if os.path.exists(TESTFN):
-            os.unlink(TESTFN)
+    if os.path.exists(TESTFN):
+        os.unlink(TESTFN)
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
