@@ -418,17 +418,32 @@ create_type_with_token(PyObject *module, PyObject *args)
     if (!PyArg_ParseTuple(args, "sO", &name, &py_token)) {
         return NULL;
     }
-
-    /* Calling this with Py_TP_USE_SPEC breaks the invariant that spec must be
-     * statically allocated! (Or at least: the pointer must outlive the class.)
-     *
-     * Strictly for the purposes of this test, that's OK. But type-checking
-     * this class using `PyType_GetBaseByToken` would be unreliable!
-     * (Technically, we rely on the fact that nothing *else* uses
-     * Py_TP_USE_SPEC with a stack-allocated spec.)
-     */
-
     void *token = PyLong_AsVoidPtr(py_token);
+    if (token == Py_TP_USE_SPEC) {
+        // Py_TP_USE_SPEC requires the spec that at least outlives the class
+        static PyType_Slot slots[] = {
+            {Py_tp_token, Py_TP_USE_SPEC},
+            {0},
+        };
+        static PyType_Spec spec = {
+            .name = "_testcapi.DefaultTokenTest",
+            .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+            .slots = slots,
+        };
+        PyObject *type = PyType_FromMetaclass(NULL, NULL, &spec, NULL);
+        if (!type) {
+            return NULL;
+        }
+        token = PyType_GetSlot((PyTypeObject *)type, Py_tp_token);
+        assert(!PyErr_Occurred());
+        Py_DECREF(type);
+        if (token != &spec) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "failed to convert token from Py_TP_USE_SPEC");
+            return NULL;
+        }
+    }
+    // Test non-NULL token that must also outlive the class
     PyType_Slot slots[] = {
         {Py_tp_token, token},
         {0},
@@ -438,15 +453,8 @@ create_type_with_token(PyObject *module, PyObject *args)
         .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         .slots = slots,
     };
-    PyTypeObject *type;
-    type = (PyTypeObject *)PyType_FromMetaclass(NULL, module, &spec, NULL);
+    PyObject *type = PyType_FromMetaclass(NULL, module, &spec, NULL);
     if (!type) {
-        return NULL;
-    }
-    if (token == Py_TP_USE_SPEC && PyType_GetSlot(type, Py_tp_token) != &spec) {
-        PyErr_SetString(PyExc_AssertionError,
-                        "failed to convert token from Py_TP_USE_SPEC");
-        Py_DECREF(type);
         return NULL;
     }
     return (PyObject *)type;
