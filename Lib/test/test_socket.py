@@ -4921,21 +4921,36 @@ class PurePythonSocketPairTest(SocketPairTest):
         pass
 
     def test_injected_authentication_failure(self):
-        import secrets
-        orig_token_bytes = secrets.token_bytes
-        fake_n = secrets.DEFAULT_ENTROPY - 1
-        from unittest import mock
-        with mock.patch.object(
-                secrets, 'token_bytes',
-                new=lambda nbytes=None: orig_token_bytes(fake_n)):
-            s1, s2 = None, None
-            try:
-                with self.assertRaisesRegex(ConnectionError,
-                                            "authentication fail"):
-                    s1, s2 = socket.socketpair()
-            finally:
-                if s1: s1.close()
-                if s2: s2.close()
+        orig_getsockname = socket.socket.getsockname
+        inject_sock = None
+
+        def inject_getsocketname(self):
+            nonlocal inject_sock
+            sockname = orig_getsockname(self)
+            # Connect to the listening socket ahead of the
+            # client socket.
+            if inject_sock is None:
+                inject_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                inject_sock.setblocking(False)
+                try:
+                    inject_sock.connect(sockname[:2])
+                except (BlockingIOError, InterruptedError):
+                    pass
+                inject_sock.setblocking(True)
+            return sockname
+
+        sock1 = sock2 = None
+        try:
+            socket.socket.getsockname = inject_getsocketname
+            with self.assertRaises(OSError):
+                sock1, sock2 = socket.socketpair()
+        finally:
+            socket.socket.getsockname = orig_getsockname
+            if inject_sock:
+                inject_sock.close()
+            if sock1:  # This cleanup isn't needed on a successful test.
+                sock1.close()
+                sock2.close()
 
 
 class NonBlockingTCPTests(ThreadedTCPSocketTest):

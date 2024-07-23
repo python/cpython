@@ -628,81 +628,36 @@ else:
         if proto != 0:
             raise ValueError("Only protocol zero is supported")
 
-        import secrets  # Delay import until actually needed.
-        auth_len = secrets.DEFAULT_ENTROPY
-        reason = "unknown"
-        for _ in range(5):
-            # We do not try forever, that'd just provide another process
-            # the ability to make us waste CPU retrying.  In all normal
-            # circumstances the first connection auth attempt succeeds.
-            s_auth = secrets.token_bytes()
-            c_auth = secrets.token_bytes()
-
-            # We create a connected TCP socket. Note the trick with
-            # setblocking(False) prevents us from having to create a thread.
-            csock = None
-            ssock = None
-            reason = "unknown"
-            lsock = socket(family, type, proto)
+        # We create a connected TCP socket. Note the trick with
+        # setblocking(False) that prevents us from having to create a thread.
+        lsock = socket(family, type, proto)
+        try:
+            lsock.bind((host, 0))
+            lsock.listen()
+            # On IPv6, ignore flow_info and scope_id
+            addr, port = lsock.getsockname()[:2]
+            csock = socket(family, type, proto)
             try:
-                lsock.bind((host, 0))
-                lsock.listen()
-                # On IPv6, ignore flow_info and scope_id
-                addr, port = lsock.getsockname()[:2]
-                csock = socket(family, type, proto)
+                csock.setblocking(False)
                 try:
-                    csock.setblocking(False)
-                    try:
-                        csock.connect((addr, port))
-                    except (BlockingIOError, InterruptedError):
-                        pass
-                    csock.setblocking(True)
-                    ssock, _ = lsock.accept()
-                except Exception:
-                    csock.close()
-                    raise
+                    csock.connect((addr, port))
+                except (BlockingIOError, InterruptedError):
+                    pass
+                csock.setblocking(True)
+                ssock, _ = lsock.accept()
+            except:
+                csock.close()
+                raise
+        finally:
+            lsock.close()
 
-                def authenticate_socket_conn(send_sock, recv_sock, auth_bytes):
-                    nonlocal auth_len
-                    data_buf = bytearray(auth_len)
-                    data_mem = memoryview(data_buf)
-                    data_len = 0
-
-                    # Send the authentication bytes.
-                    if send_sock.send(auth_bytes) != auth_len:
-                        raise ConnectionError("send() sent too few auth bytes.")
-
-                    # Attempt to read the authentication bytes from the socket.
-                    max_auth_time = time.monotonic() + 3.0
-                    while time.monotonic() < max_auth_time and data_len < auth_len:
-                        bytes_received = recv_sock.recv_into(data_mem, auth_len - data_len)
-                        if bytes_received == 0:
-                            break  # Connection closed.
-                        data_len += bytes_received
-                        data_mem = data_mem[bytes_received:]
-
-                    # Check that the authentication bytes match.
-                    if len(data_buf) != auth_len:
-                        raise ConnectionError("recv() got too few auth bytes.")
-                    if bytes(data_buf) != auth_bytes:
-                        raise ConnectionError(f"Mismatched auth token.")
-
-                # Authenticating avoids using a connection from something else
-                # able to connect to {host}:{port} instead of us.
-                try:
-                    authenticate_socket_conn(ssock, csock, s_auth)
-                    authenticate_socket_conn(csock, ssock, c_auth)
-                except OSError as exc:
-                    csock.close()
-                    ssock.close()
-                    reason = str(exc)
-                    continue
-                # authentication successful, both sockets are our process.
-                break
-            finally:
-                lsock.close()
-        else:
-            raise ConnectionError(f"socketpair authentication failed: {reason}")
+        # Authenticating avoids using a connection from something else
+        # able to connect to {host}:{port} instead of us.
+        if (
+            ssock.getsockname()[:2] != csock.getpeername()[:2]
+            or csock.getsockname()[:2] != ssock.getpeername()[:2]
+        ):
+            raise ConnectionError("Unexpected peer connection")
         return (ssock, csock)
     __all__.append("socketpair")
 
