@@ -1094,6 +1094,8 @@ enable_optimizations
 with_lto
 enable_bolt
 with_strict_overflow
+enable_safety
+enable_slower_safety
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1826,6 +1828,10 @@ Optional Features:
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
+  --disable-safety        disable usage of the security compiler options with
+                          no performance overhead
+  --enable-slower-safety  enable usage of the security compiler options with
+                          performance overhead
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
                           see Doc/library/sqlite3.rst (default is no)
@@ -9666,7 +9672,28 @@ fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-safety" >&5
+printf %s "checking for --disable-safety... " >&6; }
+# Check whether --enable-safety was given.
+if test ${enable_safety+y}
+then :
+  enableval=$enable_safety; if test "x$enable_safety" = xyes
+then :
+  disable_safety=no
+else $as_nop
+  disable_saftey=yes
+fi
+else $as_nop
+  disable_saftey=no
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_safety" >&5
+printf "%s\n" "$disable_safety" >&6; }
+
+if test "$disable_safety" = "no"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
 then :
@@ -9705,7 +9732,7 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
 then :
@@ -9744,7 +9771,22 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -D_FORTIFY_SOURCE=3" >&5
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-slower-safety" >&5
+printf %s "checking for --enable-slower-safety... " >&6; }
+# Check whether --enable-slower-safety was given.
+if test ${enable_slower_safety+y}
+then :
+  enableval=$enable_slower_safety;
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_slower_safety" >&5
+printf "%s\n" "$enable_slower_safety" >&6; }
+
+if test "$enable_slower_safety" = "yes"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -D_FORTIFY_SOURCE=3" >&5
 printf %s "checking whether C compiler accepts -D_FORTIFY_SOURCE=3... " >&6; }
 if test ${ax_cv_check_cflags___D_FORTIFY_SOURCE_3+y}
 then :
@@ -9783,6 +9825,7 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&2;}
 fi
 
+fi
 
 case $GCC in
 yes)

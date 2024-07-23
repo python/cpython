@@ -1,0 +1,2 @@
+Introduce ./configure --disable-safety and --enable-slower-safety options.
+Patch by Donghee Na.
