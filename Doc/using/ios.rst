@@ -39,7 +39,7 @@ iOS version compatibility
 The minimum supported iOS version is specified at compile time, using the
 :option:`--host` option to ``configure``. By default, when compiled for iOS,
 Python will be compiled with a minimum supported iOS version of 13.0. To use a
-different miniumum iOS version, provide the version number as part of the
+different minimum iOS version, provide the version number as part of the
 :option:`!--host` argument - for example,
 ``--host=arm64-apple-ios15.4-simulator`` would compile an ARM64 simulator build
 with a deployment target of 15.4.
@@ -323,3 +323,21 @@ modules in your app, some additional steps will be required:
 
 * If you're using a separate folder for third-party packages, ensure that folder
   is included as part of the ``PYTHONPATH`` configuration in step 10.
+
+App Store Compliance
+====================
+
+The only mechanism for distributing apps to third-party iOS devices is to
+submit the app to the iOS App Store; apps submitted for distribution must pass
+Apple's app review process. This process includes a set of automated validation
+rules that inspect the submitted application bundle for problematic code.
+
+The Python standard library contains some code that is known to violate these
+automated rules. While these violations appear to be false positives, Apple's
+review rules cannot be challenged; so, it is necessary to modify the Python
+standard library for an app to pass App Store review.
+
+The Python source tree contains
+:source:`a patch file <Mac/Resources/app-store-compliance.patch>` that will remove
+all code that is known to cause issues with the App Store review process. This
+patch is applied automatically when building for iOS.

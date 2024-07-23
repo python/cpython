@@ -16,8 +16,8 @@ Features and minimum versions required to build CPython:
 
 * On Windows, Microsoft Visual Studio 2017 or later is required.
 
-* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
-  point numbers and `floating point Not-a-Number (NaN)
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
+  floating-point numbers and `floating-point Not-a-Number (NaN)
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
 * Support for threads.
@@ -944,6 +944,17 @@ See :source:`Mac/README.rst`.
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+.. option:: --with-app-store-compliance
+.. option:: --with-app-store-compliance=PATCH-FILE
+
+   The Python standard library contains strings that are known to trigger
+   automated inspection tool errors when submitted for distribution by
+   the macOS and iOS App Stores. If enabled, this option will apply the list of
+   patches that are known to correct app store compliance. A custom patch
+   file can also be specified. This option is disabled by default.
+
+   .. versionadded:: 3.13
 
 iOS Options
 -----------

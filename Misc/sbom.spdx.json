@@ -496,11 +496,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "a6164e8b4da42120003b323afb01fa52cd246d51"
+          "checksumValue": "fc2c3ef83a71bef42eb3f73b78e4ef6642a4634e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ce327484f593d9b8fdb8352dbb13f602ede0bcd2507ff8005ca44a41974efc96"
+          "checksumValue": "e4f3ed9d1e8f661482cbd2d04b197e15cc3b698c5ef2ddedf0eb65df320dbbc4"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA3.c"
@@ -510,11 +510,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e8fa2b52a89445f44ba8fbee8986d733bc84b773"
+          "checksumValue": "7d78e6844dde1f9b5e68f58ca105a4c330461ff6"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "cb13d54a4f744ad5f3733967424c1db6e38170a41cc64d8a23cfe5411d34f372"
+          "checksumValue": "231d9bc13190be4b6821acb518194f32f4a3c04f1c034b3118f6db0bab2debe3"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA3.h"
@@ -1615,11 +1615,11 @@
           "checksumValue": "e31e4ca10da91c585793c0eaf1b98aee3cb43e3a58d3d8d478593e5a6bd82927"
         }
       ],
-      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/de979606cb6eba1aa4ace1167dba5a8319af2fcf.zip",
+      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/a6a09496d9cff652b567d26f2c3ab012321b632a.zip",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:de979606cb6eba1aa4ace1167dba5a8319af2fcf:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:a6a09496d9cff652b567d26f2c3ab012321b632a:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1627,7 +1627,7 @@
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "de979606cb6eba1aa4ace1167dba5a8319af2fcf"
+      "versionInfo": "a6a09496d9cff652b567d26f2c3ab012321b632a"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-macholib",

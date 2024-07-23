@@ -100,6 +100,13 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+fractions
+---------
+
+Added support for converting any objects that have the
+:meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
+(Contributed by Serhiy Storchaka in :gh:`82017`.)
+
 os
 --
 
@@ -111,11 +118,15 @@ os
 pathlib
 -------
 
-* Add :meth:`pathlib.Path.copy`, which copies the content of one file to
-  another, like :func:`shutil.copyfile`.
-  (Contributed by Barney Gale in :gh:`73991`.)
-* Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
-  another.
+* Add methods to :class:`pathlib.Path` to recursively copy or remove files:
+
+  * :meth:`~pathlib.Path.copy` copies the content of one file to another, like
+    :func:`shutil.copyfile`.
+  * :meth:`~pathlib.Path.copytree` copies one directory tree to another, like
+    :func:`shutil.copytree`.
+  * :meth:`~pathlib.Path.rmtree` recursively removes a directory tree, like
+    :func:`shutil.rmtree`.
+
   (Contributed by Barney Gale in :gh:`73991`.)
 
 pdb
@@ -139,6 +150,12 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+pickle
+------
+
+* Set the default protocol version on the :mod:`pickle` module to 5.
+  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
+
 
 Optimizations
 =============
@@ -150,7 +167,6 @@ asyncio
   which speeds up execution by 10% on standard pyperformance benchmarks and
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
-
 
 
 
@@ -166,6 +182,9 @@ Deprecated
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
+
+* Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
+  (Contributed by Bénédikt Tran in :gh:`119698`.)
 
 
 Removed
