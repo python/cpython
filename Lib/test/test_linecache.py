@@ -280,6 +280,9 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(linecache.getlines(filename, module_globals),
                          ['source for x.y.z\n'])
 
+    def test_filename_too_long(self):
+        self.assertEqual(linecache.updatecache("s" * 999999), [])
+
 
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):

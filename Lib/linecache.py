@@ -135,7 +135,7 @@ def updatecache(filename, module_globals=None):
             try:
                 stat = os.stat(fullname)
                 break
-            except OSError:
+            except (OSError, ValueError):
                 pass
         else:
             return []
