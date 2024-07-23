@@ -90,7 +90,7 @@ class TestSourceFormat(unittest.TestCase):
     def test_expressions(self):
         def f(
             add: a + b,
-            sub: a + b,
+            sub: a - b,
             mul: a * b,
             matmul: a @ b,
             truediv: a / b,
@@ -123,7 +123,7 @@ class TestSourceFormat(unittest.TestCase):
             anno,
             {
                 "add": "a + b",
-                "sub": "a + b",
+                "sub": "a - b",
                 "mul": "a * b",
                 "matmul": "a @ b",
                 "truediv": "a / b",
@@ -329,7 +329,7 @@ class TestGetAnnotations(unittest.TestCase):
 
     def test_custom_object_with_annotations(self):
         class C:
-            def __init__(self, x: int = 0, y: str = ""):
+            def __init__(self):
                 self.__annotations__ = {"x": int, "y": str}
 
         self.assertEqual(annotationlib.get_annotations(C()), {"x": int, "y": str})
@@ -749,20 +749,20 @@ class TestGetAnnotations(unittest.TestCase):
         results = inspect_stringized_annotations_pep695.nested()
 
         self.assertEqual(
-            set(results.F_annotations.values()), set(results.F.__type_params__)
+            set(results.F_annotations.values()),
+            set(results.F.__type_params__)
         )
         self.assertEqual(
             set(results.F_meth_annotations.values()),
-            set(results.F.generic_method.__type_params__),
+            set(results.F.generic_method.__type_params__)
         )
         self.assertNotEqual(
-            set(results.F_meth_annotations.values()), set(results.F.__type_params__)
+            set(results.F_meth_annotations.values()),
+            set(results.F.__type_params__)
         )
         self.assertEqual(
-            set(results.F_meth_annotations.values()).intersection(
-                results.F.__type_params__
-            ),
-            set(),
+            set(results.F_meth_annotations.values()).intersection(results.F.__type_params__),
+            set()
         )
 
         self.assertEqual(results.G_annotations, {"x": str})

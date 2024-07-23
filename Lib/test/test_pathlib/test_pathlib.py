@@ -904,7 +904,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             errors = []
             tmp.rmtree(on_error=errors.append)
             # Test whether onerror has actually been called.
-            print(errors)
             self.assertEqual(len(errors), 3)
         finally:
             tmp.chmod(old_dir_mode)
@@ -1006,7 +1005,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
         with swap_attr(os, 'close', close) as orig_close:
             dir1.rmtree(on_error=errors.append)
-        print(errors)
         self.assertEqual(len(errors), 2)
         self.assertEqual(errors[0].filename, str(dir2))
         self.assertEqual(errors[1].filename, str(dir1))
