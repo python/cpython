@@ -69,9 +69,8 @@ def get_unexpected_warnings(
         for warning in unexpected_warnings:
             print(warning)
         return 1
-    
-    return 0
 
+    return 0
 
 def get_unexpected_improvements(
     warnings: list[dict],
