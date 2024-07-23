@@ -94,7 +94,7 @@ def replace_error(
     out.emit(") ")
     c_offset = stack.peek_offset()
     try:
-        offset = int(c_offset)
+        offset = -int(c_offset)
         close = ";\n"
     except ValueError:
         offset = None
@@ -102,8 +102,7 @@ def replace_error(
         close = "; }\n"
     out.emit("goto ")
     if offset:
-        assert offset < 0
-        out.emit(f"pop_{-offset}_")
+        out.emit(f"pop_{offset}_")
     out.emit(label)
     out.emit(close)
 
