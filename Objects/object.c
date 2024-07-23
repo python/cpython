@@ -829,7 +829,9 @@ static void
 free_object(void *obj)
 {
     PyObject *op = (PyObject *)obj;
-    Py_TYPE(op)->tp_free(op);
+    PyTypeObject *tp = Py_TYPE(op);
+    tp->tp_free(op);
+    Py_DECREF(tp);
 }
 
 #endif
@@ -851,6 +853,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->contexts, is_finalization, free_object);
     clear_freelist(&freelists->async_gens, is_finalization, free_object);
     clear_freelist(&freelists->async_gen_asends, is_finalization, free_object);
+    clear_freelist(&freelists->futureiters, is_finalization, free_object);
     if (is_finalization) {
         // Only clear object stack chunks during finalization. We use object
         // stacks during GC, so emptying the free-list is counterproductive.
