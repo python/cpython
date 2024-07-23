@@ -963,7 +963,7 @@ class TestMain(TestCase):
             mod = blue / "calx.py"
             mod.write_text("FOO = 42", encoding="utf-8")
             commands = [
-                "print(f'{" + var + "=}')" for var in expectations
+                "print(f'^{" + var + "=}')" for var in expectations
             ] + ["exit()"]
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
@@ -989,10 +989,10 @@ class TestMain(TestCase):
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
             with self.subTest(var=var, expected=expected):
-                if m := re.search(rf"[\r\n]{var}=(.+?)[\r\n]", output):
+                if m := re.search(rf"\^{var}=(.+?)[\r\n]", output):
                     self._assertMatchOK(var, expected, actual=m.group(1))
                 else:
-                    self.fail(f"{var}= not found in output")
+                    self.fail(f"{var}= not found in output: {output!r}\n\n{output}")
 
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
@@ -1126,4 +1126,4 @@ class TestMain(TestCase):
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "\n".join(output), exit_code
+        return "".join(output), exit_code
