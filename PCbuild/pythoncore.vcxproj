@@ -432,12 +432,12 @@
     <ClCompile Include="..\Modules\_hacl\Lib_Memzero0.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b_Simd256.c" Condition="'$(Platform)'!='ARM64'">
-      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_VEC256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b_Simd256.c" Condition="'$(Platform)' == 'x64'">
+      <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/arch:AVX2</AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s_Simd128.c" Condition="'$(Platform)'!='ARM64'">
-      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s_Simd128.c" Condition="'$(Platform)' == 'x64'">
+      <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c" />
