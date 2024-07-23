@@ -453,11 +453,7 @@ create_type_with_token(PyObject *module, PyObject *args)
         .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         .slots = slots,
     };
-    PyObject *type = PyType_FromMetaclass(NULL, module, &spec, NULL);
-    if (!type) {
-        return NULL;
-    }
-    return type;
+    return PyType_FromMetaclass(NULL, module, &spec, NULL);
 }
 
 static PyObject *
