@@ -1612,7 +1612,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "e31e4ca10da91c585793c0eaf1b98aee3cb43e3a58d3d8d478593e5a6bd82927"
+          "checksumValue": "988a74f5fbb59baca2d54e41447997ada92f4ebc59888dfb717438013f859117"
         }
       ],
       "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/a6a09496d9cff652b567d26f2c3ab012321b632a.zip",
