@@ -51,7 +51,6 @@ jobs:
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
         GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
         ./configure \
-          CFLAGS="--fdiagnostics-format=json" \
           --config-cache \
           --with-pydebug \
           --enable-slower-safety \
