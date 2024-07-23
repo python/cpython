@@ -125,6 +125,7 @@ Modules/md5module.c	Modules/_hacl/include
 Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
 Modules/sha3module.c	Modules/_hacl/include
+Modules/blake2module.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
 
 # possible system-installed headers, just in case
