@@ -2431,13 +2431,17 @@ _PyCode_ConstantKey(PyObject *op)
     /* Py_None and Py_Ellipsis are singletons. */
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
-       || PyUnicode_CheckExact(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
        || PyCode_Check(op))
     {
         /* Objects of these types are always different from object of other
          * type and from tuples. */
         key = Py_NewRef(op);
+    }
+    else if (PyUnicode_CheckExact(op)) {
+        key = Py_NewRef(op);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternMortal(interp, &key);
     }
     else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
         /* Make booleans different from integers 0 and 1.
