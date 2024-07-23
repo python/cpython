@@ -1,6 +1,7 @@
 # Python test set -- part 6, built-in types
 
 from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
+from test.test_import import no_rerun
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -2378,6 +2379,7 @@ class SubinterpreterTests(unittest.TestCase):
         import test.support.interpreters.channels
 
     @cpython_only
+    @no_rerun('channels (and queues) might have a refleak; see gh-122199')
     def test_slot_wrappers(self):
         rch, sch = interpreters.channels.create()
 
