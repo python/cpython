@@ -1903,6 +1903,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             wait_process(pid, exitcode=0)
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_signal_handling(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 
@@ -1949,6 +1950,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(child_handled.is_set())
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_run(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 
@@ -1968,6 +1970,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.value, 42)
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_subprocess(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 
