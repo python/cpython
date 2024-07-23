@@ -542,7 +542,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    a :meth:`~object.__delete__` method.  Optionally, they may also have a
    :meth:`~object.__get__` method.
 
-   Examples of data descriptors are properties (see: :func:`property`), getset
+   Examples of data descriptors are :func:`properties <property>`, getset
    descriptors and member descriptors.  Note that for the latter two (which can
    be defined only at the C level, in extension modules) more specific tests
    are available: :func:`isgetsetdescriptor` and :func:`ismemberdescriptor`,
