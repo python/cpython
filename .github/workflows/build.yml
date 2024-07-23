@@ -235,7 +235,7 @@ jobs:
 
   build_windows_msi:
     name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      📦 Windows MSI${{ '' }}
+      Windows MSI${{ '' }}
     needs: check_source
     if: fromJSON(needs.check_source.outputs.run-win-msi)
     strategy:
