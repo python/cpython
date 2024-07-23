@@ -23,7 +23,6 @@ race:free_threadstate
 
 # These warnings trigger directly in a CPython function.
 
-race_top:_PyEval_EvalFrameDefault
 race_top:assign_version_tag
 race_top:new_reference
 race_top:_multiprocessing_SemLock_acquire_impl
