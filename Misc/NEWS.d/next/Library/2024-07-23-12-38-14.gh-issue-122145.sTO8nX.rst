@@ -1,0 +1,2 @@
+Fix an issue when reporting tracebacks containing only Python comments.
+Patch by Bénédikt Tran.
