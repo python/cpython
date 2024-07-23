@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
+import asyncio
 import argparse
-import atexit
 import os
 import re
 import shlex
@@ -9,12 +9,11 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+from asyncio import wait_for
+from contextlib import asynccontextmanager
 from os.path import basename, relpath
 from pathlib import Path
-from subprocess import check_output
 from tempfile import TemporaryDirectory
-from threading import Thread
-from time import sleep
 
 
 SCRIPT_NAME = Path(__file__).name
@@ -216,11 +215,58 @@ def setup_testbed(context):
              "gradle-wrapper.jar"])
 
 
-def list_devices():
+# Work around a bug involving sys.exit and TaskGroups
+# (https://github.com/python/cpython/issues/101515).
+def exit(*args):
+    raise MySystemExit(*args)
+
+
+class MySystemExit(Exception):
+    pass
+
+
+# The `test` subcommand runs all subprocesses through this context manager so
+# that no matter what happens, they can always be cancelled from another task,
+# and they will always be cleaned up on exit.
+@asynccontextmanager
+async def async_process(*args, **kwargs):
+    process = await asyncio.create_subprocess_exec(*args, **kwargs)
+    try:
+        yield process
+    finally:
+        if process.returncode is None:
+            process.kill()
+
+            # Even after killing the process we must still wait for it,
+            # otherwise we'll get "Exception ignored in __del__" messages.
+            await wait_for(process.wait(), timeout=1)
+
+
+async def async_check_output(*args, **kwargs):
+    async with async_process(
+        *args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs
+    ) as process:
+        stdout, stderr = await process.communicate()
+        if process.returncode == 0:
+            return stdout.decode("UTF-8", "backslashreplace")
+        else:
+            sys.stdout.buffer.write(stdout)
+            sys.stdout.flush()
+            sys.stderr.buffer.write(stderr)
+            sys.stderr.flush()
+            exit(
+                f"Command {args} returned non-zero exit status "
+                f"{process.returncode}"
+            )
+
+
+# Return a list of the serial numbers of connected devices. Emulators will have
+# serials of the form "emulator-5678".
+async def list_devices():
     serials = []
     header_found = False
 
-    lines = check_output([adb, "devices"], text=True).splitlines()
+    lines = (await async_check_output(adb, "devices")).splitlines()
     for line in lines:
         # Ignore blank lines, and all lines before the header.
         line = line.strip()
@@ -239,111 +285,141 @@ def list_devices():
     return serials
 
 
-def wait_for_new_device(initial_devices):
+async def find_device(context, initial_devices):
+    if context.connected:
+        return context.connected
+
     while True:
-        new_devices = set(list_devices()).difference(initial_devices)
+        new_devices = set(await list_devices()).difference(initial_devices)
         if len(new_devices) == 0:
-            sleep(1)
+            await asyncio.sleep(1)
         elif len(new_devices) == 1:
-            return new_devices.pop()
+            device = new_devices.pop()
+            print(f"Found device: {device}")
+            return device
         else:
-            sys.exit(f"Found more than one new device: {new_devices}")
+            exit(f"Found more than one new device: {new_devices}")
 
 
-def wait_for_uid():
+async def find_uid(serial):
+    testbed_package = "org.python.testbed"
     while True:
-        lines = check_output(
-            [adb, "shell", "pm", "list", "packages", "-U", "org.python.testbed"],
-            text=True
-        ).splitlines()
+        lines = (await async_check_output(
+            adb, "-s", serial, "shell",
+            "pm", "list", "packages", "-U", testbed_package
+        )).splitlines()
 
-        if len(lines) == 0:
-            sleep(1)
-        elif len(lines) == 1:
-            if match := re.search(r"uid:\d+", lines[0]):
-                return match[1]
-            else:
+        # The unit test package org.python.testbed.test will also be returned.
+        for line in lines:
+            match = re.fullmatch(r"package:(\S+) uid:(\d+)", lines[0])
+            if not match:
                 raise ValueError(f"failed to parse {lines[0]!r}")
-        else:
-            sys.exit(f"Found more than one UID: {lines}")
+            package, uid = match.groups()
+            if package == testbed_package:
+                print(f"Found UID: {uid}")
+                return uid
+
+        await asyncio.sleep(1)
 
 
-def logcat_thread(context, initial_devices):
-    serial = context.connected or wait_for_new_device(initial_devices)
+async def logcat_task(context, initial_devices):
+    serial = await find_device(context, initial_devices)
 
     # Because Gradle uninstalls the app after running the tests, its UID should
     # be different every time. There's therefore no need to filter the logs by
     # timestamp or PID.
-    uid = wait_for_uid()
+    uid = await find_uid(serial)
+    async with async_process(
+        adb, "-s", serial, "logcat",
+        "--uid", uid,
+        "--format", "tag",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    ) as process:
+        while line := (await process.stdout.readline()).decode(
+            "UTF-8", "backslashreplace"
+        ):
+            if match := re.fullmatch(r"([A-Z])/(.*)", line, re.DOTALL):
+                level, message = match.groups()
+            else:
+                # If the regex doesn't match, this is probably the second or
+                # subsequent line of a multi-line message. Python won't produce
+                # such messages, but other components might.
+                level, message = None, line
 
-    logcat = subprocess.Popen(
-        [adb, "-s", serial, "logcat", "--uid", uid, "--format", "tag"],
-        stdout=subprocess.PIPE, text=True
-    )
+            # Put high-level messages on stderr so they're highlighted in the
+            # buildbot logs. This will include Python's own stderr.
+            stream = (
+                sys.stderr
+                if level in ["E", "F"]  # ERROR and FATAL (aka ASSERT)
+                else sys.stdout
+            )
 
-    # This is a daemon thread, so `finally` won't work.
-    atexit.register(logcat.kill)
+            # To simplify automated processing of the output, e.g. a buildbot
+            # posting a failure notice on a GitHub PR, we strip the level and
+            # tag indicators from Python's stdout and stderr.
+            for prefix in ["python.stdout: ", "python.stderr: "]:
+                if message.startswith(prefix):
+                    stream.write(message.removeprefix(prefix))
+                    break
+            else:
+                if context.verbose:
+                    # Non-Python messages add a lot of noise, but they may
+                    # sometimes help explain a failure.
+                    stream.write(line)
 
-    for line in logcat.stdout:
-        if match := re.fullmatch(r"(\w)/(\w+): (.*)", line):
-            level, tag, message = match.groups()
+        # If the device disconnects while logcat is running, the status will be 0.
+        status = await wait_for(process.wait(), timeout=1)
+        if status != 0:
+            exit(f"Logcat exit status {status}")
+
+
+async def gradle_task(context):
+    env = os.environ.copy()
+    if context.connected:
+        task_prefix = "connected"
+        env["ANDROID_SERIAL"] = context.connected
+    else:
+        task_prefix = context.managed
+
+    async with async_process(
+        "./gradlew",
+        "--console", "plain",
+        f"{task_prefix}DebugAndroidTest",
+        "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
+        + shlex.join(context.args),
+        cwd=TESTBED_DIR,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    ) as process:
+        while line := await process.stdout.readline():
+            if context.verbose:
+                sys.stdout.buffer.write(line)
+                sys.stdout.flush()
+
+        status = await wait_for(process.wait(), timeout=1)
+        if status == 0:
+            exit(0)
         else:
-            # If the regex doesn't match, this is probably the second or
-            # subsequent line of a multi-line message. Python won't produce
-            # such messages, but other components might.
-            level, tag, message = None, None, line
-
-        stream = (
-            sys.stderr
-            if level in ["E", "F"]  # ERROR and FATAL (aka ASSERT)
-            else sys.stdout
-        )
-
-        # We strip the level/tag indicator from Python's stdout and stderr, to
-        # simplify automated processing of the output, e.g. a buildbot posting a
-        # failure notice on a GitHub PR.
-        #
-        # Non-Python messages from the app are still worth keeping, as they may
-        # help explain any problems.
-        stream.write(
-            message if tag in ["python.stdout", "python.stderr"] else line
-        )
-
-    status = logcat.wait()
-    if status != 0:
-        sys.exit(f"Logcat exit status {status}")
+            exit(f"Gradle exit status {status}")
 
 
-def run_testbed(context):
+async def run_testbed(context):
     if not (TESTBED_DIR / "gradlew").exists():
         setup_testbed(context)
 
-    kwargs = dict(cwd=TESTBED_DIR)
+    # In --managed mode, Gradle will create a device with an unpredictable name.
+    # So we save a list of the running devices before starting Gradle, and
+    # find_device then waits for a new device to appear.
+    initial_devices = (await list_devices()) if context.managed else None
 
-    if context.connected:
-        task_prefix = "connected"
-        env = os.environ.copy()
-        env["ANDROID_SERIAL"] = context.connected
-        kwargs.update(env=env)
-    elif context.managed:
-        task_prefix = context.managed
-    else:
-        raise ValueError("no device argument found")
-
-    Thread(
-        target=logcat_thread, args=(context, list_devices()), daemon=True
-    ).start()
-
-    run(
-        [
-            "./gradlew",
-            "--console", "plain",
-            f"{task_prefix}DebugAndroidTest",
-            "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
-            + shlex.join(context.args),
-        ],
-        **kwargs
-    )
+    try:
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(logcat_task(context, initial_devices))
+            tg.create_task(gradle_task(context))
+    except* MySystemExit as e:
+        raise SystemExit(*e.exceptions[0].args) from None
 
 
 def main():
@@ -379,6 +455,9 @@ def main():
         "setup-testbed", help="Download the testbed Gradle wrapper")
     test = subcommands.add_parser(
         "test", help="Run the test suite")
+    test.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="Show Gradle output, and non-Python logcat messages")
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
@@ -398,7 +477,10 @@ def main():
                 "clean": clean_all,
                 "setup-testbed": setup_testbed,
                 "test": run_testbed}
-    dispatch[context.subcommand](context)
+
+    result = dispatch[context.subcommand](context)
+    if asyncio.iscoroutine(result):
+        asyncio.run(result)
 
 
 if __name__ == "__main__":
