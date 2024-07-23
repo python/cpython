@@ -14,6 +14,8 @@ def generate_typeslots(out=sys.stdout):
 
         member = m.group(1)
         if member == "tp_token":
+            # The heap type structure (ht_*) is an implementation detail;
+            # the public slot for it has a familiar `tp_` prefix
             member = '{-1, offsetof(PyHeapTypeObject, ht_token)}'
         elif member.startswith("tp_"):
             member = f'{{-1, offsetof(PyTypeObject, {member})}}'

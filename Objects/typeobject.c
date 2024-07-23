@@ -5273,14 +5273,19 @@ int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
     if (token == NULL) {
-        // We scan only the heaptypes that have a token
-        goto exit;
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        goto error;
     }
-    assert(PyType_Check(type));
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        goto error;
+    }
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // Static type MRO contains no heap type,
         // which type_ready_mro() ensures.
-        goto exit;
+        goto not_found;
     }
     if (((PyHeapTypeObject*)type)->ht_token == token) {
         return _token_found(type, result);
@@ -5291,7 +5296,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         if (base != NULL) {
             return _token_found(base, result);
         }
-        goto exit;
+        goto not_found;
     }
     assert(PyTuple_Check(mro));
     // mro_invoke() ensures that the type MRO cannot be empty.
@@ -5309,11 +5314,16 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
             return _token_found(base, result);
         }
     }
-exit:
+not_found:
     if (result != NULL) {
         *result = NULL;
     }
     return 0;
+error:
+    if (result != NULL) {
+        *result = NULL;
+    }
+    return -1;
 }
 
 

@@ -275,39 +275,19 @@ Type Objects
 
 .. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 
-   Find a class whose token is valid and equal to the given one,
-   from the type and superclasses.
+   Find the first superclass in *type*'s :term:`method resolution order` whose
+   :c:macro:`Py_tp_token` token is equal to the given one.
 
    * If found, set *\*result* to a new :term:`strong reference`
-     to the first type and return ``1``.
+     to the found superclass and return ``1``.
    * If not found, set *\*result* to ``NULL`` and return ``0``.
-   * On error, set *\*result* to ``NULL`` and return ``-1`` with an exception.
-   * The ``result`` argument accepts ``NULL`` if you need only the return value.
+   * On error, set *\*result* to ``NULL`` and return ``-1`` with an
+     exception set.
 
-   The token is a memory layout ID for the class.
-   You can store the preferred one in a heap type through
-   :c:func:`PyType_FromMetaclass()`, if you know that:
+   The *result* argument may be ``NULL``, in which case *\*result* is not set.
+   Use this if you need only the return value.
 
-   * The pointer outlives the class, so it's not reused for something else
-     while the class exists.
-   * It "belongs" to the extension module where the class lives, so it will not
-     clash with other extensions.
-
-   For the entry, enable the ``Py_tp_token`` slot::
-
-      PyType_Slot foo_slots[] = {
-          ...
-          {Py_tp_token, &pointee_in_the_module},
-      }
-
-   The slot accepts ``NULL`` **via** the ``Py_TP_USE_SPEC`` identifier,
-   which is actually switched to the ``spec`` pointer passed to
-   :c:func:`PyType_FromMetaclass()`::
-
-      // Be careful when the spec is dynamically created
-      {Py_tp_token, Py_TP_USE_SPEC},
-
-   To disable the feature, remove the slot.
+   The *token* argument may not be ``NULL``.
 
    .. versionadded:: 3.14
 
@@ -514,6 +494,11 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
+      An additional slot is supported that does not correspond to a
+      :c:type:`!PyTypeObject` struct field:
+
+      * :c:data:`Py_tp_token`
+
       The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
          * :c:member:`~PyTypeObject.tp_weaklistoffset`
@@ -562,4 +547,49 @@ The following functions and structs are used to create
       The desired value of the slot. In most cases, this is a pointer
       to a function.
 
-      Slots other than ``Py_tp_doc`` may not be ``NULL``.
+      *pfunc* values may not be ``NULL``, except for the following slots:
+
+      * ``Py_tp_doc``
+      * :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
+        rather than ``NULL``)
+
+.. c:macro:: Py_tp_token
+
+   A :c:member:`~PyType_Slot.slot` that records a static memory layout ID
+   for a class.
+
+   If the :c:type:`PyType_Spec` from which the class is statically
+   allocated, the token can be set to the spec using the special value
+   :c:data:`Py_TP_USE_SPEC`:
+
+   .. code-block:: c
+
+      PyType_Slot foo_slots[] = {
+         ...
+         {Py_tp_token, Py_TP_USE_SPEC},
+      };
+
+   It can also be set to an arbitrary pointer, but you must ensure that:
+
+   * The pointer outlives the class, so it's not reused for something else
+     while the class exists.
+   * It "belongs" to the extension module where the class lives, so it will not
+     clash with other extensions.
+
+   Use :c:func:`PyType_GetBaseByToken` to check if a class's superclass has
+   a given token -- that is, check whether the memory layout is compatible.
+
+   To get the token for a given class (without considering superclasses),
+   use :c:func:`PyType_GetSlot` with ``Py_tp_token``.
+
+   .. versionadded:: 3.14
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: Py_TP_USE_SPEC
+
+      Used as a value with :c:data:`Py_tp_token` to set the token to the
+      class's :c:type:`PyType_Spec`.
+      Expands to ``NULL``.
+
+      .. versionadded:: 3.14

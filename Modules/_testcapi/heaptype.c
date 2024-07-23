@@ -419,6 +419,15 @@ create_type_with_token(PyObject *module, PyObject *args)
         return NULL;
     }
 
+    /* Calling this with Py_TP_USE_SPEC breaks the invariant that spec must be
+     * statically allocated! (Or at least: the pointer must outlive the class.)
+     *
+     * Strictly for the purposes of this test, that's OK. But type-checking
+     * this class using `PyType_GetBaseByToken` would be unreliable!
+     * (Technically, we rely on the fact that nothing *else* uses
+     * Py_TP_USE_SPEC with a stack-allocated spec.)
+     */
+
     void *token = PyLong_AsVoidPtr(py_token);
     PyType_Slot slots[] = {
         {Py_tp_token, token},
@@ -462,10 +471,14 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
                           &type, &py_token, &use_mro, &need_result)) {
         return NULL;
     }
-    assert(PyType_Check(type));
 
-    PyObject *mro_save = type->tp_mro;
+    PyObject *mro_save = NULL;
     if (use_mro != Py_True) {
+        // Test internal detail: PyType_GetBaseByToken works even with
+        // types that are only partially initialized (or torn down):
+        // if tp_mro=NULL we fall back to tp_bases.
+        assert(PyType_Check(type));
+        mro_save = type->tp_mro;
         type->tp_mro = NULL;
     }
 
@@ -480,7 +493,9 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
         ret = PyType_GetBaseByToken(type, token, NULL);
     }
 
-    type->tp_mro = mro_save;
+    if (use_mro != Py_True) {
+        type->tp_mro = mro_save;
+    }
     if (ret < 0) {
         assert(result == NULL);
         return NULL;
