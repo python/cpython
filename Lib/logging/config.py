@@ -791,31 +791,30 @@ class DictConfigurator(BaseConfigurator):
                         if '()' not in qspec:
                             raise TypeError('Invalid queue specifier %r' % qspec)
                         config['queue'] = self.configure_custom(dict(qspec))
+                    elif isinstance(qspec, queue.Queue):
+                        pass
                     else:
+                        # defer importing multiprocessing as much as possible
                         from multiprocessing.queues import Queue as MPQueue
 
-                        if not isinstance(qspec, (queue.Queue, MPQueue)):
-                            # Safely check if 'qspec' is an instance of Manager.Queue
-                            # / Manager.JoinableQueue
-
-                            from multiprocessing import Manager as MM
-                            from multiprocessing.managers import BaseProxy
-
-                            # if it's not an instance of BaseProxy, it also can't be
-                            # an instance of Manager.Queue / Manager.JoinableQueue
-                            if isinstance(qspec, BaseProxy):
-                                # Sometimes manager or queue creation might fail
-                                # (e.g. see issue gh-120868). In that case, any
-                                # exception during the creation of these queues will
-                                # propagate up to the caller and be wrapped in a
-                                # `ValueError`, whose cause will indicate the details of
-                                # the failure.
-                                mm = MM()
-                                proxy_queue = mm.Queue()
-                                proxy_joinable_queue = mm.JoinableQueue()
-                                if not isinstance(qspec, (type(proxy_queue), type(proxy_joinable_queue))):
-                                    raise TypeError('Invalid queue specifier %r' % qspec)
-                            else:
+                        if not isinstance(qspec, MPQueue):
+                            # Depending on the multiprocessing context,
+                            # we cannot create a Manager instance here
+                            # to get the runtime type of Manager.Queue()
+                            # or Manager.JoinableQueue() (see gh-121723).
+                            #
+                            # Since we only need to support an object
+                            # implementing the Queue API (see gh-120868),
+                            # we only do a protocol check but do not rely
+                            # on typing.runtime_checkable and typing.Protocol
+                            # to reduce import time.
+                            queue_interface = [
+                                'empty', 'full', 'get', 'get_nowait',
+                                'put', 'put_nowait', 'join', 'qsize',
+                                'task_done',
+                            ]
+                            if not all(callable(getattr(qspec, method, None))
+                                       for method in queue_interface):
                                 raise TypeError('Invalid queue specifier %r' % qspec)
 
                 if 'listener' in config:
