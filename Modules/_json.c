@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"           // _Py_EnterRecursiveCall()
 #include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_pyerrors.h"        // _PyErr_FormatNote
 
 #include "pycore_global_strings.h"  // _Py_ID()
 #include <stdbool.h>                // bool
@@ -1461,6 +1462,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
         Py_DECREF(newobj);
         if (rv) {
+            _PyErr_FormatNote("when serializing %T object", obj);
             Py_XDECREF(ident);
             return -1;
         }
@@ -1477,7 +1479,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
 static int
 encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *first,
-                         PyObject *key, PyObject *value,
+                         PyObject *dct, PyObject *key, PyObject *value,
                          PyObject *newline_indent,
                          PyObject *item_separator)
 {
@@ -1535,6 +1537,7 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
         return -1;
     }
     if (encoder_listencode_obj(s, writer, value, newline_indent) < 0) {
+        _PyErr_FormatNote("when serializing %T item %R", dct, key);
         return -1;
     }
     return 0;
@@ -1606,7 +1609,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
             key = PyTuple_GET_ITEM(item, 0);
             value = PyTuple_GET_ITEM(item, 1);
-            if (encoder_encode_key_value(s, writer, &first, key, value,
+            if (encoder_encode_key_value(s, writer, &first, dct, key, value,
                                          new_newline_indent,
                                          current_item_separator) < 0)
                 goto bail;
@@ -1616,7 +1619,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     } else {
         Py_ssize_t pos = 0;
         while (PyDict_Next(dct, &pos, &key, &value)) {
-            if (encoder_encode_key_value(s, writer, &first, key, value,
+            if (encoder_encode_key_value(s, writer, &first, dct, key, value,
                                          new_newline_indent,
                                          current_item_separator) < 0)
                 goto bail;
@@ -1710,8 +1713,10 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
             if (_PyUnicodeWriter_WriteStr(writer, separator) < 0)
                 goto bail;
         }
-        if (encoder_listencode_obj(s, writer, obj, new_newline_indent))
+        if (encoder_listencode_obj(s, writer, obj, new_newline_indent)) {
+            _PyErr_FormatNote("when serializing %T item %zd", seq, i);
             goto bail;
+        }
     }
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))
