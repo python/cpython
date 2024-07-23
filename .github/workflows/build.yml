@@ -307,7 +307,7 @@ jobs:
       with:
         save: false
     - name: Configure CPython
-      run: ./configure --config-cache --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: ./configure --config-cache --enable-slower-safety --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -380,6 +380,7 @@ jobs:
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
+          --enable-slower-safety \
           --with-openssl=$OPENSSL_DIR
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
