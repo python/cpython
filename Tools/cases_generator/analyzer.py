@@ -317,9 +317,13 @@ def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | No
         convert_stack_item(i, replace_op_arg_1) for i in op.inputs if isinstance(i, parser.StackEffect)
     ]
     outputs: list[StackItem] = [convert_stack_item(i, replace_op_arg_1) for i in op.outputs]
+    # Mark variables with matching names at the base of the stack as "peek"
+    modified = False
     for input, output in zip(inputs, outputs):
-        if input.name == output.name:
+        if input.name == output.name and not modified:
             input.peek = output.peek = True
+        else:
+            modified = True
     if isinstance(op, parser.InstDef):
         output_names = [out.name for out in outputs]
         for input in inputs:

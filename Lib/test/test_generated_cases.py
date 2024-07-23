@@ -1012,6 +1012,57 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_pop_on_error_peeks(self):
+
+        input = """
+        op(FIRST, (x, y -- a, b)) {
+            a = x;
+            b = y;
+        }
+
+        op(SECOND, (a, b -- a, b)) {
+        }
+
+        op(THIRD, (j, k --)) {
+            ERROR_IF(cond, error);
+        }
+
+        macro(TEST) = FIRST + SECOND + THIRD;
+        """
+        output = """
+        TARGET(TEST) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(TEST);
+            _PyStackRef x;
+            _PyStackRef y;
+            _PyStackRef a;
+            _PyStackRef b;
+            _PyStackRef j;
+            _PyStackRef k;
+            // FIRST
+            y = stack_pointer[-1];
+            x = stack_pointer[-2];
+            {
+                a = x;
+                b = y;
+            }
+            // SECOND
+            {
+            }
+            // THIRD
+            k = b;
+            j = a;
+            {
+                if (cond) goto pop_2_error;
+            }
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
