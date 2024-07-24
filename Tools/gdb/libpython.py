@@ -100,6 +100,8 @@ MAX_OUTPUT_LEN=1024
 
 hexdigits = "0123456789abcdef"
 
+USED_TAGS = 0b11
+
 ENCODING = locale.getpreferredencoding()
 
 FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
@@ -158,6 +160,8 @@ class PyObjectPtr(object):
     _typename = 'PyObject'
 
     def __init__(self, gdbval, cast_to=None):
+        # Clear the tagged pointer
+        gdbval = gdb.Value(int(gdbval) & (~USED_TAGS)).cast(gdbval.type)
         if cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
@@ -255,7 +259,7 @@ class PyObjectPtr(object):
 
         Derived classes will override this.
 
-        For example, a PyIntObject* with ob_ival 42 in the inferior process
+        For example, a PyLongObjectPtr* with long_value 42 in the inferior process
         should result in an int(42) in this process.
 
         visited: a set of all gdb.Value pyobject pointers already visited
@@ -867,7 +871,7 @@ class PyLongObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Python's Include/longobjrep.h has this declaration:
+        Python's Include/longinterpr.h has this declaration:
 
             typedef struct _PyLongValue {
                 uintptr_t lv_tag; /* Number of digits, sign and flags */
@@ -876,14 +880,18 @@ class PyLongObjectPtr(PyObjectPtr):
 
             struct _longobject {
                 PyObject_HEAD
-               _PyLongValue long_value;
+                _PyLongValue long_value;
             };
 
         with this description:
             The absolute value of a number is equal to
-                 SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
-            Negative numbers are represented with ob_size < 0;
-            zero is represented by ob_size == 0.
+                SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(PyLong_SHIFT*i)
+            The sign of the value is stored in the lower 2 bits of lv_tag.
+                - 0: Positive
+                - 1: Zero
+                - 2: Negative
+            The third lowest bit of lv_tag is reserved for an immortality flag, but is
+            not currently used.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30

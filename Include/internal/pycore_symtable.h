@@ -12,14 +12,27 @@ struct _mod;   // Type defined in pycore_ast.h
 
 typedef enum _block_type {
     FunctionBlock, ClassBlock, ModuleBlock,
-    // Used for annotations if 'from __future__ import annotations' is active.
-    // Annotation blocks cannot bind names and are not evaluated.
+    // Used for annotations. If 'from __future__ import annotations' is active,
+    // annotation blocks cannot bind names and are not evaluated. Otherwise, they
+    // are lazily evaluated (see PEP 649).
     AnnotationBlock,
-    // Used for generics and type aliases. These work mostly like functions
-    // (see PEP 695 for details). The three different blocks function identically;
-    // they are different enum entries only so that error messages can be more
-    // precise.
-    TypeVarBoundBlock, TypeAliasBlock, TypeParamBlock
+
+    // The following blocks are used for generics and type aliases. These work
+    // mostly like functions (see PEP 695 for details). The three different
+    // blocks function identically; they are different enum entries only so
+    // that error messages can be more precise.
+
+    // The block to enter when processing a "type" (PEP 695) construction,
+    // e.g., "type MyGeneric[T] = list[T]".
+    TypeAliasBlock,
+    // The block to enter when processing a "generic" (PEP 695) object,
+    // e.g., "def foo[T](): pass" or "class A[T]: pass".
+    TypeParametersBlock,
+    // The block to enter when processing the bound, the constraint tuple
+    // or the default value of a single "type variable" in the formal sense,
+    // i.e., a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two
+    // do not support a bound or a constraint tuple).
+    TypeVariableBlock,
 } _Py_block_ty;
 
 typedef enum _comprehension_type {
@@ -81,13 +94,24 @@ typedef struct _symtable_entry {
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
+    PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
+
     _Py_block_ty ste_type;
+    // Optional string set by symtable.c and used when reporting errors.
+    // The content of that string is a description of the current "context".
+    //
+    // For instance, if we are processing the default value of the type
+    // variable "T" in "def foo[T = int](): pass", `ste_scope_info` is
+    // set to "a TypeVar default".
+    const char *ste_scope_info;
+
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
                                      including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
+    unsigned ste_annotations_used : 1;  /* true if there are any annotations in this scope */
     _Py_comprehension_ty ste_comprehension;  /* Kind of comprehension (if any) */
     unsigned ste_varargs : 1;     /* true if block has varargs */
     unsigned ste_varkeywords : 1; /* true if block has varkeywords */
@@ -103,12 +127,8 @@ typedef struct _symtable_entry {
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
-    int ste_lineno;          /* first line of block */
-    int ste_col_offset;      /* offset of first line of block */
-    int ste_end_lineno;      /* end line of block */
-    int ste_end_col_offset;  /* end offset of first line of block */
-    int ste_opt_lineno;      /* lineno of last exec or import * */
-    int ste_opt_col_offset;  /* offset of last exec or import * */
+    _Py_SourceLocation ste_loc; /* source location of block */
+    struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
     struct symtable *ste_table;
 } PySTEntryObject;
 
@@ -125,9 +145,11 @@ extern struct symtable* _PySymtable_Build(
     PyObject *filename,
     _PyFutureFeatures *future);
 extern PySTEntryObject* _PySymtable_Lookup(struct symtable *, void *);
+extern int _PySymtable_LookupOptional(struct symtable *, void *, PySTEntryObject **);
 
 extern void _PySymtable_Free(struct symtable *);
 
+extern PyObject *_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name);
 extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */
@@ -137,7 +159,6 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_PARAM (2<<1)         /* formal parameter */
 #define DEF_NONLOCAL (2<<2)      /* nonlocal stmt */
 #define USE (2<<3)               /* name is used */
-#define DEF_FREE (2<<4)          /* name used but not defined in nested block */
 #define DEF_FREE_CLASS (2<<5)    /* free variable from class's method */
 #define DEF_IMPORT (2<<6)        /* assignment occurred via import */
 #define DEF_ANNOT (2<<7)         /* this name is annotated */
@@ -148,7 +169,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
 /* GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
-   table.  GLOBAL is returned from PyST_GetScope() for either of them.
+   table.  GLOBAL is returned from _PyST_GetScope() for either of them.
    It is stored in ste_symbols at bits 13-16.
 */
 #define SCOPE_OFFSET 12
@@ -159,9 +180,6 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define GLOBAL_IMPLICIT 3
 #define FREE 4
 #define CELL 5
-
-#define GENERATOR 1
-#define GENERATOR_EXPRESSION 2
 
 // Used by symtablemodule.c
 extern struct symtable* _Py_SymtableStringObjectFlags(

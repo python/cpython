@@ -275,6 +275,7 @@ typedef struct _heaptypeobject {
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyType_LookupRef(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
@@ -286,6 +287,8 @@ PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
+
+PyAPI_FUNC(void) PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *);
 
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
@@ -312,7 +315,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * triggered as a side-effect of `dst` getting torn down no longer believes
  * `dst` points to a valid object.
  *
- * Temporary variables are used to only evalutate macro arguments once and so
+ * Temporary variables are used to only evaluate macro arguments once and so
  * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
  * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
  * implementation details about type punning.
@@ -493,7 +496,7 @@ do { \
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(void) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
+PyAPI_FUNC(int) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 #define TYPE_MAX_WATCHERS 8
@@ -510,3 +513,13 @@ PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
  * assigned, or 0 if a new tag could not be assigned.
  */
 PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
+
+
+typedef enum {
+    PyRefTracer_CREATE = 0,
+    PyRefTracer_DESTROY = 1,
+} PyRefTracerEvent;
+
+typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);
+PyAPI_FUNC(int) PyRefTracer_SetTracer(PyRefTracer tracer, void *data);
+PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);

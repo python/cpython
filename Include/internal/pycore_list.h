@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"  // _PyFreeListState
-
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
 
@@ -28,7 +26,11 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     Py_ssize_t allocated = self->allocated;
     assert((size_t)len + 1 < PY_SSIZE_T_MAX);
     if (allocated > len) {
+#ifdef Py_GIL_DISABLED
+        _Py_atomic_store_ptr_release(&self->ob_item[len], newitem);
+#else
         PyList_SET_ITEM(self, len, newitem);
+#endif
         Py_SET_SIZE(self, len + 1);
         return 0;
     }

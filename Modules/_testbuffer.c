@@ -24,11 +24,13 @@ static PyTypeObject NDArray_Type;
 #define NDArray_Check(v) Py_IS_TYPE(v, &NDArray_Type)
 
 #define CHECK_LIST_OR_TUPLE(v) \
-    if (!PyList_Check(v) && !PyTuple_Check(v)) { \
-        PyErr_SetString(PyExc_TypeError,         \
-            #v " must be a list or a tuple");    \
-        return NULL;                             \
-    }                                            \
+    do { \
+        if (!PyList_Check(v) && !PyTuple_Check(v)) { \
+            PyErr_SetString(PyExc_TypeError, \
+                            #v " must be a list or a tuple"); \
+            return NULL; \
+        } \
+    } while (0)
 
 #define PyMem_XFree(v) \
     do { if (v) PyMem_Free(v); } while (0)
@@ -1180,7 +1182,7 @@ init_ndbuf(PyObject *items, PyObject *shape, PyObject *strides,
     Py_ssize_t itemsize;
 
     /* ndim = len(shape) */
-    CHECK_LIST_OR_TUPLE(shape)
+    CHECK_LIST_OR_TUPLE(shape);
     ndim = PySequence_Fast_GET_SIZE(shape);
     if (ndim > ND_MAX_NDIM) {
         PyErr_Format(PyExc_ValueError,
@@ -1190,7 +1192,7 @@ init_ndbuf(PyObject *items, PyObject *shape, PyObject *strides,
 
     /* len(strides) = len(shape) */
     if (strides) {
-        CHECK_LIST_OR_TUPLE(strides)
+        CHECK_LIST_OR_TUPLE(strides);
         if (PySequence_Fast_GET_SIZE(strides) == 0)
             strides = NULL;
         else if (flags & ND_FORTRAN) {
@@ -1217,12 +1219,12 @@ init_ndbuf(PyObject *items, PyObject *shape, PyObject *strides,
 
     /* convert scalar to list */
     if (ndim == 0) {
-        items = Py_BuildValue("(O)", items);
+        items = PyTuple_Pack(1, items);
         if (items == NULL)
             return NULL;
     }
     else {
-        CHECK_LIST_OR_TUPLE(items)
+        CHECK_LIST_OR_TUPLE(items);
         Py_INCREF(items);
     }
 
@@ -2901,6 +2903,9 @@ PyInit__testbuffer(void)
     if (mod == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     if (_testbuffer_exec(mod) < 0) {
         Py_DECREF(mod);
         return NULL;

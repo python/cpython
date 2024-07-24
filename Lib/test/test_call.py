@@ -1,6 +1,6 @@
 import unittest
 from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
-                          set_recursion_limit, skip_on_s390x, import_helper)
+                          set_recursion_limit, skip_on_s390x)
 try:
     import _testcapi
 except ImportError:
@@ -14,7 +14,6 @@ import collections
 import itertools
 import gc
 import contextlib
-import sys
 import types
 
 
@@ -46,11 +45,16 @@ class FunctionCalls(unittest.TestCase):
         # recovering from failed calls:
         def f():
             pass
-        for _ in range(1000):
-            try:
-                f(None)
-            except TypeError:
+        class C:
+            def m(self):
                 pass
+        callables = [f, C.m, [].__len__]
+        for c in callables:
+            for _ in range(1000):
+                try:
+                    c(None)
+                except TypeError:
+                    pass
         # BOOM!
 
 

@@ -312,18 +312,21 @@ class TestAsyncCase(unittest.TestCase):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'int'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test2').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'async_generator'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test3').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test3', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn(f'returned {Nothing.__name__!r}', str(w.warning))
 
     def test_cleanups_interleave_order(self):
         events = []

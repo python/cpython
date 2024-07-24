@@ -638,7 +638,7 @@ signal_strsignal_impl(PyObject *module, int signalnum)
             res = "Aborted";
             break;
         case SIGFPE:
-            res = "Floating point exception";
+            res = "Floating-point exception";
             break;
         case SIGSEGV:
             res = "Segmentation fault";
@@ -1199,13 +1199,13 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating point numbers allowed.
+The timeout is specified in seconds, with floating-point numbers allowed.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=87fd39237cf0b7ba]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=955773219c1596cd]*/
 {
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
@@ -1698,6 +1698,7 @@ _signal_module_free(void *module)
 static PyModuleDef_Slot signal_slots[] = {
     {Py_mod_exec, signal_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1,5 +1,5 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
@@ -324,7 +324,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python was built with the :c:macro:`Py_DEBUG` macro
+   ``True`` if Python was built with the :c:macro:`Py_DEBUG` macro
    defined, that is, if
    Python was :ref:`built in debug mode <debug-build>`.
 

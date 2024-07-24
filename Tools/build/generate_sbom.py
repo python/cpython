@@ -4,13 +4,13 @@ import re
 import hashlib
 import json
 import glob
-import pathlib
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import subprocess
 import sys
 import urllib.request
 import typing
 
-CPYTHON_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
+CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 
 # Before adding a new entry to this list, double check that
 # the license expression is a valid SPDX license expression:
@@ -119,9 +119,16 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     # 1 means matches, 0 means no matches.
     assert git_check_ignore_proc.returncode in (0, 1)
 
+    # Paths may or may not be quoted, Windows quotes paths.
+    git_check_ignore_re = re.compile(r"^::\s+(\"([^\"]+)\"|(.+))\Z")
+
     # Return the list of paths sorted
     git_check_ignore_lines = git_check_ignore_proc.stdout.decode().splitlines()
-    return sorted([line.split()[-1] for line in git_check_ignore_lines if line.startswith("::")])
+    git_check_not_ignored = []
+    for line in git_check_ignore_lines:
+        if match := git_check_ignore_re.fullmatch(line):
+            git_check_not_ignored.append(match.group(2) or match.group(3))
+    return sorted(git_check_not_ignored)
 
 
 def get_externals() -> list[str]:
@@ -238,12 +245,20 @@ def create_source_sbom() -> None:
             )
 
             for path in paths:
+
+                # Normalize the filename from any combination of slashes.
+                path = str(PurePosixPath(PureWindowsPath(path)))
+
                 # Skip directories and excluded files
                 if not (CPYTHON_ROOT_DIR / path).is_file() or path in exclude:
                     continue
 
                 # SPDX requires SHA1 to be used for files, but we provide SHA256 too.
                 data = (CPYTHON_ROOT_DIR / path).read_bytes()
+                # We normalize line-endings for consistent checksums.
+                # This is a rudimentary check for binary files.
+                if b"\x00" not in data:
+                    data = data.replace(b"\r\n", b"\n")
                 checksum_sha1 = hashlib.sha1(data).hexdigest()
                 checksum_sha256 = hashlib.sha256(data).hexdigest()
 
@@ -290,7 +305,21 @@ def create_externals_sbom() -> None:
 
     # Set the versionInfo and downloadLocation fields for all packages.
     for package in sbom_data["packages"]:
-        package["versionInfo"] = externals_name_to_version[package["name"]]
+        package_version = externals_name_to_version[package["name"]]
+
+        # Update the version information in all the locations.
+        package["versionInfo"] = package_version
+        for external_ref in package["externalRefs"]:
+            if external_ref["referenceType"] != "cpe23Type":
+                continue
+            # Version is the fifth field of a CPE.
+            cpe23ref = external_ref["referenceLocator"]
+            external_ref["referenceLocator"] = re.sub(
+                r"\A(cpe(?::[^:]+){4}):[^:]+:",
+                fr"\1:{package_version}:",
+                cpe23ref
+            )
+
         download_location = (
             f"https://github.com/python/cpython-source-deps/archive/refs/tags/{externals_name_to_git_tag[package['name']]}.tar.gz"
         )

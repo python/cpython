@@ -4,6 +4,7 @@ import random
 import os
 import time
 import pickle
+import shlex
 import warnings
 import test.support
 
@@ -1395,6 +1396,48 @@ class TestModule(unittest.TestCase):
             self.assertNotEqual(val, child_val)
 
             support.wait_process(pid, exitcode=0)
+
+
+class CommandLineTest(unittest.TestCase):
+    def test_parse_args(self):
+        args, help_text = random._parse_args(shlex.split("--choice a b c"))
+        self.assertEqual(args.choice, ["a", "b", "c"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("--integer 5"))
+        self.assertEqual(args.integer, 5)
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("--float 2.5"))
+        self.assertEqual(args.float, 2.5)
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("a b c"))
+        self.assertEqual(args.input, ["a", "b", "c"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("5"))
+        self.assertEqual(args.input, ["5"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("2.5"))
+        self.assertEqual(args.input, ["2.5"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+    def test_main(self):
+        for command, expected in [
+            ("--choice a b c", "b"),
+            ('"a b c"', "b"),
+            ("a b c", "b"),
+            ("--choice 'a a' 'b b' 'c c'", "b b"),
+            ("'a a' 'b b' 'c c'", "b b"),
+            ("--integer 5", 4),
+            ("5", 4),
+            ("--float 2.5", 2.266632777287572),
+            ("2.5", 2.266632777287572),
+        ]:
+            random.seed(0)
+            self.assertEqual(random.main(shlex.split(command)), expected)
 
 
 if __name__ == "__main__":

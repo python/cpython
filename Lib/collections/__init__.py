@@ -46,7 +46,8 @@ else:
     _collections_abc.MutableSequence.register(deque)
 
 try:
-    from _collections import _deque_iterator
+    # Expose _deque_iterator to support pickling deque iterators
+    from _collections import _deque_iterator  # noqa: F401
 except ImportError:
     pass
 
@@ -1016,7 +1017,7 @@ class ChainMap(_collections_abc.MutableMapping):
         return self.__missing__(key)            # support subclasses that define __missing__
 
     def get(self, key, default=None):
-        return self[key] if key in self else default
+        return self[key] if key in self else default    # needs to make use of __contains__
 
     def __len__(self):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
@@ -1028,7 +1029,10 @@ class ChainMap(_collections_abc.MutableMapping):
         return iter(d)
 
     def __contains__(self, key):
-        return any(key in m for m in self.maps)
+        for mapping in self.maps:
+            if key in mapping:
+                return True
+        return False
 
     def __bool__(self):
         return any(self.maps)

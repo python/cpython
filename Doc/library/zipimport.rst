@@ -1,5 +1,5 @@
-:mod:`zipimport` --- Import modules from Zip archives
-=====================================================
+:mod:`!zipimport` --- Import modules from Zip archives
+======================================================
 
 .. module:: zipimport
    :synopsis: Support for importing Python modules from ZIP archives.

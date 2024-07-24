@@ -1,1 +1,0 @@
-Prevent ``agen.aclose()`` objects being re-used after ``.throw()``.

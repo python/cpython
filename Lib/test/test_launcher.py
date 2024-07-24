@@ -764,3 +764,11 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             with self.script(f'#! /usr/bin/env {exe.stem} arg1') as script:
                 data = self.run_py([script], env=env)
             self.assertEqual(data["stdout"].strip(), f"{quote(exe)} arg1 {quote(script)}")
+
+    def test_shebang_executable_extension(self):
+        with self.script('#! /usr/bin/env python3.99') as script:
+            data = self.run_py([script], expect_returncode=103)
+        expect = "# Search PATH for python3.99.exe"
+        actual = [line.strip() for line in data["stderr"].splitlines()
+                  if line.startswith("# Search PATH")]
+        self.assertEqual([expect], actual)

@@ -944,6 +944,7 @@ end:
 static int
 load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 {
+    int rv = 0;
     PyObject *data_tuple = NULL;
 
     long *utcoff = NULL;
@@ -1220,7 +1221,6 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         }
     }
 
-    int rv = 0;
     goto cleanup;
 error:
     // These resources only need to be freed if we have failed, if we succeed
@@ -2760,6 +2760,7 @@ error:
 static PyModuleDef_Slot zoneinfomodule_slots[] = {
     {Py_mod_exec, zoneinfomodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

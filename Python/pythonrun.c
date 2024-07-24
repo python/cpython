@@ -83,8 +83,6 @@ _PyRun_AnyFileObject(FILE *fp, PyObject *filename, int closeit,
     return res;
 }
 
-
-/* Parse input from a file and execute it */
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
@@ -1275,16 +1273,19 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL) {
-        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
-        if (has_builtins < 0) {
+    if (!globals || !PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+        return NULL;
+    }
+    int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+    if (has_builtins < 0) {
+        return NULL;
+    }
+    if (!has_builtins) {
+        if (PyDict_SetItemString(globals, "__builtins__",
+                                 tstate->interp->builtins) < 0)
+        {
             return NULL;
-        }
-        if (!has_builtins) {
-            if (PyDict_SetItemString(globals, "__builtins__",
-                                     tstate->interp->builtins) < 0) {
-                return NULL;
-            }
         }
     }
 

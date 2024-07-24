@@ -1,0 +1,5 @@
+Suppress all :exc:`OSError` exceptions from :meth:`pathlib.Path.exists` and
+``is_*()`` methods, rather than a selection of more common errors. The new
+behaviour is consistent with :func:`os.path.exists`, :func:`os.path.isdir`,
+etc. Use :meth:`pathlib.Path.stat` to retrieve the file status without
+suppressing exceptions.
