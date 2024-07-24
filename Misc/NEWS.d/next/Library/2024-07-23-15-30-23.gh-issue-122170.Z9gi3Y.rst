@@ -1,2 +1,2 @@
-Handle long filenames in :mod:`linecache` on Windows platforms.
+Handle embedded NUL bytes in paths passed to :mod:`linecache`.
 Patch by Bénédikt Tran.
