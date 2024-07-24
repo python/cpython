@@ -890,11 +890,11 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # bad splitlines() method.
         def get_module_globals(*, splitlines_ret_val):
             class BadSource(str):
-                def splitilines(self):
+                def splitlines(self):
                     return splitlines_ret_val
 
             class BadLoader:
-                def getsource(self, fullname):
+                def get_source(self, fullname):
                     return BadSource('spam')
 
             loader = BadLoader()
