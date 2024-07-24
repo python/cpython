@@ -1611,35 +1611,75 @@ finally:
 static int
 compiler_get_ref_type(struct compiler *c, PyObject *name)
 {
-    int scope;
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
         (_PyUnicode_EqualToASCIIString(name, "__class__") ||
          _PyUnicode_EqualToASCIIString(name, "__classdict__"))) {
         return CELL;
     }
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
-    scope = _PyST_GetScope(ste, name);
+    int scope = _PyST_GetScope(ste, name);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
                      "_PyST_GetScope(name=%R) failed: "
                      "unknown scope in unit %S (%R); "
-                     "symbols: %R; locals: %R; globals: %R",
+                     "symbols: %R; locals: %R; "
+                     "globals: %R",
                      name,
                      c->u->u_metadata.u_name, ste->ste_id,
-                     ste->ste_symbols, c->u->u_metadata.u_varnames, c->u->u_metadata.u_names);
+                     ste->ste_symbols, c->u->u_metadata.u_varnames,
+                     c->u->u_metadata.u_names);
         return ERROR;
     }
     return scope;
 }
 
 static int
-compiler_lookup_arg(PyObject *dict, PyObject *name)
+dict_lookup_arg(PyObject *dict, PyObject *name)
 {
     PyObject *v = PyDict_GetItemWithError(dict, name);
     if (v == NULL) {
         return ERROR;
     }
     return PyLong_AS_LONG(v);
+}
+
+static int
+compiler_lookup_arg(struct compiler *c, PyCodeObject *co, PyObject *name)
+{
+    /* Special case: If a class contains a method with a
+     * free variable that has the same name as a method,
+     * the name will be considered free *and* local in the
+     * class.  It should be handled by the closure, as
+     * well as by the normal name lookup logic.
+     */
+    int reftype = compiler_get_ref_type(c, name);
+    if (reftype == -1) {
+        return ERROR;
+    }
+    int arg;
+    if (reftype == CELL) {
+        arg = dict_lookup_arg(c->u->u_metadata.u_cellvars, name);
+    }
+    else {
+        arg = dict_lookup_arg(c->u->u_metadata.u_freevars, name);
+    }
+    if (arg == -1) {
+        PyObject *freevars = _PyCode_GetFreevars(co);
+        if (freevars == NULL) {
+            PyErr_Clear();
+        }
+        PyErr_Format(PyExc_SystemError,
+            "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
+            "freevars of code %S: %R",
+            name,
+            reftype,
+            c->u->u_metadata.u_name,
+            co->co_name,
+            freevars);
+        Py_DECREF(freevars);
+        return ERROR;
+    }
+    return arg;
 }
 
 static int
@@ -1653,40 +1693,8 @@ compiler_make_closure(struct compiler *c, location loc,
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-
-            /* Special case: If a class contains a method with a
-               free variable that has the same name as a method,
-               the name will be considered free *and* local in the
-               class.  It should be handled by the closure, as
-               well as by the normal name lookup logic.
-            */
-            int reftype = compiler_get_ref_type(c, name);
-            if (reftype == -1) {
-                return ERROR;
-            }
-            int arg;
-            if (reftype == CELL) {
-                arg = compiler_lookup_arg(c->u->u_metadata.u_cellvars, name);
-            }
-            else {
-                arg = compiler_lookup_arg(c->u->u_metadata.u_freevars, name);
-            }
-            if (arg == -1) {
-                PyObject *freevars = _PyCode_GetFreevars(co);
-                if (freevars == NULL) {
-                    PyErr_Clear();
-                }
-                PyErr_Format(PyExc_SystemError,
-                    "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
-                    "freevars of code %S: %R",
-                    name,
-                    reftype,
-                    c->u->u_metadata.u_name,
-                    co->co_name,
-                    freevars);
-                Py_DECREF(freevars);
-                return ERROR;
-            }
+            int arg = compiler_lookup_arg(c, co, name);
+            RETURN_IF_ERROR(arg);
             ADDOP_I(c, loc, LOAD_CLOSURE, arg);
         }
         flags |= MAKE_FUNCTION_CLOSURE;
@@ -2460,7 +2468,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     /* Set __classdictcell__ if necessary */
     if (SYMTABLE_ENTRY(c)->ste_needs_classdict) {
         /* Store __classdictcell__ into class namespace */
-        int i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
+        int i = dict_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
         if (i < 0) {
             compiler_exit_scope(c);
             return ERROR;
@@ -2474,7 +2482,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     /* Return __classcell__ if it is referenced, otherwise return None */
     if (SYMTABLE_ENTRY(c)->ste_needs_class_closure) {
         /* Store __classcell__ into class namespace & return it */
-        int i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
+        int i = dict_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
         if (i < 0) {
             compiler_exit_scope(c);
             return ERROR;
