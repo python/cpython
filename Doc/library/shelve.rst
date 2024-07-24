@@ -58,7 +58,8 @@ lots of shared  sub-objects.  The keys are ordinary strings.
       Accepts :term:`path-like object` for filename.
 
    .. versionchanged:: 3.14
-      Added the *serializer* and *deserializer* parameters.
+      Accepts custom *serializer* and *deserializer* functions in place of
+      :func:`pickle.dumps` and :func:`pickle.loads`.
 
    .. note::
 
@@ -195,7 +196,7 @@ Restrictions
    optional *flag* parameter has the same interpretation as for the
    :func:`.open` function.  The optional *protocol*, *writeback*, *serializer*
    and *deserializer* parameters have the same interpretation as for the
-   :func:`~shelve.open`
+   :func:`~shelve.open`.
 
    .. versionchanged:: 3.14
       Added the *serializer* and *deserializer* parameters.
