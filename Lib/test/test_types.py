@@ -40,13 +40,49 @@ def iter_builtin_types():
 
 
 @cpython_only
-def iter_own_slot_wrappers(cls):
-    for name, value in vars(cls).items():
+def iter_slot_wrappers(cls):
+    assert cls.__module__ == 'builtins', cls
+
+    def is_slot_wrapper(name, value):
+        if not isinstance(value, types.WrapperDescriptorType):
+            assert not repr(value).startswith('<slot wrapper '), (cls, name, value)
+            return False
+        assert repr(value).startswith('<slot wrapper '), (cls, name, value)
+        assert callable(value), (cls, name, value)
+        assert name.startswith('__') and name.endswith('__'), (cls, name, value)
+        return True
+
+    ns = vars(cls)
+    unused = set(ns)
+    for name in dir(cls):
+        if name in ns:
+            unused.remove(name)
+
+        try:
+            value = getattr(cls, name)
+        except AttributeError:
+            # It's as though it weren't in __dir__.
+            assert name in ('__annotate__', '__annotations__', '__abstractmethods__'), (cls, name)
+            if name in ns and is_slot_wrapper(name, ns[name]):
+                unused.add(name)
+            continue
+
         if not name.startswith('__') or not name.endswith('__'):
-            continue
-        if 'slot wrapper' not in str(value):
-            continue
-        yield name
+            assert not is_slot_wrapper(name, value), (cls, name, value)
+        if not is_slot_wrapper(name, value):
+            if name in ns:
+                assert not is_slot_wrapper(name, ns[name]), (cls, name, value, ns[name])
+        else:
+            if name in ns:
+                assert ns[name] is value, (cls, name, value, ns[name])
+                yield name, True
+            else:
+                yield name, False
+
+    for name in unused:
+        value = ns[name]
+        if is_slot_wrapper(cls, name, value):
+            yield name, True
 
 
 class TypesTests(unittest.TestCase):
@@ -2292,8 +2328,8 @@ class SubinterpreterTests(unittest.TestCase):
         slots = []
         script = ''
         for cls in iter_builtin_types():
-            for slot in iter_own_slot_wrappers(cls):
-                slots.append((cls, slot))
+            for slot, own in iter_slot_wrappers(cls):
+                slots.append((cls, slot, own))
                 attr = f'{cls.__name__}.{slot}'
                 script += textwrap.dedent(f"""
                     sch.send_nowait('{attr}: ' + repr({attr}))
@@ -2301,7 +2337,7 @@ class SubinterpreterTests(unittest.TestCase):
 
         exec(script)
         all_expected = []
-        for cls, slot in slots:
+        for cls, slot, _ in slots:
             result = rch.recv()
             assert result.startswith(f'{cls.__name__}.{slot}: '), (cls, slot, result)
             all_expected.append(result)
@@ -2313,7 +2349,7 @@ class SubinterpreterTests(unittest.TestCase):
             """))
         interp.run(script)
 
-        for i, _ in enumerate(slots):
+        for i, (cls, slot, _) in enumerate(slots):
             with self.subTest(cls=cls, slot=slot):
                 expected = all_expected[i]
                 result = rch.recv()
