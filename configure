@@ -9771,6 +9771,21 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
 fi
 
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-slower-safety" >&5
+printf %s "checking for --enable-slower-safety... " >&6; }
+# Check whether --enable-slower-safety was given.
+if test ${enable_slower_safety+y}
+then :
+  enableval=$enable_slower_safety;
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_slower_safety" >&5
+printf "%s\n" "$enable_slower_safety" >&6; }
+
+if test "$enable_slower_safety" = "yes"
+then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -D_FORTIFY_SOURCE=3" >&5
 printf %s "checking whether C compiler accepts -D_FORTIFY_SOURCE=3... " >&6; }
 if test ${ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3+y}
@@ -9811,17 +9826,6 @@ printf "%s\n" "$as_me: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&2;}
 fi
 
 fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-slower-safety" >&5
-printf %s "checking for --enable-slower-safety... " >&6; }
-# Check whether --enable-slower-safety was given.
-if test ${enable_slower_safety+y}
-then :
-  enableval=$enable_slower_safety;
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_slower_safety" >&5
-printf "%s\n" "$enable_slower_safety" >&6; }
 
 case $GCC in
 yes)
