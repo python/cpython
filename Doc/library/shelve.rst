@@ -169,7 +169,7 @@ Restrictions
       Added the *serializer* and *deserializer* parameters.
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, \
-                      keyencoding='utf-8', *, \,
+                      keyencoding='utf-8', *, \
                       serializer=None, deserializer=None)
 
    A subclass of :class:`Shelf` which exposes :meth:`!first`, :meth:`!next`,
