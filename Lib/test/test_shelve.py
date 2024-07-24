@@ -1,3 +1,5 @@
+import array
+
 import unittest
 import dbm
 import shelve
@@ -168,22 +170,57 @@ class TestCase(unittest.TestCase):
             self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
     def test_custom_serializer_and_deserializer(self):
-        def serializer(obj, protocol=None):
-            return bytes(f"{type(obj).__name__}", 'utf-8')
+        def serializer(obj, protocol):
+            if isinstance(obj, (bytes, bytearray, memoryview, int)):
+                return f"{type(obj).__name__}"
+            elif isinstance(obj, array.array):
+                return obj.tobytes()
+            else:
+                raise TypeError(
+                    f"Unsupported type for serialization: {type(obj)}"
+                )
 
         def deserializer(data):
-            value = BytesIO(data).read()
-            return locate(value.decode("utf-8"))
+            if isinstance(data, (bytes, bytearray, memoryview, int)):
+                value = BytesIO(data).read()
+                return value.decode("utf-8")
+            elif isinstance(data, array.array):
+                return array.array("b", data)
+            else:
+                raise TypeError(
+                    f"Unsupported type for deserialization: {type(data)}"
+                )
 
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with shelve.open(self.fn,
-                         serializer=serializer,
-                         deserializer=deserializer) as s:
-            num = 1
-            s['number'] = num
-            self.assertEqual(s['number'], type(num))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                with shelve.open(
+                    self.fn,
+                    protocol=proto,
+                    serializer=serializer,
+                    deserializer=deserializer,
+                ) as s:
+                    num = 1
+                    bytes_data = b"Hello, world!"
+                    bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
+                    array_data = array.array("i", [1, 2, 3, 4, 5])
+                    memoryview_data = memoryview(b"abcdefgh")
+
+                    s["number"] = num
+                    s["bytes_data"] = bytes_data
+                    s["bytearray_data"] = bytearray_data
+                    s["array_data"] = array_data
+                    s["memoryview_data"] = memoryview_data
+
+                    self.assertEqual(s["number"], "int")
+                    self.assertEqual(s["bytes_data"], "bytes")
+                    self.assertEqual(s["bytearray_data"], "bytearray")
+                    self.assertEqual(
+                        s["array_data"], array_data.tobytes().decode()
+                    )
+                    self.assertEqual(s["memoryview_data"], "memoryview")
 
         with self.assertRaises(AssertionError):
             def serializer(obj, protocol=None):
