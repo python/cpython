@@ -1,7 +1,7 @@
 /*
  * Written in 2013 by Dmitry Chestnykh <dmitry@codingrobots.com>
  * Modified for CPython by Christian Heimes <christian@python.org>
- * Updated to usa HACL* by Jonathan Protzenko <jonathan@protzenko.fr>
+ * Updated to use HACL* by Jonathan Protzenko <jonathan@protzenko.fr>
  *
  * To the extent possible under law, the author have dedicated all
  * copyright and related and neighboring rights to this software to
