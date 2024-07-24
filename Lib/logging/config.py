@@ -497,6 +497,33 @@ class BaseConfigurator(object):
             value = tuple(value)
         return value
 
+def _is_queue_like_object(obj):
+    """Check that *obj* implements the Queue API."""
+    if isinstance(obj, queue.Queue):
+        return True
+    # defer importing multiprocessing as much as possible
+    from multiprocessing.queues import Queue as MPQueue
+    if isinstance(obj, MPQueue):
+        return True
+    # Depending on the multiprocessing start context, we cannot create
+    # a multiprocessing.managers.BaseManager instance 'mm' to get the
+    # runtime type of mm.Queue() or mm.JoinableQueue() (see gh-121723).
+    #
+    # Since we only need an object implementing the Queue API, we only
+    # do a protocol check without relying on typing.runtime_checkable
+    # and typing.Protocol to reduce import time (see gh-121723).
+    #
+    # Ideally, we would have wanted to simply use strict type checking
+    # instead of protocol-based type checking since this approach does
+    # not consider incompatible signatures.
+    queue_interface = [
+        'empty', 'full', 'get', 'get_nowait',
+        'put', 'put_nowait', 'join', 'qsize',
+        'task_done',
+    ]
+    return all(callable(getattr(obj, method, None))
+               for method in queue_interface)
+
 class DictConfigurator(BaseConfigurator):
     """
     Configure logging using a dictionary-like object to describe the
@@ -791,31 +818,8 @@ class DictConfigurator(BaseConfigurator):
                         if '()' not in qspec:
                             raise TypeError('Invalid queue specifier %r' % qspec)
                         config['queue'] = self.configure_custom(dict(qspec))
-                    elif isinstance(qspec, queue.Queue):
-                        pass
-                    else:
-                        # defer importing multiprocessing as much as possible
-                        from multiprocessing.queues import Queue as MPQueue
-
-                        if not isinstance(qspec, MPQueue):
-                            # Depending on the multiprocessing context,
-                            # we cannot create a Manager instance here
-                            # to get the runtime type of Manager.Queue()
-                            # or Manager.JoinableQueue() (see gh-121723).
-                            #
-                            # Since we only need to support an object
-                            # implementing the Queue API (see gh-120868),
-                            # we only do a protocol check but do not rely
-                            # on typing.runtime_checkable and typing.Protocol
-                            # to reduce import time.
-                            queue_interface = [
-                                'empty', 'full', 'get', 'get_nowait',
-                                'put', 'put_nowait', 'join', 'qsize',
-                                'task_done',
-                            ]
-                            if not all(callable(getattr(qspec, method, None))
-                                       for method in queue_interface):
-                                raise TypeError('Invalid queue specifier %r' % qspec)
+                    elif not _is_queue_like_object(qspec):
+                        raise TypeError('Invalid queue specifier %r' % qspec)
 
                 if 'listener' in config:
                     lspec = config['listener']
