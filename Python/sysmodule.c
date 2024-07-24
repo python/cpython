@@ -21,6 +21,7 @@ Data members:
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+#include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_DebugTypeStats()
@@ -3315,6 +3316,14 @@ make_impl_info(PyObject *version_info)
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "hexversion", value);
+    Py_DECREF(value);
+    if (res < 0)
+        goto error;
+
+    value = PyLong_FromLong(PYC_MAGIC_NUMBER);
+    if (value == NULL)
+        goto error;
+    res = PyDict_SetItemString(impl_info, "pyc_magic_number", value);
     Py_DECREF(value);
     if (res < 0)
         goto error;
