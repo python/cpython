@@ -130,8 +130,8 @@ Restrictions
   which can cause hard crashes when trying to read from the database.
 
 
-.. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8', \
-                 serializer=None, deserializer=None)
+.. class:: Shelf(dict, protocol=None, writeback=False, \
+                 keyencoding='utf-8', * serializer=None, deserializer=None)
 
    A subclass of :class:`collections.abc.MutableMapping` which stores pickled
    values in the *dict* object.
@@ -170,7 +170,8 @@ Restrictions
       :func:`pickle.dumps` and :func:`pickle.loads`.
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, \
-                      keyencoding='utf-8',  serializer=None, deserializer=None)
+                      keyencoding='utf-8', *, \,
+                      serializer=None, deserializer=None)
 
    A subclass of :class:`Shelf` which exposes :meth:`!first`, :meth:`!next`,
    :meth:`!previous`, :meth:`!last` and :meth:`!set_location` methods.
@@ -184,8 +185,9 @@ Restrictions
    parameters have the same interpretation as for the :func:`~shelve.open`.
 
 
-.. class:: DbfilenameShelf(filename, flag='c', protocol=None, writeback=False, \
-                           serializer=None, deserializer=None)
+.. class:: DbfilenameShelf(filename, flag='c', protocol=None, \
+                           writeback=False, *, serializer=None, \
+                           deserializer=None)
 
    A subclass of :class:`Shelf` which accepts a *filename* instead of a dict-like
    object.  The underlying file will be opened using :func:`dbm.open`.  By
