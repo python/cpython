@@ -1750,6 +1750,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     MAINTAIN_TRACKING(mp, key, value);
 
     if (ix == DKIX_EMPTY) {
+        assert(!_PyDict_HasSplitTable(mp));
         /* Insert into new slot. */
         assert(old_value == NULL);
         if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
