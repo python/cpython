@@ -1,1 +1,2 @@
-The :mod:`shelve` now accepts custom serializer and deserializer functions.
+The :mod:`shelve` module now accepts custom serialization
+and deserialization functions.
