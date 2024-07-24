@@ -2687,11 +2687,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 continue;
             }
             if (PyLong_Check(item)) {
-                long value;
-                int overflow;
-                value = PyLong_AsLongAndOverflow(item, &overflow);
-                if (!overflow) {
-                    re_sum.hi += (double)value;
+                double value = PyLong_AsDouble(item);
+                if (value != -1.0 || !PyErr_Occurred()) {
+                    re_sum = cs_add(re_sum, value);
                     Py_DECREF(item);
                     continue;
                 }
@@ -2736,11 +2734,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 continue;
             }
             if (PyLong_Check(item)) {
-                long value;
-                int overflow;
-                value = PyLong_AsLongAndOverflow(item, &overflow);
-                if (!overflow) {
-                    re_sum.hi += (double)value;
+                double value = PyLong_AsDouble(item);
+                if (value != -1.0 || !PyErr_Occurred()) {
+                    re_sum = cs_add(re_sum, value);
                     im_sum.hi += 0.0;
                     Py_DECREF(item);
                     continue;
@@ -2748,7 +2744,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_Check(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
-                re_sum.hi += value;
+                re_sum = cs_add(re_sum, value);
                 im_sum.hi += 0.0;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
