@@ -247,6 +247,8 @@ error:
 
    Conceptually: return a new tuple.
    (If no changes are needed, return a new ref to the argument.)
+
+   In the free-threaded build this needs a lock.
    */
 static PyObject *
 intern_constants(PyObject *tuple)
@@ -686,11 +688,18 @@ _PyCode_New(struct _PyCodeConstructor *con)
     if (!names_interned) {
         goto finally;
     }
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _py_code_state *state = &interp->code_state;
+    PyMutex_Lock(&state->mutex);
+#endif
     consts_interned = intern_constants(con->consts);
     if (!consts_interned) {
         goto finally;
     }
-    localsplusnames_interned = intern_constants(con->localsplusnames);
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&state->mutex);
+#endif
     localsplusnames_interned = intern_names(con->localsplusnames);
     if (!localsplusnames_interned) {
         goto finally;
