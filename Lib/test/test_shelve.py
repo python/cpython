@@ -6,7 +6,6 @@ import shelve
 import pickle
 import os
 from io import BytesIO
-from pydoc import locate
 
 from test.support import os_helper, import_helper
 from collections.abc import MutableMapping
@@ -268,46 +267,145 @@ class TestCase(unittest.TestCase):
                 self.assertEqual(s['number'], 100)
 
     def test_custom_serializer_and_deserializer_bsd_db_shelf(self):
-        berkeleydb = import_helper.import_module('berkeleydb')
+        berkeleydb = import_helper.import_module("berkeleydb")
 
         def serializer(obj, protocol=None):
-            return bytes(f"{type(obj).__name__}", 'utf-8')
+            if protocol == 5:
+                return bytes(f"{len(type(obj).__name__)}", encoding="utf-8")
+            else:
+                return bytes(f"{type(obj).__name__}", "utf-8")
 
         def deserializer(data):
             value = BytesIO(data).read()
-            return locate(value.decode("utf-8"))
+            return value.decode("utf-8")
 
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
-                               serializer=serializer,
-                               deserializer=deserializer) as s:
-            num = 1
-            s['number'] = num
-            num2 = 2.3
-            s['number2'] = num2
-            self.assertEqual(s['number'], type(num))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=5):
+                with shelve.BsdDbShelf(
+                    berkeleydb.btopen(self.fn),
+                    protocol=proto,
+                    serializer=serializer,
+                    deserializer=deserializer,
+                ) as s:
+                    num = 1
+                    bytes_data = b"Hello, world!"
+                    bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
+                    array_data = array.array("i", [1, 2, 3, 4, 5])
+                    memoryview_data = memoryview(b"abcdefgh")
 
-            key, value = s.previous()
-            self.assertEqual("number2", key)
-            self.assertEqual(value, type(num2))
+                    s["number"] = num
+                    s["bytes_data"] = bytes_data
+                    s["bytearray_data"] = bytearray_data
+                    s["array_data"] = array_data
+                    s["memoryview_data"] = memoryview_data
 
-            key, value = s.set_location(b'number')
-            self.assertEqual("number", key)
-            self.assertEqual(value, type(num))
+                    if proto == 5:
+                        self.assertEqual(
+                            s["number"], f"{len(type(num).__name__)}"
+                        )
+                        self.assertEqual(
+                            s["bytes_data"],
+                            f"{len(type(bytes_data).__name__)}",
+                        )
+                        self.assertEqual(
+                            s["bytearray_data"],
+                            f"{len(type(bytearray_data).__name__)}",
+                        )
+                        self.assertEqual(
+                            s["array_data"],
+                            f"{len(type(array_data).__name__)}",
+                        )
+                        self.assertEqual(
+                            s["memoryview_data"],
+                            f"{len(type(memoryview_data).__name__)}",
+                        )
 
-            key, value = s.next()
-            self.assertEqual("number2", key)
-            self.assertEqual(value, type(num2))
+                        key, value = s.set_location(b"number")
+                        self.assertEqual("number", key)
+                        self.assertEqual(value, f"{len(type(num).__name__)}")
 
-            key, value = s.first()
-            self.assertEqual("number", key)
-            self.assertEqual(s['number'], value)
+                        key, value = s.previous()
+                        self.assertEqual("memoryview_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(memoryview_data).__name__)}"
+                        )
 
-            key, value = s.last()
-            self.assertEqual("number2", key)
-            self.assertEqual(s['number2'], value)
+                        key, value = s.previous()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytes_data).__name__)}"
+                        )
+
+                        key, value = s.previous()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytearray_data).__name__)}"
+                        )
+
+                        key, value = s.previous()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(array_data).__name__)}"
+                        )
+
+                        key, value = s.next()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytearray_data).__name__)}"
+                        )
+
+                        key, value = s.first()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(array_data).__name__)}"
+                        )
+
+                        key, value = s.last()
+                        self.assertEqual("number", key)
+                        self.assertEqual(
+                            s["number"], f"{len(type(num).__name__)}"
+                        )
+                    else:
+                        key, value = s.set_location(b"number")
+                        self.assertEqual("number", key)
+                        self.assertEqual(value, "int")
+
+                        key, value = s.previous()
+                        self.assertEqual("memoryview_data", key)
+                        self.assertEqual(value, "memoryview")
+
+                        key, value = s.previous()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(value, "bytes")
+
+                        key, value = s.previous()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(value, "bytearray")
+
+                        key, value = s.previous()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(value, "array")
+
+                        key, value = s.next()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(value, "bytearray")
+
+                        key, value = s.first()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(value, "array")
+
+                        key, value = s.last()
+                        self.assertEqual("number", key)
+                        self.assertEqual(s["number"], value)
+
+                        self.assertEqual(s["number"], "int")
+                        self.assertEqual(s["bytes_data"], "bytes")
+                        self.assertEqual(s["bytearray_data"], "bytearray")
+                        self.assertEqual(s["array_data"], "array")
+                        self.assertEqual(s["memoryview_data"], "memoryview")
 
         with self.assertRaises(AssertionError):
             def serializer(obj, protocol=None):
