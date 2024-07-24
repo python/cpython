@@ -280,6 +280,28 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(linecache.getlines(filename, module_globals),
                          ['source for x.y.z\n'])
 
+    def test_embedded_null_bytes(self):
+        NUL = '\x00'
+        linecache.clearcache()
+        lines = linecache.updatecache(NUL)
+        self.assertListEqual(lines, [])
+        self.assertNotIn(NUL, linecache.cache)
+
+        # hack into the cache (it shouldn't be allowed
+        # but we never know what people do...)
+        linecache.clearcache()
+        linecache.cache[NUL] = (0, 1234, [], 'FULLNAME')
+        linecache.checkcache(NUL)
+        self.assertNotIn(NUL, linecache.cache)
+
+        linecache.clearcache()
+        linecache.cache[NUL] = (0, 1234, [], NUL)
+        linecache.checkcache(NUL)
+        self.assertNotIn(NUL, linecache.cache)
+
+        # just to be sure that we did not mess with cache
+        linecache.clearcache()
+
     def test_long_filename(self):
         # For POSIX platforms, an OSError will be raised and will take
         # the usual path handling. For Windows platforms, a ValueError
@@ -295,6 +317,7 @@ class LineCacheTests(unittest.TestCase):
 
         # hack into the cache (it shouldn't be allowed
         # but we never know what people do...)
+        linecache.clearcache()
         linecache.cache['smallname'] = (0, 1234, [], 'a' * 9999)
         linecache.checkcache('smallname')
         self.assertNotIn('smallname', linecache.cache)
