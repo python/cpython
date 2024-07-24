@@ -580,8 +580,7 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
     }
 
     return (PyObject *)self;
-
-  error:
+error:
     if (self != NULL) {
         Py_DECREF(self);
     }
