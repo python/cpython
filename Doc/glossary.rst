@@ -36,6 +36,11 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
+   annotate function
+      A function that can be called to retrieve the :term:`annotations <annotation>`
+      of an object. This function is accessible as the :attr:`~object.__annotate__`
+      attribute of functions, classes, and modules.
+
    annotation
       A label associated with a variable, a class
       attribute or a function parameter or return value,
@@ -43,12 +48,11 @@ Glossary
 
       Annotations of local variables cannot be accessed at runtime, but
       annotations of global variables, class attributes, and functions
-      are stored in the :attr:`__annotations__`
-      special attribute of modules, classes, and functions,
-      respectively.
+      can be retrieved by calling :func:`annotationlib.get_annotations`
+      on modules, classes, and functions, respectively.
 
-      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
-      and :pep:`526`, which describe this functionality.
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`,
+      :pep:`526` and :pep:`649`, which describe this functionality.
       Also see :ref:`annotations-howto`
       for best practices on working with annotations.
 
