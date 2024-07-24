@@ -55,11 +55,13 @@
 #define EDX_CMOV (1 << 15)
 
 // zero-initialized by default
-static bool sse, sse2, sse3, sse41, sse42, cmov, avx, avx2;
+typedef struct {
+    bool sse, sse2, sse3, sse41, sse42, cmov, avx, avx2;
+    bool done;
+} cpu_flags;
 
-static void detect_cpu_features(void) {
-  static bool done = false;
-  if (!done) {
+void detect_cpu_features(cpu_flags *flags) {
+  if (!flags->done) {
     int eax1 = 0, ebx1 = 0, ecx1 = 0, edx1 = 0;
     int eax7 = 0, ebx7 = 0, ecx7 = 0, edx7 = 0;
 #if defined(__x86_64__) && defined(__GNUC__)
@@ -83,31 +85,31 @@ static void detect_cpu_features(void) {
     (void) eax7; (void) ebx7; (void) ecx7; (void) edx7;
 #endif
 
-    avx = (ecx1 & ECX_AVX) != 0;
+    flags->avx = (ecx1 & ECX_AVX) != 0;
 
-    avx2 = (ebx7 & EBX_AVX2) != 0;
+    flags->avx2 = (ebx7 & EBX_AVX2) != 0;
 
-    sse = (edx1 & EDX_SSE) != 0;
-    sse2 = (edx1 & EDX_SSE2) != 0;
-    cmov = (edx1 & EDX_CMOV) != 0;
+    flags->sse = (edx1 & EDX_SSE) != 0;
+    flags->sse2 = (edx1 & EDX_SSE2) != 0;
+    flags->cmov = (edx1 & EDX_CMOV) != 0;
 
-    sse3 = (ecx1 & ECX_SSE3) != 0;
+    flags->sse3 = (ecx1 & ECX_SSE3) != 0;
     /* ssse3 = (ecx1 & ECX_SSSE3) != 0; */
-    sse41 = (ecx1 & ECX_SSE4_1) != 0;
-    sse42 = (ecx1 & ECX_SSE4_2) != 0;
+    flags->sse41 = (ecx1 & ECX_SSE4_1) != 0;
+    flags->sse42 = (ecx1 & ECX_SSE4_2) != 0;
 
-    done = true;
+    flags->done = true;
   }
 }
 
-static inline bool has_simd128(void) {
+static inline bool has_simd128(cpu_flags *flags) {
   // For now this is Intel-only, could conceivably be #ifdef'd to something
   // else.
-  return sse && sse2 && sse3 && sse41 && sse42 && cmov;
+  return flags->sse && flags->sse2 && flags->sse3 && flags->sse41 && flags->sse42 && flags->cmov;
 }
 
-static inline bool has_simd256(void) {
-  return avx && avx2;
+static inline bool has_simd256(cpu_flags *flags) {
+  return flags->avx && flags->avx2;
 }
 
 // Small mismatch between the variable names Python defines as part of configure
@@ -136,12 +138,21 @@ PyDoc_STRVAR(blake2mod__doc__,
 typedef struct {
     PyTypeObject* blake2b_type;
     PyTypeObject* blake2s_type;
+    cpu_flags flags;
 } Blake2State;
 
 static inline Blake2State*
 blake2_get_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (Blake2State *)state;
+}
+
+static inline Blake2State*
+blake2_get_state_from_type(PyTypeObject *module)
+{
+    void *state = PyType_GetModuleState(module);
     assert(state != NULL);
     return (Blake2State *)state;
 }
@@ -194,11 +205,11 @@ _blake2_free(void *module)
 static int
 blake2_exec(PyObject *m)
 {
+    Blake2State* st = blake2_get_state(m);
+
     // This is called at module initialization-time, and so appears to be as
     // good a place as any to probe the CPU flags.
-    detect_cpu_features();
-
-    Blake2State* st = blake2_get_state(m);
+    detect_cpu_features(&st->flags);
 
     st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
@@ -304,16 +315,17 @@ static inline bool is_blake2s(blake2_impl impl) {
 }
 
 static inline blake2_impl type_to_impl(PyTypeObject *type) {
+    Blake2State* st = blake2_get_state_from_type(type);
     if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #ifdef HACL_CAN_COMPILE_SIMD256
-      if (has_simd256())
+      if (has_simd256(&st->flags))
         return Blake2b_256;
       else
 #endif
         return Blake2b;
     } else if (!strcmp(type->tp_name, blake2s_type_spec.name)) {
 #ifdef HACL_CAN_COMPILE_SIMD128
-      if (has_simd128())
+      if (has_simd128(&st->flags))
         return Blake2s_128;
       else
 #endif
