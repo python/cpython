@@ -1341,152 +1341,15 @@ Deprecated
   therefore it will be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
-Pending Removal in Python 3.13
-------------------------------
+.. include:: ../deprecations/pending-removal-in-3.13.rst
 
-The following modules and APIs have been deprecated in earlier Python releases,
-and will be removed in Python 3.13.
+.. include:: ../deprecations/pending-removal-in-3.14.rst
 
-Modules (see :pep:`594`):
+.. include:: ../deprecations/pending-removal-in-3.15.rst
 
-* :mod:`aifc`
-* :mod:`audioop`
-* :mod:`cgi`
-* :mod:`cgitb`
-* :mod:`chunk`
-* :mod:`crypt`
-* :mod:`imghdr`
-* :mod:`mailcap`
-* :mod:`msilib`
-* :mod:`nis`
-* :mod:`nntplib`
-* :mod:`ossaudiodev`
-* :mod:`pipes`
-* :mod:`sndhdr`
-* :mod:`spwd`
-* :mod:`sunau`
-* :mod:`telnetlib`
-* :mod:`uu`
-* :mod:`xdrlib`
+.. include:: ../deprecations/pending-removal-in-3.16.rst
 
-Other modules:
-
-* :mod:`!lib2to3`, and the :program:`2to3` program (:gh:`84540`)
-
-APIs:
-
-* :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
-* ``locale.resetlocale()`` (:gh:`90817`)
-* :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
-* :func:`!unittest.findTestCases` (:gh:`50096`)
-* :func:`!unittest.getTestCaseNames` (:gh:`50096`)
-* :func:`!unittest.makeSuite` (:gh:`50096`)
-* :meth:`!unittest.TestProgram.usageExit` (:gh:`67048`)
-* :class:`!webbrowser.MacOSX` (:gh:`86421`)
-* :class:`classmethod` descriptor chaining (:gh:`89519`)
-* :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_ (:gh:`106531`)
-
-Pending Removal in Python 3.14
-------------------------------
-
-The following APIs have been deprecated
-and will be removed in Python 3.14.
-
-* :mod:`argparse`: The *type*, *choices*, and *metavar* parameters
-  of :class:`!argparse.BooleanOptionalAction`
-
-* :mod:`ast`:
-
-  * :class:`!ast.Num`
-  * :class:`!ast.Str`
-  * :class:`!ast.Bytes`
-  * :class:`!ast.NameConstant`
-  * :class:`!ast.Ellipsis`
-
-* :mod:`asyncio`:
-
-  * :class:`!asyncio.MultiLoopChildWatcher`
-  * :class:`!asyncio.FastChildWatcher`
-  * :class:`!asyncio.AbstractChildWatcher`
-  * :class:`!asyncio.SafeChildWatcher`
-  * :func:`!asyncio.set_child_watcher`
-  * :func:`!asyncio.get_child_watcher`,
-  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
-  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
-
-* :mod:`collections.abc`: :class:`!collections.abc.ByteString`.
-
-* :mod:`email`: the *isdst* parameter in :func:`email.utils.localtime`.
-
-* :mod:`importlib.abc`:
-
-  * :class:`!importlib.abc.ResourceReader`
-  * :class:`!importlib.abc.Traversable`
-  * :class:`!importlib.abc.TraversableResources`
-
-* :mod:`itertools`: Support for copy, deepcopy, and pickle operations.
-
-* :mod:`pkgutil`:
-
-  * :func:`!pkgutil.find_loader`
-  * :func:`!pkgutil.get_loader`.
-
-* :mod:`pty`:
-
-  * :func:`!pty.master_open`
-  * :func:`!pty.slave_open`
-
-* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree`
-
-* :mod:`typing`: :class:`!typing.ByteString`
-
-* :mod:`xml.etree.ElementTree`: Testing the truth value of an :class:`xml.etree.ElementTree.Element`.
-
-* The ``__package__`` and ``__cached__`` attributes on module objects.
-
-* The :attr:`~codeobject.co_lnotab` attribute of code objects.
-
-Pending Removal in Python 3.15
-------------------------------
-
-The following APIs have been deprecated
-and will be removed in Python 3.15.
-
-APIs:
-
-* :func:`locale.getdefaultlocale` (:gh:`90817`)
-
-
-Pending Removal in Future Versions
-----------------------------------
-
-The following APIs were deprecated in earlier Python versions and will be removed,
-although there is currently no date scheduled for their removal.
-
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
-* :class:`typing.Text` (:gh:`92332`)
-
-* Currently Python accepts numeric literals immediately followed by keywords,
-  for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
-  and ambiguous expressions like ``[0x1for x in y]`` (which can be
-  interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).
-  A syntax warning is raised if the numeric literal is
-  immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
-  :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
-  In a future release it will be changed to a syntax error. (:gh:`87999`)
-
+.. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
 =======
