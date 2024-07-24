@@ -24,8 +24,6 @@ Here are some of the useful functions provided by this module:
     stack(), trace() - get info about frames on the stack or in a traceback
 
     signature() - get a Signature object for the callable
-
-    get_annotations() - safely compute an object's annotations
 """
 
 # This module is in the public domain.  No warranties.
@@ -142,7 +140,7 @@ __all__ = [
 
 
 import abc
-from annotationlib import get_annotations
+from annotationlib import get_annotations  # re-exported
 import ast
 import dis
 import collections.abc
