@@ -1,0 +1,2 @@
+Restore :func:`inspect.ismethoddescriptor` and :func:`inspect.isroutine`
+returning ``False`` for :class:`functools.partial` objects.
