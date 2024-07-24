@@ -214,8 +214,9 @@ blake2_exec(PyObject *m)
     st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 
-    if (NULL == st->blake2b_type)
+    if (blake2b_type == NULL) {
         return -1;
+    }
     /* BLAKE2b */
     if (PyModule_AddType(m, st->blake2b_type) < 0) {
         return -1;
