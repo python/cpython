@@ -211,6 +211,15 @@ class TestModule(unittest.TestCase):
         self.assertLess(termios.VTIME, termios.NCCS)
         self.assertLess(termios.VMIN, termios.NCCS)
 
+    def test_ioctl_constants(self):
+        # gh-119770: ioctl() constants must be positive
+        for name in dir(termios):
+            if not name.startswith('TIO'):
+                continue
+            value = getattr(termios, name)
+            with self.subTest(name=name):
+                self.assertGreaterEqual(value, 0)
+
     def test_exception(self):
         self.assertTrue(issubclass(termios.error, Exception))
         self.assertFalse(issubclass(termios.error, OSError))

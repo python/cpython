@@ -310,7 +310,7 @@ def collapse_addresses(addresses):
                            [IPv4Network('192.0.2.0/24')]
 
     Args:
-        addresses: An iterator of IPv4Network or IPv6Network objects.
+        addresses: An iterable of IPv4Network or IPv6Network objects.
 
     Returns:
         An iterator of the collapsed IPv(4|6)Network objects.

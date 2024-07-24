@@ -152,7 +152,7 @@ htmlview: html
 
 .PHONY: ensure-sphinx-autobuild
 ensure-sphinx-autobuild: venv
-	$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install sphinx-autobuild
+	$(call ensure_package,sphinx-autobuild)
 
 .PHONY: htmllive
 htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
@@ -174,10 +174,15 @@ venv:
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		echo "Creating venv in $(VENVDIR)"; \
-		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
-		$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
-		echo "The venv has been created in the $(VENVDIR) directory"; \
+		if uv --version > /dev/null; then \
+			uv venv $(VENVDIR); \
+			VIRTUAL_ENV=$(VENVDIR) uv pip install -r $(REQUIREMENTS); \
+		else \
+			$(PYTHON) -m venv $(VENVDIR); \
+			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
+			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
+			echo "The venv has been created in the $(VENVDIR) directory"; \
+		fi; \
 	fi
 
 .PHONY: dist
@@ -235,9 +240,17 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
+define ensure_package
+	if uv --version > /dev/null; then \
+		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install $(1); \
+	else \
+		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install $(1); \
+	fi
+endef
+
 .PHONY: check
 check: venv
-	$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit
+	$(call ensure_package,pre_commit)
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve

@@ -16,6 +16,7 @@ import platform
 import random
 import re
 import sys
+import textwrap
 import traceback
 import types
 import typing
@@ -412,7 +413,7 @@ class BuiltinTest(unittest.TestCase):
         "socket.accept is broken"
     )
     def test_compile_top_level_await(self):
-        """Test whether code some top level await can be compiled.
+        """Test whether code with top level await can be compiled.
 
         Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
         set, and make sure the generated code object has the CO_COROUTINE flag
@@ -426,6 +427,7 @@ class BuiltinTest(unittest.TestCase):
                 yield i
 
         modes = ('single', 'exec')
+        optimizations = (-1, 0, 1, 2)
         code_samples = [
             '''a = await asyncio.sleep(0, result=1)''',
             '''async for i in arange(1):
@@ -438,34 +440,52 @@ class BuiltinTest(unittest.TestCase):
             '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
-            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]'''
+            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]''',
+            # gh-121637: Make sure we correctly handle the case where the
+            # async code is optimized away
+            '''assert not await asyncio.sleep(0); a = 1''',
+            '''assert [x async for x in arange(1)]; a = 1''',
+            '''assert {x async for x in arange(1)}; a = 1''',
+            '''assert {x: x async for x in arange(1)}; a = 1''',
+            '''
+            if (a := 1) and __debug__:
+                async with asyncio.Lock() as l:
+                    pass
+            ''',
+            '''
+            if (a := 1) and __debug__:
+                async for x in arange(2):
+                    pass
+            ''',
         ]
         policy = maybe_get_event_loop_policy()
         try:
-            for mode, code_sample in product(modes, code_samples):
-                source = dedent(code_sample)
-                with self.assertRaises(
-                        SyntaxError, msg=f"source={source} mode={mode}"):
-                    compile(source, '?', mode)
+            for mode, code_sample, optimize in product(modes, code_samples, optimizations):
+                with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
+                    source = dedent(code_sample)
+                    with self.assertRaises(
+                            SyntaxError, msg=f"source={source} mode={mode}"):
+                        compile(source, '?', mode, optimize=optimize)
 
-                co = compile(source,
-                             '?',
-                             mode,
-                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+                    co = compile(source,
+                                '?',
+                                mode,
+                                flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+                                optimize=optimize)
 
-                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                                 msg=f"source={source} mode={mode}")
+                    self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                    msg=f"source={source} mode={mode}")
 
-                # test we can create and  advance a function type
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                async_f = FunctionType(co, globals_)
-                asyncio.run(async_f())
-                self.assertEqual(globals_['a'], 1)
+                    # test we can create and  advance a function type
+                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                    async_f = FunctionType(co, globals_)
+                    asyncio.run(async_f())
+                    self.assertEqual(globals_['a'], 1)
 
-                # test we can await-eval,
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                asyncio.run(eval(co, globals_))
-                self.assertEqual(globals_['a'], 1)
+                    # test we can await-eval,
+                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                    asyncio.run(eval(co, globals_))
+                    self.assertEqual(globals_['a'], 1)
         finally:
             asyncio.set_event_loop_policy(policy)
 
@@ -662,6 +682,16 @@ class BuiltinTest(unittest.TestCase):
             self.assertAlmostEqual(result[1], exp_result[1])
 
         self.assertRaises(TypeError, divmod)
+        self.assertRaisesRegex(
+            ZeroDivisionError,
+            "division by zero",
+            divmod, 1, 0,
+        )
+        self.assertRaisesRegex(
+            ZeroDivisionError,
+            "division by zero",
+            divmod, 0.0, 0,
+        )
 
     def test_eval(self):
         self.assertEqual(eval('1+1'), 2)
@@ -1758,6 +1788,11 @@ class BuiltinTest(unittest.TestCase):
         sum(([x] for x in range(10)), empty)
         self.assertEqual(empty, [])
 
+        xs = [complex(random.random() - .5, random.random() - .5)
+              for _ in range(10000)]
+        self.assertEqual(sum(xs), complex(sum(z.real for z in xs),
+                                          sum(z.imag for z in xs)))
+
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                          "sum accuracy not guaranteed on machines with double rounding")
@@ -1765,6 +1800,10 @@ class BuiltinTest(unittest.TestCase):
     def test_sum_accuracy(self):
         self.assertEqual(sum([0.1] * 10), 1.0)
         self.assertEqual(sum([1.0, 10E100, 1.0, -10E100]), 2.0)
+        self.assertEqual(sum([1.0, 10E100, 1.0, -10E100, 2j]), 2+2j)
+        self.assertEqual(sum([2+1j, 10E100j, 1j, -10E100j]), 2+2j)
+        self.assertEqual(sum([1j, 1, 10E100j, 1j, 1.0, -10E100j]), 2+2j)
+        self.assertEqual(sum([0.1j]*10 + [fractions.Fraction(1, 10)]), 0.1+1j)
 
     def test_type(self):
         self.assertEqual(type(''),  type('123'))

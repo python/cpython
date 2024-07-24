@@ -1406,7 +1406,7 @@ _Py_dg_strtod(const char *s00, char **se)
     switch (c) {
     case '-':
         sign = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case '+':
         c = *++s;
     }
@@ -1478,7 +1478,7 @@ _Py_dg_strtod(const char *s00, char **se)
         switch (c) {
         case '-':
             esign = 1;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case '+':
             c = *++s;
         }
@@ -2366,7 +2366,7 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         break;
     case 2:
         leftright = 0;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case 4:
         if (ndigits <= 0)
             ndigits = 1;
@@ -2374,7 +2374,7 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         break;
     case 3:
         leftright = 0;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case 5:
         i = ndigits + k + 1;
         ilim = i;

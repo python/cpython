@@ -1,0 +1,2 @@
+Fix source locations of instructions generated for the iterator of a for
+statement.

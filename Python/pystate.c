@@ -9,9 +9,9 @@
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
 #include "pycore_frame.h"
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
-#include "pycore_object_stack.h"  // _PyObjectStackChunk_ClearFreeList()
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
@@ -584,9 +584,9 @@ free_interpreter(PyInterpreterState *interp)
         PyMem_RawFree(interp);
     }
 }
-
+#ifndef NDEBUG
 static inline int check_interpreter_whence(long);
-
+#endif
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -1130,7 +1130,7 @@ _PyInterpreterState_IsReady(PyInterpreterState *interp)
     return interp->_ready;
 }
 
-
+#ifndef NDEBUG
 static inline int
 check_interpreter_whence(long whence)
 {
@@ -1142,6 +1142,7 @@ check_interpreter_whence(long whence)
     }
     return 0;
 }
+#endif
 
 long
 _PyInterpreterState_GetWhence(PyInterpreterState *interp)
@@ -1292,9 +1293,8 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     PyThread_release_lock(interp->id_mutex);
 
     if (refcount == 0 && interp->requires_idref) {
-        PyThreadState *tstate = _PyThreadState_New(interp,
-                                                   _PyThreadState_WHENCE_INTERP);
-        _PyThreadState_Bind(tstate);
+        PyThreadState *tstate =
+            _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
 
         // XXX Possible GILState issues?
         PyThreadState *save_tstate = _PyThreadState_Swap(runtime, tstate);
@@ -1499,6 +1499,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->previous_executor = NULL;
     tstate->dict_global_version = 0;
 
+    _tstate->asyncio_running_loop = NULL;
+
     tstate->delete_later = NULL;
 
     llist_init(&_tstate->mem_free_queue);
@@ -1583,9 +1585,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     }
     else {
 #ifdef Py_GIL_DISABLED
-        if (interp->gc.immortalize.enable_on_thread_created &&
-            !interp->gc.immortalize.enabled)
-        {
+        if (_Py_atomic_load_int(&interp->gc.immortalize) == 0) {
             // Immortalize objects marked as using deferred reference counting
             // the first time a non-main thread is created.
             _PyGC_ImmortalizeDeferredObjects(interp);
@@ -1604,8 +1604,13 @@ new_threadstate(PyInterpreterState *interp, int whence)
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = new_threadstate(interp,
-                                            _PyThreadState_WHENCE_UNKNOWN);
+    return _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_UNKNOWN);
+}
+
+PyThreadState *
+_PyThreadState_NewBound(PyInterpreterState *interp, int whence)
+{
+    PyThreadState *tstate = new_threadstate(interp, whence);
     if (tstate) {
         bind_tstate(tstate);
         // This makes sure there's a gilstate tstate bound
@@ -1697,6 +1702,11 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
+    Py_CLEAR(tstate->threading_local_key);
+    Py_CLEAR(tstate->threading_local_sentinel);
+
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
+
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
@@ -1728,7 +1738,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
 
     // Remove ourself from the biased reference counting table of threads.
@@ -1751,7 +1761,7 @@ decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
-tstate_delete_common(PyThreadState *tstate)
+tstate_delete_common(PyThreadState *tstate, int release_gil)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     tstate_verify_not_active(tstate);
@@ -1793,10 +1803,6 @@ tstate_delete_common(PyThreadState *tstate)
 
     HEAD_UNLOCK(runtime);
 
-#ifdef Py_GIL_DISABLED
-    _Py_qsbr_unregister(tstate);
-#endif
-
     // XXX Unbind in PyThreadState_Clear(), or earlier
     // (and assert not-equal here)?
     if (tstate->_status.bound_gilstate) {
@@ -1806,6 +1812,14 @@ tstate_delete_common(PyThreadState *tstate)
 
     // XXX Move to PyThreadState_Clear()?
     clear_datastack(tstate);
+
+    if (release_gil) {
+        _PyEval_ReleaseLock(tstate->interp, tstate, 1);
+    }
+
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_unregister(tstate);
+#endif
 
     tstate->_status.finalized = 1;
 }
@@ -1818,7 +1832,7 @@ zapthreads(PyInterpreterState *interp)
        when the threads are all really dead (XXX famous last words). */
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
-        tstate_delete_common(tstate);
+        tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
     }
 }
@@ -1829,7 +1843,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
-    tstate_delete_common(tstate);
+    tstate_delete_common(tstate, 0);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -1842,8 +1856,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
     current_fast_clear(tstate->interp->runtime);
-    tstate_delete_common(tstate);
-    _PyEval_ReleaseLock(tstate->interp, tstate, 1);
+    tstate_delete_common(tstate, 1);  // release GIL as part of call
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -2808,12 +2821,18 @@ PyGILState_Release(PyGILState_STATE oldstate)
         /* can't have been locked when we created it */
         assert(oldstate == PyGILState_UNLOCKED);
         // XXX Unbind tstate here.
+        // gh-119585: `PyThreadState_Clear()` may call destructors that
+        // themselves use PyGILState_Ensure and PyGILState_Release, so make
+        // sure that gilstate_counter is not zero when calling it.
+        ++tstate->gilstate_counter;
         PyThreadState_Clear(tstate);
+        --tstate->gilstate_counter;
         /* Delete the thread-state.  Note this releases the GIL too!
          * It's vital that the GIL be held here, to avoid shutdown
          * races; see bugs 225673 and 1061968 (that nasty bug has a
          * habit of coming back).
          */
+        assert(tstate->gilstate_counter == 0);
         assert(current_fast_get() == tstate);
         _PyThreadState_DeleteCurrent(tstate);
     }
@@ -3067,6 +3086,8 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     // _PyObject_GC_New() and similar functions temporarily override this to
     // use one of the GC heaps.
     mts->current_object_heap = &mts->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+
+    _Py_atomic_store_int(&mts->initialized, 1);
 #endif
 }
 

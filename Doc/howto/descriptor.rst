@@ -787,7 +787,7 @@ Invocation from super
 ---------------------
 
 The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
-object returned by :class:`super()`.
+object returned by :func:`super`.
 
 A dotted lookup such as ``super(A, obj).m`` searches ``obj.__class__.__mro__``
 for the base class ``B`` immediately following ``A`` and then returns
@@ -1366,11 +1366,15 @@ Using the non-data descriptor protocol, a pure Python version of
         def __call__(self, *args, **kwds):
             return self.f(*args, **kwds)
 
+        @property
+        def __annotations__(self):
+            return self.f.__annotations__
+
 The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
 that refers to the underlying function.  Also it carries forward
 the attributes necessary to make the wrapper look like the wrapped
-function: :attr:`~function.__name__`, :attr:`~function.__qualname__`,
-:attr:`~function.__doc__`, and :attr:`~function.__annotations__`.
+function, including :attr:`~function.__name__`, :attr:`~function.__qualname__`,
+and :attr:`~function.__doc__`.
 
 .. testcode::
     :hide:

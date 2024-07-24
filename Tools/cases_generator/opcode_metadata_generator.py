@@ -4,15 +4,12 @@ Writes the metadata to pycore_opcode_metadata.h by default.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     PseudoInstruction,
     analyze_files,
-    Skip,
     Uop,
 )
 from generators_common import (
@@ -20,7 +17,6 @@ from generators_common import (
     ROOT,
     write_header,
     cflags,
-    StackOffset,
 )
 from cwriter import CWriter
 from typing import TextIO
