@@ -2163,16 +2163,15 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
             return 1;
         }
         Py_DECREF(w);
-        l = PySequence_List(it);
-        if (l == NULL) {
+        ll = PySequence_Size(v);
+        if (ll < 0) {
             _PyErr_Format(tstate, PyExc_ValueError,
-                        "too many values to unpack (expected %d)",
-                        argcnt);
+                          "too many values to unpack (expected %d)",
+                          argcnt);
         } else {
-            ll = PyList_GET_SIZE(l);
             _PyErr_Format(tstate, PyExc_ValueError,
-                        "too many values to unpack (expected %d, got %zd)",
-                        argcnt, argcnt + 1 + ll);
+                          "too many values to unpack (expected %d, got %zd)",
+                          argcnt, ll);
         }
         goto Error;
     }

@@ -87,7 +87,7 @@ Unpacking sequence too long
     >>> a, b = Seq()
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2, got 3)
+    ValueError: too many values to unpack (expected 2)
 
 Unpacking a sequence where the test for too long raises a different kind of
 error
