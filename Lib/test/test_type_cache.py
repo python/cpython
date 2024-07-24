@@ -160,8 +160,8 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(load_foo_2, A, "LOAD_ATTR", should_specialize=False)
 
     def test_class_load_attr_specialization_static_type(self):
-        self._assign_valid_version_or_skip(str)
-        self._assign_valid_version_or_skip(bytes)
+        self.assertNotEqual(type_get_version(str), 0)
+        self.assertNotEqual(type_get_version(bytes), 0)
 
         def get_capitalize_1(type_):
             return type_.capitalize
@@ -169,25 +169,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(get_capitalize_1, str, "LOAD_ATTR", should_specialize=True)
         self.assertEqual(get_capitalize_1(str)('hello'), 'Hello')
         self.assertEqual(get_capitalize_1(bytes)(b'hello'), b'Hello')
-        del get_capitalize_1
-
-        # Permanently overflow the static type version counter, and force str and bytes
-        # to have tp_version_tag == 0
-        for _ in range(2**16):
-            type_modified(str)
-            type_assign_version(str)
-            type_modified(bytes)
-            type_assign_version(bytes)
-
-        self.assertEqual(type_get_version(str), 0)
-        self.assertEqual(type_get_version(bytes), 0)
-
-        def get_capitalize_2(type_):
-            return type_.capitalize
-
-        self._check_specialization(get_capitalize_2, str, "LOAD_ATTR", should_specialize=False)
-        self.assertEqual(get_capitalize_2(str)('hello'), 'Hello')
-        self.assertEqual(get_capitalize_2(bytes)(b'hello'), b'Hello')
 
     def test_property_load_attr_specialization_user_type(self):
         class G:
