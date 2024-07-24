@@ -1848,9 +1848,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT(st, expr, s->v.TypeAlias.name);
         assert(s->v.TypeAlias.name->kind == Name_kind);
         PyObject *name = s->v.TypeAlias.name->v.Name.id;
-        if (!check_name(st, name, LOCATION(s), Store)) {
-             VISIT_QUIT(st, 0);
-        }
         int is_in_class = st->st_cur->ste_type == ClassBlock;
         int is_generic = asdl_seq_LEN(s->v.TypeAlias.type_params) > 0;
         if (is_generic) {
@@ -1935,12 +1932,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         break;
     case AugAssign_kind: {
-        expr_ty e = s->v.AugAssign.target;
-        if (e->kind == Name_kind) {
-            if (!check_name(st, e->v.Name.id, LOCATION(e), Store)) {
-                VISIT_QUIT(st, 0);
-            }
-        }
         VISIT(st, expr, s->v.AugAssign.target);
         VISIT(st, expr, s->v.AugAssign.value);
         break;
