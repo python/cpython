@@ -5,7 +5,7 @@ import functools
 import itertools
 import pickle
 import unittest
-from annotationlib import get_annotations, get_annotate_function
+from annotationlib import Format, get_annotations, get_annotate_function
 from typing import Unpack
 
 from test.test_inspect import inspect_stock_annotations
@@ -785,13 +785,30 @@ class MetaclassTests(unittest.TestCase):
             b: float
 
         self.assertEqual(get_annotations(Meta), {"a": int})
-        self.assertEqual(get_annotate_function(Meta)(1), {"a": int})
+        self.assertEqual(get_annotate_function(Meta)(Format.VALUE), {"a": int})
 
         self.assertEqual(get_annotations(X), {})
         self.assertIs(get_annotate_function(X), None)
 
         self.assertEqual(get_annotations(Y), {"b": float})
-        self.assertEqual(get_annotate_function(Y)(1), {"b": float})
+        self.assertEqual(get_annotate_function(Y)(Format.VALUE), {"b": float})
+
+    def test_unannotated_meta(self):
+        class Meta(type): pass
+
+        class X(metaclass=Meta):
+            a: str
+
+        class Y(X): pass
+
+        self.assertEqual(get_annotations(Meta), {})
+        self.assertIs(get_annotate_function(Meta), None)
+
+        self.assertEqual(get_annotations(Y), {})
+        self.assertIs(get_annotate_function(Y), None)
+
+        self.assertEqual(get_annotations(X), {"a": str})
+        self.assertEqual(get_annotate_function(X)(Format.VALUE), {"a": str})
 
     def test_ordering(self):
         # Based on a sample by David Ellis
@@ -831,6 +848,6 @@ class MetaclassTests(unittest.TestCase):
                         self.assertEqual(get_annotations(c), c.expected_annotations)
                         annotate_func = get_annotate_function(c)
                         if c.expected_annotations:
-                            self.assertEqual(annotate_func(1), c.expected_annotations)
+                            self.assertEqual(annotate_func(Format.VALUE), c.expected_annotations)
                         else:
                             self.assertIs(annotate_func, None)
