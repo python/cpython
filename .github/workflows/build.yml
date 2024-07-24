@@ -56,6 +56,7 @@ jobs:
       #   }}
       #
       run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
+      run-win-msi: ${{ steps.win-msi-changes.outputs.run-win-msi || false }}
       run_tests: ${{ steps.check.outputs.run_tests || false }}
       run_hypothesis: ${{ steps.check.outputs.run_hypothesis || false }}
       config_hash: ${{ steps.config_hash.outputs.hash }}  # str
@@ -115,6 +116,20 @@ jobs:
         id: docs-changes
         run: |
           echo "run-docs=true" >> "${GITHUB_OUTPUT}"
+      - name: Get a list of the MSI installer-related files
+        id: changed-win-msi-files
+        uses: Ana06/get-changed-files@v2.3.0
+        with:
+          filter: |
+            Tools/msi/**
+            .github/workflows/reusable-windows-msi.yml
+          format: csv  # works for paths with spaces
+      - name: Check for changes in MSI installer-related files
+        if: >-
+          steps.changed-win-msi-files.outputs.added_modified_renamed != ''
+        id: win-msi-changes
+        run: |
+          echo "run-win-msi=true" >> "${GITHUB_OUTPUT}"
 
   check-docs:
     name: Docs
@@ -254,6 +269,21 @@ jobs:
     with:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
+
+  build_windows_msi:
+    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
+      Windows MSI${{ '' }}
+    needs: check_source
+    if: fromJSON(needs.check_source.outputs.run-win-msi)
+    strategy:
+      matrix:
+        arch:
+        - x86
+        - x64
+        - arm64
+    uses: ./.github/workflows/reusable-windows-msi.yml
+    with:
+      arch: ${{ matrix.arch }}
 
   build_macos:
     name: 'macOS'
@@ -532,6 +562,7 @@ jobs:
     - build_ubuntu
     - build_ubuntu_ssltests
     - build_windows
+    - build_windows_msi
     - test_hypothesis
     - build_asan
     - build_tsan
@@ -545,6 +576,7 @@ jobs:
         allowed-failures: >-
           build_macos,
           build_ubuntu_ssltests,
+          build_windows_msi,
           test_hypothesis,
         allowed-skips: >-
           ${{
