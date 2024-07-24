@@ -151,6 +151,13 @@ pdb
   :pdbcmd:`commands` are preserved across hard-coded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
+pickle
+------
+
+Add notes for pickle serialization errors that allow to identify the source
+of the error.
+(Contributed by Serhiy Storchaka in :gh:`122213`.)
+
 symtable
 --------
 

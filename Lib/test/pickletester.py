@@ -2584,6 +2584,236 @@ class AbstractPickleTests:
             else:
                 self._check_pickling_with_opcode(obj, pickle.SETITEMS, proto)
 
+    def test_unpickleable_reconstructor(self):
+        obj = REX((UnpickleableCallable(), (), None))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing test.pickletester.REX reconstructor'])
+
+    def test_unpickleable_reconstructor_args(self):
+        obj = REX((print, (1, 2, UNPICKLEABLE), None))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing tuple item 2',
+                              'when serializing test.pickletester.REX reconstructor arguments'])
+
+    def test_unpickleable_newobj_class(self):
+        class LocalREX(REX): pass
+        obj = LocalREX((copyreg.__newobj__, (LocalREX,), None))
+        for proto in protocols:
+            with self.assertRaises((pickle.PicklingError, AttributeError)) as cm:
+                self.dumps(obj, proto)
+            if proto >= 2:
+                self.assertEqual(cm.exception.__notes__,
+                                 [f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} class'])
+            else:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 0',
+                                  f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} reconstructor arguments'])
+
+    def test_unpickleable_newobj_args(self):
+        obj = REX((copyreg.__newobj__, (REX, 1, 2, UNPICKLEABLE), None))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            if proto >= 2:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 2',
+                                  'when serializing test.pickletester.REX __new__ arguments'])
+            else:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 3',
+                                  'when serializing test.pickletester.REX reconstructor arguments'])
+
+    def test_unpickleable_newobj_ex_class(self):
+        class LocalREX(REX): pass
+        obj = LocalREX((copyreg.__newobj_ex__, (LocalREX, (), {}), None))
+        for proto in protocols:
+            with self.assertRaises((pickle.PicklingError, AttributeError)) as cm:
+                self.dumps(obj, proto)
+            if proto >= 4:
+                self.assertEqual(cm.exception.__notes__,
+                                 [f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} class'])
+            elif proto >= 2:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 0',
+                                  'when serializing tuple item 1',
+                                  'when serializing functools.partial state',
+                                  f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} reconstructor'])
+            else:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 0',
+                                  f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} reconstructor arguments'])
+
+    def test_unpickleable_newobj_ex_args(self):
+        obj = REX((copyreg.__newobj_ex__, (REX, (1, 2, UNPICKLEABLE), {}), None))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            if proto >= 4:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 2',
+                                  'when serializing test.pickletester.REX __new__ arguments'])
+            elif proto >= 2:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 3',
+                                  'when serializing tuple item 1',
+                                  'when serializing functools.partial state',
+                                  'when serializing test.pickletester.REX reconstructor'])
+            else:
+                self.assertEqual(cm.exception.__notes__,
+                                 ['when serializing tuple item 2',
+                                  'when serializing tuple item 1',
+                                  'when serializing test.pickletester.REX reconstructor arguments'])
+
+    def test_unpickleable_newobj_ex_kwargs(self):
+        obj = REX((copyreg.__newobj_ex__, (REX, (), {'a': UNPICKLEABLE}), None))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            if proto >= 4:
+                self.assertEqual(cm.exception.__notes__,
+                                 ["when serializing dict item 'a'",
+                                  'when serializing test.pickletester.REX __new__ arguments'])
+            elif proto >= 2:
+                self.assertEqual(cm.exception.__notes__,
+                                 ["when serializing dict item 'a'",
+                                  'when serializing tuple item 2',
+                                  'when serializing functools.partial state',
+                                  'when serializing test.pickletester.REX reconstructor'])
+            else:
+                self.assertEqual(cm.exception.__notes__,
+                                 ["when serializing dict item 'a'",
+                                  'when serializing tuple item 2',
+                                  'when serializing test.pickletester.REX reconstructor arguments'])
+
+    def test_unpickleable_state(self):
+        obj = REX_state(UNPICKLEABLE)
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing test.pickletester.REX_state state'])
+
+    def test_unpickleable_state_setter(self):
+        obj = REX((print, (), 'state', None, None, UnpickleableCallable()))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing test.pickletester.REX state setter'])
+
+    def test_unpickleable_state_with_state_setter(self):
+        obj = REX((print, (), UNPICKLEABLE, None, None, print))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing test.pickletester.REX state'])
+
+    def test_unpickleable_object_list_items(self):
+        obj = REX_six([1, 2, UNPICKLEABLE])
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing test.pickletester.REX_six item 2'])
+
+    def test_unpickleable_object_dict_items(self):
+        obj = REX_seven({'a': UNPICKLEABLE})
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ["when serializing test.pickletester.REX_seven item 'a'"])
+
+    def test_unpickleable_list_items(self):
+        obj = [1, [2, 3, UNPICKLEABLE]]
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing list item 2',
+                              'when serializing list item 1'])
+        for n in [0, 1, 1000, 1005]:
+            obj = [*range(n), UNPICKLEABLE]
+            for proto in protocols:
+                with self.assertRaises(CustomError) as cm:
+                    self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__,
+                                 [f'when serializing list item {n}'])
+
+    def test_unpickleable_tuple_items(self):
+        obj = (1, (2, 3, UNPICKLEABLE))
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing tuple item 2',
+                              'when serializing tuple item 1'])
+        obj = (*range(10), UNPICKLEABLE)
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ['when serializing tuple item 10'])
+
+    def test_unpickleable_dict_items(self):
+        obj = {'a': {'b': UNPICKLEABLE}}
+        for proto in protocols:
+            with self.assertRaises(CustomError) as cm:
+                self.dumps(obj, proto)
+            self.assertEqual(cm.exception.__notes__,
+                             ["when serializing dict item 'b'",
+                              "when serializing dict item 'a'"])
+        for n in [0, 1, 1000, 1005]:
+            obj = dict.fromkeys(range(n))
+            obj['a'] = UNPICKLEABLE
+            for proto in protocols:
+              with self.subTest(proto=proto, n=n):
+                with self.assertRaises(CustomError) as cm:
+                    self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__,
+                                 ["when serializing dict item 'a'"])
+
+    def test_unpickleable_set_items(self):
+        obj = {UNPICKLEABLE}
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaises(CustomError) as cm:
+                    self.dumps(obj, proto)
+                if proto >= 4:
+                    self.assertEqual(cm.exception.__notes__,
+                                     ['when serializing set element'])
+                else:
+                    self.assertEqual(cm.exception.__notes__,
+                                     ['when serializing list item 0',
+                                      'when serializing tuple item 0',
+                                      'when serializing set reconstructor arguments'])
+
+    def test_unpickleable_frozenset_items(self):
+        obj = frozenset({frozenset({UNPICKLEABLE})})
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaises(CustomError) as cm:
+                    self.dumps(obj, proto)
+                if proto >= 4:
+                    self.assertEqual(cm.exception.__notes__,
+                                     ['when serializing frozenset element',
+                                      'when serializing frozenset element'])
+                else:
+                    self.assertEqual(cm.exception.__notes__,
+                                     ['when serializing list item 0',
+                                      'when serializing tuple item 0',
+                                      'when serializing frozenset reconstructor arguments',
+                                      'when serializing list item 0',
+                                      'when serializing tuple item 0',
+                                      'when serializing frozenset reconstructor arguments'])
+
     # Exercise framing (proto >= 4) for significant workloads
 
     FRAME_SIZE_MIN = 4
@@ -3409,6 +3639,25 @@ class REX_state(object):
         self.state = state
     def __reduce__(self):
         return type(self), (), self.state
+
+class CustomError(Exception):
+    pass
+
+class Unpickleable:
+    def __reduce__(self):
+        raise CustomError
+
+UNPICKLEABLE = Unpickleable()
+
+class UnpickleableCallable(Unpickleable):
+    def __call__(self, *args, **kwargs):
+        pass
+
+class REX:
+    def __init__(self, reduce=None):
+        self.reduce = reduce
+    def __reduce_ex__(self, proto):
+        return self.reduce
 
 class REX_None:
     """ Setting __reduce_ex__ to None should fail """
