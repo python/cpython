@@ -1,6 +1,7 @@
 # Python test set -- part 6, built-in types
 
 from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
+from test.test_import import no_rerun
 import collections.abc
 from collections import namedtuple
 import copy
@@ -26,6 +27,26 @@ class Forward: ...
 def clear_typing_caches():
     for f in typing._cleanups:
         f()
+
+
+def iter_builtin_types():
+    for obj in __builtins__.values():
+        if not isinstance(obj, type):
+            continue
+        cls = obj
+        if cls.__module__ != 'builtins':
+            continue
+        yield cls
+
+
+@cpython_only
+def iter_own_slot_wrappers(cls):
+    for name, value in vars(cls).items():
+        if not name.startswith('__') or not name.endswith('__'):
+            continue
+        if 'slot wrapper' not in str(value):
+            continue
+        yield name
 
 
 class TypesTests(unittest.TestCase):
@@ -2264,27 +2285,39 @@ class SubinterpreterTests(unittest.TestCase):
             raise unittest.SkipTest('subinterpreters required')
 
     @cpython_only
+    @no_rerun('channels (and queues) might have a refleak; see gh-122199')
     def test_slot_wrappers(self):
         rch, sch = interpreters.create_channel()
 
-        # For now it's sufficient to check int.__str__.
-        # See https://github.com/python/cpython/issues/117482
-        # and https://github.com/python/cpython/pull/117660.
-        script = textwrap.dedent(f'''
-            text = repr(int.__str__)
-            sch = interpreters.SendChannel({sch.id})
-            sch.send_nowait(text)
-            ''')
+        slots = []
+        script = ''
+        for cls in iter_builtin_types():
+            for slot in iter_own_slot_wrappers(cls):
+                slots.append((cls, slot))
+                attr = f'{cls.__name__}.{slot}'
+                script += textwrap.dedent(f"""
+                    sch.send_nowait('{attr}: ' + repr({attr}))
+                    """)
 
         exec(script)
-        expected = rch.recv()
+        all_expected = []
+        for cls, slot in slots:
+            result = rch.recv()
+            assert result.startswith(f'{cls.__name__}.{slot}: '), (cls, slot, result)
+            all_expected.append(result)
 
         interp = interpreters.create()
-        interp.run('from test.support import interpreters')
+        interp.run(textwrap.dedent(f"""
+            from test.support import interpreters
+            sch = interpreters.SendChannel({sch.id})
+            """))
         interp.run(script)
-        results = rch.recv()
 
-        self.assertEqual(results, expected)
+        for i, _ in enumerate(slots):
+            with self.subTest(cls=cls, slot=slot):
+                expected = all_expected[i]
+                result = rch.recv()
+                self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':
