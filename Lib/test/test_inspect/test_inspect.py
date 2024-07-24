@@ -1983,7 +1983,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
         else:
             self.assertFalse(
                 inspect.ismethoddescriptor(frame_locals),
-                "a frame's 'f_locals' descriptor, is not a method descriptor")
+                "a frame's 'f_locals' descriptor is not a method descriptor")
 
     def test_descriptor_being_a_class(self):
         class MethodDescriptorMeta(type):
