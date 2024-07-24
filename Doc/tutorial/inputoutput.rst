@@ -279,9 +279,11 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The % operator (modulo) can also be used for string formatting. Given ``'string'
-% values``, instances of ``%`` in ``string`` are replaced with zero or more
-elements of ``values``. This operation is commonly known as string
+The % operator (modulo) can also be used for string formatting.
+Given ``format % values`` (where *format* is a string),
+``%`` conversion specifications in *format* are replaced with
+zero or more elements of *values*.
+This operation is commonly known as string
 interpolation. For example::
 
    >>> import math

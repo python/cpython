@@ -1651,7 +1651,7 @@ PyDoc_STRVAR(pyexpat_module_documentation,
 static int init_handler_descrs(pyexpat_state *state)
 {
     int i;
-    assert(!PyType_HasFeature(state->xml_parse_type, Py_TPFLAGS_VALID_VERSION_TAG));
+    assert(state->xml_parse_type->tp_version_tag == 0);
     for (i = 0; handler_info[i].name != NULL; i++) {
         struct HandlerInfo *hi = &handler_info[i];
         hi->getset.name = hi->name;

@@ -218,7 +218,7 @@ properties:
 
 * A sign is shown only when the number is negative.
 
-Python distinguishes between integers, floating point numbers, and complex
+Python distinguishes between integers, floating-point numbers, and complex
 numbers:
 
 
@@ -262,18 +262,18 @@ Booleans (:class:`bool`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
-   pair: object; floating point
-   pair: floating point; number
+   pair: object; floating-point
+   pair: floating-point; number
    pair: C; language
    pair: Java; language
 
-These represent machine-level double precision floating point numbers. You are
+These represent machine-level double precision floating-point numbers. You are
 at the mercy of the underlying machine architecture (and C or Java
 implementation) for the accepted range and handling of overflow. Python does not
-support single-precision floating point numbers; the savings in processor and
+support single-precision floating-point numbers; the savings in processor and
 memory usage that are usually the reason for using these are dwarfed by the
 overhead of using objects in Python, so there is no reason to complicate the
-language with two kinds of floating point numbers.
+language with two kinds of floating-point numbers.
 
 
 :class:`numbers.Complex` (:class:`complex`)
@@ -284,7 +284,7 @@ language with two kinds of floating point numbers.
    pair: complex; number
 
 These represent complex numbers as a pair of machine-level double precision
-floating point numbers.  The same caveats apply as for floating point numbers.
+floating-point numbers.  The same caveats apply as for floating-point numbers.
 The real and imaginary parts of a complex number ``z`` can be retrieved through
 the read-only attributes ``z.real`` and ``z.imag``.
 
@@ -1243,7 +1243,7 @@ Methods on code objects
 
    The iterator returns :class:`tuple`\s containing the ``(start_line, end_line,
    start_column, end_column)``. The *i-th* tuple corresponds to the
-   position of the source code that compiled to the *i-th* instruction.
+   position of the source code that compiled to the *i-th* code unit.
    Column information is 0-indexed utf-8 byte offsets on the given source
    line.
 
@@ -1347,13 +1347,13 @@ Special read-only attributes
        ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
 
    * - .. attribute:: frame.f_locals
-     - The dictionary used by the frame to look up
+     - The mapping used by the frame to look up
        :ref:`local variables <naming>`.
        If the frame refers to an :term:`optimized scope`,
        this may return a write-through proxy object.
 
        .. versionchanged:: 3.13
-          Return a proxy for functions and comprehensions.
+          Return a proxy for optimized scopes.
 
    * - .. attribute:: frame.f_globals
      - The dictionary used by the frame to look up
@@ -1667,6 +1667,8 @@ Basic customization
 
    It is not guaranteed that :meth:`__del__` methods are called for objects
    that still exist when the interpreter exits.
+   :class:`weakref.finalize` provides a straightforward way to register
+   a cleanup function to be called when an object is garbage collected.
 
    .. note::
 
@@ -3127,11 +3129,8 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
-   :meth:`__int__` nor :meth:`__index__` is defined.
-
-   .. versionchanged:: 3.11
-      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
+   .. versionchanged:: 3.14
+      :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
 
 .. _context-managers:
