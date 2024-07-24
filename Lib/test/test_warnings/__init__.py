@@ -888,36 +888,38 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # warn_explicit() should neither raise a SystemError nor cause an
         # assertion failure, in case the return value of get_source() has a
         # bad splitlines() method.
-        class BadLoader:
-            def get_source(self, fullname):
-                class BadSource(str):
-                    def splitlines(self):
-                        return splitlines_ret_val
-                return BadSource('spam')
+        def get_module_globals(*, splitlines_ret_val):
+            class BadSource(str):
+                def splitilines(self):
+                    return splitlines_ret_val
 
-        loader = BadLoader()
-        spec = importlib.machinery.ModuleSpec('foobar', loader)
-        module_globals = {'__loader__': loader,
-                          '__spec__': spec,
-                          '__name__': 'foobar'}
+            class BadLoader:
+                def getsource(self, fullname):
+                    return BadSource('spam')
+
+            loader = BadLoader()
+            spec = importlib.machinery.ModuleSpec('foobar', loader)
+            return {'__loader__': loader,
+                    '__spec__': spec,
+                    '__name__': 'foobar'}
+
+
         wmod = self.module
         with original_warnings.catch_warnings(module=wmod):
             wmod.filterwarnings('default', category=UserWarning)
 
-            splitlines_ret_val = 42
             with support.captured_stderr() as stderr:
                 wmod.warn_explicit(
                     'foo', UserWarning, 'bar', 1,
-                    module_globals=module_globals)
+                    module_globals=get_module_globals(splitlines_ret_val=42))
             self.assertIn('UserWarning: foo', stderr.getvalue())
 
             with support.swap_attr(wmod, '_showwarnmsg', None):
                 del wmod._showwarnmsg
-                splitlines_ret_val = [42]
                 with support.captured_stderr() as stderr:
                     wmod.warn_explicit(
                         'eggs', UserWarning, 'bar', 1,
-                        module_globals=module_globals)
+                        module_globals=get_module_globals(splitlines_ret_val=[42]))
                 self.assertIn('UserWarning: eggs', stderr.getvalue())
 
     @support.cpython_only
