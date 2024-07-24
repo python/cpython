@@ -214,7 +214,7 @@ blake2_exec(PyObject *m)
     st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 
-    if (blake2b_type == NULL) {
+    if (st->blake2b_type == NULL) {
         return -1;
     }
     /* BLAKE2b */
@@ -287,13 +287,6 @@ PyInit__blake2(void)
 }
 
 // IMPLEMENTATION OF METHODS
-
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
-
-#include <stdbool.h>
-#include "Python.h"
 
 // The HACL* API does not offer an agile API that can deal with either Blake2S
 // or Blake2B -- the reason is that the underlying states are optimized (uint32s
@@ -534,7 +527,7 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
 
     Hacl_Hash_Blake2b_blake2_params params = {
         .digest_length = digest_size,
-        .key_length = key->len,
+        .key_length = (uint8_t)key->len,
         .fanout = fanout,
         .depth = depth,
         .leaf_length = leaf_size,
