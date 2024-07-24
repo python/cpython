@@ -691,6 +691,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
         goto finally;
     }
     localsplusnames_interned = intern_constants(con->localsplusnames);
+    localsplusnames_interned = intern_names(con->localsplusnames);
     if (!localsplusnames_interned) {
         goto finally;
     }
