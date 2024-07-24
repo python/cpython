@@ -3414,11 +3414,22 @@ dummy_func(
         op(_MONITOR_CALL, (func, maybe_self, args[oparg] -- func, maybe_self, args[oparg])) {
             int is_func = PyStackRef_IsNull(maybe_self);
             PyObject *function = PyStackRef_AsPyObjectBorrow(func);
-            PyObject *arg = is_func ?
-                &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(maybe_self);
+            PyObject *arg0;
+            if (is_func) {
+                if (oparg) {
+                    arg0 = PyStackRef_AsPyObjectBorrow(args[0]);
+                }
+                else {
+                    arg0 = &_PyInstrumentation_MISSING;
+                }
+            }
+            else {
+                arg0 = PyStackRef_AsPyObjectBorrow(maybe_self);
+            }
             int err = _Py_call_instrumentation_2args(
-                    tstate, PY_MONITORING_EVENT_CALL,
-                    frame, this_instr, function, arg);
+                tstate, PY_MONITORING_EVENT_CALL,
+                frame, this_instr, function, arg0
+            );
             ERROR_IF(err, error);
         }
 
