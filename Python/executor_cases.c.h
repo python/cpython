@@ -4971,8 +4971,8 @@
         }
 
         case _EXIT_TRACE: {
-            oparg = CURRENT_OPARG();
-            _PyExitData *exit = &current_executor->exits[oparg];
+            PyObject *exit_p = (PyObject *)CURRENT_OPERAND();
+            _PyExitData *exit = (_PyExitData *)exit_p;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
@@ -4981,7 +4981,7 @@
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                       oparg, exit->temperature.as_counter,
+                       exit - current_executor->exits, exit->temperature.as_counter,
                        (int)(target - _PyCode_CODE(code)),
                        _PyOpcode_OpName[target->op.code]);
             }
@@ -5109,9 +5109,9 @@
         }
 
         case _DYNAMIC_EXIT: {
-            oparg = CURRENT_OPARG();
+            PyObject *exit_p = (PyObject *)CURRENT_OPERAND();
             tstate->previous_executor = (PyObject *)current_executor;
-            _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];
+            _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
@@ -5119,7 +5119,7 @@
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                       oparg, exit->temperature.as_counter,
+                       exit - current_executor->exits, exit->temperature.as_counter,
                        (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                        _PyOpcode_OpName[target->op.code]);
             }
