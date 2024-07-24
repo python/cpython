@@ -142,6 +142,17 @@ Unpacking to an empty iterable should raise ValueError
       ...
     ValueError: too many values to unpack (expected 0, got 1)
 
+Unpacking to an empty iterable should raise ValueError, but it won't consume the
+iterable if it doesn't have a pre-determined length
+
+    >>> it = iter(range(100))
+    >>> x, y, z = it
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3)
+    >>> next(it)
+    4
+
 """
 
 __test__ = {'doctests' : doctests}
