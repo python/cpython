@@ -172,7 +172,10 @@ class TestCase(unittest.TestCase):
     def test_custom_serializer_and_deserializer(self):
         def serializer(obj, protocol):
             if isinstance(obj, (bytes, bytearray, memoryview, int)):
-                return f"{type(obj).__name__}"
+                if protocol == 5:
+                    return obj
+                else:
+                    return f"{type(obj).__name__}"
             elif isinstance(obj, array.array):
                 return obj.tobytes()
             else:
@@ -214,13 +217,24 @@ class TestCase(unittest.TestCase):
                     s["array_data"] = array_data
                     s["memoryview_data"] = memoryview_data
 
-                    self.assertEqual(s["number"], "int")
-                    self.assertEqual(s["bytes_data"], "bytes")
-                    self.assertEqual(s["bytearray_data"], "bytearray")
-                    self.assertEqual(
-                        s["array_data"], array_data.tobytes().decode()
-                    )
-                    self.assertEqual(s["memoryview_data"], "memoryview")
+                    if proto == 5:
+                        self.assertEqual(s["number"], str(num))
+                        self.assertEqual(s["bytes_data"], "Hello, world!")
+                        self.assertEqual(
+                            s["bytearray_data"], bytearray_data.decode()
+                        )
+                        self.assertEqual(
+                            s["array_data"], array_data.tobytes().decode()
+                        )
+                        self.assertEqual(s["memoryview_data"], "abcdefgh")
+                    else:
+                        self.assertEqual(s["number"], "int")
+                        self.assertEqual(s["bytes_data"], "bytes")
+                        self.assertEqual(s["bytearray_data"], "bytearray")
+                        self.assertEqual(
+                            s["array_data"], array_data.tobytes().decode()
+                        )
+                        self.assertEqual(s["memoryview_data"], "memoryview")
 
         with self.assertRaises(AssertionError):
             def serializer(obj, protocol=None):
