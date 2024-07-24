@@ -3999,6 +3999,40 @@ class ConfigDictTest(BaseTest):
 
     @skip_if_tsan_fork
     @support.requires_subprocess()
+    @unittest.skipUnless(support.Py_DEBUG, "requires a debug build")
+    def test_config_queue_handler_multiprocessing_context(self):
+        # regression test for gh-121723
+        for startmethod in ['fork', 'spawn', 'forkserver']:
+            with self.subTest(startmethod=startmethod):
+                ctx = multiprocessing.get_context(startmethod)
+                with ctx.Manager() as manager:
+                    q = manager.Queue()
+                    records = []
+                    # use 1 process and 1 task per child to put 1 record
+                    with ctx.Pool(1, initializer=self._mpinit_issue121723,
+                                  initargs=(q, "text"), maxtasksperchild=1):
+                        records.append(q.get(timeout=0.5))
+                    self.assertTrue(q.empty())
+                self.assertEqual(len(records), 1)
+
+    @staticmethod
+    def _mpinit_issue121723(q, msg):
+        # static method for pickling support
+        logging.config.dictConfig({
+            'version': 1,
+            'disable_existing_loggers': True,
+            'handlers': {
+                'log_to_parent': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': q
+                }
+            },
+            'root': {'handlers': ['log_to_parent'], 'level': 'DEBUG'}
+        })
+        logging.getLogger().info(msg)
+
+    @skip_if_tsan_fork
+    @support.requires_subprocess()
     def test_multiprocessing_queues(self):
         # See gh-119819
 
