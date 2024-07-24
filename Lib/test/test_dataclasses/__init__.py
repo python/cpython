@@ -4126,11 +4126,14 @@ class TestMakeDataclass(unittest.TestCase):
         self.assertEqual(C.__annotations__, {'x': typing.Any})
         self.assertEqual(get_type_hints(C), {'x': typing.Any})
 
-    def test_no_types_no_typing_fallback(self):
+    def test_no_types_no_NameError_no_typing_fallback(self):
         with import_helper.isolated_modules():
             del sys.modules['typing']
             C = make_dataclass('Point', ['x'])
-            self.assertEqual(C.__annotations__, {'x': 'typing.Any'})
+            self.assertEqual(C.__annotations__,
+                             {'x': "__import__('typing').Any"})
+            from typing import Any  # since we hack our modules
+            self.assertEqual(get_type_hints(C), {'x': Any})
 
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)

@@ -1534,7 +1534,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             if typing:
                 tp = typing.Any
             else:
-                tp = 'typing.Any'
+                tp = "__import__('typing').Any"
         elif len(item) == 2:
             name, tp, = item
         elif len(item) == 3:
