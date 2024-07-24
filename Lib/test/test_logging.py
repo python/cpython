@@ -4002,9 +4002,13 @@ class ConfigDictTest(BaseTest):
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
-        for startmethod in ['fork', 'spawn', 'forkserver']:
-            with self.subTest(startmethod=startmethod):
-                ctx = multiprocessing.get_context(startmethod)
+        if support.MS_WINDOWS:
+            start_methods = ['spawn']
+        else:
+            start_methods = ['spawn', 'fork', 'forkserver']
+        for start_method in start_methods:
+            with self.subTest(start_method=start_method):
+                ctx = multiprocessing.get_context(start_method)
                 with ctx.Manager() as manager:
                     q = manager.Queue()
                     records = []
