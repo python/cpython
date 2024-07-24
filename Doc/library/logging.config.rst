@@ -755,7 +755,7 @@ If the ``queue`` key is present, the corresponding value can be one of the follo
 
 * An object implementing the :class:`queue.Queue` public API. For instance,
   this may be an actual instance of :class:`queue.Queue` or a subclass thereof,
-  or a proxy obtained by :meth:`multiprocessing.SyncManager.Queue`.
+  or a proxy obtained by :meth:`multiprocessing.managers.SyncManager.Queue`.
 
   This is of course only possible if you are constructing or modifying
   the configuration dictionary in code.
