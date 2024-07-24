@@ -15,8 +15,8 @@ Pending Removal in Python 3.15
 
 * :mod:`pathlib`:
   :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
-  removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
-  paths on Windows.
+  removal in Python 3.15. From Python 3.13 onwards, use ``os.path.isreserved``
+  to detect reserved paths on Windows.
 
 * :mod:`platform`:
   :func:`~platform.java_ver` is deprecated and will be removed in 3.15.
