@@ -249,6 +249,7 @@ static const char usage_envvars[] =
 "PYTHONMALLOC    : set the Python memory allocators and/or install debug hooks\n"
 "                  on Python memory allocators.  Use PYTHONMALLOC=debug to\n"
 "                  install debug hooks.\n"
+"PYTHONMALLOCSTATS: print memory allocator statistics\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "                  coercion behavior.  Use PYTHONCOERCECLOCALE=warn to request\n"
 "                  display of locale coercion and locale compatibility warnings\n"
@@ -260,6 +261,20 @@ static const char usage_envvars[] =
 "                  various kinds of output.  Setting it to 0 deactivates\n"
 "                  this behavior.\n"
 "PYTHON_HISTORY  : the location of a .python_history file.\n"
+"PYTHONASYNCIODEBUG: enable asyncio debug mode\n"
+#ifdef Py_TRACE_REFS
+"PYTHONDUMPREFS  : dump objects and reference counts still alive after shutdown\n"
+"PYTHONDUMPREFSFILE: dump objects and reference counts to the specified file\n"
+#endif
+#ifdef __APPLE__
+"PYTHONEXECUTABLE: set sys.argv[0] to this value (macOS only)\n"
+#endif
+#ifdef MS_WINDOWS
+"PYTHONLEGACYWINDOWSFSENCODING: use legacy \"mbcs\" encoding for file system\n"
+"PYTHONLEGACYWINDOWSSTDIO: use legacy Windows stdio\n"
+#endif
+"PYTHONUSERBASE  : defines the user base directory (site.USER_BASE)\n"
+"PYTHON_BASIC_REPL: use the traditional parser-based REPL\n"
 "\n"
 "These variables have equivalent command-line options (see --help for details):\n"
 "PYTHON_CPU_COUNT: override the return value of os.cpu_count() (-X cpu_count)\n"
@@ -281,6 +296,8 @@ static const char usage_envvars[] =
 "PYTHONNOUSERSITE: disable user site directory (-s)\n"
 "PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
 "PYTHONPERFSUPPORT: support the Linux \"perf\" profiler (-X perf)\n"
+"PYTHON_PERF_JIT_SUPPORT: enable Linux \"perf\" profiler support with JIT\n"
+"                  (-X perf_jit)\n"
 #ifdef Py_DEBUG
 "PYTHON_PRESITE: import this module before site (-X presite)\n"
 #endif

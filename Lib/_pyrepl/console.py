@@ -19,16 +19,21 @@
 
 from __future__ import annotations
 
-import sys
+import _colorize  # type: ignore[import-not-found]
 
 from abc import ABC, abstractmethod
+import ast
+import code
 from dataclasses import dataclass, field
+import os.path
+import sys
 
 
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import IO
+    from typing import Callable
 
 
 @dataclass
@@ -130,9 +135,67 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def wait(self) -> None:
-        """Wait for an event."""
+    def wait(self, timeout: float | None) -> bool:
+        """Wait for an event. The return value is True if an event is
+        available, False if the timeout has been reached. If timeout is
+        None, wait forever. The timeout is in milliseconds."""
+        ...
+
+    @property
+    def input_hook(self) -> Callable[[], int] | None:
+        """Returns the current input hook."""
         ...
 
     @abstractmethod
     def repaint(self) -> None: ...
+
+
+class InteractiveColoredConsole(code.InteractiveConsole):
+    def __init__(
+        self,
+        locals: dict[str, object] | None = None,
+        filename: str = "<console>",
+        *,
+        local_exit: bool = False,
+    ) -> None:
+        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
+        self.can_colorize = _colorize.can_colorize()
+
+    def showsyntaxerror(self, filename=None):
+        super().showsyntaxerror(colorize=self.can_colorize)
+
+    def showtraceback(self):
+        super().showtraceback(colorize=self.can_colorize)
+
+    def runsource(self, source, filename="<input>", symbol="single"):
+        try:
+            tree = ast.parse(source)
+        except (SyntaxError, OverflowError, ValueError):
+            self.showsyntaxerror(filename)
+            return False
+        if tree.body:
+            *_, last_stmt = tree.body
+        for stmt in tree.body:
+            wrapper = ast.Interactive if stmt is last_stmt else ast.Module
+            the_symbol = symbol if stmt is last_stmt else "exec"
+            item = wrapper([stmt])
+            try:
+                code = self.compile.compiler(item, filename, the_symbol, dont_inherit=True)
+            except SyntaxError as e:
+                if e.args[0] == "'await' outside function":
+                    python = os.path.basename(sys.executable)
+                    e.add_note(
+                        f"Try the asyncio REPL ({python} -m asyncio) to use"
+                        f" top-level 'await' and run background asyncio tasks."
+                    )
+                self.showsyntaxerror(filename)
+                return False
+            except (OverflowError, ValueError):
+                self.showsyntaxerror(filename)
+                return False
+
+            if code is None:
+                return True
+
+            self.runcode(code)
+        return False

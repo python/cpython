@@ -14,7 +14,7 @@ import weakref
 import atexit
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
-from subprocess import _args_from_interpreter_flags
+from subprocess import _args_from_interpreter_flags  # noqa: F401
 
 from . import process
 

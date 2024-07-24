@@ -790,6 +790,12 @@ PyEval_GetGlobals:PyObject*::0:
 
 PyEval_GetFrame:PyObject*::0:
 
+PyEval_GetFrameBuiltins:PyObject*::+1:
+
+PyEval_GetFrameLocals:PyObject*::+1:
+
+PyEval_GetFrameGlobals:PyObject*::+1:
+
 PyEval_GetFuncDesc:const char*:::
 PyEval_GetFuncDesc:PyObject*:func:0:
 
@@ -915,6 +921,32 @@ PyFloat_FromString:PyObject*:str:0:
 
 PyFloat_GetInfo:PyObject*::+1:
 PyFloat_GetInfo::void::
+
+PyFrame_GetBack:PyObject*::+1:
+PyFrame_GetBack:PyFrameObject*:frame:0:
+
+PyFrame_GetBuiltins:PyObject*::+1:
+PyFrame_GetBuiltins:PyFrameObject*:frame:0:
+
+PyFrame_GetCode:PyObject*::+1:
+PyFrame_GetCode:PyFrameObject*:frame:0:
+
+PyFrame_GetGenerator:PyObject*::+1:
+PyFrame_GetGenerator:PyFrameObject*:frame:0:
+
+PyFrame_GetGlobals:PyObject*::+1:
+PyFrame_GetGlobals:PyFrameObject*:frame:0:
+
+PyFrame_GetLocals:PyObject*::+1:
+PyFrame_GetLocals:PyFrameObject*:frame:0:
+
+PyFrame_GetVar:PyObject*::+1:
+PyFrame_GetVar:PyFrameObject*:frame:0:
+PyFrame_GetVar:PyObject*:name:0:
+
+PyFrame_GetVarString:PyObject*::+1:
+PyFrame_GetVarString:PyFrameObject*:frame:0:
+PyFrame_GetVarString:const char*:name::
 
 PyFrozenSet_Check:int:::
 PyFrozenSet_Check:PyObject*:p:0:
