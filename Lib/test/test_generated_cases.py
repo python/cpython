@@ -835,12 +835,12 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
-            _PyStackRef x;
-            _PyStackRef y;
-            _PyStackRef a;
-            _PyStackRef b;
-            _PyStackRef j;
-            _PyStackRef k;
+            PyObject *y;
+            PyObject *x;
+            PyObject *a;
+            PyObject *b;
+            PyObject *k;
+            PyObject *j;
             // FIRST
             y = stack_pointer[-1];
             x = stack_pointer[-2];
@@ -858,7 +858,6 @@ class TestGeneratedCases(unittest.TestCase):
                 if (cond) goto pop_2_error;
             }
             stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
         """
