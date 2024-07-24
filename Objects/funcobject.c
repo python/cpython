@@ -547,6 +547,7 @@ func_get_annotation_dict(PyFunctionObject *op)
                                      PyTuple_GET_ITEM(ann_tuple, i + 1));
 
             if (err < 0) {
+                Py_DECREF(ann_dict);
                 return NULL;
             }
         }
