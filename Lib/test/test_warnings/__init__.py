@@ -888,6 +888,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # warn_explicit() should neither raise a SystemError nor cause an
         # assertion failure, in case the return value of get_source() has a
         # bad splitlines() method.
+        get_source_called = []
         def get_module_globals(*, splitlines_ret_val):
             class BadSource(str):
                 def splitlines(self):
@@ -895,6 +896,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
 
             class BadLoader:
                 def get_source(self, fullname):
+                    get_source_called.append(splitlines_ret_val)
                     return BadSource('spam')
 
             loader = BadLoader()
@@ -908,12 +910,15 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         with original_warnings.catch_warnings(module=wmod):
             wmod.filterwarnings('default', category=UserWarning)
 
+            linecache.clearcache()
             with support.captured_stderr() as stderr:
                 wmod.warn_explicit(
                     'foo', UserWarning, 'bar', 1,
                     module_globals=get_module_globals(splitlines_ret_val=42))
             self.assertIn('UserWarning: foo', stderr.getvalue())
+            self.assertEqual(get_source_called, [42])
 
+            linecache.clearcache()
             with support.swap_attr(wmod, '_showwarnmsg', None):
                 del wmod._showwarnmsg
                 with support.captured_stderr() as stderr:
@@ -921,6 +926,8 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                         'eggs', UserWarning, 'bar', 1,
                         module_globals=get_module_globals(splitlines_ret_val=[42]))
                 self.assertIn('UserWarning: eggs', stderr.getvalue())
+            self.assertEqual(get_source_called, [42, [42]])
+            linecache.clearcache()
 
     @support.cpython_only
     def test_issue31411(self):
