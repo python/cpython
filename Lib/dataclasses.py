@@ -1530,7 +1530,11 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     for item in fields:
         if isinstance(item, str):
             name = item
-            tp = 'typing.Any'
+            typing = sys.modules.get('typing')
+            if typing:
+                tp = typing.Any
+            else:
+                tp = 'typing.Any'
         elif len(item) == 2:
             name, tp, = item
         elif len(item) == 3:

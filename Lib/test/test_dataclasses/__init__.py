@@ -13,6 +13,7 @@ import types
 import weakref
 import traceback
 import unittest
+import sys
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
@@ -23,6 +24,7 @@ import typing       # Needed for the string "typing.ClassVar[int]" to work as an
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 from test import support
+from test.support import import_helper
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
@@ -4108,16 +4110,27 @@ class TestMakeDataclass(unittest.TestCase):
         C = make_dataclass('Point', ['x', 'y', 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': 'typing.Any',
-                                             'z': 'typing.Any'})
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
+                                             'y': typing.Any,
+                                             'z': typing.Any})
 
         C = make_dataclass('Point', ['x', ('y', int), 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
                                              'y': int,
-                                             'z': 'typing.Any'})
+                                             'z': typing.Any})
+
+    def test_no_types_no_NameError(self):
+        C = make_dataclass('Point', ['x'])
+        self.assertEqual(C.__annotations__, {'x': typing.Any})
+        self.assertEqual(get_type_hints(C), {'x': typing.Any})
+
+    def test_no_types_no_typing_fallback(self):
+        with import_helper.isolated_modules():
+            del sys.modules['typing']
+            C = make_dataclass('Point', ['x'])
+            self.assertEqual(C.__annotations__, {'x': 'typing.Any'})
 
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)
