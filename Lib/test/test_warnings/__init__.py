@@ -654,7 +654,7 @@ class WarnTests(BaseTest):
             self.check_module_globals(module_globals)
             return
         with original_warnings.catch_warnings(module=self.module, record=True) as w:
-            self.module.filterwarnings('default')
+            self.module.filterwarnings('always')
             with self.assertRaisesRegex(errtype, re.escape(errmsg)):
                 self.module.warn_explicit(
                     'eggs', UserWarning, 'bar', 1,
@@ -666,7 +666,7 @@ class WarnTests(BaseTest):
             self.check_module_globals(module_globals)
             return
         with original_warnings.catch_warnings(module=self.module, record=True) as w:
-            self.module.filterwarnings('default')
+            self.module.filterwarnings('always')
             self.module.warn_explicit(
                 'eggs', UserWarning, 'bar', 1,
                 module_globals=module_globals)
