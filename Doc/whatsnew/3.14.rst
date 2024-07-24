@@ -141,6 +141,12 @@ pathlib
 
   (Contributed by Barney Gale in :gh:`73991`.)
 
+pickle
+------
+
+* Set the default protocol version on the :mod:`pickle` module to 5.
+  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
+
 pdb
 ---
 
@@ -162,12 +168,7 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
-pickle
-------
-
-* Set the default protocol version on the :mod:`pickle` module to 5.
-  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
-
+.. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
 =============
