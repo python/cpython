@@ -2110,9 +2110,17 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
             return 1;
         }
         Py_DECREF(w);
-        _PyErr_Format(tstate, PyExc_ValueError,
-                      "too many values to unpack (expected %d)",
-                      argcnt);
+        l = PySequence_List(it);
+        if (l == NULL) {
+            _PyErr_Format(tstate, PyExc_ValueError,
+                        "too many values to unpack (expected %d)",
+                        argcnt);
+        } else {
+            ll = PyList_GET_SIZE(l);
+            _PyErr_Format(tstate, PyExc_ValueError,
+                        "too many values to unpack (expected %d, got %zd)",
+                        argcnt, argcnt + 1 + ll);
+        }
         goto Error;
     }
 
