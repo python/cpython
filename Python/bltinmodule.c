@@ -2693,6 +2693,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     Py_DECREF(item);
                     continue;
                 }
+                else {
+                    return NULL;
+                }
             }
             result = PyFloat_FromDouble(cs_to_double(re_sum));
             if (result == NULL) {
@@ -2740,6 +2743,9 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     im_sum.hi += 0.0;
                     Py_DECREF(item);
                     continue;
+                }
+                else {
+                    return NULL;
                 }
             }
             if (PyFloat_Check(item)) {
