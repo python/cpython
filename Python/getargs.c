@@ -1934,7 +1934,8 @@ new_kwtuple(const char * const *keywords, int total, int pos)
             Py_DECREF(kwtuple);
             return NULL;
         }
-        PyUnicode_InternInPlace(&str);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternImmortal(interp, &str);
         PyTuple_SET_ITEM(kwtuple, i, str);
     }
     return kwtuple;
@@ -2069,7 +2070,8 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
     const char *format;
     const char *msg;
     PyObject *keyword;
-    int i, pos, len;
+    Py_ssize_t i;
+    int pos, len;
     Py_ssize_t nkwargs;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
@@ -2674,7 +2676,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 goto err;
             format++;
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
 
     case 's': /* string */
     case 'z': /* string or None */
