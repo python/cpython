@@ -1,2 +1,2 @@
-Improve the error message for unbalanced unpacking, always showing the
-actual length when possible.
+Improve the error message for unbalanced unpacking, showing the
+actual length whenever possible.
