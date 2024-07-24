@@ -4,7 +4,8 @@ from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support.classes import (ComplexSubclass, WithComplex,
-                                  WithFloat, WithIndex, WithInt)
+                                  WithFloat, WithIndex, WithInt,
+                                  OtherComplexSubclass)
 
 from random import random
 from math import isnan, copysign
@@ -516,13 +517,9 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, WithIndex(None), 1.5)
         self.assertRaises(TypeError, complex, 1.5, WithIndex(None))
 
-        class MyInt:
-            def __int__(self):
-                return 42
-
-        self.assertRaises(TypeError, complex, MyInt())
-        self.assertRaises(TypeError, complex, MyInt(), 1.5)
-        self.assertRaises(TypeError, complex, 1.5, MyInt())
+        self.assertRaises(TypeError, complex, WithInt(42))
+        self.assertRaises(TypeError, complex, WithInt(42), 1.5)
+        self.assertRaises(TypeError, complex, 1.5, WithInt(42))
 
         class complex0(complex):
             """Test usage of __complex__() when inheriting from 'complex'"""
@@ -657,10 +654,39 @@ class ComplexTest(unittest.TestCase):
             if not any(ch in lit for ch in 'xXoObB'):
                 self.assertRaises(ValueError, complex, lit)
 
+    def test_from_number(self, cls=complex):
+        def eq(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertIs(type(actual), cls)
+
+        eq(cls.from_number(3.14), 3.14+0j)
+        eq(cls.from_number(3.14j), 3.14j)
+        eq(cls.from_number(314), 314.0+0j)
+        eq(cls.from_number(OtherComplexSubclass(3.14, 2.72)), 3.14+2.72j)
+        eq(cls.from_number(WithComplex(3.14+2.72j)), 3.14+2.72j)
+        eq(cls.from_number(WithFloat(3.14)), 3.14+0j)
+        eq(cls.from_number(WithIndex(314)), 314.0+0j)
+
+        cNAN = complex(NAN, NAN)
+        x = cls.from_number(cNAN)
+        self.assertTrue(x != x)
+        self.assertIs(type(x), cls)
+        if cls is complex:
+            self.assertIs(cls.from_number(cNAN), cNAN)
+
+        self.assertRaises(TypeError, cls.from_number, '3.14')
+        self.assertRaises(TypeError, cls.from_number, b'3.14')
+        self.assertRaises(TypeError, cls.from_number, WithInt(314))
+        self.assertRaises(TypeError, cls.from_number, {})
+        self.assertRaises(TypeError, cls.from_number)
+
+    def test_from_number_subclass(self):
+        self.test_from_number(ComplexSubclass)
+
     def test_hash(self):
         for x in range(-30, 30):
             self.assertEqual(hash(x), hash(complex(x, 0)))
-            x /= 3.0    # now check against floating point
+            x /= 3.0    # now check against floating-point
             self.assertEqual(hash(x), hash(complex(x, 0.)))
 
         self.assertNotEqual(hash(2000005 - 1j), -1)

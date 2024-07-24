@@ -781,7 +781,32 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
 
-    def copy(self, target, follow_symlinks=True):
+    # Metadata keys supported by this path type.
+    _readable_metadata = _writable_metadata = frozenset()
+
+    def _read_metadata(self, keys=None, *, follow_symlinks=True):
+        """
+        Returns path metadata as a dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
+
+    def _write_metadata(self, metadata, *, follow_symlinks=True):
+        """
+        Sets path metadata from the given dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
+
+    def _copy_metadata(self, target, *, follow_symlinks=True):
+        """
+        Copies metadata (permissions, timestamps, etc) from this path to target.
+        """
+        # Metadata types supported by both source and target.
+        keys = self._readable_metadata & target._writable_metadata
+        if keys:
+            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
+            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
+
+    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
         """
         Copy the contents of this file to the given target. If this file is a
         symlink and follow_symlinks is false, a symlink will be created at the
@@ -793,6 +818,8 @@ class PathBase(PurePathBase):
             raise OSError(f"{self!r} and {target!r} are the same file")
         if not follow_symlinks and self.is_symlink():
             target.symlink_to(self.readlink())
+            if preserve_metadata:
+                self._copy_metadata(target, follow_symlinks=False)
             return
         with self.open('rb') as source_f:
             try:
@@ -805,8 +832,11 @@ class PathBase(PurePathBase):
                         f'Directory does not exist: {target}') from e
                 else:
                     raise
+        if preserve_metadata:
+            self._copy_metadata(target)
 
-    def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
+    def copytree(self, target, *, follow_symlinks=True,
+                 preserve_metadata=False, dirs_exist_ok=False,
                  ignore=None, on_error=None):
         """
         Recursively copy this directory tree to the given destination.
@@ -822,6 +852,8 @@ class PathBase(PurePathBase):
             try:
                 sources = source_dir.iterdir()
                 target_dir.mkdir(exist_ok=dirs_exist_ok)
+                if preserve_metadata:
+                    source_dir._copy_metadata(target_dir)
                 for source in sources:
                     if ignore and ignore(source):
                         continue
@@ -830,7 +862,8 @@ class PathBase(PurePathBase):
                             stack.append((source, target_dir.joinpath(source.name)))
                         else:
                             source.copy(target_dir.joinpath(source.name),
-                                        follow_symlinks=follow_symlinks)
+                                        follow_symlinks=follow_symlinks,
+                                        preserve_metadata=preserve_metadata)
                     except OSError as err:
                         on_error(err)
             except OSError as err:
@@ -885,6 +918,47 @@ class PathBase(PurePathBase):
         Remove this directory.  The directory must be empty.
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
+
+    def rmtree(self, ignore_errors=False, on_error=None):
+        """
+        Recursively delete this directory tree.
+
+        If *ignore_errors* is true, exceptions raised from scanning the tree
+        and removing files and directories are ignored. Otherwise, if
+        *on_error* is set, it will be called to handle the error. If neither
+        *ignore_errors* nor *on_error* are set, exceptions are propagated to
+        the caller.
+        """
+        if ignore_errors:
+            def on_error(err):
+                pass
+        elif on_error is None:
+            def on_error(err):
+                raise err
+        try:
+            if self.is_symlink():
+                raise OSError("Cannot call rmtree on a symbolic link")
+            elif self.is_junction():
+                raise OSError("Cannot call rmtree on a junction")
+            results = self.walk(
+                on_error=on_error,
+                top_down=False,  # Bottom-up so we rmdir() empty directories.
+                follow_symlinks=False)
+            for dirpath, dirnames, filenames in results:
+                for name in filenames:
+                    try:
+                        dirpath.joinpath(name).unlink()
+                    except OSError as err:
+                        on_error(err)
+                for name in dirnames:
+                    try:
+                        dirpath.joinpath(name).rmdir()
+                    except OSError as err:
+                        on_error(err)
+            self.rmdir()
+        except OSError as err:
+            err.filename = str(self)
+            on_error(err)
 
     def owner(self, *, follow_symlinks=True):
         """

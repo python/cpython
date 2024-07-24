@@ -29,6 +29,28 @@ test_dir = os.path.dirname(__file__) or os.curdir
 format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
 
 
+class MyIndex:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+class MyInt:
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+
+class FloatLike:
+    def __init__(self, value):
+        self.value = value
+
+    def __float__(self):
+        return self.value
+
+
 class GeneralFloatCases(unittest.TestCase):
 
     def test_float(self):
@@ -237,6 +259,37 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertIs(type(u), subclass_with_new)
         self.assertEqual(float(u), 2.5)
         self.assertEqual(u.newarg, 3)
+
+    def assertEqualAndType(self, actual, expected_value, expected_type):
+        self.assertEqual(actual, expected_value)
+        self.assertIs(type(actual), expected_type)
+
+    def test_from_number(self, cls=float):
+        def eq(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertIs(type(actual), cls)
+
+        eq(cls.from_number(3.14), 3.14)
+        eq(cls.from_number(314), 314.0)
+        eq(cls.from_number(OtherFloatSubclass(3.14)), 3.14)
+        eq(cls.from_number(FloatLike(3.14)), 3.14)
+        eq(cls.from_number(MyIndex(314)), 314.0)
+
+        x = cls.from_number(NAN)
+        self.assertTrue(x != x)
+        self.assertIs(type(x), cls)
+        if cls is float:
+            self.assertIs(cls.from_number(NAN), NAN)
+
+        self.assertRaises(TypeError, cls.from_number, '3.14')
+        self.assertRaises(TypeError, cls.from_number, b'3.14')
+        self.assertRaises(TypeError, cls.from_number, 3.14j)
+        self.assertRaises(TypeError, cls.from_number, MyInt(314))
+        self.assertRaises(TypeError, cls.from_number, {})
+        self.assertRaises(TypeError, cls.from_number)
+
+    def test_from_number_subclass(self):
+        self.test_from_number(FloatSubclass)
 
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
