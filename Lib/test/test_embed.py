@@ -417,29 +417,53 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
     def test_static_types_inherited_slots(self):
-        slots = []
-        script = ['import sys']
-        from test.test_types import iter_builtin_types, iter_own_slot_wrappers
+        script = textwrap.dedent("""
+            import json
+            import sys
+
+            results = {}
+            def add(cls, slot, own):
+                value = getattr(cls, slot)
+                try:
+                    subresults = results[cls.__name__]
+                except KeyError:
+                    subresults = results[cls.__name__] = {}
+                subresults[slot] = repr(value)
+
+            {body}
+
+            text = json.dumps(results)
+            print(text, file=sys.stderr)
+            """)
+        body = []
+        from test.test_types import iter_builtin_types, iter_slot_wrappers
         for cls in iter_builtin_types():
-            for slot in iter_own_slot_wrappers(cls):
-                slots.append((cls, slot))
-                attr = f'{cls.__name__}.{slot}'
-                script.append(f'print("{attr}:", {attr}, file=sys.stderr)')
-            script.append('')
-        script = os.linesep.join(script)
+            body.append('')
+            body.append(f'cls = {cls.__name__}')
+            for slot, own in iter_slot_wrappers(cls):
+                body.append(f'add(cls, {slot!r}, {own})')
+        body.pop(0)
+        script = script.replace('{body}', os.linesep.join(body))
 
         with contextlib.redirect_stderr(io.StringIO()) as stderr:
-            exec(script)
-        expected = stderr.getvalue().splitlines()
+            ns = {}
+            exec(script, ns, ns)
+        expected = json.loads(stderr.getvalue())
 
-        out, err = self.run_embedded_interpreter("test_repeated_init_exec", script)
+        out, err = self.run_embedded_interpreter(
+                "test_repeated_init_exec", script, script)
         results = err.split('--- Loop #')[1:]
         results = [res.rpartition(' ---\n')[-1] for res in results]
 
         self.maxDiff = None
-        for i, result in enumerate(results, start=1):
+        for i, text in enumerate(results, start=1):
+            failed = True
             with self.subTest(loop=i):
-                self.assertEqual(result.splitlines(), expected)
+                result = json.loads(text)
+                self.assertEqual(result, expected)
+                failed = False
+            if failed:
+                break
         self.assertEqual(out, '')
 
 
