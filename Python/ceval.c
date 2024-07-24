@@ -2168,7 +2168,8 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
             _PyErr_Format(tstate, PyExc_ValueError,
                           "too many values to unpack (expected %d)",
                           argcnt);
-        } else {
+        }
+        else {
             _PyErr_Format(tstate, PyExc_ValueError,
                           "too many values to unpack (expected %d, got %zd)",
                           argcnt, ll);
