@@ -1,2 +1,2 @@
-Handle embedded NUL bytes in paths passed to :mod:`linecache`.
+Handle :exc:`ValueError`s raised by :func:`os.stat` in :mod:`linecache`.
 Patch by Bénédikt Tran.
