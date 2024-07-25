@@ -595,12 +595,12 @@ class SocketPairTest(unittest.TestCase, ThreadableTest):
         self.cli = None
         self.serv = None
 
-    def call_socketpair(self):
+    def socketpair(self):
         # To be overridden by some child classes.
         return socket.socketpair()
 
     def setUp(self):
-        self.serv, self.cli = self.call_socketpair()
+        self.serv, self.cli = self.socketpair()
 
     def tearDown(self):
         if self.serv:
@@ -4907,17 +4907,30 @@ class PurePythonSocketPairTest(SocketPairTest):
         self.cli.send(MSG)
 
     def test_send(self):
-        self.serv.send(MSG)
-
-    def _test_send(self):
         msg = self.cli.recv(1024)
         self.assertEqual(msg, MSG)
 
-    def _test_injected_authentication_failure(self):
-        # No-op.  Exists for base class threading infrastructure to call.
-        # We could refactor this test into its own lesser class along with the
-        # setUp and tearDown code to construct an ideal; it is simpler to keep
-        # it here and live with extra overhead one this _one_ failure test.
+    def _test_send(self):
+        self.serv.send(MSG)
+
+    def test_ipv4(self):
+        cli, srv = socket.socketpair(socket.AF_INET)
+        cli.close()
+        srv.close()
+
+    def _test_ipv4(self):
+        pass
+
+    @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
+                     not hasattr(_socket, 'IPV6_V6ONLY'),
+                     "IPV6_V6ONLY option not supported")
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
+    def test_ipv6(self):
+        cli, srv = socket.socketpair(socket.AF_INET6)
+        cli.close()
+        srv.close()
+
+    def _test_ipv6(self):
         pass
 
     def test_injected_authentication_failure(self):
@@ -4950,7 +4963,15 @@ class PurePythonSocketPairTest(SocketPairTest):
                 inject_sock.close()
             if sock1:  # This cleanup isn't needed on a successful test.
                 sock1.close()
+            if sock2:
                 sock2.close()
+
+    def _test_injected_authentication_failure(self):
+        # No-op.  Exists for base class threading infrastructure to call.
+        # We could refactor this test into its own lesser class along with the
+        # setUp and tearDown code to construct an ideal; it is simpler to keep
+        # it here and live with extra overhead one this _one_ failure test.
+        pass
 
 
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
