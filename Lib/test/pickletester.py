@@ -2802,6 +2802,18 @@ class AbstractPickleTests:
                 self.assertIs(unpickled, Recursive)
         del Recursive.mod # break reference loop
 
+    def test_recursive_nested_names2(self):
+        global Recursive
+        class Recursive:
+            pass
+        Recursive.ref = Recursive
+        Recursive.__qualname__ = 'Recursive.ref'
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(Recursive, proto))
+                self.assertIs(unpickled, Recursive)
+        del Recursive.ref # break reference loop
+
     def test_py_methods(self):
         global PyMethodsTest
         class PyMethodsTest:
