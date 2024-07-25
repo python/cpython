@@ -294,12 +294,6 @@ class Stack:
 
     def peek_offset(self) -> str:
         return self.top_offset.to_c()
-        peek = self.base_offset.copy()
-        for var in self.variables:
-            if not var.item.peek:
-                break
-            peek.push(var.item)
-        return peek.to_c()
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
