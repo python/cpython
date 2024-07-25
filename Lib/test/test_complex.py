@@ -551,6 +551,9 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, MyInt())
         self.assertRaises(TypeError, complex, MyInt(), 1.5)
         self.assertRaises(TypeError, complex, 1.5, MyInt())
+        self.assertRaises(TypeError, complex, object())
+        with self.assertRaises(TypeError):
+            complex(real=object())
 
         class complex0(complex):
             """Test usage of __complex__() when inheriting from 'complex'"""
