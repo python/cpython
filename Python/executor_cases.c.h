@@ -324,7 +324,7 @@
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
-            assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(value)));
+            assert(PyStackRef_BoolCheck(value));
             res = PyStackRef_Is(value, PyStackRef_False)
             ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-1] = res;
@@ -346,7 +346,7 @@
         case _TO_BOOL_BOOL: {
             _PyStackRef value;
             value = stack_pointer[-1];
-            if (!PyBool_Check(PyStackRef_AsPyObjectBorrow(value))) {
+            if (!PyStackRef_BoolCheck(value)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -3344,7 +3344,7 @@
             else {
                 Py_DECREF(tb);
             }
-            assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
+            assert(PyStackRef_LongCheck(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
@@ -3368,7 +3368,7 @@
             else {
                 prev_exc = PyStackRef_None;
             }
-            assert(PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(new_exc)));
+            assert(PyStackRef_ExceptionInstanceCheck(new_exc));
             exc_info->exc_value = PyStackRef_AsPyObjectNew(new_exc);
             stack_pointer[-1] = prev_exc;
             stack_pointer[0] = new_exc;
@@ -3614,7 +3614,7 @@
             assert(Py_TYPE(callable_o) == &PyMethod_Type);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
             method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
-            assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
+            assert(PyStackRef_FunctionCheck(method));
             PyStackRef_CLOSE(callable);
             stack_pointer[-2 - oparg] = method;
             stack_pointer[-1 - oparg] = self;
