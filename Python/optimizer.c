@@ -578,7 +578,7 @@ translate_bytecode_to_trace(
         uint32_t oparg = instr->op.arg;
 
         if (!progress_needed && instr == initial_instr) {
-            // We have looped round to the start
+            // We have looped around to the start:
             RESERVE(1);
             ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
             goto done;
@@ -618,11 +618,13 @@ translate_bytecode_to_trace(
         }
 
         if (OPCODE_HAS_EXIT(opcode)) {
-            // Make space for exit code
+            // Make space for side exit and final _EXIT_TRACE:
+            RESERVE_RAW(2, "_EXIT_TRACE");
             max_length--;
         }
         if (OPCODE_HAS_ERROR(opcode)) {
-            // Make space for error code
+            // Make space for error stub and final _EXIT_TRACE:
+            RESERVE_RAW(2, "_ERROR_POP_N");
             max_length--;
         }
         switch (opcode) {
@@ -669,6 +671,7 @@ translate_bytecode_to_trace(
 
             case JUMP_BACKWARD:
                 ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
+                _Py_FALLTHROUGH;
             case JUMP_BACKWARD_NO_INTERRUPT:
             {
                 instr += 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] - (int)oparg;
