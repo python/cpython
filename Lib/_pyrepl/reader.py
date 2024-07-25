@@ -130,7 +130,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\M-7", "digit-arg"),
         (r"\M-8", "digit-arg"),
         (r"\M-9", "digit-arg"),
-        # (r'\M-\n', 'insert-nl'),
+        (r"\M-\n", "accept"),
         ("\\\\", "self-insert"),
         (r"\x1b[200~", "enable_bracketed_paste"),
         (r"\x1b[201~", "disable_bracketed_paste"),

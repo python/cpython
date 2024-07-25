@@ -980,8 +980,6 @@ IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
-APP_STORE_COMPLIANCE_PATCH_FLAGS
-APP_STORE_COMPLIANCE_PATCH_TARGET
 APP_STORE_COMPLIANCE_PATCH
 INSTALLTARGETS
 FRAMEWORKINSTALLAPPSPREFIX
@@ -1096,6 +1094,8 @@ enable_optimizations
 with_lto
 enable_bolt
 with_strict_overflow
+enable_safety
+enable_slower_safety
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1828,6 +1828,10 @@ Optional Features:
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
+  --disable-safety        disable usage of the security compiler options with
+                          no performance overhead
+  --enable-slower-safety  enable usage of the security compiler options with
+                          performance overhead
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
                           see Doc/library/sqlite3.rst (default is no)
@@ -4108,7 +4112,7 @@ printf "%s\n" "\"$MACHDEP\"" >&6; }
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -4450,8 +4454,6 @@ then :
         Darwin|iOS)
           # iOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
           ;;
         *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
       esac
@@ -4460,8 +4462,6 @@ printf "%s\n" "applying default app store compliance patch" >&6; }
       ;;
     *)
       APP_STORE_COMPLIANCE_PATCH="${withval}"
-      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-      APP_STORE_COMPLIANCE_PATCH_FLAGS=
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying custom app store compliance patch" >&5
 printf "%s\n" "applying custom app store compliance patch" >&6; }
       ;;
@@ -4473,32 +4473,18 @@ else $as_nop
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
 printf "%s\n" "applying default app store compliance patch" >&6; }
         ;;
-      Darwin)
-        # Always *check* the compliance patch on macOS
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: checking (not applying) default app store compliance patch" >&5
-printf "%s\n" "checking (not applying) default app store compliance patch" >&6; }
-        ;;
       *)
-        # No app compliance patching on any other platform
+        # No default app compliance patching on any other platform
         APP_STORE_COMPLIANCE_PATCH=
-        APP_STORE_COMPLIANCE_PATCH_TARGET=
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not patching for app store compliance" >&5
 printf "%s\n" "not patching for app store compliance" >&6; }
         ;;
     esac
 
 fi
-
-
 
 
 
@@ -4523,8 +4509,12 @@ if test "$cross_compiling" = yes; then
 		_host_device=${_host_device:=os}
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking iOS deployment target" >&5
+printf %s "checking iOS deployment target... " >&6; }
 		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
-		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=12.0}
+		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $IPHONEOS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 
 		case "$host_cpu" in
 			aarch64)
@@ -9682,7 +9672,28 @@ fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-safety" >&5
+printf %s "checking for --disable-safety... " >&6; }
+# Check whether --enable-safety was given.
+if test ${enable_safety+y}
+then :
+  enableval=$enable_safety; if test "x$enable_safety" = xyes
+then :
+  disable_safety=no
+else $as_nop
+  disable_saftey=yes
+fi
+else $as_nop
+  disable_saftey=no
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_safety" >&5
+printf "%s\n" "$disable_safety" >&6; }
+
+if test "$disable_safety" = "no"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
 then :
@@ -9721,7 +9732,7 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
 then :
@@ -9760,6 +9771,61 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
 fi
 
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-slower-safety" >&5
+printf %s "checking for --enable-slower-safety... " >&6; }
+# Check whether --enable-slower-safety was given.
+if test ${enable_slower_safety+y}
+then :
+  enableval=$enable_slower_safety;
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_slower_safety" >&5
+printf "%s\n" "$enable_slower_safety" >&6; }
+
+if test "$enable_slower_safety" = "yes"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -D_FORTIFY_SOURCE=3" >&5
+printf %s "checking whether C compiler accepts -D_FORTIFY_SOURCE=3... " >&6; }
+if test ${ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -D_FORTIFY_SOURCE=3"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" >&6; }
+if test "x$ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" = xyes
+then :
+  BASECFLAGS="$BASECFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&5
+printf "%s\n" "$as_me: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&2;}
+fi
+
+fi
 
 case $GCC in
 yes)

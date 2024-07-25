@@ -49,6 +49,9 @@ class StackOffset:
     def empty() -> "StackOffset":
         return StackOffset([], [])
 
+    def copy(self) -> "StackOffset":
+        return StackOffset(self.popped[:], self.pushed[:])
+
     def pop(self, item: StackItem) -> None:
         self.popped.append(var_size(item))
 
@@ -114,7 +117,7 @@ class StackOffset:
         self.pushed = []
 
 
-class SizeMismatch(Exception):
+class StackError(Exception):
     pass
 
 
@@ -122,39 +125,38 @@ class Stack:
     def __init__(self) -> None:
         self.top_offset = StackOffset.empty()
         self.base_offset = StackOffset.empty()
-        self.peek_offset = StackOffset.empty()
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
     def pop(self, var: StackItem, extract_bits: bool = False) -> str:
         self.top_offset.pop(var)
-        if not var.peek:
-            self.peek_offset.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
             popped = self.variables.pop()
             if popped.size != var.size:
-                raise SizeMismatch(
+                raise StackError(
                     f"Size mismatch when popping '{popped.name}' from stack to assign to {var.name}. "
                     f"Expected {var.size} got {popped.size}"
                 )
-            if popped.name == var.name:
+            if var.name in UNUSED:
+                if popped.name not in UNUSED and popped.name in self.defined:
+                    raise StackError(f"Value is declared unused, but is already cached by prior operation")
                 return ""
-            elif popped.name in UNUSED:
+            if popped.name in UNUSED or popped.name not in self.defined:
                 self.defined.add(var.name)
                 return (
                     f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
                 )
-            elif var.name in UNUSED:
-                return ""
             else:
                 self.defined.add(var.name)
-                return f"{var.name} = {popped.name};\n"
+                if popped.name == var.name:
+                    return ""
+                else:
+                    return f"{var.name} = {popped.name};\n"
         self.base_offset.pop(var)
-        if var.name in UNUSED:
+        if var.name in UNUSED or not var.used:
             return ""
-        else:
-            self.defined.add(var.name)
+        self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
         bits = ".bits" if cast and not extract_bits else ""
         assign = (
@@ -178,6 +180,8 @@ class Stack:
             return f"{var.name} = &stack_pointer[{c_offset}];\n"
         else:
             self.top_offset.push(var)
+            if var.used:
+                self.defined.add(var.name)
             return ""
 
     def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
@@ -206,8 +210,15 @@ class Stack:
         self.variables = []
         self.base_offset.clear()
         self.top_offset.clear()
-        self.peek_offset.clear()
         out.start_line()
+
+    def peek_offset(self) -> str:
+        peek = self.base_offset.copy()
+        for var in self.variables:
+            if not var.peek:
+                break
+            peek.push(var)
+        return peek.to_c()
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
