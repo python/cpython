@@ -210,7 +210,8 @@
                 _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
                 if (PyStackRef_IsNull(*target_local)) goto pop_2_error;
                 #if TIER_ONE
-                // The STORE_FAST is already done.
+                // The STORE_FAST is already done. This is done here in tier one,
+                // and during trace projection in tier two:
                 assert(next_instr->op.code == STORE_FAST);
                 SKIP_OVER(1);
                 #endif

@@ -873,9 +873,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         }
 
                         if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
+                            assert(i + 1 == nuops);
                             _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                             assert(next_instr->op.code == STORE_FAST);
                             operand = next_instr->op.arg;
+                            // Skip the STORE_FAST:
+                            instr++;
                         }
 
                         // All other instructions
@@ -894,10 +897,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
 
-        if (opcode == BINARY_OP_INPLACE_ADD_UNICODE) {
-            assert(instr->op.code == STORE_FAST);
-            instr++;
-        }
         if (opcode == CALL_LIST_APPEND) {
             assert(instr->op.code == POP_TOP);
             instr++;
