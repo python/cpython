@@ -406,7 +406,7 @@ class TestSnippets(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
-    
+
     def test_compare_modes(self):
         for mode, sources in (
             ("exec", exec_tests),

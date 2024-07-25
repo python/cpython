@@ -2974,5 +2974,3 @@ class ASTMainTests(unittest.TestCase):
         self.assertEqual(expected.splitlines(),
                          res.out.decode("utf8").splitlines())
         self.assertEqual(res.rc, 0)
-
-
