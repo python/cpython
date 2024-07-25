@@ -179,6 +179,7 @@ fnmatchmodule_exec(PyObject *module)
     INTERN_STRING(st, setops_repl_str, "\\\\\\1");
     return 0;
 }
+
 #undef INTERN_STRING
 #undef IMPORT_MODULE
 

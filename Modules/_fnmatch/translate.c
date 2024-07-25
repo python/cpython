@@ -477,7 +477,7 @@ translate_expression(fnmatchmodule_state *state,
     PyObject *chunks = split_expression(state, pattern, start, stop,
                                         pattern_str_find_meth);
     if (chunks == NULL) {
-        goto abort;
+        return NULL;
     }
     // remove empty ranges
     if (simplify_expression(chunks) < 0) {
@@ -491,7 +491,7 @@ translate_expression(fnmatchmodule_state *state,
     Py_DECREF(chunks);
     return res;
 abort:
-    Py_XDECREF(chunks);
+    Py_DECREF(chunks);
     return NULL;
 }
 
@@ -570,7 +570,7 @@ process_wildcards(PyObject *pattern, PyObject *indices)
     // exactly n + 6(m-1) + 1 + 7 = n + 6m + 2 characters, where the "+1"
     // is due to the fact that writing ".*" instead of "*" only increases
     // the total length of the pattern by 1 (and not by 2).
-    const Py_ssize_t reslen = m == 0 ? n + 7 : n + 6 * m + 2;
+    const Py_ssize_t reslen = m == 0 ? (n + 7) : (n + 6 * m + 2);
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(reslen);
     if (writer == NULL) {
         return NULL;

@@ -12,19 +12,20 @@
 // since they directly delegate to the _PyUnicodeWriter_Write* underlying
 // function. In particular, the caller is responsible for type safety.
 
-/* Write a character CHAR. */
+/* Cast WRITER and call _PyUnicodeWriter_WriteChar(). */
 #define _WRITE_CHAR(WRITER, CHAR) \
     _PyUnicodeWriter_WriteChar((_PyUnicodeWriter *)(WRITER), (CHAR))
 
-/* Write an ASCII string STRING of given length LENGTH. */
+/* Cast WRITER and call _PyUnicodeWriter_WriteASCIIString(). */
 #define _WRITE_ASCII(WRITER, STRING, LENGTH)                        \
     _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)(WRITER), \
                                       (STRING), (LENGTH))
-/* Write the string STRING. */
+
+/* Cast WRITER and call _PyUnicodeWriter_WriteStr(). */
 #define _WRITE_STRING(WRITER, STRING) \
     _PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)(WRITER), (STRING))
 
-/* Write the substring STRING[START:STOP]. */
+/* Cast WRITER and call _PyUnicodeWriter_WriteSubstring(). */
 #define _WRITE_BLOCK(WRITER, STRING, START, STOP)                   \
     _PyUnicodeWriter_WriteSubstring((_PyUnicodeWriter *)(WRITER),   \
                                     (STRING), (START), (STOP))
@@ -59,7 +60,7 @@
     } while (0)
 
 /*
- * Write the substring STRING[START:STOP] if START < STOP,
+ * Write the substring STRING[START:STOP] (no-op if the substring is empty)
  * or execute the ON_ERROR statements if it fails.
  */
 #define WRITE_BLOCK_OR(WRITER, STRING, START, STOP, ON_ERROR)           \
