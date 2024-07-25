@@ -1,1 +1,1 @@
-Export private :c:func:`_PyBytes_Join` again.
+Export private :c:func:`!_PyBytes_Join` again.
