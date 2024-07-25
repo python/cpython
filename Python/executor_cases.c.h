@@ -2031,40 +2031,6 @@
             break;
         }
 
-        case _BUILD_CONST_KEY_MAP: {
-            _PyStackRef keys;
-            _PyStackRef *values;
-            _PyStackRef map;
-            oparg = CURRENT_OPARG();
-            keys = stack_pointer[-1];
-            values = &stack_pointer[-1 - oparg];
-            PyObject *keys_o = PyStackRef_AsPyObjectBorrow(keys);
-            assert(PyTuple_CheckExact(keys_o));
-            assert(PyTuple_GET_SIZE(keys_o) == (Py_ssize_t)oparg);
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                for (int _i = oparg; --_i >= 0;) {
-                    PyStackRef_CLOSE(values[_i]);
-                }
-                PyStackRef_CLOSE(keys);
-                if (true) JUMP_TO_ERROR();
-            }
-            PyObject *map_o = _PyDict_FromItems(
-                &PyTuple_GET_ITEM(keys_o, 0), 1,
-                values_o, 1, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
-            for (int _i = oparg; --_i >= 0;) {
-                PyStackRef_CLOSE(values[_i]);
-            }
-            PyStackRef_CLOSE(keys);
-            if (map_o == NULL) JUMP_TO_ERROR();
-            map = PyStackRef_FromPyObjectSteal(map_o);
-            stack_pointer[-1 - oparg] = map;
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _DICT_UPDATE: {
             _PyStackRef update;
             _PyStackRef dict;
@@ -4989,6 +4955,10 @@
                        _PyOpcode_OpName[target->op.code]);
             }
             #endif
+            if (exit->executor && !exit->executor->vm_data.valid) {
+                exit->temperature = initial_temperature_backoff_counter();
+                Py_CLEAR(exit->executor);
+            }
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
@@ -5159,10 +5129,7 @@
             #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
-            if (!((_PyExecutorObject *)executor)->vm_data.valid) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(((_PyExecutorObject *)executor)->vm_data.valid);
             break;
         }
 

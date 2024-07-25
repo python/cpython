@@ -1881,25 +1881,6 @@ dummy_func(
             }
         }
 
-        inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
-            PyObject *keys_o = PyStackRef_AsPyObjectBorrow(keys);
-
-            assert(PyTuple_CheckExact(keys_o));
-            assert(PyTuple_GET_SIZE(keys_o) == (Py_ssize_t)oparg);
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            PyObject *map_o = _PyDict_FromItems(
-                    &PyTuple_GET_ITEM(keys_o, 0), 1,
-                    values_o, 1, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
-            DECREF_INPUTS();
-            ERROR_IF(map_o == NULL, error);
-            map = PyStackRef_FromPyObjectSteal(map_o);
-        }
-
         inst(DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1])) {
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
@@ -4623,6 +4604,10 @@ dummy_func(
                     _PyOpcode_OpName[target->op.code]);
             }
         #endif
+            if (exit->executor && !exit->executor->vm_data.valid) {
+                exit->temperature = initial_temperature_backoff_counter();
+                Py_CLEAR(exit->executor);
+            }
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
@@ -4742,7 +4727,7 @@ dummy_func(
 #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
 #endif
-            DEOPT_IF(!((_PyExecutorObject *)executor)->vm_data.valid);
+            assert(((_PyExecutorObject *)executor)->vm_data.valid);
         }
 
         tier2 op(_FATAL_ERROR, (--)) {

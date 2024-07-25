@@ -943,15 +943,6 @@
             break;
         }
 
-        case _BUILD_CONST_KEY_MAP: {
-            _Py_UopsSymbol *map;
-            map = sym_new_not_null(ctx);
-            stack_pointer[-1 - oparg] = map;
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _DICT_UPDATE: {
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
