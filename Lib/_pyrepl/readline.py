@@ -423,7 +423,7 @@ class _ReadlineWrapper:
         history = self.get_reader().history
 
         with open(os.path.expanduser(filename), 'rb') as f:
-            lines = [line.decode('utf-8', errors='replace') for line in f.read().split(b'\n')]
+            lines = [line.decode('utf-8', errors='replace') for line in f.read().splitlines()]
             buffer = []
             for line in lines:
                 # Ignore readline history file header
