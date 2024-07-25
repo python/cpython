@@ -45,10 +45,12 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    By default, :mod:`shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
    for serializing and deserializing. This can be changed by supplying
    *serializer* and *deserializer*, respectively. The *serializer* argument
-   should be a function that takes an object and returns its representation
-   as a :term:`bytes-like object`; *deserializer* should be a function that
-   takes :class:`bytes` and returns the corresponding object.
-   If one of these is given, the other must be given as well.
+   should be a function that takes an object and the *protocol* argument passed
+   to the open function and returns its representation as a
+   :term:`bytes-like object`; *protocol* argument that may be ignored by the
+   function. *deserializer* should be a function that takes :class:`bytes` and
+   returns the corresponding object. If one of these is given, the other must
+   be given as well. Otherwise :mod:`shelve` will raise a :exc:`ShelveError`.
 
    .. versionchanged:: 3.10
       :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
