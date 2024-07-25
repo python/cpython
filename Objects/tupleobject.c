@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_freelist.h"      // _Py_FREELIST_PUSH(), _Py_FREELIST_POP()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
@@ -17,7 +18,6 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 #include "clinic/tupleobject.c.h"
 
 
-static inline PyTupleObject * maybe_freelist_pop(Py_ssize_t);
 static inline int maybe_freelist_push(PyTupleObject *);
 
 
@@ -38,22 +38,20 @@ tuple_alloc(Py_ssize_t size)
         PyErr_BadInternalCall();
         return NULL;
     }
-#ifdef Py_DEBUG
     assert(size != 0);    // The empty tuple is statically allocated.
-#endif
-
-    PyTupleObject *op = maybe_freelist_pop(size);
-    if (op == NULL) {
-        /* Check for overflow */
-        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                    sizeof(PyObject *))) / sizeof(PyObject *)) {
-            return (PyTupleObject *)PyErr_NoMemory();
+    Py_ssize_t index = size - 1;
+    if (index < PyTuple_MAXSAVESIZE) {
+        PyTupleObject *op = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
+        if (op != NULL) {
+            return op;
         }
-        op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
-        if (op == NULL)
-            return NULL;
     }
-    return op;
+    /* Check for overflow */
+    if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *)) {
+        return (PyTupleObject *)PyErr_NoMemory();
+    }
+    return PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
 }
 
 // The empty tuple singleton is not tracked by the GC.
@@ -982,16 +980,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     return 0;
 }
 
-
-static void maybe_freelist_clear(struct _Py_object_freelists *, int);
-
-
-void
-_PyTuple_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-    maybe_freelist_clear(freelists, is_finalization);
-}
-
 /*********************** Tuple Iterator **************************/
 
 
@@ -1141,84 +1129,17 @@ tuple_iter(PyObject *seq)
  * freelists *
  *************/
 
-#define TUPLE_FREELIST (freelists->tuples)
-#define FREELIST_FINALIZED (TUPLE_FREELIST.numfree[0] < 0)
-
-static inline PyTupleObject *
-maybe_freelist_pop(Py_ssize_t size)
-{
-#ifdef WITH_FREELISTS
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    if (size == 0) {
-        return NULL;
-    }
-    assert(size > 0);
-    if (size <= PyTuple_MAXSAVESIZE) {
-        Py_ssize_t index = size - 1;
-        PyTupleObject *op = TUPLE_FREELIST.items[index];
-        if (op != NULL) {
-            /* op is the head of a linked list, with the first item
-               pointing to the next node.  Here we pop off the old head. */
-            TUPLE_FREELIST.items[index] = (PyTupleObject *) op->ob_item[0];
-            TUPLE_FREELIST.numfree[index]--;
-            /* Inlined _PyObject_InitVar() without _PyType_HasFeature() test */
-#ifdef Py_TRACE_REFS
-            /* maybe_freelist_push() ensures these were already set. */
-            // XXX Can we drop these?  See commit 68055ce6fe01 (GvR, Dec 1998).
-            Py_SET_SIZE(op, size);
-            Py_SET_TYPE(op, &PyTuple_Type);
-#endif
-            _Py_NewReference((PyObject *)op);
-            /* END inlined _PyObject_InitVar() */
-            OBJECT_STAT_INC(from_freelist);
-            return op;
-        }
-    }
-#endif
-    return NULL;
-}
-
 static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
-#ifdef WITH_FREELISTS
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    if (Py_SIZE(op) == 0) {
+    if (!Py_IS_TYPE(op, &PyTuple_Type)) {
         return 0;
     }
     Py_ssize_t index = Py_SIZE(op) - 1;
-    if (index < PyTuple_NFREELISTS
-        && TUPLE_FREELIST.numfree[index] < PyTuple_MAXFREELIST
-        && TUPLE_FREELIST.numfree[index] >= 0
-        && Py_IS_TYPE(op, &PyTuple_Type))
-    {
-        /* op is the head of a linked list, with the first item
-           pointing to the next node.  Here we set op as the new head. */
-        op->ob_item[0] = (PyObject *) TUPLE_FREELIST.items[index];
-        TUPLE_FREELIST.items[index] = op;
-        TUPLE_FREELIST.numfree[index]++;
-        OBJECT_STAT_INC(to_freelist);
-        return 1;
+    if (index < PyTuple_MAXSAVESIZE) {
+        return _Py_FREELIST_PUSH(tuples[index], op, Py_tuple_MAXFREELIST);
     }
-#endif
     return 0;
-}
-
-static void
-maybe_freelist_clear(struct _Py_object_freelists *freelists, int fini)
-{
-#ifdef WITH_FREELISTS
-    for (Py_ssize_t i = 0; i < PyTuple_NFREELISTS; i++) {
-        PyTupleObject *p = TUPLE_FREELIST.items[i];
-        TUPLE_FREELIST.items[i] = NULL;
-        TUPLE_FREELIST.numfree[i] = fini ? -1 : 0;
-        while (p) {
-            PyTupleObject *q = p;
-            p = (PyTupleObject *)(p->ob_item[0]);
-            PyObject_GC_Del(q);
-        }
-    }
-#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -1226,17 +1147,13 @@ void
 _PyTuple_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    for (int i = 0; i < PyTuple_NFREELISTS; i++) {
+    for (int i = 0; i < PyTuple_MAXSAVESIZE; i++) {
         int len = i + 1;
         char buf[128];
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
-        _PyDebugAllocatorStats(out, buf, TUPLE_FREELIST.numfree[i],
+        _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
                                _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 #endif
 }
-
-#undef STATE
-#undef FREELIST_FINALIZED
