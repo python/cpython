@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
       os:
-        description: OS to run the job in
+        description: OS to run the job
         required: true
         type: string
 
