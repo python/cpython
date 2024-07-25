@@ -3725,6 +3725,12 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
                 goto error;
         }
         else {
+            /* Generate a normal global opcode if we are using a pickle
+               protocol < 4, or if the object is not registered in the
+               extension registry.
+
+               Objects with multi-part __qualname__ are represented as
+               getattr(getattr(..., attrname1), attrname2). */
             const char mark_op = MARK;
             const char tupletwo_op = (self->proto < 2) ? TUPLE : TUPLE2;
             const char reduce_op = REDUCE;
@@ -3740,9 +3746,6 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
                 }
             }
 
-            /* Generate a normal global opcode if we are using a pickle
-               protocol < 4, or if the object is not registered in the
-               extension registry. */
             PyObject *encoded;
             PyObject *(*unicode_encoder)(PyObject *);
 
