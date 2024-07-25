@@ -31,7 +31,6 @@ def extract_warnings_from_compiler_output(compiler_output: str) -> list[dict]:
 
     return compiler_warnings
 
-# Create a function that returns a dictionary where the key is the file and the data is the warnings in that file
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
     Returns a dictionary where the key is the file and the data is the warnings in that file
