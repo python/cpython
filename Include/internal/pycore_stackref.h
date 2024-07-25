@@ -241,12 +241,6 @@ _PyObjectStack_FromStackRefStack(PyObject **dst, const _PyStackRef *src, size_t 
 // StackRef type checks
 
 static inline bool
-PyStackRef_CheckTupleExact(_PyStackRef stackref)
-{
-    return PyStackRef_TYPE(stackref) == &PyTuple_Type;
-}
-
-static inline bool
 PyStackRef_GenCheck(_PyStackRef stackref)
 {
     return PyGen_Check(PyStackRef_AsPyObjectBorrow(stackref));
