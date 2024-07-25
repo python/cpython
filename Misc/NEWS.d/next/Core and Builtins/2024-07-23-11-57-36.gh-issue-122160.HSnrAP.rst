@@ -1,0 +1,1 @@
+Remove the ``BUILD_CONST_KEY_MAP`` opcode. Use :opcode:`BUILD_MAP` instead.

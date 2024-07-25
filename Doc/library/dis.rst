@@ -1109,15 +1109,6 @@ iterations of the loop.
       empty dictionary pre-sized to hold *count* items.
 
 
-.. opcode:: BUILD_CONST_KEY_MAP (count)
-
-   The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
-   top element on the stack which contains a tuple of keys, then starting from
-   ``STACK[-2]``, pops *count* values to form values in the built dictionary.
-
-   .. versionadded:: 3.6
-
-
 .. opcode:: BUILD_STRING (count)
 
    Concatenates *count* strings from the stack and pushes the resulting string

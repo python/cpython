@@ -129,7 +129,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BUILD_SET] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_MAP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SETUP_ANNOTATIONS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_BUILD_CONST_KEY_MAP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DICT_UPDATE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DICT_MERGE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAP_ADD] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -289,7 +288,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_SUBSCR_LIST_INT] = "_BINARY_SUBSCR_LIST_INT",
     [_BINARY_SUBSCR_STR_INT] = "_BINARY_SUBSCR_STR_INT",
     [_BINARY_SUBSCR_TUPLE_INT] = "_BINARY_SUBSCR_TUPLE_INT",
-    [_BUILD_CONST_KEY_MAP] = "_BUILD_CONST_KEY_MAP",
     [_BUILD_LIST] = "_BUILD_LIST",
     [_BUILD_MAP] = "_BUILD_MAP",
     [_BUILD_SET] = "_BUILD_SET",
@@ -746,8 +744,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return oparg*2;
         case _SETUP_ANNOTATIONS:
             return 0;
-        case _BUILD_CONST_KEY_MAP:
-            return 1 + oparg;
         case _DICT_UPDATE:
             return 2 + (oparg - 1);
         case _DICT_MERGE:

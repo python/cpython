@@ -1759,42 +1759,24 @@ compiler_kwonlydefaults(struct compiler *c, location loc,
        */
     int i;
     PyObject *keys = NULL;
-
+    int default_count = 0;
     for (i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
+            default_count++;
             PyObject *mangled = compiler_maybe_mangle(c, arg->arg);
             if (!mangled) {
                 goto error;
             }
-            if (keys == NULL) {
-                keys = PyList_New(1);
-                if (keys == NULL) {
-                    Py_DECREF(mangled);
-                    return ERROR;
-                }
-                PyList_SET_ITEM(keys, 0, mangled);
-            }
-            else {
-                int res = PyList_Append(keys, mangled);
-                Py_DECREF(mangled);
-                if (res == -1) {
-                    goto error;
-                }
-            }
+            ADDOP_LOAD_CONST_NEW(c, loc, mangled);
             if (compiler_visit_expr(c, default_) < 0) {
                 goto error;
             }
         }
     }
-    if (keys != NULL) {
-        Py_ssize_t default_count = PyList_GET_SIZE(keys);
-        PyObject *keys_tuple = PyList_AsTuple(keys);
-        Py_DECREF(keys);
-        ADDOP_LOAD_CONST_NEW(c, loc, keys_tuple);
-        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, default_count);
-        assert(default_count > 0);
+    if (default_count) {
+        ADDOP_I(c, loc, BUILD_MAP, default_count);
         return 1;
     }
     else {
@@ -4454,25 +4436,8 @@ static int
 compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
-    PyObject *keys, *key;
     int big = n*2 > STACK_USE_GUIDELINE;
     location loc = LOC(e);
-    if (n > 1 && !big && are_all_items_const(e->v.Dict.keys, begin, end)) {
-        for (i = begin; i < end; i++) {
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
-        }
-        keys = PyTuple_New(n);
-        if (keys == NULL) {
-            return SUCCESS;
-        }
-        for (i = begin; i < end; i++) {
-            key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
-            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
-        }
-        ADDOP_LOAD_CONST_NEW(c, loc, keys);
-        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
-        return SUCCESS;
-    }
     if (big) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
@@ -5032,26 +4997,8 @@ compiler_subkwargs(struct compiler *c, location loc,
 {
     Py_ssize_t i, n = end - begin;
     keyword_ty kw;
-    PyObject *keys, *key;
     assert(n > 0);
     int big = n*2 > STACK_USE_GUIDELINE;
-    if (n > 1 && !big) {
-        for (i = begin; i < end; i++) {
-            kw = asdl_seq_GET(keywords, i);
-            VISIT(c, expr, kw->value);
-        }
-        keys = PyTuple_New(n);
-        if (keys == NULL) {
-            return ERROR;
-        }
-        for (i = begin; i < end; i++) {
-            key = ((keyword_ty) asdl_seq_GET(keywords, i))->arg;
-            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
-        }
-        ADDOP_LOAD_CONST_NEW(c, loc, keys);
-        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
-        return SUCCESS;
-    }
     if (big) {
         ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0);
     }
