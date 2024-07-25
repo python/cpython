@@ -4866,7 +4866,7 @@ class PurePythonSocketPairTest(SocketPairTest):
     # code path we're using regardless platform is the pure python one where
     # `_socket.socketpair` does not exist.  (AF_INET does not work with
     # _socket.socketpair on many platforms).
-    def call_socketpair(self):
+    def socketpair(self):
         # called by super().setUp().
         try:
             return socket.socketpair(socket.AF_INET6)
