@@ -41,6 +41,9 @@ _Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normalizer)
         Py_DECREF(name);
     }
     Py_DECREF(iter);
+    if (PyErr_Occurred()) {
+        Py_CLEAR(res);
+    }
     return res;
 abort:
     Py_DECREF(name);
