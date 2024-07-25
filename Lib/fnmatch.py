@@ -9,7 +9,6 @@ expression.  They cache the compiled regular expressions for speed.
 The function translate(PATTERN) returns a regular expression
 corresponding to PATTERN.  (It does not compile it.)
 """
-
 import os
 import posixpath
 import re
@@ -98,7 +97,7 @@ def _translate(pat, QUESTION_MARK):
                 add(re.escape(''.join(pending)))
                 pending = []
             # store the position of the wildcard
-            indices.append(len(parts))
+            indices.append(len(res))
             add('*')
             # compress consecutive `*` into one
             while i < n and pat[i] == '*':
@@ -172,7 +171,7 @@ def _translate(pat, QUESTION_MARK):
     if pending:
         add(re.escape(''.join(pending)))
     assert i == n
-    return parts, indices
+    return res, indices
 
 
 def _join_translated_parts(parts, indices):

@@ -1,4 +1,5 @@
 """Test cases for the fnmatch module."""
+
 import unittest
 import os
 import string
