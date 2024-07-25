@@ -293,17 +293,19 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     LayoutMode layout_mode = (pack > 0) ? LAYOUT_MODE_MS : LAYOUT_MODE_GCC_SYSV;
     #endif
 
+    PyObject *layout_class;
     if (PyObject_GetOptionalAttr(type, &_Py_ID(_layout_), &tmp) < 0) {
         return -1;
     }
-    if (tmp) {
-        if (!PyUnicode_Check(tmp)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "_layout_ must be a string");
-            return -1;
-        }
+    if (!tmp) {
+        layout_class = _PyImport_GetModuleAttrString("ctypes._layout",
+                                                     "NativeLayout");
+    }
+    else if (PyUnicode_Check(tmp)) {
         if (PyUnicode_CompareWithASCIIString(tmp, "ms") == 0) {
             layout_mode = LAYOUT_MODE_MS;
+            layout_class = _PyImport_GetModuleAttrString("ctypes._layout",
+                                                         "WindowsLayout");
         }
         else if (PyUnicode_CompareWithASCIIString(tmp, "gcc-sysv") == 0) {
             layout_mode = LAYOUT_MODE_GCC_SYSV;
@@ -312,13 +314,23 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                                 "_pack_ is not compatible with _layout_=\"gcc-sysv\"");
                 return -1;
             }
+            layout_class = _PyImport_GetModuleAttrString("ctypes._layout",
+                                                         "GCCSysVLayout");
         }
         else {
             PyErr_Format(PyExc_ValueError,
                             "unknown _layout_ %R", tmp);
             return -1;
         }
+        Py_DECREF(tmp);
     }
+    else {
+        layout_class = tmp;
+    }
+    if (!layout_class) {
+        return -1;
+    }
+    Py_DECREF(layout_class);
     if (PyObject_GetOptionalAttr(type, &_Py_ID(_align_), &tmp) < 0) {
         return -1;
     }
