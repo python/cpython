@@ -308,7 +308,7 @@ class TranslateTestCase(unittest.TestCase):
         from fnmatch import _translate
 
         blocks = ['a^b', '***', '?', '?', '[a-z]', '[1-9]', '*', '++', '[[a']
-        parts, indices = _translate(''.join(blocks), '.')
+        parts, indices = _translate(''.join(blocks), '*', '.')
         expect_parts = [r'a\^b', '*', '.', '.', '[a-z]', '[1-9]', '*', r'\+\+\[\[a']
         self.assertListEqual(parts, expect_parts)
         self.assertListEqual(indices, [1, 6])

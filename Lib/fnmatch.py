@@ -77,12 +77,12 @@ def translate(pat):
     There is no way to quote meta-characters.
     """
 
-    parts, indices = _translate(pat, '.')
+    parts, indices = _translate(pat, '*', '.')
     return _join_translated_parts(parts, indices)
 
 _set_ops_re = re.compile(r'([&~|])')
 
-def _translate(pat, QUESTION_MARK):
+def _translate(pat, STAR, QUESTION_MARK):
     res = []
     add = res.append
     indices = []
@@ -98,7 +98,7 @@ def _translate(pat, QUESTION_MARK):
                 pending = []
             # store the position of the wildcard
             indices.append(len(res))
-            add('*')
+            add(STAR)
             # compress consecutive `*` into one
             while i < n and pat[i] == '*':
                 i += 1
