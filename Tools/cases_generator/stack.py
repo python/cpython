@@ -258,9 +258,11 @@ class Stack:
                 top_offset.push(var)
         return "\n".join(res)
 
-    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
+    @staticmethod
+    def _do_flush(out: CWriter, variables: list[Local], base_offset: StackOffset, top_offset: StackOffset,
+                  cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
         out.start_line()
-        for var in self.variables:
+        for var in variables:
             if var.cached and not var.in_memory and not var.item.peek and not var.name in UNUSED:
                 cast = f"({cast_type})" if var.item.type else ""
                 bits = ".bits" if cast and not extract_bits else ""
@@ -269,22 +271,29 @@ class Stack:
                 if var.condition and var.condition != "1":
                     out.emit(f"if ({var.condition}) ")
                 out.emit(
-                    f"stack_pointer[{self.base_offset.to_c()}]{bits} = {cast}{var.name};\n"
+                    f"stack_pointer[{base_offset.to_c()}]{bits} = {cast}{var.name};\n"
                 )
-            self.base_offset.push(var.item)
-        if self.base_offset.to_c() != self.top_offset.to_c():
-            print("base", self.base_offset, "top", self.top_offset)
+            base_offset.push(var.item)
+        if base_offset.to_c() != top_offset.to_c():
+            print("base", base_offset, "top", top_offset)
             assert False
-        number = self.base_offset.to_c()
+        number = base_offset.to_c()
         if number != "0":
             out.emit(f"stack_pointer += {number};\n")
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
+        out.start_line()
+
+    def flush_locally(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
+        self._do_flush(out, self.variables[:], self.base_offset.copy(), self.top_offset.copy(), cast_type, extract_bits)
+
+    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
+        self._do_flush(out, self.variables, self.base_offset, self.top_offset, cast_type, extract_bits)
         self.variables = []
         self.base_offset.clear()
         self.top_offset.clear()
-        out.start_line()
 
     def peek_offset(self) -> str:
+        return self.top_offset.to_c()
         peek = self.base_offset.copy()
         for var in self.variables:
             if not var.item.peek:

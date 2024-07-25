@@ -602,7 +602,11 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            if (oparg == 0) { stack_pointer += -1 - oparg; goto somewhere; }
+            if (oparg == 0) {
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                goto somewhere;
+            }
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -1067,10 +1071,11 @@ class TestGeneratedCases(unittest.TestCase):
 
         input = """
         op(FIRST, ( -- a)) {
-            a = 1
+            a = 1;
         }
 
-        op(SECOND, (a -- )) {
+        op(SECOND, (a -- a, b)) {
+            b = 1;
             ERROR_IF(cond, error);
         }
 
@@ -1083,14 +1088,25 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
             _PyStackRef a;
+            _PyStackRef b;
             // FIRST
             {
-                a = 1
+                a = 1;
             }
             // SECOND
             {
-                if (cond) goto error;
+                b = 1;
+                if (cond) {
+                    stack_pointer[0] = a;
+                    stack_pointer += 1;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
             }
+            stack_pointer[0] = a;
+            stack_pointer[1] = b;
+            stack_pointer += 2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
         """

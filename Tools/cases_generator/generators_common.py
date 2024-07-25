@@ -95,16 +95,23 @@ def replace_error(
     c_offset = stack.peek_offset()
     try:
         offset = -int(c_offset)
-        close = ";\n"
     except ValueError:
-        offset = None
-        out.emit(f"{{ stack_pointer += {c_offset}; ")
-        close = "; }\n"
-    out.emit("goto ")
-    if offset:
-        out.emit(f"pop_{offset}_")
-    out.emit(label)
-    out.emit(close)
+        offset = -1
+    if offset > 0:
+        out.emit(f"goto pop_{offset}_")
+        out.emit(label)
+        out.emit(";\n")
+    elif offset == 0:
+        out.emit("goto ")
+        out.emit(label)
+        out.emit(";\n")
+    else:
+        out.emit("{\n")
+        stack.flush_locally(out)
+        out.emit("goto ")
+        out.emit(label)
+        out.emit(";\n")
+        out.emit("}\n")
 
 
 def replace_error_no_pop(
