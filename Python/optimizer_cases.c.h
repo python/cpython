@@ -949,15 +949,6 @@
             break;
         }
 
-        case _BUILD_CONST_KEY_MAP: {
-            _Py_UopsSymbol *map;
-            map = sym_new_not_null(ctx);
-            stack_pointer[-1 - oparg] = map;
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _DICT_UPDATE: {
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1175,7 +1166,12 @@
             break;
         }
 
-        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 */
+        case _LOAD_ATTR_PROPERTY_FRAME: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = sym_new_not_null(ctx);
+            stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
+            break;
+        }
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
