@@ -2264,15 +2264,8 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 # problems for anything else trying to run 'python3' while we install, particularly
 # if we're installing in parallel with -j.
 bininstall: commoninstall altbininstall
-	if test ! -d $(DESTDIR)$(LIBPC); then \
-		echo "Creating directory $(LIBPC)"; \
-		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBPC); \
-	fi
-	-if test -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE); \
-	then rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE); \
-	else true; \
-	fi
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)$(EXE) python3$(ABIFLAGS)$(EXE))
+	-rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE)
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)$(EXE) python3$(ABIFLAGS)$(EXE))
 	-rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)-config
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-config python3$(ABIFLAGS)-config)
 	-rm -f $(DESTDIR)$(LIBPC)/python3$(ABIFLAGS).pc
