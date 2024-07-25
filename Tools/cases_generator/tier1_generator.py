@@ -78,7 +78,7 @@ def write_uop(
         out.start_line()
         if braces:
             out.emit(f"// {uop.name}\n")
-        peeks: List[Local] = []
+        peeks: list[Local] = []
         for var in reversed(uop.stack.inputs):
             code, local = stack.pop(var)
             out.emit(code)

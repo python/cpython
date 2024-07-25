@@ -98,7 +98,7 @@ def write_uop(
     debug: bool,
     skip_inputs: bool,
 ) -> None:
-    locals: Dict[str, Local] = {}
+    locals: dict[str, Local] = {}
     try:
         prototype = override if override else uop
         is_override = override is not None
