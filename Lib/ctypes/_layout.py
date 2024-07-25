@@ -1,7 +1,9 @@
 import sys
 
 class _BaseLayout:
-    pass
+    def __init__(self, cls, fields, is_struct):
+        self.cls = cls
+        self.align = getattr(cls, '_align_', 1);
 
 class WindowsLayout(_BaseLayout):
     pass

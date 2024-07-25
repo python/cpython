@@ -330,10 +330,25 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!layout_class) {
         return -1;
     }
+    PyObject *layout = PyObject_Vectorcall(
+        layout_class,
+        1 + (PyObject*[]){
+            NULL,
+            type,
+            fields,
+            Py_GetConstantBorrowed(
+                isStruct ? Py_CONSTANT_TRUE : Py_CONSTANT_FALSE)},
+        3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        NULL);
     Py_DECREF(layout_class);
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_align_), &tmp) < 0) {
+    if (!layout) {
         return -1;
     }
+    if (PyObject_GetOptionalAttr(layout, &_Py_ID(align), &tmp) < 0) {
+        Py_DECREF(layout);
+        return -1;
+    }
+    Py_DECREF(layout);
     if (tmp) {
         forced_alignment = PyLong_AsInt(tmp);
         Py_DECREF(tmp);

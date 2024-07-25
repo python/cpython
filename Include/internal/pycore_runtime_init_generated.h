@@ -736,7 +736,6 @@ extern "C" {
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
     INIT_ID(_active), \
-    INIT_ID(_align_), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \
     INIT_ID(_as_parameter_), \
@@ -785,6 +784,7 @@ extern "C" {
     INIT_ID(after_in_parent), \
     INIT_ID(aggregate_class), \
     INIT_ID(alias), \
+    INIT_ID(align), \
     INIT_ID(allow_code), \
     INIT_ID(append), \
     INIT_ID(arg), \
