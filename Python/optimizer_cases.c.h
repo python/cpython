@@ -1160,7 +1160,12 @@
             break;
         }
 
-        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 */
+        case _LOAD_ATTR_PROPERTY_FRAME: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = sym_new_not_null(ctx);
+            stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
+            break;
+        }
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 

@@ -2243,31 +2243,29 @@ dummy_func(
             unused/2 +
             _LOAD_ATTR_CLASS;
 
-        inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner -- unused, unused if (0))) {
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-
+        op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _PyInterpreterFrame *)) {
             assert((oparg & 1) == 0);
-            DEOPT_IF(tstate->interp->eval_frame);
-
-            PyTypeObject *cls = Py_TYPE(owner_o);
-            assert(type_version != 0);
-            DEOPT_IF(cls->tp_version_tag != type_version);
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)fget;
-            assert(func_version != 0);
-            DEOPT_IF(f->func_version != func_version);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
-            assert(code->co_argcount == 1);
+            DEOPT_IF((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED);
+            DEOPT_IF(code->co_kwonlyargcount);
+            DEOPT_IF(code->co_argcount != 1);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(fget);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
-            // Manipulate stack directly because we exit with DISPATCH_INLINED().
-            STACK_SHRINK(1);
+            new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
             new_frame->localsplus[0] = owner;
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
-            DISPATCH_INLINED(new_frame);
         }
+
+        macro(LOAD_ATTR_PROPERTY) =
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_TYPE_VERSION +
+            unused/2 +
+            _LOAD_ATTR_PROPERTY_FRAME +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
 
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused, unused if (0))) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);

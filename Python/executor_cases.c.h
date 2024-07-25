@@ -2507,7 +2507,39 @@
 
         /* _LOAD_ATTR_CLASS is split on (oparg & 1) */
 
-        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        case _LOAD_ATTR_PROPERTY_FRAME: {
+            _PyStackRef owner;
+            _PyInterpreterFrame *new_frame;
+            oparg = CURRENT_OPARG();
+            owner = stack_pointer[-1];
+            PyObject *fget = (PyObject *)CURRENT_OPERAND();
+            assert((oparg & 1) == 0);
+            assert(Py_IS_TYPE(fget, &PyFunction_Type));
+            PyFunctionObject *f = (PyFunctionObject *)fget;
+            PyCodeObject *code = (PyCodeObject *)f->func_code;
+            if ((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (code->co_kwonlyargcount) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (code->co_argcount != 1) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(fget);
+            new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
+            new_frame->localsplus[0] = owner;
+            stack_pointer[-1].bits = (uintptr_t)new_frame;
+            break;
+        }
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
