@@ -1,11 +1,13 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
+#include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
+#include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _Py_SetImmortal()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
@@ -2475,22 +2477,23 @@ _PyImport_GetBuiltinModuleNames(void)
 long
 PyImport_GetMagicNumber(void)
 {
-    long res;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *external, *pyc_magic;
+    union magic_number {
+        uint32_t raw;
+        uint8_t parts[4];
+    } n;
 
-    external = PyObject_GetAttrString(IMPORTLIB(interp), "_bootstrap_external");
-    if (external == NULL)
-        return -1;
-    pyc_magic = PyObject_GetAttrString(external, "_RAW_MAGIC_NUMBER");
-    Py_DECREF(external);
-    if (pyc_magic == NULL)
-        return -1;
-    res = PyLong_AsLong(pyc_magic);
-    Py_DECREF(pyc_magic);
-    return res;
+    n.parts[0] = (uint16_t)PYC_MAGIC_NUMBER & 0xff;
+    n.parts[1] = (uint16_t)PYC_MAGIC_NUMBER >> 8;
+    n.parts[2] = '\r';
+    n.parts[3] = '\n';
+
+#if PY_BIG_ENDIAN
+    uint32_t result = _Py_bswap32(n.raw);
+    return (long)result;
+#else
+    return (long)n.raw;
+#endif
 }
-
 
 extern const char * _PySys_ImplCacheTag;
 
