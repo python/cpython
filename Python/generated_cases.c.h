@@ -4429,32 +4429,63 @@
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
+            }
+            // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
-            uint32_t type_version = read_u32(&this_instr[2].cache);
-            uint32_t func_version = read_u32(&this_instr[4].cache);
-            PyObject *fget = read_obj(&this_instr[6].cache);
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert((oparg & 1) == 0);
-            DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
-            PyTypeObject *cls = Py_TYPE(owner_o);
-            assert(type_version != 0);
-            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(Py_IS_TYPE(fget, &PyFunction_Type));
-            PyFunctionObject *f = (PyFunctionObject *)fget;
-            assert(func_version != 0);
-            DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
-            PyCodeObject *code = (PyCodeObject *)f->func_code;
-            assert(code->co_argcount == 1);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(fget);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
-            // Manipulate stack directly because we exit with DISPATCH_INLINED().
-            STACK_SHRINK(1);
-            new_frame->localsplus[0] = owner;
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
-            DISPATCH_INLINED(new_frame);
+            {
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+            }
+            /* Skip 2 cache entries */
+            // _LOAD_ATTR_PROPERTY_FRAME
+            {
+                PyObject *fget = read_obj(&this_instr[6].cache);
+                assert((oparg & 1) == 0);
+                assert(Py_IS_TYPE(fget, &PyFunction_Type));
+                PyFunctionObject *f = (PyFunctionObject *)fget;
+                PyCodeObject *code = (PyCodeObject *)f->func_code;
+                DEOPT_IF((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED, LOAD_ATTR);
+                DEOPT_IF(code->co_kwonlyargcount, LOAD_ATTR);
+                DEOPT_IF(code->co_argcount != 1, LOAD_ATTR);
+                DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
+                STAT_INC(LOAD_ATTR, hit);
+                Py_INCREF(fget);
+                new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
+                new_frame->localsplus[0] = owner;
+            }
+            // _SAVE_RETURN_OFFSET
+            {
+                #if TIER_ONE
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                #endif
+                #if TIER_TWO
+                frame->return_offset = oparg;
+                #endif
+            }
+            // _PUSH_FRAME
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+                LLTRACE_RESUME_FRAME();
+            }
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_SLOT) {

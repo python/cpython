@@ -151,6 +151,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_CLASS_0] = 0,
     [_LOAD_ATTR_CLASS_1] = 0,
     [_LOAD_ATTR_CLASS] = HAS_ARG_FLAG | HAS_OPARG_AND_1_FLAG,
+    [_LOAD_ATTR_PROPERTY_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_DORV_NO_DICT] = HAS_DEOPT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = 0,
     [_STORE_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
@@ -420,6 +421,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_MODULE] = "_LOAD_ATTR_MODULE",
     [_LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = "_LOAD_ATTR_NONDESCRIPTOR_NO_DICT",
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = "_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES",
+    [_LOAD_ATTR_PROPERTY_FRAME] = "_LOAD_ATTR_PROPERTY_FRAME",
     [_LOAD_ATTR_SLOT] = "_LOAD_ATTR_SLOT",
     [_LOAD_ATTR_SLOT_0] = "_LOAD_ATTR_SLOT_0",
     [_LOAD_ATTR_SLOT_1] = "_LOAD_ATTR_SLOT_1",
@@ -787,6 +789,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_ATTR_CLASS_1:
             return 1;
         case _LOAD_ATTR_CLASS:
+            return 1;
+        case _LOAD_ATTR_PROPERTY_FRAME:
             return 1;
         case _GUARD_DORV_NO_DICT:
             return 1;
