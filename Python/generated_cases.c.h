@@ -181,8 +181,14 @@
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                int next_oparg;
+                #if TIER_ONE
                 assert(next_instr->op.code == STORE_FAST);
-                _PyStackRef *target_local = &GETLOCAL(next_instr->op.arg);
+                next_oparg = next_instr->op.arg;
+                #else
+                next_oparg = CURRENT_OPERAND();
+                #endif
+                _PyStackRef *target_local = &GETLOCAL(next_oparg);
                 DEOPT_IF(!PyStackRef_Is(*target_local, left), BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 /* Handle `left = left + right` or `left += right` for str.
@@ -203,9 +209,12 @@
                 *target_local = PyStackRef_FromPyObjectSteal(temp);
                 _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
                 if (PyStackRef_IsNull(*target_local)) goto pop_2_error;
-                // The STORE_FAST is already done.
+                #if TIER_ONE
+                // The STORE_FAST is already done. This is done here in tier one,
+                // and during trace projection in tier two:
                 assert(next_instr->op.code == STORE_FAST);
                 SKIP_OVER(1);
+                #endif
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());

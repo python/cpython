@@ -875,6 +875,15 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             goto done;
                         }
 
+                        if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
+                            assert(i + 1 == nuops);
+                            _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                            assert(next_instr->op.code == STORE_FAST);
+                            operand = next_instr->op.arg;
+                            // Skip the STORE_FAST:
+                            instr++;
+                        }
+
                         // All other instructions
                         ADD_TO_TRACE(uop, oparg, operand, target);
                     }
