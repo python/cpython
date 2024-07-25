@@ -36,6 +36,17 @@ def recursive_repr(fillvalue='...'):
     return decorating_function
 
 class Repr:
+    _lookup = {
+        "repr_tuple": ("builtins", "tuple"),
+        "repr_list": ("builtins", "list"),
+        "repr_array": ("array", "array"),
+        "repr_set": ("builtins", "set"),
+        "repr_frozenset": ("builtins", "frozenset"),
+        "repr_deque": ("collections", "deque"),
+        "repr_dict": ("builtins", "dict"),
+        "repr_str": ("builtins", "str"),
+        "repr_int": ("builtins", "int"),
+        }
 
     def __init__(
         self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
@@ -60,14 +71,33 @@ class Repr:
         return self.repr1(x, self.maxlevel)
 
     def repr1(self, x, level):
-        typename = type(x).__name__
-        if ' ' in typename:
+        _type = type(x)
+        typename = _type.__name__
+
+        if " " in typename:
             parts = typename.split()
-            typename = '_'.join(parts)
-        if hasattr(self, 'repr_' + typename):
-            return getattr(self, 'repr_' + typename)(x, level)
-        else:
+            typename = "_".join(parts)
+
+        method_name = "repr_" + typename
+
+        _method = getattr(self, method_name, None)
+        if not _method:
             return self.repr_instance(x, level)
+
+        # we have a predefined method for this type,
+        # but it has been set in a subclass
+        if method_name not in self._lookup:
+            return _method(x, level)
+
+        module = getattr(_type, "__module__", None)
+        is_shadowed = (module, typename) != self._lookup[method_name]
+
+        if is_shadowed:
+            # we have a predefined method for a class with
+            # the same name as x, but it is not x
+            return self.repr_instance(x, level)
+
+        return _method(x, level)
 
     def _join(self, pieces, level):
         if self.indent is None:
