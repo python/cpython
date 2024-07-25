@@ -134,23 +134,6 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     return m;
 }
 
-static DWORD
-_find_last_utf8_boundary(const char *buf, DWORD len)
-{
-    /* This function never returns 0, returns the original len instead */
-    DWORD count = 1;
-    if (len == 0 || (buf[len - 1] & 0x80) == 0) {
-        return len;
-    }
-    for (;; count++) {
-        if (count > 3 || count >= len) {
-            return len;
-        }
-        if ((buf[len - count] & 0xc0) != 0x80) {
-            return len - count;
-        }
-    }
-}
 
 /*[clinic input]
 module _io
