@@ -25,11 +25,6 @@ enum _py_float_format_type {
     _py_float_format_ieee_little_endian,
 };
 
-struct _Py_float_runtime_state {
-    enum _py_float_format_type float_format;
-    enum _py_float_format_type double_format;
-};
-
 
 
 
