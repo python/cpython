@@ -4862,7 +4862,7 @@ class BasicSocketPairTest(SocketPairTest):
 
 class PurePythonSocketPairTest(SocketPairTest):
 
-    # Explicitly use socketpair AF_INET or AF_INET6 to to ensure that is the
+    # Explicitly use socketpair AF_INET or AF_INET6 to ensure that is the
     # code path we're using regardless platform is the pure python one where
     # `_socket.socketpair` does not exist.  (AF_INET does not work with
     # _socket.socketpair on many platforms).
@@ -4907,11 +4907,11 @@ class PurePythonSocketPairTest(SocketPairTest):
         self.cli.send(MSG)
 
     def test_send(self):
-        msg = self.cli.recv(1024)
-        self.assertEqual(msg, MSG)
+        self.serv.send(MSG)
 
     def _test_send(self):
-        self.serv.send(MSG)
+        msg = self.cli.recv(1024)
+        self.assertEqual(msg, MSG)
 
     def test_ipv4(self):
         cli, srv = socket.socketpair(socket.AF_INET)
