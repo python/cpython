@@ -1397,9 +1397,11 @@
 
         case _UNPACK_SEQUENCE: {
             _PyStackRef seq;
+            _PyStackRef *output;
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
-            _PyStackRef *top = stack_pointer + oparg - 1;
+            output = &stack_pointer[-1];
+            _PyStackRef *top = output + oparg;
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
             PyStackRef_CLOSE(seq);
             if (res == 0) JUMP_TO_ERROR();
@@ -1489,14 +1491,15 @@
 
         case _UNPACK_EX: {
             _PyStackRef seq;
+            _PyStackRef *right;
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
-            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _PyStackRef *top = stack_pointer + totalargs - 1;
+            right = &stack_pointer[(oparg & 0xFF)];
+            _PyStackRef *top = right + (oparg >> 8);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             PyStackRef_CLOSE(seq);
             if (res == 0) JUMP_TO_ERROR();
-            stack_pointer += (oparg >> 8) + (oparg & 0xFF);
+            stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

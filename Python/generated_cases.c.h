@@ -805,7 +805,6 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             {
-                args = &stack_pointer[-oparg];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
                 #if ENABLE_SPECIALIZATION
@@ -820,6 +819,7 @@
             }
             /* Skip 2 cache entries */
             // _CALL
+            args = &stack_pointer[-oparg];
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 PyObject *self_or_null_o = PyStackRef_AsPyObjectBorrow(self_or_null);
@@ -6596,13 +6596,14 @@
             next_instr += 1;
             INSTRUCTION_STATS(UNPACK_EX);
             _PyStackRef seq;
+            _PyStackRef *right;
             seq = stack_pointer[-1];
-            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _PyStackRef *top = stack_pointer + totalargs - 1;
+            right = &stack_pointer[(oparg & 0xFF)];
+            _PyStackRef *top = right + (oparg >> 8);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             PyStackRef_CLOSE(seq);
             if (res == 0) goto pop_1_error;
-            stack_pointer += (oparg >> 8) + (oparg & 0xFF);
+            stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -6615,6 +6616,7 @@
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef seq;
+            _PyStackRef *output;
             // _SPECIALIZE_UNPACK_SEQUENCE
             seq = stack_pointer[-1];
             {
@@ -6634,7 +6636,8 @@
             }
             // _UNPACK_SEQUENCE
             {
-                _PyStackRef *top = stack_pointer + oparg - 1;
+                output = &stack_pointer[-1];
+                _PyStackRef *top = output + oparg;
                 int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
                 PyStackRef_CLOSE(seq);
                 if (res == 0) goto pop_1_error;
