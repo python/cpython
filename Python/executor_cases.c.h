@@ -693,6 +693,55 @@
             break;
         }
 
+        case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            _PyStackRef right;
+            _PyStackRef left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            int next_oparg;
+            #if TIER_ONE
+            assert(next_instr->op.code == STORE_FAST);
+            next_oparg = next_instr->op.arg;
+            #else
+            next_oparg = CURRENT_OPERAND();
+            #endif
+            _PyStackRef *target_local = &GETLOCAL(next_oparg);
+            if (!PyStackRef_Is(*target_local, left)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(BINARY_OP, hit);
+            /* Handle `left = left + right` or `left += right` for str.
+             *
+             * When possible, extend `left` in place rather than
+             * allocating a new PyUnicodeObject. This attempts to avoid
+             * quadratic behavior when one neglects to use str.join().
+             *
+             * If `left` has only two references remaining (one from
+             * the stack, one in the locals), DECREFing `left` leaves
+             * only the locals reference, so PyUnicode_Append knows
+             * that the string is safe to mutate.
+             */
+            assert(Py_REFCNT(left_o) >= 2);
+            _Py_DECREF_NO_DEALLOC(left_o);
+            PyObject *temp = PyStackRef_AsPyObjectBorrow(*target_local);
+            PyUnicode_Append(&temp, right_o);
+            *target_local = PyStackRef_FromPyObjectSteal(temp);
+            _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
+            if (PyStackRef_IsNull(*target_local)) JUMP_TO_ERROR();
+            #if TIER_ONE
+            // The STORE_FAST is already done. This is done here in tier one,
+            // and during trace projection in tier two:
+            assert(next_instr->op.code == STORE_FAST);
+            SKIP_OVER(1);
+            #endif
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_SUBSCR: {
             _PyStackRef sub;
             _PyStackRef container;
