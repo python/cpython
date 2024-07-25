@@ -281,6 +281,42 @@ in PC/launcher.c must also be updated.
 
 #define PYC_MAGIC_NUMBER 3602
 
+#define MAX_VERSION_SIZE 8
+
+typedef struct {
+    unsigned short min;
+    unsigned short max;
+    wchar_t version[MAX_VERSION_SIZE];
+} PYC_MAGIC;
+
+static PYC_MAGIC magic_values[] = {
+    { 50823, 50823, L"2.0" },
+    { 60202, 60202, L"2.1" },
+    { 60717, 60717, L"2.2" },
+    { 62011, 62021, L"2.3" },
+    { 62041, 62061, L"2.4" },
+    { 62071, 62131, L"2.5" },
+    { 62151, 62161, L"2.6" },
+    { 62171, 62211, L"2.7" },
+    { 3000, 3131, L"3.0" },
+    { 3141, 3151, L"3.1" },
+    { 3160, 3180, L"3.2" },
+    { 3190, 3230, L"3.3" },
+    { 3250, 3310, L"3.4" },
+    { 3320, 3351, L"3.5" },
+    { 3360, 3379, L"3.6" },
+    { 3390, 3399, L"3.7" },
+    { 3400, 3419, L"3.8" },
+    { 3420, 3429, L"3.9" },
+    { 3430, 3449, L"3.10" },
+    /* Allow 50 magic numbers per version from here on */
+    { 3450, 3499, L"3.11" },
+    { 3500, 3549, L"3.12" },
+    { 3550, 3599, L"3.13" },
+    { 3600, 3649, L"3.14" },
+    { 0 }
+};
+
 #ifdef __cplusplus
 }
 #endif
