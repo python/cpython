@@ -296,6 +296,7 @@ than one MIME-type database; it provides an interface similar to the one of the
 
       .. versionadded:: 3.2
 
+
    .. method:: MimeTypes.add_type(type, ext, strict=True)
 
       Add a mapping from the MIME type *type* to the extension *ext*. When the
