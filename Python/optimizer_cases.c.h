@@ -1599,14 +1599,19 @@
         }
 
         case _MAYBE_EXPAND_METHOD: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
             _Py_UopsSymbol *func;
             _Py_UopsSymbol *maybe_self;
-            _Py_UopsSymbol **args;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
             func = sym_new_not_null(ctx);
             maybe_self = sym_new_not_null(ctx);
-            for (int _i = oparg; --_i >= 0;) {
-                args[_i] = sym_new_not_null(ctx);
-            }
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = maybe_self;
             break;
