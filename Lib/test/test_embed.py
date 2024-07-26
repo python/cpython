@@ -392,8 +392,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
-            import json
-            import sys
+            import test.support
 
             results = {}
             def add(cls, slot, own):
@@ -402,27 +401,24 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                     subresults = results[cls.__name__]
                 except KeyError:
                     subresults = results[cls.__name__] = {}
-                subresults[slot] = repr(value)
+                subresults[slot] = [repr(value), own]
 
-            {body}
+            for cls in test.support.iter_builtin_types():
+                for slot, own in test.support.iter_slot_wrappers(cls):
+                    add(cls, slot, own)
+            """)
 
+        ns = {}
+        exec(script, ns, ns)
+        all_expected = ns['results']
+        del ns
+
+        script += textwrap.dedent("""
+            import json
+            import sys
             text = json.dumps(results)
             print(text, file=sys.stderr)
             """)
-        body = []
-        for cls in support.iter_builtin_types():
-            body.append('')
-            body.append(f'cls = {cls.__name__}')
-            for slot, own in support.iter_slot_wrappers(cls):
-                body.append(f'add(cls, {slot!r}, {own})')
-        body.pop(0)
-        script = script.replace('{body}', os.linesep.join(body))
-
-        with contextlib.redirect_stderr(io.StringIO()) as stderr:
-            ns = {}
-            exec(script, ns, ns)
-        expected = json.loads(stderr.getvalue())
-
         out, err = self.run_embedded_interpreter(
                 "test_repeated_init_exec", script, script)
         results = err.split('--- Loop #')[1:]
@@ -430,13 +426,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.maxDiff = None
         for i, text in enumerate(results, start=1):
-            failed = True
-            with self.subTest(loop=i):
-                result = json.loads(text)
-                self.assertEqual(result, expected)
-                failed = False
-            if failed:
-                break
+            result = json.loads(text)
+            for classname, expected in all_expected.items():
+                with self.subTest(loop=i, cls=classname):
+                    slots = result.pop(classname)
+                    self.assertEqual(slots, expected)
+            self.assertEqual(result, {})
         self.assertEqual(out, '')
 
 
