@@ -3584,14 +3584,44 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 because it is instrumented */
+        case _MAYBE_EXPAND_METHOD: {
+            _PyStackRef *args;
+            _PyStackRef self_or_null;
+            _PyStackRef callable;
+            _PyStackRef func;
+            _PyStackRef maybe_self;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            if (PyStackRef_TYPE(callable) == &PyMethod_Type && PyStackRef_IsNull(self_or_null)) {
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                PyObject *self = ((PyMethodObject *)callable_o)->im_self;
+                maybe_self = PyStackRef_FromPyObjectNew(self);
+                PyObject *method = ((PyMethodObject *)callable_o)->im_func;
+                func = PyStackRef_FromPyObjectNew(method);
+                /* Make sure that callable and all args are in memory */
+                args[-2] = func;
+                args[-1] = maybe_self;
+                PyStackRef_CLOSE(callable);
+            }
+            else {
+                func = callable;
+                maybe_self = self_or_null;
+            }
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = maybe_self;
+            break;
+        }
 
-        /* _CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* _DO_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _CHECK_PERIODIC: {
             CHECK_EVAL_BREAKER();
             break;
         }
+
+        /* _MONITOR_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _PY_FRAME_GENERAL: {
             _PyStackRef *args;

@@ -1575,7 +1575,7 @@ class TestLoadSuperAttr(CheckEvents):
             ('line', 'method', 2),
             ('line', 'method', 3),
             ('line', 'method', 2),
-            ('call', 'method', 1),
+            ('call', 'method', d["b"]),
             ('line', 'method', 1),
             ('line', 'method', 1),
             ('line', 'get_events', 11),
