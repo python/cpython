@@ -71,10 +71,6 @@ def checkcache(filename=None):
         try:
             stat = os.stat(fullname)
         except (OSError, ValueError):
-            # ValueError may happen on Windows platforms for long paths or
-            # on any platform when the filename has embedded null bytes.
-            #
-            # See: https://github.com/python/cpython/issues/122170.
             cache.pop(filename, None)
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
@@ -143,12 +139,7 @@ def updatecache(filename, module_globals=None):
                 pass
         else:
             return []
-    except ValueError:
-        # ValueError may happen on Windows platforms for long paths or
-        # on any platform when the filename has embedded null bytes.
-        #
-        # In this case, we will not even try to find the path using lazy
-        # loading or alternative techniques.
+    except ValueError:  # may be raised by os.stat()
         return []
     try:
         with tokenize.open(fullname) as fp:

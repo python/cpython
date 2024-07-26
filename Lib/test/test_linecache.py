@@ -281,46 +281,46 @@ class LineCacheTests(unittest.TestCase):
                          ['source for x.y.z\n'])
 
     def test_embedded_null_bytes(self):
-        NUL = '\x00'
-        linecache.clearcache()
-        lines = linecache.updatecache(NUL)
-        self.assertListEqual(lines, [])
-        self.assertNotIn(NUL, linecache.cache)
+        for name in ['\x00', __file__ + '\x00']:
+            with self.subTest('updatecache', badname=name):
+                linecache.clearcache()
+                lines = linecache.updatecache(name)
+                self.assertListEqual(lines, [])
+                self.assertNotIn(name, linecache.cache)
 
-        # hack into the cache (it shouldn't be allowed
-        # but we never know what people do...)
-        linecache.clearcache()
-        linecache.cache[NUL] = (0, 1234, [], 'FULLNAME')
-        linecache.checkcache(NUL)
-        self.assertNotIn(NUL, linecache.cache)
-
-        linecache.clearcache()
-        linecache.cache[NUL] = (0, 1234, [], NUL)
-        linecache.checkcache(NUL)
-        self.assertNotIn(NUL, linecache.cache)
+            # hack into the cache (it shouldn't be allowed
+            # but we never know what people do...)
+            for key, fullname in [(name, 'ok'), ('key', name), (name, name)]:
+                with self.subTest('checkcache', key=key, fullname=fullname):
+                    linecache.clearcache()
+                    linecache.cache[key] = (0, 1234, [], fullname)
+                    linecache.checkcache(key)
+                    self.assertNotIn(key, linecache.cache)
 
         # just to be sure that we did not mess with cache
         linecache.clearcache()
 
-    def test_long_filename(self):
-        # For POSIX platforms, an OSError will be raised and will take
-        # the usual path handling. For Windows platforms, a ValueError
-        # is raised instead but linecache will handle it as if it were
-        # an OSError in this case.
-        #
-        # See: https://github.com/python/cpython/issues/122170
+    def test_invalid_names(self):
+        for name, desc in [
+            # A filename with surrogate codes. A UnicodeEncodeError is raised
+            # by os.stat() upon querying, which is a subclass of ValueError.
+            ("\uD834\uDD1E.py", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            # For POSIX platforms, an OSError will be raised but for Windows
+            # platforms, a ValueError is raised due to the path_t converter.
+            # See: https://github.com/python/cpython/issues/122170
+            ('a' * 1_000_000, 'very long filename'),
+        ]:
+            with self.subTest(f'updatecache: {desc}'):
+                linecache.clearcache()
+                lines = linecache.updatecache(name)
+                self.assertListEqual(lines, [])
+                self.assertNotIn(name, linecache.cache)
 
-        linecache.clearcache()
-        lines = linecache.updatecache('a' * 9999)
-        self.assertListEqual(lines, [])
-        self.assertNotIn('a' * 9999, linecache.cache)
-
-        # hack into the cache (it shouldn't be allowed
-        # but we never know what people do...)
-        linecache.clearcache()
-        linecache.cache['smallname'] = (0, 1234, [], 'a' * 9999)
-        linecache.checkcache('smallname')
-        self.assertNotIn('smallname', linecache.cache)
+            with self.subTest(f'checkcache: {desc}'):
+                linecache.clearcache()
+                linecache.cache['key'] = (0, 1234, [], name)
+                linecache.checkcache('key')
+                self.assertNotIn('key', linecache.cache)
 
         # just to be sure that we did not mess with cache
         linecache.clearcache()
