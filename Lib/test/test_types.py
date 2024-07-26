@@ -2322,7 +2322,7 @@ class SubinterpreterTests(unittest.TestCase):
 
     @cpython_only
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')
-    def test_slot_wrappers(self):
+    def test_static_types_inherited_slots(self):
         rch, sch = interpreters.create_channel()
 
         slots = []
