@@ -3126,8 +3126,8 @@ pre-commit-venv:
 # Run CPython's static analysis, verification, and style checks.
 .PHONY: lint
 lint: pre-commit-venv
-   .venv-pre-commit/bin/pre-commit run --all-files
-   $(PYTHON_FOR_REGEN) $(srcdir)/Tools/patchcheck/patchcheck.py
+	.venv-pre-commit/bin/pre-commit run --all-files
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/patchcheck/patchcheck.py
 
 # Perform some verification checks on any modified files.
 .PHONY: patchcheck
