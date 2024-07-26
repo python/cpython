@@ -928,7 +928,8 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec,
     }
   }
   expr_ty res;
-  if (asdl_seq_LEN(spec) == 0) {
+  Py_ssize_t n = asdl_seq_LEN(spec);
+  if (n == 0 || (n == 1 && asdl_seq_GET(spec, 0)->kind == Constant_kind)) {
     res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno, end_col_offset,
                            p->arena);
   } else {
