@@ -2248,13 +2248,7 @@ class TarFile(object):
         if filter is None:
             filter = self.extraction_filter
             if filter is None:
-                import warnings
-                warnings.warn(
-                    'Python 3.14 will, by default, filter extracted tar '
-                    + 'archives and reject files or modify their metadata. '
-                    + 'Use the filter argument to control this behavior.',
-                    DeprecationWarning, stacklevel=3)
-                return fully_trusted_filter
+                return data_filter
             if isinstance(filter, str):
                 raise TypeError(
                     'String names are not supported for '

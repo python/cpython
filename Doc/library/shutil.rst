@@ -706,11 +706,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The keyword-only *filter* argument is passed to the underlying unpacking
    function. For zip files, *filter* is not accepted.
-   For tar files, it is recommended to set it to ``'data'``,
-   unless using features specific to tar and UNIX-like filesystems.
+   For tar files, it is recommended to use ``'data'`` (default since Python
+   3.14), unless using features specific to tar and UNIX-like filesystems.
    (See :ref:`tarfile-extraction-filter` for details.)
-   The ``'data'`` filter will become the default for tar files
-   in Python 3.14.
 
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
@@ -720,6 +718,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       It is possible that files are created outside of the path specified in
       the *extract_dir* argument, e.g. members that have absolute filenames
       starting with "/" or filenames with two dots "..".
+
+      Since Python 3.14, the defaults for both built-in formats (zip and tar
+      files) will prevent the most dangerous of such security issues,
+      but will not prevent *all* unintended behavior.
+      Read the :ref:`tarfile-further-verification`
+      section for tar-specific details.
 
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
