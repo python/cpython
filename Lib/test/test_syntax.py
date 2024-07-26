@@ -2265,6 +2265,10 @@ Invalid expressions in type scopes:
    Traceback (most recent call last):
    SyntaxError: cannot assign to __debug__
 
+   >>> class A[__debug__]: pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> class A[T]((x := 3)): ...
    Traceback (most recent call last):
       ...
