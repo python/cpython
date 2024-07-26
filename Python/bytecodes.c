@@ -4609,8 +4609,8 @@ dummy_func(
             #endif
         }
 
-        tier2 op(_EXIT_TRACE, (--)) {
-            _PyExitData *exit = &current_executor->exits[oparg];
+        tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
+            _PyExitData *exit = (_PyExitData *)exit_p;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
@@ -4619,7 +4619,7 @@ dummy_func(
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                    oparg, exit->temperature.as_counter,
+                    exit - current_executor->exits, exit->temperature.as_counter,
                     (int)(target - _PyCode_CODE(code)),
                     _PyOpcode_OpName[target->op.code]);
             }
@@ -4698,9 +4698,9 @@ dummy_func(
             exe->count++;
         }
 
-        tier2 op(_DYNAMIC_EXIT, (--)) {
+        tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
             tstate->previous_executor = (PyObject *)current_executor;
-            _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];
+            _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_CODEUNIT *target = frame->instr_ptr;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
@@ -4708,7 +4708,7 @@ dummy_func(
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                    oparg, exit->temperature.as_counter,
+                    exit - current_executor->exits, exit->temperature.as_counter,
                     (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                     _PyOpcode_OpName[target->op.code]);
             }

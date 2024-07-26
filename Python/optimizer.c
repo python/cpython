@@ -1153,13 +1153,15 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         *dest = buffer[i];
         assert(opcode != _POP_JUMP_IF_FALSE && opcode != _POP_JUMP_IF_TRUE);
         if (opcode == _EXIT_TRACE) {
-            executor->exits[next_exit].target = buffer[i].target;
-            dest->oparg = next_exit;
+            _PyExitData *exit = &executor->exits[next_exit];
+            exit->target = buffer[i].target;
+            dest->operand = (uint64_t)exit;
             next_exit--;
         }
         if (opcode == _DYNAMIC_EXIT) {
-            executor->exits[next_exit].target = 0;
-            dest->oparg = next_exit;
+            _PyExitData *exit = &executor->exits[next_exit];
+            exit->target = 0;
+            dest->operand = (uint64_t)exit;
             next_exit--;
         }
     }
