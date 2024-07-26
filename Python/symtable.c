@@ -2192,7 +2192,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
             if (!symtable_add_def_helper(st, target_name, DEF_LOCAL, ste, LOCATION(e))) {
                 VISIT_QUIT(st, 0);
             }
-            return  VISIT_QUIT(st, 1);
+            VISIT_QUIT(st, 1);
         }
         /* If we find a ModuleBlock entry, add as GLOBAL */
         if (ste->ste_type == ModuleBlock) {
@@ -2206,7 +2206,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
             if (!symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste, LOCATION(e))) {
                 VISIT_QUIT(st, 0);
             }
-            return  VISIT_QUIT(st, 1);
+            VISIT_QUIT(st, 1);
         }
         /* Disallow usage in ClassBlock and type scopes */
         if (ste->ste_type == ClassBlock ||
