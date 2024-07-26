@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 # This list of sets are allowable synonyms for event argument names.
 # If two names are in the same set, they are treated as equal for the
-# purposes of warning. This won't help if number of arguments is
+# purposes of warning. This won't help if the number of arguments is
 # different!
 _SYNONYMS = [
     frozenset({"file", "path", "fd"}),
