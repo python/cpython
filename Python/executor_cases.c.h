@@ -324,7 +324,7 @@
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
-            assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(value)));
+            assert(PyStackRef_BoolCheck(value));
             res = PyStackRef_Is(value, PyStackRef_False)
             ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-1] = res;
@@ -346,7 +346,7 @@
         case _TO_BOOL_BOOL: {
             _PyStackRef value;
             value = stack_pointer[-1];
-            if (!PyBool_Check(PyStackRef_AsPyObjectBorrow(value))) {
+            if (!PyStackRef_BoolCheck(value)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -689,6 +689,55 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            _PyStackRef right;
+            _PyStackRef left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            int next_oparg;
+            #if TIER_ONE
+            assert(next_instr->op.code == STORE_FAST);
+            next_oparg = next_instr->op.arg;
+            #else
+            next_oparg = CURRENT_OPERAND();
+            #endif
+            _PyStackRef *target_local = &GETLOCAL(next_oparg);
+            if (!PyStackRef_Is(*target_local, left)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(BINARY_OP, hit);
+            /* Handle `left = left + right` or `left += right` for str.
+             *
+             * When possible, extend `left` in place rather than
+             * allocating a new PyUnicodeObject. This attempts to avoid
+             * quadratic behavior when one neglects to use str.join().
+             *
+             * If `left` has only two references remaining (one from
+             * the stack, one in the locals), DECREFing `left` leaves
+             * only the locals reference, so PyUnicode_Append knows
+             * that the string is safe to mutate.
+             */
+            assert(Py_REFCNT(left_o) >= 2);
+            _Py_DECREF_NO_DEALLOC(left_o);
+            PyObject *temp = PyStackRef_AsPyObjectBorrow(*target_local);
+            PyUnicode_Append(&temp, right_o);
+            *target_local = PyStackRef_FromPyObjectSteal(temp);
+            _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
+            if (PyStackRef_IsNull(*target_local)) JUMP_TO_ERROR();
+            #if TIER_ONE
+            // The STORE_FAST is already done. This is done here in tier one,
+            // and during trace projection in tier two:
+            assert(next_instr->op.code == STORE_FAST);
+            SKIP_OVER(1);
+            #endif
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1223,7 +1272,33 @@
 
         /* _SEND is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        /* _SEND_GEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        case _SEND_GEN_FRAME: {
+            _PyStackRef v;
+            _PyStackRef receiver;
+            _PyInterpreterFrame *gen_frame;
+            oparg = CURRENT_OPARG();
+            v = stack_pointer[-1];
+            receiver = stack_pointer[-2];
+            PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(receiver);
+            if (Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (gen->gi_frame_state >= FRAME_EXECUTING) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(SEND, hit);
+            gen_frame = &gen->gi_iframe;
+            _PyFrame_StackPush(gen_frame, v);
+            gen->gi_frame_state = FRAME_EXECUTING;
+            gen->gi_exc_state.previous_item = tstate->exc_info;
+            tstate->exc_info = &gen->gi_exc_state;
+            assert(1 + INLINE_CACHE_ENTRIES_SEND + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+            stack_pointer[-1].bits = (uintptr_t)gen_frame;
+            break;
+        }
 
         case _YIELD_VALUE: {
             _PyStackRef retval;
@@ -1545,7 +1620,36 @@
 
         /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        /* _LOAD_NAME is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _LOAD_NAME: {
+            _PyStackRef v;
+            oparg = CURRENT_OPARG();
+            PyObject *v_o;
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) JUMP_TO_ERROR();
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v_o) < 0) JUMP_TO_ERROR();
+            if (v_o == NULL) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) JUMP_TO_ERROR();
+                if (v_o == NULL) {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) JUMP_TO_ERROR();
+                    if (v_o == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                            tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                        if (true) JUMP_TO_ERROR();
+                    }
+                }
+            }
+            v = PyStackRef_FromPyObjectSteal(v_o);
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LOAD_GLOBAL: {
             _PyStackRef res;
@@ -1884,7 +1988,36 @@
             break;
         }
 
-        /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _BUILD_SET: {
+            _PyStackRef *values;
+            _PyStackRef set;
+            oparg = CURRENT_OPARG();
+            values = &stack_pointer[-oparg];
+            PyObject *set_o = PySet_New(NULL);
+            if (set_o == NULL) {
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(values[_i]);
+                }
+                if (true) JUMP_TO_ERROR();
+            }
+            int err = 0;
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
+                if (err == 0) {
+                    err = PySet_Add(set_o, item);
+                }
+                Py_DECREF(item);
+            }
+            if (err != 0) {
+                Py_DECREF(set_o);
+                if (true) JUMP_TO_ERROR();
+            }
+            set = PyStackRef_FromPyObjectSteal(set_o);
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _BUILD_MAP: {
             _PyStackRef *values;
@@ -1935,40 +2068,6 @@
             else {
                 Py_DECREF(ann_dict);
             }
-            break;
-        }
-
-        case _BUILD_CONST_KEY_MAP: {
-            _PyStackRef keys;
-            _PyStackRef *values;
-            _PyStackRef map;
-            oparg = CURRENT_OPARG();
-            keys = stack_pointer[-1];
-            values = &stack_pointer[-1 - oparg];
-            PyObject *keys_o = PyStackRef_AsPyObjectBorrow(keys);
-            assert(PyTuple_CheckExact(keys_o));
-            assert(PyTuple_GET_SIZE(keys_o) == (Py_ssize_t)oparg);
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                for (int _i = oparg; --_i >= 0;) {
-                    PyStackRef_CLOSE(values[_i]);
-                }
-                PyStackRef_CLOSE(keys);
-                if (true) JUMP_TO_ERROR();
-            }
-            PyObject *map_o = _PyDict_FromItems(
-                &PyTuple_GET_ITEM(keys_o, 0), 1,
-                values_o, 1, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
-            for (int _i = oparg; --_i >= 0;) {
-                PyStackRef_CLOSE(values[_i]);
-            }
-            PyStackRef_CLOSE(keys);
-            if (map_o == NULL) JUMP_TO_ERROR();
-            map = PyStackRef_FromPyObjectSteal(map_o);
-            stack_pointer[-1 - oparg] = map;
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2451,7 +2550,39 @@
 
         /* _LOAD_ATTR_CLASS is split on (oparg & 1) */
 
-        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        case _LOAD_ATTR_PROPERTY_FRAME: {
+            _PyStackRef owner;
+            _PyInterpreterFrame *new_frame;
+            oparg = CURRENT_OPARG();
+            owner = stack_pointer[-1];
+            PyObject *fget = (PyObject *)CURRENT_OPERAND();
+            assert((oparg & 1) == 0);
+            assert(Py_IS_TYPE(fget, &PyFunction_Type));
+            PyFunctionObject *f = (PyFunctionObject *)fget;
+            PyCodeObject *code = (PyCodeObject *)f->func_code;
+            if ((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (code->co_kwonlyargcount) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (code->co_argcount != 1) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(fget);
+            new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
+            new_frame->localsplus[0] = owner;
+            stack_pointer[-1].bits = (uintptr_t)new_frame;
+            break;
+        }
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
@@ -2834,6 +2965,42 @@
             PyStackRef_CLOSE(right);
             b = res ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-1] = b;
+            break;
+        }
+
+        case _IMPORT_NAME: {
+            _PyStackRef fromlist;
+            _PyStackRef level;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            fromlist = stack_pointer[-1];
+            level = stack_pointer[-2];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
+                PyStackRef_AsPyObjectBorrow(fromlist),
+                PyStackRef_AsPyObjectBorrow(level));
+            PyStackRef_CLOSE(level);
+            PyStackRef_CLOSE(fromlist);
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _IMPORT_FROM: {
+            _PyStackRef from;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            from = stack_pointer[-1];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -3252,7 +3419,7 @@
             else {
                 Py_DECREF(tb);
             }
-            assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
+            assert(PyStackRef_LongCheck(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
@@ -3276,7 +3443,7 @@
             else {
                 prev_exc = PyStackRef_None;
             }
-            assert(PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(new_exc)));
+            assert(PyStackRef_ExceptionInstanceCheck(new_exc));
             exc_info->exc_value = PyStackRef_AsPyObjectNew(new_exc);
             stack_pointer[-1] = prev_exc;
             stack_pointer[0] = new_exc;
@@ -3522,7 +3689,7 @@
             assert(Py_TYPE(callable_o) == &PyMethod_Type);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
             method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
-            assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
+            assert(PyStackRef_FunctionCheck(method));
             PyStackRef_CLOSE(callable);
             stack_pointer[-2 - oparg] = method;
             stack_pointer[-1 - oparg] = self;
@@ -4245,6 +4412,43 @@
             break;
         }
 
+        case _CALL_LIST_APPEND: {
+            _PyStackRef arg;
+            _PyStackRef self;
+            _PyStackRef callable;
+            oparg = CURRENT_OPARG();
+            arg = stack_pointer[-1];
+            self = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            assert(oparg == 1);
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
+            PyInterpreterState *interp = tstate->interp;
+            if (callable_o != interp->callable_cache.list_append) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(self_o != NULL);
+            if (!PyList_Check(self_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(CALL, hit);
+            int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            PyStackRef_CLOSE(self);
+            PyStackRef_CLOSE(callable);
+            if (err) JUMP_TO_ERROR();
+            #if TIER_ONE
+            // Skip the following POP_TOP. This is done here in tier one, and
+            // during trace projection in tier two:
+            assert(next_instr->op.code == POP_TOP);
+            SKIP_OVER(1);
+            #endif
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_O: {
             _PyStackRef *args;
             _PyStackRef self_or_null;
@@ -4825,6 +5029,10 @@
                        _PyOpcode_OpName[target->op.code]);
             }
             #endif
+            if (exit->executor && !exit->executor->vm_data.valid) {
+                exit->temperature = initial_temperature_backoff_counter();
+                Py_CLEAR(exit->executor);
+            }
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
@@ -4995,10 +5203,7 @@
             #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
-            if (!((_PyExecutorObject *)executor)->vm_data.valid) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(((_PyExecutorObject *)executor)->vm_data.valid);
             break;
         }
 

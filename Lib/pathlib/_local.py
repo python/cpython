@@ -830,6 +830,25 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
+    def rmtree(self, ignore_errors=False, on_error=None):
+        """
+        Recursively delete this directory tree.
+
+        If *ignore_errors* is true, exceptions raised from scanning the tree
+        and removing files and directories are ignored. Otherwise, if
+        *on_error* is set, it will be called to handle the error. If neither
+        *ignore_errors* nor *on_error* are set, exceptions are propagated to
+        the caller.
+        """
+        if on_error:
+            def onexc(func, filename, err):
+                err.filename = filename
+                on_error(err)
+        else:
+            onexc = None
+        import shutil
+        shutil.rmtree(str(self), ignore_errors, onexc=onexc)
+
     def rename(self, target):
         """
         Rename this path to the target path.
