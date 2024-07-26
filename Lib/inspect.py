@@ -313,10 +313,10 @@ def ismethoddescriptor(object):
     often is.
 
     Methods implemented via descriptors that also pass one of the other
-    tests (ismethod(), isclass() or isfunction()) make this function
-    return false, simply because those other tests promise more -- you
-    can, e.g., count on having the __func__ attribute when an object
-    passes ismethod()."""
+    tests (ismethod(), isclass(), isfunction()) make this function return
+    false, simply because those other tests promise more -- you can, e.g.,
+    count on having the __func__ attribute when an object passes
+    ismethod()."""
     if isclass(object) or ismethod(object) or isfunction(object):
         # mutual exclusion
         return False
@@ -331,10 +331,9 @@ def isdatadescriptor(object):
     But not if ismethod() or isclass() or isfunction() are true.
 
     Data descriptors have a __set__ or a __delete__ attribute.  Examples are
-    properties, getsets and members.  For the latter two (which can be
-    defined only at the C level, in extension modules) more specific tests
-    are available as well: isgetsetdescriptor() and ismemberdescriptor(),
-    respectively.
+    properties, getsets, and members.  For the latter two (defined only in C
+    extension modules) more specific tests are available as well:
+    isgetsetdescriptor() and ismemberdescriptor(), respectively.
 
     Typically, data descriptors will also have __name__ and __doc__ attributes
     (properties, getsets, and members have both of these attributes), but this
