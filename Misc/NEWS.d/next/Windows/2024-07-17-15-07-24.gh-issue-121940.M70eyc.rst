@@ -1,4 +1,3 @@
-``os.write`` on Windows no longer limits or splits up writes to console
-objects. The behavior was initially added to address bpo-11395 in 2011 as a
-workaround for the OS returning an error with too large of a write call to
-a console.
+Default buffer size :func:`os.write` on Windows no longer or splits the write.
+Writing to the Windows console is still split to maintain responsiveness of
+interrupts, but at a much larger size.
