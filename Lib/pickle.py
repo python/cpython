@@ -1151,7 +1151,7 @@ class _Pickler:
             except UnicodeEncodeError:
                 raise PicklingError(
                     "can't pickle global identifier '%s.%s' using "
-                    "pickle protocol %i" % (module, name, self.proto)) from None
+                    "pickle protocol %i" % (module_name, name, self.proto)) from None
 
     def save_type(self, obj):
         if obj is type(None):
