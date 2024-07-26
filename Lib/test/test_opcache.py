@@ -533,6 +533,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
             # Reset:
             if check_items:
                 for item in items:
+                    _testinternalcapi.reset_version(item.__globals__) #  Reset version to not get the overflow
                     item.__code__ = item.__code__.replace()
             else:
                 read.__code__ = read.__code__.replace()

@@ -360,4 +360,58 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d0770a1c20fbf40 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(reset_version__doc__,
+"reset_version($module, /, dict)\n"
+"--\n"
+"\n");
+
+#define RESET_VERSION_METHODDEF    \
+    {"reset_version", _PyCFunction_CAST(reset_version), METH_FASTCALL|METH_KEYWORDS, reset_version__doc__},
+
+static PyObject *
+reset_version_impl(PyObject *module, PyObject *dict);
+
+static PyObject *
+reset_version(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(dict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"dict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "reset_version",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *dict;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    dict = args[0];
+    return_value = reset_version_impl(module, dict);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=4282b73523afbfae input=a9049054013a1b77]*/

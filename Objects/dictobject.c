@@ -7239,6 +7239,21 @@ uint32_t _PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
     return v;
 }
 
+void
+_PyDictKeys_SetVersionForCurrentState(PyInterpreterState *interp,
+                                      PyDictKeysObject *dictkeys,
+                                      uint32_t value)
+{
+    if (dictkeys->dk_version != 0) {
+        return;
+    }
+    if (interp->dict_state.next_keys_version == 0) {
+        return;
+    }
+    interp->dict_state.next_keys_version = value;
+    dictkeys->dk_version = value;
+}
+
 static inline int
 validate_watcher_id(PyInterpreterState *interp, int watcher_id)
 {

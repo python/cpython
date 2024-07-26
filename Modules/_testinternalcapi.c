@@ -2034,6 +2034,20 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     return Py_NewRef(spam);
 }
 
+/*[clinic input]
+reset_version
+
+    dict: object
+
+[clinic start generated code]*/
+
+static PyObject *
+reset_version_impl(PyObject *module, PyObject *dict)
+/*[clinic end generated code: output=9cd6aadef620f04e input=f0c289ff2106ac52]*/
+{
+    _PyDictKeys_SetVersionForCurrentState(_PyInterpreterState_GET(), ((PyDictObject *)dict)->ma_keys, 1);
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2129,6 +2143,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    RESET_VERSION_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
