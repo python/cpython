@@ -18,6 +18,13 @@ Unpack list
     >>> a == 4 and b == 5 and c == 6
     True
 
+Unpack dict
+
+    >>> d = {4: 'four', 5: 'five', 6: 'six'}
+    >>> a, b, c = d
+    >>> a == 4 and b == 5 and c == 6
+    True
+
 Unpack implied tuple
 
     >>> a, b, c = 7, 8, 9
@@ -153,6 +160,13 @@ iterable if it doesn't have a pre-determined length
     >>> next(it)
     4
 
+Unpacking unbalanced dict
+
+    >>> d = {4: 'four', 5: 'five', 6: 'six', 7: 'seven'}
+    >>> a, b, c = d
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3, got 4)
 """
 
 __test__ = {'doctests' : doctests}

@@ -2163,7 +2163,12 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
             return 1;
         }
         Py_DECREF(w);
+        
+        /* If v is a sequence or mapping, we can show its length in the error */
         ll = PySequence_Size(v);
+        if (ll < 0) {
+            ll = PyMapping_Size(v);
+        }
         if (ll < 0) {
             _PyErr_Format(tstate, PyExc_ValueError,
                           "too many values to unpack (expected %d)",
