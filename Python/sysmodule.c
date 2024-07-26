@@ -3323,7 +3323,7 @@ make_impl_info(PyObject *version_info)
     value = PyLong_FromLong(PYC_MAGIC_NUMBER);
     if (value == NULL)
         goto error;
-    res = PyDict_SetItemString(impl_info, "pyc_magic_number", value);
+    res = PyDict_SetItemString(impl_info, "_pyc_magic_number", value);
     Py_DECREF(value);
     if (res < 0)
         goto error;

@@ -1122,11 +1122,6 @@ always available.
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
-   *pyc_magic_number* is the magic number used to identify that cached ``.pyc``
-   files match the running version of Python.
-
-   .. versionadded:: 3.14
-
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
