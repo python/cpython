@@ -436,11 +436,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             print(text, file=sys.stderr)
             """)
         body = []
-        from test.test_types import iter_builtin_types, iter_slot_wrappers
-        for cls in iter_builtin_types():
+        for cls in support.iter_builtin_types():
             body.append('')
             body.append(f'cls = {cls.__name__}')
-            for slot, own in iter_slot_wrappers(cls):
+            for slot, own in support.iter_slot_wrappers(cls):
                 body.append(f'add(cls, {slot!r}, {own})')
         body.pop(0)
         script = script.replace('{body}', os.linesep.join(body))
