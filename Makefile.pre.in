@@ -3120,7 +3120,7 @@ pre-commit-venv:
 			.venv-pre-commit/bin/python3 -m pip install --upgrade pip; \
 			.venv-pre-commit/bin/python3 -m pip install pre-commit; \
 		fi; \
-      echo "The venv has been created in the .venv-pre-commit directory"; \
+		echo "The venv has been created in the .venv-pre-commit directory"; \
 	fi
 
 # Run CPython's static analysis, verification, and style checks.
