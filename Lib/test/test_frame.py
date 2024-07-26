@@ -15,6 +15,7 @@ from collections.abc import Mapping
 from test import support
 from test.support import import_helper, threading_helper
 from test.support.script_helper import assert_python_ok
+from test import mapping_tests
 
 
 class ClearTest(unittest.TestCase):
@@ -476,6 +477,69 @@ class TestFrameLocals(unittest.TestCase):
                     proxy[obj]
                 with self.assertRaises(TypeError):
                     proxy[obj] = 0
+
+
+class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
+    """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
+
+    def _f(*args, **kwargs):
+        def _f():
+            return sys._getframe().f_locals
+        return _f()
+    type2test = _f
+
+    @unittest.skipIf(True, 'Unlike a mapping: empty proxy != empty proxy')
+    def test_constructor(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: del proxy[key] fails')
+    def test_write(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.popitem')
+    def test_popitem(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.pop')
+    def test_pop(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.clear')
+    def test_clear(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.fromkeys')
+    def test_fromkeys(self):
+        pass
+
+    # no del
+    def test_getitem(self):
+        mapping_tests.BasicTestMappingProtocol.test_getitem(self)
+        d = self._full_mapping({'a': 1, 'b': 2})
+        self.assertEqual(d['a'], 1)
+        self.assertEqual(d['b'], 2)
+        d['c'] = 3
+        d['a'] = 4
+        self.assertEqual(d['c'], 3)
+        self.assertEqual(d['a'], 4)
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.update')
+    def test_update(self):
+        pass
+
+    # proxy.copy rerourns a regular dict
+    def test_copy(self):
+        d = self._full_mapping({1:1, 2:2, 3:3})
+        self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
+        d = self._empty_mapping()
+        self.assertEqual(d.copy(), d)
+        self.assertRaises(TypeError, d.copy, None)
+
+        self.assertIsInstance(d.copy(), dict)
+
+    @unittest.skipIf(True, 'Unlike a mapping: empty proxy != empty proxy')
+    def test_eq(self):
+        pass
 
 
 class TestFrameCApi(unittest.TestCase):
