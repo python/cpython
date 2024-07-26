@@ -431,6 +431,53 @@ class TestFrameLocals(unittest.TestCase):
                 kind = "other"
         self.assertEqual(kind, "mapping")
 
+    def test_proxy_key_stringlikes(self):
+        class StringSubclass(str):
+            pass
+
+        class ImpostorX:
+            def __hash__(self):
+                return hash('x')
+
+            def __eq__(self, other):
+                return other == 'x'
+
+        def f(obj):
+            x = 1
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            return (
+                proxy.keys() ==  ['obj', 'x', 'proxy'],
+                proxy == {'obj': 'x', 'x': 2, 'proxy': proxy},
+                proxy
+            )
+
+        for obj in StringSubclass('x'), ImpostorX():
+            with self.subTest(cls=type(obj).__name__):
+
+                assertion1, assertion2, proxy = f(obj)
+                self.assertEqual(proxy.keys(),  ['obj', 'x', 'proxy'])
+                self.assertEqual(proxy, {'obj': 'x', 'x': 2, 'proxy': proxy})
+                self.assertTrue(assertion1)
+                self.assertTrue(assertion2)
+
+    def test_proxy_key_unhashables(self):
+        class StringSubclass(str):
+            __hash__ = None
+
+        class ObjectSubclass:
+            __hash__ = None
+
+        proxy = sys._getframe().f_locals
+
+        for obj in StringSubclass('x'), ObjectSubclass():
+            with self.subTest(cls=type(obj).__name__):
+                with self.assertRaises(TypeError):
+                    proxy[obj]
+                with self.assertRaises(TypeError):
+                    proxy[obj] = 0
+
+
 class TestFrameCApi(unittest.TestCase):
     def test_basic(self):
         x = 1

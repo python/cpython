@@ -53,22 +53,35 @@ static int
 framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
 {
     /*
-     * Returns the fast locals index of the key
+     * Returns -2 (!) if an error occurred; exception will be set.
+     * Returns the fast locals index of the key on success:
      *   - if read == true, returns the index if the value is not NULL
      *   - if read == false, returns the index if the value is not hidden
+     * Otherwise returns -1.
      */
 
-    assert(PyUnicode_CheckExact(key));
-
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
-    int found_key = false;
 
-    // We do 2 loops here because it's highly possible the key is interned
-    // and we can do a pointer comparison.
+    // If the key is interned (highly possible), we can do a pointer comparison.
+    int interned = PyUnicode_CheckExact(key) && PyUnicode_CHECK_INTERNED(key);
+    if (!interned) {
+        // Ensure that the key is hashable.
+        Py_hash_t hash = PyObject_Hash(key);
+        if (hash == -1) {
+            return -2;
+        }
+    }
+
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        if (name == key) {
-            found_key = true;
+        int same = (name == key);
+        if (!same && !interned) {
+            same = PyObject_RichCompareBool(name, key, Py_EQ);
+            if (same < 0) {
+                return -2;
+            }
+        }
+        if (same) {
             if (read) {
                 if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
                     return i;
@@ -76,25 +89,6 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
             } else {
                 if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
                     return i;
-                }
-            }
-        }
-    }
-
-    if (!found_key) {
-        // This is unlikely, but we need to make sure. This means the key
-        // is not interned.
-        for (int i = 0; i < co->co_nlocalsplus; i++) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            if (_PyUnicode_EQ(name, key)) {
-                if (read) {
-                    if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
-                        return i;
-                    }
-                } else {
-                    if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
-                        return i;
-                    }
                 }
             }
         }
@@ -109,13 +103,14 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
     PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
 
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, true);
-        if (i >= 0) {
-            PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
-            assert(value != NULL);
-            return Py_NewRef(value);
-        }
+    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    if (i == -2) {
+        return NULL;
+    }
+    if (i >= 0) {
+        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+        assert(value != NULL);
+        return Py_NewRef(value);
     }
 
     // Okay not in the fast locals, try extra locals
@@ -145,37 +140,38 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         return -1;
     }
 
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, false);
-        if (i >= 0) {
-            _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
+    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    if (i == -2) {
+        return -1;
+    }
+    if (i >= 0) {
+        _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
 
-            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-            _PyStackRef oldvalue = fast[i];
-            PyObject *cell = NULL;
-            if (kind == CO_FAST_FREE) {
-                // The cell was set when the frame was created from
-                // the function's closure.
-                assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
-                cell = PyStackRef_AsPyObjectBorrow(oldvalue);
-            } else if (kind & CO_FAST_CELL && oldvalue.bits != 0) {
-                PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
-                if (PyCell_Check(as_obj)) {
-                    cell = as_obj;
-                }
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+        _PyStackRef oldvalue = fast[i];
+        PyObject *cell = NULL;
+        if (kind == CO_FAST_FREE) {
+            // The cell was set when the frame was created from
+            // the function's closure.
+            assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
+            cell = PyStackRef_AsPyObjectBorrow(oldvalue);
+        } else if (kind & CO_FAST_CELL && oldvalue.bits != 0) {
+            PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
+            if (PyCell_Check(as_obj)) {
+                cell = as_obj;
             }
-            if (cell != NULL) {
-                PyObject *oldvalue_o = PyCell_GET(cell);
-                if (value != oldvalue_o) {
-                    PyCell_SET(cell, Py_XNewRef(value));
-                    Py_XDECREF(oldvalue_o);
-                }
-            } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-                PyStackRef_XCLOSE(fast[i]);
-                fast[i] = PyStackRef_FromPyObjectNew(value);
-            }
-            return 0;
         }
+        if (cell != NULL) {
+            PyObject *oldvalue_o = PyCell_GET(cell);
+            if (value != oldvalue_o) {
+                PyCell_SET(cell, Py_XNewRef(value));
+                Py_XDECREF(oldvalue_o);
+            }
+        } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
+            PyStackRef_XCLOSE(fast[i]);
+            fast[i] = PyStackRef_FromPyObjectNew(value);
+        }
+        return 0;
     }
 
     // Okay not in the fast locals, try extra locals
@@ -545,11 +541,12 @@ framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
 
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, true);
-        if (i >= 0) {
-            return 1;
-        }
+    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    if (i == -2) {
+        return -1;
+    }
+    if (i >= 0) {
+        return 1;
     }
 
     PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
