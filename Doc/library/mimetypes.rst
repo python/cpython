@@ -304,4 +304,3 @@ than one MIME-type database; it provides an interface similar to the one of the
 
       When *strict* is ``True`` (the default), the mapping will be added to the
       official MIME types, otherwise to the non-standard ones.
-      
