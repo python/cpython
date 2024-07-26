@@ -473,6 +473,12 @@
             break;
         }
 
+        case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_SUBSCR: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
@@ -615,10 +621,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 */
-
-        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 */
-
         case _GET_AITER: {
             _Py_UopsSymbol *iter;
             iter = sym_new_not_null(ctx);
@@ -649,8 +651,6 @@
             ctx->done = true;
             break;
         }
-
-        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
         case _YIELD_VALUE: {
             _Py_UopsSymbol *res;
@@ -1160,7 +1160,12 @@
             break;
         }
 
-        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 */
+        case _LOAD_ATTR_PROPERTY_FRAME: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = sym_new_not_null(ctx);
+            stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
+            break;
+        }
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
@@ -1593,13 +1598,28 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 */
+        case _MAYBE_EXPAND_METHOD: {
+            _Py_UopsSymbol *func;
+            _Py_UopsSymbol *maybe_self;
+            _Py_UopsSymbol **args;
+            args = &stack_pointer[-oparg];
+            func = sym_new_not_null(ctx);
+            maybe_self = sym_new_not_null(ctx);
+            for (int _i = oparg; --_i >= 0;) {
+                args[_i] = sym_new_not_null(ctx);
+            }
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = maybe_self;
+            break;
+        }
 
-        /* _CALL is not a viable micro-op for tier 2 */
+        /* _DO_CALL is not a viable micro-op for tier 2 */
 
         case _CHECK_PERIODIC: {
             break;
         }
+
+        /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
             _Py_UopsSymbol **args;
@@ -2044,6 +2064,8 @@
             stack_pointer[-1] = bottom;
             break;
         }
+
+        /* _INSTRUMENTED_LINE is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 */
 

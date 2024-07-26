@@ -151,7 +151,6 @@ def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
         if inst.family is not None:
             deopt = inst.family.name
         deopts.append((inst.name, deopt))
-    deopts.append(("INSTRUMENTED_LINE", "INSTRUMENTED_LINE"))
     for name, deopt in sorted(deopts):
         out.emit(f"[{name}] = {deopt},\n")
     out.emit("};\n\n")
@@ -179,7 +178,6 @@ def generate_name_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
     names = list(analysis.instructions) + list(analysis.pseudos)
-    names.append("INSTRUMENTED_LINE")
     for name in sorted(names):
         out.emit(f'[{name}] = "{name}",\n')
     out.emit("};\n")

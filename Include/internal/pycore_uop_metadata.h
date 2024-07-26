@@ -72,6 +72,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_SUBTRACT_FLOAT] = HAS_PURE_FLAG,
     [_GUARD_BOTH_UNICODE] = HAS_EXIT_FLAG,
     [_BINARY_OP_ADD_UNICODE] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
+    [_BINARY_OP_INPLACE_ADD_UNICODE] = HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -151,6 +152,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_CLASS_0] = 0,
     [_LOAD_ATTR_CLASS_1] = 0,
     [_LOAD_ATTR_CLASS] = HAS_ARG_FLAG | HAS_OPARG_AND_1_FLAG,
+    [_LOAD_ATTR_PROPERTY_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_DORV_NO_DICT] = HAS_DEOPT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = 0,
     [_STORE_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
@@ -197,6 +199,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = HAS_ARG_FLAG,
     [_CHECK_ATTR_METHOD_LAZY_DICT] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_METHOD_LAZY_DICT] = HAS_ARG_FLAG,
+    [_MAYBE_EXPAND_METHOD] = HAS_ARG_FLAG,
     [_CHECK_PERIODIC] = HAS_EVAL_BREAK_FLAG,
     [_PY_FRAME_GENERAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_FUNCTION_VERSION] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
@@ -278,6 +281,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
     [_BINARY_OP_ADD_INT] = "_BINARY_OP_ADD_INT",
     [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
+    [_BINARY_OP_INPLACE_ADD_UNICODE] = "_BINARY_OP_INPLACE_ADD_UNICODE",
     [_BINARY_OP_MULTIPLY_FLOAT] = "_BINARY_OP_MULTIPLY_FLOAT",
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
     [_BINARY_OP_SUBTRACT_FLOAT] = "_BINARY_OP_SUBTRACT_FLOAT",
@@ -420,6 +424,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_MODULE] = "_LOAD_ATTR_MODULE",
     [_LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = "_LOAD_ATTR_NONDESCRIPTOR_NO_DICT",
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = "_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES",
+    [_LOAD_ATTR_PROPERTY_FRAME] = "_LOAD_ATTR_PROPERTY_FRAME",
     [_LOAD_ATTR_SLOT] = "_LOAD_ATTR_SLOT",
     [_LOAD_ATTR_SLOT_0] = "_LOAD_ATTR_SLOT_0",
     [_LOAD_ATTR_SLOT_1] = "_LOAD_ATTR_SLOT_1",
@@ -460,6 +465,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_MATCH_KEYS] = "_MATCH_KEYS",
     [_MATCH_MAPPING] = "_MATCH_MAPPING",
     [_MATCH_SEQUENCE] = "_MATCH_SEQUENCE",
+    [_MAYBE_EXPAND_METHOD] = "_MAYBE_EXPAND_METHOD",
     [_NOP] = "_NOP",
     [_POP_EXCEPT] = "_POP_EXCEPT",
     [_POP_TOP] = "_POP_TOP",
@@ -630,6 +636,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _BINARY_OP_ADD_UNICODE:
             return 2;
+        case _BINARY_OP_INPLACE_ADD_UNICODE:
+            return 2;
         case _BINARY_SUBSCR:
             return 2;
         case _BINARY_SLICE:
@@ -788,6 +796,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _LOAD_ATTR_CLASS:
             return 1;
+        case _LOAD_ATTR_PROPERTY_FRAME:
+            return 1;
         case _GUARD_DORV_NO_DICT:
             return 1;
         case _STORE_ATTR_INSTANCE_VALUE:
@@ -880,6 +890,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
+        case _MAYBE_EXPAND_METHOD:
+            return 2 + oparg;
         case _CHECK_PERIODIC:
             return 0;
         case _PY_FRAME_GENERAL:
