@@ -48,7 +48,7 @@
    of less than one character */
 #define SMALLBUF 4
 
-/* Limit write size to consoles so that interruptss feel
+/* Limit write size to consoles so that interrupts feel
    responsive. */
 #define WRITE_LIMIT_CONSOLE (1024 * 1024)
 
