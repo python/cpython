@@ -2035,6 +2035,13 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 }
 
 
+static PyObject *
+get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _PyStaticType_GetBuiltins();
+}
+
+
 #include "_testinternalcapi/tpslots_generated.h"
 
 static PyObject *
@@ -2152,6 +2159,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slots", identify_type_slots, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
