@@ -461,6 +461,11 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     executor->jit_code = memory;
     executor->jit_side_entry = memory + trampoline.code_size;
     executor->jit_size = total_size;
+
+    // static int compile_count = 0;
+    // if (++compile_count == 100) {
+    //     _Py_Executor_Invalidate(executor);
+    // }
     return 0;
 }
 
