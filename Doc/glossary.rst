@@ -694,6 +694,9 @@ Glossary
 
          CPython does not consistently apply the requirement that an iterator
          define :meth:`~iterator.__iter__`.
+         And also please note that the free-threading CPython does not guarantee
+         the thread-safety of iterator operations.
+
 
    key function
       A key function or collation function is a callable that returns a value

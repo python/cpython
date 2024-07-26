@@ -180,7 +180,54 @@ Examining Symbol Tables
 
    .. method:: get_methods()
 
-      Return a tuple containing the names of methods declared in the class.
+      Return a tuple containing the names of method-like functions declared
+      in the class.
+
+      Here, the term 'method' designates *any* function defined in the class
+      body via :keyword:`def` or :keyword:`async def`.
+
+      Functions defined in a deeper scope (e.g., in an inner class) are not
+      picked up by :meth:`get_methods`.
+
+      For example:
+
+      .. testsetup:: symtable.Class.get_methods
+
+         import warnings
+         context = warnings.catch_warnings()
+         context.__enter__()
+         warnings.simplefilter("ignore", category=DeprecationWarning)
+
+      .. testcleanup:: symtable.Class.get_methods
+
+         context.__exit__()
+
+      .. doctest:: symtable.Class.get_methods
+
+         >>> import symtable
+         >>> st = symtable.symtable('''
+         ... def outer(): pass
+         ...
+         ... class A:
+         ...    def f():
+         ...        def w(): pass
+         ...
+         ...    def g(self): pass
+         ...
+         ...    @classmethod
+         ...    async def h(cls): pass
+         ...
+         ...    global outer
+         ...    def outer(self): pass
+         ... ''', 'test', 'exec')
+         >>> class_A = st.get_children()[2]
+         >>> class_A.get_methods()
+         ('f', 'g', 'h')
+
+      Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
+      considered as a method-like function.
+
+      .. deprecated-removed:: 3.14 3.16
 
 
 .. class:: Symbol

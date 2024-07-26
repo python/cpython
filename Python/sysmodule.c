@@ -747,7 +747,7 @@ sys_displayhook(PyObject *module, PyObject *o)
     if (o == Py_None) {
         Py_RETURN_NONE;
     }
-    if (PyObject_SetAttr(builtins, &_Py_ID(_), Py_None) != 0)
+    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), Py_None) != 0)
         return NULL;
     outf = _PySys_GetAttr(tstate, &_Py_ID(stdout));
     if (outf == NULL || outf == Py_None) {
@@ -769,10 +769,9 @@ sys_displayhook(PyObject *module, PyObject *o)
             return NULL;
         }
     }
-    _Py_DECLARE_STR(newline, "\n");
-    if (PyFile_WriteObject(&_Py_STR(newline), outf, Py_PRINT_RAW) != 0)
+    if (PyFile_WriteObject(_Py_LATIN1_CHR('\n'), outf, Py_PRINT_RAW) != 0)
         return NULL;
-    if (PyObject_SetAttr(builtins, &_Py_ID(_), o) != 0)
+    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), o) != 0)
         return NULL;
     Py_RETURN_NONE;
 }
@@ -930,7 +929,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
     if (u == NULL) {
         return NULL;
     }
-    _PyUnicode_InternInPlace(interp, &u);
+    _PyUnicode_InternImmortal(interp, &u);
     return u;
 }
 
@@ -950,7 +949,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
     if (u == NULL) {
         return NULL;
     }
-    _PyUnicode_InternInPlace(interp, &u);
+    _PyUnicode_InternImmortal(interp, &u);
     return u;
 }
 
@@ -972,8 +971,9 @@ sys_intern_impl(PyObject *module, PyObject *s)
 /*[clinic end generated code: output=be680c24f5c9e5d6 input=849483c006924e2f]*/
 {
     if (PyUnicode_CheckExact(s)) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         Py_INCREF(s);
-        PyUnicode_InternInPlace(&s);
+        _PyUnicode_InternMortal(interp, &s);
         return s;
     }
     else {
@@ -2007,14 +2007,22 @@ sys_getallocatedblocks_impl(PyObject *module)
 /*[clinic input]
 sys.getunicodeinternedsize -> Py_ssize_t
 
+    *
+    _only_immortal: bool = False
+
 Return the number of elements of the unicode interned dictionary
 [clinic start generated code]*/
 
 static Py_ssize_t
-sys_getunicodeinternedsize_impl(PyObject *module)
-/*[clinic end generated code: output=ad0e4c9738ed4129 input=726298eaa063347a]*/
+sys_getunicodeinternedsize_impl(PyObject *module, int _only_immortal)
+/*[clinic end generated code: output=29a6377a94a14f70 input=0330b3408dd5bcc6]*/
 {
-    return _PyUnicode_InternedSize();
+    if (_only_immortal) {
+        return _PyUnicode_InternedSize_Immortal();
+    }
+    else {
+        return _PyUnicode_InternedSize();
+    }
 }
 
 /*[clinic input]

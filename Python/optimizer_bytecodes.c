@@ -601,7 +601,6 @@ dummy_func(void) {
         (void)callable;
         (void)self_or_null;
         (void)args;
-        first_valid_check_stack = NULL;
         new_frame = NULL;
         ctx->done = true;
     }
@@ -656,6 +655,11 @@ dummy_func(void) {
 
     op(_FOR_ITER_GEN_FRAME, ( -- )) {
         /* We are about to hit the end of the trace */
+        ctx->done = true;
+    }
+
+    op(_SEND_GEN_FRAME, ( -- )) {
+        // We are about to hit the end of the trace:
         ctx->done = true;
     }
 
@@ -774,6 +778,12 @@ dummy_func(void) {
         }
     }
 
+    op(_LOAD_SPECIAL, (owner -- attr, self_or_null)) {
+        (void)owner;
+        attr = sym_new_not_null(ctx);
+        self_or_null = sym_new_unknown(ctx);
+    }
+
     op(_JUMP_TO_TOP, (--)) {
         ctx->done = true;
     }
@@ -781,7 +791,6 @@ dummy_func(void) {
     op(_EXIT_TRACE, (--)) {
         ctx->done = true;
     }
-
 
 // END BYTECODES //
 
