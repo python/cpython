@@ -281,6 +281,44 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+pyiter_next(PyObject *self, PyObject *args)
+{
+    PyObject *iter;
+    if (!PyArg_ParseTuple(args, "O:pyiter_next", &iter)) {
+        return NULL;
+    }
+    assert(PyIter_Check(iter) || PyAIter_Check(iter));
+    PyObject *item = PyIter_Next(iter);
+    if (item == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
+static PyObject *
+pyiter_nextitem(PyObject *self, PyObject *args)
+{
+    PyObject *iter;
+    if (!PyArg_ParseTuple(args, "O:pyiter_nextitem", &iter)) {
+        return NULL;
+    }
+    assert(PyIter_Check(iter) || PyAIter_Check(iter));
+    PyObject *item;
+    int rc = PyIter_NextItem(iter, &item);
+    if (rc < 0) {
+        assert(PyErr_Occurred());
+        assert(item == NULL);
+        return NULL;
+    }
+    assert(!PyErr_Occurred());
+    if (item == NULL) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
+
 /* Issue #4701: Check that PyObject_Hash implicitly calls
  *   PyType_Ready if it hasn't already been called
  */
@@ -3483,6 +3521,9 @@ static PyMethodDef TestMethods[] = {
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
+
+    {"PyIter_Next", pyiter_next, METH_VARARGS},
+    {"PyIter_NextItem", pyiter_nextitem, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
