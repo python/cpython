@@ -1598,13 +1598,27 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 */
+        case _MAYBE_EXPAND_METHOD: {
+            _Py_UopsSymbol *func;
+            _Py_UopsSymbol *maybe_self;
+            _Py_UopsSymbol **args;
+            func = sym_new_not_null(ctx);
+            maybe_self = sym_new_not_null(ctx);
+            for (int _i = oparg; --_i >= 0;) {
+                args[_i] = sym_new_not_null(ctx);
+            }
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = maybe_self;
+            break;
+        }
 
-        /* _CALL is not a viable micro-op for tier 2 */
+        /* _DO_CALL is not a viable micro-op for tier 2 */
 
         case _CHECK_PERIODIC: {
             break;
         }
+
+        /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
             _Py_UopsSymbol **args;
