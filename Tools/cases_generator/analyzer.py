@@ -800,12 +800,6 @@ def assign_opcodes(
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
-    # Special case: this instruction is implemented in ceval.c
-    # rather than bytecodes.c, so we need to add it explicitly
-    # here (at least until we add something to bytecodes.c to
-    # declare external instructions).
-    instrumented.append("INSTRUMENTED_LINE")
-
     specialized: set[str] = set()
     no_arg: list[str] = []
     has_arg: list[str] = []

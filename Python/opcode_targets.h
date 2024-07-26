@@ -234,6 +234,7 @@ static void *opcode_targets[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
+    &&_unknown_opcode,
     &&TARGET_INSTRUMENTED_RESUME,
     &&TARGET_INSTRUMENTED_END_FOR,
     &&TARGET_INSTRUMENTED_END_SEND,
@@ -252,7 +253,6 @@ static void *opcode_targets[256] = {
     &&TARGET_INSTRUMENTED_RETURN_VALUE,
     &&TARGET_INSTRUMENTED_RETURN_CONST,
     &&TARGET_INSTRUMENTED_YIELD_VALUE,
-    &&_unknown_opcode,
     &&TARGET_INSTRUMENTED_LINE,
     &&_unknown_opcode,
 };

@@ -1902,7 +1902,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 232: \
     case 233: \
     case 234: \
-    case 253: \
+    case 235: \
     case 255: \
         ;
 struct pseudo_targets {
