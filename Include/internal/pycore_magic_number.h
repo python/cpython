@@ -261,6 +261,7 @@ Known values:
     Python 3.14a1 3600 (Add LOAD_COMMON_CONSTANT)
     Python 3.14a1 3601 (Fix miscompilation of private names in generic classes)
     Python 3.14a1 3602 (Add LOAD_SPECIAL. Remove BEFORE_WITH and BEFORE_ASYNC_WITH)
+    Python 3.14a1 3603 (Remove BUILD_CONST_KEY_MAP)
 
     Python 3.15 will start with 3650
 
@@ -279,7 +280,7 @@ in PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3602
+#define PYC_MAGIC_NUMBER 3603
 
 #define MAX_VERSION_SIZE 8
 

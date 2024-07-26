@@ -835,46 +835,6 @@ resume_frame:
 
 #include "generated_cases.c.h"
 
-    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
-     * because it needs to capture frame->instr_ptr before it is updated,
-     * as happens in the standard instruction prologue.
-     */
-#if USE_COMPUTED_GOTOS
-        TARGET_INSTRUMENTED_LINE:
-#else
-        case INSTRUMENTED_LINE:
-#endif
-    {
-        _Py_CODEUNIT *prev = frame->instr_ptr;
-        _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
-        int original_opcode = 0;
-        if (tstate->tracing) {
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            original_opcode = code->_co_monitoring->lines[(int)(here - _PyCode_CODE(code))].original_opcode;
-        } else {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame, here, prev);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (original_opcode < 0) {
-                next_instr = here+1;
-                goto error;
-            }
-            next_instr = frame->instr_ptr;
-            if (next_instr != here) {
-                DISPATCH();
-            }
-        }
-        if (_PyOpcode_Caches[original_opcode]) {
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
-            /* Prevent the underlying instruction from specializing
-             * and overwriting the instrumentation. */
-            PAUSE_ADAPTIVE_COUNTER(cache->counter);
-        }
-        opcode = original_opcode;
-        DISPATCH_GOTO();
-    }
-
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
