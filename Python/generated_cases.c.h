@@ -773,6 +773,8 @@
             _PyStackRef callable;
             _PyStackRef self_or_null;
             _PyStackRef *args;
+            _PyStackRef func;
+            _PyStackRef maybe_self;
             _PyStackRef res;
             // _SPECIALIZE_CALL
             self_or_null = stack_pointer[-1 - oparg];
@@ -792,26 +794,34 @@
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 2 cache entries */
-            // _CALL
+            // _MAYBE_EXPAND_METHOD
+            {
+                if (PyStackRef_TYPE(callable) == &PyMethod_Type && PyStackRef_IsNull(self_or_null)) {
+                    PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                    PyObject *self = ((PyMethodObject *)callable_o)->im_self;
+                    maybe_self = PyStackRef_FromPyObjectNew(self);
+                    PyObject *method = ((PyMethodObject *)callable_o)->im_func;
+                    func = PyStackRef_FromPyObjectNew(method);
+                    /* Make sure that callable and all args are in memory */
+                    args[-2] = func;
+                    args[-1] = maybe_self;
+                    PyStackRef_CLOSE(callable);
+                }
+                else {
+                    func = callable;
+                    maybe_self = self_or_null;
+                }
+            }
+            // _DO_CALL
+            self_or_null = maybe_self;
+            callable = func;
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-                PyObject *self_or_null_o = PyStackRef_AsPyObjectBorrow(self_or_null);
                 // oparg counts all of the args, but *not* self:
                 int total_args = oparg;
-                if (self_or_null_o != NULL) {
+                if (!PyStackRef_IsNull(self_or_null)) {
                     args--;
                     total_args++;
-                }
-                else if (Py_TYPE(callable_o) == &PyMethod_Type) {
-                    args--;
-                    total_args++;
-                    PyObject *self = ((PyMethodObject *)callable_o)->im_self;
-                    args[0] = PyStackRef_FromPyObjectNew(self);
-                    PyObject *method = ((PyMethodObject *)callable_o)->im_func;
-                    args[-1] = PyStackRef_FromPyObjectNew(method);
-                    PyStackRef_CLOSE(callable);
-                    callable_o = method;
-                    callable = args[-1];
                 }
                 // Check if the call can be inlined or not
                 if (Py_TYPE(callable_o) == &PyFunction_Type &&
@@ -3504,18 +3514,134 @@
             (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL);
+            _PyStackRef callable;
+            _PyStackRef self_or_null;
+            _PyStackRef *args;
+            _PyStackRef func;
+            _PyStackRef maybe_self;
+            _PyStackRef res;
             /* Skip 3 cache entries */
-            int is_meth = PyStackRef_AsPyObjectBorrow(PEEK(oparg + 1)) != NULL;
-            int total_args = oparg + is_meth;
-            PyObject *function = PyStackRef_AsPyObjectBorrow(PEEK(oparg + 2));
-            PyObject *arg = total_args == 0 ?
-            &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(PEEK(total_args));
-            int err = _Py_call_instrumentation_2args(
-                tstate, PY_MONITORING_EVENT_CALL,
-                frame, this_instr, function, arg);
-            if (err) goto error;
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(CALL);
+            // _MAYBE_EXPAND_METHOD
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            {
+                if (PyStackRef_TYPE(callable) == &PyMethod_Type && PyStackRef_IsNull(self_or_null)) {
+                    PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                    PyObject *self = ((PyMethodObject *)callable_o)->im_self;
+                    maybe_self = PyStackRef_FromPyObjectNew(self);
+                    PyObject *method = ((PyMethodObject *)callable_o)->im_func;
+                    func = PyStackRef_FromPyObjectNew(method);
+                    /* Make sure that callable and all args are in memory */
+                    args[-2] = func;
+                    args[-1] = maybe_self;
+                    PyStackRef_CLOSE(callable);
+                }
+                else {
+                    func = callable;
+                    maybe_self = self_or_null;
+                }
+            }
+            // _MONITOR_CALL
+            {
+                int is_meth = !PyStackRef_IsNull(maybe_self);
+                PyObject *function = PyStackRef_AsPyObjectBorrow(func);
+                PyObject *arg0;
+                if (is_meth) {
+                    arg0 = PyStackRef_AsPyObjectBorrow(maybe_self);
+                }
+                else if (oparg) {
+                    arg0 = PyStackRef_AsPyObjectBorrow(args[0]);
+                }
+                else {
+                    arg0 = &_PyInstrumentation_MISSING;
+                }
+                int err = _Py_call_instrumentation_2args(
+                    tstate, PY_MONITORING_EVENT_CALL,
+                    frame, this_instr, function, arg0
+                );
+                if (err) goto error;
+            }
+            // _DO_CALL
+            self_or_null = maybe_self;
+            callable = func;
+            {
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                // oparg counts all of the args, but *not* self:
+                int total_args = oparg;
+                if (!PyStackRef_IsNull(self_or_null)) {
+                    args--;
+                    total_args++;
+                }
+                // Check if the call can be inlined or not
+                if (Py_TYPE(callable_o) == &PyFunction_Type &&
+                    tstate->interp->eval_frame == NULL &&
+                    ((PyFunctionObject *)callable_o)->vectorcall == _PyFunction_Vectorcall)
+                {
+                    int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
+                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+                        tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
+                        args, total_args, NULL
+                    );
+                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
+                    STACK_SHRINK(oparg + 2);
+                    // The frame has stolen all the arguments from the stack,
+                    // so there is no need to clean them up.
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
+                    frame->return_offset = (uint16_t)(next_instr - this_instr);
+                    DISPATCH_INLINED(new_frame);
+                }
+                /* Callable is not a normal Python function */
+                STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+                if (CONVERSION_FAILED(args_o)) {
+                    PyStackRef_CLOSE(callable);
+                    PyStackRef_CLOSE(self_or_null);
+                    for (int _i = oparg; --_i >= 0;) {
+                        PyStackRef_CLOSE(args[_i]);
+                    }
+                    if (true) { stack_pointer += -2 - oparg; goto error; }
+                }
+                PyObject *res_o = PyObject_Vectorcall(
+                    callable_o, args_o,
+                    total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                    NULL);
+                STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+                if (opcode == INSTRUMENTED_CALL) {
+                    PyObject *arg = total_args == 0 ?
+                    &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(args[0]);
+                    if (res_o == NULL) {
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, this_instr, callable_o, arg);
+                    }
+                    else {
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, this_instr, callable_o, arg);
+                        if (err < 0) {
+                            Py_CLEAR(res_o);
+                        }
+                    }
+                }
+                assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+                PyStackRef_CLOSE(callable);
+                for (int i = 0; i < total_args; i++) {
+                    PyStackRef_CLOSE(args[i]);
+                }
+                if (res_o == NULL) { stack_pointer += -2 - oparg; goto error; }
+                res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            // _CHECK_PERIODIC
+            {
+            }
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
         }
 
         TARGET(INSTRUMENTED_CALL_FUNCTION_EX) {

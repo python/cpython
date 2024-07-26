@@ -214,7 +214,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case IMPORT_NAME:
             return 2;
         case INSTRUMENTED_CALL:
-            return 0;
+            return 2 + oparg;
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 0;
         case INSTRUMENTED_CALL_KW:
@@ -661,7 +661,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case IMPORT_NAME:
             return 1;
         case INSTRUMENTED_CALL:
-            return 0;
+            return 1;
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 0;
         case INSTRUMENTED_CALL_KW:
@@ -1078,7 +1078,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_FROM] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [INSTRUMENTED_CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [INSTRUMENTED_CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_CALL_FUNCTION_EX] = { true, INSTR_FMT_IX, 0 },
     [INSTRUMENTED_CALL_KW] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
