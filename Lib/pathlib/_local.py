@@ -847,7 +847,7 @@ class Path(PathBase, PurePath):
                     err.filename = filename
                     on_error(err)
             import shutil
-            shutil.rmtree(str(self), onexc=onexc)
+            shutil.rmtree(str(self), ignore_errors, onexc=onexc)
         else:
             try:
                 self.unlink()
