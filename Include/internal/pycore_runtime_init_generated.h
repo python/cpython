@@ -1004,6 +1004,7 @@ extern "C" {
     INIT_ID(intersection), \
     INIT_ID(interval), \
     INIT_ID(is_running), \
+    INIT_ID(is_struct), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
     INIT_ID(isoformat), \

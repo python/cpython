@@ -246,7 +246,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t bitofs = 0;
     PyObject *tmp;
     int pack;
-    int forced_alignment = 1;
     Py_ssize_t ffi_ofs;
     int big_endian;
     int arrays_seen = 0;
@@ -263,6 +262,31 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
     else {
         big_endian = PY_BIG_ENDIAN;
+    }
+
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+    StgInfo *stginfo;
+    if (PyStgInfo_FromType(st, type, &stginfo) < 0) {
+        return -1;
+    }
+    if (!stginfo) {
+        PyErr_SetString(PyExc_TypeError,
+                        "ctypes state is not initialized");
+        return -1;
+    }
+    PyObject *base = (PyObject *)((PyTypeObject *)type)->tp_base;
+    StgInfo *baseinfo;
+    if (PyStgInfo_FromType(st, base, &baseinfo) < 0) {
+        return -1;
+    }
+
+    /* If this structure/union is already marked final we cannot assign
+       _fields_ anymore. */
+
+    if (stginfo->flags & DICTFLAG_FINAL) {/* is final ? */
+        PyErr_SetString(PyExc_AttributeError,
+                        "_fields_ is final");
+        return -1;
     }
 
     if (PyObject_GetOptionalAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
@@ -330,42 +354,43 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!layout_class) {
         return -1;
     }
+    PyObject *kwnames = PyTuple_Pack(
+        2,
+        &_Py_ID(is_struct),
+        &_Py_ID(base));
+    PyObject *base_arg = Py_NewRef(baseinfo ? base : Py_None);
     PyObject *layout = PyObject_Vectorcall(
         layout_class,
         1 + (PyObject*[]){
             NULL,
+            /* positional args */
             type,
             fields,
+            /* keyword args */
             Py_GetConstantBorrowed(
-                isStruct ? Py_CONSTANT_TRUE : Py_CONSTANT_FALSE)},
-        3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
-        NULL);
+                isStruct ? Py_CONSTANT_TRUE : Py_CONSTANT_FALSE),
+            base_arg},
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames);
+    Py_DECREF(kwnames);
+    Py_DECREF(base_arg);
     Py_DECREF(layout_class);
     if (!layout) {
         return -1;
     }
-    if (PyObject_GetOptionalAttr(layout, &_Py_ID(align), &tmp) < 0) {
-        Py_DECREF(layout);
+    tmp = PyObject_GetAttr(layout, &_Py_ID(align));
+    Py_DECREF(layout);
+    if (!tmp) {
         return -1;
     }
-    Py_DECREF(layout);
-    if (tmp) {
-        forced_alignment = PyLong_AsInt(tmp);
-        Py_DECREF(tmp);
-        if (forced_alignment < 0) {
-            if (!PyErr_Occurred() ||
-                PyErr_ExceptionMatches(PyExc_TypeError) ||
-                PyErr_ExceptionMatches(PyExc_OverflowError))
-            {
-                PyErr_SetString(PyExc_ValueError,
-                                "_align_ must be a non-negative integer");
-            }
-            return -1;
+    int forced_alignment = PyLong_AsInt(tmp);
+    Py_DECREF(tmp);
+    if (forced_alignment < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "_align_ must be a non-negative integer");
         }
-    }
-    else {
-        /* Setting `_align_ = 0` amounts to using the default alignment */
-        forced_alignment = 1;
+        return -1;
     }
 
     len = PySequence_Size(fields);
@@ -377,39 +402,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
 
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
-    StgInfo *stginfo;
-    if (PyStgInfo_FromType(st, type, &stginfo) < 0) {
-        return -1;
-    }
-    if (!stginfo) {
-        PyErr_SetString(PyExc_TypeError,
-                        "ctypes state is not initialized");
-        return -1;
-    }
-
-    /* If this structure/union is already marked final we cannot assign
-       _fields_ anymore. */
-
-    if (stginfo->flags & DICTFLAG_FINAL) {/* is final ? */
-        PyErr_SetString(PyExc_AttributeError,
-                        "_fields_ is final");
-        return -1;
-    }
-
     if (stginfo->format) {
         PyMem_Free(stginfo->format);
         stginfo->format = NULL;
     }
 
-    if (stginfo->ffi_type_pointer.elements)
+    if (stginfo->ffi_type_pointer.elements) {
         PyMem_Free(stginfo->ffi_type_pointer.elements);
-
-    StgInfo *baseinfo;
-    if (PyStgInfo_FromType(st, (PyObject *)((PyTypeObject *)type)->tp_base,
-                           &baseinfo) < 0) {
-        return -1;
     }
+
     if (baseinfo) {
         stginfo->flags |= (baseinfo->flags &
                            (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD));

@@ -1,9 +1,38 @@
 import sys
+import warnings
+
+from _ctypes import CField
+import ctypes
 
 class _BaseLayout:
-    def __init__(self, cls, fields, is_struct):
+    def __init__(self, cls, fields, is_struct, base, **kwargs):
+        if kwargs:
+            warnings.warn(f'Unknown keyword arguments: {list(kwargs.keys())}')
         self.cls = cls
-        self.align = getattr(cls, '_align_', 1);
+        self.fields = fields
+        self.is_struct = is_struct
+
+        if base:
+            self.size = self.offset = ctypes.sizeof(base)
+            base_align = ctypes.alignment(base)
+        else:
+            self.size = 0
+            self.offset = 0
+            base_align = 1
+
+        self.align = getattr(cls, '_align_', 1)
+        if self.align < 0:
+            raise ValueError('_align_ must be a non-negative integer')
+        elif self.align == 0:
+            # Setting `_align_ = 0` amounts to using the default alignment
+            self.align == 1
+
+        self.total_align = max(self.align, base_align)
+
+    def __iter__(self):
+        for field in self.fields:
+            yield CField()
+
 
 class WindowsLayout(_BaseLayout):
     pass
