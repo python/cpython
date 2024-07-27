@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Parses compiler output with -fdiagnostics-format=json and checks that warnings exist
-only in files that are expected to have warnings.
+Parses compiler output with -fdiagnostics-format=json and checks that warnings
+exist only in files that are expected to have warnings.
 """
 import argparse
 import json
@@ -12,13 +12,15 @@ from pathlib import Path
 
 def extract_warnings_from_compiler_output(compiler_output: str) -> list[dict]:
     """
-    Extracts warnings from the compiler output when using -fdiagnostics-format=json
+    Extracts warnings from the compiler output when using
+    -fdiagnostics-format=json
 
-    Compiler output as a whole is not a valid json document, but includes many json
-    objects and may include other output that is not json.
+    Compiler output as a whole is not a valid json document, but includes many
+    json objects and may include other output that is not json.
     """
 
-    # Regex to find json arrays at the top level of the file in the compiler output
+    # Regex to find json arrays at the top level of the file
+    # in the compiler output
     json_arrays = re.findall(
         r"\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\]", compiler_output
     )
@@ -42,7 +44,8 @@ def extract_warnings_from_compiler_output(compiler_output: str) -> list[dict]:
 
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
-    Returns a dictionary where the key is the file and the data is the warnings in that file
+    Returns a dictionary where the key is the file and the data is the warnings
+    in that file
     """
     warnings_by_file = {}
     for warning in warnings:
@@ -67,8 +70,9 @@ def get_unexpected_warnings(
     files_with_warnings: set[str],
 ) -> int:
     """
-    Returns failure status if warnings discovered in list of warnings are associated with a file
-    that is not found in the list of files with expected warnings
+    Returns failure status if warnings discovered in list of warnings
+    are associated with a file that is not found in the list of files
+    with expected warnings
     """
     unexpected_warnings = []
     for file in files_with_warnings.keys():
@@ -90,8 +94,8 @@ def get_unexpected_improvements(
     files_with_warnings: set[str],
 ) -> int:
     """
-    Returns failure status if there are no warnings in the list of warnings for a file
-    that is in the list of files with expected warnings
+    Returns failure status if there are no warnings in the list of warnings for
+    a file that is in the list of files with expected warnings
     """
     unexpected_improvements = []
     for file in files_with_expected_warnings:
@@ -131,7 +135,8 @@ def main(argv: list[str] | None = None) -> int:
         "--fail-on-improvement",
         action="store_true",
         default=False,
-        help="Flag to fail if files that were expected to have warnings have no warnings",
+        help="Flag to fail if files that were expected "
+        "to have warnings have no warnings",
     )
 
     args = parser.parse_args(argv)
@@ -141,14 +146,16 @@ def main(argv: list[str] | None = None) -> int:
     # Check that the compiler output file is a valid path
     if not Path(args.compiler_output_file_path).is_file():
         print(
-            f"Compiler output file does not exist: {args.compiler_output_file_path}"
+            "Compiler output file does not exist: "
+            f"{args.compiler_output_file_path}"
         )
         return 1
 
     # Check that the warning ignore file is a valid path
     if not Path(args.warning_ignore_file_path).is_file():
         print(
-            f"Warning ignore file does not exist: {args.warning_ignore_file_path}"
+            "Warning ignore file does not exist: "
+            f"{args.warning_ignore_file_path}"
         )
         return 1
 
