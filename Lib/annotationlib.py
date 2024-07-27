@@ -6,7 +6,7 @@ import functools
 import sys
 import types
 
-__all__ = ["Format", "ForwardRef", "call_annotate_function", "get_annotations"]
+__all__ = ["Format", "ForwardRef", "call_annotate_function", "call_evaluate_function", "get_annotate_function", "get_annotations"]
 
 
 class Format(enum.IntEnum):

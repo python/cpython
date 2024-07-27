@@ -39,7 +39,8 @@ Glossary
    annotate function
       A function that can be called to retrieve the :term:`annotations <annotation>`
       of an object. This function is accessible as the :attr:`~object.__annotate__`
-      attribute of functions, classes, and modules.
+      attribute of functions, classes, and modules. Annotate functions are a
+      subset of :term:`evaluate functions <evaluate function>`.
 
    annotation
       A label associated with a variable, a class
@@ -369,6 +370,11 @@ Glossary
       characterized by the presence of many :keyword:`try` and :keyword:`except`
       statements.  The technique contrasts with the :term:`LBYL` style
       common to many other languages such as C.
+
+   evaluate function
+      A function that can be called to evaluate a lazily evaluated attribute
+      of an object, such as the value of type aliases created with the :keyword:`type`
+      statement.
 
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
