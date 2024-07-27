@@ -63,11 +63,9 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     // Ensure that the key is hashable.
-    if (!PyUnicode_CheckExact(key)) {
-        Py_hash_t hash = PyObject_Hash(key);
-        if (hash == -1) {
-            return -2;
-        }
+    Py_hash_t key_hash = PyObject_Hash(key);
+    if (key_hash == -1) {
+        return -2;
     }
 
     // We do 2 loops here because it's highly possible the key is interned
@@ -90,6 +88,11 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
     // is not interned.
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        Py_hash_t name_hash = PyObject_Hash(name);
+        assert(name_hash != -1);  // keys are exact unicode
+        if (name_hash != key_hash) {
+            continue;
+        }
         int same = PyObject_RichCompareBool(name, key, Py_EQ);
         if (same < 0) {
             return -2;
