@@ -379,8 +379,8 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
     tmp = PyObject_GetAttr(layout, &_Py_ID(align));
-    Py_DECREF(layout);
     if (!tmp) {
+        Py_DECREF(layout);
         return -1;
     }
     int forced_alignment = PyLong_AsInt(tmp);
@@ -390,6 +390,14 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             PyErr_SetString(PyExc_ValueError,
                             "_align_ must be a non-negative integer");
         }
+        Py_DECREF(layout);
+        return -1;
+    }
+
+    PyObject *layout_fields = PySequence_Fast(layout,
+                                              "layout must return a sequence");
+    Py_DECREF(layout);
+    if (!layout_fields) {
         return -1;
     }
 
@@ -400,6 +408,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                             "'_fields_' must be a sequence of pairs");
         }
         return -1;
+    }
+
+    if (len != PySequence_Fast_GET_SIZE(layout_fields)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "number of '_fields_' must match result of layout... for now.");
     }
 
     if (stginfo->format) {

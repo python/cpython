@@ -31,7 +31,20 @@ class _BaseLayout:
 
     def __iter__(self):
         for field in self.fields:
-            yield CField()
+            field = tuple(field)
+            try:
+                name, ftype, bits = field
+            except ValueError:
+                name, ftype = field
+                bits = None
+            size = ctypes.sizeof(ftype)
+            offset = self.offset
+            yield CField(
+                name=name,
+                size=size,
+                offset=offset,
+            )
+            self.offset += self.size
 
 
 class WindowsLayout(_BaseLayout):

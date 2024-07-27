@@ -20,6 +20,13 @@
 
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
 
+/*[clinic input]
+module _ctypes
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
+
+#include "clinic/cfield.c.h"
+
 static void pymem_destructor(PyObject *ptr)
 {
     void *p = PyCapsule_GetPointer(ptr, CTYPES_CFIELD_CAPSULE_NAME_PYMEM);
@@ -33,6 +40,10 @@ static void pymem_destructor(PyObject *ptr)
 /*
   PyCField_Type
 */
+/*[clinic input]
+class _ctypes.CField "PyObject *" "PyObject"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=602817ea3ffc709c]*/
 
 static inline
 Py_ssize_t round_down(Py_ssize_t numToRound, Py_ssize_t multiple)
@@ -184,6 +195,35 @@ PyCField_FromDesc_msvc(
 
     return 0;
 }
+
+/*[clinic input]
+@classmethod
+_ctypes.CField.__new__ as PyCField_new
+
+    name: str
+    size: Py_ssize_t
+    offset: Py_ssize_t
+
+[clinic start generated code]*/
+
+static PyObject *
+PyCField_new_impl(PyTypeObject *type, const char *name, Py_ssize_t size,
+                  Py_ssize_t offset)
+/*[clinic end generated code: output=109dac517c651e4b input=25b7b4a2d83d7ef9]*/
+{
+    PyTypeObject *tp = type;
+    CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
+    self->size = size;
+    self->offset = offset;
+
+    self->setfunc = NULL; // XXX
+    self->getfunc = NULL; // XXX
+    self->index = 0; // XXX
+    self->proto = NULL; // XXX
+
+    return (PyObject *)self;
+}
+
 
 PyObject *
 PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
@@ -398,6 +438,7 @@ PyCField_repr(CFieldObject *self)
 }
 
 static PyType_Slot cfield_slots[] = {
+    {Py_tp_new, PyCField_new},
     {Py_tp_dealloc, PyCField_dealloc},
     {Py_tp_repr, PyCField_repr},
     {Py_tp_doc, (void *)PyDoc_STR("Structure/Union member")},
@@ -413,7 +454,7 @@ PyType_Spec cfield_spec = {
     .name = "_ctypes.CField",
     .basicsize = sizeof(CFieldObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = cfield_slots,
 };
 
