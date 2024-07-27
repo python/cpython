@@ -81,16 +81,21 @@ on modules, classes, and functions.
       Evaluate the forward reference, returning its value.
 
       This may throw an exception such as :exc:`NameError` if the forward reference
-      refers to names that do not exist. The parameters to the function can be used to
+      refers to names that do not exist. The arguments to this method can be used to
       provide bindings for names that would otherwise be undefined.
+
+      :class:`~ForwardRef` instances returned by :func:`get_annotations` retain
+      references to information about the scope they originated from, so calling
+      this method with no further arguments may be sufficient to evaluate such objects.
+      :class:`~ForwardRef` instances created by other means may not have any information
+      about their scope, so passing arguments to this method may be necessary to
+      evaluate them successfully.
 
       *globals* and *locals* are passed to :func:`eval()`, representing the global and
       local namespaces in which the name is evaluated. *type_params*, if given, must be
       a tuple of :ref:`type parameters <type-params>` that are in scope while the forward
       reference is being evaluated. *owner* is the object that owns the annotation from
       which the forward reference derives, usually a function, class, or module.
-      :class:`~ForwardRef` instances returned by :func:`get_annotations` retain
-      a reference to their owner, so it is not necessary to pass it in explicitly.
 
       Once a :class:`~ForwardRef` instance has been evaluated, it caches the evaluated
       value, and future calls to :meth:`evaluate` will return the cached value, regardless
@@ -161,7 +166,8 @@ on modules, classes, and functions.
    * If ``obj`` is a callable, ``globals`` defaults to
      :attr:`obj.__globals__ <function.__globals__>`,
      although if ``obj`` is a wrapped function (using
-     :func:`functools.update_wrapper`) it is first unwrapped.
+     :func:`functools.update_wrapper`) or a :class:`functools.partial` object,
+     it is unwrapped until a non-wrapped function is found.
 
    Calling :func:`!get_annotations` is best practice for accessing the
    annotations dict of any object.  See :ref:`annotations-howto` for
