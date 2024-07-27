@@ -3328,8 +3328,8 @@ Introspection helpers
    *forward_ref* must be an instance of :class:`~annotationlib.ForwardRef`.
    *owner*, if given, should be the object that holds the annotations that
    the forward reference derived from, such as a module, class object, or function.
-   It is used to infer the namespaces to use for looking up names. 
-   *globals* and *locals* can also be explicitly given to provide 
+   It is used to infer the namespaces to use for looking up names.
+   *globals* and *locals* can also be explicitly given to provide
    the global and local namespaces.
    *type_params* is a tuple of :ref:`type parameters <type-params>` that
    are in scope when evaluating the forward reference.
