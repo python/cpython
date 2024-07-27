@@ -348,7 +348,7 @@ jobs:
       with:
         save: false
     - name: Configure CPython
-      run: ./configure --config-cache --enable-slower-safety --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info

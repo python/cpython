@@ -67,6 +67,7 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: >-
         ../cpython-ro-srcdir/configure
+        CFLAGS="-fdiagnostics-format=json"
         --config-cache
         --with-pydebug
         --enable-slower-safety
@@ -74,10 +75,12 @@ jobs:
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make -j4
+      run: make -j4 &> compiler_output.txt
     - name: Display build info
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
+    - name: Check compiler warnings
+      run: python Tools/build/check_warnings.py --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output.txt --warning-ignore-file-path ${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
