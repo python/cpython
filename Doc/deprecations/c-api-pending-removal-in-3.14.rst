@@ -4,6 +4,19 @@ Pending Removal in Python 3.14
 * The ``ma_version_tag`` field in :c:type:`PyDictObject` for extension modules
   (:pep:`699`; :gh:`101193`).
 
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases (:gh:`95388`).
+
+* Functions to configure Python's initialization, deprecated in Python 3.11:
+
+  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv`
+  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv`
+  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name`
+  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home`
+
+  The :c:func:`Py_InitializeFromConfig` API should be used with
+  :c:type:`PyConfig` instead.
+
 * Global configuration variables:
 
   * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
@@ -31,6 +44,3 @@ Pending Removal in Python 3.14
 
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
-
-* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-  bases (:gh:`95388`).
