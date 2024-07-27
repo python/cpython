@@ -370,7 +370,7 @@ PyDoc_STRVAR(reset_version__doc__,
     {"reset_version", _PyCFunction_CAST(reset_version), METH_FASTCALL|METH_KEYWORDS, reset_version__doc__},
 
 static PyObject *
-reset_version_impl(PyObject *module, PyObject *dict);
+reset_version_impl(PyObject *module, PyDictObject *dict);
 
 static PyObject *
 reset_version(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -402,16 +402,20 @@ reset_version(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *dict;
+    PyDictObject *dict;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    dict = args[0];
+    if (!PyDict_Check(args[0])) {
+        _PyArg_BadArgument("reset_version", "argument 'dict'", "dict", args[0]);
+        goto exit;
+    }
+    dict = (PyDictObject *)args[0];
     return_value = reset_version_impl(module, dict);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4282b73523afbfae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a30e302b27fd9bf input=a9049054013a1b77]*/

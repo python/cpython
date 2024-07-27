@@ -87,10 +87,6 @@ extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 extern uint32_t _PyDictKeys_GetVersionForCurrentState(
         PyInterpreterState *interp, PyDictKeysObject *dictkeys);
 
-// Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(void) _PyDictKeys_SetVersionForCurrentState(
-    PyInterpreterState *interp, PyDictKeysObject *dictkeys, uint32_t value);
-
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
 
 extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);

@@ -2037,15 +2037,24 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 /*[clinic input]
 reset_version
 
-    dict: object
+    dict: object(type="PyDictObject *", subclass_of="&PyDict_Type")
 
 [clinic start generated code]*/
 
 static PyObject *
-reset_version_impl(PyObject *module, PyObject *dict)
-/*[clinic end generated code: output=9cd6aadef620f04e input=f0c289ff2106ac52]*/
+reset_version_impl(PyObject *module, PyDictObject *dict)
+/*[clinic end generated code: output=9ba372a8b7ed5566 input=212f6cc66caef7af]*/
 {
-    _PyDictKeys_SetVersionForCurrentState(_PyInterpreterState_GET(), ((PyDictObject *)dict)->ma_keys, 1);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyDictKeysObject *dictkeys = dict->ma_keys;
+    if (dictkeys->dk_version != 0) {
+        Py_RETURN_NONE;
+    }
+    if (interp->dict_state.next_keys_version == 0) {
+        Py_RETURN_NONE;
+    }
+    interp->dict_state.next_keys_version = 1;
+    dictkeys->dk_version = 1;
     Py_RETURN_NONE;
 }
 
