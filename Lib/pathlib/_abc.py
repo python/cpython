@@ -806,7 +806,7 @@ class PathBase(PurePathBase):
             metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
             target._write_metadata(metadata, follow_symlinks=follow_symlinks)
 
-    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+    def _copy_file(self, target, *, follow_symlinks=True, preserve_metadata=False):
         """
         Copy the contents of this file to the given target. If this file is a
         symlink and follow_symlinks is false, a symlink will be created at the
@@ -835,11 +835,10 @@ class PathBase(PurePathBase):
         if preserve_metadata:
             self._copy_metadata(target)
 
-    def copytree(self, target, *, follow_symlinks=True,
-                 preserve_metadata=False, dirs_exist_ok=False,
-                 ignore=None, on_error=None):
+    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False,
+             dirs_exist_ok=False, ignore=None, on_error=None):
         """
-        Recursively copy this directory tree to the given destination.
+        Recursively copy this file or directory tree to the given destination.
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
@@ -848,24 +847,21 @@ class PathBase(PurePathBase):
                 raise err
         stack = [(self, target)]
         while stack:
-            source_dir, target_dir = stack.pop()
+            source, target = stack.pop()
+            if ignore and ignore(source):
+                continue
             try:
-                sources = source_dir.iterdir()
-                target_dir.mkdir(exist_ok=dirs_exist_ok)
-                if preserve_metadata:
-                    source_dir._copy_metadata(target_dir)
-                for source in sources:
-                    if ignore and ignore(source):
-                        continue
-                    try:
-                        if source.is_dir(follow_symlinks=follow_symlinks):
-                            stack.append((source, target_dir.joinpath(source.name)))
-                        else:
-                            source.copy(target_dir.joinpath(source.name),
-                                        follow_symlinks=follow_symlinks,
-                                        preserve_metadata=preserve_metadata)
-                    except OSError as err:
-                        on_error(err)
+                if source.is_dir(follow_symlinks=follow_symlinks):
+                    children = source.iterdir()
+                    target.mkdir(exist_ok=dirs_exist_ok)
+                    if preserve_metadata:
+                        source._copy_metadata(target)
+                    for child in children:
+                        stack.append((child, target.joinpath(child.name)))
+                else:
+                    source._copy_file(target,
+                                      follow_symlinks=follow_symlinks,
+                                      preserve_metadata=preserve_metadata)
             except OSError as err:
                 on_error(err)
 

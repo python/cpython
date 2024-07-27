@@ -787,7 +787,7 @@ class Path(PathBase, PurePath):
     _write_metadata = write_file_metadata
 
     if copyfile:
-        def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+        def _copy_file(self, target, *, follow_symlinks=True, preserve_metadata=False):
             """
             Copy the contents of this file to the given target. If this file is a
             symlink and follow_symlinks is false, a symlink will be created at the
@@ -804,8 +804,8 @@ class Path(PathBase, PurePath):
                     return
                 except UnsupportedOperation:
                     pass  # Fall through to generic code.
-            PathBase.copy(self, target, follow_symlinks=follow_symlinks,
-                          preserve_metadata=preserve_metadata)
+            PathBase._copy_file(self, target, follow_symlinks=follow_symlinks,
+                                preserve_metadata=preserve_metadata)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

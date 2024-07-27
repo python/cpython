@@ -1736,13 +1736,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(source.read_text(), target.read_text())
 
-    def test_copy_directory(self):
-        base = self.cls(self.base)
-        source = base / 'dirA'
-        target = base / 'copyA'
-        with self.assertRaises(OSError):
-            source.copy(target)
-
     @needs_symlinks
     def test_copy_symlink_follow_symlinks_true(self):
         base = self.cls(self.base)
@@ -1773,7 +1766,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.is_symlink())
         self.assertEqual(source.readlink(), target.readlink())
 
-    def test_copy_to_existing_file(self):
+    def test_copy_file_to_existing_file(self):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirB' / 'fileB'
@@ -1781,7 +1774,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(source.read_text(), target.read_text())
 
-    def test_copy_to_existing_directory(self):
+    def test_copy_file_to_existing_directory(self):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirA'
@@ -1789,7 +1782,7 @@ class DummyPathTest(DummyPurePathTest):
             source.copy(target)
 
     @needs_symlinks
-    def test_copy_to_existing_symlink(self):
+    def test_copy_file_to_existing_symlink(self):
         base = self.cls(self.base)
         source = base / 'dirB' / 'fileB'
         target = base / 'linkA'
@@ -1802,7 +1795,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(source.read_text(), real_target.read_text())
 
     @needs_symlinks
-    def test_copy_to_existing_symlink_follow_symlinks_false(self):
+    def test_copy_file_to_existing_symlink_follow_symlinks_false(self):
         base = self.cls(self.base)
         source = base / 'dirB' / 'fileB'
         target = base / 'linkA'
@@ -1814,7 +1807,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse(real_target.is_symlink())
         self.assertEqual(source.read_text(), real_target.read_text())
 
-    def test_copy_empty(self):
+    def test_copy_file_empty(self):
         base = self.cls(self.base)
         source = base / 'empty'
         target = base / 'copyA'
@@ -1823,11 +1816,11 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(target.read_bytes(), b'')
 
-    def test_copytree_simple(self):
+    def test_copy_dir_simple(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'copyC'
-        source.copytree(target)
+        source.copy(target)
         self.assertTrue(target.is_dir())
         self.assertTrue(target.joinpath('dirD').is_dir())
         self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
@@ -1837,7 +1830,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
 
-    def test_copytree_complex(self, follow_symlinks=True):
+    def test_copy_dir_complex(self, follow_symlinks=True):
         def ordered_walk(path):
             for dirpath, dirnames, filenames in path.walk(follow_symlinks=follow_symlinks):
                 dirnames.sort()
@@ -1853,7 +1846,7 @@ class DummyPathTest(DummyPurePathTest):
 
         # Perform the copy
         target = base / 'copyC'
-        source.copytree(target, follow_symlinks=follow_symlinks)
+        source.copy(target, follow_symlinks=follow_symlinks)
 
         # Compare the source and target trees
         source_walk = ordered_walk(source)
@@ -1879,24 +1872,24 @@ class DummyPathTest(DummyPurePathTest):
                     self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
                     self.assertEqual(source_file.readlink(), target_file.readlink())
 
-    def test_copytree_complex_follow_symlinks_false(self):
-        self.test_copytree_complex(follow_symlinks=False)
+    def test_copy_dir_complex_follow_symlinks_false(self):
+        self.test_copy_dir_complex(follow_symlinks=False)
 
-    def test_copytree_to_existing_directory(self):
+    def test_copy_dir_to_existing_directory(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'copyC'
         target.mkdir()
         target.joinpath('dirD').mkdir()
-        self.assertRaises(FileExistsError, source.copytree, target)
+        self.assertRaises(FileExistsError, source.copy, target)
 
-    def test_copytree_to_existing_directory_dirs_exist_ok(self):
+    def test_copy_dir_to_existing_directory_dirs_exist_ok(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'copyC'
         target.mkdir()
         target.joinpath('dirD').mkdir()
-        source.copytree(target, dirs_exist_ok=True)
+        source.copy(target, dirs_exist_ok=True)
         self.assertTrue(target.is_dir())
         self.assertTrue(target.joinpath('dirD').is_dir())
         self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
@@ -1906,22 +1899,16 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
 
-    def test_copytree_file(self):
+    def test_copy_missing_on_error(self):
         base = self.cls(self.base)
-        source = base / 'fileA'
-        target = base / 'copyA'
-        self.assertRaises(NotADirectoryError, source.copytree, target)
-
-    def test_copytree_file_on_error(self):
-        base = self.cls(self.base)
-        source = base / 'fileA'
+        source = base / 'foo'
         target = base / 'copyA'
         errors = []
-        source.copytree(target, on_error=errors.append)
+        source.copy(target, on_error=errors.append)
         self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], NotADirectoryError)
+        self.assertIsInstance(errors[0], FileNotFoundError)
 
-    def test_copytree_ignore_false(self):
+    def test_copy_dir_ignore_false(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'copyC'
@@ -1929,8 +1916,9 @@ class DummyPathTest(DummyPurePathTest):
         def ignore_false(path):
             ignores.append(path)
             return False
-        source.copytree(target, ignore=ignore_false)
+        source.copy(target, ignore=ignore_false)
         self.assertEqual(set(ignores), {
+            source,
             source / 'dirD',
             source / 'dirD' / 'fileD',
             source / 'fileC',
@@ -1945,15 +1933,16 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
 
-    def test_copytree_ignore_true(self):
+    def test_copy_dir_ignore_true(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         target = base / 'copyC'
         ignores = []
         def ignore_true(path):
-            ignores.append(path)
-            return True
-        source.copytree(target, ignore=ignore_true)
+            if path != source:
+                ignores.append(path)
+                return True
+        source.copy(target, ignore=ignore_true)
         self.assertEqual(set(ignores), {
             source / 'dirD',
             source / 'fileC',
@@ -1965,7 +1954,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse(target.joinpath('novel.txt').exists())
 
     @needs_symlinks
-    def test_copytree_dangling_symlink(self):
+    def test_copy_dangling_symlink(self):
         base = self.cls(self.base)
         source = base / 'source'
         target = base / 'target'
@@ -1973,10 +1962,10 @@ class DummyPathTest(DummyPurePathTest):
         source.mkdir()
         source.joinpath('link').symlink_to('nonexistent')
 
-        self.assertRaises(FileNotFoundError, source.copytree, target)
+        self.assertRaises(FileNotFoundError, source.copy, target)
 
         target2 = base / 'target2'
-        source.copytree(target2, follow_symlinks=False)
+        source.copy(target2, follow_symlinks=False)
         self.assertTrue(target2.joinpath('link').is_symlink())
         self.assertEqual(target2.joinpath('link').readlink(), self.cls('nonexistent'))
 
