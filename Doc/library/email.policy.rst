@@ -232,7 +232,7 @@ added matters.  To illustrate::
 
    .. attribute:: verify_generated_headers
 
-      If :const:`True` (the default), the generator will raise
+      If ``True`` (the default), the generator will raise
       :exc:`~email.errors.HeaderWriteError` instead of writing a header
       that is improperly folded or delimited, such that it would
       be parsed as multiple headers or joined with adjacent data.
