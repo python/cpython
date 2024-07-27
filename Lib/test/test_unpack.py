@@ -170,7 +170,7 @@ Unpacking unbalanced dict
     ValueError: too many values to unpack (expected 3, got 4)
 
 Ensure that `__len__()` is respected when showing the error message
-    
+
     >>> class LengthTooLong:
     ...     def __len__(self):
     ...         return 5
@@ -183,7 +183,7 @@ Ensure that `__len__()` is respected when showing the error message
     ValueError: too many values to unpack (expected 3, got 5)
 
 If `__len__()` is too low, fallback to not showing the got count
-    
+
     >>> class BadLength:
     ...     def __len__(self):
     ...         return 1
