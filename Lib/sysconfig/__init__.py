@@ -642,7 +642,7 @@ def get_platform():
             release = m.group()
     elif osname[:6] == "darwin":
         if sys.platform == "ios":
-            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "12.0")
+            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "13.0")
             osname = sys.platform
             machine = sys.implementation._multiarch
         else:
