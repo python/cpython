@@ -259,4 +259,4 @@ def open(filename, flag='c', protocol=None, writeback=False, *,
     """
 
     return DbfilenameShelf(filename, flag, protocol, writeback,
-                           serializer, deserializer)
+                           serializer=serializer, deserializer=deserializer)
