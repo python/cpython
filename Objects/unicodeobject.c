@@ -329,7 +329,8 @@ init_global_interned_strings(PyInterpreterState *interp)
         return _PyStatus_ERR("failed to create global interned dict");
     }
 
-    /* Intern statically allocated string identifiers and deepfreeze strings.
+    /* Intern statically allocated string identifiers, deepfreeze strings,
+        * and one-byte latin-1 strings.
         * This must be done before any module initialization so that statically
         * allocated string identifiers are used instead of heap allocated strings.
         * Deepfreeze uses the interned identifiers if present to save space
@@ -337,6 +338,11 @@ init_global_interned_strings(PyInterpreterState *interp)
     */
     _PyUnicode_InitStaticStrings(interp);
 
+    for (int i = 0; i < 256; i++) {
+        PyObject *s = LATIN1(i);
+        _PyUnicode_InternStatic(interp, &s);
+        assert(s == LATIN1(i));
+    }
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
@@ -14889,23 +14895,14 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
     assert(s != NULL);
     assert(_PyUnicode_CHECK(s));
     assert(_PyUnicode_STATE(s).statically_allocated);
-    assert(_Py_IsImmortal(s));
-
-    switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_NOT_INTERNED:
-            break;
-        case SSTATE_INTERNED_IMMORTAL_STATIC:
-            return s;
-        default:
-            Py_FatalError("_PyUnicode_InternStatic called on wrong string");
-    }
+    assert(!PyUnicode_CHECK_INTERNED(s));
 
 #ifdef Py_DEBUG
     /* We must not add process-global interned string if there's already a
      * per-interpreter interned_dict, which might contain duplicates.
-     * Except "short string" singletons: those are special-cased. */
+     */
     PyObject *interned = get_interned_dict(interp);
-    assert(interned == NULL || unicode_is_singleton(s));
+    assert(interned == NULL);
 #endif
 
     /* Look in the global cache first. */
@@ -14977,11 +14974,6 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         return s;
     }
 
-    /* Handle statically allocated strings. */
-    if (_PyUnicode_STATE(s).statically_allocated) {
-        return intern_static(interp, s);
-    }
-
     /* Is it already interned? */
     switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
@@ -14998,18 +14990,20 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
             return s;
     }
 
+    if (_PyUnicode_STATE(s).statically_allocated) {
+        return intern_static(interp, s);
+    }
+
     /* If it's already immortal, intern it as such */
     if (_Py_IsImmortal(s)) {
         immortalize = 1;
     }
 
-    /* if it's a short string, get the singleton -- and intern it */
+    /* if it's a short string, get the singleton */
     if (PyUnicode_GET_LENGTH(s) == 1 &&
                 PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
         PyObject *r = LATIN1(*(unsigned char*)PyUnicode_DATA(s));
-        if (!PyUnicode_CHECK_INTERNED(r)) {
-            r = intern_static(interp, r);
-        }
+        assert(PyUnicode_CHECK_INTERNED(r));
         Py_DECREF(s);
         return r;
     }
