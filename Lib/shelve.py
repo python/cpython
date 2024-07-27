@@ -231,7 +231,7 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False,
+    def __init__(self, filename, flag='c', protocol=None, writeback=False, *,
                  serializer=None, deserializer=None):
         import dbm
         Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,
