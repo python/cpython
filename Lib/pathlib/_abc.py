@@ -851,6 +851,7 @@ class PathBase(PurePathBase):
                 raise OSError(f"Cannot copy {self!r} inside itself: {target!r}")
             except OSError as err:
                 on_error(err)
+                return
         stack = [(self, target)]
         while stack:
             source_dir, target_dir = stack.pop()

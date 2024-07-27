@@ -1825,6 +1825,12 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(target.read_bytes(), b'')
 
+    def test_copy_to_itself(self):
+        base = self.cls(self.base)
+        source = base / 'empty'
+        source.write_bytes(b'')
+        self.assertRaises(OSError, source.copy, source)
+
     def test_copytree_simple(self):
         base = self.cls(self.base)
         source = base / 'dirC'
@@ -1907,6 +1913,19 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').is_file())
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
+
+    def test_copytree_to_itself(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        self.assertRaises(OSError, source.copytree, source)
+
+    def test_copytree_to_itself_on_error(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        errors = []
+        source.copytree(source, on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], OSError)
 
     def test_copytree_file(self):
         base = self.cls(self.base)
