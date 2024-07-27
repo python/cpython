@@ -52,7 +52,7 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-ga_repr_items_list(_PyUnicodeWriter *writer, PyObject *p)
+ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
 {
     assert(PyList_CheckExact(p));
 

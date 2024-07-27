@@ -245,7 +245,7 @@ PyType_Spec constevaluator_spec = {
 };
 
 int
-_Py_typing_type_repr(_PyUnicodeWriter *writer, PyObject *p)
+_Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
 {
     PyObject *qualname = NULL;
     PyObject *module = NULL;
