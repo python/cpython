@@ -162,7 +162,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | per-opcode events are     |
 |                 |                   | requested                 |
 +-----------------+-------------------+---------------------------+
-|                 | clear             | used to clear all         |
+|                 | clear()           | used to clear all         |
 |                 |                   | references to local       |
 |                 |                   | variables                 |
 +-----------------+-------------------+---------------------------+
@@ -227,16 +227,16 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | arguments and local       |
 |                 |                   | variables                 |
 +-----------------+-------------------+---------------------------+
-|                 | co_lines          | returns an iterator that  |
+|                 | co_lines()        | returns an iterator that  |
 |                 |                   | yields successive         |
 |                 |                   | bytecode ranges           |
 +-----------------+-------------------+---------------------------+
-|                 | co_positions      | returns an iterator of    |
+|                 | co_positions()    | returns an iterator of    |
 |                 |                   | source code positions for |
 |                 |                   | each bytecode instruction |
 +-----------------+-------------------+---------------------------+
-|                 | replace           | returns a copy of the     |
-|                 |                   | code object with a new    |
+|                 | replace()         | returns a copy of the     |
+|                 |                   | code object with new      |
 |                 |                   | values                    |
 +-----------------+-------------------+---------------------------+
 | generator       | __name__          | name                      |

@@ -452,17 +452,18 @@ def isgenerator(object):
     """Return true if the object is a generator.
 
     Generator objects provide these attributes:
-        __iter__        defined to support iteration over container
-        close           raises a new GeneratorExit exception inside the
-                        generator to terminate the iteration
         gi_code         code object
         gi_frame        frame object or possibly None once the generator has
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
         gi_yieldfrom    object being iterated by yield from or None
-        send            resumes the generator and "sends" a value that becomes
+        
+        __iter__()      defined to support iteration over container
+        close()         raises a new GeneratorExit exception inside the
+                        generator to terminate the iteration
+        send()          resumes the generator and "sends" a value that becomes
                         the result of the current yield-expression
-        throw           used to raise an exception inside the generator"""
+        throw()         used to raise an exception inside the generator"""
     return isinstance(object, types.GeneratorType)
 
 def iscoroutine(object):
@@ -501,7 +502,7 @@ def isframe(object):
         f_trace_lines   is a tracing event triggered for each source line?
         f_trace_opcodes are per-opcode events being requested?
 
-        clear           used to clear all references to local variables"""
+        clear()          used to clear all references to local variables"""
     return isinstance(object, types.FrameType)
 
 def iscode(object):
@@ -529,9 +530,9 @@ def iscode(object):
         co_varnames         tuple of names of arguments and local variables
         co_qualname         fully qualified function name
 
-        co_lines            returns an iterator that yields successive bytecode ranges
-        co_positions        returns an iterator of source code positions for each bytecode instruction
-        replace             returns a copy of the code object with a new values"""
+        co_lines()          returns an iterator that yields successive bytecode ranges
+        co_positions()      returns an iterator of source code positions for each bytecode instruction
+        replace()           returns a copy of the code object with a new values"""
     return isinstance(object, types.CodeType)
 
 def isbuiltin(object):
