@@ -56,7 +56,7 @@ entries in the cache, and empty the cache (d.sync() also synchronizes
 the persistent dictionary on disk, if feasible).
 """
 
-from pickle import DEFAULT_PROTOCOL, Unpickler, dumps, loads
+from pickle import DEFAULT_PROTOCOL, dumps, loads
 from io import BytesIO
 
 import collections.abc
