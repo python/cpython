@@ -17,9 +17,9 @@ try:
 except ImportError:
     grp = None
 
-from ._os import (UnsupportedOperation, copyfile, file_metadata_keys,
-                  read_file_metadata, write_file_metadata)
-from ._abc import PurePathBase, PathBase
+from ._os import (copyfile, file_metadata_keys, read_file_metadata,
+                  write_file_metadata)
+from ._abc import UnsupportedOperation, PurePathBase, PathBase
 
 
 __all__ = [
@@ -787,7 +787,7 @@ class Path(PathBase, PurePath):
     _write_metadata = write_file_metadata
 
     if copyfile:
-        def _copy_file(self, target, *, follow_symlinks=True, preserve_metadata=False):
+        def _copy_file(self, target):
             """
             Copy the contents of this file to the given target. If this file is a
             symlink and follow_symlinks is false, a symlink will be created at the
@@ -796,16 +796,11 @@ class Path(PathBase, PurePath):
             try:
                 target = os.fspath(target)
             except TypeError:
-                if not isinstance(target, PathBase):
-                    raise
+                if isinstance(target, PathBase):
+                    return PathBase._copy_file(self, target)
+                raise
             else:
-                try:
-                    copyfile(os.fspath(self), target, follow_symlinks)
-                    return
-                except UnsupportedOperation:
-                    pass  # Fall through to generic code.
-            PathBase._copy_file(self, target, follow_symlinks=follow_symlinks,
-                                preserve_metadata=preserve_metadata)
+                copyfile(os.fspath(self), target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

@@ -5,8 +5,7 @@ import errno
 import stat
 import unittest
 
-from pathlib._os import UnsupportedOperation
-from pathlib._abc import ParserBase, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
 import posixpath
 
 from test.support import is_wasi
@@ -1918,7 +1917,6 @@ class DummyPathTest(DummyPurePathTest):
             return False
         source.copy(target, ignore=ignore_false)
         self.assertEqual(set(ignores), {
-            source,
             source / 'dirD',
             source / 'dirD' / 'fileD',
             source / 'fileC',
@@ -1939,9 +1937,8 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'copyC'
         ignores = []
         def ignore_true(path):
-            if path != source:
-                ignores.append(path)
-                return True
+            ignores.append(path)
+            return True
         source.copy(target, ignore=ignore_true)
         self.assertEqual(set(ignores), {
             source / 'dirD',

@@ -16,7 +16,16 @@ import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from ._os import UnsupportedOperation, copyfileobj
+from ._os import copyfileobj
+
+
+__all__ = ["UnsupportedOperation"]
+
+
+class UnsupportedOperation(NotImplementedError):
+    """An exception that is raised when an unsupported operation is attempted.
+    """
+    pass
 
 
 @functools.cache
@@ -806,21 +815,14 @@ class PathBase(PurePathBase):
             metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
             target._write_metadata(metadata, follow_symlinks=follow_symlinks)
 
-    def _copy_file(self, target, *, follow_symlinks=True, preserve_metadata=False):
+    def _copy_file(self, target):
         """
-        Copy the contents of this file to the given target. If this file is a
-        symlink and follow_symlinks is false, a symlink will be created at the
-        target.
+        Copy the contents of this file to the given target.
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
         if self._samefile_safe(target):
             raise OSError(f"{self!r} and {target!r} are the same file")
-        if not follow_symlinks and self.is_symlink():
-            target.symlink_to(self.readlink())
-            if preserve_metadata:
-                self._copy_metadata(target, follow_symlinks=False)
-            return
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -832,8 +834,6 @@ class PathBase(PurePathBase):
                         f'Directory does not exist: {target}') from e
                 else:
                     raise
-        if preserve_metadata:
-            self._copy_metadata(target)
 
     def copy(self, target, *, follow_symlinks=True, preserve_metadata=False,
              dirs_exist_ok=False, ignore=None, on_error=None):
@@ -848,20 +848,19 @@ class PathBase(PurePathBase):
         stack = [(self, target)]
         while stack:
             source, target = stack.pop()
-            if ignore and ignore(source):
-                continue
             try:
                 if source.is_dir(follow_symlinks=follow_symlinks):
                     children = source.iterdir()
                     target.mkdir(exist_ok=dirs_exist_ok)
-                    if preserve_metadata:
-                        source._copy_metadata(target)
                     for child in children:
-                        stack.append((child, target.joinpath(child.name)))
+                        if not (ignore and ignore(child)):
+                            stack.append((child, target.joinpath(child.name)))
+                elif not follow_symlinks and source.is_symlink():
+                    target.symlink_to(source.readlink())
                 else:
-                    source._copy_file(target,
-                                      follow_symlinks=follow_symlinks,
-                                      preserve_metadata=preserve_metadata)
+                    source._copy_file(target)
+                if preserve_metadata:
+                    source._copy_metadata(target, follow_symlinks=follow_symlinks)
             except OSError as err:
                 on_error(err)
 
