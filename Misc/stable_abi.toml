@@ -971,7 +971,7 @@
 [function.PyLong_FromVoidPtr]
     added = '3.2'
 [function.PyLong_GetInfo]
-    added = '3.2'
+    added = '3.1'
 [data.PyLong_Type]
     added = '3.2'
 [data.PyMap_Type]
