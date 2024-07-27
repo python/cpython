@@ -169,38 +169,40 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     PyObject *value = ((constevaluatorobject *)self)->value;
     if (format == 3) { // SOURCE
-        _PyUnicodeWriter writer;
-        _PyUnicodeWriter_Init(&writer);
+        PyUnicodeWriter *writer = PyUnicodeWriter_Create(5);  // cannot be <5
+        if (writer == NULL) {
+            return NULL;
+        }
         if (PyTuple_Check(value)) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, "(", 1) < 0) {
-                _PyUnicodeWriter_Dealloc(&writer);
+            if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+                PyUnicodeWriter_Discard(writer);
                 return NULL;
             }
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(value); i++) {
                 PyObject *item = PyTuple_GET_ITEM(value, i);
                 if (i > 0) {
-                    if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
-                        _PyUnicodeWriter_Dealloc(&writer);
+                    if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+                        PyUnicodeWriter_Discard(writer);
                         return NULL;
                     }
                 }
-                if (_Py_typing_type_repr(&writer, item) < 0) {
-                    _PyUnicodeWriter_Dealloc(&writer);
+                if (_Py_typing_type_repr(writer, item) < 0) {
+                    PyUnicodeWriter_Discard(writer);
                     return NULL;
                 }
             }
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ")", 1) < 0) {
-                _PyUnicodeWriter_Dealloc(&writer);
+            if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+                PyUnicodeWriter_Discard(writer);
                 return NULL;
             }
         }
         else {
-            if (_Py_typing_type_repr(&writer, value) < 0) {
-                _PyUnicodeWriter_Dealloc(&writer);
+            if (_Py_typing_type_repr(writer, value) < 0) {
+                PyUnicodeWriter_Discard(writer);
                 return NULL;
             }
         }
-        return _PyUnicodeWriter_Finish(&writer);
+        return PyUnicodeWriter_Finish(writer);
     }
     return Py_NewRef(value);
 }
@@ -259,7 +261,7 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
     }
 
     if (p == (PyObject *)&_PyNone_Type) {
-        return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
+        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
     }
 
     if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
@@ -306,7 +308,7 @@ exit:
     if (r == NULL) {
         return -1;
     }
-    rc = _PyUnicodeWriter_WriteStr(writer, r);
+    rc = PyUnicodeWriter_WriteStr(writer, r);
     Py_DECREF(r);
     return rc;
 }
