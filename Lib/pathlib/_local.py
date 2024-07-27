@@ -830,9 +830,9 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    def rmtree(self, ignore_errors=False, on_error=None):
+    def delete(self, ignore_errors=False, on_error=None):
         """
-        Recursively delete this directory tree.
+        Recursively delete this file or directory tree.
 
         If *ignore_errors* is true, exceptions raised from scanning the tree
         and removing files and directories are ignored. Otherwise, if
@@ -840,14 +840,24 @@ class Path(PathBase, PurePath):
         *ignore_errors* nor *on_error* are set, exceptions are propagated to
         the caller.
         """
-        if on_error:
-            def onexc(func, filename, err):
-                err.filename = filename
-                on_error(err)
-        else:
+        if self.is_dir(follow_symlinks=False):
             onexc = None
-        import shutil
-        shutil.rmtree(str(self), ignore_errors, onexc=onexc)
+            if on_error:
+                def onexc(func, filename, err):
+                    err.filename = filename
+                    on_error(err)
+            import shutil
+            shutil.rmtree(str(self), onexc=onexc)
+        else:
+            try:
+                self.unlink()
+            except OSError as err:
+                if not ignore_errors:
+                    if on_error:
+                        on_error(err)
+                    else:
+                        raise
+
 
     def rename(self, target):
         """

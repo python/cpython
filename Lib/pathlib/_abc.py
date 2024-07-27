@@ -919,9 +919,9 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
 
-    def rmtree(self, ignore_errors=False, on_error=None):
+    def delete(self, ignore_errors=False, on_error=None):
         """
-        Recursively delete this directory tree.
+        Recursively delete this file or directory tree.
 
         If *ignore_errors* is true, exceptions raised from scanning the tree
         and removing files and directories are ignored. Otherwise, if
@@ -936,10 +936,9 @@ class PathBase(PurePathBase):
             def on_error(err):
                 raise err
         try:
-            if self.is_symlink():
-                raise OSError("Cannot call rmtree on a symbolic link")
-            elif self.is_junction():
-                raise OSError("Cannot call rmtree on a junction")
+            if not self.is_dir(follow_symlinks=False):
+                self.unlink()
+                return
             results = self.walk(
                 on_error=on_error,
                 top_down=False,  # Bottom-up so we rmdir() empty directories.
