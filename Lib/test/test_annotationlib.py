@@ -2,8 +2,10 @@
 
 import annotationlib
 import functools
+import itertools
 import pickle
 import unittest
+from annotationlib import Format, get_annotations, get_annotate_function
 from typing import Unpack
 
 from test.test_inspect import inspect_stock_annotations
@@ -767,5 +769,85 @@ class TestGetAnnotations(unittest.TestCase):
 
         self.assertEqual(
             set(results.generic_func_annotations.values()),
-            set(results.generic_func.__type_params__)
+            set(results.generic_func.__type_params__),
         )
+
+
+class MetaclassTests(unittest.TestCase):
+    def test_annotated_meta(self):
+        class Meta(type):
+            a: int
+
+        class X(metaclass=Meta):
+            pass
+
+        class Y(metaclass=Meta):
+            b: float
+
+        self.assertEqual(get_annotations(Meta), {"a": int})
+        self.assertEqual(get_annotate_function(Meta)(Format.VALUE), {"a": int})
+
+        self.assertEqual(get_annotations(X), {})
+        self.assertIs(get_annotate_function(X), None)
+
+        self.assertEqual(get_annotations(Y), {"b": float})
+        self.assertEqual(get_annotate_function(Y)(Format.VALUE), {"b": float})
+
+    def test_unannotated_meta(self):
+        class Meta(type): pass
+
+        class X(metaclass=Meta):
+            a: str
+
+        class Y(X): pass
+
+        self.assertEqual(get_annotations(Meta), {})
+        self.assertIs(get_annotate_function(Meta), None)
+
+        self.assertEqual(get_annotations(Y), {})
+        self.assertIs(get_annotate_function(Y), None)
+
+        self.assertEqual(get_annotations(X), {"a": str})
+        self.assertEqual(get_annotate_function(X)(Format.VALUE), {"a": str})
+
+    def test_ordering(self):
+        # Based on a sample by David Ellis
+        # https://discuss.python.org/t/pep-749-implementing-pep-649/54974/38
+
+        def make_classes():
+            class Meta(type):
+                a: int
+                expected_annotations = {"a": int}
+
+            class A(type, metaclass=Meta):
+                b: float
+                expected_annotations = {"b": float}
+
+            class B(metaclass=A):
+                c: str
+                expected_annotations = {"c": str}
+
+            class C(B):
+                expected_annotations = {}
+
+            class D(metaclass=Meta):
+                expected_annotations = {}
+
+            return Meta, A, B, C, D
+
+        classes = make_classes()
+        class_count = len(classes)
+        for order in itertools.permutations(range(class_count), class_count):
+            names = ", ".join(classes[i].__name__ for i in order)
+            with self.subTest(names=names):
+                classes = make_classes()  # Regenerate classes
+                for i in order:
+                    get_annotations(classes[i])
+                for c in classes:
+                    with self.subTest(c=c):
+                        self.assertEqual(get_annotations(c), c.expected_annotations)
+                        annotate_func = get_annotate_function(c)
+                        if c.expected_annotations:
+                            self.assertEqual(annotate_func(Format.VALUE), c.expected_annotations)
+                        else:
+                            self.assertIs(annotate_func, None)
