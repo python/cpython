@@ -369,7 +369,7 @@ Module functions
    Create a Binary object to handle binary data in SQLite.
 
    :param data:
-      The binary data to be encapsulated. This should be a 
+   The binary data to be encapsulated. This should be a 
    :term:`bytes-like object`.
 
    The :func:`Binary` function encapsulates binary data to ensure proper handling
@@ -379,7 +379,7 @@ Module functions
    By using :func:`Binary`, developers can ensure robust handling of binary data in SQLite,
    preventing data corruption and enhancing application reliability.
 
-   **Basic example of storing and retrieving binary data:**
+   .. rubric:: Basic example of storing and retrieving binary data
 
    .. code-block:: python
 
@@ -387,8 +387,8 @@ Module functions
       import pickle
 
       # Create a connection and cursor
-      with sqlite3.connect(':memory:') as conn:
-         cursor = conn.cursor()
+      conn = sqlite3.connect(':memory:')
+      cursor = conn.cursor()
 
       # Create a table
       cursor.execute('''
@@ -400,23 +400,18 @@ Module functions
 
       # Insert binary data
       binary_data = pickle.dumps({'foo': 42, 'bar': 1337})
-      query = 'INSERT INTO files (name, data) VALUES (?, ?)'
       values = ('example.pkl', sqlite3.Binary(binary_data))
-      cursor.execute(query, values)
+      cursor.execute('INSERT INTO files (name, data) VALUES (?, ?)', values)
+      conn.commit()
 
       # Retrieve binary data
       cursor.execute('SELECT data FROM files WHERE name=?', ('example.pkl',))
       blob_data = cursor.fetchone()[0]
+      conn.close()
 
       # Deserialize the binary data using pickle
       retrieved_data = pickle.loads(blob_data)
       print(retrieved_data)  # This should print: {'foo': 42, 'bar': 1337}
-
-      # Save retrieved data to a file
-      with open('retrieved_example.txt', 'wb') as file:
-         file.write(blob_data)
-
-      conn.close()
 
 .. function:: complete_statement(statement)
 
