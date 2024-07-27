@@ -464,30 +464,27 @@ class Test_TextTestResult(unittest.TestCase):
         result = unittest.TextTestResult(None, True, 1)
         self.assertEqual(
                 result.getDescription(self),
-                __name__ +
-                '.Test_TextTestResult.testGetDescriptionWithoutDocstring')
+                f'{__name__}.Test_TextTestResult.testGetDescriptionWithoutDocstring')
 
     def testGetSubTestDescriptionWithoutDocstring(self):
         with self.subTest(foo=1, bar=2):
             result = unittest.TextTestResult(None, True, 1)
             self.assertEqual(
                     result.getDescription(self._subtest),
-                    __name__ +
-                    '.Test_TextTestResult.testGetSubTestDescriptionWithoutDocstring (foo=1, bar=2)')
+                    f'{__name__}.Test_TextTestResult.testGetSubTestDescriptionWithoutDocstring (foo=1, bar=2)')
 
         with self.subTest('some message'):
             result = unittest.TextTestResult(None, True, 1)
             self.assertEqual(
                     result.getDescription(self._subtest),
-                    __name__ +
-                    '.Test_TextTestResult.testGetSubTestDescriptionWithoutDocstring [some message]')
+                    f'{__name__}.Test_TextTestResult.testGetSubTestDescriptionWithoutDocstring [some message]')
 
     def testGetSubTestDescriptionWithoutDocstringAndParams(self):
         with self.subTest():
             result = unittest.TextTestResult(None, True, 1)
             self.assertEqual(
                     result.getDescription(self._subtest),
-                    __name__ + '.Test_TextTestResult.testGetSubTestDescriptionWithoutDocstringAndParams '
+                    f'{__name__}.Test_TextTestResult.testGetSubTestDescriptionWithoutDocstringAndParams '
                     '(<subtest>)')
 
     def testGetSubTestDescriptionForFalseValues(self):
@@ -506,7 +503,7 @@ class Test_TextTestResult(unittest.TestCase):
                 result = unittest.TextTestResult(None, True, 1)
                 self.assertEqual(
                         result.getDescription(self._subtest),
-                        __name__ + '.Test_TextTestResult.testGetNestedSubTestDescriptionWithoutDocstring '
+                        f'{__name__}.Test_TextTestResult.testGetNestedSubTestDescriptionWithoutDocstring '
                         '(baz=2, bar=3, foo=1)')
 
     def testGetDuplicatedNestedSubTestDescriptionWithoutDocstring(self):
@@ -515,7 +512,7 @@ class Test_TextTestResult(unittest.TestCase):
                 result = unittest.TextTestResult(None, True, 1)
                 self.assertEqual(
                         result.getDescription(self._subtest),
-                        __name__ + '.Test_TextTestResult.testGetDuplicatedNestedSubTestDescriptionWithoutDocstring (baz=3, bar=4, foo=1)')
+                        f'{__name__}.Test_TextTestResult.testGetDuplicatedNestedSubTestDescriptionWithoutDocstring (baz=3, bar=4, foo=1)')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -525,7 +522,7 @@ class Test_TextTestResult(unittest.TestCase):
         self.assertEqual(
                 result.getDescription(self),
                ('Tests getDescription() for a method with a docstring. '
-                '(' + __name__ + '.Test_TextTestResult.testGetDescriptionWithOneLineDocstring)'
+                f'({__name__}.Test_TextTestResult.testGetDescriptionWithOneLineDocstring)'
                 ))
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -537,7 +534,7 @@ class Test_TextTestResult(unittest.TestCase):
             self.assertEqual(
                 result.getDescription(self._subtest),
                ('Tests getDescription() for a method with a docstring. '
-                '(' + __name__ + '.Test_TextTestResult.testGetSubTestDescriptionWithOneLineDocstring '
+                f'({__name__}.Test_TextTestResult.testGetSubTestDescriptionWithOneLineDocstring '
                 '(foo=1, bar=2))'
                 ))
 
@@ -552,7 +549,7 @@ class Test_TextTestResult(unittest.TestCase):
                 result.getDescription(self),
                ('Tests getDescription() for a method with a longer '
                 'docstring. '
-                '(' + __name__ + '.Test_TextTestResult.testGetDescriptionWithMultiLineDocstring)'
+                f'({__name__}.Test_TextTestResult.testGetDescriptionWithMultiLineDocstring)'
                 ))
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -567,7 +564,7 @@ class Test_TextTestResult(unittest.TestCase):
                 result.getDescription(self._subtest),
                ('Tests getDescription() for a method with a longer '
                 'docstring. '
-                '(' + __name__ + '.Test_TextTestResult.testGetSubTestDescriptionWithMultiLineDocstring '
+                f'({__name__}.Test_TextTestResult.testGetSubTestDescriptionWithMultiLineDocstring '
                 '(foo=1, bar=2))'
                 ))
 
