@@ -40,20 +40,19 @@ on modules, classes, and functions.
    :attr:`~object.__annotate__` functions.
 
    .. attribute:: VALUE
+      :value: 1
 
       Values are the result of evaluating the annotation expressions.
 
-      This enum member's value is equal to 1.
-
    .. attribute:: FORWARDREF
+      :value: 2
 
       Values are real annotation values (as per :attr:`Format.VALUE` format) for defined values,
       and :class:`ForwardRef` proxies for undefined values. Real objects may be exposed to,
       or contain references to, :class:`ForwardRef` proxy objects.
 
-      This enum member's value is equal to 2.
-
    .. attribute:: SOURCE
+      :value: 3
 
       Values are the text string of the annotation as it appears in the source code,
       up to modifications including, but not restricted to, whitespace normalizations
@@ -120,7 +119,7 @@ on modules, classes, and functions.
 
    The *format* parameter controls the format in which annotations are returned.
 
-   Returns a dict.  ``get_annotations()`` returns a new dict every time
+   Returns a dict.  :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
    different but equivalent dicts.
 
@@ -140,14 +139,13 @@ on modules, classes, and functions.
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
-   * Always, always, always returns a freshly created dict.
 
    ``eval_str`` controls whether or not values of type ``str`` are replaced
    with the result of calling :func:`eval()` on those values:
 
    * If eval_str is true, :func:`eval()` is called on values of type ``str``.
-     (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval()`
-     raises an exception, it will unwind the stack past the ``get_annotations``
+     (Note that :func:`!get_annotations` doesn't catch exceptions; if :func:`eval()`
+     raises an exception, it will unwind the stack past the :func:`!get_annotations`
      call.)
    * If *eval_str* is false (the default), values of type ``str`` are unchanged.
 
