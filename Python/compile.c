@@ -1759,42 +1759,24 @@ compiler_kwonlydefaults(struct compiler *c, location loc,
        */
     int i;
     PyObject *keys = NULL;
-
+    int default_count = 0;
     for (i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
+            default_count++;
             PyObject *mangled = compiler_maybe_mangle(c, arg->arg);
             if (!mangled) {
                 goto error;
             }
-            if (keys == NULL) {
-                keys = PyList_New(1);
-                if (keys == NULL) {
-                    Py_DECREF(mangled);
-                    return ERROR;
-                }
-                PyList_SET_ITEM(keys, 0, mangled);
-            }
-            else {
-                int res = PyList_Append(keys, mangled);
-                Py_DECREF(mangled);
-                if (res == -1) {
-                    goto error;
-                }
-            }
+            ADDOP_LOAD_CONST_NEW(c, loc, mangled);
             if (compiler_visit_expr(c, default_) < 0) {
                 goto error;
             }
         }
     }
-    if (keys != NULL) {
-        Py_ssize_t default_count = PyList_GET_SIZE(keys);
-        PyObject *keys_tuple = PyList_AsTuple(keys);
-        Py_DECREF(keys);
-        ADDOP_LOAD_CONST_NEW(c, loc, keys_tuple);
-        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, default_count);
-        assert(default_count > 0);
+    if (default_count) {
+        ADDOP_I(c, loc, BUILD_MAP, default_count);
         return 1;
     }
     else {
@@ -1970,55 +1952,6 @@ compiler_default_arguments(struct compiler *c, location loc,
         }
     }
     return funcflags;
-}
-
-static bool
-forbidden_name(struct compiler *c, location loc, identifier name,
-               expr_context_ty ctx)
-{
-    if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
-        compiler_error(c, loc, "cannot assign to __debug__");
-        return true;
-    }
-    if (ctx == Del && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
-        compiler_error(c, loc, "cannot delete __debug__");
-        return true;
-    }
-    return false;
-}
-
-static int
-compiler_check_debug_one_arg(struct compiler *c, arg_ty arg)
-{
-    if (arg != NULL) {
-        if (forbidden_name(c, LOC(arg), arg->arg, Store)) {
-            return ERROR;
-        }
-    }
-    return SUCCESS;
-}
-
-static int
-compiler_check_debug_args_seq(struct compiler *c, asdl_arg_seq *args)
-{
-    if (args != NULL) {
-        for (Py_ssize_t i = 0, n = asdl_seq_LEN(args); i < n; i++) {
-            RETURN_IF_ERROR(
-                compiler_check_debug_one_arg(c, asdl_seq_GET(args, i)));
-        }
-    }
-    return SUCCESS;
-}
-
-static int
-compiler_check_debug_args(struct compiler *c, arguments_ty args)
-{
-    RETURN_IF_ERROR(compiler_check_debug_args_seq(c, args->posonlyargs));
-    RETURN_IF_ERROR(compiler_check_debug_args_seq(c, args->args));
-    RETURN_IF_ERROR(compiler_check_debug_one_arg(c, args->vararg));
-    RETURN_IF_ERROR(compiler_check_debug_args_seq(c, args->kwonlyargs));
-    RETURN_IF_ERROR(compiler_check_debug_one_arg(c, args->kwarg));
-    return SUCCESS;
 }
 
 static int
@@ -2285,7 +2218,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         type_params = s->v.FunctionDef.type_params;
     }
 
-    RETURN_IF_ERROR(compiler_check_debug_args(c, args));
     RETURN_IF_ERROR(compiler_decorators(c, decos));
 
     firstlineno = s->lineno;
@@ -2927,8 +2859,6 @@ compiler_lambda(struct compiler *c, expr_ty e)
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
-
-    RETURN_IF_ERROR(compiler_check_debug_args(c, args));
 
     location loc = LOC(e);
     funcflags = compiler_default_arguments(c, loc, args);
@@ -4104,10 +4034,6 @@ compiler_nameop(struct compiler *c, location loc,
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
-    if (forbidden_name(c, loc, name, ctx)) {
-        return ERROR;
-    }
-
     mangled = compiler_maybe_mangle(c, name);
     if (!mangled) {
         return ERROR;
@@ -4454,25 +4380,8 @@ static int
 compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
-    PyObject *keys, *key;
     int big = n*2 > STACK_USE_GUIDELINE;
     location loc = LOC(e);
-    if (n > 1 && !big && are_all_items_const(e->v.Dict.keys, begin, end)) {
-        for (i = begin; i < end; i++) {
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
-        }
-        keys = PyTuple_New(n);
-        if (keys == NULL) {
-            return SUCCESS;
-        }
-        for (i = begin; i < end; i++) {
-            key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
-            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
-        }
-        ADDOP_LOAD_CONST_NEW(c, loc, keys);
-        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
-        return SUCCESS;
-    }
     if (big) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
@@ -4913,10 +4822,6 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
         if (key->arg == NULL) {
             continue;
         }
-        location loc = LOC(key);
-        if (forbidden_name(c, loc, key->arg, Store)) {
-            return ERROR;
-        }
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
@@ -5032,26 +4937,8 @@ compiler_subkwargs(struct compiler *c, location loc,
 {
     Py_ssize_t i, n = end - begin;
     keyword_ty kw;
-    PyObject *keys, *key;
     assert(n > 0);
     int big = n*2 > STACK_USE_GUIDELINE;
-    if (n > 1 && !big) {
-        for (i = begin; i < end; i++) {
-            kw = asdl_seq_GET(keywords, i);
-            VISIT(c, expr, kw->value);
-        }
-        keys = PyTuple_New(n);
-        if (keys == NULL) {
-            return ERROR;
-        }
-        for (i = begin; i < end; i++) {
-            key = ((keyword_ty) asdl_seq_GET(keywords, i))->arg;
-            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
-        }
-        ADDOP_LOAD_CONST_NEW(c, loc, keys);
-        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
-        return SUCCESS;
-    }
     if (big) {
         ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0);
     }
@@ -6188,9 +6075,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
             ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
-            if (forbidden_name(c, loc, e->v.Attribute.attr, e->v.Attribute.ctx)) {
-                return ERROR;
-            }
             ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
@@ -6384,9 +6268,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     }
     switch (targ->kind) {
     case Name_kind:
-        if (forbidden_name(c, loc, targ->v.Name.id, Store)) {
-            return ERROR;
-        }
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
@@ -6418,9 +6299,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Attribute_kind:
-        if (forbidden_name(c, loc, targ->v.Attribute.attr, Store)) {
-            return ERROR;
-        }
         if (!s->v.AnnAssign.value &&
             check_ann_expr(c, targ->v.Attribute.value) < 0) {
             return ERROR;
@@ -6684,9 +6562,6 @@ pattern_helper_store_name(struct compiler *c, location loc,
         ADDOP(c, loc, POP_TOP);
         return SUCCESS;
     }
-    if (forbidden_name(c, loc, n, Store)) {
-        return ERROR;
-    }
     // Can't assign to the same name twice:
     int duplicate = PySequence_Contains(pc->stores, n);
     RETURN_IF_ERROR(duplicate);
@@ -6844,10 +6719,6 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
     Py_ssize_t nattrs = asdl_seq_LEN(attrs);
     for (Py_ssize_t i = 0; i < nattrs; i++) {
         identifier attr = ((identifier)asdl_seq_GET(attrs, i));
-        location loc = LOC((pattern_ty) asdl_seq_GET(patterns, i));
-        if (forbidden_name(c, loc, attr, Store)) {
-            return ERROR;
-        }
         for (Py_ssize_t j = i + 1; j < nattrs; j++) {
             identifier other = ((identifier)asdl_seq_GET(attrs, j));
             if (!PyUnicode_Compare(attr, other)) {

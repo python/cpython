@@ -249,27 +249,38 @@ jobs:
       arch: ${{ matrix.arch }}
 
   build_macos:
-    name: 'macOS'
+    name: >-
+      macOS
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+        # macOS 13 only runs tests against the GIL-enabled CPython.
+        # Cirrus used for upstream, macos-14 for forks.
+        os:
+        - ghcr.io/cirruslabs/macos-runner:sonoma
+        - macos-14
+        - macos-13
+        is-fork:  # only used for the exclusion trick
+        - ${{ github.repository_owner != 'python' }}
+        free-threading:
+        - false
+        - true
+        exclude:
+        - os: ghcr.io/cirruslabs/macos-runner:sonoma
+          is-fork: true
+        - os: macos-14
+          is-fork: false
+        - os: macos-13
+          free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
-
-  build_macos_free_threading:
-    name: 'macOS (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-macos.yml
-    with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
-      free-threading: true
-      # Cirrus and macos-14 are M1.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14"]'
+      free-threading: ${{ matrix.free-threading }}
+      os: ${{ matrix.os }}
 
   build_ubuntu:
     name: >-
@@ -596,7 +607,6 @@ jobs:
     - check-docs
     - check_generated_files
     - build_macos
-    - build_macos_free_threading
     - build_ubuntu
     - build_ubuntu_ssltests
     - build_wasi
@@ -632,7 +642,6 @@ jobs:
             && '
             check_generated_files,
             build_macos,
-            build_macos_free_threading,
             build_ubuntu,
             build_ubuntu_ssltests,
             build_wasi,
