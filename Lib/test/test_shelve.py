@@ -409,7 +409,7 @@ class TestCase(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             def serializer(obj, protocol=None):
-                return bytes(f"{type(obj).__name__}", 'utf-8')
+                return bytes(type(obj).__name__, 'utf-8')
 
             def deserializer(data):
                 pass
