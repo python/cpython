@@ -531,7 +531,7 @@ def iscode(object):
 
         co_lines            returns an iterator that yields successive bytecode ranges
         co_positions        returns an iterator of source code positions for each bytecode instruction
-        replace             return a copy of the code object with a new values"""
+        replace             returns a copy of the code object with a new values"""
     return isinstance(object, types.CodeType)
 
 def isbuiltin(object):
