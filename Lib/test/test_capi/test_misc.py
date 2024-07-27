@@ -402,17 +402,13 @@ class CAPITest(unittest.TestCase):
                          br'object has negative ref count')
 
     def run_iter_api_test(self, next_func):
-        dataset = (
-            (), (1,2,3),
-            [], [1,2,3],
-        )
-
-        for input_ in dataset:
-            items = []
-            it = iter(input_)
-            while (item := next_func(it)) is not None:
-                items.append(item)
-            self.assertEqual(items, list(input_))
+        for data in (), [], (1, 2, 3), [1 , 2, 3], "123":
+            with self.subTest(data=data):
+                items = []
+                it = iter(data)
+                while (item := next_func(it)) is not None:
+                    items.append(item)
+                self.assertEqual(items, list(data))
 
         class Broken:
             def __init__(self):
@@ -433,10 +429,17 @@ class CAPITest(unittest.TestCase):
             next_func(it)
 
     def test_iter_next(self):
-        self.run_iter_api_test(_testcapi.PyIter_Next)
+        from _testcapi import PyIter_Next
+        self.run_iter_api_test(PyIter_Next)
+        # CRASHES PyIter_Next(10)
 
     def test_iter_nextitem(self):
-        self.run_iter_api_test(_testcapi.PyIter_NextItem)
+        from _testcapi import PyIter_NextItem
+        self.run_iter_api_test(PyIter_NextItem)
+
+        regex = "expected.*iterator.*got.*'int'"
+        with self.assertRaisesRegex(TypeError, regex):
+            PyIter_NextItem(10)
 
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount()')

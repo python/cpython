@@ -2884,24 +2884,27 @@ PyAIter_Check(PyObject *obj)
 static int
 iternext(PyObject *iter, PyObject **item)
 {
-    *item = (*Py_TYPE(iter)->tp_iternext)(iter);
-    if (*item == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        /* When the iterator is exhausted it must return NULL;
-         * a StopIteration exception may or may not be set. */
-        if (!_PyErr_Occurred(tstate)) {
-            return 0;
-        }
-        if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-            _PyErr_Clear(tstate);
-            return 0;
-        }
-        return -1;
+    iternextfunc tp_iternext = Py_TYPE(iter)->tp_iternext;
+    if ((*item = tp_iternext(iter))) {
+        return 1;
     }
-    return 1;
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    /* When the iterator is exhausted it must return NULL;
+     * a StopIteration exception may or may not be set. */
+    if (!_PyErr_Occurred(tstate)) {
+        return 0;
+    }
+    if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+        _PyErr_Clear(tstate);
+        return 0;
+    }
+
+    /* Error case: an exception (different than StopIteration) is set. */
+    return -1;
 }
 
-/* Return 1 and set 'item' to the next item of iter on success.
+/* Return 1 and set 'item' to the next item of 'iter' on success.
  * Return 0 and set 'item' to NULL when there are no remaining values.
  * Return -1, set 'item' to NULL and set an exception on error.
  */
@@ -2912,7 +2915,8 @@ PyIter_NextItem(PyObject *iter, PyObject **item)
     assert(item != NULL);
 
     if (!PyIter_Check(iter) && !PyAIter_Check(iter)) {
-        PyErr_Format(PyExc_TypeError, "expected an iterator, not '%T'", iter);
+        *item = NULL;
+        PyErr_Format(PyExc_TypeError, "expected an iterator, got '%T'", iter);
         return -1;
     }
 
@@ -2920,7 +2924,6 @@ PyIter_NextItem(PyObject *iter, PyObject **item)
 }
 
 /* Return next item.
- * Deprecated; use PyIter_NextItem() instead.
  *
  * If an error occurs, return NULL.  PyErr_Occurred() will be true.
  * If the iteration terminates normally, return NULL and clear the

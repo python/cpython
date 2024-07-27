@@ -282,13 +282,8 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-pyiter_next(PyObject *self, PyObject *args)
+pyiter_next(PyObject *self, PyObject *iter)
 {
-    PyObject *iter;
-    if (!PyArg_ParseTuple(args, "O:pyiter_next", &iter)) {
-        return NULL;
-    }
-    assert(PyIter_Check(iter) || PyAIter_Check(iter));
     PyObject *item = PyIter_Next(iter);
     if (item == NULL && !PyErr_Occurred()) {
         Py_RETURN_NONE;
@@ -297,13 +292,8 @@ pyiter_next(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-pyiter_nextitem(PyObject *self, PyObject *args)
+pyiter_nextitem(PyObject *self, PyObject *iter)
 {
-    PyObject *iter;
-    if (!PyArg_ParseTuple(args, "O:pyiter_nextitem", &iter)) {
-        return NULL;
-    }
-    assert(PyIter_Check(iter) || PyAIter_Check(iter));
     PyObject *item;
     int rc = PyIter_NextItem(iter, &item);
     if (rc < 0) {
@@ -3522,8 +3512,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
 
-    {"PyIter_Next", pyiter_next, METH_VARARGS},
-    {"PyIter_NextItem", pyiter_nextitem, METH_VARARGS},
+    {"PyIter_Next", pyiter_next, METH_O},
+    {"PyIter_NextItem", pyiter_nextitem, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

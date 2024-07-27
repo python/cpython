@@ -409,7 +409,9 @@ PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
    If the iterator is exhausted, this returns NULL without setting an
    exception.
 
-   NULL with an exception means an error occurred. */
+   NULL with an exception means an error occurred.
+
+   Deprecated; use PyIter_NextItem() instead. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
