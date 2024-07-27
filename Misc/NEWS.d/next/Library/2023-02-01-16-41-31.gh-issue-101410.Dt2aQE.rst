@@ -1,0 +1,2 @@
+Make several math functions support custom error messages. :func:`math.sqrt` and :func:`math.log`
+now provide more helpful error messages.
