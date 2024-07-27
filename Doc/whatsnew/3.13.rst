@@ -2208,6 +2208,9 @@ Removed C APIs
   be used instead.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
+* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
+  (Contributed by Victor Stinner in :gh:`110014`.)
+
 Deprecated C APIs
 -----------------
 

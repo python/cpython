@@ -29,6 +29,3 @@ although there is currently no date scheduled for their removal.
   * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get` instead.
   * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete` instead.
   * :c:func:`PyThread_ReInitTLS`: unneeded since Python 3.7.
-
-* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
-  (Contributed by Victor Stinner in :gh:`110014`.)
