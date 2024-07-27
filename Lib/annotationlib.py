@@ -524,6 +524,10 @@ def call_annotate_function(annotate, format, owner=None):
         raise ValueError(f"Invalid format: {format!r}")
 
 
+# We use the descriptors from builtins.type instead of accessing
+# .__annotations__ and .__annotate__ directly on class objects, because
+# otherwise we could get wrong results in some cases involving metaclasses.
+# See PEP 749.
 _BASE_GET_ANNOTATE = type.__dict__["__annotate__"].__get__
 _BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
 
