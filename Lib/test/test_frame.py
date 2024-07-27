@@ -448,19 +448,21 @@ class TestFrameLocals(unittest.TestCase):
             proxy = sys._getframe().f_locals
             proxy[obj] = 2
             return (
-                proxy.keys() ==  ['obj', 'x', 'proxy'],
-                proxy == {'obj': 'x', 'x': 2, 'proxy': proxy},
+                list(proxy.keys()),
+                dict(proxy),
                 proxy
             )
 
         for obj in StringSubclass('x'), ImpostorX():
             with self.subTest(cls=type(obj).__name__):
 
-                assertion1, assertion2, proxy = f(obj)
-                self.assertEqual(proxy.keys(),  ['obj', 'x', 'proxy'])
-                self.assertEqual(proxy, {'obj': 'x', 'x': 2, 'proxy': proxy})
-                self.assertTrue(assertion1)
-                self.assertTrue(assertion2)
+                keys_snapshot, proxy_snapshot, proxy = f(obj)
+                expected_keys = ['obj', 'x', 'proxy']
+                expected_dict = {'obj': 'x', 'x': 2, 'proxy': proxy}
+                self.assertEqual(proxy.keys(),  expected_keys)
+                self.assertEqual(proxy, expected_dict)
+                self.assertEqual(keys_snapshot,  expected_keys)
+                self.assertEqual(proxy_snapshot, expected_dict)
 
     def test_proxy_key_unhashables(self):
         class StringSubclass(str):
@@ -488,7 +490,7 @@ class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
         return _f()
     type2test = _f
 
-    @unittest.skipIf(True, 'Unlike a mapping: empty proxy != empty proxy')
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
     def test_constructor(self):
         pass
 
@@ -527,7 +529,7 @@ class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
     def test_update(self):
         pass
 
-    # proxy.copy rerourns a regular dict
+    # proxy.copy returns a regular dict
     def test_copy(self):
         d = self._full_mapping({1:1, 2:2, 3:3})
         self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
@@ -537,7 +539,7 @@ class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
 
         self.assertIsInstance(d.copy(), dict)
 
-    @unittest.skipIf(True, 'Unlike a mapping: empty proxy != empty proxy')
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
     def test_eq(self):
         pass
 
