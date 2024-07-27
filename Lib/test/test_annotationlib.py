@@ -773,6 +773,25 @@ class TestGetAnnotations(unittest.TestCase):
         )
 
 
+class TestCallEvaluateFunction(unittest.TestCase):
+    def test_evaluation(self):
+        def evaluate(format, exc=NotImplementedError):
+            if format != 1:
+                raise exc
+            return undefined
+
+        with self.assertRaises(NameError):
+            annotationlib.call_evaluate_function(evaluate, annotationlib.Format.VALUE)
+        self.assertEqual(
+            annotationlib.call_evaluate_function(evaluate, annotationlib.Format.FORWARDREF),
+            annotationlib.ForwardRef("undefined"),
+        )
+        self.assertEqual(
+            annotationlib.call_evaluate_function(evaluate, annotationlib.Format.SOURCE),
+            "undefined",
+        )
+
+
 class MetaclassTests(unittest.TestCase):
     def test_annotated_meta(self):
         class Meta(type):
