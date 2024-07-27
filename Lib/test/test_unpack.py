@@ -1,4 +1,5 @@
 import doctest
+import textwrap
 import unittest
 
 
@@ -167,6 +168,32 @@ Unpacking unbalanced dict
     Traceback (most recent call last):
       ...
     ValueError: too many values to unpack (expected 3, got 4)
+
+Ensure that `__len__()` is respected when showing the error message
+    
+    >>> class LengthTooLong:
+    ...     def __len__(self):
+    ...         return 5
+    ...     def __getitem__(self, i):
+    ...         return i*2
+    ...
+    >>> x, y, z = LengthTooLong()
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3, got 5)
+
+If `__len__()` is too low, fallback to not showing the got count
+    
+    >>> class BadLength:
+    ...     def __len__(self):
+    ...         return 1
+    ...     def __getitem__(self, i):
+    ...         return i*2
+    ...
+    >>> x, y, z = BadLength()
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3)
 """
 
 __test__ = {'doctests' : doctests}
@@ -191,6 +218,25 @@ class TestCornerCases(unittest.TestCase):
         for _ in range(30):
             y = unpack_400(range(400))
             self.assertEqual(y, 399)
+
+    def test_exception_context_when_len_fails(self):
+        code = textwrap.dedent(
+            f"""
+            class CustomSeq:
+                def __len__(self):
+                    raise RuntimeError
+
+                def __getitem__(self, i):
+                    return i*2
+
+            x, y, z = CustomSeq()
+            """
+        )
+        try:
+            exec(code)
+        except ValueError as exc:
+            self.assertEqual(exc.args, ('too many values to unpack (expected 3)',))
+            self.assertIsInstance(exc.__context__, RuntimeError)
 
 if __name__ == "__main__":
     unittest.main()
