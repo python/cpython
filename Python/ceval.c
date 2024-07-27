@@ -2172,14 +2172,11 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
               raised exception in context.
             */
             if (!_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
-                /* TODO: could probably use _PyErr_ChainExceptions here */
                 PyObject *exc = _PyErr_GetRaisedException(tstate);
                 _PyErr_Format(tstate, PyExc_ValueError,
                               "too many values to unpack (expected %d)",
                               argcnt);
-                PyObject *exc2 = _PyErr_GetRaisedException(tstate);
-                PyException_SetContext(exc2, exc);
-                _PyErr_SetRaisedException(tstate, exc2);
+                _PyErr_ChainExceptions1(exc);
             }
             else {
                 _PyErr_Format(tstate, PyExc_ValueError,
