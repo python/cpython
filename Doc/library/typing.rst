@@ -3316,12 +3316,14 @@ Introspection helpers
 
    Evaluate an :class:`annotationlib.ForwardRef` as a :term:`type hint`.
 
-   This is similar to calling the :meth:`annotationlib.ForwardRef.evaluate` method,
+   This is similar to calling :meth:`annotationlib.ForwardRef.evaluate`,
    but unlike that method, :func:`!evaluate_forward_ref` also:
 
    * Recursively evaluates forward references nested within the type hint.
-   * Rejects certain objects that are not valid type hints.
-   * Replaces type hints that evaluate to None with types.NoneType.
+   * Raises :exc:`TypeError` when it encounters certain objects that are
+     not valid type hints.
+   * Replaces type hints that evaluate to :const:`!None` with
+     :class:`types.NoneType`.
    * Supports the :attr:`~annotationlib.Format.FORWARDREF` and
      :attr:`~annotationlib.Format.SOURCE` formats.
 
