@@ -2914,7 +2914,7 @@ PyIter_NextItem(PyObject *iter, PyObject **item)
     assert(iter != NULL);
     assert(item != NULL);
 
-    if (!PyIter_Check(iter) && !PyAIter_Check(iter)) {
+    if (!PyIter_Check(iter)) {
         *item = NULL;
         PyErr_Format(PyExc_TypeError, "expected an iterator, got '%T'", iter);
         return -1;
