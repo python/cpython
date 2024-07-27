@@ -18,7 +18,11 @@ except ImportError:
 
 from test import support
 from test.support import os_helper, script_helper
-from test.support.ast_helper import ASTTestMixin, to_tuple
+from test.support.ast_helper import ASTTestMixin
+from test.test_ast.utils import to_tuple
+from test.test_ast.snippets import (
+    eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
+)
 
 
 STDLIB = os.path.dirname(ast.__file__)
@@ -36,6 +40,24 @@ class AST_Tests(unittest.TestCase):
             return False
         return name != 'AST' and name[0].isupper()
 
+    def _assertTrueorder(self, ast_node, parent_pos):
+        if not isinstance(ast_node, ast.AST) or ast_node._fields is None:
+            return
+        if isinstance(ast_node, (ast.expr, ast.stmt, ast.excepthandler)):
+            node_pos = (ast_node.lineno, ast_node.col_offset)
+            self.assertGreaterEqual(node_pos, parent_pos)
+            parent_pos = (ast_node.lineno, ast_node.col_offset)
+        for name in ast_node._fields:
+            value = getattr(ast_node, name)
+            if isinstance(value, list):
+                first_pos = parent_pos
+                if value and name == 'decorator_list':
+                    first_pos = (value[0].lineno, value[0].col_offset)
+                for child in value:
+                    self._assertTrueorder(child, first_pos)
+            elif value is not None:
+                self._assertTrueorder(value, parent_pos)
+        self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
         x = ast.AST()
@@ -62,6 +84,24 @@ class AST_Tests(unittest.TestCase):
         support.gc_collect()
         self.assertIsNone(ref())
 
+    def test_snippets(self):
+        for input, output, kind in ((exec_tests, exec_results, "exec"),
+                                    (single_tests, single_results, "single"),
+                                    (eval_tests, eval_results, "eval")):
+            for i, o in zip(input, output):
+                with self.subTest(action="parsing", input=i):
+                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
+                    self.assertEqual(to_tuple(ast_tree), o)
+                    self._assertTrueorder(ast_tree, (0, 0))
+                with self.subTest(action="compiling", input=i, kind=kind):
+                    compile(ast_tree, "?", kind)
+
+    def test_ast_validation(self):
+        # compile() is the only function that calls PyAST_Validate
+        snippets_to_validate = exec_tests + single_tests + eval_tests
+        for snippet in snippets_to_validate:
+            tree = ast.parse(snippet)
+            compile(tree, '<string>', 'exec')
 
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
@@ -544,6 +584,18 @@ class AST_Tests(unittest.TestCase):
         del a2.id
         self.assertTrue(ast.compare(a1, a2))
 
+    def test_compare_modes(self):
+        for mode, sources in (
+            ("exec", exec_tests),
+            ("eval", eval_tests),
+            ("single", single_tests),
+        ):
+            for source in sources:
+                a = ast.parse(source, mode=mode)
+                b = ast.parse(source, mode=mode)
+                self.assertTrue(
+                    ast.compare(a, b), f"{ast.dump(a)} != {ast.dump(b)}"
+                )
 
     def test_compare_attributes_option(self):
         def parse(a, b):
@@ -743,6 +795,15 @@ class CopyTests(unittest.TestCase):
 
         yield from do(ast.AST)
 
+    def test_pickling(self):
+        import pickle
+
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            for code in exec_tests:
+                with self.subTest(code=code, protocol=protocol):
+                    tree = compile(code, "?", "exec", 0x400)
+                    ast2 = pickle.loads(pickle.dumps(tree, protocol))
+                    self.assertEqual(to_tuple(ast2), to_tuple(tree))
 
     def test_copy_with_parents(self):
         # gh-120108
