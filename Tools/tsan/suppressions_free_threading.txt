@@ -28,7 +28,6 @@ race_top:assign_version_tag
 race_top:new_reference
 race_top:_multiprocessing_SemLock_acquire_impl
 race_top:list_get_item_ref
-race_top:make_pending_calls
 race_top:_Py_slot_tp_getattr_hook
 race_top:add_threadstate
 race_top:dump_traceback
