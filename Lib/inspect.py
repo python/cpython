@@ -386,7 +386,7 @@ def isfunction(object):
         __annotations__ dict of parameter annotations
         __kwdefaults__  dict of keyword only parameters with defaults
         __dict__        namespace which is supporting arbitrary function attributes
-        __closure__     None or tuple of cells
+        __closure__     a tuple of cells or None
         __type_params__ tuple of type parameters"""
     return isinstance(object, types.FunctionType)
 
