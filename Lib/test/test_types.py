@@ -2379,7 +2379,6 @@ class SubinterpreterTests(unittest.TestCase):
         import test.support.interpreters.channels
 
     @cpython_only
-    @unittest.skipIf(is_apple_mobile, "Fails on iOS due to test ordering; see #121832.")
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')
     def test_slot_wrappers(self):
         rch, sch = interpreters.channels.create()
