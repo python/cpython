@@ -457,7 +457,7 @@ def isgenerator(object):
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
         gi_yieldfrom    object being iterated by yield from or None
-        
+
         __iter__()      defined to support iteration over container
         close()         raises a new GeneratorExit exception inside the
                         generator to terminate the iteration
