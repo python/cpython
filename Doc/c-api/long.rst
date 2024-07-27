@@ -522,7 +522,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    On failure, return ``NULL`` with an exception set.
 
-   .. versionadded:: 3.2
+   .. versionadded:: 3.1
 
 
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
