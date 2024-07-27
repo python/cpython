@@ -7,7 +7,7 @@ import pickle
 import os
 from io import BytesIO
 
-from test.support import os_helper, import_helper
+from test.support import import_helper, os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
