@@ -369,57 +369,12 @@ Module functions
    Create a Binary object to handle binary data in SQLite.
 
    :param data:
-       The binary data to be encapsulated. This can be any object supporting the
-       Python buffer protocol, such as bytes, bytearray, or memoryview.
-   :type data: buffer-compatible object
+       The binary data to be encapsulated. This should be a 
+   :term:`bytes-like object`.
 
    The :func:`Binary` function encapsulates binary data to ensure proper handling
    by SQLite. It is used to signal to the sqlite3 module that the data should be
    treated as a BLOB (Binary Large Object) rather than text.
-
-   **Purpose and Functionality:**
-
-   - **Data Encapsulation**: Ensures the data is treated as binary and not as text.
-   - **Buffer Protocol Support**: Accepts objects that support the Python buffer protocol.
-   - **Type Signaling**: Explicitly signals that the data should be treated as binary.
-
-   **Internal Workings:**
-
-   - Creates an instance of the Binary class, a subclass of bytes.
-   - Flags the data for special handling as binary by the sqlite3 module.
-   - Ensures data is bound as a BLOB in SQL queries.
-
-   **Use Cases:**
-
-   - **Storing Raw Binary Data**: Ideal for files, images, or any raw binary data.
-   - **Preserving Exact Byte Sequences**: Prevents encoding/decoding errors.
-   - **Working with Non-Text Data**: Ensures data isn't subjected to text-based operations.
-
-   **Behavior in Queries:**
-
-   - **INSERT or UPDATE**: Stores Binary objects as BLOB data.
-   - **SELECT**: Retrieves BLOB data as Binary objects, convertible to bytes.
-
-   **Performance Considerations:**
-
-   - Using Binary() for large data can be memory-intensive.
-   - For very large objects, consider using SQLite's incremental or BLOB I/O interfaces.
-
-   **Compatibility and Portability:**
-
-   - Ensures consistent behavior across Python implementations and SQLite versions.
-   - Helps in writing portable code for binary data handling.
-
-   **Error Handling:**
-
-   - Raises :exc:`TypeError` if input doesn't support the buffer protocol.
-   - Handle potential :exc:`MemoryError` for very large binary objects.
-
-   **Best Practices:**
-
-   - Use Binary() to explicitly mark data as binary.
-   - Be mindful of memory usage for large binary objects.
-   - Consider using with prepared statements for efficiency.
 
    By using :func:`Binary`, developers can ensure robust handling of binary data in SQLite,
    preventing data corruption and enhancing application reliability.
@@ -439,67 +394,25 @@ Module functions
        # Create a table
        cursor.execute('''
        CREATE TABLE files (
-           id INTEGER PRIMARY KEY,
            name TEXT,
            data BLOB
        )
        ''')
 
        # Insert binary data
-       with open('example.png', 'rb') as file:
-           binary_data = file.read()
-           cursor.execute('INSERT INTO files (name, data) VALUES (?, ?)', ('example.png', sqlite3.Binary(binary_data)))
+       binary_data = bytes("abc", "utf-8")
+       query = 'INSERT INTO files (name, data) VALUES (?, ?)'
+       values = ('example.txt', sqlite3.Binary(binary_data))
+       cursor.execute(query, values)
 
        conn.commit()
 
        # Retrieve binary data
-       cursor.execute('SELECT data FROM files WHERE name=?', ('example.png',))
+       cursor.execute('SELECT data FROM files WHERE name=?', ('example.txt',))
        blob_data = cursor.fetchone()[0]
 
-       # Save retrieved data to a file
-       with open('retrieved_example.png', 'wb') as file:
-           file.write(blob_data)
-
-       # Clean up
-       conn.close()
-
-   Example with buffer-compatible objects:
-
-   .. code-block:: python
-
-       import sqlite3
-       import numpy as np
-
-       # Create a connection and cursor
-       conn = sqlite3.connect(':memory:')
-       cursor = conn.cursor()
-
-       # Create a table
-       cursor.execute('''
-       CREATE TABLE binary_data (
-           id INTEGER PRIMARY KEY,
-           data BLOB
-       )
-       ''')
-
-       # Use a memoryview object
-       data_array = np.array([1, 2, 3, 4, 5], dtype=np.uint8)
-       memoryview_data = memoryview(data_array)
-
-       # Insert memoryview data
-       cursor.execute('INSERT INTO binary_data (data) VALUES (?)', (sqlite3.Binary(memoryview_data),))
-
-       conn.commit()
-
-       # Retrieve memoryview data
-       cursor.execute('SELECT data FROM binary_data WHERE id=1')
-       blob_data = cursor.fetchone()[0]
-
-       # Convert retrieved data back to a numpy array
-       retrieved_array = np.frombuffer(blob_data, dtype=np.uint8)
-
-       # Clean up
-       conn.close()
+       with open('retrieved_example.txt', 'wb') as file:
+            file.write(blob_data)
 
 .. function:: complete_statement(statement)
 
