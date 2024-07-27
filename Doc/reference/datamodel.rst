@@ -3330,7 +3330,7 @@ with a symbol.
    a value corresponding to a member of the enum.
 
    If an annotate function doesn't support the requested format, it must raise
-   :exc:`NotImplementedError()`. Annotate functions must always support
+   :exc:`NotImplementedError`. Annotate functions must always support
    :attr:`~annotationlib.Format.VALUE` format; they must not raise
    :exc:`NotImplementedError()` when called with this format.
 
@@ -3344,7 +3344,7 @@ with a symbol.
 
 .. seealso::
 
-   :pep:`649` - Deferred evaluation of annotation using descriptors
+   :pep:`649` --- Deferred evaluation of annotation using descriptors
       Introduces lazy evaluation of annotations and the ``__annotate__`` function.
 
 

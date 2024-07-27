@@ -27,14 +27,14 @@ on modules, classes, and functions.
    in a special environment that allows it to produce annotations in the other formats.
 
    *owner* is the object that owns the annotation function, usually a function, class, or module.
-   If provided, it is used in the :attr:`~Format.FORWARDREF` format to produce :class:`ForwardRef`
+   If provided, it is used in the :attr:`~Format.FORWARDREF` format to produce a :class:`ForwardRef`
    object that carry more information.
 
    .. versionadded:: 3.14
 
 .. class:: Format
 
-   A :class:`enum.IntEnum` describing the formats in which annotations can be returned.
+   An :class:`~enum.IntEnum` describing the formats in which annotations can be returned.
    Members of the enum, or their equivalent integer values, can be passed to
    :func:`get_annotations` and other functions in this module, as well as to
    :attr:`~object.__annotate__` functions.
@@ -55,10 +55,11 @@ on modules, classes, and functions.
 
    .. attribute:: SOURCE
 
-      Values are the text string of the annotation as it appears in the source code.
-      May only be approximate; whitespace may be normalized, and constant values
-      may be optimized. It is possible the exact values of these strings could
-      change in future version of Python.
+      Values are the text string of the annotation as it appears in the source code,
+      up to modifications including, but not restricted to, whitespace normalizations
+      and constant values optimizations.
+
+      The exact values of these strings may change in future versions of Python.
 
    .. versionadded:: 3.14
 
@@ -113,11 +114,11 @@ on modules, classes, and functions.
 
    Compute the annotations dict for an object.
 
-   ``obj`` may be a callable, class, module, or other object with
+   *obj* may be a callable, class, module, or other object with
    :attr:`~object.__annotate__` and :attr:`~object.__annotations__` attributes.
    Passing in an object of any other type raises :exc:`TypeError`.
 
-   The *format* parameter controls the format in which annotations are returned:
+   The *format* parameter controls the format in which annotations are returned.
 
    Returns a dict.  ``get_annotations()`` returns a new dict every time
    it's called; calling it twice on the same object will return two
@@ -125,8 +126,8 @@ on modules, classes, and functions.
 
    This function handles several details for you:
 
-   * If ``eval_str`` is true, values of type ``str`` will
-     be un-stringized using :func:`eval()`.  This is intended
+   * If *eval_str* is true, values of type ``str`` will
+     be un-stringized using :func:`eval`.  This is intended
      for use with stringized annotations
      (``from __future__ import annotations``). It is an error
      to set ``eval_str`` to true with formats other than :attr:`Format.VALUE`.
@@ -148,7 +149,7 @@ on modules, classes, and functions.
      (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval()`
      raises an exception, it will unwind the stack past the ``get_annotations``
      call.)
-   * If eval_str is false (the default), values of type ``str`` are unchanged.
+   * If *eval_str* is false (the default), values of type ``str`` are unchanged.
 
    ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
    for :func:`eval()` for more information.  If ``globals`` or ``locals``
