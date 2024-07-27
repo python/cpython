@@ -237,7 +237,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | replace           | returns a copy of the     |
 |                 |                   | code object with a new    |
-|                 |                   | values                    |                
+|                 |                   | values                    |
 +-----------------+-------------------+---------------------------+
 | generator       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
