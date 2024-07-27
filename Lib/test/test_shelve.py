@@ -1,5 +1,5 @@
-import array
 
+import array
 import unittest
 import dbm
 import shelve
