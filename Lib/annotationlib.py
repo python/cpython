@@ -524,6 +524,27 @@ def call_annotate_function(annotate, format, owner=None):
         raise ValueError(f"Invalid format: {format!r}")
 
 
+# We use the descriptors from builtins.type instead of accessing
+# .__annotations__ and .__annotate__ directly on class objects, because
+# otherwise we could get wrong results in some cases involving metaclasses.
+# See PEP 749.
+_BASE_GET_ANNOTATE = type.__dict__["__annotate__"].__get__
+_BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
+
+
+def get_annotate_function(obj):
+    """Get the __annotate__ function for an object.
+
+    obj may be a function, class, or module, or a user-defined type with
+    an `__annotate__` attribute.
+
+    Returns the __annotate__ function or None.
+    """
+    if isinstance(obj, type):
+        return _BASE_GET_ANNOTATE(obj)
+    return getattr(obj, "__annotate__", None)
+
+
 def get_annotations(
     obj, *, globals=None, locals=None, eval_str=False, format=Format.VALUE
 ):
@@ -576,16 +597,23 @@ def get_annotations(
 
     # For VALUE format, we look at __annotations__ directly.
     if format != Format.VALUE:
-        annotate = getattr(obj, "__annotate__", None)
+        annotate = get_annotate_function(obj)
         if annotate is not None:
             ann = call_annotate_function(annotate, format, owner=obj)
             if not isinstance(ann, dict):
                 raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
             return dict(ann)
 
-    ann = getattr(obj, "__annotations__", None)
-    if ann is None:
-        return {}
+    if isinstance(obj, type):
+        try:
+            ann = _BASE_GET_ANNOTATIONS(obj)
+        except AttributeError:
+            # For static types, the descriptor raises AttributeError.
+            return {}
+    else:
+        ann = getattr(obj, "__annotations__", None)
+        if ann is None:
+            return {}
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
