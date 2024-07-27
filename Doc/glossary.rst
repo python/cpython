@@ -53,7 +53,7 @@ Glossary
       on modules, classes, and functions, respectively.
 
       See :term:`variable annotation`, :term:`function annotation`, :pep:`484`,
-      :pep:`526` and :pep:`649`, which describe this functionality.
+      :pep:`526`, and :pep:`649`, which describe this functionality.
       Also see :ref:`annotations-howto`
       for best practices on working with annotations.
 

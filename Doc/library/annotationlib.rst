@@ -133,9 +133,11 @@ on modules, classes, and functions.
       reference is being evaluated. *owner* is the object that owns the annotation from
       which the forward reference derives, usually a function, class, or module.
 
-      Once a :class:`~ForwardRef` instance has been evaluated, it caches the evaluated
-      value, and future calls to :meth:`evaluate` will return the cached value, regardless
-      of the parameters passed in.
+      .. important::
+
+         Once a :class:`~ForwardRef` instance has been evaluated, it caches the evaluated
+         value, and future calls to :meth:`evaluate` will return the cached value, regardless
+         of the parameters passed in.
 
    .. versionadded:: 3.14
 
@@ -146,7 +148,7 @@ on modules, classes, and functions.
 
    This is usually equivalent to accessing the :attr:`~object.__annotate__` attribute of *obj*,
    but direct access to the attribute may return the wrong object in certain situations involving
-   metaclasses. It is recommended to use this function instead of accessing the attribute directly.
+   metaclasses. This function should be used instead of accessing the attribute directly.
 
    .. versionadded:: 3.14
 
@@ -158,7 +160,8 @@ on modules, classes, and functions.
    :attr:`~object.__annotate__` and :attr:`~object.__annotations__` attributes.
    Passing in an object of any other type raises :exc:`TypeError`.
 
-   The *format* parameter controls the format in which annotations are returned.
+   The *format* parameter controls the format in which annotations are returned,
+   and must be a member of the :class:`Format` enum or its integer equivalent.
 
    Returns a dict.  :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
