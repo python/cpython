@@ -174,7 +174,7 @@ class TestCase(unittest.TestCase):
                 if protocol == 5:
                     return obj
                 else:
-                    return f"{type(obj).__name__}"
+                    return type(obj).__name__
             elif isinstance(obj, array.array):
                 return obj.tobytes()
             else:
