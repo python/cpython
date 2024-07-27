@@ -170,7 +170,7 @@ class TestCase(unittest.TestCase):
 
     def test_custom_serializer_and_deserializer(self):
         def serializer(obj, protocol):
-            if isinstance(obj, (bytes, bytearray, memoryview, int)):
+            if isinstance(obj, (bytes, bytearray, memoryview, str)):
                 if protocol == 5:
                     return obj
                 else:
@@ -183,7 +183,7 @@ class TestCase(unittest.TestCase):
                 )
 
         def deserializer(data):
-            if isinstance(data, (bytes, bytearray, memoryview, int)):
+            if isinstance(data, (bytes, bytearray, memoryview, str)):
                 value = BytesIO(data).read()
                 return value.decode("utf-8")
             elif isinstance(data, array.array):
@@ -204,20 +204,20 @@ class TestCase(unittest.TestCase):
                     serializer=serializer,
                     deserializer=deserializer,
                 ) as s:
-                    num = 1
+                    bar = "bar"
                     bytes_data = b"Hello, world!"
                     bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
                     array_data = array.array("i", [1, 2, 3, 4, 5])
                     memoryview_data = memoryview(b"abcdefgh")
 
-                    s["number"] = num
+                    s["foo"] = bar
                     s["bytes_data"] = bytes_data
                     s["bytearray_data"] = bytearray_data
                     s["array_data"] = array_data
                     s["memoryview_data"] = memoryview_data
 
                     if proto == 5:
-                        self.assertEqual(s["number"], str(num))
+                        self.assertEqual(s["foo"], str(bar))
                         self.assertEqual(s["bytes_data"], "Hello, world!")
                         self.assertEqual(
                             s["bytearray_data"], bytearray_data.decode()
@@ -227,7 +227,7 @@ class TestCase(unittest.TestCase):
                         )
                         self.assertEqual(s["memoryview_data"], "abcdefgh")
                     else:
-                        self.assertEqual(s["number"], "int")
+                        self.assertEqual(s["foo"], "str")
                         self.assertEqual(s["bytes_data"], "bytes")
                         self.assertEqual(s["bytearray_data"], "bytearray")
                         self.assertEqual(
@@ -245,8 +245,8 @@ class TestCase(unittest.TestCase):
             with shelve.open(self.fn,
                              serializer=serializer,
                              deserializer=deserializer) as s:
-                s['number'] = 100
-                self.assertEqual(s['number'], 100)
+                s["foo"] = "bar"
+                self.assertEqual(s["foo"], "bar")
 
     def test_custom_incomplete_serializer_and_deserializer(self):
         dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
@@ -263,8 +263,8 @@ class TestCase(unittest.TestCase):
             with shelve.open(self.fn,
                              serializer=serializer,
                              deserializer=deserializer) as s:
-                s['number'] = 100
-                self.assertEqual(s['number'], 100)
+                s["foo"] = "bar"
+                self.assertEqual(s["foo"], "bar")
 
     def test_custom_serializer_and_deserializer_bsd_db_shelf(self):
         berkeleydb = import_helper.import_module("berkeleydb")
@@ -290,13 +290,13 @@ class TestCase(unittest.TestCase):
                     serializer=serializer,
                     deserializer=deserializer,
                 ) as s:
-                    num = 1
+                    bar = "bar"
                     bytes_data = b"Hello, world!"
                     bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
                     array_data = array.array("i", [1, 2, 3, 4, 5])
                     memoryview_data = memoryview(b"abcdefgh")
 
-                    s["number"] = num
+                    s["foo"] = "bar"
                     s["bytes_data"] = bytes_data
                     s["bytearray_data"] = bytearray_data
                     s["array_data"] = array_data
@@ -304,7 +304,7 @@ class TestCase(unittest.TestCase):
 
                     if proto == 5:
                         self.assertEqual(
-                            s["number"], f"{len(type(num).__name__)}"
+                            s["foo"], f"{len(type(bar).__name__)}"
                         )
                         self.assertEqual(
                             s["bytes_data"],
@@ -323,15 +323,9 @@ class TestCase(unittest.TestCase):
                             f"{len(type(memoryview_data).__name__)}",
                         )
 
-                        key, value = s.set_location(b"number")
-                        self.assertEqual("number", key)
-                        self.assertEqual(value, f"{len(type(num).__name__)}")
-
-                        key, value = s.previous()
-                        self.assertEqual("memoryview_data", key)
-                        self.assertEqual(
-                            value, f"{len(type(memoryview_data).__name__)}"
-                        )
+                        key, value = s.set_location(b"foo")
+                        self.assertEqual("foo", key)
+                        self.assertEqual(value, f"{len(type(bar).__name__)}")
 
                         key, value = s.previous()
                         self.assertEqual("bytes_data", key)
@@ -357,6 +351,12 @@ class TestCase(unittest.TestCase):
                             value, f"{len(type(bytearray_data).__name__)}"
                         )
 
+                        key, value = s.next()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytes_data).__name__)}"
+                        )
+
                         key, value = s.first()
                         self.assertEqual("array_data", key)
                         self.assertEqual(
@@ -364,18 +364,14 @@ class TestCase(unittest.TestCase):
                         )
 
                         key, value = s.last()
-                        self.assertEqual("number", key)
+                        self.assertEqual("memoryview_data", key)
                         self.assertEqual(
-                            s["number"], f"{len(type(num).__name__)}"
+                            s["memoryview_data"], f"{len(type(memoryview_data).__name__)}"
                         )
                     else:
-                        key, value = s.set_location(b"number")
-                        self.assertEqual("number", key)
-                        self.assertEqual(value, "int")
-
-                        key, value = s.previous()
-                        self.assertEqual("memoryview_data", key)
-                        self.assertEqual(value, "memoryview")
+                        key, value = s.set_location(b"foo")
+                        self.assertEqual("foo", key)
+                        self.assertEqual(value, "str")
 
                         key, value = s.previous()
                         self.assertEqual("bytes_data", key)
@@ -393,15 +389,19 @@ class TestCase(unittest.TestCase):
                         self.assertEqual("bytearray_data", key)
                         self.assertEqual(value, "bytearray")
 
+                        key, value = s.next()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(value, "bytes")
+
                         key, value = s.first()
                         self.assertEqual("array_data", key)
                         self.assertEqual(value, "array")
 
                         key, value = s.last()
-                        self.assertEqual("number", key)
-                        self.assertEqual(s["number"], value)
+                        self.assertEqual("memoryview_data", key)
+                        self.assertEqual(s["memoryview_data"], value)
 
-                        self.assertEqual(s["number"], "int")
+                        self.assertEqual(s["foo"], "str")
                         self.assertEqual(s["bytes_data"], "bytes")
                         self.assertEqual(s["bytearray_data"], "bytearray")
                         self.assertEqual(s["array_data"], "array")
@@ -417,8 +417,8 @@ class TestCase(unittest.TestCase):
             with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
                                    serializer=serializer,
                                    deserializer=deserializer) as s:
-                s['number'] = 100
-                self.assertEqual(s['number'], 100)
+                s["foo"] = "bar"
+                self.assertEqual(s["foo"], "bar")
 
         def serializer(obj, protocol=None):
             pass
@@ -429,9 +429,9 @@ class TestCase(unittest.TestCase):
         with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
                                serializer=serializer,
                                deserializer=deserializer) as s:
-            s['number'] = 100
-            self.assertNotEqual(s['number'], 100)
-            self.assertEqual(s['number'], "")
+            s["foo"] = "bar"
+            self.assertNotEqual(s["foo"], "bar")
+            self.assertEqual(s["foo"], "")
 
     def test_missing_custom_deserializer(self):
         def serializer(obj, protocol=None):
