@@ -402,15 +402,17 @@ class CAPITest(unittest.TestCase):
                          br'object has negative ref count')
 
     def run_iter_api_test(self, next_func):
-        inputs = [ (), (1,2,3),
-                   [], [1,2,3]]
+        dataset = (
+            (), (1,2,3),
+            [], [1,2,3],
+        )
 
-        for inp in inputs:
+        for input_ in dataset:
             items = []
-            it = iter(inp)
+            it = iter(input_)
             while (item := next_func(it)) is not None:
                 items.append(item)
-            self.assertEqual(items, list(inp))
+            self.assertEqual(items, list(input_))
 
         class Broken:
             def __init__(self):
