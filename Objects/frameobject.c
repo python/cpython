@@ -62,24 +62,37 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
 
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
-    // If the key is interned (highly possible), we can do a pointer comparison.
-    int interned = PyUnicode_CheckExact(key) && PyUnicode_CHECK_INTERNED(key);
-    if (!interned) {
-        // Ensure that the key is hashable.
+    // Ensure that the key is hashable.
+    if (!PyUnicode_CheckExact(key)) {
         Py_hash_t hash = PyObject_Hash(key);
         if (hash == -1) {
             return -2;
         }
     }
 
+    // We do 2 loops here because it's highly possible the key is interned
+    // and we can do a pointer comparison.
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        int same = (name == key);
-        if (!same && !interned) {
-            same = PyObject_RichCompareBool(name, key, Py_EQ);
-            if (same < 0) {
-                return -2;
+        if (name == key) {
+            if (read) {
+                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                    return i;
+                }
+            } else {
+                if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
+                    return i;
+                }
             }
+        }
+    }
+    // This is unlikely, but we need to make sure. This means the key
+    // is not interned.
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        int same = PyObject_RichCompareBool(name, key, Py_EQ);
+        if (same < 0) {
+            return -2;
         }
         if (same) {
             if (read) {
