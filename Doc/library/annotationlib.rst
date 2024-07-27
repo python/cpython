@@ -91,7 +91,7 @@ on modules, classes, and functions.
       about their scope, so passing arguments to this method may be necessary to
       evaluate them successfully.
 
-      *globals* and *locals* are passed to :func:`eval()`, representing the global and
+      *globals* and *locals* are passed to :func:`eval`, representing the global and
       local namespaces in which the name is evaluated. *type_params*, if given, must be
       a tuple of :ref:`type parameters <type-params>` that are in scope while the forward
       reference is being evaluated. *owner* is the object that owns the annotation from
@@ -105,7 +105,7 @@ on modules, classes, and functions.
 
 .. function:: get_annotate_function(obj)
 
-   Retrieve the :term:`annotate function` for *obj*. Return ``None`` if *obj* does not have an
+   Retrieve the :term:`annotate function` for *obj*. Return :const:`!None` if *obj* does not have an
    annotate function.
 
    This is usually equivalent to accessing the :attr:`~object.__annotate__` attribute of *obj*,
@@ -130,12 +130,12 @@ on modules, classes, and functions.
 
    This function handles several details for you:
 
-   * If *eval_str* is true, values of type ``str`` will
+   * If *eval_str* is true, values of type :class:`!str` will
      be un-stringized using :func:`eval`.  This is intended
      for use with stringized annotations
      (``from __future__ import annotations``). It is an error
-     to set ``eval_str`` to true with formats other than :attr:`Format.VALUE`.
-   * If ``obj`` doesn't have an annotations dict, returns an
+     to set *eval_str* to true with formats other than :attr:`Format.VALUE`.
+   * If *obj* doesn't have an annotations dict, returns an
      empty dict.  (Functions and methods always have an
      annotations dict; classes, modules, and other types of
      callables may not.)
@@ -145,27 +145,27 @@ on modules, classes, and functions.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
 
-   ``eval_str`` controls whether or not values of type ``str`` are replaced
-   with the result of calling :func:`eval()` on those values:
+   *eval_str* controls whether or not values of type :class:`!str` are replaced
+   with the result of calling :func:`eval` on those values:
 
-   * If eval_str is true, :func:`eval()` is called on values of type ``str``.
+   * If eval_str is true, :func:`eval` is called on values of type :class:`!str`.
      (Note that :func:`!get_annotations` doesn't catch exceptions; if :func:`eval()`
      raises an exception, it will unwind the stack past the :func:`!get_annotations`
      call.)
-   * If *eval_str* is false (the default), values of type ``str`` are unchanged.
+   * If *eval_str* is false (the default), values of type :class:`!str` are unchanged.
 
-   ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
-   for :func:`eval()` for more information.  If ``globals`` or ``locals``
-   is ``None``, this function may replace that value with a context-specific
+   *globals* and *locals* are passed in to :func:`eval`; see the documentation
+   for :func:`eval` for more information.  If *globals* or *locals*
+   is :const:`!None`, this function may replace that value with a context-specific
    default, contingent on ``type(obj)``:
 
-   * If ``obj`` is a module, ``globals`` defaults to ``obj.__dict__``.
-   * If ``obj`` is a class, ``globals`` defaults to
-     ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
-     to the ``obj`` class namespace.
-   * If ``obj`` is a callable, ``globals`` defaults to
+   * If *obj* is a module, *globals* defaults to ``obj.__dict__``.
+   * If *obj* is a class, *globals* defaults to
+     ``sys.modules[obj.__module__].__dict__`` and *locals* defaults
+     to the *obj* class namespace.
+   * If *obj* is a callable, *globals* defaults to
      :attr:`obj.__globals__ <function.__globals__>`,
-     although if ``obj`` is a wrapped function (using
+     although if *obj* is a wrapped function (using
      :func:`functools.update_wrapper`) or a :class:`functools.partial` object,
      it is unwrapped until a non-wrapped function is found.
 

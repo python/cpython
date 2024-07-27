@@ -3225,7 +3225,7 @@ Introspection helpers
    Class used for internal typing representation of string forward references.
 
    For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  ``ForwardRef`` should not be instantiated by
+   ``List[ForwardRef("SomeClass")]``.  :class:`!ForwardRef` should not be instantiated by
    a user, but may be used by introspection tools.
 
    .. note::
@@ -3242,7 +3242,7 @@ Introspection helpers
 
    Evaluate an :class:`annotationlib.ForwardRef` as a :term:`type hint`.
 
-   This is similar to calling the :meth:`annotationlib.ForwardRef.evaluate()` method,
+   This is similar to calling the :meth:`annotationlib.ForwardRef.evaluate` method,
    but unlike that method, :func:`!evaluate_forward_ref` also:
 
    * Recursively evaluates forward references nested within the type hint.
