@@ -296,7 +296,7 @@ than one MIME-type database; it provides an interface similar to the one of the
 
       .. versionadded:: 3.2
 
-   
+
    .. method:: MimeTypes.add_type(type, ext, strict=True)
 
       Add a mapping from the MIME type *type* to the extension *ext*. When the
@@ -304,5 +304,4 @@ than one MIME-type database; it provides an interface similar to the one of the
       is already known the extension will be added to the list of known extensions.
 
       When *strict* is ``True`` (the default), the mapping will be added to the
-      official MIME types, otherwise to the non-standard ones.      
-      
+      official MIME types, otherwise to the non-standard ones.
