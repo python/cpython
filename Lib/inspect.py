@@ -378,7 +378,7 @@ def isfunction(object):
     Function objects provide these attributes:
         __doc__         documentation string
         __name__        name with which this function was defined
-        __qualname__    fully qualified name of this function
+        __qualname__    qualified name of this function
         __module__      name of the module the function was defined in or None
         __code__        code object containing compiled function bytecode
         __defaults__    tuple of any default values for arguments
