@@ -221,8 +221,9 @@ typedef enum {
     LAYOUT_MODE_GCC_SYSV,
 } LayoutMode;
 
-extern PyObject *
-PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
+struct CFieldObject;
+extern int
+PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self, PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign,
@@ -259,7 +260,7 @@ struct fielddesc {
     GETFUNC getfunc_swapped;
 };
 
-typedef struct {
+typedef struct CFieldObject {
     PyObject_HEAD
     Py_ssize_t offset;
     Py_ssize_t size;

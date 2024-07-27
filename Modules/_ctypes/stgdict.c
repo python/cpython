@@ -548,6 +548,20 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         } else
             bitsize = 0;
 
+        prop = PySequence_Fast_GET_ITEM(layout_fields, i);
+        if (!prop) {
+            Py_DECREF(pair);
+            return -1;
+        }
+        Py_INCREF(prop);
+        if (!PyType_IsSubtype(Py_TYPE(prop), st->PyCField_Type)) {
+            PyErr_Format(PyExc_TypeError,
+                        "fields must be of type CField, got %T", prop);
+            Py_DECREF(pair);
+            return -1;
+
+        }
+
         if (isStruct) {
             const char *fieldfmt = info->format ? info->format : "B";
             const char *fieldname = PyUnicode_AsUTF8(name);
@@ -565,12 +579,13 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            prop = PyCField_FromDesc(st, desc, i,
+            int res = PyCField_InitFromDesc(st, (CFieldObject*)prop, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
-            if (prop == NULL) {
+            if (res < 0) {
                 Py_DECREF(pair);
+                Py_DECREF(prop);
                 return -1;
             }
 
@@ -621,11 +636,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             bitofs = 0;
             offset = 0;
             align = 0;
-            prop = PyCField_FromDesc(st, desc, i,
+            int res = PyCField_InitFromDesc(st, (CFieldObject*)prop, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
-            if (prop == NULL) {
+            if (res < 0) {
                 Py_DECREF(pair);
                 return -1;
             }

@@ -225,27 +225,24 @@ PyCField_new_impl(PyTypeObject *type, const char *name, Py_ssize_t size,
 }
 
 
-PyObject *
-PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
+int
+PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian, LayoutMode layout_mode)
 {
     PyTypeObject *tp = st->PyCField_Type;
-    CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL) {
-        return NULL;
+        return -1;
     }
     StgInfo *info;
     if (PyStgInfo_FromType(st, desc, &info) < 0) {
-        Py_DECREF(self);
-        return NULL;
+        return -1;
     }
     if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "has no _stginfo_");
-        Py_DECREF(self);
-        return NULL;
+        return -1;
     }
 
     PyObject* proto = desc;
@@ -258,21 +255,18 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
     if (PyCArrayTypeObject_Check(st, proto)) {
         StgInfo *ainfo;
         if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
-            Py_DECREF(self);
-            return NULL;
+            return -1;
         }
 
         if (ainfo && ainfo->proto) {
             StgInfo *iinfo;
             if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
-                Py_DECREF(self);
-                return NULL;
+                return -1;
             }
             if (!iinfo) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
-                Py_DECREF(self);
-                return NULL;
+                return -1;
             }
             if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("s");
@@ -323,14 +317,13 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 );
     }
     if (result < 0) {
-        Py_DECREF(self);
-        return NULL;
+        return -1;
     }
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
     if(big_endian && is_bitfield) {
         self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
     }
-    return (PyObject *)self;
+    return 0;
 }
 
 static int
