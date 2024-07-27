@@ -49,7 +49,7 @@ class TextTestResult(result.TestResult):
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
         if self.descriptions and doc_first_line:
-            return doc_first_line + ' (' + str(test) + ')'
+            return f'{doc_first_line} ({test})'
         else:
             return str(test)
 

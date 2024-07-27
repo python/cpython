@@ -555,6 +555,7 @@ class RunStringTests(TestBase):
 
     def setUp(self):
         super().setUp()
+        # Use `_id`, because `id()` is part of TestCase API.
         self._id = _interpreters.create()
 
     def test_success(self):
@@ -886,6 +887,7 @@ class RunFailedTests(TestBase):
 
     def setUp(self):
         super().setUp()
+        # Use `_id`, because `id()` is part of TestCase API.
         self._id = _interpreters.create()
 
     def add_module(self, modname, text):
@@ -1043,6 +1045,7 @@ class RunFuncTests(TestBase):
 
     def setUp(self):
         super().setUp()
+        # Use `_id`, because `id()` is part of TestCase API.
         self._id = _interpreters.create()
 
     def test_success(self):
