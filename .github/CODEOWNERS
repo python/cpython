@@ -215,6 +215,7 @@ Doc/c-api/stable.rst          @encukou
 /Doc/library/idle.rst         @terryjreedy
 
 **/*typing*                   @JelleZijlstra @AlexWaygood
+**/*annotationlib*            @JelleZijlstra
 
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
