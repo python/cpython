@@ -153,12 +153,14 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
-|                 | f_trace_lines     | is a tracing event        |
+|                 | f_trace_lines     | indicate whether a        |
+|                 |                   | tracing event is          |
 |                 |                   | triggered for each source |
-|                 |                   | line?                     |
+|                 |                   | source line               |
 +-----------------+-------------------+---------------------------+
-|                 | f_trace_opcodes   | are per-opcode events     |
-|                 |                   | being requested?          |
+|                 | f_trace_opcodes   | indicate whether          |
+|                 |                   | per-opcode events are     |
+|                 |                   | requested                 |
 +-----------------+-------------------+---------------------------+
 |                 | clear             | used to clear all         |
 |                 |                   | references to local       |
@@ -233,8 +235,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | source code positions for |
 |                 |                   | each bytecode instruction |
 +-----------------+-------------------+---------------------------+
-|                 | replace           | return a copy of the code |
-|                 |                   | object with a new values  |
+|                 | replace           | returns a copy of the     |
+|                 |                   | code object with a new    |
+|                 |                   | values                    |                
 +-----------------+-------------------+---------------------------+
 | generator       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
