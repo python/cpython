@@ -100,8 +100,8 @@ class Shelf(collections.abc.MutableMapping):
             self.serializer = dumps
             self.deserializer = loads
         elif (serializer is None) ^ (deserializer is None):
-            raise ShelveError("Serializer and deserializer must be"
-                              "defined together.")
+            raise ShelveError("serializer and deserializer must be "
+                              "defined together")
         else:
             self.serializer = serializer
             self.deserializer = deserializer
