@@ -156,6 +156,12 @@ pdb
   :pdbcmd:`commands` are preserved across hard-coded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
+pickle
+------
+
+* Set the default protocol version on the :mod:`pickle` module to 5.
+  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
+
 symtable
 --------
 
@@ -167,12 +173,7 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
-pickle
-------
-
-* Set the default protocol version on the :mod:`pickle` module to 5.
-  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
-
+.. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
 =============
@@ -185,24 +186,32 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
-
-
 Deprecated
 ==========
 
-* Passing a complex number as the *real* or *imag* argument in the
+* :mod:`builtins`:
+  Passing a complex number as the *real* or *imag* argument in the
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
-* :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
+* :mod:`os`:
+  :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
-* Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
+* :mod:`symtable`:
+  Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
 
+.. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
 =======
@@ -261,7 +270,6 @@ asyncio
   * :func:`!asyncio.set_child_watcher`
 
   (Contributed by Kumar Aditya in :gh:`120804`.)
-
 
 collections.abc
 ---------------
