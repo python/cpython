@@ -284,7 +284,7 @@ class CompletingReader(Reader):
         p = self.pos - 1
         while p >= 0 and st.get(b[p], SW) == SW:
             p -= 1
-        return ''.join(b[p+1:self.pos])
+        return ''.join(b[i] for i in range(p + 1, self.pos))
 
     def get_completions(self, stem: str) -> list[str]:
         return []
