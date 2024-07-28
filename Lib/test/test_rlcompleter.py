@@ -142,6 +142,19 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('match', 0), 'match ')
         self.assertEqual(completer.complete('case', 0), 'case ')
 
+    @unittest.mock.patch('rlcompleter._readline_available', False)
+    def test_complete_with_buffer(self):
+        completer = rlcompleter.Completer()
+        buffer = list('if ...:\n    ...\nel')
+        self.assertEqual(completer.complete('el', 0, buffer), 'elif ')
+        self.assertEqual(completer.complete('el', 1, buffer), 'else')
+        buffer = list('match foo:\n    c')
+        self.assertEqual(completer.complete('c', 0, buffer), 'case ')
+        buffer = list('True a')
+        self.assertEqual(completer.complete('a', 0, buffer), 'and ')
+        buffer = list('a if True e')
+        self.assertEqual(completer.complete('e', 0, buffer), 'else')
+
     def test_duplicate_globals(self):
         namespace = {
             'False': None,  # Keyword vs builtin vs namespace
