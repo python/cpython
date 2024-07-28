@@ -397,11 +397,13 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    This function always succeeds. */
 PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
 /* Return 1 and set 'item' to the next item of iter on success.
  * Return 0 and set 'item' to NULL when there are no remaining values.
  * Return -1, set 'item' to NULL and set an exception on error.
  */
 PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
+#endif
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
