@@ -269,6 +269,7 @@ class TranslateTestCaseMixin:
 
     def test_translate_wildcards(self):
         for pattern, expect in [
+            ('', r'(?s:)\Z'),
             ('ab*', r'(?s:ab.*)\Z'),
             ('ab*cd', r'(?s:ab.*cd)\Z'),
             ('ab*cd*', r'(?s:ab(?>.*?cd).*)\Z'),
