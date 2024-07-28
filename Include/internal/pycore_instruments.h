@@ -23,7 +23,7 @@ typedef uint32_t _PyMonitoringEventSet;
 #define PY_MONITORING_PROFILER_ID 2
 #define PY_MONITORING_OPTIMIZER_ID 5
 
-/* Internal IDs used to suuport sys.setprofile() and sys.settrace() */
+/* Internal IDs used to support sys.setprofile() and sys.settrace() */
 #define PY_MONITORING_SYS_PROFILE_ID 6
 #define PY_MONITORING_SYS_TRACE_ID 7
 

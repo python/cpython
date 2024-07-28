@@ -450,6 +450,10 @@ Constants
       same way that ``SO_BINDTODEVICE`` is used, but with the index of a
       network interface instead of its name.
 
+   .. versionchanged:: 3.14
+      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
+      on Linux.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -1922,7 +1926,7 @@ to sockets.
 .. method:: socket.settimeout(value)
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative floating point number expressing seconds, or ``None``.
+   nonnegative floating-point number expressing seconds, or ``None``.
    If a non-zero value is given, subsequent socket operations will raise a
    :exc:`timeout` exception if the timeout period *value* has elapsed before
    the operation has completed.  If zero is given, the socket is put in

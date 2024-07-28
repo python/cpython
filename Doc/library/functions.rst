@@ -57,7 +57,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer, a floating point number, or an object implementing
+   integer, a floating-point number, or an object implementing
    :meth:`~object.__abs__`.
    If the argument is a complex number, its magnitude is returned.
 
@@ -141,10 +141,11 @@ are always available.  They are listed here in alphabetical order.
    See also :func:`format` for more information.
 
 
-.. class:: bool(x=False)
+.. class:: bool(object=False, /)
 
-   Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
-   using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
+   Return a Boolean value, i.e. one of ``True`` or ``False``.  The argument
+   is converted using the standard :ref:`truth testing procedure <truth>`.
+   If the argument is false
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
@@ -153,7 +154,7 @@ are always available.  They are listed here in alphabetical order.
    .. index:: pair: Boolean; type
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The parameter is now positional-only.
 
 .. function:: breakpoint(*args, **kws)
 
@@ -371,29 +372,75 @@ are always available.  They are listed here in alphabetical order.
       support for top-level ``await``, ``async for``, and ``async with``.
 
 
-.. class:: complex(real=0, imag=0)
-           complex(string)
+.. class:: complex(number=0, /)
+           complex(string, /)
+           complex(real=0, imag=0)
 
-   Return a complex number with the value *real* + *imag*\*1j or convert a string
-   or number to a complex number.  If the first parameter is a string, it will
-   be interpreted as a complex number and the function must be called without a
-   second parameter.  The second parameter can never be a string. Each argument
-   may be any numeric type (including complex).  If *imag* is omitted, it
-   defaults to zero and the constructor serves as a numeric conversion like
-   :class:`int` and :class:`float`.  If both arguments are omitted, returns
-   ``0j``.
+   Convert a single string or number to a complex number, or create a
+   complex number from real and imaginary parts.
 
+   Examples:
+
+   .. doctest::
+
+      >>> complex('+1.23')
+      (1.23+0j)
+      >>> complex('-4.5j')
+      -4.5j
+      >>> complex('-1.23+4.5j')
+      (-1.23+4.5j)
+      >>> complex('\t( -1.23+4.5J )\n')
+      (-1.23+4.5j)
+      >>> complex('-Infinity+NaNj')
+      (-inf+nanj)
+      >>> complex(1.23)
+      (1.23+0j)
+      >>> complex(imag=-4.5)
+      -4.5j
+      >>> complex(-1.23, 4.5)
+      (-1.23+4.5j)
+
+   If the argument is a string, it must contain either a real part (in the
+   same format as for :func:`float`) or an imaginary part (in the same
+   format but with a ``'j'`` or ``'J'`` suffix), or both real and imaginary
+   parts (the sign of the imaginary part is mandatory in this case).
+   The string can optionally be surrounded by whitespaces and the round
+   parentheses ``'('`` and ``')'``, which are ignored.
+   The string must not contain whitespace between ``'+'``, ``'-'``, the
+   ``'j'`` or ``'J'`` suffix, and the decimal number.
+   For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
+   :exc:`ValueError`.
+   More precisely, the input must conform to the :token:`~float:complexvalue`
+   production rule in the following grammar, after parentheses and leading and
+   trailing whitespace characters are removed:
+
+   .. productionlist:: float
+      complexvalue: `floatvalue` |
+                  : `floatvalue` ("j" | "J") |
+                  : `floatvalue` `sign` `absfloatvalue` ("j" | "J")
+
+   If the argument is a number, the constructor serves as a numeric
+   conversion like :class:`int` and :class:`float`.
    For a general Python object ``x``, ``complex(x)`` delegates to
-   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
-   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   ``x.__complex__()``.
+   If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.
+   If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
-   .. note::
+   If two arguments are provided or keyword arguments are used, each argument
+   may be any numeric type (including complex).
+   If both arguments are real numbers, return a complex number with the real
+   component *real* and the imaginary component *imag*.
+   If both arguments are complex numbers, return a complex number with the real
+   component ``real.real-imag.imag`` and the imaginary component
+   ``real.imag+imag.real``.
+   If one of arguments is a real number, only its real component is used in
+   the above expressions.
 
-      When converting from a string, the string must not contain whitespace
-      around the central ``+`` or ``-`` operator.  For example,
-      ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
-      :exc:`ValueError`.
+   See also :meth:`complex.from_number` which only accepts a single numeric argument.
+
+   If all arguments are omitted, returns ``0j``.
 
    The complex type is described in :ref:`typesnumeric`.
 
@@ -403,6 +450,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__complex__` and
       :meth:`~object.__float__` are not defined.
+
+   .. deprecated:: 3.14
+      Passing a complex number as the *real* or *imag* argument is now
+      deprecated; it should only be passed as a single positional argument.
 
 
 .. function:: delattr(object, name)
@@ -493,7 +544,7 @@ are always available.  They are listed here in alphabetical order.
    Take two (non-complex) numbers as arguments and return a pair of numbers
    consisting of their quotient and remainder when using integer division.  With
    mixed operand types, the rules for binary arithmetic operators apply.  For
-   integers, the result is the same as ``(a // b, a % b)``. For floating point
+   integers, the result is the same as ``(a // b, a % b)``. For floating-point
    numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a /
    b)`` but may be 1 less than that.  In any case ``q * b + a % b`` is very
    close to *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0
@@ -623,10 +674,6 @@ are always available.  They are listed here in alphabetical order.
       means functions and classes defined in the executed code will not be able
       to access variables assigned at the top level (as the "top level"
       variables are treated as class variables in a class definition).
-      Passing a :class:`collections.ChainMap` instance as *globals* allows name
-      lookups to be chained across multiple mappings without triggering this
-      behaviour. Values assigned to top level names in the executed code can be
-      retrieved by passing an empty dictionary as the first entry in the chain.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
@@ -686,48 +733,18 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* is false.
 
 
-.. class:: float(x=0.0)
+.. class:: float(number=0.0, /)
+           float(string, /)
 
    .. index::
       single: NaN
       single: Infinity
 
-   Return a floating point number constructed from a number or string *x*.
+   Return a floating-point number constructed from a number or a string.
 
-   If the argument is a string, it should contain a decimal number, optionally
-   preceded by a sign, and optionally embedded in whitespace.  The optional
-   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
-   produced.  The argument may also be a string representing a NaN
-   (not-a-number), or positive or negative infinity.  More precisely, the
-   input must conform to the ``floatvalue`` production rule in the following
-   grammar, after leading and trailing whitespace characters are removed:
+   Examples:
 
-   .. productionlist:: float
-      sign: "+" | "-"
-      infinity: "Infinity" | "inf"
-      nan: "nan"
-      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
-      digitpart: `digit` (["_"] `digit`)*
-      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
-      exponent: ("e" | "E") ["+" | "-"] `digitpart`
-      floatnumber: number [`exponent`]
-      floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
-
-   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
-   "iNfINity" are all acceptable spellings for positive infinity.
-
-   Otherwise, if the argument is an integer or a floating point number, a
-   floating point number with the same value (within Python's floating point
-   precision) is returned.  If the argument is outside the range of a Python
-   float, an :exc:`OverflowError` will be raised.
-
-   For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
-   to :meth:`~object.__index__`.
-
-   If no argument is given, ``0.0`` is returned.
-
-   Examples::
+   .. doctest::
 
       >>> float('+1.23')
       1.23
@@ -740,13 +757,50 @@ are always available.  They are listed here in alphabetical order.
       >>> float('-Infinity')
       -inf
 
+   If the argument is a string, it should contain a decimal number, optionally
+   preceded by a sign, and optionally embedded in whitespace.  The optional
+   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
+   produced.  The argument may also be a string representing a NaN
+   (not-a-number), or positive or negative infinity.
+   More precisely, the input must conform to the :token:`~float:floatvalue`
+   production rule in the following grammar, after leading and trailing
+   whitespace characters are removed:
+
+   .. productionlist:: float
+      sign: "+" | "-"
+      infinity: "Infinity" | "inf"
+      nan: "nan"
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
+      digitpart: `digit` (["_"] `digit`)*
+      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
+      exponent: ("e" | "E") [`sign`] `digitpart`
+      floatnumber: `number` [`exponent`]
+      absfloatvalue: `floatnumber` | `infinity` | `nan`
+      floatvalue: [`sign`] `absfloatvalue`
+
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
+
+   Otherwise, if the argument is an integer or a floating-point number, a
+   floating-point number with the same value (within Python's floating-point
+   precision) is returned.  If the argument is outside the range of a Python
+   float, an :exc:`OverflowError` will be raised.
+
+   For a general Python object ``x``, ``float(x)`` delegates to
+   ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
+
+   See also :meth:`float.from_number` which only accepts a numeric argument.
+
+   If no argument is given, ``0.0`` is returned.
+
    The float type is described in :ref:`typesnumeric`.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The parameter is now positional-only.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
@@ -930,17 +984,35 @@ are always available.  They are listed here in alphabetical order.
       with the result after successfully reading input.
 
 
-.. class:: int(x=0)
-           int(x, base=10)
+.. class:: int(number=0, /)
+           int(string, /, base=10)
 
-   Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* defines :meth:`~object.__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`~object.__index__`,
-   it returns ``x.__index__()``.  If *x* defines :meth:`~object.__trunc__`,
-   it returns ``x.__trunc__()``.
-   For floating point numbers, this truncates towards zero.
+   Return an integer object constructed from a number or a string, or return
+   ``0`` if no arguments are given.
 
-   If *x* is not a number or if *base* is given, then *x* must be a string,
+   Examples:
+
+   .. doctest::
+
+      >>> int(123.45)
+      123
+      >>> int('123')
+      123
+      >>> int('   -12_345\n')
+      -12345
+      >>> int('FACE', 16)
+      64206
+      >>> int('0xface', 0)
+      64206
+      >>> int('01110011', base=2)
+      115
+
+   If the argument defines :meth:`~object.__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If the argument defines
+   :meth:`~object.__index__`, it returns ``x.__index__()``.
+   For floating-point numbers, this truncates towards zero.
+
+   If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
    in radix *base*.  Optionally, the string can be preceded by ``+`` or ``-``
    (with no space in between), have leading zeros, be surrounded by whitespace,
@@ -970,21 +1042,21 @@ are always available.  They are listed here in alphabetical order.
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The first parameter is now positional-only.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`~object.__trunc__` is deprecated.
-
-   .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
       help avoid denial of service attacks. A :exc:`ValueError` is raised when
-      the limit is exceeded while converting a string *x* to an :class:`int` or
+      the limit is exceeded while converting a string to an :class:`int` or
       when converting an :class:`int` into a string would exceed the limit.
       See the :ref:`integer string conversion length limitation
       <int_max_str_digits>` documentation.
+
+   .. versionchanged:: 3.14
+      :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
 .. function:: isinstance(object, classinfo)
 
@@ -1437,7 +1509,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open file,mode,flags open
+   .. audit-event:: open path,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
@@ -1493,7 +1565,9 @@ are always available.  They are listed here in alphabetical order.
    returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
    type :class:`int` or :class:`float` and a non-integral exponent, a complex
    result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
-   to ``3j``.
+   to ``3j``. Whereas, for a negative base of type :class:`int` or :class:`float`
+   with an integral exponent, a float result is delivered. For example,
+   ``pow(-9, 2.0)`` returns ``81.0``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
    also be of integer type and *mod* must be nonzero. If *mod* is present and
@@ -1854,7 +1928,7 @@ are always available.  They are listed here in alphabetical order.
 
    For some use cases, there are good alternatives to :func:`sum`.
    The preferred, fast way to concatenate a sequence of strings is by calling
-   ``''.join(sequence)``.  To add floating point values with extended precision,
+   ``''.join(sequence)``.  To add floating-point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
 
@@ -1863,6 +1937,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
       that gives higher accuracy and better commutativity on most builds.
+
+   .. versionchanged:: 3.14
+      Added specialization for summation of complexes,
+      using same algorithm as for summation of floats.
 
 
 .. class:: super()

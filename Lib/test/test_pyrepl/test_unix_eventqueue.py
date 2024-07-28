@@ -1,13 +1,17 @@
 import tempfile
 import unittest
+import sys
 from unittest.mock import patch
 
-from _pyrepl.console import Event
-from _pyrepl.unix_eventqueue import EventQueue
+try:
+    from _pyrepl.console import Event
+    from _pyrepl.unix_eventqueue import EventQueue
+except ImportError:
+    pass
 
-
+@unittest.skipIf(sys.platform == "win32", "No Unix event queue on Windows")
 @patch("_pyrepl.curses.tigetstr", lambda x: b"")
-class TestUnivEventQueue(unittest.TestCase):
+class TestUnixEventQueue(unittest.TestCase):
     def setUp(self):
         self.file = tempfile.TemporaryFile()
 

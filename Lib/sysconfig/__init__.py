@@ -27,10 +27,10 @@ _ALWAYS_STR = {
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
         'include':
             '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
@@ -77,10 +77,10 @@ _INSTALL_SCHEMES = {
     # Downstream distributors who patch posix_prefix/nt scheme are encouraged to
     # leave the following schemes unchanged
     'posix_venv': {
-        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
         'include':
             '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
@@ -148,11 +148,11 @@ if _HAS_USER_BASE:
             'data': '{userbase}',
             },
         'posix_user': {
-            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
-            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
-            'include': '{userbase}/include/{implementation_lower}{py_version_short}',
+            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+            'include': '{userbase}/include/{implementation_lower}{py_version_short}{abi_thread}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
@@ -487,6 +487,9 @@ def _init_config_vars():
         # the init-function.
         _CONFIG_VARS['userbase'] = _getuserbase()
 
+    # e.g., 't' for free-threaded or '' for default build
+    _CONFIG_VARS['abi_thread'] = 't' if _CONFIG_VARS.get('Py_GIL_DISABLED') else ''
+
     # Always convert srcdir to an absolute path
     srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
     if os.name == 'posix':
@@ -639,7 +642,7 @@ def get_platform():
             release = m.group()
     elif osname[:6] == "darwin":
         if sys.platform == "ios":
-            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "12.0")
+            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "13.0")
             osname = sys.platform
             machine = sys.implementation._multiarch
         else:
@@ -653,6 +656,10 @@ def get_platform():
 
 def get_python_version():
     return _PY_VERSION_SHORT
+
+
+def _get_python_version_abi():
+    return _PY_VERSION_SHORT + get_config_var("abi_thread")
 
 
 def expand_makefile_vars(s, vars):
