@@ -116,24 +116,16 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     PyObject *pattern_str_find_meth = NULL; // pattern.find()
     // ---- def local objects -------------------------------------------------
     wildcard_indices = PyList_New(0);
-    if (wildcard_indices == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(wildcard_indices);
     // The Python implementation always takes queries re.escape() and re.sub()
     // inside translate() and thus we should at least allow external users to
     // mock those functions (thus, we cannot cache them in the module's state).
     re_escape_func = PyObject_GetAttr(state->re_module, &_Py_ID(escape));
-    if (re_escape_func == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(re_escape_func);
     setops_re_subfn = get_setops_re_sub_method(state);
-    if (setops_re_subfn == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(setops_re_subfn);
     pattern_str_find_meth = PyObject_GetAttr(pattern, &_Py_ID(find));
-    if (pattern_str_find_meth == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(pattern_str_find_meth);
     // ------------------------------------------------------------------------
     const int pattern_kind = PyUnicode_KIND(pattern);
     const void *const pattern_data = PyUnicode_DATA(pattern);
@@ -152,9 +144,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             Py_ssize_t t = escape_block(writer, pattern,        \
                                         escstart, (ESCSTOP),    \
                                         re_escape_func);        \
-            if (t < 0) {                                        \
-                goto abort;                                     \
-            }                                                   \
+            CHECK_INTVAL_OR_ABORT(t);                           \
             written += t;                                       \
             escstart = -1;                                      \
         }                                                       \
@@ -174,14 +164,10 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 for (; i < maxind && READ_CHAR(i) == '*'; ++i);
                 // store the position of the wildcard
                 PyObject *wildcard_index = PyLong_FromSsize_t(written++);
-                if (wildcard_index == NULL) {
-                    goto abort;
-                }
+                CHECK_NON_NULL_OR_ABORT(wildcard_index);
                 int rc = PyList_Append(wildcard_indices, wildcard_index);
                 Py_DECREF(wildcard_index);
-                if (rc < 0) {
-                    goto abort;
-                }
+                CHECK_INTVAL_OR_ABORT(rc);
                 break;
             }
             case '?': {
@@ -193,8 +179,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             }
             case '[': {
                 WRITE_PENDING(escstop);
-                assert(i > 0);
-                assert(READ_CHAR(i - 1) == '[');
+                assert(READ_CHAR(escstop) == '[');
                 Py_ssize_t j = i;
                 ADVANCE_IF_CHAR_IS('!', j, maxind);             // [!
                 ADVANCE_IF_CHAR_IS(']', j, maxind);             // [!] or []
@@ -213,9 +198,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                     PyObject *expr = NULL;
                     if (pos == -1) {
                         PyObject *tmp = PyUnicode_Substring(pattern, i, j);
-                        if (tmp == NULL) {
-                            goto abort;
-                        }
+                        CHECK_NON_NULL_OR_ABORT(tmp);
                         expr = BACKSLASH_REPLACE(state, tmp);
                         Py_DECREF(tmp);
                     }
@@ -223,15 +206,11 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                         expr = translate_expression(state, pattern, i, j,
                                                     pattern_str_find_meth);
                     }
-                    if (expr == NULL) {
-                        goto abort;
-                    }
+                    CHECK_NON_NULL_OR_ABORT(expr);
                     Py_ssize_t expr_len = write_expression(state, writer, expr,
                                                            setops_re_subfn);
                     Py_DECREF(expr);
-                    if (expr_len < 0) {
-                        goto abort;
-                    }
+                    CHECK_INTVAL_OR_ABORT(expr_len);
                     written += expr_len;
                     i = j + 1;  // jump to the character after ']'
                     break;      // explicit early break for clarity
@@ -285,20 +264,14 @@ escape_block(PyUnicodeWriter *writer,
     }
 #endif
     PyObject *str = PyUnicode_Substring(pattern, start, stop);
-    if (str == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(str);
     PyObject *escaped = PyObject_CallOneArg(re_escape_func, str);
     Py_DECREF(str);
-    if (escaped == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(escaped);
     Py_ssize_t written = PyUnicode_GET_LENGTH(escaped);
     int rc = _WRITE_STRING(writer, escaped);
     Py_DECREF(escaped);
-    if (rc < 0) {
-        goto abort;
-    }
+    CHECK_INTVAL_OR_ABORT(rc);
     return written;
 abort:
     return -1;
@@ -316,31 +289,23 @@ split_expression(fnmatchmodule_state *state,
                  PyObject *pattern, Py_ssize_t start, Py_ssize_t stop,
                  PyObject *str_find_func)
 {
+    // ---- decl local objects ------------------------------------------------
     PyObject *chunks = NULL, *maxind = NULL;
     PyObject *hyphen = state->hyphen_str;
-
+    // ---- def local objects -------------------------------------------------
     chunks = PyList_New(0);
-    if (chunks == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(chunks);
     maxind = PyLong_FromSsize_t(stop);
-    if (maxind == NULL) {
-        goto abort;
-    }
-
+    CHECK_NON_NULL_OR_ABORT(maxind);
     // ---- def local macros --------------------------------------------------
     /* add pattern[START:STOP] to the list of chunks */
 #define ADD_CHUNK(START, STOP)                                              \
     do {                                                                    \
         PyObject *chunk = PyUnicode_Substring(pattern, (START), (STOP));    \
-        if (chunk == NULL) {                                                \
-            goto abort;                                                     \
-        }                                                                   \
+        CHECK_NON_NULL_OR_ABORT(chunk);                                     \
         int rc = PyList_Append(chunks, chunk);                              \
         Py_DECREF(chunk);                                                   \
-        if (rc < 0) {                                                       \
-            goto abort;                                                     \
-        }                                                                   \
+        CHECK_INTVAL_OR_ABORT(rc);                                          \
     } while (0)
     // ------------------------------------------------------------------------
     Py_ssize_t chunk_start = start;
@@ -350,9 +315,7 @@ split_expression(fnmatchmodule_state *state,
     while (ind < stop) {
         PyObject *p_chunk_stop = PyObject_CallFunction(str_find_func, "OnO",
                                                        hyphen, ind, maxind);
-        if (p_chunk_stop == NULL) {
-            goto abort;
-        }
+        CHECK_NON_NULL_OR_ABORT(p_chunk_stop);
         Py_ssize_t chunk_stop = PyLong_AsSsize_t(p_chunk_stop);
         Py_DECREF(p_chunk_stop);
         if (chunk_stop < 0) {
@@ -433,9 +396,7 @@ simplify_expression(PyObject *chunks)
                 assert(c1len > 1);
                 assert(c2len > 1);
                 PyUnicodeWriter *writer = PyUnicodeWriter_Create(olen);
-                if (writer == NULL) {
-                    goto abort;
-                }
+                CHECK_NON_NULL_OR_ABORT(writer);
                 // all but the last character in the first chunk
                 if (_WRITE_BLOCK(writer, c1, 0, c1len - 1) < 0) {
                     PyUnicodeWriter_Discard(writer);
@@ -455,9 +416,7 @@ simplify_expression(PyObject *chunks)
                 Py_XDECREF(str);
                 goto abort;
             }
-            if (PySequence_DelItem(chunks, k) < 0) {
-                goto abort;
-            }
+            CHECK_INTVAL_OR_ABORT(PySequence_DelItem(chunks, k));
         }
     }
     return 0;
@@ -478,9 +437,7 @@ escape_expression(fnmatchmodule_state *state, PyObject *chunks)
         PyObject *s0 = PyList_GET_ITEM(chunks, c);
         assert(s0 != NULL);
         PyObject *s1 = BACKSLASH_REPLACE(state, s0);
-        if (s1 == NULL) {
-            goto abort;
-        }
+        CHECK_NON_NULL_OR_ABORT(s1);
         PyObject *s2 = HYPHEN_REPLACE(state, s1);
         Py_DECREF(s1);
         // PyList_SetItem() does not create a new reference on 's2'
@@ -503,22 +460,16 @@ translate_expression(fnmatchmodule_state *state,
 {
     PyObject *chunks = split_expression(state, pattern, start, stop,
                                         pattern_str_find_meth);
-    if (chunks == NULL) {
-        return NULL;
-    }
+    CHECK_NON_NULL_OR_ABORT(chunks);
     // remove empty ranges
-    if (simplify_expression(chunks) < 0) {
-        goto abort;
-    }
+    CHECK_INTVAL_OR_ABORT(simplify_expression(chunks));
     // escape backslashes and set differences
-    if (escape_expression(state, chunks) < 0) {
-        goto abort;
-    }
+    CHECK_INTVAL_OR_ABORT(escape_expression(state, chunks));
     PyObject *res = PyUnicode_Join(state->hyphen_str, chunks);
     Py_DECREF(chunks);
     return res;
 abort:
-    Py_DECREF(chunks);
+    Py_XDECREF(chunks);
     return NULL;
 }
 
@@ -544,9 +495,7 @@ write_expression(fnmatchmodule_state *state,
     WRITE_CHAR_OR_ABORT(writer, '[');
     // escape set operations as late as possible
     safe_expression = SETOPS_REPLACE(state, expression, setops_re_sub_meth);
-    if (safe_expression == NULL) {
-        goto abort;
-    }
+    CHECK_NON_NULL_OR_ABORT(safe_expression);
     switch (token) {
         case '!': {
             WRITE_CHAR_OR_ABORT(writer, '^'); // replace '!' by '^'
@@ -606,7 +555,7 @@ process_wildcards(PyObject *pattern, PyObject *indices)
 #define LOAD_WILDCARD_INDEX(VAR, IND)                               \
     do {                                                            \
         VAR = PyLong_AsSsize_t(PyList_GET_ITEM(indices, (IND)));    \
-        if (VAR < 0) {                                              \
+        if ((VAR) < 0 && PyErr_Occurred())  {                       \
             goto abort;                                             \
         }                                                           \
     } while (0)
