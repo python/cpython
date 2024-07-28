@@ -1,8 +1,10 @@
+import gc
 import ctypes
 import sys
 import unittest
 import warnings
-from ctypes import (Structure, Array, sizeof, addressof,
+import weakref
+from ctypes import (Structure, Array, sizeof, addressof, POINTER, pointer,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
@@ -278,6 +280,32 @@ class ArrayTestCase(unittest.TestCase):
     def test_deprecation(self):
         with self.assertWarns(DeprecationWarning):
             CharArray = ctypes.ARRAY(c_char, 3)
+
+    def test_ptr_reuse(self):
+        w = weakref.WeakValueDictionary()
+        arr = 3 * POINTER(c_short)
+
+        vals = arr(
+            pointer(w.setdefault(10, c_short(10))),
+            pointer(w.setdefault(11, c_short(11))),
+            None,
+        )
+        gc.collect()
+
+        self.assertEqual(vals[0].contents.value, 10)
+        self.assertEqual(vals[1].contents.value, 11)
+
+        vals[2] = vals[0]
+
+        self.assertEqual(vals[2].contents.value, 10)
+
+        vals[2][0] = w.setdefault(12, c_short(12))
+        vals[2].contents = w.setdefault(13, c_short(13))
+
+        gc.collect()
+
+        self.assertEqual(vals[2].contents.value, 13)
+        self.assertEqual(vals[0].contents.value, 12)
 
 
 if __name__ == '__main__':

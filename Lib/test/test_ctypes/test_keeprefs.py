@@ -1,6 +1,8 @@
+import gc
 import unittest
-from ctypes import (Structure, POINTER, pointer,  _pointer_type_cache,
+from ctypes import (addressof, Structure, POINTER, pointer,  _pointer_type_cache,
                     c_char_p, c_int)
+import weakref
 
 
 class SimpleTestCase(unittest.TestCase):
@@ -98,6 +100,29 @@ class PointerTestCase(unittest.TestCase):
         x = pointer(i)
         self.assertEqual(x._objects, {'1': i})
 
+    @unittest.expectedFailure  # gh-46376, gh-107131, gh-107940, gh-108222
+    def test_pp_ownership(self):
+        w = weakref.WeakValueDictionary()
+        d = w.setdefault(123, c_int(123))
+
+        p = pointer(d)
+        pp = pointer(p)
+        address = addressof(p.contents)
+
+        pp.contents.contents = w.setdefault(456, c_int(456))
+        # pp.contents is a temporary object, changing where it points to
+        # (setting .contents) shouldn't change where p is pointing to
+        # see https://docs.python.org/3/library/ctypes.html#pointers
+
+        del d
+        del pp
+        # c_int(123) should be kept alive by p._objects
+        gc.collect()
+
+        self.assertIn(123, w)
+        self.assertNotIn(456, w)
+        self.assertEqual(address, addressof(p.contents))  # if it changed, where to?
+        self.assertEqual(p.contents.value, 123)
 
 class PointerToStructure(unittest.TestCase):
     def test(self):
