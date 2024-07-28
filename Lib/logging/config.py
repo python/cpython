@@ -501,21 +501,22 @@ def _is_queue_like_object(obj):
     """Check that *obj* implements the Queue API."""
     if isinstance(obj, queue.Queue):
         return True
+
     # defer importing multiprocessing as much as possible
     from multiprocessing.queues import Queue as MPQueue
     if isinstance(obj, MPQueue):
         return True
     # Depending on the multiprocessing start context, we cannot create
     # a multiprocessing.managers.BaseManager instance 'mm' to get the
-    # runtime type of mm.Queue() or mm.JoinableQueue() (see gh-121723).
+    # runtime type of mm.Queue() or mm.JoinableQueue() (see gh-119819).
     #
     # Since we only need an object implementing the Queue API, we only
-    # do a protocol check without relying on typing.runtime_checkable
+    # do a protocol check, but we do not use typing.runtime_checkable()
     # and typing.Protocol to reduce import time (see gh-121723).
     #
     # Ideally, we would have wanted to simply use strict type checking
-    # instead of protocol-based type checking since this approach does
-    # not consider incompatible signatures.
+    # instead of a protocol-based type checking since the latetr does
+    # not check the method signatures.
     queue_interface = [
         'empty', 'full', 'get', 'get_nowait',
         'put', 'put_nowait', 'join', 'qsize',

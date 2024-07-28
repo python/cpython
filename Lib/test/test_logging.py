@@ -2380,7 +2380,7 @@ class FuzzyCustomQueueProtocol(CustomQueueProtocol):
     # An object implementing the Queue API (incorrect signatures).
     # The object will be considered a valid queue class since we
     # do not check the signatures (only callability of methods)
-    # but will NOT be usable in production since a ValueError will
+    # but will NOT be usable in production since a TypeError will
     # be raised due to a missing argument.
     def empty(self, x):
         pass
@@ -3957,11 +3957,11 @@ class ConfigDictTest(BaseTest):
         q1 = {"()": "queue.Queue", "maxsize": -1}
         q2 = MQ()
         q3 = queue.Queue()
-        # FuzzyCustomQueueProtocol pass the checks but will not be usable
+        # FuzzyCustomQueueProtocol passes the checks but will not be usable
         # since the signatures are incompatible. Checking the Queue API
         # without testing the type of the actual queue is a trade-off
         # between usability and the work we need to do in order to safely
-        # check that the queue object is a valid queue object.
+        # check that the queue object correctly implements the API.
         q4 = FuzzyCustomQueueProtocol()
 
         for qspec in (q1, q2, q3, q4):
