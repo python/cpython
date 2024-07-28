@@ -853,7 +853,7 @@ class PathBase(PurePathBase):
                         target_is_directory=source.is_dir())
                     if preserve_metadata:
                         source._copy_metadata(target, follow_symlinks=False)
-                elif source.is_dir(follow_symlinks=follow_symlinks):
+                elif source.is_dir():
                     children = source.iterdir()
                     target.mkdir(exist_ok=dirs_exist_ok)
                     for child in children:
