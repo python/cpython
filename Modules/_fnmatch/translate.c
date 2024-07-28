@@ -115,9 +115,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     const int pattern_kind = PyUnicode_KIND(pattern);
     const void *const pattern_data = PyUnicode_DATA(pattern);
     // ---- def local macros --------------------------------------------------
-#define READ_CHAR(IND)          PyUnicode_READ(pattern_kind, pattern_data, IND)
-#define WRITE_CHAR(CHAR)        WRITE_CHAR_OR_ABORT(writer, CHAR)
-#define WRITE_ASCII(STR, LEN)   WRITE_ASCII_OR_ABORT(writer, STR, LEN)
+#define READ_CHAR(IND)  PyUnicode_READ(pattern_kind, pattern_data, IND)
     /* advance IND if the character is CHAR */
 #define ADVANCE_IF_CHAR_IS(CHAR, IND, MAXIND)               \
     do {                                                    \
@@ -132,7 +130,8 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
         Py_UCS4 chr = READ_CHAR(i++);
         switch (chr) {
             case '*': {
-                WRITE_CHAR('*');
+                // translate wildcard '*' (fnmatch) into optional '.' (regex)
+                WRITE_CHAR_OR_ABORT(writer, '*');
                 // skip duplicated '*'
                 for (; i < maxind && READ_CHAR(i) == '*'; ++i);
                 // store the position of the wildcard
@@ -149,7 +148,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             }
             case '?': {
                 // translate optional '?' (fnmatch) into optional '.' (regex)
-                WRITE_CHAR('.');
+                WRITE_CHAR_OR_ABORT(writer, '.');
                 ++written; // increase the expected result's length
                 break;
             }
@@ -161,7 +160,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 ADVANCE_IF_CHAR_IS(']', j, maxind);             // [!] or []
                 for (; j < maxind && READ_CHAR(j) != ']'; ++j); // locate ']'
                 if (j >= maxind) {
-                    WRITE_ASCII("\\[", 2);
+                    WRITE_ASCII_OR_ABORT(writer, "\\[", 2);
                     written += 2;   // we just wrote 2 characters
                     break;          // explicit early break for clarity
                 }
@@ -226,8 +225,6 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
         }
     }
 #undef ADVANCE_IF_CHAR_IS
-#undef WRITE_ASCII
-#undef WRITE_CHAR
 #undef READ_CHAR
     Py_DECREF(pattern_str_find_meth);
     Py_DECREF(re_sub_func);
@@ -498,52 +495,42 @@ abort:
 static Py_ssize_t
 write_expression(PyUnicodeWriter *writer, PyObject *expression)
 {
-    // ---- def local macros --------------------------------------------------
-#define WRITE_CHAR(CHAR)        WRITE_CHAR_OR_ABORT(writer, CHAR)
-#define WRITE_ASCII(STR, LEN)   WRITE_ASCII_OR_ABORT(writer, STR, LEN)
-#define WRITE_STRING(STR)       WRITE_STRING_OR_ABORT(writer, STR)
-#define WRITE_BLOCK(STR, I, J)  WRITE_BLOCK_OR_ABORT(writer, STR, I, J)
-    // ------------------------------------------------------------------------
     Py_ssize_t grouplen = PyUnicode_GET_LENGTH(expression);
     if (grouplen == 0) {
         // empty range: never match
-        WRITE_ASCII("(?!)", 4);
+        WRITE_ASCII_OR_ABORT(writer, "(?!)", 4);
         return 4;
     }
     Py_UCS4 token = PyUnicode_READ_CHAR(expression, 0);
     if (grouplen == 1 && token == '!') {
         // negated empty range: match any character
-        WRITE_CHAR('.');
+        WRITE_CHAR_OR_ABORT(writer, '.');
         return 1;
     }
     Py_ssize_t extra = 2; // '[' and ']'
-    WRITE_CHAR('[');
+    WRITE_CHAR_OR_ABORT(writer, '[');
     switch (token) {
         case '!': {
-            WRITE_CHAR('^'); // replace '!' by '^'
-            WRITE_BLOCK(expression, 1, grouplen);
+            WRITE_CHAR_OR_ABORT(writer, '^'); // replace '!' by '^'
+            WRITE_BLOCK_OR_ABORT(writer, expression, 1, grouplen);
             break;
         }
         case '^':
         case '[': {
-            WRITE_CHAR('\\');
+            WRITE_CHAR_OR_ABORT(writer, '\\');
             ++extra; // because we wrote '\\'
-            WRITE_STRING(expression);
+            WRITE_STRING_OR_ABORT(writer, expression);
             break;
         }
         default: {
-            WRITE_STRING(expression);
+            WRITE_STRING_OR_ABORT(writer, expression);
             break;
         }
     }
-    WRITE_CHAR(']');
+    WRITE_CHAR_OR_ABORT(writer, ']');
     return grouplen + extra;
 abort:
     return -1;
-#undef WRITE_BLOCK
-#undef WRITE_STRING
-#undef WRITE_ASCII
-#undef WRITE_CHAR
 }
 
 static PyObject *
@@ -576,43 +563,39 @@ process_wildcards(PyObject *pattern, PyObject *indices)
         return NULL;
     }
     // ---- def local macros --------------------------------------------------
-#define WRITE_CHAR(CHAR)        WRITE_CHAR_OR_ABORT(writer, CHAR)
-#define WRITE_ASCII(STR, LEN)   WRITE_ASCII_OR_ABORT(writer, STR, LEN)
-#define WRITE_STRING(STR)       WRITE_STRING_OR_ABORT(writer, STR)
-#define WRITE_BLOCK(STR, I, J)  WRITE_BLOCK_OR_ABORT(writer, STR, I, J)
-#define LOAD_WILDCARD_INDEX(VAR, IND)                           \
-    do {                                                        \
-        VAR = PyLong_AsSsize_t(PyList_GET_ITEM(indices, IND));  \
-        if (VAR < 0) {                                          \
-            goto abort;                                         \
-        }                                                       \
+#define LOAD_WILDCARD_INDEX(VAR, IND)                               \
+    do {                                                            \
+        VAR = PyLong_AsSsize_t(PyList_GET_ITEM(indices, (IND)));    \
+        if (VAR < 0) {                                              \
+            goto abort;                                             \
+        }                                                           \
     } while (0)
     // ------------------------------------------------------------------------
-    WRITE_ASCII("(?s:", 4);
+    WRITE_ASCII_OR_ABORT(writer, "(?s:", 4);
     if (m == 0) {
-        WRITE_STRING(pattern);
+        WRITE_STRING_OR_ABORT(writer, pattern);
     }
     else {
         Py_ssize_t i = 0, j = -1;
         // process the optional PREFIX
         LOAD_WILDCARD_INDEX(j, 0);
-        WRITE_BLOCK(pattern, i, j);
+        WRITE_BLOCK_OR_ABORT(writer, pattern, 0, j);
         i = j + 1;
         for (Py_ssize_t k = 1; k < m; ++k) {
             // process the (* INNER) groups
             LOAD_WILDCARD_INDEX(j, k);
             assert(i < j);
             // write the atomic RE group '(?>.*?' + INNER + ')'
-            WRITE_ASCII("(?>.*?", 6);
-            WRITE_BLOCK(pattern, i, j);
-            WRITE_CHAR(')');
+            WRITE_ASCII_OR_ABORT(writer, "(?>.*?", 6);
+            WRITE_BLOCK_OR_ABORT(writer, pattern, i, j);
+            WRITE_CHAR_OR_ABORT(writer, ')');
             i = j + 1;
         }
         // handle the (*) [OUTER] part
-        WRITE_ASCII(".*", 2);
-        WRITE_BLOCK(pattern, i, n);
+        WRITE_ASCII_OR_ABORT(writer, ".*", 2);
+        WRITE_BLOCK_OR_ABORT(writer, pattern, i, n);
     }
-    WRITE_ASCII(")\\Z", 3);
+    WRITE_ASCII_OR_ABORT(writer, ")\\Z", 3);
     PyObject *res = PyUnicodeWriter_Finish(writer);
     assert(res == NULL || PyUnicode_GET_LENGTH(res) == reslen);
     return res;
@@ -620,8 +603,4 @@ abort:
     PyUnicodeWriter_Discard(writer);
     return NULL;
 #undef LOAD_WILDCARD_INDEX
-#undef WRITE_BLOCK
-#undef WRITE_STRING
-#undef WRITE_ASCII
-#undef WRITE_CHAR
 }
