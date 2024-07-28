@@ -848,7 +848,9 @@ class PathBase(PurePathBase):
             source, target = stack.pop()
             try:
                 if not follow_symlinks and source.is_symlink():
-                    target.symlink_to(source.readlink())
+                    target.symlink_to(
+                        source.readlink(),
+                        target_is_directory=source.is_dir())
                     if preserve_metadata:
                         source._copy_metadata(target, follow_symlinks=False)
                 elif source.is_dir(follow_symlinks=follow_symlinks):
