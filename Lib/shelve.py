@@ -61,7 +61,7 @@ from io import BytesIO
 
 import collections.abc
 
-__all__ = ["Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
+__all__ = ["ShelveError", "Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
 
 
 class ShelveError(Exception):
