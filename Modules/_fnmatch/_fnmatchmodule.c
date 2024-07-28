@@ -141,24 +141,26 @@ get_platform_normcase_function(PyObject *module, bool *isposix)
 
 // ==== Module state functions ================================================
 
-#define IMPORT_MODULE(state, attribute, name) \
-    do { \
-        /* make sure that the attribute is initialized once */ \
-        assert(state->attribute == NULL); \
-        state->attribute = PyImport_ImportModule((name)); \
-        if (state->attribute == NULL) { \
-            return -1; \
-        } \
+/* Import a named module and store it in 'STATE->ATTRIBUTE'. */
+#define IMPORT_MODULE(STATE, ATTRIBUTE, MODULE_NAME)                \
+    do {                                                            \
+        /* make sure that the attribute is initialized once */      \
+        assert(STATE->ATTRIBUTE == NULL);                           \
+        STATE->ATTRIBUTE = PyImport_ImportModule((MODULE_NAME));    \
+        if (STATE->ATTRIBUTE == NULL) {                             \
+            return -1;                                              \
+        }                                                           \
     } while (0)
 
-#define INTERN_STRING(state, attribute, literal) \
-    do { \
-        /* make sure that the attribute is initialized once */ \
-        assert(state->attribute == NULL); \
-        state->attribute = PyUnicode_InternFromString((literal)); \
-        if (state->attribute == NULL) { \
-            return -1; \
-        } \
+/* Intern a literal STRING and store it in 'STATE->ATTRIBUTE'. */
+#define INTERN_STRING(STATE, ATTRIBUTE, STRING)                     \
+    do {                                                            \
+        /* make sure that the attribute is initialized once */      \
+        assert(STATE->ATTRIBUTE == NULL);                           \
+        STATE->ATTRIBUTE = PyUnicode_InternFromString((STRING));    \
+        if (STATE->ATTRIBUTE == NULL) {                             \
+            return -1;                                              \
+        }                                                           \
     } while (0)
 
 static int
