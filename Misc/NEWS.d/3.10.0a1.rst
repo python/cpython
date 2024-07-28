@@ -97,7 +97,7 @@ convention. Patch by Donghee Na.
 .. nonce: aJS9B3
 .. section: Core and Builtins
 
-Port the :mod:`_bisect` module to the multi-phase initialization API
+Port the :mod:`!_bisect` module to the multi-phase initialization API
 (:pep:`489`).
 
 ..
@@ -128,7 +128,7 @@ Taskaya.
 .. nonce: lh335O
 .. section: Core and Builtins
 
-Port the :mod:`_lsprof` extension module to multi-phase initialization
+Port the :mod:`!_lsprof` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -148,7 +148,7 @@ Port the :mod:`cmath` extension module to multi-phase initialization
 .. nonce: jiXmyT
 .. section: Core and Builtins
 
-Port the :mod:`_scproxy` extension module to multi-phase initialization
+Port the :mod:`!_scproxy` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -168,7 +168,7 @@ Port the :mod:`termios` extension module to multi-phase initialization
 .. nonce: QuDIut
 .. section: Core and Builtins
 
-Convert the :mod:`_sha256` extension module types to heap types.
+Convert the :mod:`!_sha256` extension module types to heap types.
 
 ..
 
@@ -187,7 +187,7 @@ classes with a huge amount of arguments. Patch by Pablo Galindo.
 .. nonce: CnRME3
 .. section: Core and Builtins
 
-Port the :mod:`_overlapped` extension module to multi-phase initialization
+Port the :mod:`!_overlapped` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -197,7 +197,7 @@ Port the :mod:`_overlapped` extension module to multi-phase initialization
 .. nonce: X9CZgo
 .. section: Core and Builtins
 
-Port the :mod:`_curses_panel` extension module to multi-phase initialization
+Port the :mod:`!_curses_panel` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -207,7 +207,7 @@ Port the :mod:`_curses_panel` extension module to multi-phase initialization
 .. nonce: 5jZymK
 .. section: Core and Builtins
 
-Port the :mod:`_opcode` extension module to multi-phase initialization
+Port the :mod:`!_opcode` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -282,7 +282,7 @@ initialized ``_ast`` module.
 .. nonce: vcxSUa
 .. section: Core and Builtins
 
-Convert :mod:`_operator` to use :c:func:`PyType_FromSpec`.
+Convert :mod:`!_operator` to use :c:func:`PyType_FromSpec`.
 
 ..
 
@@ -291,7 +291,7 @@ Convert :mod:`_operator` to use :c:func:`PyType_FromSpec`.
 .. nonce: fubBkb
 .. section: Core and Builtins
 
-Port :mod:`_sha3` to multi-phase init.  Convert static types to heap types.
+Port :mod:`!_sha3` to multi-phase init.  Convert static types to heap types.
 
 ..
 
@@ -300,7 +300,7 @@ Port :mod:`_sha3` to multi-phase init.  Convert static types to heap types.
 .. nonce: FC13e7
 .. section: Core and Builtins
 
-Port the :mod:`_blake2` extension module to the multi-phase initialization
+Port the :mod:`!_blake2` extension module to the multi-phase initialization
 API (:pep:`489`).
 
 ..
@@ -339,7 +339,7 @@ The output of ``python --help`` contains now only ASCII characters.
 .. nonce: O0d3ym
 .. section: Core and Builtins
 
-Port the :mod:`_sha1`, :mod:`_sha512`, and :mod:`_md5` extension modules to
+Port the :mod:`!_sha1`, :mod:`!_sha512`, and :mod:`!_md5` extension modules to
 multi-phase initialization API (:pep:`489`).
 
 ..
@@ -636,7 +636,7 @@ Remove the remaining files from the old parser and the :mod:`symbol` module.
 .. nonce: _yI-ax
 .. section: Core and Builtins
 
-Convert :mod:`_bz2` to use :c:func:`PyType_FromSpec`.
+Convert :mod:`!_bz2` to use :c:func:`PyType_FromSpec`.
 
 ..
 
@@ -666,7 +666,7 @@ by Brandt Bucher.
 .. nonce: 61iyYh
 .. section: Core and Builtins
 
-Port :mod:`_gdbm` to multiphase initialization.
+Port :mod:`!_gdbm` to multiphase initialization.
 
 ..
 
@@ -696,7 +696,7 @@ for emitting syntax errors. Patch by Pablo Galindo.
 .. nonce: mmlp3Q
 .. section: Core and Builtins
 
-Port :mod:`_dbm` to multiphase initialization.
+Port :mod:`!_dbm` to multiphase initialization.
 
 ..
 
@@ -1010,7 +1010,7 @@ Port :mod:`mmap` to multiphase initialization.
 .. nonce: Kfe9fT
 .. section: Core and Builtins
 
-Port :mod:`_lzma` to multiphase initialization.
+Port :mod:`!_lzma` to multiphase initialization.
 
 ..
 

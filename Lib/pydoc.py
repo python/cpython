@@ -1682,6 +1682,13 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
+    if inspect.ismethodwrapper(thing):
+        return 'method wrapper ' + thing.__name__
+    if inspect.ismethoddescriptor(thing):
+        try:
+            return 'method descriptor ' + thing.__name__
+        except AttributeError:
+            pass
     return type(thing).__name__
 
 def locate(path, forceload=0):
@@ -1755,7 +1762,14 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            what = thing if isinstance(thing, str) else type(thing).__name__
+            if isinstance(thing, str):
+                what = thing
+            else:
+                what = getattr(thing, '__qualname__', None)
+                if not isinstance(what, str):
+                    what = getattr(thing, '__name__', None)
+                    if not isinstance(what, str):
+                        what = type(thing).__name__ + ' object'
             pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:

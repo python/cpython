@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"   // _PyFreeListState
-
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
     // Pointer to next object in the list.
@@ -346,7 +344,7 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 
     /* gh-117783: Deferred reference counting is not fully implemented yet, so
-       as a temporary measure we treat objects using deferred referenence
+       as a temporary measure we treat objects using deferred reference
        counting as immortal. The value may be zero, one, or a negative number:
         0: immortalize deferred RC objects once the first thread is created
         1: immortalize all deferred RC objects immediately

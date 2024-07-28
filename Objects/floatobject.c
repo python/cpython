@@ -7,8 +7,8 @@
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_interp.h"        // _Py_float_freelist
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_Init(), _PyDebugAllocatorStats()
@@ -25,16 +25,6 @@ class float "PyObject *" "&PyFloat_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd0003f68f144284]*/
 
 #include "clinic/floatobject.c.h"
-
-#ifdef WITH_FREELISTS
-static struct _Py_float_freelist *
-get_float_freelist(void)
-{
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    assert(freelists != NULL);
-    return &freelists->floats;
-}
-#endif
 
 
 double
@@ -132,24 +122,14 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    PyFloatObject *op;
-#ifdef WITH_FREELISTS
-    struct _Py_float_freelist *float_freelist = get_float_freelist();
-    op = float_freelist->items;
-    if (op != NULL) {
-        float_freelist->items = (PyFloatObject *) Py_TYPE(op);
-        float_freelist->numfree--;
-        OBJECT_STAT_INC(from_freelist);
-    }
-    else
-#endif
-    {
+    PyFloatObject *op = _Py_FREELIST_POP(PyFloatObject, floats);
+    if (op == NULL) {
         op = PyObject_Malloc(sizeof(PyFloatObject));
         if (!op) {
             return PyErr_NoMemory();
         }
+        _PyObject_Init((PyObject*)op, &PyFloat_Type);
     }
-    _PyObject_Init((PyObject*)op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
@@ -248,20 +228,7 @@ void
 _PyFloat_ExactDealloc(PyObject *obj)
 {
     assert(PyFloat_CheckExact(obj));
-    PyFloatObject *op = (PyFloatObject *)obj;
-#ifdef WITH_FREELISTS
-    struct _Py_float_freelist *float_freelist = get_float_freelist();
-    if (float_freelist->numfree >= PyFloat_MAXFREELIST || float_freelist->numfree < 0) {
-        PyObject_Free(op);
-        return;
-    }
-    float_freelist->numfree++;
-    Py_SET_TYPE(op, (PyTypeObject *)float_freelist->items);
-    float_freelist->items = op;
-    OBJECT_STAT_INC(to_freelist);
-#else
-    PyObject_Free(op);
-#endif
+    _Py_FREELIST_FREE(floats, obj, PyObject_Free);
 }
 
 static void
@@ -1142,69 +1109,39 @@ char_from_hex(int x)
     return Py_hexdigits[x];
 }
 
+/* This table maps characters to their hexadecimal values, only
+ * works with encodings whose lower half is ASCII (like UTF-8).
+ * '0' maps to 0, ..., '9' maps to 9.
+ * 'a' and 'A' map to 10, ..., 'f' and 'F' map to 15.
+ * All other indices map to -1.
+ */
+static const int
+_CHAR_TO_HEX[256] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
+/* Convert a character to its hexadecimal value, or -1 if it's not a
+ * valid hexadecimal character, only works with encodings whose lower
+ * half is ASCII (like UTF-8).
+ */
 static int
-hex_from_char(char c) {
-    int x;
-    switch(c) {
-    case '0':
-        x = 0;
-        break;
-    case '1':
-        x = 1;
-        break;
-    case '2':
-        x = 2;
-        break;
-    case '3':
-        x = 3;
-        break;
-    case '4':
-        x = 4;
-        break;
-    case '5':
-        x = 5;
-        break;
-    case '6':
-        x = 6;
-        break;
-    case '7':
-        x = 7;
-        break;
-    case '8':
-        x = 8;
-        break;
-    case '9':
-        x = 9;
-        break;
-    case 'a':
-    case 'A':
-        x = 10;
-        break;
-    case 'b':
-    case 'B':
-        x = 11;
-        break;
-    case 'c':
-    case 'C':
-        x = 12;
-        break;
-    case 'd':
-    case 'D':
-        x = 13;
-        break;
-    case 'e':
-    case 'E':
-        x = 14;
-        break;
-    case 'f':
-    case 'F':
-        x = 15;
-        break;
-    default:
-        x = -1;
-        break;
-    }
-    return x;
+hex_from_char(unsigned char c) {
+    return _CHAR_TO_HEX[c];
 }
 
 /* convert a float to a hexadecimal string */
@@ -1632,12 +1569,12 @@ float.__new__ as float_new
     x: object(c_default="NULL") = 0
     /
 
-Convert a string or number to a floating point number, if possible.
+Convert a string or number to a floating-point number, if possible.
 [clinic start generated code]*/
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=f43661b7de03e9d8]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=55909f888aa0c8a6]*/
 {
     if (type != &PyFloat_Type) {
         if (x == NULL) {
@@ -1700,6 +1637,36 @@ float_vectorcall(PyObject *type, PyObject * const*args,
 
 
 /*[clinic input]
+@classmethod
+float.from_number
+
+    number: object
+    /
+
+Convert real number to a floating-point number.
+[clinic start generated code]*/
+
+static PyObject *
+float_from_number(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=bbcf05529fe907a3 input=1f8424d9bc11866a]*/
+{
+    if (PyFloat_CheckExact(number) && type == &PyFloat_Type) {
+        Py_INCREF(number);
+        return number;
+    }
+    double x = PyFloat_AsDouble(number);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyObject *result = PyFloat_FromDouble(x);
+    if (type != &PyFloat_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
+    }
+    return result;
+}
+
+
+/*[clinic input]
 float.__getnewargs__
 [clinic start generated code]*/
 
@@ -1733,13 +1700,13 @@ You probably don't want to use this function.
 It exists mainly to be used in Python's test suite.
 
 This function returns whichever of 'unknown', 'IEEE, big-endian' or 'IEEE,
-little-endian' best describes the format of floating point numbers used by the
+little-endian' best describes the format of floating-point numbers used by the
 C type named by typestr.
 [clinic start generated code]*/
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=d5a52600f835ad67]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=90d5e246409a246e]*/
 {
     float_format_type r;
 
@@ -1812,6 +1779,7 @@ float___format___impl(PyObject *self, PyObject *format_spec)
 }
 
 static PyMethodDef float_methods[] = {
+    FLOAT_FROM_NUMBER_METHODDEF
     FLOAT_CONJUGATE_METHODDEF
     FLOAT___TRUNC___METHODDEF
     FLOAT___FLOOR___METHODDEF
@@ -1925,7 +1893,7 @@ _init_global_state(void)
     float_format_type detected_double_format, detected_float_format;
 
     /* We attempt to determine if this machine is using IEEE
-       floating point formats by peering at the bits of some
+       floating-point formats by peering at the bits of some
        carefully chosen values.  If it looks like we are on an
        IEEE platform, the float packing/unpacking routines can
        just copy bits, if not they resort to arithmetic & shifts
@@ -1994,27 +1962,6 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 }
 
 void
-_PyFloat_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-#ifdef WITH_FREELISTS
-    struct _Py_float_freelist *state = &freelists->floats;
-    PyFloatObject *f = state->items;
-    while (f != NULL) {
-        PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
-        PyObject_Free(f);
-        f = next;
-    }
-    state->items = NULL;
-    if (is_finalization) {
-        state->numfree = -1;
-    }
-    else {
-        state->numfree = 0;
-    }
-#endif
-}
-
-void
 _PyFloat_FiniType(PyInterpreterState *interp)
 {
     _PyStructSequence_FiniBuiltin(interp, &FloatInfoType);
@@ -2025,10 +1972,10 @@ void
 _PyFloat_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_float_freelist *float_freelist = get_float_freelist();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
-                           float_freelist->numfree, sizeof(PyFloatObject));
+                           _Py_FREELIST_SIZE(floats),
+                           sizeof(PyFloatObject));
 #endif
 }
 
