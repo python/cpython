@@ -133,7 +133,7 @@ Restrictions
 
 
 .. class:: Shelf(dict, protocol=None, writeback=False, \
-                 keyencoding='utf-8', * serializer=None, deserializer=None)
+                 keyencoding='utf-8', *, serializer=None, deserializer=None)
 
    A subclass of :class:`collections.abc.MutableMapping` which stores pickled
    values in the *dict* object.
@@ -151,7 +151,8 @@ Restrictions
    The *keyencoding* parameter is the encoding used to encode keys before they
    are used with the underlying dict.
 
-   The *deserializer* and *serializer* are as in :func:`~shelve.open`.
+   The *serializer* and *deserializer* parameters have the same interpretation
+   as in :func:`~shelve.open`.
 
    A :class:`Shelf` object can also be used as a context manager, in which
    case it will be automatically closed when the :keyword:`with` block ends.
@@ -183,7 +184,7 @@ Restrictions
    methods.  This is generally accomplished by calling one of
    :func:`!bsddb.hashopen`, :func:`!bsddb.btopen` or :func:`!bsddb.rnopen`.  The
    optional *protocol*, *writeback*, *keyencoding*, *serializer* and *deserializer*
-   parameters have the same interpretation as for the :func:`~shelve.open`.
+   parameters have the same interpretation as in :func:`~shelve.open`.
 
    .. versionchanged:: 3.14
       Added the *serializer* and *deserializer* parameters.
@@ -197,7 +198,7 @@ Restrictions
    default, the file will be created and opened for both read and write.  The
    optional *flag* parameter has the same interpretation as for the
    :func:`.open` function.  The optional *protocol*, *writeback*, *serializer*
-   and *deserializer* parameters have the same interpretation as for the
+   and *deserializer* parameters have the same interpretation as in the
    :func:`~shelve.open`.
 
    .. versionchanged:: 3.14
@@ -241,6 +242,19 @@ object)::
 
    d.close()                  # close it
 
+
+Exceptions
+----------
+
+.. exception:: ShelveError
+
+   Exception raised when one of the arguments *deserializer* and *serializer*
+   is missing in the :func:`~shelve.open`, :class:`Shelf`, :class:`BsdDbShelf`
+   and :class:`DbfilenameShelf`
+
+   The *deserializer* and *serializer* arguments must be given together.
+
+   .. versionadded:: 3.14
 
 .. seealso::
 
