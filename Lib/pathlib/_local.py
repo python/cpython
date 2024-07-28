@@ -832,13 +832,13 @@ class Path(PathBase, PurePath):
 
     def delete(self, ignore_errors=False, on_error=None):
         """
-        Recursively delete this file or directory tree.
+        Recursively remove this file or directory tree.
 
-        If *ignore_errors* is true, exceptions raised from scanning the tree
-        and removing files and directories are ignored. Otherwise, if
-        *on_error* is set, it will be called to handle the error. If neither
-        *ignore_errors* nor *on_error* are set, exceptions are propagated to
-        the caller.
+        If *ignore_errors* is true, exceptions raised from scanning the
+        filesystem and removing files and directories are ignored. Otherwise,
+        if *on_error* is set, it will be called to handle the error. If
+        neither *ignore_errors* nor *on_error* are set, exceptions are
+        propagated to the caller.
         """
         if self.is_dir(follow_symlinks=False):
             onexc = None

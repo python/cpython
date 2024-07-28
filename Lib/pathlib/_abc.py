@@ -921,13 +921,13 @@ class PathBase(PurePathBase):
 
     def delete(self, ignore_errors=False, on_error=None):
         """
-        Recursively delete this file or directory tree.
+        Recursively remove this file or directory tree.
 
-        If *ignore_errors* is true, exceptions raised from scanning the tree
-        and removing files and directories are ignored. Otherwise, if
-        *on_error* is set, it will be called to handle the error. If neither
-        *ignore_errors* nor *on_error* are set, exceptions are propagated to
-        the caller.
+        If *ignore_errors* is true, exceptions raised from scanning the
+        filesystem and removing files and directories are ignored. Otherwise,
+        if *on_error* is set, it will be called to handle the error. If
+        neither *ignore_errors* nor *on_error* are set, exceptions are
+        propagated to the caller.
         """
         if ignore_errors:
             def on_error(err):
@@ -936,25 +936,25 @@ class PathBase(PurePathBase):
             def on_error(err):
                 raise err
         try:
-            if not self.is_dir(follow_symlinks=False):
+            if self.is_dir(follow_symlinks=False):
+                results = self.walk(
+                    on_error=on_error,
+                    top_down=False,  # So we rmdir() empty directories.
+                    follow_symlinks=False)
+                for dirpath, dirnames, filenames in results:
+                    for name in filenames:
+                        try:
+                            dirpath.joinpath(name).unlink()
+                        except OSError as err:
+                            on_error(err)
+                    for name in dirnames:
+                        try:
+                            dirpath.joinpath(name).rmdir()
+                        except OSError as err:
+                            on_error(err)
+                self.rmdir()
+            else:
                 self.unlink()
-                return
-            results = self.walk(
-                on_error=on_error,
-                top_down=False,  # Bottom-up so we rmdir() empty directories.
-                follow_symlinks=False)
-            for dirpath, dirnames, filenames in results:
-                for name in filenames:
-                    try:
-                        dirpath.joinpath(name).unlink()
-                    except OSError as err:
-                        on_error(err)
-                for name in dirnames:
-                    try:
-                        dirpath.joinpath(name).rmdir()
-                    except OSError as err:
-                        on_error(err)
-            self.rmdir()
         except OSError as err:
             err.filename = str(self)
             on_error(err)
