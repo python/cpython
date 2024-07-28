@@ -805,6 +805,16 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
 
+    def _copy_metadata(self, target, *, follow_symlinks=True):
+        """
+        Copies metadata (permissions, timestamps, etc) from this path to target.
+        """
+        # Metadata types supported by both source and target.
+        keys = self._readable_metadata & target._writable_metadata
+        if keys:
+            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
+            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
+
     def _copy_data(self, target):
         """
         Copy the contents of this file to the given target.
@@ -839,20 +849,20 @@ class PathBase(PurePathBase):
             try:
                 if not follow_symlinks and source.is_symlink():
                     target.symlink_to(source.readlink())
-                elif source.is_dir():
+                    if preserve_metadata:
+                        source._copy_metadata(target, follow_symlinks=False)
+                elif source.is_dir(follow_symlinks=follow_symlinks):
                     children = source.iterdir()
                     target.mkdir(exist_ok=dirs_exist_ok)
                     for child in children:
                         if not (ignore and ignore(child)):
                             stack.append((child, target.joinpath(child.name)))
+                    if preserve_metadata:
+                        source._copy_metadata(target)
                 else:
                     source._copy_data(target)
-                if preserve_metadata:
-                    # Metadata types supported by both source and target.
-                    keys = source._readable_metadata & target._writable_metadata
-                    if keys:
-                        metadata = source._read_metadata(keys, follow_symlinks=follow_symlinks)
-                        target._write_metadata(metadata, follow_symlinks=follow_symlinks)
+                    if preserve_metadata:
+                        source._copy_metadata(target)
             except OSError as err:
                 on_error(err)
 

@@ -794,9 +794,9 @@ class Path(PathBase, PurePath):
             try:
                 target = os.fspath(target)
             except TypeError:
-                if isinstance(target, PathBase):
-                    return PathBase._copy_data(self, target)
-                raise
+                if not isinstance(target, PathBase):
+                    raise
+                PathBase._copy_data(self, target)
             else:
                 copyfile(os.fspath(self), target)
 
