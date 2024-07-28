@@ -294,11 +294,6 @@ class TranslateTestCaseMixin:
             self.assertEqual(translated, expect, pattern)
 
     def test_translate_expressions(self):
-        '[', '[-abc]', '[[]b', '[[a]b', '[\\\\]', '[\\]', '[]-]', '[][!]',
-        '[]]b', '[]a[]b', '[^a-c]*', '[a-\\z]',
-        '[a-c]b*', '[a-y]*[^c]', '[abc-]', '\\*',
-        '[0-4-3-2]', '[b-ac-z9-1]', '[!b-ac-z9-1]', '[!]b-ac-z9-1]',
-        '[]b-ac-z9-1]', '[]b-ac-z9-1]*', '*[]b-ac-z9-1]',
         for pattern, expect in [
             ('[', r'(?s:\[)\Z'),
             ('[!', r'(?s:\[!)\Z'),
