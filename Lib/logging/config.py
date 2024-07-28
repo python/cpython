@@ -515,7 +515,7 @@ def _is_queue_like_object(obj):
     # and typing.Protocol to reduce import time (see gh-121723).
     #
     # Ideally, we would have wanted to simply use strict type checking
-    # instead of a protocol-based type checking since the latetr does
+    # instead of a protocol-based type checking since the latter does
     # not check the method signatures.
     queue_interface = [
         'empty', 'full', 'get', 'get_nowait',
