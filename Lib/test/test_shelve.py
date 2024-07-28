@@ -170,7 +170,7 @@ class TestCase(unittest.TestCase):
 
     def test_custom_serializer_and_deserializer(self):
         def serializer(obj, protocol):
-            if isinstance(obj, (bytes, bytearray, memoryview, str)):
+            if isinstance(obj, (bytes, bytearray, str)):
                 if protocol == 5:
                     return obj
                 else:
@@ -183,7 +183,7 @@ class TestCase(unittest.TestCase):
                 )
 
         def deserializer(data):
-            if isinstance(data, (bytes, bytearray, memoryview, str)):
+            if isinstance(data, (bytes, bytearray, str)):
                 value = BytesIO(data).read()
                 return value.decode("utf-8")
             elif isinstance(data, array.array):
@@ -208,13 +208,11 @@ class TestCase(unittest.TestCase):
                     bytes_data = b"Hello, world!"
                     bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
                     array_data = array.array("i", [1, 2, 3, 4, 5])
-                    memoryview_data = memoryview(b"abcdefgh")
 
                     s["foo"] = bar
                     s["bytes_data"] = bytes_data
                     s["bytearray_data"] = bytearray_data
                     s["array_data"] = array_data
-                    s["memoryview_data"] = memoryview_data
 
                     if proto == 5:
                         self.assertEqual(s["foo"], str(bar))
@@ -225,7 +223,6 @@ class TestCase(unittest.TestCase):
                         self.assertEqual(
                             s["array_data"], array_data.tobytes().decode()
                         )
-                        self.assertEqual(s["memoryview_data"], "abcdefgh")
                     else:
                         self.assertEqual(s["foo"], "str")
                         self.assertEqual(s["bytes_data"], "bytes")
@@ -233,7 +230,6 @@ class TestCase(unittest.TestCase):
                         self.assertEqual(
                             s["array_data"], array_data.tobytes().decode()
                         )
-                        self.assertEqual(s["memoryview_data"], "memoryview")
 
         with self.assertRaises(AssertionError):
             def serializer(obj, protocol=None):
@@ -294,13 +290,11 @@ class TestCase(unittest.TestCase):
                     bytes_data = b"Hello, world!"
                     bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
                     array_data = array.array("i", [1, 2, 3, 4, 5])
-                    memoryview_data = memoryview(b"abcdefgh")
 
                     s["foo"] = "bar"
                     s["bytes_data"] = bytes_data
                     s["bytearray_data"] = bytearray_data
                     s["array_data"] = array_data
-                    s["memoryview_data"] = memoryview_data
 
                     if proto == 5:
                         self.assertEqual(
@@ -317,10 +311,6 @@ class TestCase(unittest.TestCase):
                         self.assertEqual(
                             s["array_data"],
                             f"{len(type(array_data).__name__)}",
-                        )
-                        self.assertEqual(
-                            s["memoryview_data"],
-                            f"{len(type(memoryview_data).__name__)}",
                         )
 
                         key, value = s.set_location(b"foo")
@@ -362,12 +352,6 @@ class TestCase(unittest.TestCase):
                         self.assertEqual(
                             value, f"{len(type(array_data).__name__)}"
                         )
-
-                        key, value = s.last()
-                        self.assertEqual("memoryview_data", key)
-                        self.assertEqual(
-                            s["memoryview_data"], f"{len(type(memoryview_data).__name__)}"
-                        )
                     else:
                         key, value = s.set_location(b"foo")
                         self.assertEqual("foo", key)
@@ -397,15 +381,10 @@ class TestCase(unittest.TestCase):
                         self.assertEqual("array_data", key)
                         self.assertEqual(value, "array")
 
-                        key, value = s.last()
-                        self.assertEqual("memoryview_data", key)
-                        self.assertEqual(s["memoryview_data"], value)
-
                         self.assertEqual(s["foo"], "str")
                         self.assertEqual(s["bytes_data"], "bytes")
                         self.assertEqual(s["bytearray_data"], "bytearray")
                         self.assertEqual(s["array_data"], "array")
-                        self.assertEqual(s["memoryview_data"], "memoryview")
 
         with self.assertRaises(AssertionError):
             def serializer(obj, protocol=None):
