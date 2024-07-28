@@ -8,6 +8,9 @@
 #include "Python.h"
 
 typedef struct {
+} translatemodule_state;
+
+typedef struct {
     PyObject *os_module;            // import os
     PyObject *posixpath_module;     // import posixpath
     PyObject *re_module;            // import re
@@ -55,10 +58,14 @@ _Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normalizer);
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.
  *
- * The 'pattern' must be a Unicode object (not a bytes) object,
- * and the translated pattern will be a Unicode object as well.
+ * Parameters
  *
- * Note: this is the C implementation of fnmatch.translate().
+ *  module          A module with a state given by get_fnmatchmodule_state().
+ *  pattern         A Unicode object to translate.
+ *
+ * Returns
+ *
+ *  A translated unicode RE pattern.
  */
 extern PyObject *
 _Py_fnmatch_translate(PyObject *module, PyObject *pattern);
