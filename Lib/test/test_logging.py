@@ -2376,7 +2376,7 @@ class CustomQueueProtocol:
         queue = object.__getattribute__(self, 'queue')
         return getattr(queue, attribute)
 
-class FuzzyCustomQueueProtocol(CustomQueueProtocol):
+class CustomQueueFakeProtocol(CustomQueueProtocol):
     # An object implementing the Queue API (incorrect signatures).
     # The object will be considered a valid queue class since we
     # do not check the signatures (only callability of methods)
@@ -2385,7 +2385,7 @@ class FuzzyCustomQueueProtocol(CustomQueueProtocol):
     def empty(self, x):
         pass
 
-class BadCustomQueueProtocol(CustomQueueProtocol):
+class CustomQueueWrongProtocol(CustomQueueProtocol):
     empty = None
 
 def queueMaker():
@@ -3962,7 +3962,7 @@ class ConfigDictTest(BaseTest):
         # without testing the type of the actual queue is a trade-off
         # between usability and the work we need to do in order to safely
         # check that the queue object correctly implements the API.
-        q4 = FuzzyCustomQueueProtocol()
+        q4 = CustomQueueFakeProtocol()
 
         for qspec in (q1, q2, q3, q4):
             self.apply_config(
@@ -3982,7 +3982,7 @@ class ConfigDictTest(BaseTest):
     def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
         # gh-120868, gh-121723
 
-        for qspec in [object(), BadCustomQueueProtocol()]:
+        for qspec in [object(), CustomQueueWrongProtocol()]:
             with self.assertRaises(ValueError):
                 self.apply_config(
                     {
@@ -3999,7 +3999,8 @@ class ConfigDictTest(BaseTest):
 
     @skip_if_tsan_fork
     @support.requires_subprocess()
-    @unittest.skipUnless(support.Py_DEBUG, "requires a debug build")
+    @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
+                                           "assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
         if support.MS_WINDOWS:
@@ -4020,7 +4021,7 @@ class ConfigDictTest(BaseTest):
                 self.assertEqual(len(records), 1)
 
     @staticmethod
-    def _mpinit_issue121723(q, msg):
+    def _mpinit_issue121723(qspec, message_to_log):
         # static method for pickling support
         logging.config.dictConfig({
             'version': 1,
@@ -4028,12 +4029,13 @@ class ConfigDictTest(BaseTest):
             'handlers': {
                 'log_to_parent': {
                     'class': 'logging.handlers.QueueHandler',
-                    'queue': q
+                    'queue': qspec
                 }
             },
             'root': {'handlers': ['log_to_parent'], 'level': 'DEBUG'}
         })
-        logging.getLogger().info(msg)
+        # log a message (this creates a record put in the queue)
+        logging.getLogger().info(message_to_log)
 
     @skip_if_tsan_fork
     @support.requires_subprocess()
