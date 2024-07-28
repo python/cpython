@@ -805,22 +805,10 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
 
-    def _copy_metadata(self, target, *, follow_symlinks=True):
-        """
-        Copies metadata (permissions, timestamps, etc) from this path to target.
-        """
-        # Metadata types supported by both source and target.
-        keys = self._readable_metadata & target._writable_metadata
-        if keys:
-            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
-            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
-
-    def _copy_file(self, target):
+    def _copy_data(self, target):
         """
         Copy the contents of this file to the given target.
         """
-        if not isinstance(target, PathBase):
-            target = self.with_segments(target)
         if self._samefile_safe(target):
             raise OSError(f"{self!r} and {target!r} are the same file")
         with self.open('rb') as source_f:
@@ -858,9 +846,13 @@ class PathBase(PurePathBase):
                 elif not follow_symlinks and source.is_symlink():
                     target.symlink_to(source.readlink())
                 else:
-                    source._copy_file(target)
+                    source._copy_data(target)
                 if preserve_metadata:
-                    source._copy_metadata(target, follow_symlinks=follow_symlinks)
+                    # Metadata types supported by both source and target.
+                    keys = source._readable_metadata & target._writable_metadata
+                    if keys:
+                        metadata = source._read_metadata(keys, follow_symlinks=follow_symlinks)
+                        target._write_metadata(metadata, follow_symlinks=follow_symlinks)
             except OSError as err:
                 on_error(err)
 

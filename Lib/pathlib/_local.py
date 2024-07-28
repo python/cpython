@@ -787,17 +787,15 @@ class Path(PathBase, PurePath):
     _write_metadata = write_file_metadata
 
     if copyfile:
-        def _copy_file(self, target):
+        def _copy_data(self, target):
             """
-            Copy the contents of this file to the given target. If this file is a
-            symlink and follow_symlinks is false, a symlink will be created at the
-            target.
+            Copy the contents of this file to the given target.
             """
             try:
                 target = os.fspath(target)
             except TypeError:
                 if isinstance(target, PathBase):
-                    return PathBase._copy_file(self, target)
+                    return PathBase._copy_data(self, target)
                 raise
             else:
                 copyfile(os.fspath(self), target)
