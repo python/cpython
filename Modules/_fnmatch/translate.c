@@ -15,12 +15,16 @@
 // ==== Helper declarations ===================================================
 
 /*
- * Creates a new Unicode object from a Py_UCS4 character.
+ * Write re.escape(pattern[start:stop]).
  *
- * Note: this is 'unicode_char' taken from Objects/unicodeobject.c.
+ * This returns the number of written characters, or -1 if an error occurred.
+ *
+ * @pre     0 <= start < stop <= len(pattern)
  */
-static PyObject *
-get_unicode_character(Py_UCS4 ch);
+static inline Py_ssize_t
+escape_block(PyUnicodeWriter *writer,
+             PyObject *pattern, Py_ssize_t start, Py_ssize_t stop,
+             PyObject *re_escape_func);
 
 /*
  * Construct a regular expression out of a UNIX-style expression.
@@ -51,7 +55,9 @@ translate_expression(fnmatchmodule_state *state,
  * This returns the number of written characters, or -1 if an error occurred.
  */
 static Py_ssize_t
-write_expression(PyUnicodeWriter *writer, PyObject *expression);
+write_expression(fnmatchmodule_state *state,
+                 PyUnicodeWriter *writer, PyObject *expression,
+                 PyObject *setops_re_sub_meth);
 
 /*
  * Build the final regular expression by processing the wildcards.
@@ -62,6 +68,17 @@ static PyObject *
 process_wildcards(PyObject *pattern, PyObject *indices);
 
 // ==== API implementation ====================================================
+
+static inline PyObject *
+get_setops_re_sub_method(fnmatchmodule_state *state)
+{
+    PyObject *compiled = PyObject_CallMethodOneArg(state->re_module,
+                                                   &_Py_ID(compile),
+                                                   state->setops_str);
+    PyObject *method = PyObject_GetAttr(compiled, &_Py_ID(sub));
+    Py_DECREF(compiled);
+    return method;
+}
 
 PyObject *
 _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
@@ -90,28 +107,34 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
         return NULL;
     }
 
+    // ---- decl local objects ------------------------------------------------
     // list containing the indices where '*' has a special meaning
     PyObject *wildcard_indices = NULL;
     // cached functions (cache is local to the call)
-    PyObject *re_escape_func = NULL, *re_sub_func = NULL;
-    PyObject *pattern_str_find_meth = NULL; // bound method of pattern.find()
-
+    PyObject *re_escape_func = NULL;        // re.escape()
+    PyObject *setops_re_subfn = NULL;       // re.compile('([&~|])').sub()
+    PyObject *pattern_str_find_meth = NULL; // pattern.find()
+    // ---- def local objects -------------------------------------------------
     wildcard_indices = PyList_New(0);
     if (wildcard_indices == NULL) {
         goto abort;
     }
-#define CACHE_ATTRIBUTE(DEST, OBJECT, NAME)         \
-    do {                                            \
-        DEST = PyObject_GetAttr((OBJECT), (NAME));  \
-        if ((DEST) == NULL) {                       \
-            goto abort;                             \
-        }                                           \
-    } while (0);
-    CACHE_ATTRIBUTE(re_escape_func, state->re_module, &_Py_ID(escape));
-    CACHE_ATTRIBUTE(re_sub_func, state->re_module, &_Py_ID(sub));
-    CACHE_ATTRIBUTE(pattern_str_find_meth, pattern, &_Py_ID(find));
-#undef CACHE_ATTRIBUTE
-
+    // The Python implementation always takes queries re.escape() and re.sub()
+    // inside translate() and thus we should at least allow external users to
+    // mock those functions (thus, we cannot cache them in the module's state).
+    re_escape_func = PyObject_GetAttr(state->re_module, &_Py_ID(escape));
+    if (re_escape_func == NULL) {
+        goto abort;
+    }
+    setops_re_subfn = get_setops_re_sub_method(state);
+    if (setops_re_subfn == NULL) {
+        goto abort;
+    }
+    pattern_str_find_meth = PyObject_GetAttr(pattern, &_Py_ID(find));
+    if (pattern_str_find_meth == NULL) {
+        goto abort;
+    }
+    // ------------------------------------------------------------------------
     const int pattern_kind = PyUnicode_KIND(pattern);
     const void *const pattern_data = PyUnicode_DATA(pattern);
     // ---- def local macros --------------------------------------------------
@@ -123,13 +146,28 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             ++IND;                                          \
         }                                                   \
     } while (0)
+#define WRITE_PENDING(ESCSTOP)                                  \
+    do {                                                        \
+        if (escstart != -1) {                                   \
+            Py_ssize_t t = escape_block(writer, pattern,        \
+                                        escstart, (ESCSTOP),    \
+                                        re_escape_func);        \
+            if (t < 0) {                                        \
+                goto abort;                                     \
+            }                                                   \
+            written += t;                                       \
+            escstart = -1;                                      \
+        }                                                       \
+    } while (0)
     // ------------------------------------------------------------------------
-    Py_ssize_t i = 0;       // current index
-    Py_ssize_t written = 0; // number of characters written
-    while (i < maxind) {
+    Py_ssize_t i = 0;                       // current index
+    Py_ssize_t written = 0;                 // number of characters written
+    Py_ssize_t escstart = -1, escstop = -1; // start/stop escaping indices
+    while ((escstop = i) < maxind) {
         Py_UCS4 chr = READ_CHAR(i++);
         switch (chr) {
             case '*': {
+                WRITE_PENDING(escstop);
                 // translate wildcard '*' (fnmatch) into optional '.' (regex)
                 WRITE_CHAR_OR_ABORT(writer, '*');
                 // skip duplicated '*'
@@ -147,12 +185,14 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 break;
             }
             case '?': {
+                WRITE_PENDING(escstop);
                 // translate optional '?' (fnmatch) into optional '.' (regex)
                 WRITE_CHAR_OR_ABORT(writer, '.');
                 ++written; // increase the expected result's length
                 break;
             }
             case '[': {
+                WRITE_PENDING(escstop);
                 assert(i > 0);
                 assert(READ_CHAR(i - 1) == '[');
                 Py_ssize_t j = i;
@@ -170,28 +210,24 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                     if (pos == -2) {
                         goto abort;
                     }
-                    PyObject *pre_expr = NULL, *expr = NULL;
+                    PyObject *expr = NULL;
                     if (pos == -1) {
                         PyObject *tmp = PyUnicode_Substring(pattern, i, j);
                         if (tmp == NULL) {
                             goto abort;
                         }
-                        pre_expr = BACKSLASH_REPLACE(state, tmp);
+                        expr = BACKSLASH_REPLACE(state, tmp);
                         Py_DECREF(tmp);
                     }
                     else {
-                        pre_expr = translate_expression(state, pattern, i, j,
-                                                        pattern_str_find_meth);
+                        expr = translate_expression(state, pattern, i, j,
+                                                    pattern_str_find_meth);
                     }
-                    if (pre_expr == NULL) {
-                        goto abort;
-                    }
-                    expr = SETOPS_REPLACE(state, pre_expr, re_sub_func);
-                    Py_DECREF(pre_expr);
                     if (expr == NULL) {
                         goto abort;
                     }
-                    Py_ssize_t expr_len = write_expression(writer, expr);
+                    Py_ssize_t expr_len = write_expression(state, writer, expr,
+                                                           setops_re_subfn);
                     Py_DECREF(expr);
                     if (expr_len < 0) {
                         goto abort;
@@ -202,32 +238,20 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 }
             }
             default: {
-                PyObject *str = get_unicode_character(chr);
-                if (str == NULL) {
-                    goto abort;
+                if (escstart == -1) {
+                    assert(i >= 1);
+                    escstart = i - 1;
                 }
-                PyObject *escaped = PyObject_CallOneArg(re_escape_func, str);
-                Py_DECREF(str);
-                if (escaped == NULL) {
-                    goto abort;
-                }
-                Py_ssize_t escaped_len = PyUnicode_GET_LENGTH(escaped);
-                // Do NOT use WRITE_STRING_OR_ABORT() since 'escaped'
-                // must be first decref'ed in case of an error.
-                int rc = _WRITE_STRING(writer, escaped);
-                Py_DECREF(escaped);
-                if (rc < 0) {
-                    goto abort;
-                }
-                written += escaped_len;
                 break;
             }
         }
     }
+    WRITE_PENDING(maxind);
+#undef WRITE_PENDING
 #undef ADVANCE_IF_CHAR_IS
 #undef READ_CHAR
     Py_DECREF(pattern_str_find_meth);
-    Py_DECREF(re_sub_func);
+    Py_DECREF(setops_re_subfn);
     Py_DECREF(re_escape_func);
     PyObject *translated = PyUnicodeWriter_Finish(writer);
     if (translated == NULL) {
@@ -240,7 +264,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     return res;
 abort:
     Py_XDECREF(pattern_str_find_meth);
-    Py_XDECREF(re_sub_func);
+    Py_XDECREF(setops_re_subfn);
     Py_XDECREF(re_escape_func);
     Py_XDECREF(wildcard_indices);
     PyUnicodeWriter_Discard(writer);
@@ -249,29 +273,35 @@ abort:
 
 // ==== Helper implementations ================================================
 
-static PyObject *
-get_unicode_character(Py_UCS4 ch)
+static inline Py_ssize_t
+escape_block(PyUnicodeWriter *writer,
+             PyObject *pattern, Py_ssize_t start, Py_ssize_t stop,
+             PyObject *re_escape_func)
 {
-    assert(ch <= 0x10ffff);
-    if (ch < 256) {
-        PyObject *o = _Py_LATIN1_CHR(ch);
-        assert(_Py_IsImmortal(o));
-        return o;
+#ifdef Py_DEBUG
+    if (start < 0 || start >= stop || stop > PyUnicode_GET_LENGTH(pattern)) {
+        PyErr_BadInternalCall();
+        return -1;
     }
-    PyObject *unicode = PyUnicode_New(1, ch);
-    if (unicode == NULL) {
-        return NULL;
+#endif
+    PyObject *str = PyUnicode_Substring(pattern, start, stop);
+    if (str == NULL) {
+        goto abort;
     }
-    assert(PyUnicode_KIND(unicode) != PyUnicode_1BYTE_KIND);
-    if (PyUnicode_KIND(unicode) == PyUnicode_2BYTE_KIND) {
-        PyUnicode_2BYTE_DATA(unicode)[0] = (Py_UCS2)ch;
+    PyObject *escaped = PyObject_CallOneArg(re_escape_func, str);
+    Py_DECREF(str);
+    if (escaped == NULL) {
+        goto abort;
     }
-    else {
-        assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
-        PyUnicode_4BYTE_DATA(unicode)[0] = ch;
+    Py_ssize_t written = PyUnicode_GET_LENGTH(escaped);
+    int rc = _WRITE_STRING(writer, escaped);
+    Py_DECREF(escaped);
+    if (rc < 0) {
+        goto abort;
     }
-    assert(_PyUnicode_CheckConsistency(unicode, 1));
-    return unicode;
+    return written;
+abort:
+    return -1;
 }
 
 /*
@@ -493,8 +523,11 @@ abort:
 }
 
 static Py_ssize_t
-write_expression(PyUnicodeWriter *writer, PyObject *expression)
+write_expression(fnmatchmodule_state *state,
+                 PyUnicodeWriter *writer, PyObject *expression,
+                 PyObject *setops_re_sub_meth)
 {
+    PyObject *safe_expression = NULL;  // for the 'goto abort' statements
     Py_ssize_t grouplen = PyUnicode_GET_LENGTH(expression);
     if (grouplen == 0) {
         // empty range: never match
@@ -509,27 +542,34 @@ write_expression(PyUnicodeWriter *writer, PyObject *expression)
     }
     Py_ssize_t extra = 2; // '[' and ']'
     WRITE_CHAR_OR_ABORT(writer, '[');
+    // escape set operations as late as possible
+    safe_expression = SETOPS_REPLACE(state, expression, setops_re_sub_meth);
+    if (safe_expression == NULL) {
+        goto abort;
+    }
     switch (token) {
         case '!': {
             WRITE_CHAR_OR_ABORT(writer, '^'); // replace '!' by '^'
-            WRITE_BLOCK_OR_ABORT(writer, expression, 1, grouplen);
+            WRITE_BLOCK_OR_ABORT(writer, safe_expression, 1, grouplen);
             break;
         }
         case '^':
         case '[': {
             WRITE_CHAR_OR_ABORT(writer, '\\');
             ++extra; // because we wrote '\\'
-            WRITE_STRING_OR_ABORT(writer, expression);
+            WRITE_STRING_OR_ABORT(writer, safe_expression);
             break;
         }
         default: {
-            WRITE_STRING_OR_ABORT(writer, expression);
+            WRITE_STRING_OR_ABORT(writer, safe_expression);
             break;
         }
     }
+    Py_DECREF(safe_expression);
     WRITE_CHAR_OR_ABORT(writer, ']');
     return grouplen + extra;
 abort:
+    Py_XDECREF(safe_expression);
     return -1;
 }
 
