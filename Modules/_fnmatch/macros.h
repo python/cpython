@@ -9,15 +9,16 @@
 // ==== Macro definitions =====================================================
 
 /*
- * Check that INTVAL is >= 0 or execute 'goto abort'.
+ * Check that STATUS is >= 0 or execute 'goto abort'.
  *
  * This macro is provided for convenience and should be
  * carefully used if more resources should be released
  * before jumping to the 'abort' label.
  */
-#define CHECK_INTVAL_OR_ABORT(INTVAL)   \
+#define CHECK_RET_CODE_OR_ABORT(STATUS) \
     do {                                \
-        if ((INTVAL) < 0) {             \
+        if ((STATUS) < 0) {             \
+            assert(PyErr_Occurred());   \
             goto abort;                 \
         }                               \
     } while (0)
@@ -29,11 +30,11 @@
  * carefully used if more resources should be released
  * before jumping to the 'abort' label.
  */
-#define CHECK_NON_NULL_OR_ABORT(OBJ)  \
-    do {                        \
-        if ((OBJ) == NULL) {    \
-            goto abort;         \
-        }                       \
+#define CHECK_NOT_NULL_OR_ABORT(OBJ)    \
+    do {                                \
+        if ((OBJ) == NULL) {            \
+            goto abort;                 \
+        }                               \
     } while (0)
 
 // The following _WRITE_* and _WRITE_*_OR macros do NOT check their inputs
@@ -54,64 +55,38 @@
     _PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)(WRITER), (STRING))
 
 /* Cast WRITER and call _PyUnicodeWriter_WriteSubstring(). */
-#define _WRITE_BLOCK(WRITER, STRING, START, STOP)                   \
+#define _WRITE_SUBSTRING(WRITER, STRING, START, STOP)               \
     _PyUnicodeWriter_WriteSubstring((_PyUnicodeWriter *)(WRITER),   \
                                     (STRING), (START), (STOP))
 
 // ----------------------------------------------------------------------------
 
-/* Write a character CHAR or execute the ON_ERROR statements if it fails. */
-#define _WRITE_CHAR_OR(WRITER, CHAR, ON_ERROR)      \
-    do {                                            \
-        if (_WRITE_CHAR((WRITER), (CHAR)) < 0) {    \
-            ON_ERROR;                               \
-        }                                           \
-    } while (0)
+/* Write the character CHAR or jump to the 'abort' label on failure. */
+#define WRITE_CHAR_OR_ABORT(WRITER, CHAR) \
+    CHECK_RET_CODE_OR_ABORT(_WRITE_CHAR((WRITER), (CHAR)))
 
 /*
  * Write an ASCII string STRING of given length LENGTH,
- * or execute the ON_ERROR statements if it fails.
+ * or jump to the 'abort' label on failure.
  */
-#define _WRITE_ASCII_OR(WRITER, ASCII, LENGTH, ON_ERROR)        \
-    do {                                                        \
-        if (_WRITE_ASCII((WRITER), (ASCII), (LENGTH)) < 0) {    \
-            ON_ERROR;                                           \
-        }                                                       \
-    } while (0)
+#define WRITE_ASCII_OR_ABORT(WRITER, ASCII, LENGTH)  \
+    CHECK_RET_CODE_OR_ABORT(_WRITE_ASCII((WRITER), (ASCII), (LENGTH)))
 
-/* Write the string STRING or execute the ON_ERROR statements if it fails. */
-#define _WRITE_STRING_OR(WRITER, STRING, ON_ERROR)      \
-    do {                                                \
-        if (_WRITE_STRING((WRITER), (STRING)) < 0) {    \
-            ON_ERROR;                                   \
-        }                                               \
-    } while (0)
+/* Write the string STRING or jump to the 'abort' label on failure. */
+#define WRITE_STRING_OR_ABORT(WRITER, STRING)  \
+    CHECK_RET_CODE_OR_ABORT(_WRITE_STRING((WRITER), (STRING)))
 
 /*
- * Write the substring STRING[START:STOP] (no-op if the substring is empty)
- * or execute the ON_ERROR statements if it fails.
+ * Write the substring STRING[START:STOP] (no-op if empty)
+ * or jump to the 'abort' label on failure.
  */
-#define _WRITE_SUBSTRING_OR(WRITER, STRING, START, STOP, ON_ERROR)      \
+#define WRITE_SUBSTRING_OR_ABORT(WRITER, STRING, START, STOP)           \
     do {                                                                \
-        /* intermediate variables to allow in-place operations */       \
-        Py_ssize_t _i = (START), _j = (STOP);                           \
-        if (_i < _j && _WRITE_BLOCK((WRITER), (STRING), _i, _j) < 0) {  \
-            ON_ERROR;                                                   \
-        }                                                               \
+        const Py_ssize_t _START = (START);                              \
+        const Py_ssize_t _STOP = (STOP);                                \
+        int _RC = _WRITE_SUBSTRING((WRITER), (STRING), _START, _STOP);  \
+        CHECK_RET_CODE_OR_ABORT(_RC);                                   \
     } while (0)
-
-// ----------------------------------------------------------------------------
-
-// Macros which execute "goto abort" if an error occurs.
-
-#define WRITE_CHAR_OR_ABORT(WRITER, CHAR) \
-    _WRITE_CHAR_OR((WRITER), (CHAR), goto abort)
-#define WRITE_ASCII_OR_ABORT(WRITER, STRING, LENGTH) \
-    _WRITE_ASCII_OR((WRITER), (STRING), (LENGTH), goto abort)
-#define WRITE_STRING_OR_ABORT(WRITER, STRING) \
-    _WRITE_STRING_OR((WRITER), (STRING), goto abort)
-#define WRITE_BLOCK_OR_ABORT(WRITER, STRING, START, STOP) \
-    _WRITE_SUBSTRING_OR((WRITER), (STRING), (START), (STOP), goto abort)
 
 // ----------------------------------------------------------------------------
 
