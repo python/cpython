@@ -837,14 +837,14 @@ class PathBase(PurePathBase):
         while stack:
             source, target = stack.pop()
             try:
-                if source.is_dir(follow_symlinks=follow_symlinks):
+                if not follow_symlinks and source.is_symlink():
+                    target.symlink_to(source.readlink())
+                elif source.is_dir():
                     children = source.iterdir()
                     target.mkdir(exist_ok=dirs_exist_ok)
                     for child in children:
                         if not (ignore and ignore(child)):
                             stack.append((child, target.joinpath(child.name)))
-                elif not follow_symlinks and source.is_symlink():
-                    target.symlink_to(source.readlink())
                 else:
                     source._copy_data(target)
                 if preserve_metadata:
