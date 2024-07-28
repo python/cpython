@@ -8,9 +8,6 @@
 #include "Python.h"
 
 typedef struct {
-} translatemodule_state;
-
-typedef struct {
     PyObject *os_module;            // import os
     PyObject *posixpath_module;     // import posixpath
     PyObject *re_module;            // import re
