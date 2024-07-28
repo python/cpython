@@ -1227,7 +1227,7 @@ class ReTests(unittest.TestCase):
             pickled = pickle.dumps(oldpat, proto)
             newpat = pickle.loads(pickled)
             self.assertEqual(newpat, oldpat)
-        # current pickle expects the _compile() reconstructor in re module
+        # previous pickles may expect the _compile() reconstructor in re module
         from re import _compile  # noqa: F401
 
     def test_copying(self):
