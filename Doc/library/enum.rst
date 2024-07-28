@@ -66,7 +66,7 @@ Module Contents
 
    :class:`EnumDict`
 
-      An enum class :class:`dict` that tracks order and enforces unique member names.
+      A subclass of :class:`dict` that tracks order and enforces unique member names.
 
    :class:`EnumType`
 
@@ -165,7 +165,7 @@ Data Types
 
 .. class:: EnumDict
 
-   *EnumDict* is used by *EnumType* to keep track of the enum member orders and prevent reusing the member names.
+   *EnumDict* is a subclass of :class:`dict` that keeps track of the order of enum members and prevents reusing member names. Use *EnumDict* when member names must be unique and their order needs to be preserved.
 
    .. attribute:: EnumDict.member_names
 
