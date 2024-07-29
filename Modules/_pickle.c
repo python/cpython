@@ -3123,6 +3123,7 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
             if (!PyTuple_Check(obj) || PyTuple_Size(obj) != 2) {
                 PyErr_SetString(PyExc_TypeError, "dict items "
                                 "iterator must return 2-tuples");
+                Py_DECREF(obj);
                 return -1;
             }
             i = save(state, self, PyTuple_GET_ITEM(obj, 0), 0);
