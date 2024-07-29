@@ -148,6 +148,7 @@ def _path_stat(path):
     Made a separate function to make it easier to override in experiments
     (e.g. cache stat results).
 
+    This function may raise OSError or ValueError.
     """
     return _os.stat(path)
 
@@ -156,7 +157,7 @@ def _path_is_mode_type(path, mode):
     """Test whether the path is the specified mode type."""
     try:
         stat_info = _path_stat(path)
-    except OSError:
+    except (OSError, ValueError):
         return False
     return (stat_info.st_mode & 0o170000) == mode
 
@@ -211,10 +212,10 @@ def _write_atomic(path, data, mode=0o666):
         with _io.FileIO(fd, 'wb') as file:
             file.write(data)
         _os.replace(path_tmp, path)
-    except OSError:
+    except (OSError, ValueError):
         try:
             _os.unlink(path_tmp)
-        except OSError:
+        except (OSError, ValueError):
             pass
         raise
 
@@ -654,7 +655,7 @@ def _calc_mode(path):
     """Calculate the mode permissions for a bytecode file."""
     try:
         mode = _path_stat(path).st_mode
-    except OSError:
+    except (OSError, ValueError):
         mode = 0o666
     # We always ensure write access so we can update cached files
     # later even when the source files are read-only on Windows (#6074)
@@ -990,7 +991,7 @@ class WindowsRegistryFinder:
             return None
         try:
             _path_stat(filepath)
-        except OSError:
+        except (OSError, ValueError):
             return None
         for loader, suffixes in _get_supported_file_loaders():
             if filepath.endswith(tuple(suffixes)):
@@ -1036,7 +1037,7 @@ class SourceLoader(_LoaderBasics):
         """Optional method that returns the modification time (an int) for the
         specified path (a str).
 
-        Raises OSError when the path cannot be handled.
+        Raises OSError or ValueError when the path cannot be handled.
         """
         raise OSError
 
@@ -1050,7 +1051,7 @@ class SourceLoader(_LoaderBasics):
         - 'size' (optional) is the size in bytes of the source code.
 
         Implementing this method allows the loader to read bytecode files.
-        Raises OSError when the path cannot be handled.
+        Raises OSError or ValueError when the path cannot be handled.
         """
         return {'mtime': self.path_mtime(path)}
 
@@ -1076,7 +1077,7 @@ class SourceLoader(_LoaderBasics):
         path = self.get_filename(fullname)
         try:
             source_bytes = self.get_data(path)
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             raise ImportError('source not available through get_data()',
                               name=fullname) from exc
         return decode_source(source_bytes)
@@ -1109,13 +1110,13 @@ class SourceLoader(_LoaderBasics):
         else:
             try:
                 st = self.path_stats(source_path)
-            except OSError:
+            except (OSError, ValueError):
                 pass
             else:
                 source_mtime = int(st['mtime'])
                 try:
                     data = self.get_data(bytecode_path)
-                except OSError:
+                except (OSError, ValueError):
                     pass
                 else:
                     exc_details = {
@@ -1211,7 +1212,10 @@ class FileLoader:
         return self.path
 
     def get_data(self, path):
-        """Return the data from path as raw bytes."""
+        """Return the data from path as raw bytes.
+
+        This may raise an OSError or a ValueError if the path is invalid.
+        """
         if isinstance(self, (SourceLoader, ExtensionFileLoader)):
             with _io.open_code(str(path)) as file:
                 return file.read()
@@ -1255,19 +1259,20 @@ class SourceFileLoader(FileLoader, SourceLoader):
             except FileExistsError:
                 # Probably another Python process already created the dir.
                 continue
-            except OSError as exc:
-                # Could be a permission error, read-only filesystem: just forget
-                # about writing the data.
+            except (OSError, ValueError) as exc:
+                # Could be a permission error, read-only filesystem, or
+                # an invalid path name: just forget about writing the data.
                 _bootstrap._verbose_message('could not create {!r}: {!r}',
                                             parent, exc)
                 return
         try:
             _write_atomic(path, data, _mode)
-            _bootstrap._verbose_message('created {!r}', path)
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             # Same as above: just don't write the bytecode.
             _bootstrap._verbose_message('could not create {!r}: {!r}', path,
                                         exc)
+        else:
+            _bootstrap._verbose_message('created {!r}', path)
 
 
 class SourcelessFileLoader(FileLoader, _LoaderBasics):
@@ -1631,6 +1636,9 @@ class FileFinder:
             mtime = _path_stat(self.path or _os.getcwd()).st_mtime
         except OSError:
             mtime = -1
+        except ValueError:
+            # Invalid paths will never be usable even if mtime = -1.
+            return None
         if mtime != self._path_mtime:
             self._fill_cache()
             self._path_mtime = mtime
