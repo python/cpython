@@ -1635,28 +1635,24 @@ Copying, renaming and deleting
 
 .. method:: Path.delete(ignore_errors=False, on_error=None)
 
-   Recursively remove this file or directory tree.
+   Delete this file or directory (including all sub-directories).
 
-   If *ignore_errors* is true, errors resulting from failed removals will be
-   ignored. If *ignore_errors* is false or omitted, and a function is given to
-   *on_error*, it will be called each time an exception is raised. If neither
-   *ignore_errors* nor *on_error* are supplied, exceptions are propagated to
-   the caller.
-
-   If the optional argument *on_error* is specified, it should be a callable;
-   it will be called with one argument of type :exc:`OSError`. The
-   callable can handle the error to continue the deletion process or re-raise
-   it to stop. Note that the filename is available as the
-   :attr:`~OSError.filename` attribute of the exception object.
+   If *ignore_errors* is true, errors resulting from failed deletions will be
+   ignored. If *ignore_errors* is false or omitted, and a callable is given as
+   the optional *on_error* argument, it will be called with one argument of
+   type :exc:`OSError` each time an exception is raised. The callable can
+   handle the error to continue the deletion process or re-raise it to stop.
+   Note that the filename is available as the :attr:`~OSError.filename`
+   attribute of the exception object. If neither *ignore_errors* nor
+   *on_error* are supplied, exceptions are propagated to the caller.
 
    .. note::
 
-      On platforms that support the necessary fd-based functions, a symlink
-      attack-resistant version of :meth:`~Path.delete` is used to delete
-      directory trees. On other platforms, the :func:`~Path.delete`
-      implementation is susceptible to a symlink attack: given proper timing
-      and circumstances, attackers can manipulate symlinks on the filesystem
-      to delete files they would not be able to access otherwise.
+      On platforms that lack the necessary file descriptor-based functions,
+      :func:`~Path.delete` implementation is susceptible to a symlink attack:
+      given proper timing and circumstances, attackers can manipulate symlinks
+      on the filesystem to delete files they would not be able to access
+      otherwise.
 
    .. versionadded:: 3.14
 
