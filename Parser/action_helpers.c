@@ -1010,7 +1010,8 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
         spec = resized_spec;
     }
     expr_ty res;
-    if (asdl_seq_LEN(spec) == 0) {
+    Py_ssize_t n = asdl_seq_LEN(spec);
+    if (n == 0 || (n == 1 && asdl_seq_GET(spec, 0)->kind == Constant_kind)) {
         res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno,
                                     end_col_offset, p->arena);
     } else {
@@ -1594,7 +1595,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     for (i = 0; i < n_flattened_elements; i++) {
         expr_ty elem = asdl_seq_GET(flattened, i);
 
-        /* The concatenation of a FormattedValue and an empty Contant should
+        /* The concatenation of a FormattedValue and an empty Constant should
            lead to the FormattedValue itself. Thus, we will not take any empty
            constants into account, just as in `_PyPegen_joined_str` */
         if (f_string_found && elem->kind == Constant_kind &&
