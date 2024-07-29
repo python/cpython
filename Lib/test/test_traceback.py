@@ -3275,16 +3275,15 @@ class TestStack(unittest.TestCase):
             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
         )
 
-    def test_traceback_empty_ast(self):
-        # see gh-122145
-        fs = traceback.FrameSummary("?", 1, "s", lookup_line=False,
-                                    locals=None, end_lineno=1, colno=0,
-                                    end_colno=10, line="#123456789")
-        self.assertListEqual(
-            traceback.StackSummary().format_frame_summary(fs).splitlines(),
-            ['  File "?", line 1, in s', '    #123456789']
-        )
-
+    def test_summary_should_show_carets(self):
+        # See: https://github.com/python/cpython/issues/122353
+        should_show = traceback.StackSummary()._should_show_carets
+        # a line that may or may not have carrets shown
+        self.assertTrue(should_show(0, 1, ['a = 123456789'], None))
+        self.assertFalse(should_show(0, 999, ['return'], None))
+        # commented lines have an empty AST body, hence never shown
+        self.assertFalse(should_show(0, 1, ['# abc = 123456789'], None))
+        self.assertFalse(should_show(0, 999, ['# return'], None))
 
 class Unrepresentable:
     def __repr__(self) -> str:
