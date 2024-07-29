@@ -1,0 +1,2 @@
+Fix :class:`zoneinfo.ZoneInfo` raising :exc:`OSError` instead of
+``ZoneInfoNotFoundError``.
