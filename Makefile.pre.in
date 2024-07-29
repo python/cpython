@@ -2213,6 +2213,14 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 	else \
 		$(INSTALL_PROGRAM) $(STRIPFLAG) Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	fi
+	# For framework installs, the unsuffixed binary file name is currently
+	# needed for getpath.py setting of sys._base_executable for venv's
+	-if test "$(VERSION)" != "$(LDVERSION)" && test "$(PYTHONFRAMEWORKDIR)" != "no-framework"; then \
+		if test -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+		then rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+		fi; \
+		(cd $(DESTDIR)$(BINDIR); $(LN) python$(LDVERSION)$(EXE) python$(VERSION)$(EXE)); \
+	fi
 	@if test "$(PY_ENABLE_SHARED)" = 1 -o "$(STATIC_LIBPYTHON)" = 1; then \
 		if test -f $(LDLIBRARY) && test "$(PYTHONFRAMEWORKDIR)" = "no-framework" ; then \
 			if test -n "$(DLLLIBRARY)" ; then \
