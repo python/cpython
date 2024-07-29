@@ -2503,7 +2503,7 @@ AS_VAR_IF([with_strict_overflow], [yes],
 AC_MSG_CHECKING([for --disable-safety])
 AC_ARG_ENABLE([safety],
   [AS_HELP_STRING([--disable-safety], [disable usage of the security compiler options with no performance overhead])],
-  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_saftey=yes])], [disable_saftey=no])
+  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_safety=yes])], [disable_safety=no])
 AC_MSG_RESULT([$disable_safety])
 
 if test "$disable_safety" = "no"
@@ -2514,7 +2514,8 @@ fi
 
 AC_MSG_CHECKING([for --enable-slower-safety])
 AC_ARG_ENABLE([slower-safety],
-  [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],[])
+  [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],
+  [AS_VAR_IF([disable_slower_safety], [yes], [enable_slower_safety=no], [enable_slower_safety=yes])], [enable_slower_safety=no])
 AC_MSG_RESULT([$enable_slower_safety])
 
 if test "$enable_slower_safety" = "yes"
