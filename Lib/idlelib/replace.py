@@ -87,11 +87,11 @@ class ReplaceDialog(SearchDialogBase):
         self.do_find(False)
 
     def replace_it(self, event=None): 
-        """Handle the Replace button. 
+         """Only used in test case
   
-        If the find is successful, then perform replace. 
-        """ 
-        if self.do_find(self.ok): 
+         If the find is successful, then perform replace. 
+         """ 
+         if self.do_find(self.ok):
             self.do_replace()
 
     def default_command(self, event=None):
