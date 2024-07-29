@@ -67,6 +67,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
     if (key_hash == -1) {
         return -2;
     }
+    bool found = false;
 
     // We do 2 loops here because it's highly possible the key is interned
     // and we can do a pointer comparison.
@@ -82,8 +83,11 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
                     return i;
                 }
             }
-            return -1;
+            found = true;
         }
+    }
+    if (found) {
+        return -1;
     }
     // This is unlikely, but we need to make sure. This means the key
     // is not interned.
@@ -108,7 +112,6 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
                     return i;
                 }
             }
-            return -1;
         }
     }
 
