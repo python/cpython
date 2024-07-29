@@ -314,16 +314,17 @@ class _Unframer:
 # Tools used for pickling.
 
 def _getattribute(obj, name):
+    top = obj
     for subpath in name.split('.'):
         if subpath == '<locals>':
             raise AttributeError("Can't get local attribute {!r} on {!r}"
-                                 .format(name, obj))
+                                 .format(name, top))
         try:
             parent = obj
             obj = getattr(obj, subpath)
         except AttributeError:
             raise AttributeError("Can't get attribute {!r} on {!r}"
-                                 .format(name, obj)) from None
+                                 .format(name, top)) from None
     return obj, parent
 
 def whichmodule(obj, name):
@@ -830,7 +831,7 @@ class _Pickler:
     if _HAVE_PICKLE_BUFFER:
         def save_picklebuffer(self, obj):
             if self.proto < 5:
-                raise PicklingError("PickleBuffer can only pickled with "
+                raise PicklingError("PickleBuffer can only be pickled with "
                                     "protocol >= 5")
             with obj.raw() as m:
                 if not m.contiguous:

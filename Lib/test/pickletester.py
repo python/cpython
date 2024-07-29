@@ -1984,8 +1984,10 @@ class AbstractPicklingErrorTests:
         pb = pickle.PickleBuffer(b"foobar")
         for proto in range(0, 5):
             with self.subTest(proto=proto):
-                with self.assertRaises(pickle.PickleError):
+                with self.assertRaises(pickle.PickleError) as cm:
                     self.dumps(pb, proto)
+                self.assertEqual(str(cm.exception),
+                    'PickleBuffer can only be pickled with protocol >= 5')
 
     def test_non_continuous_buffer(self):
         if self.pickler is pickle._Pickler:
