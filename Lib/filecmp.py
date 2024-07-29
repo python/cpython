@@ -138,10 +138,20 @@ class dircmp:
         self.shallow = shallow
 
     def phase0(self): # Compare everything except common subdirectories
-        self.left_list = _filter(os.listdir(self.left),
-                                 self.hide+self.ignore)
-        self.right_list = _filter(os.listdir(self.right),
-                                  self.hide+self.ignore)
+        try:
+            left_full_list = os.listdir(self.left)
+        except (OSError, ValueError):
+            self.left_list = []
+        else:
+            self.left_list = _filter(left_full_list, self.hide + self.ignore)
+
+        try:
+            right_full_list = os.listdir(self.right)
+        except (OSError, ValueError):
+            self.right_list = []
+        else:
+            self.right_list = _filter(right_full_list, self.hide + self.ignore)
+
         self.left_list.sort()
         self.right_list.sort()
 
@@ -164,12 +174,12 @@ class dircmp:
             ok = True
             try:
                 a_stat = os.stat(a_path)
-            except OSError:
+            except (OSError, ValueError):
                 # print('Can\'t stat', a_path, ':', why.args[1])
                 ok = False
             try:
                 b_stat = os.stat(b_path)
-            except OSError:
+            except (OSError, ValueError):
                 # print('Can\'t stat', b_path, ':', why.args[1])
                 ok = False
 
@@ -285,12 +295,12 @@ def cmpfiles(a, b, common, shallow=True):
 # Return:
 #       0 for equal
 #       1 for different
-#       2 for funny cases (can't stat, etc.)
+#       2 for funny cases (can't stat, NUL bytes, etc.)
 #
 def _cmp(a, b, sh, abs=abs, cmp=cmp):
     try:
         return not abs(cmp(a, b, sh))
-    except OSError:
+    except (OSError, ValueError):
         return 2
 
 
