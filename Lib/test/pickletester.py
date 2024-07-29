@@ -1230,8 +1230,8 @@ class AbstractUnpickleTests:
 
         self.assertIs(unpickler4.find_class('builtins', 'str.upper'), str.upper)
         with self.assertRaisesRegex(AttributeError,
-                "module 'builtins' has no attribute 'str.upper'|"
-                "Can't get attribute 'str.upper' on <module 'builtins'"):
+                r"module 'builtins' has no attribute 'str\.upper'|"
+                r"Can't get attribute 'str\.upper' on <module 'builtins'"):
             unpickler.find_class('builtins', 'str.upper')
 
         with self.assertRaisesRegex(AttributeError,
@@ -1242,20 +1242,18 @@ class AbstractUnpickleTests:
                 "Can't get attribute 'spam' on <module 'math'"):
             unpickler4.find_class('math', 'spam')
         with self.assertRaisesRegex(AttributeError,
-                "module 'math' has no attribute 'log.spam'|"
-                "Can't get attribute 'log.spam' on <module 'math'"):
+                r"module 'math' has no attribute 'log\.spam'|"
+                r"Can't get attribute 'log\.spam' on <module 'math'"):
             unpickler.find_class('math', 'log.spam')
         with self.assertRaisesRegex(AttributeError,
-                "Can't get attribute 'log.spam' on <built-in function log|"
-                "Can't get attribute 'log.spam' on <module 'math'"):
+                r"Can't get attribute 'log\.spam' on <module 'math'"):
             unpickler4.find_class('math', 'log.spam')
         with self.assertRaisesRegex(AttributeError,
-                "module 'math' has no attribute 'log.<locals>.spam'|"
-                "Can't get attribute 'log.<locals>.spam' on <module 'math'"):
+                r"module 'math' has no attribute 'log\.<locals>\.spam'|"
+                r"Can't get attribute 'log\.<locals>\.spam' on <module 'math'"):
             unpickler.find_class('math', 'log.<locals>.spam')
         with self.assertRaisesRegex(AttributeError,
-                "Can't get local attribute 'log.<locals>.spam' on <built-in function log|"
-                "Can't pickle local attribute 'log.<locals>.spam' on <module 'math'"):
+                r"Can't get local attribute 'log\.<locals>\.spam' on <module 'math'"):
             unpickler4.find_class('math', 'log.<locals>.spam')
         with self.assertRaisesRegex(AttributeError,
                 "module 'math' has no attribute ''|"
@@ -2070,7 +2068,7 @@ class AbstractPicklingErrorTests:
                     self.dumps(f, proto)
                 self.assertIn(str(cm.exception), {
                     f"Can't pickle {f!r}: it's not found as {__name__}.{f.__qualname__}",
-                    f"Can't pickle local object {f.__qualname__!r}"})
+                    f"Can't get local object {f.__qualname__!r}"})
         # Same without a __module__ attribute (exercises a different path
         # in _pickle.c).
         del f.__module__
@@ -2080,7 +2078,7 @@ class AbstractPicklingErrorTests:
                     self.dumps(f, proto)
                 self.assertIn(str(cm.exception), {
                     f"Can't pickle {f!r}: it's not found as __main__.{f.__qualname__}",
-                    f"Can't pickle local object {f.__qualname__!r}"})
+                    f"Can't get local object {f.__qualname__!r}"})
         # Yet a different path.
         f.__name__ = f.__qualname__
         for proto in protocols:
@@ -2089,7 +2087,7 @@ class AbstractPicklingErrorTests:
                     self.dumps(f, proto)
                 self.assertIn(str(cm.exception), {
                     f"Can't pickle {f!r}: it's not found as __main__.{f.__qualname__}",
-                    f"Can't pickle local object {f.__qualname__!r}"})
+                    f"Can't get local object {f.__qualname__!r}"})
 
     def test_reduce_ex_None(self):
         c = REX_None()
@@ -2119,7 +2117,7 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PickleError) as cm:
                     self.dumps(pb, proto)
                 self.assertEqual(str(cm.exception),
-                    'PickleBuffer can only pickled with protocol >= 5')
+                    'PickleBuffer can only be pickled with protocol >= 5')
 
     def test_non_continuous_buffer(self):
         if self.pickler is pickle._Pickler:
