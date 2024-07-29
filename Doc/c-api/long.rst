@@ -113,24 +113,28 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    retrieved from the resulting value using :c:func:`PyLong_AsVoidPtr`.
 
 
-.. c:function:: PyObject* PyLong_FromNativeBytes(const void* buffer, size_t n_bytes, int endianness)
+.. c:function:: PyObject* PyLong_FromNativeBytes(const void* buffer, size_t n_bytes, int flags)
 
    Create a Python integer from the value contained in the first *n_bytes* of
    *buffer*, interpreted as a two's-complement signed number.
 
-   *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or else ``0`` for big endian and ``1`` for little.
+   *flags* are as for :c:func:`PyLong_AsNativeBytes`. Passing ``-1`` will select
+   the native endian that CPython was compiled with and assume that the
+   most-significant bit is a sign bit. Passing
+   ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` will produce the same result as calling
+   :c:func:`PyLong_FromUnsignedNativeBytes`. Other flags are ignored.
 
    .. versionadded:: 3.13
 
 
-.. c:function:: PyObject* PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n_bytes, int endianness)
+.. c:function:: PyObject* PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n_bytes, int flags)
 
    Create a Python integer from the value contained in the first *n_bytes* of
    *buffer*, interpreted as an unsigned number.
 
-   *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or else ``0`` for big endian and ``1`` for little.
+   *flags* are as for :c:func:`PyLong_AsNativeBytes`. Passing ``-1`` will select
+   the native endian that CPython was compiled with and assume that the
+   most-significant bit is not a sign bit. Flags other than endian are ignored.
 
    .. versionadded:: 3.13
 
@@ -354,52 +358,160 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
-.. c:function:: Py_ssize_t PyLong_AsNativeBytes(PyObject *pylong, void* buffer, Py_ssize_t n_bytes, int endianness)
+.. c:function:: Py_ssize_t PyLong_AsNativeBytes(PyObject *pylong, void* buffer, Py_ssize_t n_bytes, int flags)
 
-   Copy the Python integer value to a native *buffer* of size *n_bytes*::
+   Copy the Python integer value *pylong* to a native *buffer* of size
+   *n_bytes*. The *flags* can be set to ``-1`` to behave similarly to a C cast,
+   or to values documented below to control the behavior.
 
-      int value;
-      Py_ssize_t bytes = PyLong_AsNativeBytes(v, &value, sizeof(value), -1);
+   Returns ``-1`` with an exception raised on error.  This may happen if
+   *pylong* cannot be interpreted as an integer, or if *pylong* was negative
+   and the ``Py_ASNATIVEBYTES_REJECT_NEGATIVE`` flag was set.
+
+   Otherwise, returns the number of bytes required to store the value.
+   If this is equal to or less than *n_bytes*, the entire value was copied.
+   All *n_bytes* of the buffer are written: large buffers are padded with
+   zeroes.
+
+   If the returned value is greater than than *n_bytes*, the value was
+   truncated: as many of the lowest bits of the value as could fit are written,
+   and the higher bits are ignored. This matches the typical behavior
+   of a C-style downcast.
+
+   .. note::
+
+      Overflow is not considered an error. If the returned value
+      is larger than *n_bytes*, most significant bits were discarded.
+
+   ``0`` will never be returned.
+
+   Values are always copied as two's-complement.
+
+   Usage example::
+
+      int32_t value;
+      Py_ssize_t bytes = PyLong_AsNativeBytes(pylong, &value, sizeof(value), -1);
       if (bytes < 0) {
-          // Error occurred
+          // Failed. A Python exception was set with the reason.
           return NULL;
       }
       else if (bytes <= (Py_ssize_t)sizeof(value)) {
           // Success!
       }
       else {
-          // Overflow occurred, but 'value' contains truncated value
+          // Overflow occurred, but 'value' contains the truncated
+          // lowest bits of pylong.
       }
 
-   *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or ``0`` for big endian and ``1`` for little.
-
-   Return ``-1`` with an exception raised if *pylong* cannot be interpreted as
-   an integer. Otherwise, return the size of the buffer required to store the
-   value. If this is equal to or less than *n_bytes*, the entire value was
-   copied.
-
-   Unless an exception is raised, all *n_bytes* of the buffer will be written
-   with as much of the value as can fit. This allows the caller to ignore all
-   non-negative results if the intent is to match the typical behavior of a
-   C-style downcast. No exception is set for this case.
-
-   Values are always copied as two's-complement, and sufficient buffer will be
-   requested to include a sign bit. For example, this may cause an value that
-   fits into 8 bytes when treated as unsigned to request 9 bytes, even though
-   all eight bytes were copied into the buffer. What has been omitted is the
-   zero sign bit, which is redundant when the intention is to treat the value as
-   unsigned.
-
-   Passing zero to *n_bytes* will return the requested buffer size.
+   Passing zero to *n_bytes* will return the size of a buffer that would
+   be large enough to hold the value. This may be larger than technically
+   necessary, but not unreasonably so. If *n_bytes=0*, *buffer* may be
+   ``NULL``.
 
    .. note::
 
-      When the value does not fit in the provided buffer, the requested size
-      returned from the function may be larger than necessary. Passing 0 to this
-      function is not an accurate way to determine the bit length of a value.
+      Passing *n_bytes=0* to this function is not an accurate way to determine
+      the bit length of the value.
+
+   To get at the entire Python value of an unknown size, the function can be
+   called twice: first to determine the buffer size, then to fill it::
+
+      // Ask how much space we need.
+      Py_ssize_t expected = PyLong_AsNativeBytes(pylong, NULL, 0, -1);
+      if (expected < 0) {
+          // Failed. A Python exception was set with the reason.
+          return NULL;
+      }
+      assert(expected != 0);  // Impossible per the API definition.
+      uint8_t *bignum = malloc(expected);
+      if (!bignum) {
+          PyErr_SetString(PyExc_MemoryError, "bignum malloc failed.");
+          return NULL;
+      }
+      // Safely get the entire value.
+      Py_ssize_t bytes = PyLong_AsNativeBytes(pylong, bignum, expected, -1);
+      if (bytes < 0) {  // Exception has been set.
+          free(bignum);
+          return NULL;
+      }
+      else if (bytes > expected) {  // This should not be possible.
+          PyErr_SetString(PyExc_RuntimeError,
+              "Unexpected bignum truncation after a size check.");
+          free(bignum);
+          return NULL;
+      }
+      // The expected success given the above pre-check.
+      // ... use bignum ...
+      free(bignum);
+
+   *flags* is either ``-1`` (``Py_ASNATIVEBYTES_DEFAULTS``) to select defaults
+   that behave most like a C cast, or a combintation of the other flags in
+   the table below.
+   Note that ``-1`` cannot be combined with other flags.
+
+   Currently, ``-1`` corresponds to
+   ``Py_ASNATIVEBYTES_NATIVE_ENDIAN | Py_ASNATIVEBYTES_UNSIGNED_BUFFER``.
+
+   ============================================= ======
+   Flag                                          Value
+   ============================================= ======
+   .. c:macro:: Py_ASNATIVEBYTES_DEFAULTS        ``-1``
+   .. c:macro:: Py_ASNATIVEBYTES_BIG_ENDIAN      ``0``
+   .. c:macro:: Py_ASNATIVEBYTES_LITTLE_ENDIAN   ``1``
+   .. c:macro:: Py_ASNATIVEBYTES_NATIVE_ENDIAN   ``3``
+   .. c:macro:: Py_ASNATIVEBYTES_UNSIGNED_BUFFER ``4``
+   .. c:macro:: Py_ASNATIVEBYTES_REJECT_NEGATIVE ``8``
+   .. c:macro:: Py_ASNATIVEBYTES_ALLOW_INDEX     ``16``
+   ============================================= ======
+
+   Specifying ``Py_ASNATIVEBYTES_NATIVE_ENDIAN`` will override any other endian
+   flags. Passing ``2`` is reserved.
+
+   By default, sufficient buffer will be requested to include a sign bit.
+   For example, when converting 128 with *n_bytes=1*, the function will return
+   2 (or more) in order to store a zero sign bit.
+
+   If ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` is specified, a zero sign bit
+   will be omitted from size calculations. This allows, for example, 128 to fit
+   in a single-byte buffer. If the destination buffer is later treated as
+   signed, a positive input value may become negative.
+   Note that the flag does not affect handling of negative values: for those,
+   space for a sign bit is always requested.
+
+   Specifying ``Py_ASNATIVEBYTES_REJECT_NEGATIVE`` causes an exception to be set
+   if *pylong* is negative. Without this flag, negative values will be copied
+   provided there is enough space for at least one sign bit, regardless of
+   whether ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` was specified.
+
+   If ``Py_ASNATIVEBYTES_ALLOW_INDEX`` is specified and a non-integer value is
+   passed, its :meth:`~object.__index__` method will be called first. This may
+   result in Python code executing and other threads being allowed to run, which
+   could cause changes to other objects or values in use. When *flags* is
+   ``-1``, this option is not set, and non-integer values will raise
+   :exc:`TypeError`.
+
+   .. note::
+
+      With the default *flags* (``-1``, or *UNSIGNED_BUFFER*  without
+      *REJECT_NEGATIVE*), multiple Python integers can map to a single value
+      without overflow. For example, both ``255`` and ``-1`` fit a single-byte
+      buffer and set all its bits.
+      This matches typical C cast behavior.
 
    .. versionadded:: 3.13
+
+
+.. c:function:: int PyLong_GetSign(PyObject *obj, int *sign)
+
+   Get the sign of the integer object *obj*.
+
+   On success, set *\*sign* to the integer sign  (0, -1 or +1 for zero, negative or
+   positive integer, respectively) and return 0.
+
+   On failure, return -1 with an exception set.  This function always succeeds
+   if *obj* is a :c:type:`PyLongObject` or its subtype.
+
+   .. versionadded:: 3.14
 
 
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
@@ -410,7 +522,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    a “fast path” for small integers. For compact values use
    :c:func:`PyUnstable_Long_CompactValue`; for others fall back to a
    :c:func:`PyLong_As* <PyLong_AsSize_t>` function or
-   :c:func:`calling <PyObject_CallMethod>` :meth:`int.to_bytes`.
+   :c:func:`PyLong_AsNativeBytes`.
 
    The speedup is expected to be negligible for most users.
 

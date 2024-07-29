@@ -83,11 +83,11 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
-Python/tier2_redundancy_eliminator_cases.c.h
+Python/optimizer_cases.c.h
 
 # not actually source
 Python/bytecodes.c
-Python/tier2_redundancy_eliminator_bytecodes.c
+Python/optimizer_bytecodes.c
 
 # mimalloc
 Objects/mimalloc/*.c
@@ -167,6 +167,7 @@ Objects/stringlib/count.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/find.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/partition.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/replace.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/repr.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/split.h	Objects/stringlib/fastsearch.h
 
 # @end=tsv@

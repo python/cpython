@@ -1284,7 +1284,7 @@ Add function :func:`sys.is_finalizing` to know about interpreter shutdown.
 .. section: Library
 
 Add a default limit for the amount of data xmlrpclib.gzip_decode will
-return. This resolves CVE-2013-1753.
+return. This resolves :cve:`2013-1753`.
 
 ..
 
@@ -1345,7 +1345,7 @@ newer worked.
 .. section: Library
 
 The "ip" command is now used on Linux to determine MAC address in
-uuid.getnode().  Pach by Bruno Cauet.
+uuid.getnode().  Patch by Bruno Cauet.
 
 ..
 
@@ -3447,7 +3447,8 @@ tkinter.ttk now works when default root window is not set.
 .. nonce: FE_PII
 .. section: Library
 
-_tkinter.create() now creates tkapp object with wantobject=1 by default.
+``_tkinter.create()`` now creates ``tkapp`` object with ``wantobjects=1`` by
+default.
 
 ..
 
@@ -3930,7 +3931,7 @@ has been called.
 .. nonce: 5CDoox
 .. section: Library
 
-New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` incase of
+New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` in case of
 an attribute startswith assert or assret.
 
 ..
@@ -4030,7 +4031,7 @@ unittest.mock.MagicMock now supports division. Patch by Johannes Baiter.
 .. section: Library
 
 Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
-parameter. Bug reported by Guido Vranken. (See also: CVE-2014-4616)
+parameter. Bug reported by Guido Vranken. (See also: :cve:`2014-4616`)
 
 ..
 
@@ -4339,7 +4340,7 @@ these modules are not used.
 .. nonce: V1-XhC
 .. section: Library
 
-Include the broadcast address in the usuable hosts for IPv6 in ipaddress.
+Include the broadcast address in the usable hosts for IPv6 in ipaddress.
 
 ..
 
@@ -5467,7 +5468,7 @@ All resources are now allowed when tests are not run by regrtest.py.
 .. section: Tests
 
 Fix pystone micro-benchmark: use floor division instead of true division to
-benchmark integers instead of floating point numbers. Set pystone version to
+benchmark integers instead of floating-point numbers. Set pystone version to
 1.2. Patch written by Lennart Regebro.
 
 ..

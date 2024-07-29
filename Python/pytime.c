@@ -55,6 +55,14 @@
 #endif
 
 
+#ifdef MS_WINDOWS
+static _PyTimeFraction py_qpc_base = {0, 0};
+
+// Forward declaration
+static int py_win_perf_counter_frequency(_PyTimeFraction *base, int raise_exc);
+#endif
+
+
 static PyTime_t
 _PyTime_GCD(PyTime_t x, PyTime_t y)
 {
@@ -367,7 +375,7 @@ pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
 
     if (PyFloat_Check(obj)) {
         double d = PyFloat_AsDouble(obj);
-        if (Py_IS_NAN(d)) {
+        if (isnan(d)) {
             *numerator = 0;
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
@@ -395,7 +403,7 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
-        if (Py_IS_NAN(d)) {
+        if (isnan(d)) {
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
@@ -565,6 +573,7 @@ pytime_from_double(PyTime_t *tp, double value, _PyTime_round_t round,
     /* See comments in pytime_double_to_denominator */
     if (!((double)PyTime_MIN <= d && d < -(double)PyTime_MIN)) {
         pytime_time_t_overflow();
+        *tp = 0;
         return -1;
     }
     PyTime_t ns = (PyTime_t)d;
@@ -581,7 +590,7 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
     if (PyFloat_Check(obj)) {
         double d;
         d = PyFloat_AsDouble(obj);
-        if (Py_IS_NAN(d)) {
+        if (isnan(d)) {
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
@@ -652,14 +661,10 @@ _PyTime_AsLong(PyTime_t ns)
     return PyLong_FromLongLong((long long)ns);
 }
 
-PyTime_t
-_PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round)
+int
+_PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round, PyTime_t *result)
 {
-    PyTime_t tp;
-    if(pytime_from_double(&tp, seconds, round, SEC_TO_NS) < 0) {
-        return -1;
-    }
-    return tp;
+    return pytime_from_double(result, seconds, round, SEC_TO_NS);
 }
 
 
@@ -893,12 +898,16 @@ static int
 py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
+    if (raise_exc) {
+        // raise_exc requires to hold the GIL
+        assert(PyGILState_Check());
+    }
 
 #ifdef MS_WINDOWS
     FILETIME system_time;
     ULARGE_INTEGER large;
 
-    GetSystemTimeAsFileTime(&system_time);
+    GetSystemTimePreciseAsFileTime(&system_time);
     large.u.LowPart = system_time.dwLowDateTime;
     large.u.HighPart = system_time.dwHighDateTime;
     /* 11,644,473,600,000,000,000: number of nanoseconds between
@@ -907,18 +916,17 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     PyTime_t ns = large.QuadPart * 100 - 11644473600000000000;
     *tp = ns;
     if (info) {
-        DWORD timeAdjustment, timeIncrement;
-        BOOL isTimeAdjustmentDisabled, ok;
-
-        info->implementation = "GetSystemTimeAsFileTime()";
-        info->monotonic = 0;
-        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                                     &isTimeAdjustmentDisabled);
-        if (!ok) {
-            PyErr_SetFromWindowsErr(0);
-            return -1;
+        // GetSystemTimePreciseAsFileTime() is implemented using
+        // QueryPerformanceCounter() internally.
+        if (py_qpc_base.denom == 0) {
+            if (py_win_perf_counter_frequency(&py_qpc_base, raise_exc) < 0) {
+                return -1;
+            }
         }
-        info->resolution = timeIncrement * 1e-7;
+
+        info->implementation = "GetSystemTimePreciseAsFileTime()";
+        info->monotonic = 0;
+        info->resolution = _PyTimeFraction_Resolution(&py_qpc_base);
         info->adjustable = 1;
     }
 
@@ -1000,19 +1008,6 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 }
 
 
-PyTime_t
-_PyTime_TimeUnchecked(void)
-{
-    PyTime_t t;
-    if (py_get_system_clock(&t, NULL, 0) < 0) {
-        // If clock_gettime(CLOCK_REALTIME) or gettimeofday() fails:
-        // silently ignore the failure and return 0.
-        t = 0;
-    }
-    return t;
-}
-
-
 int
 PyTime_Time(PyTime_t *result)
 {
@@ -1023,6 +1018,18 @@ PyTime_Time(PyTime_t *result)
     return 0;
 }
 
+
+int
+PyTime_TimeRaw(PyTime_t *result)
+{
+    if (py_get_system_clock(result, NULL, 0) < 0) {
+        *result = 0;
+        return -1;
+    }
+    return 0;
+}
+
+
 int
 _PyTime_TimeWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 {
@@ -1030,9 +1037,75 @@ _PyTime_TimeWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 }
 
 
+#ifdef MS_WINDOWS
+static int
+py_win_perf_counter_frequency(_PyTimeFraction *base, int raise_exc)
+{
+    LARGE_INTEGER freq;
+    // Since Windows XP, the function cannot fail.
+    (void)QueryPerformanceFrequency(&freq);
+    LONGLONG frequency = freq.QuadPart;
+
+    // Since Windows XP, frequency cannot be zero.
+    assert(frequency >= 1);
+
+    Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(frequency));
+    PyTime_t denom = (PyTime_t)frequency;
+
+    // Known QueryPerformanceFrequency() values:
+    //
+    // * 10,000,000 (10 MHz): 100 ns resolution
+    // * 3,579,545 Hz (3.6 MHz): 279 ns resolution
+    if (_PyTimeFraction_Set(base, SEC_TO_NS, denom) < 0) {
+        if (raise_exc) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "invalid QueryPerformanceFrequency");
+        }
+        return -1;
+    }
+    return 0;
+}
+
+
+// N.B. If raise_exc=0, this may be called without the GIL.
+static int
+py_get_win_perf_counter(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
+{
+    assert(info == NULL || raise_exc);
+
+    if (py_qpc_base.denom == 0) {
+        if (py_win_perf_counter_frequency(&py_qpc_base, raise_exc) < 0) {
+            return -1;
+        }
+    }
+
+    if (info) {
+        info->implementation = "QueryPerformanceCounter()";
+        info->resolution = _PyTimeFraction_Resolution(&py_qpc_base);
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    LONGLONG ticksll = now.QuadPart;
+
+    /* Make sure that casting LONGLONG to PyTime_t cannot overflow,
+       both types are signed */
+    PyTime_t ticks;
+    static_assert(sizeof(ticksll) <= sizeof(ticks),
+                  "LONGLONG is larger than PyTime_t");
+    ticks = (PyTime_t)ticksll;
+
+    *tp = _PyTimeFraction_Mul(ticks, &py_qpc_base);
+    return 0;
+}
+#endif  // MS_WINDOWS
+
+
 #ifdef __APPLE__
 static int
-py_mach_timebase_info(_PyTimeFraction *base, int raise)
+py_mach_timebase_info(_PyTimeFraction *base, int raise_exc)
 {
     mach_timebase_info_data_t timebase;
     // According to the Technical Q&A QA1398, mach_timebase_info() cannot
@@ -1054,7 +1127,7 @@ py_mach_timebase_info(_PyTimeFraction *base, int raise)
     // * (1000000000, 33333335) on PowerPC: ~30 ns
     // * (1000000000, 25000000) on PowerPC: 40 ns
     if (_PyTimeFraction_Set(base, numer, denom) < 0) {
-        if (raise) {
+        if (raise_exc) {
             PyErr_SetString(PyExc_RuntimeError,
                             "invalid mach_timebase_info");
         }
@@ -1070,44 +1143,15 @@ static int
 py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
+    if (raise_exc) {
+        // raise_exc requires to hold the GIL
+        assert(PyGILState_Check());
+    }
 
 #if defined(MS_WINDOWS)
-    ULONGLONG ticks = GetTickCount64();
-    static_assert(sizeof(ticks) <= sizeof(PyTime_t),
-                  "ULONGLONG is larger than PyTime_t");
-    PyTime_t t;
-    if (ticks <= (ULONGLONG)PyTime_MAX) {
-        t = (PyTime_t)ticks;
-    }
-    else {
-        // GetTickCount64() maximum is larger than PyTime_t maximum:
-        // ULONGLONG is unsigned, whereas PyTime_t is signed.
-        t = PyTime_MAX;
-    }
-
-    int res = pytime_mul(&t, MS_TO_NS);
-    *tp = t;
-
-    if (raise_exc && res < 0) {
-        pytime_overflow();
+    if (py_get_win_perf_counter(tp, info, raise_exc) < 0) {
         return -1;
     }
-
-    if (info) {
-        DWORD timeAdjustment, timeIncrement;
-        BOOL isTimeAdjustmentDisabled, ok;
-        info->implementation = "GetTickCount64()";
-        info->monotonic = 1;
-        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                                     &isTimeAdjustmentDisabled);
-        if (!ok) {
-            PyErr_SetFromWindowsErr(0);
-            return -1;
-        }
-        info->resolution = timeIncrement * 1e-7;
-        info->adjustable = 0;
-    }
-
 #elif defined(__APPLE__)
     static _PyTimeFraction base = {0, 0};
     if (base.denom == 0) {
@@ -1188,23 +1232,21 @@ py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 }
 
 
-PyTime_t
-_PyTime_MonotonicUnchecked(void)
-{
-    PyTime_t t;
-    if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
-        // If mach_timebase_info(), clock_gettime() or gethrtime() fails:
-        // silently ignore the failure and return 0.
-        t = 0;
-    }
-    return t;
-}
-
-
 int
 PyTime_Monotonic(PyTime_t *result)
 {
     if (py_get_monotonic_clock(result, NULL, 1) < 0) {
+        *result = 0;
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+PyTime_MonotonicRaw(PyTime_t *result)
+{
+    if (py_get_monotonic_clock(result, NULL, 0) < 0) {
         *result = 0;
         return -1;
     }
@@ -1219,122 +1261,24 @@ _PyTime_MonotonicWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
 }
 
 
-#ifdef MS_WINDOWS
-static int
-py_win_perf_counter_frequency(_PyTimeFraction *base, int raise)
-{
-    LONGLONG frequency;
-
-    LARGE_INTEGER freq;
-    // Since Windows XP, the function cannot fail.
-    (void)QueryPerformanceFrequency(&freq);
-    frequency = freq.QuadPart;
-
-    // Since Windows XP, frequency cannot be zero.
-    assert(frequency >= 1);
-
-    Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(frequency));
-    PyTime_t denom = (PyTime_t)frequency;
-
-    // Known QueryPerformanceFrequency() values:
-    //
-    // * 10,000,000 (10 MHz): 100 ns resolution
-    // * 3,579,545 Hz (3.6 MHz): 279 ns resolution
-    if (_PyTimeFraction_Set(base, SEC_TO_NS, denom) < 0) {
-        if (raise) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "invalid QueryPerformanceFrequency");
-        }
-        return -1;
-    }
-    return 0;
-}
-
-
-// N.B. If raise_exc=0, this may be called without the GIL.
-static int
-py_get_win_perf_counter(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
-{
-    assert(info == NULL || raise_exc);
-
-    static _PyTimeFraction base = {0, 0};
-    if (base.denom == 0) {
-        if (py_win_perf_counter_frequency(&base, raise_exc) < 0) {
-            return -1;
-        }
-    }
-
-    if (info) {
-        info->implementation = "QueryPerformanceCounter()";
-        info->resolution = _PyTimeFraction_Resolution(&base);
-        info->monotonic = 1;
-        info->adjustable = 0;
-    }
-
-    LARGE_INTEGER now;
-    QueryPerformanceCounter(&now);
-    LONGLONG ticksll = now.QuadPart;
-
-    /* Make sure that casting LONGLONG to PyTime_t cannot overflow,
-       both types are signed */
-    PyTime_t ticks;
-    static_assert(sizeof(ticksll) <= sizeof(ticks),
-                  "LONGLONG is larger than PyTime_t");
-    ticks = (PyTime_t)ticksll;
-
-    PyTime_t ns = _PyTimeFraction_Mul(ticks, &base);
-    *tp = ns;
-    return 0;
-}
-#endif  // MS_WINDOWS
-
-
 int
 _PyTime_PerfCounterWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 {
-#ifdef MS_WINDOWS
-    return py_get_win_perf_counter(t, info, 1);
-#else
     return _PyTime_MonotonicWithInfo(t, info);
-#endif
-}
-
-
-PyTime_t
-_PyTime_PerfCounterUnchecked(void)
-{
-    PyTime_t t;
-    int res;
-#ifdef MS_WINDOWS
-    res = py_get_win_perf_counter(&t, NULL, 0);
-#else
-    res = py_get_monotonic_clock(&t, NULL, 0);
-#endif
-    if (res  < 0) {
-        // If py_win_perf_counter_frequency() or py_get_monotonic_clock()
-        // fails: silently ignore the failure and return 0.
-        t = 0;
-    }
-    return t;
 }
 
 
 int
 PyTime_PerfCounter(PyTime_t *result)
 {
-    int res;
-#ifdef MS_WINDOWS
-    res = py_get_win_perf_counter(result, NULL, 1);
-#else
-    res = py_get_monotonic_clock(result, NULL, 1);
-#endif
-    if (res  < 0) {
-        // If py_win_perf_counter_frequency() or py_get_monotonic_clock()
-        // fails: silently ignore the failure and return 0.
-        *result = 0;
-        return -1;
-    }
-    return 0;
+    return PyTime_Monotonic(result);
+}
+
+
+int
+PyTime_PerfCounterRaw(PyTime_t *result)
+{
+    return PyTime_MonotonicRaw(result);
 }
 
 
@@ -1408,7 +1352,9 @@ _PyTime_gmtime(time_t t, struct tm *tm)
 PyTime_t
 _PyDeadline_Init(PyTime_t timeout)
 {
-    PyTime_t now = _PyTime_MonotonicUnchecked();
+    PyTime_t now;
+    // silently ignore error: cannot report error to the caller
+    (void)PyTime_MonotonicRaw(&now);
     return _PyTime_Add(now, timeout);
 }
 
@@ -1416,6 +1362,8 @@ _PyDeadline_Init(PyTime_t timeout)
 PyTime_t
 _PyDeadline_Get(PyTime_t deadline)
 {
-    PyTime_t now = _PyTime_MonotonicUnchecked();
+    PyTime_t now;
+    // silently ignore error: cannot report error to the caller
+    (void)PyTime_MonotonicRaw(&now);
     return deadline - now;
 }

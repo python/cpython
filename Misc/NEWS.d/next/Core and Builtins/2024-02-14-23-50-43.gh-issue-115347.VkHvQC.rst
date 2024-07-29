@@ -1,2 +1,0 @@
-Fix bug where docstring was replaced by a redundant NOP when Python is run
-with ``-OO``.

@@ -1,0 +1,2 @@
+Fix :meth:`symtable.Class.get_methods` and document its behaviour. Patch by
+Bénédikt Tran.

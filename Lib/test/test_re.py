@@ -1,12 +1,11 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, is_emscripten, is_wasi,
-                          warnings_helper, SHORT_TIMEOUT)
+                          warnings_helper, SHORT_TIMEOUT, CPUStopwatch, requires_resource)
 import locale
 import re
 import string
 import sys
-import time
 import unittest
 import warnings
 from re import Scanner
@@ -14,7 +13,7 @@ from weakref import proxy
 
 # some platforms lack working multiprocessing
 try:
-    import _multiprocessing
+    import _multiprocessing  # noqa: F401
 except ImportError:
     multiprocessing = None
 else:
@@ -1229,7 +1228,7 @@ class ReTests(unittest.TestCase):
             newpat = pickle.loads(pickled)
             self.assertEqual(newpat, oldpat)
         # current pickle expects the _compile() reconstructor in re module
-        from re import _compile
+        from re import _compile  # noqa: F401
 
     def test_copying(self):
         import copy
@@ -2282,19 +2281,21 @@ class ReTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "got 'type'"):
             re.search("x*", type)
 
+    # gh-117594: The test is not slow by itself, but it relies on
+    # the absolute computation time and can fail on very slow computers.
+    @requires_resource('cpu')
     def test_search_anchor_at_beginning(self):
         s = 'x'*10**7
-        start = time.perf_counter()
-        for p in r'\Ay', r'^y':
-            self.assertIsNone(re.search(p, s))
-            self.assertEqual(re.split(p, s), [s])
-            self.assertEqual(re.findall(p, s), [])
-            self.assertEqual(list(re.finditer(p, s)), [])
-            self.assertEqual(re.sub(p, '', s), s)
-        t = time.perf_counter() - start
+        with CPUStopwatch() as stopwatch:
+            for p in r'\Ay', r'^y':
+                self.assertIsNone(re.search(p, s))
+                self.assertEqual(re.split(p, s), [s])
+                self.assertEqual(re.findall(p, s), [])
+                self.assertEqual(list(re.finditer(p, s)), [])
+                self.assertEqual(re.sub(p, '', s), s)
         # Without optimization it takes 1 second on my computer.
         # With optimization -- 0.0003 seconds.
-        self.assertLess(t, 0.1)
+        self.assertLess(stopwatch.seconds, 0.1)
 
     def test_possessive_quantifiers(self):
         """Test Possessive Quantifiers
@@ -2471,6 +2472,24 @@ class ReTests(unittest.TestCase):
 
     def test_fail(self):
         self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
+
+    def test_character_set_any(self):
+        # The union of complementary character sets mathes any character
+        # and is equivalent to "(?s:.)".
+        s = '1x\n'
+        for p in r'[\s\S]', r'[\d\D]', r'[\w\W]', r'[\S\s]', r'\s|\S':
+            with self.subTest(pattern=p):
+                self.assertEqual(re.findall(p, s), list(s))
+                self.assertEqual(re.fullmatch('(?:' + p + ')+', s).group(), s)
+
+    def test_character_set_none(self):
+        # Negation of the union of complementary character sets does not match
+        # any character.
+        s = '1x\n'
+        for p in r'[^\s\S]', r'[^\d\D]', r'[^\w\W]', r'[^\S\s]':
+            with self.subTest(pattern=p):
+                self.assertIsNone(re.search(p, s))
+                self.assertIsNone(re.search('(?s:.)' + p, s))
 
 
 def get_debug_out(pat):

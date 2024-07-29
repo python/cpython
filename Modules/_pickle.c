@@ -9,15 +9,16 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "pycore_long.h"          // _PyLong_AsByteArray()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _PyNone_Type
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_bytesobject.h"       // _PyBytesWriter
+#include "pycore_ceval.h"             // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"              // _PyLong_AsByteArray()
+#include "pycore_moduleobject.h"      // _PyModule_GetState()
+#include "pycore_object.h"            // _PyNone_Type
+#include "pycore_pystate.h"           // _PyThreadState_GET()
+#include "pycore_runtime.h"           // _Py_ID()
+#include "pycore_setobject.h"         // _PySet_NextEntry()
+#include "pycore_sysmodule.h"         // _PySys_GetAttr()
 
 #include <stdlib.h>               // strtol()
 
@@ -39,7 +40,7 @@ class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" ""
    already includes it. */
 enum {
     HIGHEST_PROTOCOL = 5,
-    DEFAULT_PROTOCOL = 4
+    DEFAULT_PROTOCOL = 5
 };
 
 #ifdef MS_WINDOWS
@@ -1806,8 +1807,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-    _Py_DECLARE_STR(dot, ".");
-    dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
+    dotted_path = PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
     if (dotted_path == NULL)
         return NULL;
     n = PyList_GET_SIZE(dotted_path);
@@ -1817,10 +1817,10 @@ get_dotted_path(PyObject *obj, PyObject *name)
         if (_PyUnicode_EqualToASCIIString(subpath, "<locals>")) {
             if (obj == NULL)
                 PyErr_Format(PyExc_AttributeError,
-                             "Can't pickle local object %R", name);
+                             "Can't get local object %R", name);
             else
                 PyErr_Format(PyExc_AttributeError,
-                             "Can't pickle local attribute %R on %R", name, obj);
+                             "Can't get local attribute %R on %R", name, obj);
             Py_DECREF(dotted_path);
             return NULL;
         }
@@ -2507,7 +2507,7 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
 {
     if (self->proto < 5) {
         PyErr_SetString(st->PicklingError,
-                        "PickleBuffer can only pickled with protocol >= 5");
+                        "PickleBuffer can only be pickled with protocol >= 5");
         return -1;
     }
     const Py_buffer* view = PyPickleBuffer_GetBuffer(obj);
@@ -3413,14 +3413,20 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            Py_INCREF(item);
-            int err = save(state, self, item, 0);
+
+        int err = 0;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        while (_PySet_NextEntryRef(obj, &ppos, &item, &hash)) {
+            err = save(state, self, item, 0);
             Py_CLEAR(item);
             if (err < 0)
-                return -1;
+                break;
             if (++i == BATCHSIZE)
                 break;
+        }
+        Py_END_CRITICAL_SECTION();
+        if (err < 0) {
+            return -1;
         }
         if (_Pickler_Write(self, &additems_op, 1) < 0)
             return -1;
@@ -3586,7 +3592,6 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     PyObject *module = NULL;
     PyObject *parent = NULL;
     PyObject *dotted_path = NULL;
-    PyObject *lastname = NULL;
     PyObject *cls;
     int status = 0;
 
@@ -3627,10 +3632,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
                      obj, module_name);
         goto error;
     }
-    lastname = Py_NewRef(PyList_GET_ITEM(dotted_path,
-                         PyList_GET_SIZE(dotted_path) - 1));
     cls = get_deep_attribute(module, dotted_path, &parent);
-    Py_CLEAR(dotted_path);
     if (cls == NULL) {
         PyErr_Format(st->PicklingError,
                      "Can't pickle %R: attribute lookup %S on %S failed",
@@ -3718,7 +3720,10 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     else {
   gen_global:
         if (parent == module) {
-            Py_SETREF(global_name, Py_NewRef(lastname));
+            Py_SETREF(global_name,
+                Py_NewRef(PyList_GET_ITEM(dotted_path,
+                                          PyList_GET_SIZE(dotted_path) - 1)));
+            Py_CLEAR(dotted_path);
         }
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;
@@ -3731,20 +3736,30 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             if (_Pickler_Write(self, &stack_global_op, 1) < 0)
                 goto error;
         }
-        else if (parent != module) {
-            PyObject *reduce_value = Py_BuildValue("(O(OO))",
-                                        st->getattr, parent, lastname);
-            if (reduce_value == NULL)
-                goto error;
-            status = save_reduce(st, self, reduce_value, NULL);
-            Py_DECREF(reduce_value);
-            if (status < 0)
-                goto error;
-        }
         else {
             /* Generate a normal global opcode if we are using a pickle
                protocol < 4, or if the object is not registered in the
-               extension registry. */
+               extension registry.
+
+               Objects with multi-part __qualname__ are represented as
+               getattr(getattr(..., attrname1), attrname2). */
+            const char mark_op = MARK;
+            const char tupletwo_op = (self->proto < 2) ? TUPLE : TUPLE2;
+            const char reduce_op = REDUCE;
+            Py_ssize_t i;
+            if (dotted_path) {
+                if (PyList_GET_SIZE(dotted_path) > 1) {
+                    Py_SETREF(global_name, Py_NewRef(PyList_GET_ITEM(dotted_path, 0)));
+                }
+                for (i = 1; i < PyList_GET_SIZE(dotted_path); i++) {
+                    if (save(st, self, st->getattr, 0) < 0 ||
+                        (self->proto < 2 && _Pickler_Write(self, &mark_op, 1) < 0))
+                    {
+                        goto error;
+                    }
+                }
+            }
+
             PyObject *encoded;
             PyObject *(*unicode_encoder)(PyObject *);
 
@@ -3806,6 +3821,17 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             Py_DECREF(encoded);
             if (_Pickler_Write(self, "\n", 1) < 0)
                 goto error;
+
+            if (dotted_path) {
+                for (i = 1; i < PyList_GET_SIZE(dotted_path); i++) {
+                    if (save(st, self, PyList_GET_ITEM(dotted_path, i), 0) < 0 ||
+                        _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
+                        _Pickler_Write(self, &reduce_op, 1) < 0)
+                    {
+                        goto error;
+                    }
+                }
+            }
         }
         /* Memoize the object. */
         if (memo_put(st, self, obj) < 0)
@@ -3821,7 +3847,6 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     Py_XDECREF(module);
     Py_XDECREF(parent);
     Py_XDECREF(dotted_path);
-    Py_XDECREF(lastname);
 
     return status;
 }
@@ -4686,7 +4711,7 @@ This takes a binary file for writing a pickle data stream.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -4719,7 +4744,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=a7c969699bf5dad3]*/
+/*[clinic end generated code: output=0abedc50590d259b input=cddc50f66b770002]*/
 {
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
@@ -6518,11 +6543,13 @@ load_additems(PickleState *state, UnpicklerObject *self)
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SET_SIZE(self->stack, mark);
+                Py_DECREF(add_func);
                 return -1;
             }
             Py_DECREF(result);
         }
         Py_SET_SIZE(self->stack, mark);
+        Py_DECREF(add_func);
     }
 
     return 0;
@@ -6598,8 +6625,10 @@ load_build(PickleState *st, UnpicklerObject *self)
             /* normally the keys for instance attributes are
                interned.  we should try to do that here. */
             Py_INCREF(d_key);
-            if (PyUnicode_CheckExact(d_key))
-                PyUnicode_InternInPlace(&d_key);
+            if (PyUnicode_CheckExact(d_key)) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &d_key);
+            }
             if (PyObject_SetItem(dict, d_key, d_value) < 0) {
                 Py_DECREF(d_key);
                 goto error;
@@ -7497,7 +7526,7 @@ be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7523,7 +7552,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=5ed6653da99cd97c]*/
+/*[clinic end generated code: output=706186dba996490c input=b89ce8d0e911fd46]*/
 {
     PickleState *state = _Pickle_GetState(module);
     PicklerObject *pickler = _Pickler_New(state);
@@ -7568,7 +7597,7 @@ Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7588,7 +7617,7 @@ into *file* as part of the pickle stream.  It is an error if
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports, PyObject *buffer_callback)
-/*[clinic end generated code: output=fbab0093a5580fdf input=e543272436c6f987]*/
+/*[clinic end generated code: output=fbab0093a5580fdf input=139fc546886c63ac]*/
 {
     PyObject *result;
     PickleState *state = _Pickle_GetState(module);
@@ -7856,6 +7885,7 @@ _pickle_exec(PyObject *m)
 static PyModuleDef_Slot pickle_slots[] = {
     {Py_mod_exec, _pickle_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

@@ -265,9 +265,11 @@ class Test_Csv(unittest.TestCase):
                     writer = csv.writer(sio, lineterminator=lineterminator)
                     writer.writerow(['a', 'b'])
                     writer.writerow([1, 2])
+                    writer.writerow(['\r', '\n'])
                     self.assertEqual(sio.getvalue(),
                                      f'a,b{lineterminator}'
-                                     f'1,2{lineterminator}')
+                                     f'1,2{lineterminator}'
+                                     f'"\r","\n"{lineterminator}')
 
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
@@ -452,6 +454,10 @@ class Test_Csv(unittest.TestCase):
                           quoting=csv.QUOTE_STRINGS)
         self._read_test(['1,@,3,@,5'], [['1', ',3,', '5']], quotechar='@')
         self._read_test(['1,\0,3,\0,5'], [['1', ',3,', '5']], quotechar='\0')
+        self._read_test(['1\\.5,\\.5,.5'], [[1.5, 0.5, 0.5]],
+                        quoting=csv.QUOTE_NONNUMERIC, escapechar='\\')
+        self._read_test(['1\\.5,\\.5,"\\.5"'], [[1.5, 0.5, ".5"]],
+                        quoting=csv.QUOTE_STRINGS, escapechar='\\')
 
     def test_read_skipinitialspace(self):
         self._read_test(['no space, space,  spaces,\ttab'],
@@ -507,22 +513,44 @@ class Test_Csv(unittest.TestCase):
         self.assertEqual(r.line_num, 3)
 
     def test_roundtrip_quoteed_newlines(self):
-        with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
-            writer = csv.writer(fileobj)
-            rows = [['a\nb','b'],['c','x\r\nd']]
-            writer.writerows(rows)
-            fileobj.seek(0)
-            for i, row in enumerate(csv.reader(fileobj)):
-                self.assertEqual(row, rows[i])
+        rows = [
+            ['\na', 'b\nc', 'd\n'],
+            ['\re', 'f\rg', 'h\r'],
+            ['\r\ni', 'j\r\nk', 'l\r\n'],
+            ['\n\rm', 'n\n\ro', 'p\n\r'],
+            ['\r\rq', 'r\r\rs', 't\r\r'],
+            ['\n\nu', 'v\n\nw', 'x\n\n'],
+        ]
+        for lineterminator in '\r\n', '\n', '\r':
+            with self.subTest(lineterminator=lineterminator):
+                with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
+                    writer = csv.writer(fileobj, lineterminator=lineterminator)
+                    writer.writerows(rows)
+                    fileobj.seek(0)
+                    for i, row in enumerate(csv.reader(fileobj)):
+                        self.assertEqual(row, rows[i])
 
     def test_roundtrip_escaped_unquoted_newlines(self):
-        with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
-            writer = csv.writer(fileobj,quoting=csv.QUOTE_NONE,escapechar="\\")
-            rows = [['a\nb','b'],['c','x\r\nd']]
-            writer.writerows(rows)
-            fileobj.seek(0)
-            for i, row in enumerate(csv.reader(fileobj,quoting=csv.QUOTE_NONE,escapechar="\\")):
-                self.assertEqual(row,rows[i])
+        rows = [
+            ['\na', 'b\nc', 'd\n'],
+            ['\re', 'f\rg', 'h\r'],
+            ['\r\ni', 'j\r\nk', 'l\r\n'],
+            ['\n\rm', 'n\n\ro', 'p\n\r'],
+            ['\r\rq', 'r\r\rs', 't\r\r'],
+            ['\n\nu', 'v\n\nw', 'x\n\n'],
+        ]
+        for lineterminator in '\r\n', '\n', '\r':
+            with self.subTest(lineterminator=lineterminator):
+                with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
+                    writer = csv.writer(fileobj, lineterminator=lineterminator,
+                                        quoting=csv.QUOTE_NONE, escapechar="\\")
+                    writer.writerows(rows)
+                    fileobj.seek(0)
+                    for i, row in enumerate(csv.reader(fileobj,
+                                                       quoting=csv.QUOTE_NONE,
+                                                       escapechar="\\")):
+                        self.assertEqual(row, rows[i])
+
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):

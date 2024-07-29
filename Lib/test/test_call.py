@@ -5,12 +5,15 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testlimitedcapi
+except ImportError:
+    _testlimitedcapi = None
 import struct
 import collections
 import itertools
 import gc
 import contextlib
-import sys
 import types
 
 
@@ -42,11 +45,16 @@ class FunctionCalls(unittest.TestCase):
         # recovering from failed calls:
         def f():
             pass
-        for _ in range(1000):
-            try:
-                f(None)
-            except TypeError:
+        class C:
+            def m(self):
                 pass
+        callables = [f, C.m, [].__len__]
+        for c in callables:
+            for _ in range(1000):
+                try:
+                    c(None)
+                except TypeError:
+                    pass
         # BOOM!
 
 
@@ -240,6 +248,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, mod)
 
 
+@unittest.skipIf(_testcapi is None, "requires _testcapi")
 class TestCallingConventions(unittest.TestCase):
     """Test calling using various C calling conventions (METH_*) from Python
 
@@ -437,6 +446,7 @@ PYTHON_INSTANCE = PythonClass()
 
 NULL_OR_EMPTY = object()
 
+
 class FastCallTests(unittest.TestCase):
     """Test calling using various callables from C
     """
@@ -480,42 +490,43 @@ class FastCallTests(unittest.TestCase):
     ]
 
     # Add all the calling conventions and variants of C callables
-    _instance = _testcapi.MethInstance()
-    for obj, expected_self in (
-        (_testcapi, _testcapi),  # module-level function
-        (_instance, _instance),  # bound method
-        (_testcapi.MethClass, _testcapi.MethClass),  # class method on class
-        (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
-        (_testcapi.MethStatic, None),  # static method
-    ):
-        CALLS_POSARGS.extend([
-            (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
-            (obj.meth_varargs_keywords,
-                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
-            (obj.meth_fastcall, (1, 2), (expected_self, (1, 2))),
-            (obj.meth_fastcall, (), (expected_self, ())),
-            (obj.meth_fastcall_keywords,
-                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
-            (obj.meth_fastcall_keywords,
-                (), (expected_self, (), NULL_OR_EMPTY)),
-            (obj.meth_noargs, (), expected_self),
-            (obj.meth_o, (123, ), (expected_self, 123)),
-        ])
+    if _testcapi:
+        _instance = _testcapi.MethInstance()
+        for obj, expected_self in (
+            (_testcapi, _testcapi),  # module-level function
+            (_instance, _instance),  # bound method
+            (_testcapi.MethClass, _testcapi.MethClass),  # class method on class
+            (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
+            (_testcapi.MethStatic, None),  # static method
+        ):
+            CALLS_POSARGS.extend([
+                (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
+                (obj.meth_varargs_keywords,
+                    (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+                (obj.meth_fastcall, (1, 2), (expected_self, (1, 2))),
+                (obj.meth_fastcall, (), (expected_self, ())),
+                (obj.meth_fastcall_keywords,
+                    (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+                (obj.meth_fastcall_keywords,
+                    (), (expected_self, (), NULL_OR_EMPTY)),
+                (obj.meth_noargs, (), expected_self),
+                (obj.meth_o, (123, ), (expected_self, 123)),
+            ])
 
-        CALLS_KWARGS.extend([
-            (obj.meth_varargs_keywords,
-                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
-            (obj.meth_varargs_keywords,
-                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
-            (obj.meth_varargs_keywords,
-                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
-            (obj.meth_fastcall_keywords,
-                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
-            (obj.meth_fastcall_keywords,
-                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
-            (obj.meth_fastcall_keywords,
-                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
-        ])
+            CALLS_KWARGS.extend([
+                (obj.meth_varargs_keywords,
+                    (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+                (obj.meth_varargs_keywords,
+                    (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+                (obj.meth_varargs_keywords,
+                    (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+                (obj.meth_fastcall_keywords,
+                    (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+                (obj.meth_fastcall_keywords,
+                    (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+                (obj.meth_fastcall_keywords,
+                    (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+            ])
 
     def check_result(self, result, expected):
         if isinstance(expected, tuple) and expected[-1] is NULL_OR_EMPTY:
@@ -523,6 +534,7 @@ class FastCallTests(unittest.TestCase):
                 expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_vectorcall_dict(self):
         # Test PyObject_VectorcallDict()
 
@@ -542,6 +554,7 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, kwargs)
                 self.check_result(result, expected)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_vectorcall(self):
         # Test PyObject_Vectorcall()
 
@@ -606,6 +619,7 @@ def testfunction_kw(self, *, kw):
 ADAPTIVE_WARMUP_DELAY = 2
 
 
+@unittest.skipIf(_testcapi is None, "requires _testcapi")
 class TestPEP590(unittest.TestCase):
 
     def test_method_descriptor_flag(self):
@@ -837,12 +851,12 @@ class TestPEP590(unittest.TestCase):
     @requires_limited_api
     def test_vectorcall_limited_incoming(self):
         from _testcapi import pyobject_vectorcall
-        obj = _testcapi.LimitedVectorCallClass()
+        obj = _testlimitedcapi.LimitedVectorCallClass()
         self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing(self):
-        from _testcapi import call_vectorcall
+        from _testlimitedcapi import call_vectorcall
 
         args_captured = []
         kwargs_captured = []
@@ -858,7 +872,7 @@ class TestPEP590(unittest.TestCase):
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing_method(self):
-        from _testcapi import call_vectorcall_method
+        from _testlimitedcapi import call_vectorcall_method
 
         args_captured = []
         kwargs_captured = []
@@ -1018,6 +1032,7 @@ class TestRecursion(unittest.TestCase):
 
     @skip_on_s390x
     @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_super_deep(self):
 
         def recurse(n):

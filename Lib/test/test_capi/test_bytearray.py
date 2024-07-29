@@ -1,7 +1,7 @@
 import unittest
 from test.support import import_helper
 
-_testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
@@ -19,7 +19,7 @@ class BytesLike:
 class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyByteArray_Check()
-        check = _testcapi.bytearray_check
+        check = _testlimitedcapi.bytearray_check
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertTrue(check(ByteArraySubclass(b'abc')))
@@ -32,7 +32,7 @@ class CAPITest(unittest.TestCase):
 
     def test_checkexact(self):
         # Test PyByteArray_CheckExact()
-        check = _testcapi.bytearray_checkexact
+        check = _testlimitedcapi.bytearray_checkexact
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertFalse(check(ByteArraySubclass(b'abc')))
@@ -45,7 +45,7 @@ class CAPITest(unittest.TestCase):
 
     def test_fromstringandsize(self):
         # Test PyByteArray_FromStringAndSize()
-        fromstringandsize = _testcapi.bytearray_fromstringandsize
+        fromstringandsize = _testlimitedcapi.bytearray_fromstringandsize
 
         self.assertEqual(fromstringandsize(b'abc'), bytearray(b'abc'))
         self.assertEqual(fromstringandsize(b'abc', 2), bytearray(b'ab'))
@@ -62,7 +62,7 @@ class CAPITest(unittest.TestCase):
 
     def test_fromobject(self):
         # Test PyByteArray_FromObject()
-        fromobject = _testcapi.bytearray_fromobject
+        fromobject = _testlimitedcapi.bytearray_fromobject
 
         self.assertEqual(fromobject(b'abc'), bytearray(b'abc'))
         self.assertEqual(fromobject(bytearray(b'abc')), bytearray(b'abc'))
@@ -77,7 +77,7 @@ class CAPITest(unittest.TestCase):
 
     def test_size(self):
         # Test PyByteArray_Size()
-        size = _testcapi.bytearray_size
+        size = _testlimitedcapi.bytearray_size
 
         self.assertEqual(size(bytearray(b'abc')), 3)
         self.assertEqual(size(ByteArraySubclass(b'abc')), 3)
@@ -88,7 +88,7 @@ class CAPITest(unittest.TestCase):
 
     def test_asstring(self):
         """Test PyByteArray_AsString()"""
-        asstring = _testcapi.bytearray_asstring
+        asstring = _testlimitedcapi.bytearray_asstring
 
         self.assertEqual(asstring(bytearray(b'abc'), 4), b'abc\0')
         self.assertEqual(asstring(ByteArraySubclass(b'abc'), 4), b'abc\0')
@@ -100,7 +100,7 @@ class CAPITest(unittest.TestCase):
 
     def test_concat(self):
         """Test PyByteArray_Concat()"""
-        concat = _testcapi.bytearray_concat
+        concat = _testlimitedcapi.bytearray_concat
 
         ba = bytearray(b'abc')
         self.assertEqual(concat(ba, b'def'), bytearray(b'abcdef'))
@@ -133,7 +133,7 @@ class CAPITest(unittest.TestCase):
 
     def test_resize(self):
         """Test PyByteArray_Resize()"""
-        resize = _testcapi.bytearray_resize
+        resize = _testlimitedcapi.bytearray_resize
 
         ba = bytearray(b'abcdef')
         self.assertEqual(resize(ba, 3), 0)

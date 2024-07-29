@@ -453,7 +453,9 @@ error:
 
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
-    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
+        "Return a copy of the structure with new values for the specified fields.")},
     {NULL, NULL}  // sentinel
 };
 
@@ -603,6 +605,9 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
                                        PyStructSequence_Desc *desc,
                                        unsigned long tp_flags)
 {
+    if (Py_TYPE(type) == NULL) {
+        Py_SET_TYPE(type, &PyType_Type);
+    }
     Py_ssize_t n_unnamed_members;
     Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
     PyMemberDef *members = NULL;
@@ -618,7 +623,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
         }
         initialize_static_fields(type, desc, members, tp_flags);
 
-        _Py_SetImmortal(type);
+        _Py_SetImmortal((PyObject *)type);
     }
 #ifndef NDEBUG
     else {
@@ -713,7 +718,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
         return;
     }
 
-    _PyStaticType_Dealloc(interp, type);
+    _PyStaticType_FiniBuiltin(interp, type);
 
     if (_Py_IsMainInterpreter(interp)) {
         // Undo _PyStructSequence_InitBuiltinWithFlags().

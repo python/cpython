@@ -1,22 +1,25 @@
 /* fcntl module */
 
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
+// Need limited C API version 3.13 for PyLong_AsInt()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
 
+#include <errno.h>                // EINTR
+#include <fcntl.h>                // fcntl()
+#include <string.h>               // memcpy()
+#include <sys/ioctl.h>            // ioctl()
 #ifdef HAVE_SYS_FILE_H
-#include <sys/file.h>
+#  include <sys/file.h>           // flock()
 #endif
 #ifdef HAVE_LINUX_FS_H
-#include <linux/fs.h>
+#  include <linux/fs.h>
 #endif
-
-#include <sys/ioctl.h>
-#include <fcntl.h>
 #ifdef HAVE_STROPTS_H
-#include <stropts.h>
+#  include <stropts.h>            // I_FLUSHBAND
 #endif
 
 /*[clinic input]
@@ -109,7 +112,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 fcntl.ioctl
 
     fd: fildes
-    request as code: unsigned_int(bitwise=True)
+    request as code: unsigned_long(bitwise=True)
     arg as ob_arg: object(c_default='NULL') = 0
     mutate_flag as mutate_arg: bool = True
     /
@@ -145,9 +148,9 @@ code.
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=7f7f5840c65991be input=967b4a4cbeceb0a8]*/
+/*[clinic end generated code: output=3d8eb6828666cea1 input=cee70f6a27311e58]*/
 {
 #define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
@@ -167,7 +170,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     Py_ssize_t len;
     char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
-    if (PySys_Audit("fcntl.ioctl", "iIO", fd, code,
+    if (PySys_Audit("fcntl.ioctl", "ikO", fd, code,
                     ob_arg ? ob_arg : Py_None) < 0) {
         return NULL;
     }
@@ -742,6 +745,7 @@ fcntl_exec(PyObject *module)
 static PyModuleDef_Slot fcntl_slots[] = {
     {Py_mod_exec, fcntl_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

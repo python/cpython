@@ -6,6 +6,56 @@ Object Protocol
 ===============
 
 
+.. c:function:: PyObject* Py_GetConstant(unsigned int constant_id)
+
+   Get a :term:`strong reference` to a constant.
+
+   Set an exception and return ``NULL`` if *constant_id* is invalid.
+
+   *constant_id* must be one of these constant identifiers:
+
+   .. c:namespace:: NULL
+
+   ========================================  =====  =========================
+   Constant Identifier                       Value  Returned object
+   ========================================  =====  =========================
+   .. c:macro:: Py_CONSTANT_NONE             ``0``  :py:data:`None`
+   .. c:macro:: Py_CONSTANT_FALSE            ``1``  :py:data:`False`
+   .. c:macro:: Py_CONSTANT_TRUE             ``2``  :py:data:`True`
+   .. c:macro:: Py_CONSTANT_ELLIPSIS         ``3``  :py:data:`Ellipsis`
+   .. c:macro:: Py_CONSTANT_NOT_IMPLEMENTED  ``4``  :py:data:`NotImplemented`
+   .. c:macro:: Py_CONSTANT_ZERO             ``5``  ``0``
+   .. c:macro:: Py_CONSTANT_ONE              ``6``  ``1``
+   .. c:macro:: Py_CONSTANT_EMPTY_STR        ``7``  ``''``
+   .. c:macro:: Py_CONSTANT_EMPTY_BYTES      ``8``  ``b''``
+   .. c:macro:: Py_CONSTANT_EMPTY_TUPLE      ``9``  ``()``
+   ========================================  =====  =========================
+
+   Numeric values are only given for projects which cannot use the constant
+   identifiers.
+
+
+   .. versionadded:: 3.13
+
+   .. impl-detail::
+
+      In CPython, all of these constants are :term:`immortal`.
+
+
+.. c:function:: PyObject* Py_GetConstantBorrowed(unsigned int constant_id)
+
+   Similar to :c:func:`Py_GetConstant`, but return a :term:`borrowed
+   reference`.
+
+   This function is primarily intended for backwards compatibility:
+   using :c:func:`Py_GetConstant` is recommended for new code.
+
+   The reference is borrowed from the interpreter, and is valid until the
+   interpreter finalization.
+
+   .. versionadded:: 3.13
+
+
 .. c:var:: PyObject* Py_NotImplemented
 
    The ``NotImplemented`` singleton, used to signal that an operation is
@@ -16,7 +66,7 @@ Object Protocol
 
    Properly handle returning :c:data:`Py_NotImplemented` from within a C
    function (that is, create a new :term:`strong reference`
-   to NotImplemented and return it).
+   to :const:`NotImplemented` and return it).
 
 
 .. c:macro:: Py_PRINT_RAW
@@ -156,6 +206,13 @@ Object Protocol
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
+   The number of different attribute names passed to this function
+   should be kept small, usually by using a statically allocated string
+   as *attr_name*.
+   For attribute names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object.
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
@@ -180,6 +237,14 @@ Object Protocol
    This is the same as :c:func:`PyObject_DelAttr`, but *attr_name* is
    specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
    rather than a :c:expr:`PyObject*`.
+
+   The number of different attribute names passed to this function
+   should be kept small, usually by using a statically allocated string
+   as *attr_name*.
+   For attribute names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_DelAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object for lookup.
 
 
 .. c:function:: PyObject* PyObject_GenericGetDict(PyObject *o, void *context)

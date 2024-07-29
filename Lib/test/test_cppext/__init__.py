@@ -1,10 +1,10 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
 import os.path
+import shlex
 import shutil
-import unittest
 import subprocess
-import sysconfig
+import unittest
 from test import support
 
 
@@ -12,36 +12,41 @@ SOURCE = os.path.join(os.path.dirname(__file__), 'extension.cpp')
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 
-# gh-110119: pip does not currently support 't' in the ABI flag use by
-# --disable-gil builds. Once it does, we can remove this skip.
-@unittest.skipIf(support.Py_GIL_DISABLED,
-                 'test does not work with --disable-gil')
+# With MSVC on a debug build, the linker fails with: cannot open file
+# 'python311.lib', it should look 'python311_d.lib'.
+@unittest.skipIf(support.MS_WINDOWS and support.Py_DEBUG,
+                 'test fails on Windows debug build')
+# Building and running an extension in clang sanitizing mode is not
+# straightforward
+@support.skip_if_sanitizer('test does not work with analyzing builds',
+                           address=True, memory=True, ub=True, thread=True)
+# the test uses venv+pip: skip if it's not available
+@support.requires_venv_with_pip()
 @support.requires_subprocess()
+@support.requires_resource('cpu')
 class TestCPPExt(unittest.TestCase):
-    @support.requires_resource('cpu')
-    def test_build_cpp11(self):
-        self.check_build(False, '_testcpp11ext')
+    def test_build(self):
+        self.check_build('_testcppext')
 
-    @support.requires_resource('cpu')
     def test_build_cpp03(self):
-        self.check_build(True, '_testcpp03ext')
+        self.check_build('_testcpp03ext', std='c++03')
 
-    # With MSVC, the linker fails with: cannot open file 'python311.lib'
-    # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
-    @unittest.skipIf(support.MS_WINDOWS, 'test fails on Windows')
-    # Building and running an extension in clang sanitizing mode is not
-    # straightforward
-    @unittest.skipIf(
-        '-fsanitize' in (sysconfig.get_config_var('PY_CFLAGS') or ''),
-        'test does not work with analyzing builds')
-    # the test uses venv+pip: skip if it's not available
-    @support.requires_venv_with_pip()
-    def check_build(self, std_cpp03, extension_name):
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c++11")
+    def test_build_cpp11(self):
+        self.check_build('_testcpp11ext', std='c++11')
+
+    # Only test C++14 on MSVC.
+    # On s390x RHEL7, GCC 4.8.5 doesn't support C++14.
+    @unittest.skipIf(not support.MS_WINDOWS, "need Windows")
+    def test_build_cpp14(self):
+        self.check_build('_testcpp14ext', std='c++14')
+
+    def check_build(self, extension_name, std=None):
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
-            self._check_build(std_cpp03, extension_name, python_exe)
+            self._check_build(extension_name, python_exe, std=std)
 
-    def _check_build(self, std_cpp03, extension_name, python_exe):
+    def _check_build(self, extension_name, python_exe, std):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP, os.path.join(pkg_dir, os.path.basename(SETUP)))
@@ -49,10 +54,11 @@ class TestCPPExt(unittest.TestCase):
 
         def run_cmd(operation, cmd):
             env = os.environ.copy()
-            env['CPYTHON_TEST_CPP_STD'] = 'c++03' if std_cpp03 else 'c++11'
+            if std:
+                env['CPYTHON_TEST_CPP_STD'] = std
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
             if support.verbose:
-                print('Run:', ' '.join(cmd))
+                print('Run:', ' '.join(map(shlex.quote, cmd)))
                 subprocess.run(cmd, check=True, env=env)
             else:
                 proc = subprocess.run(cmd,
@@ -61,6 +67,7 @@ class TestCPPExt(unittest.TestCase):
                                       stderr=subprocess.STDOUT,
                                       text=True)
                 if proc.returncode:
+                    print('Run:', ' '.join(map(shlex.quote, cmd)))
                     print(proc.stdout, end='')
                     self.fail(
                         f"{operation} failed with exit code {proc.returncode}")
@@ -69,6 +76,8 @@ class TestCPPExt(unittest.TestCase):
         cmd = [python_exe, '-X', 'dev',
                '-m', 'pip', 'install', '--no-build-isolation',
                os.path.abspath(pkg_dir)]
+        if support.verbose:
+            cmd.append('-v')
         run_cmd('Install', cmd)
 
         # Do a reference run. Until we test that running python

@@ -16,11 +16,9 @@
 
 // These functions were removed from Python 3.13 API but are still exported
 // for the stable ABI. We want to test them in this program.
-extern void Py_SetProgramName(const wchar_t *program_name);
 extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
-extern void Py_SetPythonHome(const wchar_t *home);
 
 
 int main_argc;
@@ -172,14 +170,22 @@ PyInit_embedded_ext(void)
 static int test_repeated_init_exec(void)
 {
     if (main_argc < 3) {
-        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        fprintf(stderr,
+                "usage: %s test_repeated_init_exec CODE ...\n", PROGRAM);
         exit(1);
     }
     const char *code = main_argv[2];
+    int loops = main_argc > 3
+        ? main_argc - 2
+        : INIT_LOOPS;
 
-    for (int i=1; i <= INIT_LOOPS; i++) {
-        fprintf(stderr, "--- Loop #%d ---\n", i);
+    for (int i=0; i < loops; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i+1);
         fflush(stderr);
+
+        if (main_argc > 3) {
+            code = main_argv[i+2];
+        }
 
         _testembed_Py_InitializeFromConfig();
         int err = PyRun_SimpleString(code);

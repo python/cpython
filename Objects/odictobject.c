@@ -200,7 +200,7 @@ Here are some ways to address this challenge:
 Adding the checks to the concrete API would help make any interpreter
 switch to OrderedDict less painful for extension modules.  However, this
 won't work.  The equivalent C API call to `dict.__setitem__(obj, k, v)`
-is 'PyDict_SetItem(obj, k, v)`.  This illustrates how subclasses in C call
+is `PyDict_SetItem(obj, k, v)`.  This illustrates how subclasses in C call
 the base class's methods, since there is no equivalent of super() in the
 C API.  Calling into Python for parent class API would work, but some
 extension modules already rely on this feature of the concrete API.
@@ -535,8 +535,12 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyObject *value = NULL;
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
-
+#ifdef Py_GIL_DISABLED
+    ix = _Py_dict_lookup_threadsafe((PyDictObject *)od, key, hash, &value);
+    Py_XDECREF(value);
+#else
     ix = _Py_dict_lookup((PyDictObject *)od, key, hash, &value);
+#endif
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }

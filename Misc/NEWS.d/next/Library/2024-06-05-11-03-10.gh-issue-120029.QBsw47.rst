@@ -1,0 +1,4 @@
+Expose :class:`symtable.Symbol` methods :meth:`~symtable.Symbol.is_free_class`,
+:meth:`~symtable.Symbol.is_comp_iter` and :meth:`~symtable.Symbol.is_comp_cell`.
+Patch by Bénédikt Tran.
+
