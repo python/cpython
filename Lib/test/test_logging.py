@@ -3957,7 +3957,7 @@ class ConfigDictTest(BaseTest):
         q1 = {"()": "queue.Queue", "maxsize": -1}
         q2 = MQ()
         q3 = queue.Queue()
-        # FuzzyCustomQueueProtocol passes the checks but will not be usable
+        # CustomQueueFakeProtocol passes the checks but will not be usable
         # since the signatures are incompatible. Checking the Queue API
         # without testing the type of the actual queue is a trade-off
         # between usability and the work we need to do in order to safely
