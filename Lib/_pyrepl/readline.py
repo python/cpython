@@ -258,7 +258,9 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
             if buffer[pos] == "\n":
                 break
             if buffer[pos] == "#":
-                last_char = None
+                last_char = "#"
+            elif last_char == "#" and buffer[pos] == ":":
+                last_char = ":"
     return last_char == ":"
 
 
