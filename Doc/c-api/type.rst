@@ -564,7 +564,7 @@ The following functions and structs are used to create
 
    .. code-block:: c
 
-      PyType_Slot foo_slots[] = {
+      static PyType_Slot foo_slots[] = {
          ...
          {Py_tp_token, Py_TP_USE_SPEC},
       };
