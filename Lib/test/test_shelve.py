@@ -167,6 +167,9 @@ class TestCase(unittest.TestCase):
             self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
     def test_custom_serializer_and_deserializer(self):
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
         def serializer(obj, protocol):
             if isinstance(obj, (bytes, bytearray, str)):
                 if protocol == 5:
@@ -189,9 +192,6 @@ class TestCase(unittest.TestCase):
                 raise TypeError(
                     f"Unsupported type for deserialization: {type(data)}"
                 )
-
-        os.mkdir(self.dirname)
-        self.addCleanup(os_helper.rmtree, self.dirname)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -258,6 +258,8 @@ class TestCase(unittest.TestCase):
 
     def test_custom_serializer_and_deserializer_bsd_db_shelf(self):
         berkeleydb = import_helper.import_module("berkeleydb")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
 
         def serializer(obj, protocol=None):
             data = obj.__class__.__name__
@@ -267,9 +269,6 @@ class TestCase(unittest.TestCase):
 
         def deserializer(data):
             return data.decode("utf-8")
-
-        os.mkdir(self.dirname)
-        self.addCleanup(os_helper.rmtree, self.dirname)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=5):
