@@ -27,24 +27,6 @@ There are two functions specifically for working with iterators.
    Return ``0`` and set *item* to ``NULL`` if there are no remaining values.
    Return ``-1``, set *item* to ``NULL`` and set an exception on error.
 
-   Iterate over *iter* using the following pattern::
-
-      PyObject *iter = PyObject_GetIter(obj);
-      if (iter == NULL) {
-          goto error;
-      }
-
-      PyObject *item = NULL;
-      while (PyIter_NextItem(iter, &item)) {
-          if (item == NULL) {
-              Py_DECREF(iter);
-              goto error;
-          }
-          do_something(item);
-          Py_DECREF(item);
-      }
-      Py_DECREF(iter);
-
    .. versionadded:: 3.14
 
 .. c:function:: PyObject* PyIter_Next(PyObject *o)
