@@ -14,9 +14,18 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_typeid.h"        // _PyType_IncrefSlow
 
 
 #define _Py_IMMORTAL_REFCNT_LOOSE ((_Py_IMMORTAL_REFCNT >> 1) + 1)
+
+// This value is added to `ob_ref_shared` for objects that use deferred
+// reference counting so that they are not immediately deallocated when the
+// non-deferred reference count drops to zero.
+//
+// The value is half the maximum shared refcount because the low two bits of
+// `ob_ref_shared` are used for flags.
+#define _Py_REF_DEFERRED (PY_SSIZE_T_MAX / 8)
 
 // gh-121528, gh-118997: Similar to _Py_IsImmortal() but be more loose when
 // comparing the reference count to stay compatible with C extensions built
@@ -280,6 +289,64 @@ extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
+static inline void
+_Py_INCREF_TYPE(PyTypeObject *type)
+{
+#ifndef Py_GIL_DISABLED
+    Py_INCREF(type);
+#else
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        assert(_Py_IsImmortal(type));
+        return;
+    }
+
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+
+    // Unsigned comparison so that `ht_id=-1` is treated as out-of-bounds.
+    Py_ssize_t ht_id = ht->_ht_id;
+    if ((size_t)ht_id >= (size_t)tstate->types.size) {
+        _PyType_IncrefSlow(ht);
+    }
+    else {
+#  ifdef Py_REF_DEBUG
+        _Py_INCREF_IncRefTotal();
+#  endif
+        _Py_INCREF_STAT_INC();
+        tstate->types.refcounts[ht_id]++;
+    }
+#endif
+}
+
+static inline void
+_Py_DECREF_TYPE(PyTypeObject *type)
+{
+#ifndef Py_GIL_DISABLED
+    Py_DECREF(type);
+#else
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        assert(_Py_IsImmortal(type));
+        return;
+    }
+
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+
+    // Unsigned comparison so that `ht_id=-1` is treated as out-of-bounds.
+    Py_ssize_t ht_id = ht->_ht_id;
+    if ((size_t)ht_id >= (size_t)tstate->types.size) {
+        Py_DECREF(type);
+    }
+    else {
+#  ifdef Py_REF_DEBUG
+        _Py_DECREF_DecRefTotal();
+#  endif
+        _Py_DECREF_STAT_INC();
+        tstate->types.refcounts[ht_id]--;
+    }
+#endif
+}
+
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
    _PyObject_InitVar() is the fast version of PyObject_InitVar().
@@ -291,7 +358,7 @@ _PyObject_Init(PyObject *op, PyTypeObject *typeobj)
     assert(op != NULL);
     Py_SET_TYPE(op, typeobj);
     assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortalLoose(typeobj));
-    Py_INCREF(typeobj);
+    _Py_INCREF_TYPE(typeobj);
     _Py_NewReference(op);
 }
 
