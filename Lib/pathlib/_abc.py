@@ -770,6 +770,13 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('symlink_to()'))
 
+    def _symlink_to_target_of(self, link):
+        """
+        Make this path a symlink with the same target as the given link. This
+        is used by copy().
+        """
+        self.symlink_to(link.readlink())
+
     def hardlink_to(self, target):
         """
         Make this path a hard link pointing to the same file as *target*.
@@ -848,9 +855,7 @@ class PathBase(PurePathBase):
             source, target = stack.pop()
             try:
                 if not follow_symlinks and source.is_symlink():
-                    target.symlink_to(
-                        source.readlink(),
-                        target_is_directory=source.is_dir())
+                    target._symlink_to_target_of(source)
                     if preserve_metadata:
                         source._copy_metadata(target, follow_symlinks=False)
                 elif source.is_dir():

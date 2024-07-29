@@ -876,6 +876,14 @@ class Path(PathBase, PurePath):
             """
             os.symlink(target, self, target_is_directory)
 
+    if os.name == 'nt':
+        def _symlink_to_target_of(self, link):
+            """
+            Make this path a symlink with the same target as the given link.
+            This is used by copy().
+            """
+            self.symlink_to(link.readlink(), link.is_dir())
+
     if hasattr(os, "link"):
         def hardlink_to(self, target):
             """
