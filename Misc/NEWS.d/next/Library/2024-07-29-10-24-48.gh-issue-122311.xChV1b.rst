@@ -1,0 +1,1 @@
+Fix some error messages in :mod:`pickle`.
