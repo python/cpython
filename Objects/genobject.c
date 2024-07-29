@@ -334,14 +334,12 @@ is_resume(_PyInterpreterFrame *frame, uint8_t *oparg_p)
     int offset = frame->instr_ptr - _PyCode_CODE(code);
     uint8_t opcode = _Py_GetBaseOpcode(code, offset);
     uint8_t oparg = frame->instr_ptr->op.arg;
-#ifdef _Py_TIER2
     if (opcode == ENTER_EXECUTOR) {
         _PyExecutorObject *executor = _Py_GetExecutor(code, sizeof(_Py_CODEUNIT) * offset);
         opcode = _PyOpcode_Deopt[executor->vm_data.opcode];
         oparg = executor->vm_data.oparg;
         Py_DECREF(executor);
     }
-#endif
     if (opcode == RESUME) {
         *oparg_p = oparg;
         return true;
