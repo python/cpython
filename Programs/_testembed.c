@@ -163,14 +163,22 @@ PyInit_embedded_ext(void)
 static int test_repeated_init_exec(void)
 {
     if (main_argc < 3) {
-        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        fprintf(stderr,
+                "usage: %s test_repeated_init_exec CODE ...\n", PROGRAM);
         exit(1);
     }
     const char *code = main_argv[2];
+    int loops = main_argc > 3
+        ? main_argc - 2
+        : INIT_LOOPS;
 
-    for (int i=1; i <= INIT_LOOPS; i++) {
-        fprintf(stderr, "--- Loop #%d ---\n", i);
+    for (int i=0; i < loops; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i+1);
         fflush(stderr);
+
+        if (main_argc > 3) {
+            code = main_argv[i+2];
+        }
 
         _testembed_Py_InitializeFromConfig();
         int err = PyRun_SimpleString(code);
