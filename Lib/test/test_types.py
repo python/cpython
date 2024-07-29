@@ -2,6 +2,7 @@
 
 from test.support import (
     run_with_locale, is_apple_mobile, cpython_only, no_rerun,
+    iter_builtin_types, iter_slot_wrappers,
     MISSING_C_DOCSTRINGS,
 )
 import collections.abc
@@ -30,26 +31,6 @@ class Forward: ...
 def clear_typing_caches():
     for f in typing._cleanups:
         f()
-
-
-def iter_builtin_types():
-    for obj in __builtins__.values():
-        if not isinstance(obj, type):
-            continue
-        cls = obj
-        if cls.__module__ != 'builtins':
-            continue
-        yield cls
-
-
-@cpython_only
-def iter_own_slot_wrappers(cls):
-    for name, value in vars(cls).items():
-        if not name.startswith('__') or not name.endswith('__'):
-            continue
-        if 'slot wrapper' not in str(value):
-            continue
-        yield name
 
 
 class TypesTests(unittest.TestCase):
@@ -2371,6 +2352,36 @@ class FunctionTests(unittest.TestCase):
 
 class SubinterpreterTests(unittest.TestCase):
 
+    NUMERIC_METHODS = {
+        '__abs__',
+        '__add__',
+        '__bool__',
+        '__divmod__',
+        '__float__',
+        '__floordiv__',
+        '__index__',
+        '__int__',
+        '__lshift__',
+        '__mod__',
+        '__mul__',
+        '__neg__',
+        '__pos__',
+        '__pow__',
+        '__radd__',
+        '__rdivmod__',
+        '__rfloordiv__',
+        '__rlshift__',
+        '__rmod__',
+        '__rmul__',
+        '__rpow__',
+        '__rrshift__',
+        '__rshift__',
+        '__rsub__',
+        '__rtruediv__',
+        '__sub__',
+        '__truediv__',
+    }
+
     @classmethod
     def setUpClass(cls):
         global interpreters
@@ -2382,14 +2393,16 @@ class SubinterpreterTests(unittest.TestCase):
 
     @cpython_only
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')
-    def test_slot_wrappers(self):
+    def test_static_types_inherited_slots(self):
         rch, sch = interpreters.channels.create()
 
         slots = []
         script = ''
         for cls in iter_builtin_types():
-            for slot in iter_own_slot_wrappers(cls):
-                slots.append((cls, slot))
+            for slot, own in iter_slot_wrappers(cls):
+                if cls is bool and slot in self.NUMERIC_METHODS:
+                    continue
+                slots.append((cls, slot, own))
                 script += textwrap.dedent(f"""
                     text = repr({cls.__name__}.{slot})
                     sch.send_nowait(({cls.__name__!r}, {slot!r}, text))
@@ -2397,9 +2410,9 @@ class SubinterpreterTests(unittest.TestCase):
 
         exec(script)
         all_expected = []
-        for cls, slot in slots:
+        for cls, slot, _ in slots:
             result = rch.recv()
-            assert result == (cls.__name__, slot, result[2]), (cls, slot, result)
+            assert result == (cls.__name__, slot, result[-1]), (cls, slot, result)
             all_expected.append(result)
 
         interp = interpreters.create()
@@ -2407,7 +2420,7 @@ class SubinterpreterTests(unittest.TestCase):
         interp.prepare_main(sch=sch)
         interp.exec(script)
 
-        for i, _ in enumerate(slots):
+        for i, (cls, slot, _) in enumerate(slots):
             with self.subTest(cls=cls, slot=slot):
                 expected = all_expected[i]
                 result = rch.recv()
