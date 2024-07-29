@@ -225,9 +225,6 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
 
 #endif
 
-static void monitor_raise(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr);
 static void monitor_reraise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
@@ -835,46 +832,6 @@ resume_frame:
 
 #include "generated_cases.c.h"
 
-    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
-     * because it needs to capture frame->instr_ptr before it is updated,
-     * as happens in the standard instruction prologue.
-     */
-#if USE_COMPUTED_GOTOS
-        TARGET_INSTRUMENTED_LINE:
-#else
-        case INSTRUMENTED_LINE:
-#endif
-    {
-        _Py_CODEUNIT *prev = frame->instr_ptr;
-        _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
-        int original_opcode = 0;
-        if (tstate->tracing) {
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            original_opcode = code->_co_monitoring->lines[(int)(here - _PyCode_CODE(code))].original_opcode;
-        } else {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame, here, prev);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (original_opcode < 0) {
-                next_instr = here+1;
-                goto error;
-            }
-            next_instr = frame->instr_ptr;
-            if (next_instr != here) {
-                DISPATCH();
-            }
-        }
-        if (_PyOpcode_Caches[original_opcode]) {
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
-            /* Prevent the underlying instruction from specializing
-             * and overwriting the instrumentation. */
-            PAUSE_ADAPTIVE_COUNTER(cache->counter);
-        }
-        opcode = original_opcode;
-        DISPATCH_GOTO();
-    }
-
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
@@ -924,7 +881,7 @@ error:
                 PyTraceBack_Here(f);
             }
         }
-        monitor_raise(tstate, frame, next_instr-1);
+        _PyEval_MonitorRaise(tstate, frame, next_instr-1);
 exception_unwind:
         {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
@@ -2240,8 +2197,8 @@ no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     }
 }
 
-static void
-monitor_raise(PyThreadState *tstate, _PyInterpreterFrame *frame,
+void
+_PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
     if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RAISE)) {

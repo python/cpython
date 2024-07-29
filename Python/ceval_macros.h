@@ -402,7 +402,10 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 /* There's no STORE_IP(), it's inlined by the code generator. */
 
 #define LOAD_SP() \
-stack_pointer = _PyFrame_GetStackPointer(frame);
+stack_pointer = _PyFrame_GetStackPointer(frame)
+
+#define SAVE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
