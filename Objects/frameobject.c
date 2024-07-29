@@ -82,6 +82,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
                     return i;
                 }
             }
+            return -1;
         }
     }
     // This is unlikely, but we need to make sure. This means the key
@@ -107,6 +108,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
                     return i;
                 }
             }
+            return -1;
         }
     }
 
