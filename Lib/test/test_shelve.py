@@ -254,7 +254,7 @@ class TestCase(unittest.TestCase):
                          deserializer=deserializer) as s:
             s["foo"] = "bar"
             self.assertNotEqual(s["foo"], "bar")
-            self.assertEqual(s["foo"], None)
+            self.assertIsNone(s["foo"])
 
     def test_custom_serializer_and_deserializer_bsd_db_shelf(self):
         berkeleydb = import_helper.import_module("berkeleydb")
@@ -394,7 +394,7 @@ class TestCase(unittest.TestCase):
                                deserializer=deserializer) as s:
             s["foo"] = "bar"
             self.assertNotEqual(s["foo"], "bar")
-            self.assertEqual(s["foo"], None)
+            self.assertIsNone(s["foo"])
 
         def serializer(obj, protocol=None):
             pass
