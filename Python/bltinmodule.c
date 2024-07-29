@@ -2694,6 +2694,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     continue;
                 }
                 else {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
                     return NULL;
                 }
             }
@@ -2745,6 +2747,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     continue;
                 }
                 else {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
                     return NULL;
                 }
             }
