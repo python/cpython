@@ -4,7 +4,6 @@ import dbm
 import shelve
 import pickle
 import os
-from io import BytesIO
 
 from test.support import import_helper, os_helper
 from collections.abc import MutableMapping
@@ -183,8 +182,7 @@ class TestCase(unittest.TestCase):
 
         def deserializer(data):
             if isinstance(data, (bytes, bytearray, str)):
-                value = BytesIO(data).read()
-                return value.decode("utf-8")
+                return data.decode("utf-8")
             elif isinstance(data, array.array):
                 return array.array("b", data)
             else:
@@ -240,14 +238,14 @@ class TestCase(unittest.TestCase):
                 pass
 
             def deserializer(data):
-                return BytesIO(data).read().decode("utf-8")
+                return data.decode("utf-8")
 
             with shelve.open(self.fn, serializer=serializer,
                              deserializer=deserializer) as s:
                 s["foo"] = "bar"
 
         def serializer(obj, protocol=None):
-            return bytes(type(obj).__name__, 'utf-8')
+            return type(obj).__name__.encode("utf-8")
 
         def deserializer(data):
             pass
@@ -262,14 +260,13 @@ class TestCase(unittest.TestCase):
         berkeleydb = import_helper.import_module("berkeleydb")
 
         def serializer(obj, protocol=None):
+            data = obj.__class__.__name__
             if protocol == 5:
-                return bytes(f"{len(type(obj).__name__)}", encoding="utf-8")
-            else:
-                return bytes(f"{type(obj).__name__}", "utf-8")
+                data = str(len(data))
+            return data.encode("utf-8")
 
         def deserializer(data):
-            value = BytesIO(data).read()
-            return value.decode("utf-8")
+            return data.decode("utf-8")
 
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
@@ -384,9 +381,11 @@ class TestCase(unittest.TestCase):
 
     def test_custom_incomplete_serializer_and_deserializer_bsd_db_shelf(self):
         berkeleydb = import_helper.import_module("berkeleydb")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
 
         def serializer(obj, protocol=None):
-            return bytes(type(obj).__name__, 'utf-8')
+            return type(obj).__name__.encode("utf-8")
 
         def deserializer(data):
             pass
@@ -402,7 +401,7 @@ class TestCase(unittest.TestCase):
             pass
 
         def deserializer(data):
-            return BytesIO(data).read().decode("utf-8")
+            return data.decode("utf-8")
 
         with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
                                serializer=serializer,
