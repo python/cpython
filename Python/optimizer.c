@@ -797,7 +797,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
                         if (uop == _PUSH_FRAME) {
                             assert(i + 1 == nuops);
-                            if (opcode == FOR_ITER_GEN || opcode == SEND_GEN) {
+                            if (opcode == FOR_ITER_GEN ||
+                                opcode == LOAD_ATTR_PROPERTY ||
+                                opcode == SEND_GEN)
+                            {
                                 DPRINTF(2, "Bailing due to dynamic target\n");
                                 ADD_TO_TRACE(uop, oparg, 0, target);
                                 ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
@@ -870,6 +873,15 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             ADD_TO_TRACE(uop, oparg, 0, target);
                             ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
                             goto done;
+                        }
+
+                        if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
+                            assert(i + 1 == nuops);
+                            _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                            assert(next_instr->op.code == STORE_FAST);
+                            operand = next_instr->op.arg;
+                            // Skip the STORE_FAST:
+                            instr++;
                         }
 
                         // All other instructions
@@ -1141,13 +1153,15 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         *dest = buffer[i];
         assert(opcode != _POP_JUMP_IF_FALSE && opcode != _POP_JUMP_IF_TRUE);
         if (opcode == _EXIT_TRACE) {
-            executor->exits[next_exit].target = buffer[i].target;
-            dest->oparg = next_exit;
+            _PyExitData *exit = &executor->exits[next_exit];
+            exit->target = buffer[i].target;
+            dest->operand = (uint64_t)exit;
             next_exit--;
         }
         if (opcode == _DYNAMIC_EXIT) {
-            executor->exits[next_exit].target = 0;
-            dest->oparg = next_exit;
+            _PyExitData *exit = &executor->exits[next_exit];
+            exit->target = 0;
+            dest->operand = (uint64_t)exit;
             next_exit--;
         }
     }
@@ -1587,42 +1601,36 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     _Py_BloomFilter_Add(&obj_filter, obj);
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
-    bool no_memory = false;
     PyObject *invalidate = PyList_New(0);
     if (invalidate == NULL) {
-        PyErr_Clear();
-        no_memory = true;
+        goto error;
     }
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
-        if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
-            unlink_executor(exec);
-            if (no_memory) {
-                exec->vm_data.valid = 0;
-            } else {
-                if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
-                    PyErr_Clear();
-                    no_memory = true;
-                    exec->vm_data.valid = 0;
-                }
-            }
-            if (is_invalidation) {
-                OPT_STAT_INC(executors_invalidated);
-            }
+        if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter) &&
+            PyList_Append(invalidate, (PyObject *)exec))
+        {
+            goto error;
         }
         exec = next;
     }
-    if (invalidate != NULL) {
-        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
-            _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
-            executor_clear(exec);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
+        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+        executor_clear(exec);
+        if (is_invalidation) {
+            OPT_STAT_INC(executors_invalidated);
         }
-        Py_DECREF(invalidate);
     }
+    Py_DECREF(invalidate);
     return;
+error:
+    PyErr_Clear();
+    Py_XDECREF(invalidate);
+    // If we're truly out of memory, wiping out everything is a fine fallback:
+    _Py_Executors_InvalidateAll(interp, is_invalidation);
 }
 
 /* Invalidate all executors */
