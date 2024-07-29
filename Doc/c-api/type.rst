@@ -558,7 +558,7 @@ The following functions and structs are used to create
    A :c:member:`~PyType_Slot.slot` that records a static memory layout ID
    for a class.
 
-   If the :c:type:`PyType_Spec` from which the class is statically
+   If the :c:type:`PyType_Spec` of the class is statically
    allocated, the token can be set to the spec using the special value
    :c:data:`Py_TP_USE_SPEC`:
 
