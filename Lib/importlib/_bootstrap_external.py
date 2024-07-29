@@ -221,7 +221,7 @@ def _write_atomic(path, data, mode=0o666):
 
 _code_type = type(_write_atomic.__code__)
 
-MAGIC_NUMBER = (sys.implementation._pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (_imp._pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # for import.c
 

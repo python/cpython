@@ -4826,6 +4826,10 @@ imp_module_exec(PyObject *module)
         return -1;
     }
 
+    if (PyModule_AddIntConstant(module, "_pyc_magic_number", PYC_MAGIC_NUMBER) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
