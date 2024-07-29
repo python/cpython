@@ -283,7 +283,7 @@ class TestCase(unittest.TestCase):
                     bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
                     array_data = array.array("i", [1, 2, 3, 4, 5])
 
-                    s["foo"] = "bar"
+                    s["foo"] = bar
                     s["bytes_data"] = bytes_data
                     s["bytearray_data"] = bytearray_data
                     s["array_data"] = array_data
@@ -393,8 +393,8 @@ class TestCase(unittest.TestCase):
                                serializer=serializer,
                                deserializer=deserializer) as s:
             s["foo"] = "bar"
-            self.assertNotEqual(s["foo"], "bar")
             self.assertIsNone(s["foo"])
+            self.assertNotEqual(s["foo"], "bar")
 
         def serializer(obj, protocol=None):
             pass
@@ -406,8 +406,9 @@ class TestCase(unittest.TestCase):
                                serializer=serializer,
                                deserializer=deserializer) as s:
             s["foo"] = "bar"
-            self.assertNotEqual(s["foo"], "bar")
             self.assertEqual(s["foo"], "")
+            self.assertNotEqual(s["foo"], "bar")
+
 
     def test_missing_custom_deserializer(self):
         def serializer(obj, protocol=None):
