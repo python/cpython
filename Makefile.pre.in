@@ -2353,6 +2353,7 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
+		test/test_ast \
 		test/archivetestdata \
 		test/audiodata \
 		test/certdata \
