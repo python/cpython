@@ -231,19 +231,6 @@ class TestCase(unittest.TestCase):
                             s["array_data"], array_data.tobytes().decode()
                         )
 
-        with self.assertRaises(AssertionError):
-            def serializer(obj, protocol=None):
-                return bytes(type(obj).__name__, 'utf-8')
-
-            def deserializer(data):
-                pass
-
-            with shelve.open(self.fn,
-                             serializer=serializer,
-                             deserializer=deserializer) as s:
-                s["foo"] = "bar"
-                self.assertEqual(s["foo"], "bar")
-
     def test_custom_incomplete_serializer_and_deserializer(self):
         dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
         os.mkdir(self.dirname)
@@ -256,11 +243,21 @@ class TestCase(unittest.TestCase):
             def deserializer(data):
                 return BytesIO(data).read().decode("utf-8")
 
-            with shelve.open(self.fn,
-                             serializer=serializer,
+            with shelve.open(self.fn, serializer=serializer,
                              deserializer=deserializer) as s:
                 s["foo"] = "bar"
-                self.assertEqual(s["foo"], "bar")
+
+        def serializer(obj, protocol=None):
+            return bytes(type(obj).__name__, 'utf-8')
+
+        def deserializer(data):
+            pass
+
+        with shelve.open(self.fn, serializer=serializer,
+                         deserializer=deserializer) as s:
+            s["foo"] = "bar"
+            self.assertNotEqual(s["foo"], "bar")
+            self.assertEqual(s["foo"], None)
 
     def test_custom_serializer_and_deserializer_bsd_db_shelf(self):
         berkeleydb = import_helper.import_module("berkeleydb")
@@ -386,18 +383,21 @@ class TestCase(unittest.TestCase):
                         self.assertEqual(s["bytearray_data"], "bytearray")
                         self.assertEqual(s["array_data"], "array")
 
-        with self.assertRaises(AssertionError):
-            def serializer(obj, protocol=None):
-                return bytes(type(obj).__name__, 'utf-8')
+    def test_custom_incomplete_serializer_and_deserializer_bsd_db_shelf(self):
+        berkeleydb = import_helper.import_module("berkeleydb")
 
-            def deserializer(data):
-                pass
+        def serializer(obj, protocol=None):
+            return bytes(type(obj).__name__, 'utf-8')
 
-            with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
-                                   serializer=serializer,
-                                   deserializer=deserializer) as s:
-                s["foo"] = "bar"
-                self.assertEqual(s["foo"], "bar")
+        def deserializer(data):
+            pass
+
+        with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
+                               serializer=serializer,
+                               deserializer=deserializer) as s:
+            s["foo"] = "bar"
+            self.assertNotEqual(s["foo"], "bar")
+            self.assertEqual(s["foo"], None)
 
         def serializer(obj, protocol=None):
             pass
