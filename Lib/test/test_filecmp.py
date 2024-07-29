@@ -156,6 +156,17 @@ class DirCompareTestCase(unittest.TestCase):
                     (['file'], ['file2'], []),
                     "Comparing mismatched directories fails")
 
+    def test_compfiles_invalid_names(self):
+        for file, desc in [
+            ('\x00', 'NUL bytes filename'),
+            (__file__ + '\x00', 'filename with embedded NUL bytes'),
+            ("\uD834\uDD1E.py", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            ('a' * 1_000_000, 'very long filename'),
+        ]:
+            for other_dir in [self.dir, self.dir_same, self.dir_diff]:
+                with self.subTest(desc, other_dir=other_dir):
+                    res = filecmp.cmpfiles(self.dir, other_dir, [file])
+                    self.assertTupleEqual(res, ([], [], [file]))
 
     def _assert_lists(self, actual, expected):
         """Assert that two lists are equal, up to ordering."""
