@@ -1124,7 +1124,7 @@ dummy_func(
             if (retval_o == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                 ) {
-                    monitor_raise(tstate, frame, this_instr);
+                    _PyEval_MonitorRaise(tstate, frame, this_instr);
                 }
                 if (_PyGen_FetchStopIterationValue(&retval_o) == 0) {
                     assert(retval_o != NULL);
@@ -2824,7 +2824,7 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         ERROR_NO_POP();
                     }
-                    monitor_raise(tstate, frame, this_instr);
+                    _PyEval_MonitorRaise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -2849,6 +2849,7 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         ERROR_NO_POP();
                     }
+                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -2875,7 +2876,7 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         ERROR_NO_POP();
                     }
-                    monitor_raise(tstate, frame, this_instr);
+                    _PyEval_MonitorRaise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
