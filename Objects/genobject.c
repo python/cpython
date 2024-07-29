@@ -10,7 +10,6 @@
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_opcode_metadata.h"  // _PyOpcode_Deopt
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
@@ -328,23 +327,14 @@ gen_close_iter(PyObject *yf)
 }
 
 static inline bool
-is_resume(_PyInterpreterFrame *frame, uint8_t *oparg_p)
+is_resume(_Py_CODEUNIT *instr)
 {
-    PyCodeObject *code = _PyFrame_GetCode(frame);
-    int offset = frame->instr_ptr - _PyCode_CODE(code);
-    uint8_t opcode = _Py_GetBaseOpcode(code, offset);
-    uint8_t oparg = frame->instr_ptr->op.arg;
-    if (opcode == ENTER_EXECUTOR) {
-        _PyExecutorObject *executor = _Py_GetExecutor(code, sizeof(_Py_CODEUNIT) * offset);
-        opcode = _PyOpcode_Deopt[executor->vm_data.opcode];
-        oparg = executor->vm_data.oparg;
-        Py_DECREF(executor);
-    }
-    if (opcode == RESUME) {
-        *oparg_p = oparg;
-        return true;
-    }
-    return false;
+    uint8_t code = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code);
+    return (
+        code == RESUME ||
+        code == RESUME_CHECK ||
+        code == INSTRUMENTED_RESUME
+    );
 }
 
 PyObject *
@@ -352,11 +342,6 @@ _PyGen_yf(PyGenObject *gen)
 {
     if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
-    #ifndef NDEBUG
-        uint8_t oparg;
-        assert(is_resume(frame, &oparg));
-        assert((oparg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
-    #endif
         return PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame));
     }
     return NULL;
@@ -385,11 +370,11 @@ gen_close(PyGenObject *gen, PyObject *args)
         Py_DECREF(yf);
     }
     _PyInterpreterFrame *frame = &gen->gi_iframe;
-    uint8_t oparg;
-    if (is_resume(frame, &oparg)) {
+    if (is_resume(frame->instr_ptr)) {
         /* We can safely ignore the outermost try block
          * as it is automatically generated to handle
          * StopIteration. */
+        int oparg = frame->instr_ptr->op.arg;
         if (oparg & RESUME_OPARG_DEPTH1_MASK) {
             // RESUME after YIELD_VALUE and exception depth is 1
             assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
