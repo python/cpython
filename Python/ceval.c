@@ -245,9 +245,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
 
-static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
-                              PyObject *, PyObject *, PyObject *);
-static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static  _PyInterpreterFrame *
@@ -730,15 +727,6 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
-#if defined(_MSC_VER) && defined(_Py_USING_PGO)
-/* gh-111786: _PyEval_EvalFrameDefault is too large to optimize for speed with
-   PGO on MSVC. Disable that optimization temporarily. If this is fixed
-   upstream, we should gate this on the version of MSVC.
- */
-#  pragma optimize("t", off)
-/* This setting is reversed below following _PyEval_EvalFrameDefault */
-#endif
-
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -773,7 +761,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     entry_frame.f_executable = Py_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
-    entry_frame.stacktop = 0;
+    entry_frame.stackpointer = entry_frame.localsplus;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.return_offset = 0;
     /* Push frame */
@@ -846,46 +834,6 @@ resume_frame:
         {
 
 #include "generated_cases.c.h"
-
-    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
-     * because it needs to capture frame->instr_ptr before it is updated,
-     * as happens in the standard instruction prologue.
-     */
-#if USE_COMPUTED_GOTOS
-        TARGET_INSTRUMENTED_LINE:
-#else
-        case INSTRUMENTED_LINE:
-#endif
-    {
-        _Py_CODEUNIT *prev = frame->instr_ptr;
-        _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
-        int original_opcode = 0;
-        if (tstate->tracing) {
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            original_opcode = code->_co_monitoring->lines[(int)(here - _PyCode_CODE(code))].original_opcode;
-        } else {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame, here, prev);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (original_opcode < 0) {
-                next_instr = here+1;
-                goto error;
-            }
-            next_instr = frame->instr_ptr;
-            if (next_instr != here) {
-                DISPATCH();
-            }
-        }
-        if (_PyOpcode_Caches[original_opcode]) {
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
-            /* Prevent the underlying instruction from specializing
-             * and overwriting the instrumentation. */
-            PAUSE_ADAPTIVE_COUNTER(cache->counter);
-        }
-        opcode = original_opcode;
-        DISPATCH_GOTO();
-    }
 
 
 #if USE_COMPUTED_GOTOS
@@ -1158,7 +1106,6 @@ goto_to_tier1:
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
-#  pragma optimize("", on)
 #endif
 
 static void
@@ -2535,6 +2482,7 @@ _PyEval_GetBuiltinId(_Py_Identifier *name)
 PyObject *
 PyEval_GetLocals(void)
 {
+    // We need to return a borrowed reference here, so some tricks are needed
     PyThreadState *tstate = _PyThreadState_GET();
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
@@ -2542,7 +2490,37 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    PyObject *locals = _PyEval_GetFrameLocals();
+    // Be aware that this returns a new reference
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
+
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    if (PyFrameLocalsProxy_Check(locals)) {
+        PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        PyObject *ret = f->f_locals_cache;
+        if (ret == NULL) {
+            PyObject *ret = PyDict_New();
+            if (ret == NULL) {
+                Py_DECREF(locals);
+                return NULL;
+            }
+            f->f_locals_cache = ret;
+        }
+        if (PyDict_Update(ret, locals) < 0) {
+            // At this point, if the cache dict is broken, it will stay broken, as
+            // trying to clean it up or replace it will just cause other problems
+            ret = NULL;
+        }
+        Py_DECREF(locals);
+        return ret;
+    }
+
+    assert(PyMapping_Check(locals));
+    assert(Py_REFCNT(locals) > 1);
+    Py_DECREF(locals);
+
     return locals;
 }
 
@@ -2706,8 +2684,8 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
     return 1;
 }
 
-static PyObject *
-import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
+PyObject *
+_PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
@@ -2745,8 +2723,8 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     return res;
 }
 
-static PyObject *
-import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
+PyObject *
+_PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;

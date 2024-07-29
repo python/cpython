@@ -51,7 +51,7 @@ except ImportError:
 bytes_types = (bytes, bytearray)
 
 # These are purely informational; no code uses these.
-format_version = "4.0"                  # File format version we write
+format_version = "5.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
                       "1.1",            # Protocol 0 with INST added
                       "1.2",            # Original protocol 1
@@ -68,7 +68,7 @@ HIGHEST_PROTOCOL = 5
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
 # Only bump this if the oldest still supported version of Python already
 # includes it.
-DEFAULT_PROTOCOL = 4
+DEFAULT_PROTOCOL = 5
 
 class PickleError(Exception):
     """A common base class for the other pickling exceptions."""
@@ -314,16 +314,17 @@ class _Unframer:
 # Tools used for pickling.
 
 def _getattribute(obj, name):
+    top = obj
     for subpath in name.split('.'):
         if subpath == '<locals>':
             raise AttributeError("Can't get local attribute {!r} on {!r}"
-                                 .format(name, obj))
+                                 .format(name, top))
         try:
             parent = obj
             obj = getattr(obj, subpath)
         except AttributeError:
             raise AttributeError("Can't get attribute {!r} on {!r}"
-                                 .format(name, obj)) from None
+                                 .format(name, top)) from None
     return obj, parent
 
 def whichmodule(obj, name):
@@ -408,7 +409,7 @@ class _Pickler:
 
         The optional *protocol* argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3, 4 and 5.
-        The default protocol is 4. It was introduced in Python 3.4, and
+        The default protocol is 5. It was introduced in Python 3.8, and
         is incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
@@ -832,7 +833,7 @@ class _Pickler:
     if _HAVE_PICKLE_BUFFER:
         def save_picklebuffer(self, obj):
             if self.proto < 5:
-                raise PicklingError("PickleBuffer can only pickled with "
+                raise PicklingError("PickleBuffer can only be pickled with "
                                     "protocol >= 5")
             with obj.raw() as m:
                 if not m.contiguous:
@@ -1110,11 +1111,35 @@ class _Pickler:
             self.save(module_name)
             self.save(name)
             write(STACK_GLOBAL)
-        elif parent is not module:
-            self.save_reduce(getattr, (parent, lastname))
-        elif self.proto >= 3:
-            write(GLOBAL + bytes(module_name, "utf-8") + b'\n' +
-                  bytes(name, "utf-8") + b'\n')
+        elif '.' in name:
+            # In protocol < 4, objects with multi-part __qualname__
+            # are represented as
+            # getattr(getattr(..., attrname1), attrname2).
+            dotted_path = name.split('.')
+            name = dotted_path.pop(0)
+            save = self.save
+            for attrname in dotted_path:
+                save(getattr)
+                if self.proto < 2:
+                    write(MARK)
+            self._save_toplevel_by_name(module_name, name)
+            for attrname in dotted_path:
+                save(attrname)
+                if self.proto < 2:
+                    write(TUPLE)
+                else:
+                    write(TUPLE2)
+                write(REDUCE)
+        else:
+            self._save_toplevel_by_name(module_name, name)
+
+        self.memoize(obj)
+
+    def _save_toplevel_by_name(self, module_name, name):
+        if self.proto >= 3:
+            # Non-ASCII identifiers are supported only with protocols >= 3.
+            self.write(GLOBAL + bytes(module_name, "utf-8") + b'\n' +
+                       bytes(name, "utf-8") + b'\n')
         else:
             if self.fix_imports:
                 r_name_mapping = _compat_pickle.REVERSE_NAME_MAPPING
@@ -1124,14 +1149,12 @@ class _Pickler:
                 elif module_name in r_import_mapping:
                     module_name = r_import_mapping[module_name]
             try:
-                write(GLOBAL + bytes(module_name, "ascii") + b'\n' +
-                      bytes(name, "ascii") + b'\n')
+                self.write(GLOBAL + bytes(module_name, "ascii") + b'\n' +
+                           bytes(name, "ascii") + b'\n')
             except UnicodeEncodeError:
                 raise PicklingError(
                     "can't pickle global identifier '%s.%s' using "
-                    "pickle protocol %i" % (module, name, self.proto)) from None
-
-        self.memoize(obj)
+                    "pickle protocol %i" % (module_name, name, self.proto)) from None
 
     def save_type(self, obj):
         if obj is type(None):

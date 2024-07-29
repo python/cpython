@@ -449,8 +449,8 @@ well-formed for surrogateescape encoding. Patch by Sidney Markowitz.
 .. nonce: N8E1zw
 .. section: Core and Builtins
 
-Use the object's actual class name in :meth:`_io.FileIO.__repr__`,
-:meth:`_io._WindowsConsoleIO` and :meth:`_io.TextIOWrapper.__repr__`, to
+Use the object's actual class name in :meth:`!_io.FileIO.__repr__`,
+:meth:`!_io._WindowsConsoleIO` and :meth:`!_io.TextIOWrapper.__repr__`, to
 make these methods subclass friendly.
 
 ..

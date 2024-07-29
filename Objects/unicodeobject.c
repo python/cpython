@@ -252,7 +252,8 @@ _PyUnicode_InternedSize_Immortal(void)
     // value, to help detect bugs in optimizations.
 
     while (PyDict_Next(dict, &pos, &key, &value)) {
-       if (_Py_IsImmortal(key)) {
+        assert(PyUnicode_CHECK_INTERNED(key) != SSTATE_INTERNED_IMMORTAL_STATIC);
+        if (PyUnicode_CHECK_INTERNED(key) == SSTATE_INTERNED_IMMORTAL) {
            count++;
        }
     }
@@ -324,7 +325,8 @@ init_global_interned_strings(PyInterpreterState *interp)
         return _PyStatus_ERR("failed to create global interned dict");
     }
 
-    /* Intern statically allocated string identifiers and deepfreeze strings.
+    /* Intern statically allocated string identifiers, deepfreeze strings,
+        * and one-byte latin-1 strings.
         * This must be done before any module initialization so that statically
         * allocated string identifiers are used instead of heap allocated strings.
         * Deepfreeze uses the interned identifiers if present to save space
@@ -332,14 +334,11 @@ init_global_interned_strings(PyInterpreterState *interp)
     */
     _PyUnicode_InitStaticStrings(interp);
 
-#ifdef Py_GIL_DISABLED
-// In the free-threaded build, intern the 1-byte strings as well
     for (int i = 0; i < 256; i++) {
         PyObject *s = LATIN1(i);
         _PyUnicode_InternStatic(interp, &s);
         assert(s == LATIN1(i));
     }
-#endif
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
@@ -688,10 +687,14 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 
     /* Check interning state */
 #ifdef Py_DEBUG
+    // Note that we do not check `_Py_IsImmortal(op)`, since stable ABI
+    // extensions can make immortal strings mortal (but with a high enough
+    // refcount).
+    // The other way is extremely unlikely (worth a potential failed assertion
+    // in a debug build), so we do check `!_Py_IsImmortal(op)`.
     switch (PyUnicode_CHECK_INTERNED(op)) {
         case SSTATE_NOT_INTERNED:
             if (ascii->state.statically_allocated) {
-                CHECK(_Py_IsImmortal(op));
                 // This state is for two exceptions:
                 // - strings are currently checked before they're interned
                 // - the 256 one-latin1-character strings
@@ -707,11 +710,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             break;
         case SSTATE_INTERNED_IMMORTAL:
             CHECK(!ascii->state.statically_allocated);
-            CHECK(_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             CHECK(ascii->state.statically_allocated);
-            CHECK(_Py_IsImmortal(op));
             break;
         default:
             Py_UNREACHABLE();
@@ -1867,7 +1868,6 @@ static PyObject*
 get_latin1_char(Py_UCS1 ch)
 {
     PyObject *o = LATIN1(ch);
-    assert(_Py_IsImmortal(o));
     return o;
 }
 
@@ -13635,27 +13635,28 @@ int
 _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
                                 Py_ssize_t start, Py_ssize_t end)
 {
-    Py_UCS4 maxchar;
-    Py_ssize_t len;
-
     assert(0 <= start);
     assert(end <= PyUnicode_GET_LENGTH(str));
     assert(start <= end);
 
-    if (end == 0)
-        return 0;
-
     if (start == 0 && end == PyUnicode_GET_LENGTH(str))
         return _PyUnicodeWriter_WriteStr(writer, str);
 
-    if (PyUnicode_MAX_CHAR_VALUE(str) > writer->maxchar)
-        maxchar = _PyUnicode_FindMaxChar(str, start, end);
-    else
-        maxchar = writer->maxchar;
-    len = end - start;
+    Py_ssize_t len = end - start;
+    if (len == 0) {
+        return 0;
+    }
 
-    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0)
+    Py_UCS4 maxchar;
+    if (PyUnicode_MAX_CHAR_VALUE(str) > writer->maxchar) {
+        maxchar = _PyUnicode_FindMaxChar(str, start, end);
+    }
+    else {
+        maxchar = writer->maxchar;
+    }
+    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0) {
         return -1;
+    }
 
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, start, len);
@@ -15352,27 +15353,14 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
     assert(s != NULL);
     assert(_PyUnicode_CHECK(s));
     assert(_PyUnicode_STATE(s).statically_allocated);
-    assert(_Py_IsImmortal(s));
-
-    switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_NOT_INTERNED:
-            break;
-        case SSTATE_INTERNED_IMMORTAL_STATIC:
-            return s;
-        default:
-            Py_FatalError("_PyUnicode_InternStatic called on wrong string");
-    }
+    assert(!PyUnicode_CHECK_INTERNED(s));
 
 #ifdef Py_DEBUG
     /* We must not add process-global interned string if there's already a
      * per-interpreter interned_dict, which might contain duplicates.
-     * Except "short string" singletons: those are special-cased. */
+     */
     PyObject *interned = get_interned_dict(interp);
-    assert(interned == NULL || unicode_is_singleton(s));
-#ifdef Py_GIL_DISABLED
-    // In the free-threaded build, don't allow even the short strings.
     assert(interned == NULL);
-#endif
 #endif
 
     /* Look in the global cache first. */
@@ -15444,11 +15432,6 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         return s;
     }
 
-    /* Handle statically allocated strings. */
-    if (_PyUnicode_STATE(s).statically_allocated) {
-        return intern_static(interp, s);
-    }
-
     /* Is it already interned? */
     switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
@@ -15465,6 +15448,9 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
             return s;
     }
 
+    /* Statically allocated strings must be already interned. */
+    assert(!_PyUnicode_STATE(s).statically_allocated);
+
 #if Py_GIL_DISABLED
     /* In the free-threaded build, all interned strings are immortal */
     immortalize = 1;
@@ -15475,13 +15461,11 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         immortalize = 1;
     }
 
-    /* if it's a short string, get the singleton -- and intern it */
+    /* if it's a short string, get the singleton */
     if (PyUnicode_GET_LENGTH(s) == 1 &&
                 PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
         PyObject *r = LATIN1(*(unsigned char*)PyUnicode_DATA(s));
-        if (!PyUnicode_CHECK_INTERNED(r)) {
-            r = intern_static(interp, r);
-        }
+        assert(PyUnicode_CHECK_INTERNED(r));
         Py_DECREF(s);
         return r;
     }
@@ -15493,7 +15477,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     {
         PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
         if (r != NULL) {
-            assert(_Py_IsImmortal(r));
+            assert(_PyUnicode_STATE(r).statically_allocated);
             assert(r != s);  // r must be statically_allocated; s is not
             Py_DECREF(s);
             return Py_NewRef(r);
@@ -15583,7 +15567,7 @@ void
 PyUnicode_InternInPlace(PyObject **p)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternImmortal(interp, p);
+    _PyUnicode_InternMortal(interp, p);
 }
 
 // Public-looking name kept for the stable ABI; user should not call this:

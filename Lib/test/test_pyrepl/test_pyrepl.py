@@ -2,6 +2,7 @@ import io
 import itertools
 import os
 import pathlib
+import re
 import rlcompleter
 import select
 import subprocess
@@ -21,6 +22,8 @@ from .support import (
     more_lines,
     multiline_input,
     code_to_events,
+    clean_screen,
+    make_clean_env,
 )
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
@@ -483,13 +486,35 @@ class TestPyReplOutput(TestCase):
         console = FakeConsole(events)
         config = ReadlineConfig(readline_completer=None)
         reader = ReadlineAlikeReader(console=console, config=config)
+        reader.can_colorize = False
         return reader
+
+    def test_stdin_is_tty(self):
+        # Used during test log analysis to figure out if a TTY was available.
+        try:
+            if os.isatty(sys.stdin.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdin tty check failed: {ose}")
+        else:
+            self.skipTest("stdin is not a tty")
+
+    def test_stdout_is_tty(self):
+        # Used during test log analysis to figure out if a TTY was available.
+        try:
+            if os.isatty(sys.stdout.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdout tty check failed: {ose}")
+        else:
+            self.skipTest("stdout is not a tty")
 
     def test_basic(self):
         reader = self.prepare_reader(code_to_events("1+1\n"))
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
 
     def test_multiline_edit(self):
         events = itertools.chain(
@@ -519,8 +544,10 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "def f():\n    ...\n    ")
+        self.assertEqual(clean_screen(reader.screen), "def f():\n    ...")
         output = multiline_input(reader)
         self.assertEqual(output, "def g():\n    pass\n    ")
+        self.assertEqual(clean_screen(reader.screen), "def g():\n    pass")
 
     def test_history_navigation_with_up_arrow(self):
         events = itertools.chain(
@@ -539,12 +566,40 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assertEqual(clean_screen(reader.screen), "2+2")
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assertEqual(clean_screen(reader.screen), "2+2")
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
+
+    def test_history_with_multiline_entries(self):
+        code = "def foo():\nx = 1\ny = 2\nz = 3\n\ndef bar():\nreturn 42\n\n"
+        events = list(itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ]
+        ))
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        output = multiline_input(reader)
+        output = multiline_input(reader)
+        self.assertEqual(
+            clean_screen(reader.screen),
+            'def foo():\n    x = 1\n    y = 2\n    z = 3'
+        )
+        self.assertEqual(output, "def foo():\n    x = 1\n    y = 2\n    z = 3\n    ")
+
 
     def test_history_navigation_with_down_arrow(self):
         events = itertools.chain(
@@ -562,6 +617,7 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
 
     def test_history_search(self):
         events = itertools.chain(
@@ -578,18 +634,23 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assertEqual(clean_screen(reader.screen), "2+2")
         output = multiline_input(reader)
         self.assertEqual(output, "3+3")
+        self.assertEqual(clean_screen(reader.screen), "3+3")
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assertEqual(clean_screen(reader.screen), "1+1")
 
     def test_control_character(self):
         events = code_to_events("c\x1d\n")
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, "c\x1d")
+        self.assertEqual(clean_screen(reader.screen), "c")
 
 
 class TestPyReplCompleter(TestCase):
@@ -845,11 +906,19 @@ class TestPasteEvent(TestCase):
 
 @skipUnless(pty, "requires pty")
 class TestMain(TestCase):
+    def setUp(self):
+        # Cleanup from PYTHON* variables to isolate from local
+        # user settings, see #121359.  Such variables should be
+        # added later in test methods to patched os.environ.
+        patcher = patch('os.environ', new=make_clean_env())
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
         pre = "['__annotations__', '__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
         if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
@@ -867,6 +936,84 @@ class TestMain(TestCase):
         case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
+
+    def _assertMatchOK(
+            self, var: str, expected: str | re.Pattern, actual: str
+    ) -> None:
+        if isinstance(expected, re.Pattern):
+            self.assertTrue(
+                expected.match(actual),
+                f"{var}={actual} does not match {expected.pattern}",
+            )
+        else:
+            self.assertEqual(
+                actual,
+                expected,
+                f"expected {var}={expected}, got {var}={actual}",
+            )
+
+    @force_not_colorized
+    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False):
+        clean_env = make_clean_env()
+        clean_env["NO_COLOR"] = "1"  # force_not_colorized doesn't touch subprocesses
+
+        with tempfile.TemporaryDirectory() as td:
+            blue = pathlib.Path(td) / "blue"
+            blue.mkdir()
+            mod = blue / "calx.py"
+            mod.write_text("FOO = 42", encoding="utf-8")
+            commands = [
+                "print(f'^{" + var + "=}')" for var in expectations
+            ] + ["exit()"]
+            if as_file and as_module:
+                self.fail("as_file and as_module are mutually exclusive")
+            elif as_file:
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=[str(mod)],
+                    env=clean_env,
+                )
+            elif as_module:
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=["-m", "blue.calx"],
+                    env=clean_env,
+                    cwd=td,
+                )
+            else:
+                self.fail("Choose one of as_file or as_module")
+
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+
+        self.assertEqual(exit_code, 0)
+        for var, expected in expectations.items():
+            with self.subTest(var=var, expected=expected):
+                if m := re.search(rf"\^{var}=(.+?)[\r\n]", output):
+                    self._assertMatchOK(var, expected, actual=m.group(1))
+                else:
+                    self.fail(f"{var}= not found in output: {output!r}\n\n{output}")
+
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    def test_inspect_keeps_globals_from_inspected_file(self):
+        expectations = {
+            "FOO": "42",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, as_file=True)
+
+    def test_inspect_keeps_globals_from_inspected_module(self):
+        expectations = {
+            "FOO": "42",
+            "__name__": "'__main__'",
+            "__package__": "'blue'",
+            "__file__": re.compile(r"^'.*calx.py'$"),
+        }
+        self._run_repl_globals_test(expectations, as_module=True)
 
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
@@ -929,36 +1076,54 @@ class TestMain(TestCase):
         self.assertIn("spam", output)
         self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
 
-    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+    def run_repl(
+        self,
+        repl_input: str | list[str],
+        env: dict | None = None,
+        *,
+        cmdline_args: list[str] | None = None,
+        cwd: str | None = None,
+    ) -> tuple[str, int]:
+        assert pty
         master_fd, slave_fd = pty.openpty()
         cmd = [sys.executable, "-i", "-u"]
         if env is None:
             cmd.append("-I")
+        if cmdline_args is not None:
+            cmd.extend(cmdline_args)
         process = subprocess.Popen(
             cmd,
             stdin=slave_fd,
             stdout=slave_fd,
             stderr=slave_fd,
+            cwd=cwd,
             text=True,
             close_fds=True,
             env=env if env else os.environ,
-       )
+        )
+        os.close(slave_fd)
         if isinstance(repl_input, list):
             repl_input = "\n".join(repl_input) + "\n"
         os.write(master_fd, repl_input.encode("utf-8"))
 
         output = []
-        while select.select([master_fd], [], [], 0.5)[0]:
-            data = os.read(master_fd, 1024).decode("utf-8")
-            if not data:
+        while select.select([master_fd], [], [], SHORT_TIMEOUT)[0]:
+            try:
+                data = os.read(master_fd, 1024).decode("utf-8")
+                if not data:
+                    break
+            except OSError:
                 break
             output.append(data)
+        else:
+            os.close(master_fd)
+            process.kill()
+            self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
 
         os.close(master_fd)
-        os.close(slave_fd)
         try:
             exit_code = process.wait(timeout=SHORT_TIMEOUT)
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "\n".join(output), exit_code
+        return "".join(output), exit_code

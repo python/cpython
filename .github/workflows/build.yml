@@ -27,11 +27,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
+      # Some of the referenced steps set outputs conditionally and there may be
+      # cases when referencing them evaluates to empty strings. It is nice to
+      # work with proper booleans so they have to be evaluated through JSON
+      # conversion in the expressions. However, empty strings used like that
+      # may trigger all sorts of undefined and hard-to-debug behaviors in
+      # GitHub Actions CI/CD. To help with this, all of the outputs set here
+      # that are meant to be used as boolean flags (and not arbitrary strings),
+      # MUST have fallbacks with default values set. A common pattern would be
+      # to add ` || false` to all such expressions here, in the output
+      # definitions. They can then later be safely used through the following
+      # idiom in job conditionals and other expressions. Here's some examples:
+      #
+      #   if: fromJSON(needs.check_source.outputs.run-docs)
+      #
+      #   ${{
+      #        fromJSON(needs.check_source.outputs.run_tests)
+      #        && 'truthy-branch'
+      #        || 'falsy-branch'
+      #   }}
+      #
       run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
-      run_tests: ${{ steps.check.outputs.run_tests }}
-      run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
-      run_cifuzz: ${{ steps.check.outputs.run_cifuzz }}
-      config_hash: ${{ steps.config_hash.outputs.hash }}
+      run-win-msi: ${{ steps.win-msi-changes.outputs.run-win-msi || false }}
+      run_tests: ${{ steps.check.outputs.run_tests || false }}
+      run_hypothesis: ${{ steps.check.outputs.run_hypothesis || false }}
+      run_cifuzz: ${{ steps.check.outputs.run_cifuzz || false }}
+      config_hash: ${{ steps.config_hash.outputs.hash }}  # str
     steps:
       - uses: actions/checkout@v4
       - name: Check for source changes
@@ -103,6 +124,20 @@ jobs:
         id: docs-changes
         run: |
           echo "run-docs=true" >> "${GITHUB_OUTPUT}"
+      - name: Get a list of the MSI installer-related files
+        id: changed-win-msi-files
+        uses: Ana06/get-changed-files@v2.3.0
+        with:
+          filter: |
+            Tools/msi/**
+            .github/workflows/reusable-windows-msi.yml
+          format: csv  # works for paths with spaces
+      - name: Check for changes in MSI installer-related files
+        if: >-
+          steps.changed-win-msi-files.outputs.added_modified_renamed != ''
+        id: win-msi-changes
+        run: |
+          echo "run-win-msi=true" >> "${GITHUB_OUTPUT}"
 
   check-docs:
     name: Docs
@@ -179,68 +214,89 @@ jobs:
         run: make check-c-globals
 
   build_windows:
-    name: 'Windows'
+    name: >-
+      Windows
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-windows.yml
-
-  build_windows_free_threading:
-    name: 'Windows (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    if: fromJSON(needs.check_source.outputs.run_tests)
+    strategy:
+      matrix:
+        arch:
+        - Win32
+        - x64
+        - arm64
+        free-threading:
+        - false
+        - true
     uses: ./.github/workflows/reusable-windows.yml
     with:
-      free-threading: true
+      arch: ${{ matrix.arch }}
+      free-threading: ${{ matrix.free-threading }}
+
+  build_windows_msi:
+    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
+      Windows MSI${{ '' }}
+    needs: check_source
+    if: fromJSON(needs.check_source.outputs.run-win-msi)
+    strategy:
+      matrix:
+        arch:
+        - x86
+        - x64
+        - arm64
+    uses: ./.github/workflows/reusable-windows-msi.yml
+    with:
+      arch: ${{ matrix.arch }}
 
   build_macos:
-    name: 'macOS'
+    name: >-
+      macOS
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+        # macOS 13 only runs tests against the GIL-enabled CPython.
+        # Cirrus used for upstream, macos-14 for forks.
+        os:
+        - ghcr.io/cirruslabs/macos-runner:sonoma
+        - macos-14
+        - macos-13
+        is-fork:  # only used for the exclusion trick
+        - ${{ github.repository_owner != 'python' }}
+        free-threading:
+        - false
+        - true
+        exclude:
+        - os: ghcr.io/cirruslabs/macos-runner:sonoma
+          is-fork: true
+        - os: macos-14
+          is-fork: false
+        - os: macos-13
+          free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
-
-  build_macos_free_threading:
-    name: 'macOS (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-macos.yml
-    with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
-      free-threading: true
-      # Cirrus and macos-14 are M1.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14"]'
+      free-threading: ${{ matrix.free-threading }}
+      os: ${{ matrix.os }}
 
   build_ubuntu:
-    name: 'Ubuntu'
+    name: >-
+      Ubuntu
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        free-threading:
+        - false
+        - true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --with-openssl=$OPENSSL_DIR
-
-  build_ubuntu_free_threading:
-    name: 'Ubuntu (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-ubuntu.yml
-    with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --with-openssl=$OPENSSL_DIR \
-          --disable-gil
+      free-threading: ${{ matrix.free-threading }}
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -292,7 +348,7 @@ jobs:
       with:
         save: false
     - name: Configure CPython
-      run: ./configure --config-cache --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -365,6 +421,7 @@ jobs:
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
+          --enable-slower-safety \
           --with-openssl=$OPENSSL_DIR
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
@@ -393,7 +450,7 @@ jobs:
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
         restore-keys: |
-          - hypothesis-database-
+          hypothesis-database-
     - name: "Run tests"
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -550,13 +607,11 @@ jobs:
     - check-docs
     - check_generated_files
     - build_macos
-    - build_macos_free_threading
     - build_ubuntu
-    - build_ubuntu_free_threading
     - build_ubuntu_ssltests
     - build_wasi
     - build_windows
-    - build_windows_free_threading
+    - build_windows_msi
     - test_hypothesis
     - build_asan
     - build_tsan
@@ -571,6 +626,7 @@ jobs:
       with:
         allowed-failures: >-
           build_ubuntu_ssltests,
+          build_windows_msi,
           cifuzz,
           test_hypothesis,
         allowed-skips: >-
@@ -586,13 +642,10 @@ jobs:
             && '
             check_generated_files,
             build_macos,
-            build_macos_free_threading,
             build_ubuntu,
-            build_ubuntu_free_threading,
             build_ubuntu_ssltests,
             build_wasi,
             build_windows,
-            build_windows_free_threading,
             build_asan,
             build_tsan,
             build_tsan_free_threading,
