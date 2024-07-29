@@ -210,8 +210,8 @@ Here are some simple examples::
 Browser Controller Objects
 --------------------------
 
-Browser controllers provide the :attr:`name` attribute, and these three methods
-which parallel module-level convenience functions:
+Browser controllers provide the :attr:`~controller.name` attribute,
+and the following three methods which parallel module-level convenience functions:
 
 
 .. attribute:: controller.name
