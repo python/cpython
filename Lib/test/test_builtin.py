@@ -1778,6 +1778,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, [], '')
         self.assertRaises(TypeError, sum, [], b'')
         self.assertRaises(TypeError, sum, [], bytearray())
+        self.assertRaises(OverflowError, sum, [1.0, 10**1000])
+        self.assertRaises(OverflowError, sum, [1j, 10**1000])
 
         class BadSeq:
             def __getitem__(self, index):
@@ -1803,6 +1805,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum([1.0, 10E100, 1.0, -10E100, 2j]), 2+2j)
         self.assertEqual(sum([2+1j, 10E100j, 1j, -10E100j]), 2+2j)
         self.assertEqual(sum([1j, 1, 10E100j, 1j, 1.0, -10E100j]), 2+2j)
+        self.assertEqual(sum([2j, 1., 10E100, 1., -10E100]), 2+2j)
+        self.assertEqual(sum([1.0, 10**100, 1.0, -10**100]), 2.0)
+        self.assertEqual(sum([2j, 1.0, 10**100, 1.0, -10**100]), 2+2j)
         self.assertEqual(sum([0.1j]*10 + [fractions.Fraction(1, 10)]), 0.1+1j)
 
     def test_type(self):
