@@ -2031,7 +2031,7 @@ swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
                             Py_hash_t hash, PyObject *task)
 {
     PyObject *prev_task;
-    if (_PyDict_GetItemRef_KnownHash(current_tasks, loop, hash, &prev_task) < 0) {
+    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
         return NULL;
     }
     if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
