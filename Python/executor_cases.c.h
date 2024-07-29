@@ -2635,6 +2635,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         JUMP_TO_ERROR();
                     }
+                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
