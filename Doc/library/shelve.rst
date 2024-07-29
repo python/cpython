@@ -171,6 +171,7 @@ Restrictions
    .. versionchanged:: 3.14
       Added the *serializer* and *deserializer* parameters.
 
+
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, \
                       keyencoding='utf-8', *, \
                       serializer=None, deserializer=None)
@@ -189,6 +190,7 @@ Restrictions
    .. versionchanged:: 3.14
       Added the *serializer* and *deserializer* parameters.
 
+
 .. class:: DbfilenameShelf(filename, flag='c', protocol=None, \
                            writeback=False, *, serializer=None, \
                            deserializer=None)
@@ -203,6 +205,7 @@ Restrictions
 
    .. versionchanged:: 3.14
       Added the *serializer* and *deserializer* parameters.
+
 
 .. _shelve-example:
 
@@ -255,6 +258,7 @@ Exceptions
    The *deserializer* and *serializer* arguments must be given together.
 
    .. versionadded:: 3.14
+
 
 .. seealso::
 
