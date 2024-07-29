@@ -190,11 +190,11 @@ Here are some simple examples::
 Browser Controller Objects
 --------------------------
 
-Browser controllers provide these methods which parallel three of the
-module-level convenience functions:
+Browser controllers provide the :attr:`name` attribute, and these three methods
+which parallel module-level convenience functions:
 
 
-.. attribute:: name
+.. attribute:: controller.name
 
    System-dependent name for the browser.
 
