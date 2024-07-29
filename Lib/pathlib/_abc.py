@@ -935,26 +935,27 @@ class PathBase(PurePathBase):
         elif on_error is None:
             def on_error(err):
                 raise err
+        if self.is_dir(follow_symlinks=False):
+            results = self.walk(
+                on_error=on_error,
+                top_down=False,  # So we rmdir() empty directories.
+                follow_symlinks=False)
+            for dirpath, dirnames, filenames in results:
+                for name in filenames:
+                    try:
+                        dirpath.joinpath(name).unlink()
+                    except OSError as err:
+                        on_error(err)
+                for name in dirnames:
+                    try:
+                        dirpath.joinpath(name).rmdir()
+                    except OSError as err:
+                        on_error(err)
+            delete_self = self.rmdir
+        else:
+            delete_self = self.unlink
         try:
-            if self.is_dir(follow_symlinks=False):
-                results = self.walk(
-                    on_error=on_error,
-                    top_down=False,  # So we rmdir() empty directories.
-                    follow_symlinks=False)
-                for dirpath, dirnames, filenames in results:
-                    for name in filenames:
-                        try:
-                            dirpath.joinpath(name).unlink()
-                        except OSError as err:
-                            on_error(err)
-                    for name in dirnames:
-                        try:
-                            dirpath.joinpath(name).rmdir()
-                        except OSError as err:
-                            on_error(err)
-                self.rmdir()
-            else:
-                self.unlink()
+            delete_self()
         except OSError as err:
             err.filename = str(self)
             on_error(err)
