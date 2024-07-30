@@ -616,7 +616,7 @@ Important files
   * [Lib/opcode.py](https://github.com/python/cpython/blob/main/Lib/opcode.py)
     : opcode utilities exposed to Python.
 
-  * [Lib/importlib/_bootstrap_external.py](https://github.com/python/cpython/blob/main/Lib/importlib/_bootstrap_external.py)
+  * [Include/core/pycore_magic_number.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_magic_number.h)
     : Home of the magic number (named ``MAGIC_NUMBER``) for bytecode versioning.
 
 

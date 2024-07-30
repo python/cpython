@@ -705,7 +705,7 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
             source_bytes = _get_pyc_source(self, fullpath)
             if source_bytes is not None:
                 source_hash = _imp.source_hash(
-                    _bootstrap_external._RAW_MAGIC_NUMBER,
+                    _imp.pyc_magic_number_token,
                     source_bytes,
                 )
 
