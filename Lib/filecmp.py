@@ -138,20 +138,12 @@ class dircmp:
         self.shallow = shallow
 
     def phase0(self): # Compare everything except common subdirectories
-        try:
-            left_full_list = os.listdir(self.left)
-        except (OSError, ValueError):
-            self.left_list = []
-        else:
-            self.left_list = _filter(left_full_list, self.hide + self.ignore)
-
-        try:
-            right_full_list = os.listdir(self.right)
-        except (OSError, ValueError):
-            self.right_list = []
-        else:
-            self.right_list = _filter(right_full_list, self.hide + self.ignore)
-
+        # Do not protect os.listdir() against OSError or ValueError.
+        # See https://github.com/python/cpython/issues/122400.
+        self.left_list = _filter(os.listdir(self.left),
+                                 self.hide + self.ignore)
+        self.right_list = _filter(os.listdir(self.right),
+                                  self.hide+self.ignore)
         self.left_list.sort()
         self.right_list.sort()
 
@@ -175,6 +167,8 @@ class dircmp:
             try:
                 a_stat = os.stat(a_path)
             except (OSError, ValueError):
+                # See https://github.com/python/cpython/issues/122400
+                # for the rationale for protecting against ValueError.
                 # print('Can\'t stat', a_path, ':', why.args[1])
                 ok = False
             try:
