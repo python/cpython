@@ -732,7 +732,7 @@ class RawConfigParser(MutableMapping):
         for filename in filenames:
             try:
                 fp = open(filename, encoding=encoding)
-            except (OSError, ValueError):
+            except OSError:
                 continue
             with fp:
                 self._read(fp, filename)
