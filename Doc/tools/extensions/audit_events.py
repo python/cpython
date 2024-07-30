@@ -66,7 +66,7 @@ class AuditEvents:
             if any(a1 in s and a2 in s for s in _SYNONYMS):
                 continue
             logger.warning(msg)
-        return
+            return
 
     def id_for(self, name) -> str:
         source_count = len(self.sources.get(name, ()))
