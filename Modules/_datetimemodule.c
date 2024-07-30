@@ -1952,7 +1952,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
 #ifdef Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C') {
+        else if (ch == 'Y' || ch == 'G'
+#if __STDC_VERSION__ >= 199901L
+#define Py_STRFTIME_C99_SUPPORT
+                 || ch == 'F' || ch == 'C'
+#endif
+        ) {
             /* 0-pad year with century as necessary */
             PyObject *item = PyTuple_GET_ITEM(timetuple, 0);
             long year_long = PyLong_AsLong(item);
@@ -1982,6 +1987,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Done;
                 }
             }
+#ifdef Py_STRFTIME_C99_SUPPORT
             if (ch == 'F') {
                 item = PyTuple_GET_ITEM(timetuple, 1);
                 long month = PyLong_AsLong(item);
@@ -1997,11 +2003,14 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                                           year_long, month, day);
             }
             else {
+#endif
                 ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+#ifdef Py_STRFTIME_C99_SUPPORT
                 if (ch == 'C') {
                     ntoappend -= 2;
                 }
             }
+#endif
             ptoappend = buf;
         }
 #endif

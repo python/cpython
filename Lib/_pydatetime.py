@@ -215,6 +215,17 @@ def _need_normalize_century():
             _normalize_century = True
     return _normalize_century
 
+_supports_c99 = None
+def _can_support_c99():
+    global _supports_c99
+    if _supports_c99 is None:
+        try:
+            _supports_c99 = (
+                _time.strftime("%F", (99, 1, 1, 0, 0, 0, 0, 1, 0)) != "%F")
+        except ValueError:
+            _supports_c99 = True
+    return _supports_c99
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -274,7 +285,8 @@ def _wrap_strftime(object, format, timetuple):
                     newformat.append(Zreplace)
                 # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
                 # year 1000 for %G can go on the fast path.
-                elif ch in 'YGFC' and object.year < 1000 and _need_normalize_century():
+                elif ((ch in 'YG' or ch in 'FC' and _can_support_c99()) and
+                        object.year < 1000 and _need_normalize_century()):
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
                     else:
