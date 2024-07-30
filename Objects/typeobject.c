@@ -2439,8 +2439,7 @@ subtype_dealloc(PyObject *self)
         // Don't read type memory after calling basedealloc() since basedealloc()
         // can deallocate the type and free its memory.
         int type_needs_decref = (type->tp_flags & Py_TPFLAGS_HEAPTYPE
-                                 && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE)
-                                 && !_Py_IsImmortal(type));
+                                 && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
 
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
 
@@ -2553,8 +2552,7 @@ subtype_dealloc(PyObject *self)
     // Don't read type memory after calling basedealloc() since basedealloc()
     // can deallocate the type and free its memory.
     int type_needs_decref = (type->tp_flags & Py_TPFLAGS_HEAPTYPE
-                             && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE)
-                             && !(_Py_IsImmortal(type)));
+                             && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
 
     assert(basedealloc);
     basedealloc(self);
