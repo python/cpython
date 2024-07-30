@@ -1,3 +1,4 @@
+import annotationlib
 import asyncio
 import textwrap
 import types
@@ -6,7 +7,7 @@ import pickle
 import weakref
 from test.support import requires_working_socket, check_syntax_error, run_code
 
-from typing import Generic, NoDefault, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
+from typing import Generic, NoDefault, Sequence, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
@@ -1394,3 +1395,43 @@ class DefaultsTest(unittest.TestCase):
 
         self.assertEqual(ns["X1"].__type_params__[0].__default__, "A")
         self.assertEqual(ns["X2"].__type_params__[0].__default__, "B")
+
+
+class TestEvaluateFunctions(unittest.TestCase):
+    def test_general(self):
+        type Alias = int
+        Alias2 = TypeAliasType("Alias2", int)
+        def f[T: int = int, **P = int, *Ts = int](): pass
+        T, P, Ts = f.__type_params__
+        T2 = TypeVar("T2", bound=int, default=int)
+        P2 = ParamSpec("P2", default=int)
+        Ts2 = TypeVarTuple("Ts2", default=int)
+        cases = [
+            Alias.evaluate_value,
+            Alias2.evaluate_value,
+            T.evaluate_bound,
+            T.evaluate_default,
+            P.evaluate_default,
+            Ts.evaluate_default,
+            T2.evaluate_bound,
+            T2.evaluate_default,
+            P2.evaluate_default,
+            Ts2.evaluate_default,
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                self.assertIs(case(1), int)
+                self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.VALUE), int)
+                self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.FORWARDREF), int)
+                self.assertEqual(annotationlib.call_evaluate_function(case, annotationlib.Format.SOURCE), 'int')
+
+    def test_constraints(self):
+        def f[T: (int, str)](): pass
+        T, = f.__type_params__
+        T2 = TypeVar("T2", int, str)
+        for case in [T, T2]:
+            with self.subTest(case=case):
+                self.assertEqual(case.evaluate_constraints(1), (int, str))
+                self.assertEqual(annotationlib.call_evaluate_function(case.evaluate_constraints, annotationlib.Format.VALUE), (int, str))
+                self.assertEqual(annotationlib.call_evaluate_function(case.evaluate_constraints, annotationlib.Format.FORWARDREF), (int, str))
+                self.assertEqual(annotationlib.call_evaluate_function(case.evaluate_constraints, annotationlib.Format.SOURCE), '(int, str)')

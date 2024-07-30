@@ -342,8 +342,9 @@ _PyGen_yf(PyGenObject *gen)
 {
     if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
-        assert(is_resume(frame->instr_ptr));
-        assert((frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
+        // GH-122390: These asserts are wrong in the presence of ENTER_EXECUTOR!
+        // assert(is_resume(frame->instr_ptr));
+        // assert((frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
         return PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame));
     }
     return NULL;
