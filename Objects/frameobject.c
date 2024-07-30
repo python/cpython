@@ -87,6 +87,8 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         }
     }
     if (found) {
+        // This is an attempt to read an unset local variable or
+        // write to a variable that is hidden from regular write operations
         return -1;
     }
     // This is unlikely, but we need to make sure. This means the key
