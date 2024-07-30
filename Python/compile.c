@@ -564,8 +564,11 @@ compiler_unit_free(struct compiler_unit *u)
 
 static int
 compiler_maybe_add_static_attribute_to_class(
-    struct compiler *c, expr_ty attr_value, PyObject *attr)
+    struct compiler *c, expr_ty e)
 {
+    assert(e->kind == Attribute_kind);
+    PyObject *attr_name = e->v.Attribute.attr;
+    expr_ty attr_value = e->v.Attribute.value;
     if (attr_value->kind != Name_kind ||
         !_PyUnicode_EqualToASCIIString(attr_value->v.Name.id, "self"))
     {
@@ -579,7 +582,7 @@ compiler_maybe_add_static_attribute_to_class(
         assert(u);
         if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
             assert(u->u_static_attributes);
-            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, attr));
+            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, attr_name));
             break;
         }
     }
@@ -4793,8 +4796,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Alright, we can optimize the code. */
 
     RETURN_IF_ERROR(
-        compiler_maybe_add_static_attribute_to_class(
-            c, meth->v.Attribute.value, meth->v.Attribute.attr));
+        compiler_maybe_add_static_attribute_to_class(c, meth));
     location loc = LOC(meth);
 
     if (can_optimize_super_call(c, meth)) {
@@ -6076,8 +6078,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
             return SUCCESS;
         }
         RETURN_IF_ERROR(
-            compiler_maybe_add_static_attribute_to_class(
-                c, e->v.Attribute.value, e->v.Attribute.attr));
+            compiler_maybe_add_static_attribute_to_class(c, e));
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
