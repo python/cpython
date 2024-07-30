@@ -2,7 +2,7 @@
 # Originally by Mark Shannon (mark@hotpy.org)
 # https://gist.github.com/markshannon/db7ab649440b5af765451bb77c7dba34
 
-__all__ = []
+__all__: list[str] = []
 
 import re
 from dataclasses import dataclass
