@@ -2609,12 +2609,19 @@ def copy_python_src_ignore(path, names):
 
 
 def iter_builtin_types():
+    seen = set()
     for obj in __builtins__.values():
         if not isinstance(obj, type):
             continue
         cls = obj
         if cls.__module__ != 'builtins':
             continue
+        if cls == ExceptionGroup:
+            # It's a heap type.
+            continue
+        if cls in seen:
+            continue
+        seen.add(cls)
         yield cls
 
 
