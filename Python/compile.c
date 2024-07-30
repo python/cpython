@@ -563,8 +563,14 @@ compiler_unit_free(struct compiler_unit *u)
 }
 
 static int
-compiler_add_static_attribute_to_class(struct compiler *c, PyObject *attr)
+compiler_maybe_add_static_attribute_to_class(
+    struct compiler *c, expr_ty attr_value, PyObject *attr)
 {
+    if (attr_value->kind != Name_kind ||
+        !_PyUnicode_EqualToASCIIString(attr_value->v.Name.id, "self"))
+    {
+        return SUCCESS;
+    }
     Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
     for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
         PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
@@ -4785,6 +4791,10 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     }
 
     /* Alright, we can optimize the code. */
+
+    RETURN_IF_ERROR(
+        compiler_maybe_add_static_attribute_to_class(
+            c, meth->v.Attribute.value, meth->v.Attribute.attr));
     location loc = LOC(meth);
 
     if (can_optimize_super_call(c, meth)) {
@@ -6065,11 +6075,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
             ADDOP(c, loc, NOP);
             return SUCCESS;
         }
-        if (e->v.Attribute.value->kind == Name_kind &&
-            _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
-        {
-            RETURN_IF_ERROR(compiler_add_static_attribute_to_class(c, e->v.Attribute.attr));
-        }
+        RETURN_IF_ERROR(
+            compiler_maybe_add_static_attribute_to_class(
+                c, e->v.Attribute.value, e->v.Attribute.attr));
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
