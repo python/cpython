@@ -4814,7 +4814,9 @@ imp_module_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddIntConstant(module, "pyc_magic_number_token", PYC_MAGIC_NUMBER_TOKEN) < 0) {
+    if (PyModule_AddIntConstant(
+            module, "pyc_magic_number_token", PYC_MAGIC_NUMBER_TOKEN) < 0)
+    {
         return -1;
     }
 
