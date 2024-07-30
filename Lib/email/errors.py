@@ -29,6 +29,10 @@ class CharsetError(MessageError):
     """An illegal charset was given."""
 
 
+class HeaderWriteError(MessageError):
+    """Error while writing headers."""
+
+
 # These are parsing defects which the parser was able to work around.
 class MessageDefect(ValueError):
     """Base class for a message defect."""
