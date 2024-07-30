@@ -563,8 +563,7 @@ compiler_unit_free(struct compiler_unit *u)
 }
 
 static int
-compiler_maybe_add_static_attribute_to_class(
-    struct compiler *c, expr_ty e)
+compiler_maybe_add_static_attribute_to_class(struct compiler *c, expr_ty e)
 {
     assert(e->kind == Attribute_kind);
     expr_ty attr_value = e->v.Attribute.value;
@@ -4794,8 +4793,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 
     /* Alright, we can optimize the code. */
 
-    RETURN_IF_ERROR(
-        compiler_maybe_add_static_attribute_to_class(c, meth));
+    RETURN_IF_ERROR(compiler_maybe_add_static_attribute_to_class(c, meth));
     location loc = LOC(meth);
 
     if (can_optimize_super_call(c, meth)) {
@@ -6076,8 +6074,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
             ADDOP(c, loc, NOP);
             return SUCCESS;
         }
-        RETURN_IF_ERROR(
-            compiler_maybe_add_static_attribute_to_class(c, e));
+        RETURN_IF_ERROR(compiler_maybe_add_static_attribute_to_class(c, e));
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
