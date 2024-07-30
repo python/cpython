@@ -2804,7 +2804,7 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
-        if part.token_type == 'ptext'
+        if part.token_type == 'ptext':
             # Encode if tstr contains special characters.
             want_encoding = not SPECIALSNL.isdisjoint(tstr)
         else:
