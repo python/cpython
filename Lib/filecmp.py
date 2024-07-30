@@ -138,8 +138,6 @@ class dircmp:
         self.shallow = shallow
 
     def phase0(self): # Compare everything except common subdirectories
-        # Do not protect os.listdir() against OSError or ValueError.
-        # See https://github.com/python/cpython/issues/122400.
         self.left_list = _filter(os.listdir(self.left),
                                  self.hide+self.ignore)
         self.right_list = _filter(os.listdir(self.right),
