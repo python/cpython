@@ -1633,6 +1633,27 @@ Copying, renaming and deleting
       Added return value, return the new :class:`!Path` instance.
 
 
+.. method:: Path.unlink(missing_ok=False)
+
+   Remove this file or symbolic link.  If the path points to a directory,
+   use :func:`Path.rmdir` or :func:`Path.delete` instead.
+
+   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
+
+   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   ignored (same behavior as the POSIX ``rm -f`` command).
+
+   .. versionchanged:: 3.8
+      The *missing_ok* parameter was added.
+
+
+.. method:: Path.rmdir()
+
+   Remove this directory.  The directory must be empty; use
+   :meth:`Path.delete` to remove a non-empty directory.
+
+
 .. method:: Path.delete(ignore_errors=False, on_error=None)
 
    Delete this file or directory. If this path refers to a non-empty
@@ -1656,27 +1677,6 @@ Copying, renaming and deleting
       otherwise.
 
    .. versionadded:: 3.14
-
-
-.. method:: Path.unlink(missing_ok=False)
-
-   Remove this file or symbolic link.  If the path points to a directory,
-   use :func:`Path.rmdir` or :func:`Path.delete` instead.
-
-   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
-   raised if the path does not exist.
-
-   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
-   ignored (same behavior as the POSIX ``rm -f`` command).
-
-   .. versionchanged:: 3.8
-      The *missing_ok* parameter was added.
-
-
-.. method:: Path.rmdir()
-
-   Remove this directory.  The directory must be empty; use
-   :meth:`Path.delete` to remove a non-empty directory.
 
 
 Permissions and ownership
