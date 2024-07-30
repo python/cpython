@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Parses compiler output with -fdiagnostics-format=json and checks that warnings
 exist only in files that are expected to have warnings.
@@ -114,24 +113,28 @@ def get_unexpected_improvements(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-c",
         "--compiler-output-file-path",
         type=str,
         required=True,
         help="Path to the compiler output file",
     )
     parser.add_argument(
+        "-i",
         "--warning-ignore-file-path",
         type=str,
         required=True,
         help="Path to the warning ignore file",
     )
     parser.add_argument(
+        "-x",
         "--fail-on-regression",
         action="store_true",
         default=False,
         help="Flag to fail if new warnings are found",
     )
     parser.add_argument(
+        "-X",
         "--fail-on-improvement",
         action="store_true",
         default=False,
