@@ -1,2 +1,2 @@
 Fix bug where optimized method calls were not inserted into
-``__static_attributes__``.
+:attr:`~class.__static_attributes__`.
