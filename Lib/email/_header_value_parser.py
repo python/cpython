@@ -2806,10 +2806,11 @@ def _refold_parse_tree(parse_tree, *, policy):
         tstr = str(part)
         if part.token_type == 'ptext':
             # Encode if tstr contains special characters.
-            want_encoding = not SPECIALSNL.isdisjoint(tstr)
-        else:
-            # Encode if text contains newlines
-            want_encoding = not NLSET.isdisjoint(tstr)
+            if not SPECIALSNL.isdisjoint(tstr):
+                want_encoding = True
+        elif not NLSET.isdisjoint(tstr):
+            # Encode if tstr contains newlines.
+            want_encoding = True
         try:
             tstr.encode(encoding)
             charset = encoding
