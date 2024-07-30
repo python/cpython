@@ -9,7 +9,7 @@ from analyzer import (
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator, Tuple
-from lexer import Token
+from lexer import COMMA, IDENTIFIER, LPAREN, RPAREN, Token
 from stack import Stack
 
 
@@ -51,9 +51,9 @@ def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
     for tkn in tkn_iter:
         if tkn.kind == end and parens == 0:
             return
-        if tkn.kind == "LPAREN":
+        if tkn.kind == LPAREN:
             parens += 1
-        if tkn.kind == "RPAREN":
+        if tkn.kind == RPAREN:
             parens -= 1
         out.emit(tkn)
 
@@ -68,7 +68,7 @@ def replace_deopt(
 ) -> None:
     out.emit_at("DEOPT_IF", tkn)
     out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "RPAREN")
+    emit_to(out, tkn_iter, RPAREN)
     next(tkn_iter)  # Semi colon
     out.emit(", ")
     assert inst is not None
@@ -87,7 +87,7 @@ def replace_error(
 ) -> None:
     out.emit_at("if ", tkn)
     out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "COMMA")
+    emit_to(out, tkn_iter, COMMA)
     label = next(tkn_iter).text
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
@@ -208,7 +208,7 @@ def emit_tokens(
     tkn_iter = iter(tkns)
     out.start_line()
     for tkn in tkn_iter:
-        if tkn.kind == "IDENTIFIER" and tkn.text in replacement_functions:
+        if tkn.kind == IDENTIFIER and tkn.text in replacement_functions:
             replacement_functions[tkn.text](out, tkn, tkn_iter, uop, stack, inst)
         else:
             out.emit(tkn)
