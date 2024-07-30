@@ -381,6 +381,17 @@ The following functions and structs are used to create
       :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
       will be no longer allowed.
 
+.. c:function:: int PyType_Freeze(PyTypeObject *type)
+
+   Make a type immutable: set the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag.
+
+   Base classes must be immutable.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   .. versionadded:: 3.14
+
 .. raw:: html
 
    <!-- Keep old URL fragments working (see gh-97908) -->

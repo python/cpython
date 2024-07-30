@@ -472,6 +472,9 @@ New Features
   an interned string and deallocate it during module shutdown.
   (Contribued by Eddie Elizondo in :gh:`113601`.)
 
+* Add :c:func:`PyType_Freeze` function to make a type immutable.
+  (Contributed by Victor Stinner in :gh:`121654`.)
+
 Porting to Python 3.14
 ----------------------
 

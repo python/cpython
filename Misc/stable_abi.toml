@@ -2510,3 +2510,5 @@
     added = '3.14'
 [function.PyIter_NextItem]
     added = '3.14'
+[function.PyType_Freeze]
+    added = '3.14'
