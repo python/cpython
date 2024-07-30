@@ -102,6 +102,14 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIn("Original exception was:", error)
         self.assertIn("division by zero", error)
 
+    def test_sysexcepthook_raising_SystemExit_gets_through(self):
+        self.infunc.side_effect = ["1/0"]
+        def raise_base(*args, **kwargs):
+            raise SystemExit
+        self.sysmod.excepthook = raise_base
+        with self.assertRaises(SystemExit):
+            self.console.interact()
+
     def test_banner(self):
         # with banner
         self.infunc.side_effect = EOFError('Finished')
