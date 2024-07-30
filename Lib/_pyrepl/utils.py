@@ -21,4 +21,5 @@ def wlen(s: str) -> int:
     length = sum(str_width(i) for i in s)
     # remove lengths of any escape sequences
     sequence = ANSI_ESCAPE_SEQUENCE.findall(s)
-    return length - sum(len(i) for i in sequence)
+    ctrl_z_cnt = s.count('\x1a')
+    return length - sum(len(i) for i in sequence) + ctrl_z_cnt
