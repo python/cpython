@@ -2477,22 +2477,7 @@ _PyImport_GetBuiltinModuleNames(void)
 long
 PyImport_GetMagicNumber(void)
 {
-    union magic_number {
-        uint32_t raw;
-        uint8_t parts[4];
-    } n;
-
-    n.parts[0] = (uint16_t)PYC_MAGIC_NUMBER & 0xff;
-    n.parts[1] = (uint16_t)PYC_MAGIC_NUMBER >> 8;
-    n.parts[2] = '\r';
-    n.parts[3] = '\n';
-
-#if PY_BIG_ENDIAN
-    uint32_t result = _Py_bswap32(n.raw);
-    return (long)result;
-#else
-    return (long)n.raw;
-#endif
+    return PYC_MAGIC_NUMBER_TOKEN;
 }
 
 extern const char * _PySys_ImplCacheTag;
@@ -4827,6 +4812,10 @@ imp_module_exec(PyObject *module)
     }
 
     if (PyModule_AddIntConstant(module, "_pyc_magic_number", PYC_MAGIC_NUMBER) < 0) {
+        return -1;
+    }
+
+    if (PyModule_AddIntConstant(module, "_pyc_magic_number_token", PYC_MAGIC_NUMBER_TOKEN) < 0) {
         return -1;
     }
 

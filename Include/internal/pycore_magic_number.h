@@ -268,6 +268,8 @@ PC/launcher.c must also be updated.
 */
 
 #define PYC_MAGIC_NUMBER 3603
+#define PYC_MAGIC_NUMBER_TOKEN ((uint32_t)PYC_MAGIC_NUMBER | ((uint32_t)'\r' << 16) | ((uint32_t)'\n' << 24))
+
 
 #ifdef __cplusplus
 }
