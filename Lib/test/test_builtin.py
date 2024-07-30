@@ -2389,7 +2389,8 @@ class PtyTests(unittest.TestCase):
                 print(ascii(input(prompt)), file=wpipe)
             except BaseException as e:
                 print(ascii(f'{e.__class__.__name__}: {e!s}'), file=wpipe)
-        lines = self.run_child(child, terminal_input + b"\r\n")
+        with self.detach_readline():
+            lines = self.run_child(child, terminal_input + b"\r\n")
         # Check we did exercise the GNU readline path
         self.assertIn(lines[0], {'tty = True', 'tty = False'})
         if lines[0] != 'tty = True':
@@ -2427,38 +2428,32 @@ class PtyTests(unittest.TestCase):
 
     def test_input_tty(self):
         # Test input() functionality when wired to a tty
-        with self.detach_readline():
-            self.check_input_tty("prompt", b"quux")
+        self.check_input_tty("prompt", b"quux")
 
     def test_input_tty_non_ascii(self):
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
-        with self.detach_readline():
-            self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
+        self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
         # Check stdin/stdout error handler is used when invoking PyOS_Readline()
-        with self.detach_readline():
-            self.check_input_tty("prompté", b"quux\xe9", "ascii")
+        self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
     def test_input_tty_null_in_prompt(self):
-        with self.detach_readline():
-            self.check_input_tty("prompt\0", b"",
-                    expected='ValueError: input: prompt string cannot contain '
-                            'null characters')
+        self.check_input_tty("prompt\0", b"",
+                expected='ValueError: input: prompt string cannot contain '
+                         'null characters')
 
     def test_input_tty_nonencodable_prompt(self):
-        with self.detach_readline():
-            self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
-                    expected="UnicodeEncodeError: 'ascii' codec can't encode "
-                            "character '\\xe9' in position 6: ordinal not in "
-                            "range(128)")
+        self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
+                expected="UnicodeEncodeError: 'ascii' codec can't encode "
+                         "character '\\xe9' in position 6: ordinal not in "
+                         "range(128)")
 
     def test_input_tty_nondecodable_input(self):
-        with self.detach_readline():
-            self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
-                    expected="UnicodeDecodeError: 'ascii' codec can't decode "
-                            "byte 0xe9 in position 4: ordinal not in "
-                            "range(128)")
+        self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
+                expected="UnicodeDecodeError: 'ascii' codec can't decode "
+                         "byte 0xe9 in position 4: ordinal not in "
+                         "range(128)")
 
     def test_input_no_stdout_fileno(self):
         # Issue #24402: If stdin is the original terminal but stdout.fileno()
