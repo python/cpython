@@ -111,7 +111,6 @@ _PyType_ReleaseId(PyHeapTypeObject *type)
     }
 
     LOCK_POOL(pool);
-
     _Py_type_id_entry *entry = &pool->table[type->_ht_id];
     assert(entry->type == type);
     entry->next = pool->freelist;

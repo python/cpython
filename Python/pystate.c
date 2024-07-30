@@ -1772,7 +1772,6 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     _PyRuntimeState *runtime = interp->runtime;
 
     HEAD_LOCK(runtime);
-
     if (tstate->prev) {
         tstate->prev->next = tstate->next;
     }
