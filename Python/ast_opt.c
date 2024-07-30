@@ -521,7 +521,7 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 static PyObject*
 make_const_tuple(asdl_expr_seq *elts)
 {
-    for (int i = 0; i < asdl_seq_LEN(elts); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         if (e->kind != Constant_kind) {
             return NULL;
@@ -533,7 +533,7 @@ make_const_tuple(asdl_expr_seq *elts)
         return NULL;
     }
 
-    for (int i = 0; i < asdl_seq_LEN(elts); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         PyObject *v = e->v.Constant.value;
         PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
@@ -650,7 +650,7 @@ static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimize
         return 0;
 
 #define CALL_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
+    Py_ssize_t i; \
     asdl_ ## TYPE ## _seq *seq = (ARG); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \

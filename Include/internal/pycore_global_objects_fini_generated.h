@@ -588,7 +588,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__annotate__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__annotations__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__args__));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__asyncio_running_event_loop__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__await__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__bases__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__bool__));
@@ -899,6 +898,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(displayhook));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dklen));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(doc));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(done));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dont_inherit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst_dir_fd));

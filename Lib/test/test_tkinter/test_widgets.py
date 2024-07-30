@@ -61,11 +61,11 @@ class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
 @add_standard_options(StandardOptionsTests)
 class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
     OPTIONS = (
-        'background', 'borderwidth',
+        'background', 'backgroundimage', 'borderwidth',
         'class', 'colormap', 'container', 'cursor', 'height',
         'highlightbackground', 'highlightcolor', 'highlightthickness',
         'menu', 'padx', 'pady', 'relief', 'screen',
-        'takefocus', 'use', 'visual', 'width',
+        'takefocus', 'tile', 'use', 'visual', 'width',
     )
 
     def create(self, **kwargs):
@@ -104,10 +104,10 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
 @add_standard_options(StandardOptionsTests)
 class FrameTest(AbstractToplevelTest, unittest.TestCase):
     OPTIONS = (
-        'background', 'borderwidth',
+        'background', 'backgroundimage', 'borderwidth',
         'class', 'colormap', 'container', 'cursor', 'height',
         'highlightbackground', 'highlightcolor', 'highlightthickness',
-        'padx', 'pady', 'relief', 'takefocus', 'visual', 'width',
+        'padx', 'pady', 'relief', 'takefocus', 'tile', 'visual', 'width',
     )
 
     def create(self, **kwargs):
@@ -338,7 +338,8 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         'highlightbackground', 'highlightcolor', 'highlightthickness',
         'insertbackground', 'insertborderwidth',
         'insertofftime', 'insertontime', 'insertwidth',
-        'invalidcommand', 'justify', 'readonlybackground', 'relief',
+        'invalidcommand', 'justify', 'placeholder', 'placeholderforeground',
+        'readonlybackground', 'relief',
         'selectbackground', 'selectborderwidth', 'selectforeground',
         'show', 'state', 'takefocus', 'textvariable',
         'validate', 'validatecommand', 'width', 'xscrollcommand',
@@ -432,8 +433,8 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         'increment',
         'insertbackground', 'insertborderwidth',
         'insertofftime', 'insertontime', 'insertwidth',
-        'invalidcommand', 'justify', 'relief', 'readonlybackground',
-        'repeatdelay', 'repeatinterval',
+        'invalidcommand', 'justify', 'placeholder', 'placeholderforeground',
+        'relief', 'readonlybackground', 'repeatdelay', 'repeatinterval',
         'selectbackground', 'selectborderwidth', 'selectforeground',
         'state', 'takefocus', 'textvariable', 'to',
         'validate', 'validatecommand', 'values',
@@ -1176,10 +1177,6 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return tkinter.Scrollbar(self.root, **kwargs)
 
-    def test_configure_activerelief(self):
-        widget = self.create()
-        self.checkReliefParam(widget, 'activerelief')
-
     def test_configure_elementborderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, '1m')
@@ -1386,6 +1383,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 class MenuTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'activebackground', 'activeborderwidth', 'activeforeground',
+        'activerelief',
         'background', 'borderwidth', 'cursor',
         'disabledforeground', 'font', 'foreground',
         'postcommand', 'relief', 'selectcolor', 'takefocus',
@@ -1400,6 +1398,8 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         i = widget.index('none')
         self.assertIsNone(i)
+
+    test_configure_activerelief = requires_tk(8, 7)(StandardOptionsTests.test_configure_activerelief)
 
     def test_configure_postcommand(self):
         widget = self.create()

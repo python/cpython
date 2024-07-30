@@ -1112,61 +1112,6 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.connection_lost.called)
 
 
-class AbstractChildWatcherTests(unittest.TestCase):
-
-    def test_warns_on_subclassing(self):
-        with self.assertWarns(DeprecationWarning):
-            class MyWatcher(asyncio.AbstractChildWatcher):
-                pass
-
-    def test_not_implemented(self):
-        f = mock.Mock()
-        watcher = asyncio.AbstractChildWatcher()
-        self.assertRaises(
-            NotImplementedError, watcher.add_child_handler, f, f)
-        self.assertRaises(
-            NotImplementedError, watcher.remove_child_handler, f)
-        self.assertRaises(
-            NotImplementedError, watcher.attach_loop, f)
-        self.assertRaises(
-            NotImplementedError, watcher.close)
-        self.assertRaises(
-            NotImplementedError, watcher.is_active)
-        self.assertRaises(
-            NotImplementedError, watcher.__enter__)
-        self.assertRaises(
-            NotImplementedError, watcher.__exit__, f, f, f)
-
-
-class PolicyTests(unittest.TestCase):
-
-    def create_policy(self):
-        return asyncio.DefaultEventLoopPolicy()
-
-    @mock.patch('asyncio.unix_events.can_use_pidfd')
-    def test_get_default_child_watcher(self, m_can_use_pidfd):
-        m_can_use_pidfd.return_value = False
-        policy = self.create_policy()
-        self.assertIsNone(policy._watcher)
-        with self.assertWarns(DeprecationWarning):
-            watcher = policy.get_child_watcher()
-        self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
-
-        self.assertIs(policy._watcher, watcher)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIs(watcher, policy.get_child_watcher())
-
-        m_can_use_pidfd.return_value = True
-        policy = self.create_policy()
-        self.assertIsNone(policy._watcher)
-        with self.assertWarns(DeprecationWarning):
-            watcher = policy.get_child_watcher()
-        self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
-
-        self.assertIs(policy._watcher, watcher)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIs(watcher, policy.get_child_watcher())
-
 class TestFunctional(unittest.TestCase):
 
     def setUp(self):
@@ -1267,6 +1212,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             wait_process(pid, exitcode=0)
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_signal_handling(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 
@@ -1313,6 +1259,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(child_handled.is_set())
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_run(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 
@@ -1332,6 +1279,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.value, 42)
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_subprocess(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 

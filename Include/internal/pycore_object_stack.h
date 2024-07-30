@@ -1,8 +1,6 @@
 #ifndef Py_INTERNAL_OBJECT_STACK_H
 #define Py_INTERNAL_OBJECT_STACK_H
 
-#include "pycore_freelist.h"        // _PyFreeListState
-
 #ifdef __cplusplus
 extern "C" {
 #endif

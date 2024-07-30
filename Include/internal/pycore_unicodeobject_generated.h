@@ -108,10 +108,6 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
-    string = &_Py_ID(__asyncio_running_event_loop__);
-    _PyUnicode_InternStatic(interp, &string);
-    assert(_PyUnicode_CheckConsistency(string, 1));
-    assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(__await__);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
@@ -1349,6 +1345,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(doc);
+    _PyUnicode_InternStatic(interp, &string);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    assert(PyUnicode_GET_LENGTH(string) != 1);
+    string = &_Py_ID(done);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);

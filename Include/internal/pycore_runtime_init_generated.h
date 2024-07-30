@@ -586,7 +586,6 @@ extern "C" {
     INIT_ID(__annotate__), \
     INIT_ID(__annotations__), \
     INIT_ID(__args__), \
-    INIT_ID(__asyncio_running_event_loop__), \
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
     INIT_ID(__bool__), \
@@ -897,6 +896,7 @@ extern "C" {
     INIT_ID(displayhook), \
     INIT_ID(dklen), \
     INIT_ID(doc), \
+    INIT_ID(done), \
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \

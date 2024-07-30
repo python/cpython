@@ -14,6 +14,8 @@ it is not, please report that through the
 
 [Compiler Design](compiler.md)
 
+[Frames](frames.md)
+
 [Adaptive Instruction Families](adaptive.md)
 
 [The Source Code Locations Table](locations.md)
