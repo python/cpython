@@ -24,7 +24,7 @@ from generators_common import (
     type_and_null,
 )
 from cwriter import CWriter
-from typing import Dict, TextIO
+from typing import TextIO
 from stack import Local, Stack, StackError, get_stack_effect
 
 
@@ -74,7 +74,7 @@ def write_uop(
         stack.flush(out)
         return offset
     try:
-        locals: Dict[str, Local] = {}
+        locals: dict[str, Local] = {}
         out.start_line()
         if braces:
             out.emit(f"// {uop.name}\n")

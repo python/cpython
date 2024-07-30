@@ -23,7 +23,7 @@ from generators_common import (
     type_and_null,
 )
 from cwriter import CWriter
-from typing import Dict, TextIO, Iterator
+from typing import TextIO, Iterator
 from lexer import Token
 from stack import Local, Stack, StackError, get_stack_effect
 
@@ -157,7 +157,7 @@ TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 
 
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
-    locals: Dict[str, Local] = {}
+    locals: dict[str, Local] = {}
     try:
         out.start_line()
         if uop.properties.oparg:

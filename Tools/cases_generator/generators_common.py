@@ -8,7 +8,7 @@ from analyzer import (
     StackItem,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator, Tuple
+from typing import Callable, Mapping, TextIO, Iterator
 from lexer import Token
 from stack import Stack
 
@@ -25,7 +25,7 @@ def root_relative_path(filename: str) -> str:
         return filename
 
 
-def type_and_null(var: StackItem) -> Tuple[str, str]:
+def type_and_null(var: StackItem) -> tuple[str, str]:
     if var.type:
         return var.type, "NULL"
     elif var.is_array():

@@ -2,7 +2,7 @@ import re
 from analyzer import StackItem, StackEffect, Instruction, Uop, PseudoInstruction
 from dataclasses import dataclass
 from cwriter import CWriter
-from typing import Dict, Iterator, Tuple
+from typing import Iterator
 
 UNUSED = {"unused"}
 
@@ -173,7 +173,7 @@ class Stack:
         self.variables: list[Local] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem, extract_bits: bool = False) -> Tuple[str, Local]:
+    def pop(self, var: StackItem, extract_bits: bool = False) -> tuple[str, Local]:
         self.top_offset.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
@@ -311,7 +311,7 @@ def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
             yield inst.stack
 
     for s in stacks(inst):
-        locals: Dict[str, Local] = {}
+        locals: dict[str, Local] = {}
         for var in reversed(s.inputs):
             _, local = stack.pop(var)
             if var.name != "unused":
