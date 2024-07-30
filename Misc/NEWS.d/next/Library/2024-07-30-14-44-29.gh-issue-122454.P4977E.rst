@@ -1,2 +1,3 @@
 Handle :exc:`ValueError`\s raised by :func:`open` in
-:meth:`configparser.RawConfigParser.read`. Patch by Bénédikt Tran.
+:meth:`ConfigParser.read <configparser.ConfigParser.read>`.
+Patch by Bénédikt Tran.
