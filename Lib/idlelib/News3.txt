@@ -4,6 +4,9 @@ Released after 2023-10-02
 =========================
 
 
+gh-122482: Change About IDLE to direct users to discuss.python.org
+instead of the now unused idle-dev email and mailing list.
+
 gh-78889: Stop Shell freezes by blocking user access to non-method
 sys.stdout.shell attributes, which are all private.
 
