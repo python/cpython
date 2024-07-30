@@ -9,7 +9,6 @@ import decimal
 import fractions
 import gc
 import io
-import importlib
 import locale
 import math
 import os
@@ -32,6 +31,7 @@ from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
 from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
+from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import check_warnings
@@ -2413,11 +2413,7 @@ class PtyTests(unittest.TestCase):
         # since test_builtin is not intended to test
         # the readline module, but the builtins module.
         if "readline" in sys.modules:
-            try:
-                c = importlib.import_module("ctypes")
-            except ImportError:
-                self.skipTest("the readline module is loaded")
-
+            c = import_module("ctypes")
             fp_api = "PyOS_ReadlineFunctionPointer"
             prev_value = c.c_void_p.in_dll(c.pythonapi, fp_api).value
             c.c_void_p.in_dll(c.pythonapi, fp_api).value = None
