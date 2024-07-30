@@ -88,6 +88,21 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIn("Original exception was:", error)
         self.assertIn("division by zero", error)
 
+    def test_sysexcepthook_raising_BaseException(self):
+        self.infunc.side_effect = ["1/0", "a = 123", "print(a)", EOFError('Finished')]
+        s = "not so fast"
+        def raise_base(*args, **kwargs):
+            raise BaseException(s)
+        self.sysmod.excepthook = raise_base
+        self.console.interact()
+        self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
+        error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
+        self.stack.close()
+        self.assertIn("Error in sys.excepthook:", error)
+        self.assertEqual(error.count("not so fast"), 1)
+        self.assertIn("Original exception was:", error)
+        self.assertIn("division by zero", error)
+
     def test_banner(self):
         # with banner
         self.infunc.side_effect = EOFError('Finished')

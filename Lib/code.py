@@ -157,7 +157,7 @@ class InteractiveInterpreter:
     def _call_excepthook(self, typ, value, tb):
         try:
             sys.excepthook(typ, value, tb)
-        except Exception as e:
+        except BaseException as e:
             e.__context__ = None
             print('Error in sys.excepthook:', file=sys.stderr)
             sys.__excepthook__(type(e), e, e.__traceback__.tb_next)
