@@ -156,7 +156,8 @@ class DirCompareTestCase(unittest.TestCase):
                     (['file'], ['file2'], []),
                     "Comparing mismatched directories fails")
 
-    def test_compfiles_invalid_names(self):
+    def test_cmpfiles_invalid_names(self):
+        # See https://github.com/python/cpython/issues/122400.
         for file, desc in [
             ('\x00', 'NUL bytes filename'),
             (__file__ + '\x00', 'filename with embedded NUL bytes'),
@@ -164,9 +165,26 @@ class DirCompareTestCase(unittest.TestCase):
             ('a' * 1_000_000, 'very long filename'),
         ]:
             for other_dir in [self.dir, self.dir_same, self.dir_diff]:
-                with self.subTest(desc, other_dir=other_dir):
+                with self.subTest(f'cmpfiles: {desc}', other_dir=other_dir):
                     res = filecmp.cmpfiles(self.dir, other_dir, [file])
                     self.assertTupleEqual(res, ([], [], [file]))
+
+    def test_dircmp_invalid_names(self):
+        for bad_dir, desc in [
+            ('\x00', 'NUL bytes dirname'),
+            (f'Top{os.sep}Mid\x00', 'dirname with embedded NUL bytes'),
+            ("\uD834\uDD1E", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            ('a' * 1_000_000, 'very long dirname'),
+        ]:
+            d = filecmp.dircmp(self.dir, bad_dir)
+            for target in [
+                # attributes where os.listdir() raises OSError or ValueError
+                'left_list', 'right_list',
+                'left_only', 'right_only', 'common',
+            ]:
+                with self.subTest(f'dircmp: {desc}', target=target):
+                    with self.assertRaises((OSError, ValueError)):
+                        getattr(d, target)
 
     def _assert_lists(self, actual, expected):
         """Assert that two lists are equal, up to ordering."""
