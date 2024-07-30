@@ -5,6 +5,7 @@ import unittest
 
 from collections import namedtuple
 import contextlib
+import io
 import json
 import os
 import os.path
@@ -414,6 +415,51 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         )
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
+
+    @unittest.skip('inheritance across re-init is currently broken; see gh-117482')
+    def test_static_types_inherited_slots(self):
+        script = textwrap.dedent("""
+            import test.support
+
+            results = {}
+            def add(cls, slot, own):
+                value = getattr(cls, slot)
+                try:
+                    subresults = results[cls.__name__]
+                except KeyError:
+                    subresults = results[cls.__name__] = {}
+                subresults[slot] = [repr(value), own]
+
+            for cls in test.support.iter_builtin_types():
+                for slot, own in test.support.iter_slot_wrappers(cls):
+                    add(cls, slot, own)
+            """)
+
+        ns = {}
+        exec(script, ns, ns)
+        all_expected = ns['results']
+        del ns
+
+        script += textwrap.dedent("""
+            import json
+            import sys
+            text = json.dumps(results)
+            print(text, file=sys.stderr)
+            """)
+        out, err = self.run_embedded_interpreter(
+                "test_repeated_init_exec", script, script)
+        results = err.split('--- Loop #')[1:]
+        results = [res.rpartition(' ---\n')[-1] for res in results]
+
+        self.maxDiff = None
+        for i, text in enumerate(results, start=1):
+            result = json.loads(text)
+            for classname, expected in all_expected.items():
+                with self.subTest(loop=i, cls=classname):
+                    slots = result.pop(classname)
+                    self.assertEqual(slots, expected)
+            self.assertEqual(result, {})
+        self.assertEqual(out, '')
 
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")

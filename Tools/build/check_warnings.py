@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Parses compiler output with -fdiagnostics-format=json and checks that warnings exist
-only in files that are expected to have warnings.
+Parses compiler output with -fdiagnostics-format=json and checks that warnings
+exist only in files that are expected to have warnings.
 """
 import argparse
 import json
@@ -9,26 +9,36 @@ import re
 import sys
 from pathlib import Path
 
-def extract_warnings_from_compiler_output_clang(compiler_output: str) -> list[dict]:
+
+def extract_warnings_from_compiler_output_clang(
+    compiler_output: str,
+) -> list[dict]:
     """
     Extracts warnings from the compiler output when using clang
     """
     # Regex to find warnings in the compiler output
-    clang_warning_regex = re.compile(r'(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: (?P<message>.*)')
+    clang_warning_regex = re.compile(
+        r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: (?P<message>.*)"
+    )
     compiler_warnings = []
     for line in compiler_output.splitlines():
         match = clang_warning_regex.match(line)
         if match:
-            compiler_warnings.append({
-                'file': match.group('file'),
-                'line': match.group('line'),
-                'column': match.group('column'),
-                'message': match.group('message'),
-            })
+            compiler_warnings.append(
+                {
+                    "file": match.group("file"),
+                    "line": match.group("line"),
+                    "column": match.group("column"),
+                    "message": match.group("message"),
+                }
+            )
 
     return compiler_warnings
 
-def extract_warnings_from_compiler_output_json(compiler_output: str) -> list[dict]:
+
+def extract_warnings_from_compiler_output_json(
+    compiler_output: str,
+) -> list[dict]:
     """
     Extracts warnings from the compiler output when using -fdiagnostics-format=json
 
@@ -36,30 +46,40 @@ def extract_warnings_from_compiler_output_json(compiler_output: str) -> list[dic
     objects and may include other output that is not json.
     """
     # Regex to find json arrays at the top level of the file in the compiler output
-    json_arrays = re.findall(r'\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\]', compiler_output)
+    json_arrays = re.findall(
+        r"\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\]", compiler_output
+    )
     compiler_warnings = []
     for array in json_arrays:
         try:
             json_data = json.loads(array)
             json_objects_in_array = [entry for entry in json_data]
-            warning_list = [entry for entry in json_objects_in_array if entry.get('kind') == 'warning']
+            warning_list = [
+                entry
+                for entry in json_objects_in_array
+                if entry.get("kind") == "warning"
+            ]
             for warning in warning_list:
-                locations = warning['locations']
+                locations = warning["locations"]
                 for location in locations:
-                    for key in ['caret', 'start', 'end']:
+                    for key in ["caret", "start", "end"]:
                         if key in location:
-                            compiler_warnings.append({
-                                'file': location[key]['file'].lstrip('./'),  # Remove leading current directory if present
-                                'line': location[key]['line'],
-                                'column': location[key]['column'],
-                                'message': warning['message'],
-                            })
-
+                            compiler_warnings.append(
+                                {
+                                    "file": location[key]["file"].lstrip(
+                                        "./"
+                                    ),  # Remove leading current directory if present
+                                    "line": location[key]["line"],
+                                    "column": location[key]["column"],
+                                    "message": warning["message"],
+                                }
+                            )
 
         except json.JSONDecodeError:
             continue  # Skip malformed JSON
 
     return compiler_warnings
+
 
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
@@ -67,12 +87,13 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
     warnings_by_file = {}
     for warning in warnings:
-        file = warning['file']
+        file = warning["file"]
         if file not in warnings_by_file:
             warnings_by_file[file] = []
         warnings_by_file[file].append(warning)
 
     return warnings_by_file
+
 
 def get_unexpected_warnings(
     files_with_expected_warnings: set[str],
@@ -95,6 +116,7 @@ def get_unexpected_warnings(
 
     return 0
 
+
 def get_unexpected_improvements(
     files_with_expected_warnings: set[str],
     files_with_warnings: set[str],
@@ -116,38 +138,44 @@ def get_unexpected_improvements(
 
     return 0
 
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-c",
         "--compiler-output-file-path",
         type=str,
         required=True,
-        help="Path to the compiler output file"
+        help="Path to the compiler output file",
     )
     parser.add_argument(
+        "-i",
         "--warning-ignore-file-path",
         type=str,
         required=True,
-        help="Path to the warning ignore file"
+        help="Path to the warning ignore file",
     )
     parser.add_argument(
+        "-x",
         "--fail-on-regression",
         action="store_true",
         default=False,
-        help="Flag to fail if new warnings are found"
+        help="Flag to fail if new warnings are found",
     )
     parser.add_argument(
+        "-X",
         "--fail-on-improvement",
         action="store_true",
         default=False,
-        help="Flag to fail if files that were expected to have warnings have no warnings"
+        help="Flag to fail if files that were expected to have warnings have no warnings",
     )
     parser.add_argument(
+        "-t",
         "--compiler-output-type",
         type=str,
         required=True,
         choices=["json", "clang"],
-        help="Type of compiler output file (json or clang)"
+        help="Type of compiler output file (json or clang)",
     )
 
     args = parser.parse_args(argv)
@@ -156,16 +184,22 @@ def main(argv: list[str] | None = None) -> int:
 
     # Check that the compiler output file is a valid path
     if not Path(args.compiler_output_file_path).is_file():
-        print(f"Compiler output file does not exist: {args.compiler_output_file_path}")
+        print(
+            f"Compiler output file does not exist: {args.compiler_output_file_path}"
+        )
         return 1
     # Check that the warning ignore file is a valid path
     if not Path(args.warning_ignore_file_path).is_file():
-        print(f"Warning ignore file does not exist: {args.warning_ignore_file_path}")
+        print(
+            f"Warning ignore file does not exist: {args.warning_ignore_file_path}"
+        )
         return 1
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
 
-    with Path(args.warning_ignore_file_path).open(encoding="UTF-8") as clean_files:
+    with Path(args.warning_ignore_file_path).open(
+        encoding="UTF-8"
+    ) as clean_files:
         files_with_expected_warnings = {
             file.strip()
             for file in clean_files
@@ -173,19 +207,30 @@ def main(argv: list[str] | None = None) -> int:
         }
 
     if args.compiler_output_type == "json":
-        warnings = extract_warnings_from_compiler_output_json(compiler_output_file_contents)
+        warnings = extract_warnings_from_compiler_output_json(
+            compiler_output_file_contents
+        )
     elif args.compiler_output_type == "clang":
-        warnings = extract_warnings_from_compiler_output_clang(compiler_output_file_contents)
+        warnings = extract_warnings_from_compiler_output_clang(
+            compiler_output_file_contents
+        )
 
     files_with_warnings = get_warnings_by_file(warnings)
 
-    status = get_unexpected_warnings(files_with_expected_warnings, files_with_warnings)
-    if args.fail_on_regression: exit_code |= status
+    status = get_unexpected_warnings(
+        files_with_expected_warnings, files_with_warnings
+    )
+    if args.fail_on_regression:
+        exit_code |= status
 
-    status = get_unexpected_improvements(files_with_expected_warnings, files_with_warnings)
-    if args.fail_on_improvement: exit_code |= status
+    status = get_unexpected_improvements(
+        files_with_expected_warnings, files_with_warnings
+    )
+    if args.fail_on_improvement:
+        exit_code |= status
 
     return exit_code
+
 
 if __name__ == "__main__":
     sys.exit(main())
