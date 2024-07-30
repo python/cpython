@@ -1,2 +1,1 @@
-A :exc:`ValueError` is now raised when a negative value is passed to
-:func:`readline.append_history_file`
+:func:`readline.append_history_file` now raises a :exc:`ValueError` when given a negative value.
