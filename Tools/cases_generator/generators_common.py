@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TextIO
+from typing import Callable, Mapping, TextIO, Iterator, Tuple
 
 from analyzer import (
     Instruction,
@@ -8,7 +8,6 @@ from analyzer import (
     StackItem,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator, Tuple
 from lexer import COMMA, IDENTIFIER, LPAREN, RPAREN, Token
 from stack import Stack
 
