@@ -618,7 +618,8 @@ translate_bytecode_to_trace(
         RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
         ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
 
-        if (progress_needed) {
+        if (first && progress_needed) {
+            assert(first);
             if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
                 opcode = _PyOpcode_Deopt[opcode];
             }
@@ -913,7 +914,6 @@ translate_bytecode_to_trace(
         }
     top:
         // Jump here after _PUSH_FRAME or likely branches.
-        progress_needed = false;
         first = false;
     }  // End for (;;)
 
@@ -923,7 +923,7 @@ done:
     }
     assert(code == initial_code);
     // Skip short traces where we can't even translate a single instruction:
-    if (progress_needed) {
+    if (first) {
         OPT_STAT_INC(trace_too_short);
         DPRINTF(2,
                 "No trace for %s (%s:%d) at byte offset %d (no progress)\n",
