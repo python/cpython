@@ -8,10 +8,7 @@
 // This contains code for allocating unique ids to heap type objects
 // and re-using those ids when the type is deallocated.
 //
-// The type ids are used to implement per-thread reference counts of
-// heap type objects to avoid contention on the reference count fields
-// of heap type objects. Static type objects are immortal, so contention
-// is not an issue.
+// See Include/internal/pycore_typeid.h for more details.
 
 #ifdef Py_GIL_DISABLED
 

@@ -15,11 +15,13 @@ extern "C" {
 //
 // The type ids are used to implement per-thread reference counts of
 // heap type objects to avoid contention on the reference count fields
-// of heap type objects. (Non-heap type objects are immortal, so contention
-// is not an issue.)
+// of heap type objects. Static type objects are immortal, so contention
+// is not an issue for those types.
 //
 // Type id of -1 is used to indicate a type doesn't use thread-local
-// refcounting.
+// refcounting. This value is used when a type object is finalized by the GC
+// and during interpreter shutdown to allow the type object to be
+// deallocated promptly when the object's refcount reaches zero.
 //
 // Each entry implicitly represents a type id based on it's offset in the
 // table. Non-allocated entries form a free-list via the 'next' pointer.

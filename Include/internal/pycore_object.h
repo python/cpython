@@ -303,17 +303,19 @@ _Py_INCREF_TYPE(PyTypeObject *type)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
 
-    // Unsigned comparison so that `ht_id=-1` is treated as out-of-bounds.
-    Py_ssize_t ht_id = ht->_ht_id;
-    if ((size_t)ht_id >= (size_t)tstate->types.size) {
-        _PyType_IncrefSlow(ht);
-    }
-    else {
+    // Unsigned comparison so that `ht_id=-1`, which indicates that per-thread
+    // refcounting has been disabled on this type, is handled by the "else".
+    if ((size_t)ht->_ht_id < (size_t)tstate->types.size) {
 #  ifdef Py_REF_DEBUG
         _Py_INCREF_IncRefTotal();
 #  endif
         _Py_INCREF_STAT_INC();
-        tstate->types.refcounts[ht_id]++;
+        tstate->types.refcounts[ht->_ht_id]++;
+    }
+    else {
+        // The slow path resizes the thread-local refcount array if necessary.
+        // It handles the ht_id=-1 case to keep the inlinable function smaller.
+        _PyType_IncrefSlow(ht);
     }
 #endif
 }
@@ -332,17 +334,19 @@ _Py_DECREF_TYPE(PyTypeObject *type)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
 
-    // Unsigned comparison so that `ht_id=-1` is treated as out-of-bounds.
-    Py_ssize_t ht_id = ht->_ht_id;
-    if ((size_t)ht_id >= (size_t)tstate->types.size) {
-        Py_DECREF(type);
-    }
-    else {
+    // Unsigned comparison so that `ht_id=-1`, which indicates that per-thread
+    // refcounting has been disabled on this type, is handled by the "else".
+    if ((size_t)ht->_ht_id < (size_t)tstate->types.size) {
 #  ifdef Py_REF_DEBUG
         _Py_DECREF_DecRefTotal();
 #  endif
         _Py_DECREF_STAT_INC();
-        tstate->types.refcounts[ht_id]--;
+        tstate->types.refcounts[ht->_ht_id]--;
+    }
+    else {
+        // Directly decref the type if the type id is not assigned or if
+        // per-thread refcounting has been disabled on this type.
+        Py_DECREF(type);
     }
 #endif
 }
