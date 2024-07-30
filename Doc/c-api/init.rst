@@ -39,6 +39,7 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_GetAllocator`
   * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`Py_GetBuildInfo`
+  * :c:func:`Py_GetConfigInfo`
   * :c:func:`Py_GetCompiler`
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
@@ -667,6 +668,22 @@ Process-wide parameters
    The returned string points into static storage; the caller should not modify its
    value.  The value is available to Python code as part of the variable
    ``sys.version``.
+
+
+.. c:function:: const char* Py_GetConfigInfo()
+
+   Return information about how the `configure` script was invoked, e.g.::
+
+      "release"
+      "optimized, BOLT"
+
+   .. index:: single: version (in module sys)
+
+   The returned string points into static storage; the caller should not modify
+   its value.  The value is available to Python code as part of the variable
+   ``sys.version``.
+
+   .. versionadded:: 3.14
 
 
 .. c:function:: void PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
