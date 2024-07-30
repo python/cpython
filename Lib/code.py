@@ -144,8 +144,8 @@ class InteractiveInterpreter:
         sys.last_traceback = last_tb
         sys.last_exc = ei[1]
         try:
-            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next, colorize=colorize)
             if sys.excepthook is sys.__excepthook__:
+                lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next, colorize=colorize)
                 self.write(''.join(lines))
             else:
                 # If someone has set sys.excepthook, we let that take precedence
