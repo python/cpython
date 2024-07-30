@@ -3185,7 +3185,7 @@
                         if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                             goto error;
                         }
-                        monitor_raise(tstate, frame, this_instr);
+                        _PyEval_MonitorRaise(tstate, frame, this_instr);
                         _PyErr_Clear(tstate);
                     }
                     /* iterator ended normally */
@@ -3864,7 +3864,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, this_instr);
+                    _PyEval_MonitorRaise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -6163,7 +6163,7 @@
                 if (retval_o == NULL) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                     ) {
-                        monitor_raise(tstate, frame, this_instr);
+                        _PyEval_MonitorRaise(tstate, frame, this_instr);
                     }
                     if (_PyGen_FetchStopIterationValue(&retval_o) == 0) {
                         assert(retval_o != NULL);

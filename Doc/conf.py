@@ -20,6 +20,7 @@ from pyspecific import SOURCE_URI
 # ---------------------
 
 extensions = [
+    'audit_events',
     'c_annotations',
     'glossary_search',
     'lexers',
