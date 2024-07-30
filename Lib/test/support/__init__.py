@@ -2642,6 +2642,16 @@ def walk_class_hierarchy(top, *, topdown=True):
 
 
 def iter_builtin_types():
+    # First try the explicit route.
+    try:
+        import _testinternalcapi
+    except ImportError:
+        _testinternalcapi = None
+    if _testinternalcapi is not None:
+        yield from _testinternalcapi.get_static_builtin_types()
+        return
+
+    # Fall back to making a best-effort guess.
     if hasattr(object, '__flags__'):
         # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
         import datetime
