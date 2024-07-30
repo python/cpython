@@ -1635,7 +1635,8 @@ Copying, renaming and deleting
 
 .. method:: Path.delete(ignore_errors=False, on_error=None)
 
-   Delete this file or directory (including all sub-directories).
+   Delete this file or directory. If this path refers to a non-empty
+   directory, its files and sub-directories are deleted recursively.
 
    If *ignore_errors* is true, errors resulting from failed deletions will be
    ignored. If *ignore_errors* is false or omitted, and a callable is given as
@@ -1660,7 +1661,7 @@ Copying, renaming and deleting
 .. method:: Path.unlink(missing_ok=False)
 
    Remove this file or symbolic link.  If the path points to a directory,
-   use :func:`Path.rmdir` instead.
+   use :func:`Path.rmdir` or :func:`Path.delete` instead.
 
    If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
    raised if the path does not exist.
@@ -1674,7 +1675,8 @@ Copying, renaming and deleting
 
 .. method:: Path.rmdir()
 
-   Remove this directory.  The directory must be empty.
+   Remove this directory.  The directory must be empty; use
+   :meth:`Path.delete` to remove a non-empty directory.
 
 
 Permissions and ownership
