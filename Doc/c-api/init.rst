@@ -672,7 +672,7 @@ Process-wide parameters
 
 .. c:function:: const char* Py_GetConfigInfo()
 
-   Return information about how the `configure` script was invoked, e.g.::
+   Return information about how the ``configure`` script was invoked, e.g.::
 
       "release"
       "optimized, BOLT"
