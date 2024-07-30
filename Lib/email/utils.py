@@ -25,8 +25,6 @@ __all__ = [
 import os
 import re
 import time
-import random
-import socket
 import datetime
 import urllib.parse
 
@@ -35,9 +33,6 @@ from email._parseaddr import AddressList as _AddressList
 from email._parseaddr import mktime_tz
 
 from email._parseaddr import parsedate, parsedate_tz, _parsedate_tz
-
-# Intrapackage imports
-from email.charset import Charset
 
 COMMASPACE = ', '
 EMPTYSTRING = ''
@@ -48,11 +43,12 @@ TICK = "'"
 specialsre = re.compile(r'[][\\()<>@,:;".]')
 escapesre = re.compile(r'[\\"]')
 
+
 def _has_surrogates(s):
-    """Return True if s contains surrogate-escaped binary data."""
+    """Return True if s may contain surrogate-escaped binary data."""
     # This check is based on the fact that unless there are surrogates, utf8
     # (Python's default encoding) can encode any string.  This is the fastest
-    # way to check for surrogates, see issue 11454 for timings.
+    # way to check for surrogates, see bpo-11454 (moved to gh-55663) for timings.
     try:
         s.encode()
         return False
@@ -94,6 +90,8 @@ def formataddr(pair, charset='utf-8'):
             name.encode('ascii')
         except UnicodeEncodeError:
             if isinstance(charset, str):
+                # lazy import to improve module import time
+                from email.charset import Charset
                 charset = Charset(charset)
             encoded_name = charset.header_encode(name)
             return "%s <%s>" % (encoded_name, address)
@@ -106,12 +104,127 @@ def formataddr(pair, charset='utf-8'):
     return address
 
 
+def _iter_escaped_chars(addr):
+    pos = 0
+    escape = False
+    for pos, ch in enumerate(addr):
+        if escape:
+            yield (pos, '\\' + ch)
+            escape = False
+        elif ch == '\\':
+            escape = True
+        else:
+            yield (pos, ch)
+    if escape:
+        yield (pos, '\\')
 
-def getaddresses(fieldvalues):
-    """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
-    all = COMMASPACE.join(str(v) for v in fieldvalues)
-    a = _AddressList(all)
-    return a.addresslist
+
+def _strip_quoted_realnames(addr):
+    """Strip real names between quotes."""
+    if '"' not in addr:
+        # Fast path
+        return addr
+
+    start = 0
+    open_pos = None
+    result = []
+    for pos, ch in _iter_escaped_chars(addr):
+        if ch == '"':
+            if open_pos is None:
+                open_pos = pos
+            else:
+                if start != open_pos:
+                    result.append(addr[start:open_pos])
+                start = pos + 1
+                open_pos = None
+
+    if start < len(addr):
+        result.append(addr[start:])
+
+    return ''.join(result)
+
+
+supports_strict_parsing = True
+
+def getaddresses(fieldvalues, *, strict=True):
+    """Return a list of (REALNAME, EMAIL) or ('','') for each fieldvalue.
+
+    When parsing fails for a fieldvalue, a 2-tuple of ('', '') is returned in
+    its place.
+
+    If strict is true, use a strict parser which rejects malformed inputs.
+    """
+
+    # If strict is true, if the resulting list of parsed addresses is greater
+    # than the number of fieldvalues in the input list, a parsing error has
+    # occurred and consequently a list containing a single empty 2-tuple [('',
+    # '')] is returned in its place. This is done to avoid invalid output.
+    #
+    # Malformed input: getaddresses(['alice@example.com <bob@example.com>'])
+    # Invalid output: [('', 'alice@example.com'), ('', 'bob@example.com')]
+    # Safe output: [('', '')]
+
+    if not strict:
+        all = COMMASPACE.join(str(v) for v in fieldvalues)
+        a = _AddressList(all)
+        return a.addresslist
+
+    fieldvalues = [str(v) for v in fieldvalues]
+    fieldvalues = _pre_parse_validation(fieldvalues)
+    addr = COMMASPACE.join(fieldvalues)
+    a = _AddressList(addr)
+    result = _post_parse_validation(a.addresslist)
+
+    # Treat output as invalid if the number of addresses is not equal to the
+    # expected number of addresses.
+    n = 0
+    for v in fieldvalues:
+        # When a comma is used in the Real Name part it is not a deliminator.
+        # So strip those out before counting the commas.
+        v = _strip_quoted_realnames(v)
+        # Expected number of addresses: 1 + number of commas
+        n += 1 + v.count(',')
+    if len(result) != n:
+        return [('', '')]
+
+    return result
+
+
+def _check_parenthesis(addr):
+    # Ignore parenthesis in quoted real names.
+    addr = _strip_quoted_realnames(addr)
+
+    opens = 0
+    for pos, ch in _iter_escaped_chars(addr):
+        if ch == '(':
+            opens += 1
+        elif ch == ')':
+            opens -= 1
+            if opens < 0:
+                return False
+    return (opens == 0)
+
+
+def _pre_parse_validation(email_header_fields):
+    accepted_values = []
+    for v in email_header_fields:
+        if not _check_parenthesis(v):
+            v = "('', '')"
+        accepted_values.append(v)
+
+    return accepted_values
+
+
+def _post_parse_validation(parsed_email_header_tuples):
+    accepted_values = []
+    # The parser would have parsed a correctly formatted domain-literal
+    # The existence of an [ after parsing indicates a parsing failure
+    for v in parsed_email_header_tuples:
+        if '[' in v[1]:
+            v = ('', '')
+        accepted_values.append(v)
+
+    return accepted_values
 
 
 def _format_timetuple_and_zone(timetuple, zone):
@@ -128,7 +241,7 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
 
     Fri, 09 Nov 2001 01:08:47 -0000
 
-    Optional timeval if given is a floating point time value as accepted by
+    Optional timeval if given is a floating-point time value as accepted by
     gmtime() and localtime(), otherwise the current time is used.
 
     Optional localtime is a flag that when True, interprets timeval, and
@@ -143,13 +256,13 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
     # 2822 requires that day and month names be the English abbreviations.
     if timeval is None:
         timeval = time.time()
-    if localtime or usegmt:
-        dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
-    else:
-        dt = datetime.datetime.utcfromtimestamp(timeval)
+    dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
+
     if localtime:
         dt = dt.astimezone()
         usegmt = False
+    elif not usegmt:
+        dt = dt.replace(tzinfo=None)
     return format_datetime(dt, usegmt)
 
 def format_datetime(dt, usegmt=False):
@@ -181,6 +294,11 @@ def make_msgid(idstring=None, domain=None):
     portion of the message id after the '@'.  It defaults to the locally
     defined hostname.
     """
+    # Lazy imports to speedup module import time
+    # (no other functions in email.utils need these modules)
+    import random
+    import socket
+
     timeval = int(time.time()*100)
     pid = os.getpid()
     randint = random.getrandbits(64)
@@ -205,16 +323,33 @@ def parsedate_to_datetime(data):
             tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
 
 
-def parseaddr(addr):
+def parseaddr(addr, *, strict=True):
     """
     Parse addr into its constituent realname and email address parts.
 
     Return a tuple of realname and email address, unless the parse fails, in
     which case return a 2-tuple of ('', '').
+
+    If strict is True, use a strict parser which rejects malformed inputs.
     """
-    addrs = _AddressList(addr).addresslist
-    if not addrs:
-        return '', ''
+    if not strict:
+        addrs = _AddressList(addr).addresslist
+        if not addrs:
+            return ('', '')
+        return addrs[0]
+
+    if isinstance(addr, list):
+        addr = addr[0]
+
+    if not isinstance(addr, str):
+        return ('', '')
+
+    addr = _pre_parse_validation([addr])[0]
+    addrs = _post_parse_validation(_AddressList(addr).addresslist)
+
+    if not addrs or len(addrs) > 1:
+        return ('', '')
+
     return addrs[0]
 
 
@@ -331,41 +466,15 @@ def collapse_rfc2231_value(value, errors='replace',
 # better than not having it.
 #
 
-def localtime(dt=None, isdst=-1):
+def localtime(dt=None):
     """Return local time as an aware datetime object.
 
     If called without arguments, return current time.  Otherwise *dt*
     argument should be a datetime instance, and it is converted to the
     local time zone according to the system time zone database.  If *dt* is
     naive (that is, dt.tzinfo is None), it is assumed to be in local time.
-    In this case, a positive or zero value for *isdst* causes localtime to
-    presume initially that summer time (for example, Daylight Saving Time)
-    is or is not (respectively) in effect for the specified time.  A
-    negative value for *isdst* causes the localtime() function to attempt
-    to divine whether summer time is in effect for the specified time.
 
     """
     if dt is None:
-        return datetime.datetime.now(datetime.timezone.utc).astimezone()
-    if dt.tzinfo is not None:
-        return dt.astimezone()
-    # We have a naive datetime.  Convert to a (localtime) timetuple and pass to
-    # system mktime together with the isdst hint.  System mktime will return
-    # seconds since epoch.
-    tm = dt.timetuple()[:-1] + (isdst,)
-    seconds = time.mktime(tm)
-    localtm = time.localtime(seconds)
-    try:
-        delta = datetime.timedelta(seconds=localtm.tm_gmtoff)
-        tz = datetime.timezone(delta, localtm.tm_zone)
-    except AttributeError:
-        # Compute UTC offset and compare with the value implied by tm_isdst.
-        # If the values match, use the zone name implied by tm_isdst.
-        delta = dt - datetime.datetime(*time.gmtime(seconds)[:6])
-        dst = time.daylight and localtm.tm_isdst > 0
-        gmtoff = -(time.altzone if dst else time.timezone)
-        if delta == datetime.timedelta(seconds=gmtoff):
-            tz = datetime.timezone(delta, time.tzname[dst])
-        else:
-            tz = datetime.timezone(delta)
-    return dt.replace(tzinfo=tz)
+        dt = datetime.datetime.now()
+    return dt.astimezone()

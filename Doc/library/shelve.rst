@@ -1,12 +1,12 @@
-:mod:`shelve` --- Python object persistence
-===========================================
+:mod:`!shelve` --- Python object persistence
+============================================
 
 .. module:: shelve
    :synopsis: Python object persistence.
 
 **Source code:** :source:`Lib/shelve.py`
 
-.. index:: module: pickle
+.. index:: pair: module; pickle
 
 --------------
 
@@ -25,7 +25,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    database file is opened for reading and writing.  The optional *flag* parameter
    has the same interpretation as the *flag* parameter of :func:`dbm.open`.
 
-   By default, pickles created with :data:`pickle.DEFAULT_PROTOCOL` are used
+   By default, pickles created with :const:`pickle.DEFAULT_PROTOCOL` are used
    to serialize values.  The version of the pickle protocol can be specified
    with the *protocol* parameter.
 
@@ -42,7 +42,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    mutated).
 
    .. versionchanged:: 3.10
-      :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
+      :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
    .. versionchanged:: 3.11
@@ -86,7 +86,7 @@ Two additional methods are supported:
 
 .. seealso::
 
-   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642/>`_
+   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642-persistent-dict-with-multiple-standard-file-format/>`_
    with widely supported storage formats and having the speed of native
    dictionaries.
 
@@ -94,9 +94,9 @@ Two additional methods are supported:
 Restrictions
 ------------
 
-  .. index::
-     module: dbm.ndbm
-     module: dbm.gnu
+.. index::
+   pair: module; dbm.ndbm
+   pair: module; dbm.gnu
 
 * The choice of which database package will be used (such as :mod:`dbm.ndbm` or
   :mod:`dbm.gnu`) depends on which interface is available.  Therefore it is not
@@ -113,13 +113,16 @@ Restrictions
   differs across Unix versions and requires knowledge about the database
   implementation used.
 
+* On macOS :mod:`dbm.ndbm` can silently corrupt the database file on updates,
+  which can cause hard crashes when trying to read from the database.
+
 
 .. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
 
    A subclass of :class:`collections.abc.MutableMapping` which stores pickled
    values in the *dict* object.
 
-   By default, pickles created with :data:`pickle.DEFAULT_PROTOCOL` are used
+   By default, pickles created with :const:`pickle.DEFAULT_PROTOCOL` are used
    to serialize values.  The version of the pickle protocol can be specified
    with the *protocol* parameter.  See the :mod:`pickle` documentation for a
    discussion of the pickle protocols.
@@ -143,19 +146,20 @@ Restrictions
       Added context manager support.
 
    .. versionchanged:: 3.10
-      :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
+      :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
 
-   A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`!next`,
-   :meth:`previous`, :meth:`last` and :meth:`set_location` which are available
-   in the third-party :mod:`bsddb` module from `pybsddb
+   A subclass of :class:`Shelf` which exposes :meth:`!first`, :meth:`!next`,
+   :meth:`!previous`, :meth:`!last` and :meth:`!set_location` methods.
+   These are available
+   in the third-party :mod:`!bsddb` module from `pybsddb
    <https://www.jcea.es/programacion/pybsddb.htm>`_ but not in other database
    modules.  The *dict* object passed to the constructor must support those
    methods.  This is generally accomplished by calling one of
-   :func:`bsddb.hashopen`, :func:`bsddb.btopen` or :func:`bsddb.rnopen`.  The
+   :func:`!bsddb.hashopen`, :func:`!bsddb.btopen` or :func:`!bsddb.rnopen`.  The
    optional *protocol*, *writeback*, and *keyencoding* parameters have the same
    interpretation as for the :class:`Shelf` class.
 

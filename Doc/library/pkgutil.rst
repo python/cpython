@@ -1,5 +1,5 @@
-:mod:`pkgutil` --- Package extension utility
-============================================
+:mod:`!pkgutil` --- Package extension utility
+=============================================
 
 .. module:: pkgutil
    :synopsis: Utilities for the import system.
@@ -25,18 +25,18 @@ support.
       from pkgutil import extend_path
       __path__ = extend_path(__path__, __name__)
 
-   This will add to the package's ``__path__`` all subdirectories of directories
-   on :data:`sys.path` named after the package.  This is useful if one wants to
-   distribute different parts of a single logical package as multiple
+   For each directory on :data:`sys.path` that has a subdirectory that matches the
+   package name, add the subdirectory to the package's :attr:`__path__`.  This is useful
+   if one wants to distribute different parts of a single logical package as multiple
    directories.
 
    It also looks for :file:`\*.pkg` files beginning where ``*`` matches the
    *name* argument.  This feature is similar to :file:`\*.pth` files (see the
    :mod:`site` module for more information), except that it doesn't special-case
    lines starting with ``import``.  A :file:`\*.pkg` file is trusted at face
-   value: apart from checking for duplicates, all entries found in a
-   :file:`\*.pkg` file are added to the path, regardless of whether they exist
-   on the filesystem.  (This is a feature.)
+   value: apart from skipping blank lines and ignoring comments, all entries
+   found in a :file:`\*.pkg` file are added to the path, regardless of whether
+   they exist on the filesystem (this is a feature).
 
    If the input path is not a list (as is the case for frozen packages) it is
    returned unchanged.  The input path is not modified; an extended copy is
@@ -48,33 +48,6 @@ support.
    this function to raise an exception (in line with :func:`os.path.isdir`
    behavior).
 
-
-.. class:: ImpImporter(dirname=None)
-
-   :pep:`302` Finder that wraps Python's "classic" import algorithm.
-
-   If *dirname* is a string, a :pep:`302` finder is created that searches that
-   directory.  If *dirname* is ``None``, a :pep:`302` finder is created that
-   searches the current :data:`sys.path`, plus any modules that are frozen or
-   built-in.
-
-   Note that :class:`ImpImporter` does not currently support being used by
-   placement on :data:`sys.meta_path`.
-
-   .. deprecated:: 3.3
-      This emulation is no longer needed, as the standard import mechanism
-      is now fully :pep:`302` compliant and available in :mod:`importlib`.
-
-
-.. class:: ImpLoader(fullname, file, filename, etc)
-
-   :term:`Loader <loader>` that wraps Python's "classic" import algorithm.
-
-   .. deprecated:: 3.3
-      This emulation is no longer needed, as the standard import mechanism
-      is now fully :pep:`302` compliant and available in :mod:`importlib`.
-
-
 .. function:: find_loader(fullname)
 
    Retrieve a module :term:`loader` for the given *fullname*.
@@ -82,7 +55,7 @@ support.
    This is a backwards compatibility wrapper around
    :func:`importlib.util.find_spec` that converts most failures to
    :exc:`ImportError` and only returns the loader rather than the full
-   :class:`ModuleSpec`.
+   :class:`importlib.machinery.ModuleSpec`.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
@@ -90,6 +63,10 @@ support.
 
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
+
+   .. deprecated-removed:: 3.12 3.14
+      Use :func:`importlib.util.find_spec` instead.
+
 
 .. function:: get_importer(path_item)
 
@@ -122,6 +99,9 @@ support.
 
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
+
+   .. deprecated-removed:: 3.12 3.14
+      Use :func:`importlib.util.find_spec` instead.
 
 
 .. function:: iter_importers(fullname='')

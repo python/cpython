@@ -1,5 +1,5 @@
-:mod:`errno` --- Standard errno system symbols
-==============================================
+:mod:`!errno` --- Standard errno system symbols
+===============================================
 
 .. module:: errno
    :synopsis: Standard errno system symbols.
@@ -511,6 +511,13 @@ defined by the module.  The specific list of defined symbols is available as
    Operation not supported on transport endpoint
 
 
+.. data:: ENOTSUP
+
+   Operation not supported
+
+   .. versionadded:: 3.2
+
+
 .. data:: EPFNOSUPPORT
 
    Protocol family not supported
@@ -666,3 +673,24 @@ defined by the module.  The specific list of defined symbols is available as
    .. availability:: WASI, FreeBSD
 
    .. versionadded:: 3.11.1
+
+
+.. data:: ECANCELED
+
+   Operation canceled
+
+   .. versionadded:: 3.2
+
+
+.. data:: EOWNERDEAD
+
+   Owner died
+
+   .. versionadded:: 3.2
+
+
+.. data:: ENOTRECOVERABLE
+
+   State not recoverable
+
+   .. versionadded:: 3.2

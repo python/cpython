@@ -1,0 +1,3 @@
+Fix a possible race condition affecting parallel builds configured with
+``--enable-experimental-jit``, in which compilation errors could be caused
+by an incompletely-generated header file.

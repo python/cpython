@@ -7,19 +7,24 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
-SPHINXLINT   = PATH=$(VENVDIR)/bin:$$PATH sphinx-lint
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
+JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+REQUIREMENTS = requirements.txt
 SPHINXERRORHANDLING = -W
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j auto \
-                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
+ALLSPHINXOPTS = -b $(BUILDER) \
+                -d build/doctrees \
+                -j $(JOBS) \
+                $(PAPEROPT_$(PAPER)) \
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) \
+                . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help
 help:
@@ -27,7 +32,9 @@ help:
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
 	@echo "  html       to make standalone HTML files"
+	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
+	@echo "  htmllive   to rebuild and reload HTML files in your browser"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text       to make plain text files"
@@ -134,9 +141,23 @@ pydoc-topics: build
 	@echo "Building finished; now run this:" \
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
+.PHONY: gettext
+gettext: BUILDER = gettext
+gettext: SPHINXOPTS += '-d build/doctrees-gettext'
+gettext: build
+
 .PHONY: htmlview
 htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
+
+.PHONY: ensure-sphinx-autobuild
+ensure-sphinx-autobuild: venv
+	$(call ensure_package,sphinx-autobuild)
+
+.PHONY: htmllive
+htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
+htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
+htmllive: ensure-sphinx-autobuild html
 
 .PHONY: clean
 clean: clean-venv
@@ -152,10 +173,16 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
-		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \
-		$(VENVDIR)/bin/python3 -m pip install -r requirements.txt; \
-		echo "The venv has been created in the $(VENVDIR) directory"; \
+		echo "Creating venv in $(VENVDIR)"; \
+		if uv --version > /dev/null; then \
+			uv venv $(VENVDIR); \
+			VIRTUAL_ENV=$(VENVDIR) uv pip install -r $(REQUIREMENTS); \
+		else \
+			$(PYTHON) -m venv $(VENVDIR); \
+			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
+			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
+			echo "The venv has been created in the $(VENVDIR) directory"; \
+		fi; \
 	fi
 
 .PHONY: dist
@@ -213,12 +240,18 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
+define ensure_package
+	if uv --version > /dev/null; then \
+		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install $(1); \
+	else \
+		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install $(1); \
+	fi
+endef
+
 .PHONY: check
-check:
-	# Check the docs and NEWS files with sphinx-lint.
-	# Ignore the tools and venv dirs and check that the default role is not used.
-	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
-	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
+check: venv
+	$(call ensure_package,pre_commit)
+	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
 serve:

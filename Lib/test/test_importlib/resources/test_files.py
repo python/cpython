@@ -1,4 +1,3 @@
-import typing
 import textwrap
 import unittest
 import warnings
@@ -32,12 +31,13 @@ class FilesTests:
         actual = files.joinpath('utf-8.file').read_text(encoding='utf-8')
         assert actual == 'Hello, UTF-8 world!\n'
 
-    @unittest.skipUnless(
-        hasattr(typing, 'runtime_checkable'),
-        "Only suitable when typing supports runtime_checkable",
-    )
     def test_traversable(self):
         assert isinstance(resources.files(self.data), Traversable)
+
+    def test_joinpath_with_multiple_args(self):
+        files = resources.files(self.data)
+        binfile = files.joinpath('subdirectory', 'binary.file')
+        self.assertTrue(binfile.is_file())
 
     def test_old_parameter(self):
         """
@@ -64,13 +64,17 @@ class OpenNamespaceTests(FilesTests, unittest.TestCase):
         self.data = namespacedata01
 
 
+class OpenNamespaceZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
+    ZIP_MODULE = 'namespacedata01'
+
+
 class SiteDir:
     def setUp(self):
         self.fixtures = contextlib.ExitStack()
         self.addCleanup(self.fixtures.close)
         self.site_dir = self.fixtures.enter_context(os_helper.temp_dir())
         self.fixtures.enter_context(import_helper.DirsOnSysPath(self.site_dir))
-        self.fixtures.enter_context(import_helper.CleanImport())
+        self.fixtures.enter_context(import_helper.isolated_modules())
 
 
 class ModulesFilesTests(SiteDir, unittest.TestCase):
@@ -85,7 +89,7 @@ class ModulesFilesTests(SiteDir, unittest.TestCase):
         _path.build(spec, self.site_dir)
         import mod
 
-        actual = resources.files(mod).joinpath('res.txt').read_text()
+        actual = resources.files(mod).joinpath('res.txt').read_text(encoding='utf-8')
         assert actual == spec['res.txt']
 
 
@@ -99,7 +103,7 @@ class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
                 '__init__.py': textwrap.dedent(
                     """
                     import importlib.resources as res
-                    val = res.files().joinpath('res.txt').read_text()
+                    val = res.files().joinpath('res.txt').read_text(encoding='utf-8')
                     """
                 ),
                 'res.txt': 'resources are the best',

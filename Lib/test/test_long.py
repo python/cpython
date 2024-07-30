@@ -386,15 +386,6 @@ class LongTest(unittest.TestCase):
                 return 42
         self.assertRaises(TypeError, int, JustLong())
 
-        class LongTrunc:
-            # __long__ should be ignored in 3.x
-            def __long__(self):
-                return 42
-            def __trunc__(self):
-                return 1729
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(int(LongTrunc()), 1729)
-
     def check_float_conversion(self, n):
         # Check that int -> float conversion behaviour matches
         # that of the pure Python version above.
@@ -1600,6 +1591,47 @@ class LongTest(unittest.TestCase):
                 # (2**i - 1)**2 = 2**(2*i) - 2*2**i + 1
                 self.assertEqual(n**2,
                     (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)
+
+    def test___sizeof__(self):
+        self.assertEqual(int.__itemsize__, sys.int_info.sizeof_digit)
+
+        # Pairs (test_value, number of allocated digits)
+        test_values = [
+            # We always allocate space for at least one digit, even for
+            # a value of zero; sys.getsizeof should reflect that.
+            (0, 1),
+            (1, 1),
+            (-1, 1),
+            (BASE-1, 1),
+            (1-BASE, 1),
+            (BASE, 2),
+            (-BASE, 2),
+            (BASE*BASE - 1, 2),
+            (BASE*BASE, 3),
+        ]
+
+        for value, ndigits in test_values:
+            with self.subTest(value):
+                self.assertEqual(
+                    value.__sizeof__(),
+                    int.__basicsize__ + int.__itemsize__ * ndigits
+                )
+
+        # Same test for a subclass of int.
+        class MyInt(int):
+            pass
+
+        self.assertEqual(MyInt.__itemsize__, sys.int_info.sizeof_digit)
+
+        for value, ndigits in test_values:
+            with self.subTest(value):
+                self.assertEqual(
+                    MyInt(value).__sizeof__(),
+                    MyInt.__basicsize__ + MyInt.__itemsize__ * ndigits
+                )
+
+        # GH-117195 -- This shouldn't crash
+        object.__sizeof__(1)
 
 if __name__ == "__main__":
     unittest.main()

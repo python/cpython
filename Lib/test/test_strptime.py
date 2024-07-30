@@ -7,7 +7,7 @@ import re
 import os
 import sys
 from test import support
-from test.support import skip_if_buggy_ucrt_strfptime
+from test.support import skip_if_buggy_ucrt_strfptime, warnings_helper
 from datetime import date as datetime_date
 
 import _strptime
@@ -120,7 +120,7 @@ class TimeRETests(unittest.TestCase):
 
     def test_pattern(self):
         # Test TimeRE.pattern
-        pattern_string = self.time_re.pattern(r"%a %A %d")
+        pattern_string = self.time_re.pattern(r"%a %A %d %Y")
         self.assertTrue(pattern_string.find(self.locale_time.a_weekday[2]) != -1,
                         "did not find abbreviated weekday in pattern string '%s'" %
                          pattern_string)
@@ -160,10 +160,11 @@ class TimeRETests(unittest.TestCase):
                           found.group('b')))
         for directive in ('a','A','b','B','c','d','G','H','I','j','m','M','p',
                           'S','u','U','V','w','W','x','X','y','Y','Z','%'):
-            compiled = self.time_re.compile("%" + directive)
-            found = compiled.match(time.strftime("%" + directive))
+            fmt = "%d %Y" if directive == 'd' else "%" + directive
+            compiled = self.time_re.compile(fmt)
+            found = compiled.match(time.strftime(fmt))
             self.assertTrue(found, "Matching failed on '%s' using '%s' regex" %
-                                    (time.strftime("%" + directive),
+                                    (time.strftime(fmt),
                                      compiled.pattern))
 
     def test_blankpattern(self):
@@ -224,25 +225,55 @@ class StrptimeTests(unittest.TestCase):
             else:
                 self.fail("'%s' did not raise ValueError" % bad_format)
 
-        # Ambiguous or incomplete cases using ISO year/week/weekday directives
-        # 1. ISO week (%V) is specified, but the year is specified with %Y
-        # instead of %G
-        with self.assertRaises(ValueError):
-            _strptime._strptime("1999 50", "%Y %V")
-        # 2. ISO year (%G) and ISO week (%V) are specified, but weekday is not
-        with self.assertRaises(ValueError):
-            _strptime._strptime("1999 51", "%G %V")
-        # 3. ISO year (%G) and weekday are specified, but ISO week (%V) is not
-        for w in ('A', 'a', 'w', 'u'):
-            with self.assertRaises(ValueError):
-                _strptime._strptime("1999 51","%G %{}".format(w))
-        # 4. ISO year is specified alone (e.g. time.strptime('2015', '%G'))
-        with self.assertRaises(ValueError):
-            _strptime._strptime("2015", "%G")
-        # 5. Julian/ordinal day (%j) is specified with %G, but not %Y
-        with self.assertRaises(ValueError):
-            _strptime._strptime("1999 256", "%G %j")
+        msg_week_no_year_or_weekday = r"ISO week directive '%V' must be used with " \
+            r"the ISO year directive '%G' and a weekday directive " \
+            r"\('%A', '%a', '%w', or '%u'\)."
+        msg_week_not_compatible = r"ISO week directive '%V' is incompatible with " \
+            r"the year directive '%Y'. Use the ISO year '%G' instead."
+        msg_julian_not_compatible = r"Day of the year directive '%j' is not " \
+            r"compatible with ISO year directive '%G'. Use '%Y' instead."
+        msg_year_no_week_or_weekday = r"ISO year directive '%G' must be used with " \
+            r"the ISO week directive '%V' and a weekday directive " \
+            r"\('%A', '%a', '%w', or '%u'\)."
 
+        locale_time = _strptime.LocaleTime()
+
+        # Ambiguous or incomplete cases using ISO year/week/weekday directives
+        subtests = [
+            # 1. ISO week (%V) is specified, but the year is specified with %Y
+            # instead of %G
+            ("1999 50", "%Y %V", msg_week_no_year_or_weekday),
+            ("1999 50 5", "%Y %V %u", msg_week_not_compatible),
+            # 2. ISO year (%G) and ISO week (%V) are specified, but weekday is not
+            ("1999 51", "%G %V", msg_year_no_week_or_weekday),
+            # 3. ISO year (%G) and weekday are specified, but ISO week (%V) is not
+            ("1999 {}".format(locale_time.f_weekday[5]), "%G %A",
+                msg_year_no_week_or_weekday),
+            ("1999 {}".format(locale_time.a_weekday[5]), "%G %a",
+                msg_year_no_week_or_weekday),
+            ("1999 5", "%G %w", msg_year_no_week_or_weekday),
+            ("1999 5", "%G %u", msg_year_no_week_or_weekday),
+            # 4. ISO year is specified alone (e.g. time.strptime('2015', '%G'))
+            ("2015", "%G", msg_year_no_week_or_weekday),
+            # 5. Julian/ordinal day (%j) is specified with %G, but not %Y
+            ("1999 256", "%G %j", msg_julian_not_compatible),
+            ("1999 50 5 256", "%G %V %u %j", msg_julian_not_compatible),
+            # ISO week specified alone
+            ("50", "%V", msg_week_no_year_or_weekday),
+            # ISO year is unspecified, falling back to year
+            ("50 5", "%V %u", msg_week_no_year_or_weekday),
+            # 6. Invalid ISO weeks
+            ("2019-00-1", "%G-%V-%u",
+             "time data '2019-00-1' does not match format '%G-%V-%u'"),
+            ("2019-54-1", "%G-%V-%u",
+             "time data '2019-54-1' does not match format '%G-%V-%u'"),
+            ("2021-53-1", "%G-%V-%u", "Invalid week: 53"),
+        ]
+
+        for (data_string, format, message) in subtests:
+            with self.subTest(data_string=data_string, format=format):
+                with self.assertRaisesRegex(ValueError, message):
+                    _strptime._strptime(data_string, format)
 
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
@@ -260,8 +291,9 @@ class StrptimeTests(unittest.TestCase):
 
     def helper(self, directive, position):
         """Helper fxn in testing."""
-        strf_output = time.strftime("%" + directive, self.time_tuple)
-        strp_output = _strptime._strptime_time(strf_output, "%" + directive)
+        fmt = "%d %Y" if directive == 'd' else "%" + directive
+        strf_output = time.strftime(fmt, self.time_tuple)
+        strp_output = _strptime._strptime_time(strf_output, fmt)
         self.assertTrue(strp_output[position] == self.time_tuple[position],
                         "testing of '%s' directive failed; '%s' -> %s != %s" %
                          (directive, strf_output, strp_output[position],
@@ -467,9 +499,11 @@ class StrptimeTests(unittest.TestCase):
         need_escaping = r".^$*+?{}\[]|)("
         self.assertTrue(_strptime._strptime_time(need_escaping, need_escaping))
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-70647
     def test_feb29_on_leap_year_without_year(self):
         time.strptime("Feb 29", "%b %d")
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-70647
     def test_mar1_comes_after_feb29_even_when_omitting_the_year(self):
         self.assertLess(
                 time.strptime("Feb 29", "%b %d"),
@@ -649,25 +683,25 @@ class CacheTests(unittest.TestCase):
     def test_time_re_recreation(self):
         # Make sure cache is recreated when current locale does not match what
         # cached object was created with.
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         _strptime._strptime_time("2005", "%Y")
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
         original_time_re = _strptime._TimeRE_cache
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         self.assertIsNot(original_time_re, _strptime._TimeRE_cache)
         self.assertEqual(len(_strptime._regex_cache), 1)
 
     def test_regex_cleanup(self):
         # Make sure cached regexes are discarded when cache becomes "full".
         try:
-            del _strptime._regex_cache['%d']
+            del _strptime._regex_cache['%d %Y']
         except KeyError:
             pass
         bogus_key = 0
         while len(_strptime._regex_cache) <= _strptime._CACHE_MAX_SIZE:
             _strptime._regex_cache[bogus_key] = None
             bogus_key += 1
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         self.assertEqual(len(_strptime._regex_cache), 1)
 
     def test_new_localetime(self):
@@ -675,7 +709,7 @@ class CacheTests(unittest.TestCase):
         # is created.
         locale_time_id = _strptime._TimeRE_cache.locale_time
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         self.assertIsNot(locale_time_id, _strptime._TimeRE_cache.locale_time)
 
     def test_TimeRE_recreation_locale(self):
@@ -686,13 +720,13 @@ class CacheTests(unittest.TestCase):
         except locale.Error:
             self.skipTest('test needs en_US.UTF8 locale')
         try:
-            _strptime._strptime_time('10', '%d')
+            _strptime._strptime_time('10 2004', '%d %Y')
             # Get id of current cache object.
             first_time_re = _strptime._TimeRE_cache
             try:
                 # Change the locale and force a recreation of the cache.
                 locale.setlocale(locale.LC_TIME, ('de_DE', 'UTF8'))
-                _strptime._strptime_time('10', '%d')
+                _strptime._strptime_time('10 2004', '%d %Y')
                 # Get the new cache object's id.
                 second_time_re = _strptime._TimeRE_cache
                 # They should not be equal.

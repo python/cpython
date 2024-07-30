@@ -21,7 +21,12 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "module.h"
+#include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "connection.h"
 
 // Returns non-NULL if a new exception should be raised
@@ -157,7 +162,7 @@ _pysqlite_long_as_int64(PyObject * py_val)
         sqlite_int64 int64val;
         if (_PyLong_AsByteArray((PyLongObject *)py_val,
                                 (unsigned char *)&int64val, sizeof(int64val),
-                                IS_LITTLE_ENDIAN, 1 /* signed */) >= 0) {
+                                IS_LITTLE_ENDIAN, 1 /* signed */, 0) >= 0) {
             return int64val;
         }
     }

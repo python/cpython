@@ -18,7 +18,6 @@ from email import errors
 from email.encoders import encode_7or8bit
 
 
-
 # Flags for types of header encodings
 QP          = 1 # Quoted-Printable
 BASE64      = 2 # Base64
@@ -32,7 +31,6 @@ UNKNOWN8BIT = 'unknown-8bit'
 EMPTYSTRING = ''
 
 
-
 # Defaults
 CHARSETS = {
     # input        header enc  body enc output conv
@@ -104,7 +102,6 @@ CODEC_MAP = {
     }
 
 
-
 # Convenience functions for extending the above mappings
 def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
     """Add character set properties to the global registry.
@@ -153,7 +150,6 @@ def add_codec(charset, codecname):
     CODEC_MAP[charset] = codecname
 
 
-
 # Convenience function for encoding strings, taking into account
 # that they might be unknown-8bit (ie: have surrogate-escaped bytes)
 def _encode(string, codec):
@@ -163,7 +159,6 @@ def _encode(string, codec):
         return string.encode(codec)
 
 
-
 class Charset:
     """Map character sets to their email properties.
 
@@ -180,7 +175,7 @@ class Charset:
     module expose the following information about a character set:
 
     input_charset: The initial character set specified.  Common aliases
-                   are converted to their `official' email names (e.g. latin_1
+                   are converted to their 'official' email names (e.g. latin_1
                    is converted to iso-8859-1).  Defaults to 7-bit us-ascii.
 
     header_encoding: If the character set must be encoded before it can be
@@ -250,7 +245,7 @@ class Charset:
     def get_body_encoding(self):
         """Return the content-transfer-encoding used for body encoding.
 
-        This is either the string `quoted-printable' or `base64' depending on
+        This is either the string 'quoted-printable' or 'base64' depending on
         the encoding used, or it is a function in which case you should call
         the function with a single argument, the Message object being
         encoded.  The function should then set the Content-Transfer-Encoding
@@ -346,7 +341,6 @@ class Charset:
                 if not lines and not current_line:
                     lines.append(None)
                 else:
-                    separator = (' ' if lines else '')
                     joined_line = EMPTYSTRING.join(current_line)
                     header_bytes = _encode(joined_line, codec)
                     lines.append(encoder(header_bytes))

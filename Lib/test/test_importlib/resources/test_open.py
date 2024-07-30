@@ -15,7 +15,7 @@ class CommonBinaryTests(util.CommonTests, unittest.TestCase):
 class CommonTextTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
         target = resources.files(package).joinpath(path)
-        with target.open():
+        with target.open(encoding='utf-8'):
             pass
 
 
@@ -24,11 +24,11 @@ class OpenTests:
         target = resources.files(self.data) / 'binary.file'
         with target.open('rb') as fp:
             result = fp.read()
-            self.assertEqual(result, b'\x00\x01\x02\x03')
+            self.assertEqual(result, bytes(range(4)))
 
     def test_open_text_default_encoding(self):
         target = resources.files(self.data) / 'utf-8.file'
-        with target.open() as fp:
+        with target.open(encoding='utf-8') as fp:
             result = fp.read()
             self.assertEqual(result, 'Hello, UTF-8 world!\n')
 
@@ -39,7 +39,9 @@ class OpenTests:
         self.assertEqual(result, 'Hello, UTF-16 world!\n')
 
     def test_open_text_with_errors(self):
-        # Raises UnicodeError without the 'errors' argument.
+        """
+        Raises UnicodeError without the 'errors' argument.
+        """
         target = resources.files(self.data) / 'utf-16.file'
         with target.open(encoding='utf-8', errors='strict') as fp:
             self.assertRaises(UnicodeError, fp.read)
@@ -54,11 +56,13 @@ class OpenTests:
 
     def test_open_binary_FileNotFoundError(self):
         target = resources.files(self.data) / 'does-not-exist'
-        self.assertRaises(FileNotFoundError, target.open, 'rb')
+        with self.assertRaises(FileNotFoundError):
+            target.open('rb')
 
     def test_open_text_FileNotFoundError(self):
         target = resources.files(self.data) / 'does-not-exist'
-        self.assertRaises(FileNotFoundError, target.open)
+        with self.assertRaises(FileNotFoundError):
+            target.open(encoding='utf-8')
 
 
 class OpenDiskTests(OpenTests, unittest.TestCase):
@@ -75,6 +79,10 @@ class OpenDiskNamespaceTests(OpenTests, unittest.TestCase):
 
 class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
     pass
+
+
+class OpenNamespaceZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
+    ZIP_MODULE = 'namespacedata01'
 
 
 if __name__ == '__main__':

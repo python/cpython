@@ -306,7 +306,8 @@ class socket(_socket.socket):
         """makefile(...) -> an I/O stream connected to the socket
 
         The arguments are as for io.open() after the filename, except the only
-        supported mode values are 'r' (default), 'w' and 'b'.
+        supported mode values are 'r' (default), 'w', 'b', or a combination of
+        those.
         """
         # XXX refactor to share code?
         if not set(mode) <= {"r", "w", "b"}:
@@ -382,7 +383,7 @@ class socket(_socket.socket):
                     if timeout and not selector_select(timeout):
                         raise TimeoutError('timed out')
                     if count:
-                        blocksize = count - total_sent
+                        blocksize = min(count - total_sent, blocksize)
                         if blocksize <= 0:
                             break
                     try:
@@ -649,6 +650,23 @@ else:
                 raise
         finally:
             lsock.close()
+
+        # Authenticating avoids using a connection from something else
+        # able to connect to {host}:{port} instead of us.
+        # We expect only AF_INET and AF_INET6 families.
+        try:
+            if (
+                ssock.getsockname() != csock.getpeername()
+                or csock.getsockname() != ssock.getpeername()
+            ):
+                raise ConnectionError("Unexpected peer connection")
+        except:
+            # getsockname() and getpeername() can fail
+            # if either socket isn't connected.
+            ssock.close()
+            csock.close()
+            raise
+
         return (ssock, csock)
     __all__.append("socketpair")
 
@@ -702,16 +720,15 @@ class SocketIO(io.RawIOBase):
         self._checkReadable()
         if self._timeout_occurred:
             raise OSError("cannot read from timed out object")
-        while True:
-            try:
-                return self._sock.recv_into(b)
-            except timeout:
-                self._timeout_occurred = True
-                raise
-            except error as e:
-                if e.errno in _blocking_errnos:
-                    return None
-                raise
+        try:
+            return self._sock.recv_into(b)
+        except timeout:
+            self._timeout_occurred = True
+            raise
+        except error as e:
+            if e.errno in _blocking_errnos:
+                return None
+            raise
 
     def write(self, b):
         """Write the given bytes or bytearray object *b* to the socket
@@ -910,7 +927,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         # address, effectively preventing this one from accepting
         # connections. Also, it may set the process in a state where
         # it'll no longer respond to any signals or graceful kills.
-        # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        # See: https://learn.microsoft.com/windows/win32/winsock/using-so-reuseaddr-and-so-exclusiveaddruse
         if os.name not in ('nt', 'cygwin') and \
                 hasattr(_socket, 'SO_REUSEADDR'):
             try:

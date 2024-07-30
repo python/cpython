@@ -71,15 +71,22 @@ class Test_TestProgram(unittest.TestCase):
         def testUnexpectedSuccess(self):
             pass
 
-    class FooBarLoader(unittest.TestLoader):
-        """Test loader that returns a suite containing FooBar."""
+    class Empty(unittest.TestCase):
+        pass
+
+    class TestLoader(unittest.TestLoader):
+        """Test loader that returns a suite containing the supplied testcase."""
+
+        def __init__(self, testcase):
+            self.testcase = testcase
+
         def loadTestsFromModule(self, module):
             return self.suiteClass(
-                [self.loadTestsFromTestCase(Test_TestProgram.FooBar)])
+                [self.loadTestsFromTestCase(self.testcase)])
 
         def loadTestsFromNames(self, names, module):
             return self.suiteClass(
-                [self.loadTestsFromTestCase(Test_TestProgram.FooBar)])
+                [self.loadTestsFromTestCase(self.testcase)])
 
     def test_defaultTest_with_string(self):
         class FakeRunner(object):
@@ -92,7 +99,7 @@ class Test_TestProgram(unittest.TestCase):
         runner = FakeRunner()
         program = unittest.TestProgram(testRunner=runner, exit=False,
                                        defaultTest='test.test_unittest',
-                                       testLoader=self.FooBarLoader())
+                                       testLoader=self.TestLoader(self.FooBar))
         sys.argv = old_argv
         self.assertEqual(('test.test_unittest',), program.testNames)
 
@@ -108,7 +115,7 @@ class Test_TestProgram(unittest.TestCase):
         program = unittest.TestProgram(
             testRunner=runner, exit=False,
             defaultTest=['test.test_unittest', 'test.test_unittest2'],
-            testLoader=self.FooBarLoader())
+            testLoader=self.TestLoader(self.FooBar))
         sys.argv = old_argv
         self.assertEqual(['test.test_unittest', 'test.test_unittest2'],
                           program.testNames)
@@ -118,7 +125,7 @@ class Test_TestProgram(unittest.TestCase):
         program = unittest.main(exit=False,
                                 argv=["foobar"],
                                 testRunner=unittest.TextTestRunner(stream=stream),
-                                testLoader=self.FooBarLoader())
+                                testLoader=self.TestLoader(self.FooBar))
         self.assertTrue(hasattr(program, 'result'))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
@@ -130,13 +137,13 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_Exit(self):
         stream = BufferedWriter()
-        self.assertRaises(
-            SystemExit,
-            unittest.main,
-            argv=["foobar"],
-            testRunner=unittest.TextTestRunner(stream=stream),
-            exit=True,
-            testLoader=self.FooBarLoader())
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["foobar"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                exit=True,
+                testLoader=self.TestLoader(self.FooBar))
+        self.assertEqual(cm.exception.code, 1)
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
@@ -147,12 +154,11 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_ExitAsDefault(self):
         stream = BufferedWriter()
-        self.assertRaises(
-            SystemExit,
-            unittest.main,
-            argv=["foobar"],
-            testRunner=unittest.TextTestRunner(stream=stream),
-            testLoader=self.FooBarLoader())
+        with self.assertRaises(SystemExit):
+            unittest.main(
+                argv=["foobar"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.FooBar))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
@@ -160,6 +166,29 @@ class Test_TestProgram(unittest.TestCase):
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
+
+    def test_ExitSkippedSuite(self):
+        stream = BufferedWriter()
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["foobar", "-k", "testSkipped"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.FooBar))
+        self.assertEqual(cm.exception.code, 0)
+        out = stream.getvalue()
+        expected = '\n\nOK (skipped=1)\n'
+        self.assertTrue(out.endswith(expected))
+
+    def test_ExitEmptySuite(self):
+        stream = BufferedWriter()
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["empty"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.Empty))
+        self.assertEqual(cm.exception.code, 5)
+        out = stream.getvalue()
+        self.assertIn('\nNO TESTS RAN\n', out)
 
 
 class InitialisableProgram(unittest.TestProgram):
@@ -284,6 +313,7 @@ class TestCommandLineArgs(unittest.TestCase):
         program.failfast = 'failfast'
         program.buffer = 'buffer'
         program.warnings = 'warnings'
+        program.durations = '5'
 
         program.runTests()
 
@@ -291,7 +321,8 @@ class TestCommandLineArgs(unittest.TestCase):
                                                 'failfast': 'failfast',
                                                 'buffer': 'buffer',
                                                 'tb_locals': False,
-                                                'warnings': 'warnings'})
+                                                'warnings': 'warnings',
+                                                'durations': '5'})
         self.assertEqual(FakeRunner.test, 'test')
         self.assertIs(program.result, RESULT)
 
@@ -320,7 +351,8 @@ class TestCommandLineArgs(unittest.TestCase):
                                                'failfast': False,
                                                'tb_locals': True,
                                                'verbosity': 1,
-                                               'warnings': None})
+                                               'warnings': None,
+                                               'durations': None})
 
     def testRunTestsOldRunnerClass(self):
         program = self.program
@@ -333,6 +365,7 @@ class TestCommandLineArgs(unittest.TestCase):
         program.failfast = 'failfast'
         program.buffer = 'buffer'
         program.test = 'test'
+        program.durations = '0'
 
         program.runTests()
 
@@ -356,6 +389,7 @@ class TestCommandLineArgs(unittest.TestCase):
 
         program = self.program
         program.catchbreak = True
+        program.durations = None
 
         program.testRunner = FakeRunner
 
@@ -425,8 +459,8 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testParseArgsAbsolutePathsThatCannotBeConverted(self):
         program = self.program
-        # even on Windows '/...' is considered absolute by os.path.abspath
-        argv = ['progname', '/foo/bar/baz.py', '/green/red.py']
+        drive = os.path.splitdrive(os.getcwd())[0]
+        argv = ['progname', f'{drive}/foo/bar/baz.py', f'{drive}/green/red.py']
         self._patch_isfile(argv)
 
         program.createTests = lambda: None

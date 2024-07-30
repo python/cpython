@@ -484,19 +484,19 @@ Protocol classes can implement the following **callback methods**:
     :widths: 50 50
     :class: full-width-table
 
-    * - ``callback`` :meth:`pipe_data_received()
-        <SubprocessProtocol.pipe_data_received>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_data_received`
       - Called when the child process writes data into its
         *stdout* or *stderr* pipe.
 
-    * - ``callback`` :meth:`pipe_connection_lost()
-        <SubprocessProtocol.pipe_connection_lost>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_connection_lost`
       - Called when one of the pipes communicating with
         the child process is closed.
 
     * - ``callback`` :meth:`process_exited()
         <SubprocessProtocol.process_exited>`
-      - Called when the child process has exited.
+      - Called when the child process has exited. It can be called before
+        :meth:`~SubprocessProtocol.pipe_data_received` and
+        :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
 
 
 Event Loop Policies

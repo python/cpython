@@ -537,10 +537,11 @@ class dispatcher_with_send(dispatcher):
 # ---------------------------------------------------------------------------
 
 def compact_traceback():
-    t, v, tb = sys.exc_info()
-    tbinfo = []
+    exc = sys.exception()
+    tb = exc.__traceback__
     if not tb: # Must have a traceback
         raise AssertionError("traceback does not exist")
+    tbinfo = []
     while tb:
         tbinfo.append((
             tb.tb_frame.f_code.co_filename,
@@ -554,7 +555,7 @@ def compact_traceback():
 
     file, function, line = tbinfo[-1]
     info = ' '.join(['[%s|%s|%s]' % x for x in tbinfo])
-    return (file, function, line), t, v, info
+    return (file, function, line), type(exc), exc, info
 
 def close_all(map=None, ignore_all=False):
     if map is None:

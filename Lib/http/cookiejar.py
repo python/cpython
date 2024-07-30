@@ -104,9 +104,9 @@ def time2isoz(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%04d-%02d-%02d %02d:%02d:%02dZ" % (
         dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
@@ -122,9 +122,9 @@ def time2netscape(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%s, %02d-%s-%04d %02d:%02d:%02d GMT" % (
         DAYS[dt.weekday()], dt.day, MONTHS[dt.month-1],
         dt.year, dt.hour, dt.minute, dt.second)
@@ -1986,7 +1986,7 @@ class MozillaCookieJar(FileCookieJar):
 
     This class differs from CookieJar only in the format it uses to save and
     load cookies to and from a file.  This class uses the Mozilla/Netscape
-    `cookies.txt' format.  curl and lynx use this file format, too.
+    'cookies.txt' format.  curl and lynx use this file format, too.
 
     Don't expect cookies saved while the browser is running to be noticed by
     the browser (in fact, Mozilla on unix will overwrite your saved cookies if

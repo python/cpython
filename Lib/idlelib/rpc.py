@@ -158,8 +158,8 @@ class SocketIO:
             s = s + " " + str(a)
         print(s, file=sys.__stderr__)
 
-    def register(self, oid, object):
-        self.objtable[oid] = object
+    def register(self, oid, object_):
+        self.objtable[oid] = object_
 
     def unregister(self, oid):
         try:
@@ -174,7 +174,7 @@ class SocketIO:
         except TypeError:
             return ("ERROR", "Bad request format")
         if oid not in self.objtable:
-            return ("ERROR", "Unknown object id: %r" % (oid,))
+            return ("ERROR", f"Unknown object id: {oid!r}")
         obj = self.objtable[oid]
         if methodname == "__methods__":
             methods = {}
@@ -185,7 +185,7 @@ class SocketIO:
             _getattributes(obj, attributes)
             return ("OK", attributes)
         if not hasattr(obj, methodname):
-            return ("ERROR", "Unsupported method name: %r" % (methodname,))
+            return ("ERROR", f"Unsupported method name: {methodname!r}")
         method = getattr(obj, methodname)
         try:
             if how == 'CALL':

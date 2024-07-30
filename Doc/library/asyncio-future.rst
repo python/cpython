@@ -120,20 +120,20 @@ Future Object
       a :exc:`CancelledError` exception.
 
       If the Future's result isn't yet available, this method raises
-      a :exc:`InvalidStateError` exception.
+      an :exc:`InvalidStateError` exception.
 
    .. method:: set_result(result)
 
       Mark the Future as *done* and set its result.
 
-      Raises a :exc:`InvalidStateError` error if the Future is
+      Raises an :exc:`InvalidStateError` error if the Future is
       already *done*.
 
    .. method:: set_exception(exception)
 
       Mark the Future as *done* and set an exception.
 
-      Raises a :exc:`InvalidStateError` error if the Future is
+      Raises an :exc:`InvalidStateError` error if the Future is
       already *done*.
 
    .. method:: done()
@@ -276,4 +276,4 @@ the Future has a result::
      :func:`concurrent.futures.as_completed` functions.
 
    - :meth:`asyncio.Future.cancel` accepts an optional ``msg`` argument,
-     but :func:`concurrent.futures.cancel` does not.
+     but :meth:`concurrent.futures.Future.cancel` does not.

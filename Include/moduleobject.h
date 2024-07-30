@@ -27,11 +27,6 @@ PyAPI_FUNC(PyObject *) PyModule_GetNameObject(PyObject *);
 PyAPI_FUNC(const char *) PyModule_GetName(PyObject *);
 Py_DEPRECATED(3.2) PyAPI_FUNC(const char *) PyModule_GetFilename(PyObject *);
 PyAPI_FUNC(PyObject *) PyModule_GetFilenameObject(PyObject *);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyModule_Clear(PyObject *);
-PyAPI_FUNC(void) _PyModule_ClearDict(PyObject *);
-PyAPI_FUNC(int) _PyModuleSpec_IsInitializing(PyObject *);
-#endif
 PyAPI_FUNC(PyModuleDef*) PyModule_GetDef(PyObject*);
 PyAPI_FUNC(void*) PyModule_GetState(PyObject*);
 
@@ -58,7 +53,7 @@ typedef struct PyModuleDef_Base {
   /* A copy of the module's __dict__ after the first time it was loaded.
      This is only set/used for legacy modules that do not support
      multiple initializations.
-     It is set by _PyImport_FixupExtensionObject(). */
+     It is set by fix_up_extension() in import.c. */
   PyObject* m_copy;
 } PyModuleDef_Base;
 
@@ -78,12 +73,36 @@ struct PyModuleDef_Slot {
 
 #define Py_mod_create 1
 #define Py_mod_exec 2
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000
+#  define Py_mod_multiple_interpreters 3
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#  define Py_mod_gil 4
+#endif
+
 
 #ifndef Py_LIMITED_API
-#define _Py_mod_LAST_SLOT 2
+#define _Py_mod_LAST_SLOT 4
 #endif
 
 #endif /* New in 3.5 */
+
+/* for Py_mod_multiple_interpreters: */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000
+#  define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED ((void *)0)
+#  define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED ((void *)1)
+#  define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED ((void *)2)
+#endif
+
+/* for Py_mod_gil: */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#  define Py_MOD_GIL_USED ((void *)0)
+#  define Py_MOD_GIL_NOT_USED ((void *)1)
+#endif
+
+#if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+PyAPI_FUNC(int) PyUnstable_Module_SetGIL(PyObject *module, void *gil);
+#endif
 
 struct PyModuleDef {
   PyModuleDef_Base m_base;
@@ -96,12 +115,6 @@ struct PyModuleDef {
   inquiry m_clear;
   freefunc m_free;
 };
-
-
-// Internal C API
-#ifdef Py_BUILD_CORE
-extern int _PyModule_IsExtension(PyObject *obj);
-#endif
 
 #ifdef __cplusplus
 }
