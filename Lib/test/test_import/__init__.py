@@ -3116,10 +3116,10 @@ class CAPITests(unittest.TestCase):
 @cpython_only
 class TestMagicNumber(unittest.TestCase):
     def test_magic_number_endianness(self):
-        magic_number = (_imp._pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
+        magic_number = (_imp.pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
         raw_magic_number = int.from_bytes(magic_number, 'little')
 
-        assert raw_magic_number == _imp._pyc_magic_number_token
+        assert raw_magic_number == _imp.pyc_magic_number_token
 
 
 if __name__ == '__main__':

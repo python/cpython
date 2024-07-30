@@ -17,7 +17,7 @@ import types
 
 def source_hash(source_bytes):
     "Return the hash of *source_bytes* as used in hash-based pyc files."
-    return _imp.source_hash(_imp._pyc_magic_number_token, source_bytes)
+    return _imp.source_hash(_imp.pyc_magic_number_token, source_bytes)
 
 
 def resolve_name(name, package):

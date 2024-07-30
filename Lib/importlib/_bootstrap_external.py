@@ -221,7 +221,7 @@ def _write_atomic(path, data, mode=0o666):
 
 _code_type = type(_write_atomic.__code__)
 
-MAGIC_NUMBER = (_imp._pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (_imp.pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
 
 _PYCACHE = '__pycache__'
 _OPT = 'opt-'
@@ -860,7 +860,7 @@ class SourceLoader(_LoaderBasics):
                                  _imp.check_hash_based_pycs == 'always')):
                                 source_bytes = self.get_data(source_path)
                                 source_hash = _imp.source_hash(
-                                    _imp._pyc_magic_number_token,
+                                    _imp.pyc_magic_number_token,
                                     source_bytes,
                                 )
                                 _validate_hash_pyc(data, source_hash, fullname,
@@ -889,7 +889,7 @@ class SourceLoader(_LoaderBasics):
                 source_mtime is not None):
             if hash_based:
                 if source_hash is None:
-                    source_hash = _imp.source_hash(_imp._pyc_magic_number_token,
+                    source_hash = _imp.source_hash(_imp.pyc_magic_number_token,
                                                    source_bytes)
                 data = _code_to_hash_pyc(code_object, source_hash, check_source)
             else:
