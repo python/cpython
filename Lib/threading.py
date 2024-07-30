@@ -685,6 +685,8 @@ class Barrier:
         default for all subsequent 'wait()' calls.
 
         """
+        if parties < 1:
+            raise ValueError("parties must be > 0")
         self._cond = Condition(Lock())
         self._action = action
         self._timeout = timeout
