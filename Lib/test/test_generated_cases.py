@@ -31,7 +31,7 @@ test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
     from analyzer import StackItem
     import parser
-    from stack import Stack, Local
+    from stack import Local, Stack
     import tier1_generator
     import optimizer_generator
 

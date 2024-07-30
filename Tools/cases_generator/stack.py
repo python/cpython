@@ -190,7 +190,7 @@ class Stack:
             if not var.used:
                 return "", popped
             self.defined.add(var.name)
-            #Always define array variables as it is free, and their offset might have changed
+            # Always define array variables as it is free, and their offset might have changed
             if var.is_array():
                 return (
                     f"{var.name} = &stack_pointer[{self.top_offset.to_c()}];\n",

@@ -86,7 +86,7 @@ def write_uop(
                 peeks.append(local)
             if local.defined:
                 locals[local.name] = local
-        #Push back the peeks, so that they remain on the logical
+        # Push back the peeks, so that they remain on the logical
         # stack, but their values are cached.
         while peeks:
             stack.push(peeks.pop())

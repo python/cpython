@@ -139,7 +139,7 @@ def write_uop(
                 local = locals[var.name]
             else:
                 local = Local.local(var)
-            out.emit(stack.push(Local.local(var)))
+            out.emit(stack.push(local))
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:
