@@ -239,10 +239,11 @@ class AuditEventListTransform(SphinxPostTransform):
                     target = (
                         f"{builder.get_relative_uri(docname, doc)}#{label}"
                     )
-                    ref["refuri"] = target
                 except NoUri:
                     continue
-                backlinks_node += ref
+                else:
+                    ref["refuri"] = target
+                    backlinks_node += ref
         row += nodes.entry("", backlinks_node)
         return row
 
