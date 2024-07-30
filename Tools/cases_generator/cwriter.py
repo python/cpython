@@ -1,5 +1,5 @@
 import contextlib
-from lexer import Token
+from lexer import COMMENT, Token
 from typing import TextIO, Iterator
 
 
@@ -86,7 +86,7 @@ class CWriter:
             self.out.write(text)
 
     def emit_token(self, tkn: Token) -> None:
-        if tkn.kind == "COMMENT" and "\n" in tkn.text:
+        if tkn.kind == COMMENT and "\n" in tkn.text:
             return self.emit_multiline_comment(tkn)
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
