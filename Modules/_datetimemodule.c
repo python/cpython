@@ -1852,8 +1852,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_ssize_t ntoappend;       /* # of bytes to append to output buffer */
 
 #ifdef Py_NORMALIZE_CENTURY
-    /* Buffer of maximum size of formatted year permitted by long. */
-    char buf[SIZEOF_LONG*5/2+2];
+    /* Buffer of maximum size of formatted year permitted by long.
+     * Adding 6 just to accomodate %F with dashes, 2-digit month and day.
+     */
+    char buf[SIZEOF_LONG*5/2+2+6];
 #endif
 
     assert(object && format && timetuple);
@@ -1950,7 +1952,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
 #ifdef Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G') {
+        else if (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C') {
             /* 0-pad year with century as necessary */
             PyObject *item = PyTuple_GET_ITEM(timetuple, 0);
             long year_long = PyLong_AsLong(item);
@@ -1980,8 +1982,26 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Done;
                 }
             }
-
-            ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+            if (ch == 'F') {
+                item = PyTuple_GET_ITEM(timetuple, 1);
+                long month = PyLong_AsLong(item);
+                if (month == -1 && PyErr_Occurred()) {
+                    goto Done;
+                }                
+                item = PyTuple_GET_ITEM(timetuple, 2);
+                long day = PyLong_AsLong(item);
+                if (day == -1 && PyErr_Occurred()) {
+                    goto Done;
+                }
+                ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld-%02ld-%02ld",
+                                          year_long, month, day);
+            }
+            else {
+                ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+                if (ch == 'C') {
+                    ntoappend -= 2;
+                }
+            }
             ptoappend = buf;
         }
 #endif
