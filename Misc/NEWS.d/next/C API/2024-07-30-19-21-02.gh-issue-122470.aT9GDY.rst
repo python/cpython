@@ -1,0 +1,3 @@
+Show simple information on how Python was compiled upon REPL startup. This
+additional information is exposed by :c:func:`Py_GetConfigInfo`. by Bénédikt
+Tran.
