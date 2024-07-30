@@ -727,14 +727,7 @@ When an instance method object is derived from a :class:`classmethod` object, th
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from :ref:`function object <user-defined-funcs>`
-to instance method
-object happens each time the attribute is retrieved from the instance.  In
-some cases, a fruitful optimization is to assign the attribute to a local
-variable and call that local variable. Also notice that this
-transformation only happens for user-defined functions; other callable
-objects (and all non-callable objects) are retrieved without
-transformation.  It is also important to note that user-defined functions
+It is important to note that user-defined functions
 which are attributes of a class instance are not converted to bound
 methods; this *only* happens when the function is an attribute of the
 class.
