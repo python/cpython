@@ -4379,7 +4379,7 @@ class PurePythonSocketPairTest(SocketPairTest):
     @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
                      not hasattr(_socket, 'IPV6_V6ONLY'),
                      "IPV6_V6ONLY option not supported")
-    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_ipv6(self):
         cli, srv = socket.socketpair(socket.AF_INET6)
         cli.close()
