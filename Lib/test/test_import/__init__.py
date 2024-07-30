@@ -2138,6 +2138,8 @@ class SubinterpImportTests(unittest.TestCase):
             self.check_incompatible_here(module)
         with self.subTest(f'{module}: strict, fresh'):
             self.check_incompatible_fresh(module)
+        with self.subTest(f'{module}: isolated, fresh'):
+            self.check_incompatible_fresh(module, isolated=True)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):
@@ -3109,6 +3111,15 @@ class CAPITests(unittest.TestCase):
 
         mod = _testcapi.check_pyimport_addmodule(name)
         self.assertIs(mod, sys.modules[name])
+
+
+@cpython_only
+class TestMagicNumber(unittest.TestCase):
+    def test_magic_number_endianness(self):
+        magic_number = (_imp.pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
+        raw_magic_number = int.from_bytes(magic_number, 'little')
+
+        self.assertEqual(raw_magic_number, _imp.pyc_magic_number_token)
 
 
 if __name__ == '__main__':

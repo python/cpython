@@ -209,10 +209,6 @@ class self_insert(commands.self_insert):
         r = self.reader  # type: ignore[assignment]
 
         commands.self_insert.do(self)
-
-        if r.cmpltn_menu_visible or r.cmpltn_message_visible:
-            r.calc_screen = r.calc_complete_screen
-
         if r.cmpltn_menu_visible:
             stem = r.get_stem()
             if len(stem) < 1:
@@ -261,8 +257,8 @@ class CompletingReader(Reader):
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
 
-    def calc_complete_screen(self) -> list[str]:
-        screen = super().calc_complete_screen()
+    def calc_screen(self) -> list[str]:
+        screen = super().calc_screen()
         if self.cmpltn_menu_visible:
             ly = self.lxy[1]
             screen[ly:ly] = self.cmpltn_menu

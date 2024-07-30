@@ -170,12 +170,12 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
 
         switch(len) {
             /* ((hash << 5) + hash) + *p == hash * 33 + *p */
-            case 7: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
-            case 6: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
-            case 5: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
-            case 4: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
-            case 3: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
-            case 2: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
+            case 7: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
+            case 6: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
+            case 5: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
+            case 4: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
+            case 3: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
+            case 2: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
             case 1: hash = ((hash << 5) + hash) + *p++; break;
             default:
                 Py_UNREACHABLE();
@@ -391,13 +391,13 @@ siphash13(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     t = 0;
     pt = (uint8_t *)&t;
     switch (src_sz) {
-        case 7: pt[6] = in[6]; /* fall through */
-        case 6: pt[5] = in[5]; /* fall through */
-        case 5: pt[4] = in[4]; /* fall through */
+        case 7: pt[6] = in[6]; _Py_FALLTHROUGH;
+        case 6: pt[5] = in[5]; _Py_FALLTHROUGH;
+        case 5: pt[4] = in[4]; _Py_FALLTHROUGH;
         case 4: memcpy(pt, in, sizeof(uint32_t)); break;
-        case 3: pt[2] = in[2]; /* fall through */
-        case 2: pt[1] = in[1]; /* fall through */
-        case 1: pt[0] = in[0]; /* fall through */
+        case 3: pt[2] = in[2]; _Py_FALLTHROUGH;
+        case 2: pt[1] = in[1]; _Py_FALLTHROUGH;
+        case 1: pt[0] = in[0]; break;
     }
     b |= _le64toh(t);
 
@@ -442,13 +442,13 @@ siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     t = 0;
     pt = (uint8_t *)&t;
     switch (src_sz) {
-        case 7: pt[6] = in[6]; /* fall through */
-        case 6: pt[5] = in[5]; /* fall through */
-        case 5: pt[4] = in[4]; /* fall through */
+        case 7: pt[6] = in[6]; _Py_FALLTHROUGH;
+        case 6: pt[5] = in[5]; _Py_FALLTHROUGH;
+        case 5: pt[4] = in[4]; _Py_FALLTHROUGH;
         case 4: memcpy(pt, in, sizeof(uint32_t)); break;
-        case 3: pt[2] = in[2]; /* fall through */
-        case 2: pt[1] = in[1]; /* fall through */
-        case 1: pt[0] = in[0]; /* fall through */
+        case 3: pt[2] = in[2]; _Py_FALLTHROUGH;
+        case 2: pt[1] = in[1]; _Py_FALLTHROUGH;
+        case 1: pt[0] = in[0]; break;
     }
     b |= _le64toh(t);
 
