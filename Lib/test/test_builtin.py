@@ -4,10 +4,12 @@ import ast
 import asyncio
 import builtins
 import collections
+import contextlib
 import decimal
 import fractions
 import gc
 import io
+import importlib
 import locale
 import math
 import os
@@ -2400,49 +2402,63 @@ class PtyTests(unittest.TestCase):
                 expected = terminal_input.decode(sys.stdin.encoding)  # what else?
         self.assertEqual(input_result, expected)
 
-    def test_input_tty(self):
-        # Test input() functionality when wired to a tty (the code path
-        # is different and invokes GNU readline if available).
-        self.check_input_tty("prompt", b"quux")
-
-    def skip_if_readline(self):
+    @contextlib.contextmanager
+    def detach_readline(self):
         # bpo-13886: When the readline module is loaded, PyOS_Readline() uses
         # the readline implementation. In some cases, the Python readline
         # callback rlhandler() is called by readline with a string without
-        # non-ASCII characters. Skip tests on non-ASCII characters if the
-        # readline module is loaded, since test_builtin is not intended to test
+        # non-ASCII characters.
+        # Unlink readline temporarily from PyOS_Readline() for those tests,
+        # since test_builtin is not intended to test
         # the readline module, but the builtins module.
-        if 'readline' in sys.modules:
-            self.skipTest("the readline module is loaded")
+        if "readline" in sys.modules:
+            try:
+                c = importlib.import_module("ctypes")
+            except ImportError:
+                self.skipTest("the readline module is loaded")
+
+            fp_api = "PyOS_ReadlineFunctionPointer"
+            prev_value = c.c_void_p.in_dll(c.pythonapi, fp_api).value
+            c.c_void_p.in_dll(c.pythonapi, fp_api).value = None
+            yield
+            c.c_void_p.in_dll(c.pythonapi, fp_api).value = prev_value
+        else:
+            yield
+
+    def test_input_tty(self):
+        # Test input() functionality when wired to a tty
+        with self.detach_readline():
+            self.check_input_tty("prompt", b"quux")
 
     def test_input_tty_non_ascii(self):
-        self.skip_if_readline()
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
-        self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
+        with self.detach_readline():
+            self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
-        self.skip_if_readline()
         # Check stdin/stdout error handler is used when invoking PyOS_Readline()
-        self.check_input_tty("prompté", b"quux\xe9", "ascii")
+        with self.detach_readline():
+            self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
     def test_input_tty_null_in_prompt(self):
-        self.check_input_tty("prompt\0", b"",
-                expected='ValueError: input: prompt string cannot contain '
-                         'null characters')
+        with self.detach_readline():
+            self.check_input_tty("prompt\0", b"",
+                    expected='ValueError: input: prompt string cannot contain '
+                            'null characters')
 
     def test_input_tty_nonencodable_prompt(self):
-        self.skip_if_readline()
-        self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
-                expected="UnicodeEncodeError: 'ascii' codec can't encode "
-                         "character '\\xe9' in position 6: ordinal not in "
-                         "range(128)")
+        with self.detach_readline():
+            self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
+                    expected="UnicodeEncodeError: 'ascii' codec can't encode "
+                            "character '\\xe9' in position 6: ordinal not in "
+                            "range(128)")
 
     def test_input_tty_nondecodable_input(self):
-        self.skip_if_readline()
-        self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
-                expected="UnicodeDecodeError: 'ascii' codec can't decode "
-                         "byte 0xe9 in position 4: ordinal not in "
-                         "range(128)")
+        with self.detach_readline():
+            self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
+                    expected="UnicodeDecodeError: 'ascii' codec can't decode "
+                            "byte 0xe9 in position 4: ordinal not in "
+                            "range(128)")
 
     def test_input_no_stdout_fileno(self):
         # Issue #24402: If stdin is the original terminal but stdout.fileno()
