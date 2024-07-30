@@ -724,6 +724,15 @@ doctest
 email
 -----
 
+* Headers with embedded newlines are now quoted on output.
+
+  The :mod:`~email.generator` will now refuse to serialize (write) headers
+  that are improperly folded or delimited, such that they would be parsed as
+  multiple headers or joined with adjacent data.
+  If you need to turn this safety feature off,
+  set :attr:`~email.policy.Policy.verify_generated_headers`.
+  (Contributed by Bas Bloemsaat and Petr Viktorin in :gh:`121650`.)
+
 * :func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now return
   ``('', '')`` 2-tuples in more situations where invalid email addresses are
   encountered instead of potentially inaccurate values. Add optional *strict*
