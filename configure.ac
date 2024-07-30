@@ -2510,6 +2510,7 @@ if test "$disable_safety" = "no"
 then
   AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
 fi
 
 AC_MSG_CHECKING([for --enable-slower-safety])
@@ -2517,11 +2518,6 @@ AC_ARG_ENABLE([slower-safety],
   [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],
   [AS_VAR_IF([disable_slower_safety], [yes], [enable_slower_safety=no], [enable_slower_safety=yes])], [enable_slower_safety=no])
 AC_MSG_RESULT([$enable_slower_safety])
-
-if test "$enable_slower_safety" = "yes"
-then
-  AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
-fi
 
 case $GCC in
 yes)
