@@ -212,6 +212,7 @@
     <ClCompile Include="..\Python\gc_free_threading.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
+    <ClCompile Include="..\Python\getconfiginfo.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
     <ClCompile Include="..\Python\getopt.c" />
     <ClCompile Include="..\Python\getplatform.c" />

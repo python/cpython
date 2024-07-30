@@ -1343,6 +1343,9 @@
     <ClCompile Include="..\Python\getcompiler.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\getconfiginfo.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\getcopyright.c">
       <Filter>Python</Filter>
     </ClCompile>

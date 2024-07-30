@@ -199,6 +199,9 @@
     <ClCompile Include="..\Python\getcompiler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\getconfiginfo.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\getcopyright.c">
       <Filter>Source Files</Filter>
     </ClCompile>
