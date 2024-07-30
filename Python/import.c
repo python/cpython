@@ -1,7 +1,6 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
-#include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
