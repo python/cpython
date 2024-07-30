@@ -2804,12 +2804,12 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
-        if part.token_type == 'ptext' and set(tstr) & SPECIALSNL:
+        if part.token_type == 'ptext'
             # Encode if tstr contains special characters.
-            want_encoding = True
-        elif set(tstr) & NLSET:
+            want_encoding = not SPECIALSNL.isdisjoint(tstr)
+        else:
             # Encode if text contains newlines
-            want_encoding = True
+            want_encoding = not NLSET.isdisjoint(tstr)
         try:
             tstr.encode(encoding)
             charset = encoding

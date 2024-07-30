@@ -315,7 +315,6 @@ class PolicyAPITests(unittest.TestCase):
                 del message['Header']
                 message['Header'] = LiteralHeader(text)
 
-                expected = text#.replace('\r\n', '\n')
                 self.assertEqual(
                     message.as_string(),
                     f"{text}\nBody",
