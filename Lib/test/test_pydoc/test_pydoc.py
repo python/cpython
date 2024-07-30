@@ -776,9 +776,16 @@ class PydocDocTest(unittest.TestCase):
                         'Help on function help in module pydoc:')
         run_pydoc_pager('str', 'str', 'Help on class str in module builtins:')
         run_pydoc_pager(str, 'str', 'Help on class str in module builtins:')
-        run_pydoc_pager('str.upper', 'str.upper', 'Help on method_descriptor in str:')
-        run_pydoc_pager(str.upper, 'str.upper', 'Help on method_descriptor:')
-        run_pydoc_pager(str.__add__, 'str.__add__', 'Help on wrapper_descriptor:')
+        run_pydoc_pager('str.upper', 'str.upper',
+                        'Help on method descriptor upper in str:')
+        run_pydoc_pager(str.upper, 'str.upper',
+                        'Help on method descriptor upper:')
+        run_pydoc_pager(''.upper, 'str.upper',
+                        'Help on built-in function upper:')
+        run_pydoc_pager(str.__add__,
+                        'str.__add__', 'Help on method descriptor __add__:')
+        run_pydoc_pager(''.__add__,
+                        'str.__add__', 'Help on method wrapper __add__:')
         run_pydoc_pager(int.numerator, 'int.numerator',
                         'Help on getset descriptor builtins.int.numerator:')
         run_pydoc_pager(list[int], 'list',

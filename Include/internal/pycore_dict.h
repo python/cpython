@@ -8,15 +8,18 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"             // _PyFreeListState
 #include "pycore_object.h"               // PyManagedDictPointer
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 
-extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
-                             int (*predicate)(PyObject *value));
+// Delete an item from a dict if a predicate is true
+// Returns -1 on error, 1 if the item was deleted, 0 otherwise
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_DelItemIf(PyObject *mp, PyObject *key,
+                                  int (*predicate)(PyObject *value, void *arg),
+                                  void *arg);
 
 // "KnownHash" variants
 // Export for '_asyncio' shared extension

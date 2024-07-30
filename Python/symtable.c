@@ -70,10 +70,10 @@
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
-#define ASYNC_WITH_OUTISDE_ASYNC_FUNC \
+#define ASYNC_WITH_OUTSIDE_ASYNC_FUNC \
 "'async with' outside async function"
 
-#define ASYNC_FOR_OUTISDE_ASYNC_FUNC \
+#define ASYNC_FOR_OUTSIDE_ASYNC_FUNC \
 "'async for' outside async function"
 
 #define LOCATION(x) SRC_LOCATION_FROM_AST(x)
@@ -81,6 +81,8 @@
 #define SET_ERROR_LOCATION(FNAME, L) \
     PyErr_RangedSyntaxLocationObject((FNAME), \
         (L).lineno, (L).col_offset + 1, (L).end_lineno, (L).end_col_offset + 1)
+
+#define IS_ASYNC_DEF(st) ((st)->st_cur->ste_type == FunctionBlock && (st)->st_cur->ste_coroutine)
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
@@ -258,6 +260,7 @@ static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
 static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
 static int symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_SourceLocation loc);
 static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
+static int symtable_add_def(struct symtable *st, PyObject *name, int flag, _Py_SourceLocation loc);
 
 /* For debugging purposes only */
 #if _PY_DUMP_SYMTABLE
@@ -1386,6 +1389,16 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
         return 0;
     int result = symtable_enter_existing_block(st, ste);
     Py_DECREF(ste);
+    if (block == AnnotationBlock || block == TypeVariableBlock || block == TypeAliasBlock) {
+        _Py_DECLARE_STR(format, ".format");
+        // We need to insert code that reads this "parameter" to the function.
+        if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM, loc)) {
+            return 0;
+        }
+        if (!symtable_add_def(st, &_Py_STR(format), USE, loc)) {
+            return 0;
+        }
+    }
     return result;
 }
 
@@ -1493,14 +1506,71 @@ error:
 }
 
 static int
-symtable_add_def(struct symtable *st, PyObject *name, int flag, _Py_SourceLocation loc)
+check_name(struct symtable *st, PyObject *name, _Py_SourceLocation loc,
+           expr_context_ty ctx)
 {
+    if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        PyErr_SetString(PyExc_SyntaxError, "cannot assign to __debug__");
+        SET_ERROR_LOCATION(st->st_filename, loc);
+        return 0;
+    }
+    if (ctx == Del && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        PyErr_SetString(PyExc_SyntaxError, "cannot delete __debug__");
+        SET_ERROR_LOCATION(st->st_filename, loc);
+        return 0;
+    }
+    return 1;
+}
+
+static int
+check_keywords(struct symtable *st, asdl_keyword_seq *keywords)
+{
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(keywords); i++) {
+        keyword_ty key = ((keyword_ty)asdl_seq_GET(keywords, i));
+        if (key->arg  && !check_name(st, key->arg, LOCATION(key), Store)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+check_kwd_patterns(struct symtable *st, pattern_ty p)
+{
+    assert(p->kind == MatchClass_kind);
+    asdl_identifier_seq *kwd_attrs = p->v.MatchClass.kwd_attrs;
+    asdl_pattern_seq *kwd_patterns = p->v.MatchClass.kwd_patterns;
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(kwd_attrs); i++) {
+        _Py_SourceLocation loc = LOCATION(asdl_seq_GET(kwd_patterns, i));
+        if (!check_name(st, asdl_seq_GET(kwd_attrs, i), loc, Store)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+symtable_add_def_ctx(struct symtable *st, PyObject *name, int flag,
+                     _Py_SourceLocation loc, expr_context_ty ctx)
+{
+    int write_mask = DEF_PARAM | DEF_LOCAL | DEF_IMPORT;
+    if ((flag & write_mask) && !check_name(st, name, loc, ctx)) {
+        return 0;
+    }
     if ((flag & DEF_TYPE_PARAM) && st->st_cur->ste_mangled_names != NULL) {
         if(PySet_Add(st->st_cur->ste_mangled_names, name) < 0) {
             return 0;
         }
     }
     return symtable_add_def_helper(st, name, flag, st->st_cur, loc);
+}
+
+static int
+symtable_add_def(struct symtable *st, PyObject *name, int flag,
+                 _Py_SourceLocation loc)
+{
+    return symtable_add_def_ctx(st, name, flag, loc,
+                                flag == USE ? Load : Store);
 }
 
 static int
@@ -1660,12 +1730,18 @@ check_import_from(struct symtable *st, stmt_ty s)
     return 1;
 }
 
+static bool
+allows_top_level_await(struct symtable *st)
+{
+    return (st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+            st->st_cur->ste_type == ModuleBlock;
+}
+
+
 static void
 maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
 {
-    if ((st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
-        (st->st_cur->ste_type == ModuleBlock))
-    {
+    if (allows_top_level_await(st)) {
         st->st_cur->ste_coroutine = 1;
     }
 }
@@ -1749,6 +1825,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, type_param, s->v.ClassDef.type_params);
         }
         VISIT_SEQ(st, expr, s->v.ClassDef.bases);
+        if (!check_keywords(st, s->v.ClassDef.keywords)) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
                                   (void *)s, LOCATION(s))) {
@@ -1863,10 +1942,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT(st, expr, s->v.AnnAssign.value);
         }
         break;
-    case AugAssign_kind:
+    case AugAssign_kind: {
         VISIT(st, expr, s->v.AugAssign.target);
         VISIT(st, expr, s->v.AugAssign.value);
         break;
+    }
     case For_kind:
         VISIT(st, expr, s->v.For.target);
         VISIT(st, expr, s->v.For.iter);
@@ -2054,7 +2134,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     case AsyncWith_kind:
         maybe_set_ste_coroutine_for_module(st, s);
-        if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             VISIT_QUIT(st, 0);
         }
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
@@ -2062,7 +2142,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case AsyncFor_kind:
         maybe_set_ste_coroutine_for_module(st, s);
-        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             VISIT_QUIT(st, 0);
         }
         VISIT(st, expr, s->v.AsyncFor.target);
@@ -2279,6 +2359,20 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (!symtable_raise_if_annotation_block(st, "await expression", e)) {
             VISIT_QUIT(st, 0);
         }
+        if (!allows_top_level_await(st)) {
+            if (!_PyST_IsFunctionLike(st->st_cur)) {
+                PyErr_SetString(PyExc_SyntaxError,
+                                "'await' outside function");
+                SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
+                VISIT_QUIT(st, 0);
+            }
+            if (!IS_ASYNC_DEF(st) && st->st_cur->ste_comprehension == NoComprehension) {
+                PyErr_SetString(PyExc_SyntaxError,
+                                "'await' outside async function");
+                SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
+                VISIT_QUIT(st, 0);
+            }
+        }
         VISIT(st, expr, e->v.Await.value);
         st->st_cur->ste_coroutine = 1;
         break;
@@ -2289,6 +2383,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Call_kind:
         VISIT(st, expr, e->v.Call.func);
         VISIT_SEQ(st, expr, e->v.Call.args);
+        if (!check_keywords(st, e->v.Call.keywords)) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT_SEQ_WITH_NULL(st, keyword, e->v.Call.keywords);
         break;
     case FormattedValue_kind:
@@ -2304,6 +2401,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
+        if (!check_name(st, e->v.Attribute.attr, LOCATION(e), e->v.Attribute.ctx)) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT(st, expr, e->v.Attribute.value);
         break;
     case Subscript_kind:
@@ -2322,9 +2422,11 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT(st, expr, e->v.Slice.step);
         break;
     case Name_kind:
-        if (!symtable_add_def(st, e->v.Name.id,
-                              e->v.Name.ctx == Load ? USE : DEF_LOCAL, LOCATION(e)))
+        if (!symtable_add_def_ctx(st, e->v.Name.id,
+                                  e->v.Name.ctx == Load ? USE : DEF_LOCAL,
+                                  LOCATION(e), e->v.Name.ctx)) {
             VISIT_QUIT(st, 0);
+        }
         /* Special-case super: it counts as a use of __class__ */
         if (e->v.Name.ctx == Load &&
             _PyST_IsFunctionLike(st->st_cur) &&
@@ -2450,19 +2552,26 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         break;
     case MatchStar_kind:
         if (p->v.MatchStar.name) {
-            symtable_add_def(st, p->v.MatchStar.name, DEF_LOCAL, LOCATION(p));
+            if (!symtable_add_def(st, p->v.MatchStar.name, DEF_LOCAL, LOCATION(p))) {
+                VISIT_QUIT(st, 0);
+            }
         }
         break;
     case MatchMapping_kind:
         VISIT_SEQ(st, expr, p->v.MatchMapping.keys);
         VISIT_SEQ(st, pattern, p->v.MatchMapping.patterns);
         if (p->v.MatchMapping.rest) {
-            symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL, LOCATION(p));
+            if (!symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL, LOCATION(p))) {
+                VISIT_QUIT(st, 0);
+            }
         }
         break;
     case MatchClass_kind:
         VISIT(st, expr, p->v.MatchClass.cls);
         VISIT_SEQ(st, pattern, p->v.MatchClass.patterns);
+        if (!check_kwd_patterns(st, p)) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT_SEQ(st, pattern, p->v.MatchClass.kwd_patterns);
         break;
     case MatchAs_kind:
@@ -2470,7 +2579,9 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
             VISIT(st, pattern, p->v.MatchAs.pattern);
         }
         if (p->v.MatchAs.name) {
-            symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL, LOCATION(p));
+            if (!symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL, LOCATION(p))) {
+                VISIT_QUIT(st, 0);
+            }
         }
         break;
     case MatchOr_kind:
@@ -2530,18 +2641,6 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
                 return 0;
             }
         }
-
-        _Py_DECLARE_STR(format, ".format");
-        // The generated __annotate__ function takes a single parameter with the
-        // internal name ".format".
-        if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM,
-                                LOCATION(annotation))) {
-            return 0;
-        }
-        if (!symtable_add_def(st, &_Py_STR(format), USE,
-                                LOCATION(annotation))) {
-            return 0;
-        }
     }
     else {
         if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
@@ -2589,14 +2688,6 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(o))) {
             return 0;
         }
-    }
-    _Py_DECLARE_STR(format, ".format");
-    // We need to insert code that reads this "parameter" to the function.
-    if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM, LOCATION(o))) {
-        return 0;
-    }
-    if (!symtable_add_def(st, &_Py_STR(format), USE, LOCATION(o))) {
-        return 0;
     }
     if (a->posonlyargs && !symtable_visit_argannotations(st, a->posonlyargs))
         return 0;
@@ -2796,6 +2887,16 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     st->st_cur->ste_generator = is_generator;
     int is_async = st->st_cur->ste_coroutine && !is_generator;
     if (!symtable_exit_block(st)) {
+        return 0;
+    }
+    if (is_async &&
+        !IS_ASYNC_DEF(st) &&
+        st->st_cur->ste_comprehension == NoComprehension &&
+        !allows_top_level_await(st))
+    {
+        PyErr_SetString(PyExc_SyntaxError, "asynchronous comprehension outside of "
+                                           "an asynchronous function");
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
         return 0;
     }
     if (is_async) {
