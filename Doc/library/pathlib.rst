@@ -1543,7 +1543,8 @@ Copying, renaming and deleting
                       preserve_metadata=False, dirs_exist_ok=False, \
                       ignore=None, on_error=None)
 
-   Recursively copy this file or directory tree to the given destination.
+   Copy this file or directory tree to the given *target*. If both paths are
+   existing files, the target file will be replaced.
 
    If a symlink is encountered and *follow_symlinks* is true (the default),
    the symlink's target is copied. Otherwise, the symlink is recreated at the
@@ -1556,8 +1557,8 @@ Copying, renaming and deleting
    This argument has no effect on Windows, where metadata is always preserved
    when copying.
 
-   If the source and destination are existing directories and *dirs_exist_ok*
-   is false (the default), a :exc:`FileExistsError` is raised. Otherwise, the
+   If the source and target are existing directories and *dirs_exist_ok* is
+   false (the default), a :exc:`FileExistsError` is raised. Otherwise, the
    copying operation will continue if it encounters existing directories, and
    files within the destination tree will be overwritten by corresponding
    files from the source tree.
