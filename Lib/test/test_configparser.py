@@ -760,6 +760,15 @@ boolean {0[0]} NO
         cf = self.newconfig()
         parsed_files = cf.read([], encoding="utf-8")
         self.assertEqual(parsed_files, [])
+        # check when we pass invalid file names:
+        cf = self.newconfig()
+        parsed_files = cf.read([
+            '\x00',                 # NUL bytes filename
+            __file__ + '\x00.ini',  # filename with embedded NUL bytes
+            "\uD834\uDD1E.ini",     # surrogate codes (MUSICAL SYMBOL G CLEF)
+            'a' * 1_000_000         # very long filename
+        ], encoding='utf-8')
+        self.assertListEqual(parsed_files, [])
 
     def test_read_returns_file_list_with_bytestring_path(self):
         if self.delimiters[0] != '=':
