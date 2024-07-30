@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from email.generator import Generator, BytesGenerator
 from email.headerregistry import Address
 from email import policy
+import email.errors
 from test.test_email import TestEmailBase, parameterize
 
 
@@ -216,6 +217,44 @@ class TestGeneratorBase:
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_keep_encoded_newlines(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)))
+        expected = textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=80))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_keep_long_encoded_newlines(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)))
+        expected = textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject
+             =?utf-8?q?=0A?=Bcc:
+             injection@example.com
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=30))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -223,6 +262,29 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
     genclass = Generator
     ioclass = io.StringIO
     typ = str
+
+    def test_verify_generated_headers(self):
+        """gh-121650: by default the generator prevents header injection"""
+        class LiteralHeader(str):
+            name = 'Header'
+            def fold(self, **kwargs):
+                return self
+
+        for text in (
+            'Value\r\nBad Injection\r\n',
+            'NoNewLine'
+        ):
+            with self.subTest(text=text):
+                message = message_from_string(
+                    "Header: Value\r\n\r\nBody",
+                    policy=self.policy,
+                )
+
+                del message['Header']
+                message['Header'] = LiteralHeader(text)
+
+                with self.assertRaises(email.errors.HeaderWriteError):
+                    message.as_string()
 
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
