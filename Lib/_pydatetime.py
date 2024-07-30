@@ -221,9 +221,9 @@ def _can_support_c99():
     if _supports_c99 is None:
         try:
             _supports_c99 = (
-                _time.strftime("%F", (99, 1, 1, 0, 0, 0, 0, 1, 0)) != "%F")
+                _time.strftime("%F", (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == "1900-01-01")
         except ValueError:
-            _supports_c99 = True
+            pass
     return _supports_c99
 
 # Correctly substitute for %z and %Z escapes in strftime formats.

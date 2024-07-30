@@ -1711,7 +1711,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (1970, 0),
         )
         specifiers = 'YG'
-        if _time.strftime('%F', (99, 1, 1, 0, 0, 0, 0, 1, 0)) != '%F':
+        if _time.strftime('%F', (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == '1900-01-01':
             specifiers += 'FC'
         for year, g_offset in dataset:
             for specifier in specifiers:
