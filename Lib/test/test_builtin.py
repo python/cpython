@@ -2417,8 +2417,10 @@ class PtyTests(unittest.TestCase):
             fp_api = "PyOS_ReadlineFunctionPointer"
             prev_value = c.c_void_p.in_dll(c.pythonapi, fp_api).value
             c.c_void_p.in_dll(c.pythonapi, fp_api).value = None
-            yield
-            c.c_void_p.in_dll(c.pythonapi, fp_api).value = prev_value
+            try:
+                yield
+            finally:
+                c.c_void_p.in_dll(c.pythonapi, fp_api).value = prev_value
         else:
             yield
 
