@@ -1953,8 +1953,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
 #ifdef Py_NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G'
-#if __STDC_VERSION__ >= 199901L
-#define Py_STRFTIME_C99_SUPPORT
+#ifdef Py_STRFTIME_C99_SUPPORT
                  || ch == 'F' || ch == 'C'
 #endif
         ) {
