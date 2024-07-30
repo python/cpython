@@ -54,6 +54,7 @@ PyAPI_FUNC(const char *) Py_GetPlatform(void);
 PyAPI_FUNC(const char *) Py_GetCopyright(void);
 PyAPI_FUNC(const char *) Py_GetCompiler(void);
 PyAPI_FUNC(const char *) Py_GetBuildInfo(void);
+PyAPI_FUNC(const char *) Py_GetConfigInfo(void);
 
 /* Signals */
 typedef void (*PyOS_sighandler_t)(int);

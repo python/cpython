@@ -8358,6 +8358,9 @@ fi
 
 
 if test "$Py_OPT" = 'true' ; then
+
+printf "%s\n" "#define PY_CONFIGURE_WITH_OPTIMIZATIONS 1" >>confdefs.h
+
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
@@ -8809,6 +8812,9 @@ fi
 
   CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
+
+printf "%s\n" "#define PY_CONFIGURE_WITH_LTO 1" >>confdefs.h
+
 fi
 
 # Enable PGO flags.
@@ -9311,6 +9317,10 @@ printf "%s\n" "\"Found merge-fdata\"" >&6; }
   else
     as_fn_error $? "merge-fdata is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
+
+
+printf "%s\n" "#define PY_CONFIGURE_WITH_BOLT 1" >>confdefs.h
+
 fi
 
 

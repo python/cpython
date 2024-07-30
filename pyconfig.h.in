@@ -1654,6 +1654,15 @@
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
+/* Define to 1 if --enable-bolt was used. */
+#undef PY_CONFIGURE_WITH_BOLT
+
+/* Define to 1 if --with-lto was used. */
+#undef PY_CONFIGURE_WITH_LTO
+
+/* Define to 1 if --enable-optimizations was used. */
+#undef PY_CONFIGURE_WITH_OPTIMIZATIONS
+
 /* Define to 1 if you have the perf trampoline. */
 #undef PY_HAVE_PERF_TRAMPOLINE
 

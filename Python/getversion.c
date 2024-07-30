@@ -6,7 +6,7 @@
 #include "patchlevel.h"
 
 static int initialized = 0;
-static char version[300];
+static char version[400];
 
 void _Py_InitVersion(void)
 {
@@ -15,12 +15,13 @@ void _Py_InitVersion(void)
     }
     initialized = 1;
 #ifdef Py_GIL_DISABLED
-    const char *buildinfo_format = "%.80s experimental free-threading build (%.80s) %.80s";
+    const char *buildinfo_format = "%.80s experimental free-threading build (%.80s) (%.80s) %.80s";
 #else
-    const char *buildinfo_format = "%.80s (%.80s) %.80s";
+    const char *buildinfo_format = "%.80s (%.80s) (%.80s) %.80s";
 #endif
     PyOS_snprintf(version, sizeof(version), buildinfo_format,
-                  PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler());
+                  PY_VERSION, Py_GetConfigInfo(),
+                  Py_GetBuildInfo(), Py_GetCompiler());
 }
 
 const char *

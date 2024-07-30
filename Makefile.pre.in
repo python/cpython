@@ -438,6 +438,7 @@ PYTHON_OBJS=	\
 		Python/gc_gil.o \
 		Python/getargs.o \
 		Python/getcompiler.o \
+		Python/getconfiginfo.o \
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \

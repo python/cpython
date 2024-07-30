@@ -1869,6 +1869,8 @@ fi],
 [AC_MSG_RESULT([no])])
 
 if test "$Py_OPT" = 'true' ; then
+  AC_DEFINE([PY_CONFIGURE_WITH_OPTIMIZATIONS], [1],
+            [Define to 1 if --enable-optimizations was used.])
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
@@ -2056,6 +2058,8 @@ if test "$Py_LTO" = 'true' ; then
 
   CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
+  AC_DEFINE([PY_CONFIGURE_WITH_LTO], [1],
+            [Define to 1 if --with-lto was used.])
 fi
 
 # Enable PGO flags.
@@ -2198,6 +2202,9 @@ if test "$Py_BOLT" = 'true' ; then
   else
     AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
   fi
+
+  AC_DEFINE([PY_CONFIGURE_WITH_BOLT], [1],
+            [Define to 1 if --enable-bolt was used.])
 fi
 
 dnl Enable BOLT of libpython if built.
