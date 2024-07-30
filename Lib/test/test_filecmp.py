@@ -176,15 +176,19 @@ class DirCompareTestCase(unittest.TestCase):
             ("\uD834\uDD1E", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
             ('a' * 1_000_000, 'very long dirname'),
         ]:
-            d = filecmp.dircmp(self.dir, bad_dir)
+            d1 = filecmp.dircmp(self.dir, bad_dir)
+            d2 = filecmp.dircmp(bad_dir, self.dir)
             for target in [
                 # attributes where os.listdir() raises OSError or ValueError
                 'left_list', 'right_list',
                 'left_only', 'right_only', 'common',
             ]:
-                with self.subTest(f'dircmp: {desc}', target=target):
+                with self.subTest(f'dircmp(ok, bad): {desc}', target=target):
                     with self.assertRaises((OSError, ValueError)):
-                        getattr(d, target)
+                        getattr(d1, target)
+                with self.subTest(f'dircmp(bad, ok): {desc}', target=target):
+                    with self.assertRaises((OSError, ValueError)):
+                        getattr(d2, target)
 
     def _assert_lists(self, actual, expected):
         """Assert that two lists are equal, up to ordering."""
