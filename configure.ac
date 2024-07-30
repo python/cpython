@@ -2510,7 +2510,7 @@ if test "$disable_safety" = "no"
 then
   AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
-  AX_CHECK_COMPILE_FLAG([-Wformat=2], [CFLAGS_NODIST="$CFLAGS_NODIST -Wformat=2"], [AC_MSG_WARN([-Wformat=2 not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wformat -Wformat=2], [CFLAGS_NODIST="$CFLAGS_NODIST -Wformat -Wformat=2"], [AC_MSG_WARN([-Wformat and -Wformat=2 not supported])], [-Werror])
 fi
 
 AC_MSG_CHECKING([for --enable-slower-safety])
