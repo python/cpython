@@ -77,6 +77,17 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.console.interact()
         self.assertTrue(hook.called)
 
+    def test_sysexcepthook_crashing_doesnt_close_repl(self):
+        self.infunc.side_effect = ["1/0", "a = 123", "print(a)", EOFError('Finished')]
+        self.sysmod.excepthook = 1
+        self.console.interact()
+        self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
+        error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
+        self.assertIn("Error in sys.excepthook:", error)
+        self.assertEqual(error.count("'int' object is not callable"), 1)
+        self.assertIn("Original exception was:", error)
+        self.assertIn("division by zero", error)
+
     def test_banner(self):
         # with banner
         self.infunc.side_effect = EOFError('Finished')
