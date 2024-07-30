@@ -1494,8 +1494,8 @@ New Deprecations
   (Contributed by Hugo van Kemenade in :gh:`80480`.)
 
 * :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
-  and :func:`!ctypes.ARRAY` functions.
-  Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
+  function. :term:`Soft-deprecate <soft deprecated>` the :func:`ctypes.ARRAY`
+  function in favor of multiplication.
   (Contributed by Victor Stinner in :gh:`105733`.)
 
 * :mod:`decimal`: Deprecate non-standard format specifier "N" for
