@@ -432,7 +432,7 @@ class TestFrameLocals(unittest.TestCase):
                 kind = "other"
         self.assertEqual(kind, "mapping")
 
-    def test_proxy_key_stringlikes(self):
+    def _x_stringlikes(self):
         class StringSubclass(str):
             pass
 
@@ -443,6 +443,9 @@ class TestFrameLocals(unittest.TestCase):
             def __eq__(self, other):
                 return other == 'x'
 
+        return StringSubclass('x'), ImpostorX(), 'x'
+
+    def test_proxy_key_stringlikes_overwrite(self):
         def f(obj):
             x = 1
             proxy = sys._getframe().f_locals
@@ -453,7 +456,7 @@ class TestFrameLocals(unittest.TestCase):
                 proxy
             )
 
-        for obj in StringSubclass('x'), ImpostorX():
+        for obj in self._x_stringlikes():
             with self.subTest(cls=type(obj).__name__):
 
                 keys_snapshot, proxy_snapshot, proxy = f(obj)
@@ -463,6 +466,17 @@ class TestFrameLocals(unittest.TestCase):
                 self.assertEqual(proxy, expected_dict)
                 self.assertEqual(keys_snapshot,  expected_keys)
                 self.assertEqual(proxy_snapshot, expected_dict)
+
+    def test_proxy_key_stringlikes_ftrst_write(self):
+        def f(obj):
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            self.assertEqual(x, 2)
+            x = 1
+
+        for obj in self._x_stringlikes():
+            with self.subTest(cls=type(obj).__name__):
+                f(obj)
 
     def test_proxy_key_unhashables(self):
         class StringSubclass(str):
