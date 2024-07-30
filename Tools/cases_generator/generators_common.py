@@ -5,9 +5,10 @@ from analyzer import (
     Instruction,
     Uop,
     Properties,
+    StackItem,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator
+from typing import Callable, Mapping, TextIO, Iterator, Tuple
 from lexer import Token
 from stack import Stack
 
@@ -22,6 +23,15 @@ def root_relative_path(filename: str) -> str:
     except ValueError:
         # Not relative to root, just return original path.
         return filename
+
+
+def type_and_null(var: StackItem) -> Tuple[str, str]:
+    if var.type:
+        return var.type, "NULL"
+    elif var.is_array():
+        return "_PyStackRef *", "NULL"
+    else:
+        return "_PyStackRef", "PyStackRef_NULL"
 
 
 def write_header(
@@ -82,7 +92,7 @@ def replace_error(
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
     out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
+    c_offset = stack.peek_offset()
     try:
         offset = -int(c_offset)
         close = ";\n"
@@ -126,7 +136,7 @@ def replace_decrefs(
     for var in uop.stack.inputs:
         if var.name == "unused" or var.name == "null" or var.peek:
             continue
-        if var.size != "1":
+        if var.size:
             out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
             out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
             out.emit("}\n")

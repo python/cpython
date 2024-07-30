@@ -8,10 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_brc.h"           // struct _brc_thread_state
-#include "pycore_freelist.h"      // struct _Py_freelist_state
-#include "pycore_mimalloc.h"      // struct _mimalloc_thread_state
-#include "pycore_qsbr.h"          // struct qsbr
+#include "pycore_brc.h"             // struct _brc_thread_state
+#include "pycore_freelist_state.h"  // struct _Py_freelists
+#include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
+#include "pycore_qsbr.h"            // struct qsbr
 
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -21,13 +21,15 @@ typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
 
+    PyObject *asyncio_running_loop; // Strong reference
+
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue
 
 #ifdef Py_GIL_DISABLED
     struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
-    struct _Py_object_freelists freelists;
+    struct _Py_freelists freelists;
     struct _brc_thread_state brc;
 #endif
 
