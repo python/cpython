@@ -350,7 +350,6 @@ readline_append_history_file_impl(PyObject *module, int nelements,
         filename_bytes = NULL;
         filename = NULL;
     }
-
     errno = err = append_history(
         nelements - libedit_append_replace_history_offset, filename);
     if (!err && _history_length >= 0)
