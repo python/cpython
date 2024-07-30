@@ -333,6 +333,12 @@ readline_append_history_file_impl(PyObject *module, int nelements,
                                   PyObject *filename_obj)
 /*[clinic end generated code: output=5df06fc9da56e4e4 input=784b774db3a4b7c5]*/
 {
+    if (nelements < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "nelements cannot be negative");
+        return NULL;
+    }
+
     PyObject *filename_bytes;
     const char *filename;
     int err;
@@ -344,6 +350,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
         filename_bytes = NULL;
         filename = NULL;
     }
+
     errno = err = append_history(
         nelements - libedit_append_replace_history_offset, filename);
     if (!err && _history_length >= 0)
