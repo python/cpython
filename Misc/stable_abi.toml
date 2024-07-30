@@ -1628,6 +1628,8 @@
     added = '3.2'
 [function.Py_GetCompiler]
     added = '3.2'
+[function.Py_GetConfigInfo]
+    added = '3.14'
 [function.Py_GetCopyright]
     added = '3.2'
 [function.Py_GetExecPrefix]

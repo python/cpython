@@ -862,6 +862,7 @@ SYMBOL_NAMES = (
     "Py_GetArgcArgv",
     "Py_GetBuildInfo",
     "Py_GetCompiler",
+    "Py_GetConfigInfo",
     "Py_GetConstant",
     "Py_GetConstantBorrowed",
     "Py_GetCopyright",
