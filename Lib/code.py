@@ -107,6 +107,7 @@ class InteractiveInterpreter:
 
         """
         colorize = kwargs.pop('colorize', False)
+        limit = kwargs.pop('limit', None)
         type, value, tb = sys.exc_info()
         sys.last_exc = value
         sys.last_type = type
@@ -124,7 +125,8 @@ class InteractiveInterpreter:
                 value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
-            lines = traceback.format_exception_only(type, value, colorize=colorize)
+            lines = traceback.format_exception_only(type, value, colorize=colorize,
+                                                    limit=limit)
             self.write(''.join(lines))
         else:
             # If someone has set sys.excepthook, we let that take precedence
@@ -140,11 +142,13 @@ class InteractiveInterpreter:
 
         """
         colorize = kwargs.pop('colorize', False)
+        limit = kwargs.pop('limit', None)
         sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
         sys.last_traceback = last_tb
         sys.last_exc = ei[1]
         try:
-            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next, colorize=colorize)
+            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next, colorize=colorize,
+                                               limit=limit)
             if sys.excepthook is sys.__excepthook__:
                 self.write(''.join(lines))
             else:
