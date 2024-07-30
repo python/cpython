@@ -567,7 +567,6 @@ compiler_maybe_add_static_attribute_to_class(
     struct compiler *c, expr_ty e)
 {
     assert(e->kind == Attribute_kind);
-    PyObject *attr_name = e->v.Attribute.attr;
     expr_ty attr_value = e->v.Attribute.value;
     if (attr_value->kind != Name_kind ||
         !_PyUnicode_EqualToASCIIString(attr_value->v.Name.id, "self"))
@@ -582,7 +581,7 @@ compiler_maybe_add_static_attribute_to_class(
         assert(u);
         if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
             assert(u->u_static_attributes);
-            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, attr_name));
+            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, e->v.Attribute.attr));
             break;
         }
     }
