@@ -334,8 +334,8 @@ are always available.  They are listed here in alphabetical order.
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
 
-   This function raises :exc:`SyntaxError` if the compiled source is invalid,
-   and :exc:`ValueError` if the source contains null bytes.
+   This function raises :exc:`SyntaxError` if the compiled source is invalid or
+   contains null bytes.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -371,6 +371,9 @@ are always available.  They are listed here in alphabetical order.
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
 
+   .. versionchanged:: 3.12
+      Previously, :exc:`ValueError` was raised when null bytes were encountered
+      in *source*.
 
 .. class:: complex(number=0, /)
            complex(string, /)
