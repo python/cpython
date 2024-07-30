@@ -1987,7 +1987,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 long month = PyLong_AsLong(item);
                 if (month == -1 && PyErr_Occurred()) {
                     goto Done;
-                }                
+                }
                 item = PyTuple_GET_ITEM(timetuple, 2);
                 long day = PyLong_AsLong(item);
                 if (day == -1 && PyErr_Occurred()) {
