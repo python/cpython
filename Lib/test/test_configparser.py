@@ -760,15 +760,24 @@ boolean {0[0]} NO
         cf = self.newconfig()
         parsed_files = cf.read([], encoding="utf-8")
         self.assertEqual(parsed_files, [])
+
+    def test_invalid_filenames(self):
         # check when we pass invalid file names:
-        cf = self.newconfig()
-        parsed_files = cf.read([
-            '\x00',                 # NUL bytes filename
-            __file__ + '\x00.ini',  # filename with embedded NUL bytes
-            "\uD834\uDD1E.ini",     # surrogate codes (MUSICAL SYMBOL G CLEF)
-            'a' * 1_000_000         # very long filename
-        ], encoding='utf-8')
-        self.assertListEqual(parsed_files, [])
+        for name, desc in [
+            ('\x00', 'NUL bytes filename'),
+            (__file__ + '\x00.ini', 'filename with embedded NUL bytes'),
+            # A filename with surrogate codes. A UnicodeEncodeError is raised
+            # by open() upon querying, which is a subclass of ValueError.
+            ("\uD834\uDD1E.ini", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            # For POSIX platforms, an OSError will be raised but for Windows
+            # platforms, a ValueError is raised due to the path_t converter.
+            # See: https://github.com/python/cpython/issues/122170
+            ('a' * 1_000_000, 'very long filename'),
+        ]:
+            cf = self.newconfig()
+            with self.subTest(f'read: {desc}'):
+                parsed_files = cf.read([name], encoding='utf-8')
+                self.assertListEqual(parsed_files, [])
 
     def test_read_returns_file_list_with_bytestring_path(self):
         if self.delimiters[0] != '=':

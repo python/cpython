@@ -724,9 +724,6 @@ class RawConfigParser(MutableMapping):
         filename may also be given.
 
         Return list of successfully read files.
-
-        Any exception other than an OSError raised while
-        parsing the file is propogated to the caller.
         """
         if isinstance(filenames, (str, bytes, os.PathLike)):
             filenames = [filenames]
@@ -737,13 +734,8 @@ class RawConfigParser(MutableMapping):
                 fp = open(filename, encoding=encoding)
             except (OSError, ValueError):
                 continue
-            try:
-                with fp:
-                    self._read(fp, filename)
-            except OSError:
-                # Do not silence ValueError during the parsing
-                # phase such as those due to a wrong encoding.
-                continue
+            with fp:
+                self._read(fp, filename)
             if isinstance(filename, os.PathLike):
                 filename = os.fspath(filename)
             read_ok.append(filename)
