@@ -3119,7 +3119,7 @@ class TestMagicNumber(unittest.TestCase):
         magic_number = (_imp.pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
         raw_magic_number = int.from_bytes(magic_number, 'little')
 
-        self.assertEqual(raw_magic_number, _imp._pyc_magic_number_token)
+        self.assertEqual(raw_magic_number, _imp.pyc_magic_number_token)
 
 
 if __name__ == '__main__':
