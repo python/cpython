@@ -1,3 +1,2 @@
-Handle :exc:`ValueError`\s raised by OS-related functions
-in :class:`filecmp.dircmp` and :func:`filecmp.cmpfiles`.
-Patch by Bénédikt Tran.
+Handle :exc:`ValueError`\s raised by :func:`os.stat` in
+:attr:`filecmp.dircmp.`in :func:`filecmp.cmpfiles`. Patch by Bénédikt Tran.
