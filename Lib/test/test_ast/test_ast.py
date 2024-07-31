@@ -136,7 +136,7 @@ class AST_Tests(unittest.TestCase):
                 for tree in [tree1, tree2]:
                     res = to_tuple(tree.body[0])
                     self.assertEqual(res, expected)
-    
+
     def test_const_folding(self):
         for input, folded, not_folded, kind in (
             (eval_opt_tests, eval_results_folded, eval_results_not_folded, "eval"),
