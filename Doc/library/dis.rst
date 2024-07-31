@@ -780,16 +780,6 @@ not have to be) the original ``STACK[-2]``.
    .. versionadded:: 3.12
 
 
-.. opcode:: BEFORE_ASYNC_WITH
-
-   Resolves ``__aenter__`` and ``__aexit__`` from ``STACK[-1]``.
-   Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack::
-
-      STACK.extend((__aexit__, __aenter__())
-
-   .. versionadded:: 3.5
-
-
 
 **Miscellaneous opcodes**
 
@@ -943,18 +933,6 @@ iterations of the loop.
 
    Pushes :func:`!builtins.__build_class__` onto the stack.  It is later called
    to construct a class.
-
-
-.. opcode:: BEFORE_WITH
-
-   This opcode performs several operations before a with block starts.  First,
-   it loads :meth:`~object.__exit__` from the context manager and pushes it onto
-   the stack for later use by :opcode:`WITH_EXCEPT_START`.  Then,
-   :meth:`~object.__enter__` is called. Finally, the result of calling the
-   ``__enter__()`` method is pushed onto the stack.
-
-   .. versionadded:: 3.11
-
 
 .. opcode:: GET_LEN
 
@@ -1129,15 +1107,6 @@ iterations of the loop.
    .. versionchanged:: 3.5
       The dictionary is created from stack items instead of creating an
       empty dictionary pre-sized to hold *count* items.
-
-
-.. opcode:: BUILD_CONST_KEY_MAP (count)
-
-   The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
-   top element on the stack which contains a tuple of keys, then starting from
-   ``STACK[-2]``, pops *count* values to form values in the built dictionary.
-
-   .. versionadded:: 3.6
 
 
 .. opcode:: BUILD_STRING (count)
@@ -1667,7 +1636,7 @@ iterations of the loop.
 
    A no-op. Performs internal tracing, debugging and optimization checks.
 
-   The ``context`` oparand consists of two parts. The lowest two bits
+   The ``context`` operand consists of two parts. The lowest two bits
    indicate where the ``RESUME`` occurs:
 
    * ``0`` The start of a function, which is neither a generator, coroutine
@@ -1749,7 +1718,7 @@ iterations of the loop.
    | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
    |                                   | ``StopIteration`` exception.      |
    +-----------------------------------+-----------------------------------+
-   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async generator value    |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
    |                                   | operation                         |
@@ -1810,6 +1779,17 @@ iterations of the loop.
    +----------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
+
+
+.. opcode:: LOAD_SPECIAL
+
+   Performs special method lookup on ``STACK[-1]``.
+   If ``type(STACK[-1]).__xxx__`` is a method, leave
+   ``type(STACK[-1]).__xxx__; STACK[-1]`` on the stack.
+   If ``type(STACK[-1]).__xxx__`` is not a method, leave
+   ``STACK[-1].__xxx__; NULL`` on the stack.
+
+   .. versionadded:: 3.14
 
 
 **Pseudo-instructions**

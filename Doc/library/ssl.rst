@@ -1478,6 +1478,19 @@ to speed up repeated connections from the same clients.
       :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
       :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
+   .. note::
+
+      :class:`SSLContext` only supports limited mutation once it has been used
+      by a connection. Adding new certificates to the internal trust store is
+      allowed, but changing ciphers, verification settings, or mTLS
+      certificates may result in surprising behavior.
+
+   .. note::
+
+      :class:`SSLContext` is designed to be shared and used by multiple
+      connections.
+      Thus, it is thread-safe as long as it is not reconfigured after being
+      used by a connection.
 
 :class:`SSLContext` objects have the following methods and attributes:
 
@@ -1735,7 +1748,7 @@ to speed up repeated connections from the same clients.
    IDN-encoded internationalized domain name, the *server_name_callback*
    receives a decoded U-label (``"pythön.org"``).
 
-   If there is an decoding error on the server name, the TLS connection will
+   If there is a decoding error on the server name, the TLS connection will
    terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
    alert message to the client.
 

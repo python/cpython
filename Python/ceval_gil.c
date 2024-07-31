@@ -901,6 +901,18 @@ unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 #endif
 }
 
+static void
+clear_pending_handling_thread(struct _pending_calls *pending)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&pending->mutex);
+    pending->handling_thread = NULL;
+    PyMutex_Unlock(&pending->mutex);
+#else
+    pending->handling_thread = NULL;
+#endif
+}
+
 static int
 make_pending_calls(PyThreadState *tstate)
 {
@@ -933,7 +945,7 @@ make_pending_calls(PyThreadState *tstate)
 
     int32_t npending;
     if (_make_pending_calls(pending, &npending) != 0) {
-        pending->handling_thread = NULL;
+        clear_pending_handling_thread(pending);
         /* There might not be more calls to make, but we play it safe. */
         signal_pending_calls(tstate, interp);
         return -1;
@@ -945,7 +957,7 @@ make_pending_calls(PyThreadState *tstate)
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
         if (_make_pending_calls(pending_main, &npending) != 0) {
-            pending->handling_thread = NULL;
+            clear_pending_handling_thread(pending);
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
             return -1;
@@ -956,7 +968,7 @@ make_pending_calls(PyThreadState *tstate)
         }
     }
 
-    pending->handling_thread = NULL;
+    clear_pending_handling_thread(pending);
     return 0;
 }
 
@@ -991,12 +1003,34 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
     assert(PyGILState_Check());
     assert(_PyThreadState_CheckConsistency(tstate));
 
-    if (make_pending_calls(tstate) < 0) {
-        PyObject *exc = _PyErr_GetRaisedException(tstate);
-        PyErr_BadInternalCall();
-        _PyErr_ChainExceptions1(exc);
-        _PyErr_Print(tstate);
-    }
+    struct _pending_calls *pending = &tstate->interp->ceval.pending;
+    struct _pending_calls *pending_main =
+            _Py_IsMainThread() && _Py_IsMainInterpreter(tstate->interp)
+            ? &_PyRuntime.ceval.pending_mainthread
+            : NULL;
+    /* make_pending_calls() may return early without making all pending
+       calls, so we keep trying until we're actually done. */
+    int32_t npending;
+#ifndef NDEBUG
+    int32_t npending_prev = INT32_MAX;
+#endif
+    do {
+        if (make_pending_calls(tstate) < 0) {
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            PyErr_BadInternalCall();
+            _PyErr_ChainExceptions1(exc);
+            _PyErr_Print(tstate);
+        }
+
+        npending = _Py_atomic_load_int32_relaxed(&pending->npending);
+        if (pending_main != NULL) {
+            npending += _Py_atomic_load_int32_relaxed(&pending_main->npending);
+        }
+#ifndef NDEBUG
+        assert(npending_prev > npending);
+        npending_prev = npending;
+#endif
+    } while (npending > 0);
 }
 
 int
