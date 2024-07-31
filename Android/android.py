@@ -215,13 +215,13 @@ def setup_testbed(context):
         os.chmod(out_path, 0o755)
 
     with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
-        os.chdir(temp_dir)
         bin_zip = download(
-            f"https://services.gradle.org/distributions/gradle-{ver_short}-bin.zip")
+            f"https://services.gradle.org/distributions/gradle-{ver_short}-bin.zip",
+            temp_dir)
         outer_jar = f"gradle-{ver_short}/lib/plugins/gradle-wrapper-{ver_short}.jar"
-        run(["unzip", bin_zip, outer_jar])
-        run(["unzip", "-o", "-d", f"{TESTBED_DIR}/gradle/wrapper", outer_jar,
-             "gradle-wrapper.jar"])
+        run(["unzip", "-d", temp_dir, bin_zip, outer_jar])
+        run(["unzip", "-o", "-d", f"{TESTBED_DIR}/gradle/wrapper",
+             f"{temp_dir}/{outer_jar}", "gradle-wrapper.jar"])
 
 
 # Work around a bug involving sys.exit and TaskGroups
@@ -403,7 +403,7 @@ async def gradle_task(context):
         env["ANDROID_SERIAL"] = context.connected
 
     async with async_process(
-        "./gradlew",
+        f"{TESTBED_DIR}/gradlew" + (".bat" if os.name == "nt" else ""),
         "--console", "plain",
         f"{task_prefix}DebugAndroidTest",
         "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
