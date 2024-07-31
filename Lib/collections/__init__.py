@@ -1527,6 +1527,43 @@ class UserString(_collections_abc.Sequence):
 
     def join(self, seq):
         return self.data.join(seq)
+    
+    '''
+    Explaination: 
+    UserString.join(iterable)
+    Concatenate any number of strings.
+
+    The string whose method is called is inserted in between each given string.
+    The result is returned as a new string.
+
+    Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+    Parameters:
+    iterable -- Iterable of strings to be joined. If an item in the iterable is 
+                not a string (including other UserString instances), it is 
+                converted to a string using str().
+
+    Returns:
+    str -- A new string with all items from the iterable joined by the string 
+           on which this method was called.
+
+    Note:
+    This method differs from str.join() in that it automatically converts all 
+    elements in the iterable to strings, allowing it to work seamlessly with 
+    other UserString instances and non-string objects.
+    
+    Examples:
+    >>> s = UserString('-')
+    >>> s.join(['a', 'b', 'c'])
+    'a-b-c'
+    >>> s.join([UserString('x'), UserString('y'), UserString('z')])
+    'x-y-z'
+    >>> s.join([1, 2, 3])
+    '1-2-3'
+
+    '''
+    def join(self, iterable):
+        return self.data.join(str(item) for item in iterable)
 
     def ljust(self, width, *args):
         return self.__class__(self.data.ljust(width, *args))
