@@ -1267,7 +1267,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 return
         try:
             _write_atomic(path, data, _mode)
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             # Same as above: just don't write the bytecode.
             _bootstrap._verbose_message('could not create {!r}: {!r}', path,
                                         exc)
