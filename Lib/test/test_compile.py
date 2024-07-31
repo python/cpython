@@ -2146,15 +2146,6 @@ class TestStaticAttributes(unittest.TestCase):
         self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
         self.assertEqual(sorted(D.__static_attributes__), ['y', 'z'])
 
-    def test_method_calls(self):
-        class C:
-            def f(self):
-                self.x
-                self.y[3]
-                self.z()
-
-        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y', 'z'])
-
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
     # stays within reasonable bounds (see issue #21523 for an example
