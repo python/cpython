@@ -121,7 +121,7 @@ another rational number, or from a string.
 
    .. attribute:: numerator
 
-      Numerator of the Fraction in lowest term.
+      Numerator of the Fraction in lowest terms.
 
    .. attribute:: denominator
 
