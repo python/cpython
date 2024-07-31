@@ -10,7 +10,7 @@ colorama<0.5
 imagesize<1.5
 Jinja2<3.2
 packaging<25
-Pygments>=2.16.1,<3
+Pygments<3
 requests<3
 snowballstemmer<3
 sphinxcontrib-applehelp<2.1
