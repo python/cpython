@@ -1049,6 +1049,30 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    @force_not_colorized
+    def test_bad_sys_excepthook_doesnt_crash_pyrepl(self):
+        env = os.environ.copy()
+        commands = ("import sys\n"
+                    "sys.excepthook = 1\n"
+                    "1/0\n"
+                    "exit()\n")
+
+        def check(output, exitcode):
+            self.assertIn("Error in sys.excepthook:", output)
+            self.assertEqual(output.count("'int' object is not callable"), 1)
+            self.assertIn("Original exception was:", output)
+            self.assertIn("division by zero", output)
+            self.assertEqual(exitcode, 0)
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        check(output, exit_code)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        check(output, exit_code)
+
     def test_not_wiping_history_file(self):
         # skip, if readline module is not available
         import_module('readline')
