@@ -1529,41 +1529,27 @@ class UserString(_collections_abc.Sequence):
         return self.data.join(seq)
     
     '''
-    Explaination: 
-    UserString.join(iterable)
-    Concatenate any number of strings.
+    Improvements:
+    Type Checking:
 
-    The string whose method is called is inserted in between each given string.
-    The result is returned as a new string.
+    Purpose: Before attempting the join operation, the method checks whether all items in the iterable are of type str.
+    Implementation: all(isinstance(item, str) for item in iterable) iterates through each item in iterable and checks its type. If any item is not a string, it returns False.
+    Error Handling:
 
-    Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+    Purpose: To provide a clear and specific error message when the iterable contains non-string types.
+    Implementation: If the type check fails, a TypeError is raised with a message explaining that all items must be strings.
+    Preserve Behavior:
 
-    Parameters:
-    iterable -- Iterable of strings to be joined. If an item in the iterable is 
-                not a string (including other UserString instances), it is 
-                converted to a string using str().
-
-    Returns:
-    str -- A new string with all items from the iterable joined by the string 
-           on which this method was called.
-
-    Note:
-    This method differs from str.join() in that it automatically converts all 
-    elements in the iterable to strings, allowing it to work seamlessly with 
-    other UserString instances and non-string objects.
-    
-    Examples:
-    >>> s = UserString('-')
-    >>> s.join(['a', 'b', 'c'])
-    'a-b-c'
-    >>> s.join([UserString('x'), UserString('y'), UserString('z')])
-    'x-y-z'
-    >>> s.join([1, 2, 3])
-    '1-2-3'
+    Purpose: Ensures that the join method only performs the join operation if the iterable contains only strings, aligning with how str.join() behaves in standard Python.
+    Implementation: The self.data.join(iterable) performs the join operation only if the type check passes, ensuring consistency with expected behavior.
+    Summary
+    This improvement ensures that the join method in UserString behaves more predictably and safely. It prevents potential issues with non-string types in the iterable and aligns with the behavior of str.join(), making the method more robust and user-friendly.
 
     '''
     def join(self, iterable):
-        return self.data.join(str(item) for item in iterable)
+        if not all(isinstance(item, str) for item in iterable):
+            raise TypeError("All items in the iterable must be strings")
+        return self.data.join(iterable)
 
     def ljust(self, width, *args):
         return self.__class__(self.data.ljust(width, *args))
