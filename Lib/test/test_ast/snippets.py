@@ -366,6 +366,24 @@ eval_tests = [
   "f'foo({a})'",
 ]
 
+eval_opt_tests = [
+    # Common arithmetic operations
+    # There's no snippet for `@` operand since we don't have
+    # builtin constant that implement `@` operator
+    "1 + 1",
+    "1 - 1",
+    "1 * 1",
+    "1 / 1",
+    "1 // 1",
+    "1 % 1",
+    "1 ** 1",
+    "1 << 1",
+    "1 >> 1",
+    "1 | 1",
+    "1 ^ 1",
+    "1 & 1"
+]
+
 
 def main():
     if __name__ != '__main__':
