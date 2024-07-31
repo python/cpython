@@ -5,7 +5,7 @@ import sys
 import unittest
 from posixpath import realpath, abspath, dirname, basename
 from test import test_genericpath
-from test.support import import_helper
+from test.support import get_attribute, import_helper
 from test.support import cpython_only, os_helper
 from test.support.os_helper import FakePath
 from unittest import mock
@@ -359,7 +359,7 @@ class PosixPathTest(unittest.TestCase):
                      "no home directory on VxWorks")
     def test_expanduser_pwd2(self):
         pwd = import_helper.import_module('pwd')
-        for all_entry in pwd.getpwall():
+        for all_entry in get_attribute(pwd, 'getpwall')():
             name = all_entry.pw_name
 
             # gh-121200: pw_dir can be different between getpwall() and
