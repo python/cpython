@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from glob import glob
 import os
 import re
 import shutil
@@ -16,16 +17,21 @@ CHECKOUT = Path(__file__).resolve().parent.parent
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
 
-def delete_if_exists(path):
-    if path.exists():
+def delete_glob(pattern):
+    # Path.glob doesn't accept non-relative patterns.
+    for path in glob(str(pattern)):
+        path = Path(path)
         print(f"Deleting {path} ...")
-        shutil.rmtree(path)
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
 
 
 def subdir(name, *, clean=None):
     path = CROSS_BUILD_DIR / name
     if clean:
-        delete_if_exists(path)
+        delete_glob(path)
     if not path.exists():
         if clean is None:
             sys.exit(
@@ -150,10 +156,17 @@ def configure_host_python(context):
 
 
 def make_host_python(context):
+    # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
+    # delete any previously-installed Python libs and include files to prevent
+    # them being used during the build.
     host_dir = subdir(context.host)
+    prefix_dir = host_dir / "prefix"
+    delete_glob(f"{prefix_dir}/include/python*")
+    delete_glob(f"{prefix_dir}/lib/libpython*")
+
     os.chdir(host_dir / "build")
     run(["make", "-j", str(os.cpu_count())], host=context.host)
-    run(["make", "install", f"prefix={host_dir}/prefix"], host=context.host)
+    run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
 
 
 def build_all(context):
@@ -164,7 +177,7 @@ def build_all(context):
 
 
 def clean_all(context):
-    delete_if_exists(CROSS_BUILD_DIR)
+    delete_glob(CROSS_BUILD_DIR)
 
 
 # To avoid distributing compiled artifacts without corresponding source code,
