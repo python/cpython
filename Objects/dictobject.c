@@ -165,6 +165,8 @@ ASSERT_DICT_LOCKED(PyObject *op)
 
 #define IS_DICT_SHARED(mp) _PyObject_GC_IS_SHARED(mp)
 #define SET_DICT_SHARED(mp) _PyObject_GC_SET_SHARED(mp)
+#define IS_DICT_SHARED_INLINE(mp) _PyObject_GC_IS_SHARED_INLINE(mp)
+#define SET_DICT_SHARED_INLINE(mp) _PyObject_GC_SET_SHARED_INLINE(mp)
 #define LOAD_INDEX(keys, size, idx) _Py_atomic_load_int##size##_relaxed(&((const int##size##_t*)keys->dk_indices)[idx]);
 #define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size##_relaxed(&((int##size##_t*)keys->dk_indices)[idx], (int##size##_t)value);
 #define ASSERT_OWNED_OR_SHARED(mp) \
@@ -245,6 +247,8 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 #define UNLOCK_KEYS_IF_SPLIT(keys, kind)
 #define IS_DICT_SHARED(mp) (false)
 #define SET_DICT_SHARED(mp)
+#define IS_DICT_SHARED_INLINE(mp) (false)
+#define SET_DICT_SHARED_INLINE(mp)
 #define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)(keys->dk_indices))[idx]
 #define STORE_INDEX(keys, size, idx, value) ((int##size##_t*)(keys->dk_indices))[idx] = (int##size##_t)value
 
@@ -3082,20 +3086,21 @@ dict_dealloc(PyObject *self)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
     Py_TRASHCAN_BEGIN(mp, dict_dealloc)
+    bool is_shared = IS_DICT_SHARED_INLINE(self);
     if (values != NULL) {
         if (values->embedded == 0) {
             for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
                 Py_XDECREF(values->values[i]);
             }
-            free_values(values, false);
+            free_values(values, is_shared);
         }
-        dictkeys_decref(interp, keys, false);
+        dictkeys_decref(interp, keys, is_shared);
     }
     else if (keys != NULL) {
         assert(keys->dk_refcnt == 1 || keys == Py_EMPTY_KEYS);
-        dictkeys_decref(interp, keys, false);
+        dictkeys_decref(interp, keys, is_shared);
     }
-    if (Py_IS_TYPE(mp, &PyDict_Type)) {
+    if (Py_IS_TYPE(mp, &PyDict_Type) && !is_shared) {
         _Py_FREELIST_FREE(dicts, mp, Py_TYPE(mp)->tp_free);
     }
     else {
@@ -7047,6 +7052,9 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
             FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
                                 (PyDictObject *)Py_XNewRef(new_dict));
         }
+        // We could be racing with a read from a borrowed reference of
+        // the dict, so we need to free it using QSBR.
+        SET_DICT_SHARED_INLINE(dict);
         Py_END_CRITICAL_SECTION2();
 
         if (err == 0) {
