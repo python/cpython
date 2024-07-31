@@ -602,7 +602,7 @@ def _fallback_socketpair(family=AF_INET, type=SOCK_STREAM, proto=0):
         host = _LOCALHOST_V6
     else:
         raise ValueError("Only AF_INET and AF_INET6 socket address families "
-                            "are supported")
+                         "are supported")
     if type != SOCK_STREAM:
         raise ValueError("Only SOCK_STREAM socket type is supported")
     if proto != 0:
