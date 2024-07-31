@@ -2,7 +2,9 @@
 Parses compiler output with -fdiagnostics-format=json and checks that warnings
 exist only in files that are expected to have warnings.
 """
+
 import argparse
+from collections import defaultdict
 import json
 import re
 import sys
@@ -21,8 +23,7 @@ def extract_warnings_from_compiler_output_clang(
     )
     compiler_warnings = []
     for line in compiler_output.splitlines():
-        match = clang_warning_regex.match(line)
-        if match:
+        if match := clang_warning_regex.match(line):
             compiler_warnings.append(
                 {
                     "file": match.group("file"),
@@ -39,14 +40,16 @@ def extract_warnings_from_compiler_output_json(
     compiler_output: str,
 ) -> list[dict]:
     """
-    Extracts warnings from the compiler output when using -fdiagnostics-format=json
+    Extracts warnings from the compiler output when using
+    -fdiagnostics-format=json.
 
-    Compiler output as a whole is not a valid json document, but includes many json
-    objects and may include other output that is not json.
+    Compiler output as a whole is not a valid json document,
+    but includes many json objects and may include other output
+    that is not json.
     """
     # Regex to find json arrays at the top level of the file in the compiler output
     json_arrays = re.findall(
-        r"\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\]", compiler_output
+        r"\[(?:[^[\]]|\[[^\]]*\])*\]", compiler_output
     )
     compiler_warnings = []
     for array in json_arrays:
@@ -61,18 +64,24 @@ def extract_warnings_from_compiler_output_json(
             for warning in warning_list:
                 locations = warning["locations"]
                 for location in locations:
+                    found_location = False
                     for key in ["caret", "start", "end"]:
                         if key in location:
                             compiler_warnings.append(
                                 {
-                                    "file": location[key]["file"].lstrip(
-                                        "./"
-                                    ),  # Remove leading current directory if present
+                                    # Remove leading current directory if present
+                                    "file": location[key]["file"].lstrip("./"),
                                     "line": location[key]["line"],
                                     "column": location[key]["column"],
                                     "message": warning["message"],
                                 }
                             )
+                            # Found a caret, start, or end in location so
+                            # break out completely to address next warning
+                            break
+                    else:
+                        continue
+                    break
 
         except json.JSONDecodeError:
             continue  # Skip malformed JSON
@@ -84,19 +93,16 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
     Returns a dictionary where the key is the file and the data is the warnings in that file
     """
-    warnings_by_file = {}
+    warnings_by_file = defaultdict(list)
     for warning in warnings:
-        file = warning["file"]
-        if file not in warnings_by_file:
-            warnings_by_file[file] = []
-        warnings_by_file[file].append(warning)
+        warnings_by_file[warning["file"]].append(warning)
 
     return warnings_by_file
 
 
 def get_unexpected_warnings(
     files_with_expected_warnings: set[str],
-    files_with_warnings: set[str],
+    files_with_warnings: dict[str, list[dict]],
 ) -> int:
     """
     Returns failure status if warnings discovered in list of warnings are associated with a file
@@ -118,7 +124,7 @@ def get_unexpected_warnings(
 
 def get_unexpected_improvements(
     files_with_expected_warnings: set[str],
-    files_with_warnings: set[str],
+    files_with_warnings: dict[str, list[dict]],
 ) -> int:
     """
     Returns failure status if there are no warnings in the list of warnings for a file
@@ -183,20 +189,23 @@ def main(argv: list[str] | None = None) -> int:
     # Check that the compiler output file is a valid path
     if not Path(args.compiler_output_file_path).is_file():
         print(
-            f"Compiler output file does not exist: {args.compiler_output_file_path}"
+            f"Compiler output file does not exist:"
+            f" {args.compiler_output_file_path}"
         )
         return 1
 
     # Check that a warning ignore file was specified and if so is a valid path
     if not args.warning_ignore_file_path:
         print(
-            "Warning ignore file not specified. Continuing without it (no warnings ignored)."
+            "Warning ignore file not specified."
+            " Continuing without it (no warnings ignored)."
         )
         files_with_expected_warnings = set()
     else:
         if not Path(args.warning_ignore_file_path).is_file():
             print(
-                f"Warning ignore file does not exist: {args.warning_ignore_file_path}"
+                f"Warning ignore file does not exist:"
+                f" {args.warning_ignore_file_path}"
             )
             return 1
         with Path(args.warning_ignore_file_path).open(
