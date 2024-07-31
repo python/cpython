@@ -212,10 +212,10 @@ def _write_atomic(path, data, mode=0o666):
         with _io.FileIO(fd, 'wb') as file:
             file.write(data)
         _os.replace(path_tmp, path)
-    except (OSError, ValueError):
+    except OSError:
         try:
             _os.unlink(path_tmp)
-        except (OSError, ValueError):
+        except OSError:
             pass
         raise
 
@@ -1267,7 +1267,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 return
         try:
             _write_atomic(path, data, _mode)
-        except (OSError, ValueError) as exc:
+        except OSError as exc:
             # Same as above: just don't write the bytecode.
             _bootstrap._verbose_message('could not create {!r}: {!r}', path,
                                         exc)
