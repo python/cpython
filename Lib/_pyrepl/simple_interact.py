@@ -76,6 +76,7 @@ REPL_COMMANDS = {
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
     "clear": _clear_screen,
+    "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
 
 

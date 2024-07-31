@@ -20,6 +20,7 @@ extern "C" {
 #  define Py_contexts_MAXFREELIST 255
 #  define Py_async_gens_MAXFREELIST 80
 #  define Py_async_gen_asends_MAXFREELIST 80
+#  define Py_futureiters_MAXFREELIST 255
 #  define Py_object_stack_chunks_MAXFREELIST 4
 #else
 #  define PyTuple_MAXSAVESIZE 0
@@ -47,6 +48,7 @@ struct _Py_freelists {
     struct _Py_freelist contexts;
     struct _Py_freelist async_gens;
     struct _Py_freelist async_gen_asends;
+    struct _Py_freelist futureiters;
     struct _Py_freelist object_stack_chunks;
 #else
     char _unused;  // Empty structs are not allowed.

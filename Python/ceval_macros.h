@@ -316,17 +316,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         /* gh-115999 tracks progress on addressing this. */ \
         static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) ((void)COUNTER)
 #else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
     } while (0);
-#endif
 
 #define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+#endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
@@ -402,7 +403,10 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 /* There's no STORE_IP(), it's inlined by the code generator. */
 
 #define LOAD_SP() \
-stack_pointer = _PyFrame_GetStackPointer(frame);
+stack_pointer = _PyFrame_GetStackPointer(frame)
+
+#define SAVE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
