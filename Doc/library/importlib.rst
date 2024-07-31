@@ -416,12 +416,16 @@ ABC hierarchy::
         Loaders that have a file-like storage back-end
         that allows storing arbitrary data
         can implement this abstract method to give direct access
-        to the data stored. :exc:`OSError` is to be raised if the *path* cannot
-        be found. The *path* is expected to be constructed using a module's
-        :attr:`__file__` attribute or an item from a package's :attr:`__path__`.
+        to the data stored.
+
+        An :exc:`OSError` is to be raised if the *path* cannot be found, and
+        a :exc:`ValueError` is raised if the *path* cannot be handled (e.g.,
+        the *path* contains null characters or the *path* is too long). The
+        *path* is expected to be constructed using a module's :attr:`__file__`
+        attribute or an item from a package's :attr:`__path__`.
 
         .. versionchanged:: 3.4
-           Raises :exc:`OSError` instead of :exc:`NotImplementedError`.
+           Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
 
 
 .. class:: InspectLoader
@@ -551,6 +555,9 @@ ABC hierarchy::
 
       Reads *path* as a binary file and returns the bytes from it.
 
+      An :exc:`OSError` is to be raised if the *path* cannot be found, and
+      a :exc:`ValueError` is raised if the *path* is invalid (e.g., *path*
+      contains null characters or is too long).
 
 .. class:: SourceLoader
 
@@ -582,12 +589,13 @@ ABC hierarchy::
         - ``'size'`` (optional): the size in bytes of the source code.
 
         Any other keys in the dictionary are ignored, to allow for future
-        extensions. If the path cannot be handled, :exc:`OSError` is raised.
+        extensions. If the path cannot be handled, raises an :exc:`OSError`
+        or a :exc:`ValueError` depending on the reason.
 
         .. versionadded:: 3.3
 
         .. versionchanged:: 3.4
-           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
+           Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
 
     .. method:: path_mtime(path)
 
@@ -597,10 +605,11 @@ ABC hierarchy::
         .. deprecated:: 3.3
            This method is deprecated in favour of :meth:`path_stats`.  You don't
            have to implement it, but it is still available for compatibility
-           purposes. Raise :exc:`OSError` if the path cannot be handled.
+           purposes. If the path cannot be handled, raises an :exc:`OSError`
+           or a :exc:`ValueError` depending on the reason.
 
         .. versionchanged:: 3.4
-           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
+           Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
 
     .. method:: set_data(path, data)
 
@@ -608,9 +617,9 @@ ABC hierarchy::
         path. Any intermediate directories which do not exist are to be created
         automatically.
 
-        When writing to the path fails because the path is read-only
-        (:const:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
-        exception.
+        When writing to the path fails by raising an :class:`OSError` (e.g.,
+        the path is read-only (:const:`errno.EACCES`/:exc:`PermissionError`)
+        or a :class:`ValueError`, the exception is not propagated.
 
         .. versionchanged:: 3.4
            No longer raises :exc:`NotImplementedError` when called.
