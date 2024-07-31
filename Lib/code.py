@@ -127,7 +127,7 @@ class InteractiveInterpreter:
         else:
             # If someone has set sys.excepthook, we let that take precedence
             # over self.write
-            sys.excepthook(type, value, tb)
+            self._call_excepthook(type, value, tb)
 
     def showtraceback(self):
         """Display the exception that just occurred.
@@ -141,15 +141,28 @@ class InteractiveInterpreter:
         sys.last_traceback = last_tb
         sys.last_exc = ei[1]
         try:
-            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next)
             if sys.excepthook is sys.__excepthook__:
+                lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next)
                 self.write(''.join(lines))
             else:
                 # If someone has set sys.excepthook, we let that take precedence
                 # over self.write
-                sys.excepthook(ei[0], ei[1], last_tb)
+                self._call_excepthook(ei[0], ei[1], last_tb)
         finally:
             last_tb = ei = None
+
+    def _call_excepthook(self, typ, value, tb):
+        try:
+            sys.excepthook(typ, value, tb)
+        except SystemExit:
+            raise
+        except BaseException as e:
+            e.__context__ = None
+            print('Error in sys.excepthook:', file=sys.stderr)
+            sys.__excepthook__(type(e), e, e.__traceback__.tb_next)
+            print(file=sys.stderr)
+            print('Original exception was:', file=sys.stderr)
+            sys.__excepthook__(typ, value, tb)
 
     def write(self, data):
         """Write a string.
