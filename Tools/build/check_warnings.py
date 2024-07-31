@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Parses compiler output with -fdiagnostics-format=json and checks that warnings
 exist only in files that are expected to have warnings.
