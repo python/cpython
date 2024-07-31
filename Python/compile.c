@@ -4793,7 +4793,6 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     }
 
     /* Alright, we can optimize the code. */
-
     location loc = LOC(meth);
 
     if (can_optimize_super_call(c, meth)) {
