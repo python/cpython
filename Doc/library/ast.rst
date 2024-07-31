@@ -2155,8 +2155,6 @@ and classes for traversing abstract syntax trees:
    is no guarantee that the parse (or success of the parse) is the same as
    when run on the Python version corresponding to ``feature_version``.
 
-   If source contains a null character (``\0``), :exc:`SyntaxError` is raised.
-
    .. warning::
       Note that successfully parsing source code into an AST object doesn't
       guarantee that the source code provided is valid Python code that can
@@ -2177,8 +2175,8 @@ and classes for traversing abstract syntax trees:
       Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
 
    .. versionchanged:: 3.12
-      Previously, :exc:`ValueError` was raised when null bytes were encountered
-      in *source*.
+      Previously, :exc:`ValueError` was raised instead of :exc:`SyntaxError`
+      when null characters (``\0``) were encountered in *source*.
 
    .. versionchanged:: 3.13
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
