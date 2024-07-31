@@ -1544,12 +1544,7 @@ dir_fd_and_follow_symlinks_invalid(const char *function_name, int dir_fd,
     return 0;
 }
 
-#ifdef MS_WINDOWS
-    typedef long long Py_off_t;
-#else
-    typedef off_t Py_off_t;
-#endif
-
+#if defined(HAVE_WAITID)
 static int
 idtype_t_converter(PyObject *arg, void *addr)
 {
@@ -1560,6 +1555,13 @@ idtype_t_converter(PyObject *arg, void *addr)
     *((idtype_t *)addr) = (idtype_t)(value);
     return 1;
 }
+#endif
+
+#ifdef MS_WINDOWS
+    typedef long long Py_off_t;
+#else
+    typedef off_t Py_off_t;
+#endif
 
 static int
 Py_off_t_converter(PyObject *arg, void *addr)
