@@ -417,12 +417,12 @@ ABC hierarchy::
         that allows storing arbitrary data
         can implement this abstract method to give direct access
         to the data stored.
+        The *path* is expected to be constructed using a module's
+        :attr:`__file__` attribute or an item from a package's
+        :attr:`__path__` attribute.
 
-        An :exc:`OSError` is to be raised if the *path* cannot be found, and
-        a :exc:`ValueError` is raised if the *path* cannot be handled (e.g.,
-        the *path* contains null characters or the *path* is too long). The
-        *path* is expected to be constructed using a module's :attr:`__file__`
-        attribute or an item from a package's :attr:`__path__`.
+        If the *path* cannot be handled, this raises an :exc:`OSError`
+        or a :exc:`ValueError` depending on the reason.
 
         .. versionchanged:: 3.4
            Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
@@ -555,9 +555,8 @@ ABC hierarchy::
 
       Reads *path* as a binary file and returns the bytes from it.
 
-      An :exc:`OSError` is to be raised if the *path* cannot be found, and
-      a :exc:`ValueError` is raised if the *path* is invalid (e.g., *path*
-      contains null characters or is too long).
+      If the *path* cannot be handled, this raises an :exc:`OSError`
+      or a :exc:`ValueError` depending on the reason.
 
 .. class:: SourceLoader
 
@@ -589,8 +588,8 @@ ABC hierarchy::
         - ``'size'`` (optional): the size in bytes of the source code.
 
         Any other keys in the dictionary are ignored, to allow for future
-        extensions. If the path cannot be handled, raises an :exc:`OSError`
-        or a :exc:`ValueError` depending on the reason.
+        extensions. If the *path* cannot be handled, this raises an
+        :exc:`OSError` or a :exc:`ValueError` depending on the reason.
 
         .. versionadded:: 3.3
 
@@ -605,8 +604,8 @@ ABC hierarchy::
         .. deprecated:: 3.3
            This method is deprecated in favour of :meth:`path_stats`.  You don't
            have to implement it, but it is still available for compatibility
-           purposes. If the path cannot be handled, raises an :exc:`OSError`
-           or a :exc:`ValueError` depending on the reason.
+           purposes. If the *path* cannot be handled, this raises an
+           :exc:`OSError` or a :exc:`ValueError` depending on the reason.
 
         .. versionchanged:: 3.4
            Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
