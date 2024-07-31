@@ -616,8 +616,7 @@ ABC hierarchy::
         path. Any intermediate directories which do not exist are to be created
         automatically.
 
-        When writing to the path fails by raising an :class:`OSError` (e.g.,
-        the path is read-only (:const:`errno.EACCES`/:exc:`PermissionError`)
+        When writing to the path fails by raising an :class:`OSError`
         or a :class:`ValueError`, the exception is not propagated.
 
         .. versionchanged:: 3.4
