@@ -1026,7 +1026,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         op(THIRD, (j, k --)) {
-            j,k;
+            j,k; // Mark j and k as used
             ERROR_IF(cond, error);
         }
 
@@ -1057,7 +1057,7 @@ class TestGeneratedCases(unittest.TestCase):
             k = b;
             j = a;
             {
-                j,k;
+                j,k; // Mark j and k as used
                 if (cond) goto pop_2_error;
             }
             stack_pointer += -2;
