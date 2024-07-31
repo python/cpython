@@ -103,7 +103,7 @@ class FinderTests:
             (f'Top{os.sep}Mid\x00', 'path with embedded NUL bytes'),
             # A filename with surrogate codes. A UnicodeEncodeError is raised
             # by os.stat() upon querying, which is a subclass of ValueError.
-            ("\uD834\uDD1E.py", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            ("\uD834\uDD1E", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
             # For POSIX platforms, an OSError will be raised but for Windows
             # platforms, a ValueError is raised due to the path_t converter.
             # See: https://github.com/python/cpython/issues/122353
