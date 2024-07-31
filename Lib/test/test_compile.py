@@ -2095,6 +2095,9 @@ class TestStaticAttributes(unittest.TestCase):
         class C:
             def f(self):
                 self.a = self.b = 42
+                # read fields are not included
+                self.f()
+                self.arr[3]
 
         self.assertIsInstance(C.__static_attributes__, tuple)
         self.assertEqual(sorted(C.__static_attributes__), ['a', 'b'])
