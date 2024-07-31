@@ -335,6 +335,8 @@ are always available.  They are listed here in alphabetical order.
    or ``2`` (docstrings are removed too).
 
    This function raises :exc:`SyntaxError` if the compiled source is invalid.
+   It can also raise :exc:`ValueError`, :exc:`OverflowError` and
+   :exc:`RecursionError`.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.

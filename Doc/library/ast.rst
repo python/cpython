@@ -2155,6 +2155,10 @@ and classes for traversing abstract syntax trees:
    is no guarantee that the parse (or success of the parse) is the same as
    when run on the Python version corresponding to ``feature_version``.
 
+   This function raises :exc:`SyntaxError` if the parsed source is invalid.
+   It can also raise :exc:`ValueError`, :exc:`OverflowError` and
+   :exc:`RecursionError`.
+
    .. warning::
       Note that successfully parsing source code into an AST object doesn't
       guarantee that the source code provided is valid Python code that can
