@@ -120,10 +120,24 @@ extern int _PyMem_DebugEnabled(void);
 extern void _PyMem_FreeDelayed(void *ptr);
 
 // Enqueue an object to be freed possibly after some delay
-extern void _PyObject_FreeDelayed(void *ptr);
+#ifdef Py_GIL_DISABLED
+extern void _PyObject_XDecRefDelayed(PyObject *obj);
+#else
+static inline void _PyObject_XDecRefDelayed(PyObject *obj)
+{
+    Py_XDECREF(obj);
+}
+#endif
 
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
+
+
+// Periodically process delayed free requests when the world is stopped.
+// Notify of any objects whic should be freeed.
+typedef void (*delayed_dealloc_cb)(PyObject *, void *);
+extern void _PyMem_ProcessDelayedNoDealloc(PyThreadState *tstate,
+                                           delayed_dealloc_cb cb, void *state);
 
 // Abandon all thread-local delayed free requests and push them to the
 // interpreter's queue.

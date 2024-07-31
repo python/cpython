@@ -7087,51 +7087,137 @@ set_dict_inline_values(PyObject *obj, PyDictObject *new_dict)
     }
 }
 
-int
-_PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
+#ifdef Py_GIL_DISABLED
+
+// Trys and sets the dictionary for an object in the easy case when our current
+// dictionary is either completely not materialized or is a dictionary which
+// does not point at the inline values.
+static bool
+try_set_dict_inline_only_or_other_dict(PyObject *obj, PyObject *new_dict, PyDictObject **cur_dict)
+{
+    bool replaced = false;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+
+    PyDictObject *dict = *cur_dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+        // We only have inline values, we can just completely replace them.
+        set_dict_inline_values(obj, (PyDictObject *)new_dict);
+        replaced = true;
+        goto exit_lock;
+    }
+
+    if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) != _PyObject_InlineValues(obj)) {
+        // We have a materialized dict which doesn't point at the inline values,
+        // We get to simply swap dictionaries and free the old dictionary.
+        FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
+                (PyDictObject *)Py_XNewRef(new_dict));
+        replaced = true;
+        goto exit_lock;
+    } else {
+        // We have inline values, we need to lock the dict and the object
+        // at the same time to safely dematerialize them. To do that while releasing
+        // the object lock we need a strong reference to the current dictionary.
+        Py_INCREF(dict);
+    }
+exit_lock:
+    Py_END_CRITICAL_SECTION();
+    return replaced;
+}
+
+// Replaces a dictionary that is probably the dictionary which has been
+// materialized and points at the inline values. We could have raced
+// and replaced it with another dictionary though.
+static int
+replace_dict_probably_inline_materialized(PyObject *obj, PyDictObject *inline_dict,
+                                          PyObject *new_dict, bool clear,
+                                          PyDictObject **replaced_dict)
+{
+    // But we could have had another thread race in after we released
+    // the object lock
+    int err = 0;
+    *replaced_dict = _PyObject_GetManagedDict(obj);
+    assert(FT_ATOMIC_LOAD_PTR_RELAXED(inline_dict->ma_values) == _PyObject_InlineValues(obj));
+
+    if (*replaced_dict == inline_dict) {
+        err = _PyDict_DetachFromObject(inline_dict, obj);
+        if (err != 0) {
+            assert(new_dict == NULL);
+            return err;
+        }
+        // We incref'd the inline dict and the object owns a ref.
+        // Clear the object's reference, we'll clear the local
+        // reference after releasing the lock.
+        if (clear) {
+            Py_XDECREF((PyObject *)*replaced_dict);
+        } else {
+            _PyObject_XDecRefDelayed((PyObject *)*replaced_dict);
+        }
+        *replaced_dict = NULL;
+    }
+
+    FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
+                    (PyDictObject *)Py_XNewRef(new_dict));
+    return err;
+}
+
+#endif
+
+static int
+set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     int err = 0;
     PyTypeObject *tp = Py_TYPE(obj);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+#ifdef Py_GIL_DISABLED
+        PyDictObject *prev_dict;
+        if (!try_set_dict_inline_only_or_other_dict(obj, new_dict, &prev_dict)) {
+            // We had a materialized dictionary which pointed at the inline
+            // values. We need to lock both the object and the dict at the
+            // same time to safely replace it. We can't merely lock the dictionary
+            // while the object is locked because it could suspend the object lock.
+            PyDictObject *replaced_dict;
+
+            assert(prev_dict != NULL);
+            Py_BEGIN_CRITICAL_SECTION2(obj, prev_dict);
+
+            err = replace_dict_probably_inline_materialized(obj, prev_dict, new_dict,
+                                                            clear, &replaced_dict);
+
+            Py_END_CRITICAL_SECTION2();
+
+            Py_DECREF(prev_dict);
+            if (err != 0) {
+                return err;
+            }
+            prev_dict = replaced_dict;
+        }
+
+        if (prev_dict != NULL) {
+            // Readers from the old dictionary use a borrowed reference. We need
+            // to set the decref the dict at the next safe point.
+            if (clear) {
+                Py_XDECREF((PyObject *)prev_dict);
+            } else {
+                _PyObject_XDecRefDelayed((PyObject *)prev_dict);
+            }
+        }
+        return 0;
+#else
         PyDictObject *dict = _PyObject_GetManagedDict(obj);
         if (dict == NULL) {
-#ifdef Py_GIL_DISABLED
-            Py_BEGIN_CRITICAL_SECTION(obj);
-
-            dict = _PyObject_ManagedDictPointer(obj)->dict;
-            if (dict == NULL) {
-                set_dict_inline_values(obj, (PyDictObject *)new_dict);
-            }
-
-            Py_END_CRITICAL_SECTION();
-
-            if (dict == NULL) {
-                return 0;
-            }
-#else
             set_dict_inline_values(obj, (PyDictObject *)new_dict);
             return 0;
+        }
+        if (_PyDict_DetachFromObject(dict, obj) == 0) {
+            _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)Py_XNewRef(new_dict);
+            Py_DECREF(dict);
+            return 0;
+        }
+        assert(new_dict == NULL);
+        return -1;
 #endif
-        }
-
-        Py_BEGIN_CRITICAL_SECTION2(dict, obj);
-
-        // We've locked dict, but the actual dict could have changed
-        // since we locked it.
-        dict = _PyObject_ManagedDictPointer(obj)->dict;
-        err = _PyDict_DetachFromObject(dict, obj);
-        assert(err == 0 || new_dict == NULL);
-        if (err == 0) {
-            FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
-                                (PyDictObject *)Py_XNewRef(new_dict));
-        }
-        Py_END_CRITICAL_SECTION2();
-
-        if (err == 0) {
-            Py_XDECREF(dict);
-        }
     }
     else {
         PyDictObject *dict;
@@ -7144,17 +7230,26 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
                             (PyDictObject *)Py_XNewRef(new_dict));
 
         Py_END_CRITICAL_SECTION();
-
-        Py_XDECREF(dict);
+        if (clear) {
+            Py_XDECREF((PyObject *)dict);
+        } else {
+            _PyObject_XDecRefDelayed((PyObject *)dict);
+        }
     }
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     return err;
 }
 
+int
+_PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
+{
+    return set_or_clear_managed_dict(obj, new_dict, false);
+}
+
 void
 PyObject_ClearManagedDict(PyObject *obj)
 {
-    if (_PyObject_SetManagedDict(obj, NULL) < 0) {
+    if (set_or_clear_managed_dict(obj, NULL, true) < 0) {
         /* Must be out of memory */
         assert(PyErr_Occurred() == PyExc_MemoryError);
         PyErr_WriteUnraisable(NULL);
