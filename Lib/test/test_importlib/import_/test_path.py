@@ -101,7 +101,7 @@ class FinderTests:
             # embedded NUL characters raise ValueError in os.stat()
             ('\x00', 'NUL bytes path'),
             (f'Top{os.sep}Mid\x00', 'path with embedded NUL bytes'),
-            # A filename with surrogate codes. A UnicodeEncodeError is raised
+            # A directory with surrogate codes. A UnicodeEncodeError is raised
             # by os.stat() upon querying, which is a subclass of ValueError.
             ("\uD834\uDD1E", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
             # For POSIX platforms, an OSError will be raised but for Windows
