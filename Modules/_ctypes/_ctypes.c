@@ -454,7 +454,7 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState2(self);
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
         PyErr_WriteUnraisable(self);
     }
@@ -485,7 +485,7 @@ ctype_clear_stginfo(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState2(self);
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
         PyErr_WriteUnraisable(self);
     }
@@ -498,7 +498,7 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState2(self);
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
         PyErr_WriteUnraisable(self);
     }
