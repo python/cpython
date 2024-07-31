@@ -1978,14 +1978,6 @@ PyTypeObject PyFloat_Type = {
 };
 
 
-void
-_PyFloat_InitState(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-}
-
 PyStatus
 _PyFloat_InitTypes(PyInterpreterState *interp)
 {

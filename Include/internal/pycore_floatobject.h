@@ -12,7 +12,6 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern void _PyFloat_InitState(PyInterpreterState *);
 extern PyStatus _PyFloat_InitTypes(PyInterpreterState *);
 extern void _PyFloat_FiniType(PyInterpreterState *);
 
