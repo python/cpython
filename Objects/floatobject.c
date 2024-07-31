@@ -1684,7 +1684,11 @@ typedef enum _py_float_format_type float_format_type;
 #define ieee_big_endian_format _py_float_format_ieee_big_endian
 #define ieee_little_endian_format _py_float_format_ieee_little_endian
 
-static inline uint32_t byte_swap_uint32(uint32_t x) {
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
+static inline uint32_t
+byte_swap_uint32(uint32_t x) {
     return (
         ((x >> 24) & 0xff)
         | ((x >> 8) & 0xff00)
@@ -1693,7 +1697,11 @@ static inline uint32_t byte_swap_uint32(uint32_t x) {
     );
 }
 
-static inline uint64_t byte_swap_uint64(uint64_t x) {
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
+static inline uint64_t
+byte_swap_uint64(uint64_t x) {
     return (
         ((x >> 56) & 0xff)
         | ((x >> 40) & 0xff00)
@@ -1724,7 +1732,11 @@ static inline uint64_t byte_swap_uint64(uint64_t x) {
     These functions are reduced to a no-op via compiler
     optimizations. */
 
-static inline float_format_type get_float_format(void) {
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
+static inline float_format_type
+get_float_format(void) {
     if (sizeof(float) == 4) {
         float y = 16711938.0;
         uint32_t z;
@@ -1742,7 +1754,11 @@ static inline float_format_type get_float_format(void) {
     return unknown_format;
 }
 
-static inline float_format_type get_double_format(void) {
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
+static inline float_format_type
+get_double_format(void) {
     if (sizeof(float) == 4) {
         double y = 9006104071832581.0;
         uint64_t z;
