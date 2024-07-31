@@ -421,7 +421,7 @@ def main():
             for snippet in snippets:
                 folded_tree = ast.parse(snippet, "?", kind, optimize=2)
                 not_folded_tree = ast.parse(snippet, "?", kind, optimize=-1)
-                
+
                 folded += "%r," % (to_tuple(folded_tree),) + "\n"
                 not_folded += "%r," % (to_tuple(not_folded_tree),) + "\n"
             folded += "]"

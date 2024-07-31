@@ -23,7 +23,7 @@ from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
     eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results,
     eval_opt_tests, eval_results_folded, eval_results_not_folded, exec_opt_tests,
-    exec_results_folded, exec_results_not_folded 
+    exec_results_folded, exec_results_not_folded,
 )
 
 
