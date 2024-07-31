@@ -10,6 +10,7 @@
 .. changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
 .. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
    November 2002
+.. changes for IDLE by Forest <forestix@nom.one> August 2024
 
 **Source code:** :source:`Lib/imaplib.py`
 
@@ -187,7 +188,7 @@ However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
 
-Each command returns a tuple: ``(type, [data, ...])`` where *type* is usually
+Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
 or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
@@ -305,6 +306,48 @@ An :class:`IMAP4` instance has the following methods:
 
    Get the list of ``quota`` ``roots`` for the named *mailbox*. This method is part
    of the IMAP4 QUOTA extension defined in rfc2087.
+
+
+.. method:: IMAP4.idle([dur])
+
+   Return an iterable context manager implementing the ``IDLE`` command
+   as defined in :rfc:`2177`.
+
+   The optional *dur* argument specifies a maximum duration (in seconds) to
+   keep idling.  It defaults to ``None``, meaning no time limit.
+   To avoid inactivity timeouts on servers that impose them, callers are
+   advised to keep this <= 29 minutes.  See the note below regarding
+   :class:`IMAP4_stream` on Windows.
+
+   The context manager sends the ``IDLE`` command upon entry, produces
+   responses via iteration, and sends ``DONE`` upon exit.
+   It represents responses as ``(type, datum)`` tuples, rather than the
+   ``(type, [data, ...])`` tuples returned by other methods, because only
+   one response is represented at a time.
+
+   Example::
+
+      with M.idle(dur=29*60) as idler:
+          for response in idler:
+              typ, datum = response
+              print(typ, datum)
+
+   It is also possible to process a burst of responses all at once instead
+   of one at a time.  See `IDLE Context Manager`_ for details.
+
+   Responses produced by the iterator will not be returned by
+   :meth:`IMAP4.response`.
+
+   .. note::
+
+      Windows :class:`IMAP4_stream` connections have no way to accurately
+      respect *dur*, since Windows ``select()`` only works on sockets.
+      However, if the server regularly sends status messages during ``IDLE``,
+      they will wake our selector and keep iteration from blocking for long.
+      Dovecot's ``imap_idle_notify_interval`` is two minutes by default.
+      Assuming that's typical of IMAP servers, subtracting it from the 29
+      minutes needed to avoid server inactivity timeouts would make 27
+      minutes a sensible value for *dur* in this situation.
 
 
 .. method:: IMAP4.list([directory[, pattern]])
@@ -610,6 +653,62 @@ The following attributes are defined on instances of :class:`IMAP4`:
    capability.
 
    .. versionadded:: 3.5
+
+
+.. _idle context manager:
+
+IDLE Context Manager
+--------------------
+
+The object returned by :meth:`IMAP4.idle` implements the context management
+protocol for the :keyword:`with` statement, and the :term:`iterator` protocol
+for retrieving untagged responses while the context is active.
+It also has the following method:
+
+.. method:: IdleContextManager.burst([interval])
+
+   Yield a burst of responses no more than *interval* seconds apart.
+
+   This generator retrieves the next response along with any
+   immediately available subsequent responses (e.g. a rapid series of
+   ``EXPUNGE`` responses after a bulk delete) so they can be efficiently
+   processed as a batch instead of one at a time.
+
+   The optional *interval* argument specifies a time limit (in seconds)
+   for each response after the first.  It defaults to 0.1 seconds.
+   (The ``IDLE`` context's maximum duration is respected when waiting for the
+   first response.)
+
+   Represents responses as ``(type, datum)`` tuples, just as when
+   iterating directly on the context manager.
+
+   Example::
+
+      with M.idle() as idler:
+
+          # get the next response and any others following by < 0.1 seconds
+          batch = list(idler.burst())
+
+          print(f'processing {len(batch)} responses...')
+          for typ, datum in batch:
+              print(typ, datum)
+
+   Produces no responses and returns immediately if the ``IDLE`` context's
+   maximum duration (the *dur* argument to :meth:`IMAP4.idle`) has elapsed.
+   Callers should plan accordingly if using this method in a loop.
+
+   .. note::
+
+      Windows :class:`IMAP4_stream` connections will ignore the *interval*
+      argument, yielding endless responses and blocking indefinitely for each
+      one, since Windows ``select()`` only works on sockets.  It is therefore
+      advised not to use this method with an :class:`IMAP4_stream` connection
+      on Windows.
+
+.. note::
+
+  The context manager's type name is not part of its public interface,
+  and is subject to change.
 
 
 .. _imap4-example:
