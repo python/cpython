@@ -1978,7 +1978,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    .. audit-event:: object.__getattr__ obj,name object.__getattribute__
 
       For certain sensitive attribute accesses, raises an
-      :ref:`auditing event <auditing>` ``object.__getattr__`` with arguments
+      :ref:`auditing event <auditing>` ``obj.__getattribute__`` with arguments
       ``obj`` and ``name``.
 
 
