@@ -1006,7 +1006,7 @@ Special attributes:
       a :ref:`generic class <generic-classes>`.
 
    :attr:`~class.__static_attributes__`
-      A tuple containing names of attributes of this class which are accessed
+      A tuple containing names of attributes of this class which are modified
       through ``self.X`` from any function in its body.
 
    :attr:`__firstlineno__`
