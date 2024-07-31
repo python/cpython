@@ -4795,7 +4795,6 @@ class BasicSocketPairTest(SocketPairTest):
 
 
 class PurePythonSocketPairTest(SocketPairTest):
-
     # Explicitly use socketpair AF_INET or AF_INET6 to ensure that is the
     # code path we're using regardless platform is the pure python one where
     # `_socket.socketpair` does not exist.  (AF_INET does not work with
@@ -4810,28 +4809,21 @@ class PurePythonSocketPairTest(SocketPairTest):
     # Local imports in this class make for easy security fix backporting.
 
     def setUp(self):
-        import _socket
-        self._orig_sp = getattr(_socket, 'socketpair', None)
-        if self._orig_sp is not None:
+        if hasattr(_socket, "socketpair"):
+            self._orig_sp = socket.socketpair
             # This forces the version using the non-OS provided socketpair
             # emulation via an AF_INET socket in Lib/socket.py.
-            del _socket.socketpair
-            import importlib
-            global socket
-            socket = importlib.reload(socket)
+            socket.socketpair = socket._fallback_socketpair
         else:
-            pass  # This platform already uses the non-OS provided version.
+            # This platform already uses the non-OS provided version.
+            self._orig_sp = None
         super().setUp()
 
     def tearDown(self):
         super().tearDown()
-        import _socket
         if self._orig_sp is not None:
             # Restore the default socket.socketpair definition.
-            _socket.socketpair = self._orig_sp
-            import importlib
-            global socket
-            socket = importlib.reload(socket)
+            socket.socketpair = self._orig_sp
 
     def test_recv(self):
         msg = self.serv.recv(1024)
