@@ -359,6 +359,9 @@ class PosixPathTest(unittest.TestCase):
                      "no home directory on VxWorks")
     def test_expanduser_pwd2(self):
         pwd = import_helper.import_module('pwd')
+        if not hasattr(pwd, "getpwall"):
+            self.skipTest("Does not have getpwall()")
+
         for all_entry in pwd.getpwall():
             name = all_entry.pw_name
 
