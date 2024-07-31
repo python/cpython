@@ -151,7 +151,6 @@ def main(argv: list[str] | None = None) -> int:
         "-i",
         "--warning-ignore-file-path",
         type=str,
-        required=True,
         help="Path to the warning ignore file",
     )
     parser.add_argument(
@@ -187,23 +186,30 @@ def main(argv: list[str] | None = None) -> int:
             f"Compiler output file does not exist: {args.compiler_output_file_path}"
         )
         return 1
-    # Check that the warning ignore file is a valid path
-    if not Path(args.warning_ignore_file_path).is_file():
+
+    # Check that a warning ignore file was specified and if so is a valid path
+    if not args.warning_ignore_file_path:
         print(
-            f"Warning ignore file does not exist: {args.warning_ignore_file_path}"
+            "Warning ignore file not specified. Continuing without it (no warnings ignored)."
         )
-        return 1
+        files_with_expected_warnings = set()
+    else:
+        if not Path(args.warning_ignore_file_path).is_file():
+            print(
+                f"Warning ignore file does not exist: {args.warning_ignore_file_path}"
+            )
+            return 1
+        with Path(args.warning_ignore_file_path).open(
+            encoding="UTF-8"
+        ) as clean_files:
+            files_with_expected_warnings = {
+                file.strip()
+                for file in clean_files
+                if file.strip() and not file.startswith("#")
+            }
+
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
-
-    with Path(args.warning_ignore_file_path).open(
-        encoding="UTF-8"
-    ) as clean_files:
-        files_with_expected_warnings = {
-            file.strip()
-            for file in clean_files
-            if file.strip() and not file.startswith("#")
-        }
 
     if args.compiler_output_type == "json":
         warnings = extract_warnings_from_compiler_output_json(
