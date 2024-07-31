@@ -103,15 +103,18 @@ of the immediately contained objects are implied.  So, if an immutable container
 (like a tuple) contains a reference to a mutable object, its value changes if
 that mutable object is changed.
 
-Types affect almost all aspects of object behavior.  Even the importance of
-object identity is affected in some sense: for immutable types, operations that
-compute new values may actually return a reference to any existing object with
-the same type and value, while for mutable objects this is not allowed.  E.g.,
-after ``a = 1; b = 1``, ``a`` and ``b`` may or may not refer to the same object
-with the value one, depending on the implementation, but after ``c = []; d =
-[]``, ``c`` and ``d`` are guaranteed to refer to two different, unique, newly
-created empty lists. (Note that ``c = d = []`` assigns the same object to both
-``c`` and ``d``.)
+Types affect almost all aspects of object behavior. Even the importance of
+object identity is affected in some sense.
+
+For immutable types such as :class:`int` or :class:`str`, operations that
+compute new values may actually return a reference to any existing object
+with the same type and value, e.g., after ``a = 1; b = 1``, *a* and *b* may
+or may not refer to the same object with the value one.
+
+For mutable types such as :class:`list` or :class:`dict`, this is not allowed,
+e.g., after ``c = []; d = []``, *c* and *d* are guaranteed to refer to two
+different, unique, newly created empty lists (note that ``e = f = []`` assigns
+the *same* object to both *e* and *f*).
 
 
 .. _types:
