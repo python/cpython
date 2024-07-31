@@ -1,2 +1,1 @@
-Fix bug where optimized method calls were not inserted into
-:attr:`~class.__static_attributes__`.
+Add only fields which are modified via self.* to :attr:`~class.__static_attributes__`.
