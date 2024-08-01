@@ -134,10 +134,7 @@ class InteractiveInterpreter:
         colorize = kwargs.pop('colorize', False)
         try:
             typ, value, tb = sys.exc_info()
-            # Remove internal frames (in modules code and codeop) from traceback.
-            while tb and tb.tb_frame.f_globals.get('__name__') in ('code', 'codeop'):
-                tb = tb.tb_next
-            self._showtraceback(typ, value, tb, colorize)
+            self._showtraceback(typ, value, tb.tb_next, colorize)
         finally:
             typ = value = tb = None
 
