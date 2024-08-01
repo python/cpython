@@ -244,7 +244,7 @@ class IOSBrowserTest(unittest.TestCase):
     @unittest.skipIf(getattr(webbrowser, "objc", None) is None,
                      "iOS Webbrowser tests require ctypes")
     def setUp(self):
-        # Intercept the the objc library. Wrap the calls to get the
+        # Intercept the objc library. Wrap the calls to get the
         # references to classes and selectors to return strings, and
         # wrap msgSend to return stringified object references
         self.orig_objc = webbrowser.objc

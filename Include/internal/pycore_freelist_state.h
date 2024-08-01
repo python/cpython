@@ -28,7 +28,7 @@ extern "C" {
 
 // A generic freelist of either PyObjects or other data structures.
 struct _Py_freelist {
-    // Entries are linked together using the first word of the the object.
+    // Entries are linked together using the first word of the object.
     // For PyObjects, this overlaps with the `ob_refcnt` field or the `ob_tid`
     // field.
     void *freelist;
