@@ -473,6 +473,12 @@
             break;
         }
 
+        case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_SUBSCR: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
@@ -615,10 +621,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 */
-
-        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 */
-
         case _GET_AITER: {
             _Py_UopsSymbol *iter;
             iter = sym_new_not_null(ctx);
@@ -644,9 +646,11 @@
 
         /* _SEND is not a viable micro-op for tier 2 */
 
-        /* _SEND_GEN is not a viable micro-op for tier 2 */
-
-        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
+        case _SEND_GEN_FRAME: {
+            // We are about to hit the end of the trace:
+            ctx->done = true;
+            break;
+        }
 
         case _YIELD_VALUE: {
             _Py_UopsSymbol *res;
@@ -787,7 +791,14 @@
 
         /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 */
 
-        /* _LOAD_NAME is not a viable micro-op for tier 2 */
+        case _LOAD_NAME: {
+            _Py_UopsSymbol *v;
+            v = sym_new_not_null(ctx);
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LOAD_GLOBAL: {
             _Py_UopsSymbol *res;
@@ -910,7 +921,14 @@
             break;
         }
 
-        /* _BUILD_SET is not a viable micro-op for tier 2 */
+        case _BUILD_SET: {
+            _Py_UopsSymbol *set;
+            set = sym_new_not_null(ctx);
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _BUILD_MAP: {
             _Py_UopsSymbol *map;
@@ -922,15 +940,6 @@
         }
 
         case _SETUP_ANNOTATIONS: {
-            break;
-        }
-
-        case _BUILD_CONST_KEY_MAP: {
-            _Py_UopsSymbol *map;
-            map = sym_new_not_null(ctx);
-            stack_pointer[-1 - oparg] = map;
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1151,7 +1160,12 @@
             break;
         }
 
-        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 */
+        case _LOAD_ATTR_PROPERTY_FRAME: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = sym_new_not_null(ctx);
+            stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
+            break;
+        }
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
@@ -1304,6 +1318,24 @@
             _Py_UopsSymbol *b;
             b = sym_new_not_null(ctx);
             stack_pointer[-1] = b;
+            break;
+        }
+
+        case _IMPORT_NAME: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _IMPORT_FROM: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1566,13 +1598,32 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 */
+        case _MAYBE_EXPAND_METHOD: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UopsSymbol *func;
+            _Py_UopsSymbol *maybe_self;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            func = sym_new_not_null(ctx);
+            maybe_self = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = maybe_self;
+            break;
+        }
 
-        /* _CALL is not a viable micro-op for tier 2 */
+        /* _DO_CALL is not a viable micro-op for tier 2 */
 
         case _CHECK_PERIODIC: {
             break;
         }
+
+        /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
             _Py_UopsSymbol **args;
@@ -1846,6 +1897,12 @@
             break;
         }
 
+        case _CALL_LIST_APPEND: {
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_O: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
@@ -2012,6 +2069,8 @@
             break;
         }
 
+        /* _INSTRUMENTED_LINE is not a viable micro-op for tier 2 */
+
         /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
@@ -2109,6 +2168,8 @@
         }
 
         case _EXIT_TRACE: {
+            PyObject *exit_p = (PyObject *)this_instr->operand;
+            (void)exit_p;
             ctx->done = true;
             break;
         }

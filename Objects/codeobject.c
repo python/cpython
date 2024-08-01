@@ -147,7 +147,7 @@ intern_strings(PyObject *tuple)
                             "non-string found in code slot");
             return -1;
         }
-        _PyUnicode_InternMortal(interp, &_PyTuple_ITEMS(tuple)[i]);
+        _PyUnicode_InternImmortal(interp, &_PyTuple_ITEMS(tuple)[i]);
     }
     return 0;
 }

@@ -27,6 +27,7 @@ class Properties:
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
+    needs_prev: bool = False
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -53,6 +54,7 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
+            needs_prev=any(p.needs_prev for p in properties),
         )
 
     @property
@@ -78,7 +80,7 @@ SKIP_PROPERTIES = Properties(
     uses_locals=False,
     has_free=False,
     side_exit=False,
-    pure=False,
+    pure=True,
 )
 
 
@@ -96,6 +98,20 @@ class Skip:
         return SKIP_PROPERTIES
 
 
+class Flush:
+
+    @property
+    def properties(self) -> Properties:
+        return SKIP_PROPERTIES
+
+    @property
+    def name(self) -> str:
+        return "flush"
+
+    @property
+    def size(self) -> int:
+        return 0
+
 @dataclass
 class StackItem:
     name: str
@@ -103,6 +119,7 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
+    used: bool = False
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -132,7 +149,6 @@ class CacheEntry:
 
     def __str__(self) -> str:
         return f"{self.name}/{self.size}"
-
 
 @dataclass
 class Uop:
@@ -195,7 +211,7 @@ class Uop:
         return False
 
 
-Part = Uop | Skip
+Part = Uop | Skip | Flush
 
 
 @dataclass
@@ -303,9 +319,23 @@ def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | No
         convert_stack_item(i, replace_op_arg_1) for i in op.inputs if isinstance(i, parser.StackEffect)
     ]
     outputs: list[StackItem] = [convert_stack_item(i, replace_op_arg_1) for i in op.outputs]
+    # Mark variables with matching names at the base of the stack as "peek"
+    modified = False
     for input, output in zip(inputs, outputs):
-        if input.name == output.name:
+        if input.name == output.name and not modified:
             input.peek = output.peek = True
+        else:
+            modified = True
+    if isinstance(op, parser.InstDef):
+        output_names = [out.name for out in outputs]
+        for input in inputs:
+            if (variable_used(op, input.name) or
+                variable_used(op, "DECREF_INPUTS") or
+                (not input.peek and input.name in output_names)):
+                input.used = True
+        for output in outputs:
+            if variable_used(op, output.name):
+                output.used = True
     return StackEffect(inputs, outputs)
 
 
@@ -324,7 +354,13 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens
+    )
+
+def oparg_used(node: parser.InstDef) -> bool:
+    """Determine whether `oparg` is used in a node."""
+    return any(
+        token.kind == "IDENTIFIER" and token.text == "oparg" for token in node.tokens
     )
 
 def tier_variable(node: parser.InstDef) -> int | None:
@@ -570,7 +606,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         error_without_pop=error_without_pop,
         deopts=deopts_if,
         side_exit=exits_if,
-        oparg=variable_used(op, "oparg"),
+        oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
         ends_with_eval_breaker=eval_breaker_at_end(op),
@@ -584,6 +620,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         tier=tier_variable(op),
+        needs_prev=variable_used(op, "prev_instr"),
     )
 
 
@@ -689,13 +726,16 @@ def desugar_inst(
 def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
-    parts: list[Uop | Skip] = []
+    parts: list[Part] = []
     for part in macro.uops:
         match part:
             case parser.OpName():
-                if part.name not in uops:
-                    analysis_error(f"No Uop named {part.name}", macro.tokens[0])
-                parts.append(uops[part.name])
+                if part.name == "flush":
+                    parts.append(Flush())
+                else:
+                    if part.name not in uops:
+                        raise analysis_error(f"No Uop named {part.name}", macro.tokens[0])
+                    parts.append(uops[part.name])
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:
@@ -759,12 +799,6 @@ def assign_opcodes(
     instmap["INSTRUMENTED_LINE"] = 254
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
-
-    # Special case: this instruction is implemented in ceval.c
-    # rather than bytecodes.c, so we need to add it explicitly
-    # here (at least until we add something to bytecodes.c to
-    # declare external instructions).
-    instrumented.append("INSTRUMENTED_LINE")
 
     specialized: set[str] = set()
     no_arg: list[str] = []

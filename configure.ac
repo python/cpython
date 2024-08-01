@@ -382,7 +382,7 @@ AC_MSG_RESULT(["$MACHDEP"])
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -710,8 +710,6 @@ AC_ARG_WITH(
         Darwin|iOS)
           # iOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
           ;;
         *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
       esac
@@ -719,8 +717,6 @@ AC_ARG_WITH(
       ;;
     *)
       APP_STORE_COMPLIANCE_PATCH="${withval}"
-      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-      APP_STORE_COMPLIANCE_PATCH_FLAGS=
       AC_MSG_RESULT([applying custom app store compliance patch])
       ;;
     esac
@@ -729,29 +725,16 @@ AC_ARG_WITH(
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([applying default app store compliance patch])
         ;;
-      Darwin)
-        # Always *check* the compliance patch on macOS
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
-        AC_MSG_RESULT([checking (not applying) default app store compliance patch])
-        ;;
       *)
-        # No app compliance patching on any other platform
+        # No default app compliance patching on any other platform
         APP_STORE_COMPLIANCE_PATCH=
-        APP_STORE_COMPLIANCE_PATCH_TARGET=
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([not patching for app store compliance])
         ;;
     esac
 ])
 AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_TARGET])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_FLAGS])
 
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then
@@ -774,8 +757,10 @@ if test "$cross_compiling" = yes; then
 		_host_device=${_host_device:=os}
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
+		AC_MSG_CHECKING([iOS deployment target])
 		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
-		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=12.0}
+		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
+		AC_MSG_RESULT([$IPHONEOS_DEPLOYMENT_TARGET])
 
 		case "$host_cpu" in
 			aarch64)
@@ -1739,7 +1724,9 @@ fi
 
 # For calculating the .so ABI tag.
 AC_SUBST([ABIFLAGS])
+AC_SUBST([ABI_THREAD])
 ABIFLAGS=""
+ABI_THREAD=""
 
 # Check for --disable-gil
 # --disable-gil
@@ -1756,6 +1743,7 @@ then
             [Define if you want to disable the GIL])
   # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
+  ABI_THREAD="t"
 fi
 
 # Check for --with-pydebug
@@ -2511,8 +2499,29 @@ AS_VAR_IF([with_strict_overflow], [yes],
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
-AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+
+AC_MSG_CHECKING([for --disable-safety])
+AC_ARG_ENABLE([safety],
+  [AS_HELP_STRING([--disable-safety], [disable usage of the security compiler options with no performance overhead])],
+  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_safety=yes])], [disable_safety=no])
+AC_MSG_RESULT([$disable_safety])
+
+if test "$disable_safety" = "no"
+then
+  AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+fi
+
+AC_MSG_CHECKING([for --enable-slower-safety])
+AC_ARG_ENABLE([slower-safety],
+  [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],
+  [AS_VAR_IF([disable_slower_safety], [yes], [enable_slower_safety=no], [enable_slower_safety=yes])], [enable_slower_safety=no])
+AC_MSG_RESULT([$enable_slower_safety])
+
+if test "$enable_slower_safety" = "yes"
+then
+  AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
+fi
 
 case $GCC in
 yes)
@@ -6234,11 +6243,11 @@ fi
 
 
 AC_SUBST([BINLIBDEST])
-BINLIBDEST='$(LIBDIR)/python$(VERSION)'
+BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
 
 
 # Check for --with-platlibdir
-# /usr/$LIDIRNAME/python$VERSION
+# /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 AC_SUBST([PLATLIBDIR])
 PLATLIBDIR="lib"
 AC_MSG_CHECKING([for --with-platlibdir])
@@ -6257,7 +6266,7 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT([yes])
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)'
+  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   AC_MSG_RESULT([no])
 fi],
@@ -6267,9 +6276,9 @@ fi],
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST([PY_ENABLE_SHARED])
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST([LIBPL])
 
@@ -7689,7 +7698,6 @@ PY_STDLIB_MOD_SIMPLE([_csv])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
 PY_STDLIB_MOD_SIMPLE([_lsprof])
-PY_STDLIB_MOD_SIMPLE([_opcode])
 PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
