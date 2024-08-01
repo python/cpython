@@ -182,7 +182,7 @@ _blake2_clear(PyObject *module)
 static void
 _blake2_free(void *module)
 {
-    _blake2_clear((PyObject *)module);
+    (void)_blake2_clear((PyObject *)module);
 }
 
 #define ADD_INT(d, name, value) do { \
