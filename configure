@@ -9739,6 +9739,7 @@ else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported" >&5
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
