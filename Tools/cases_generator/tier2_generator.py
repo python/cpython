@@ -25,7 +25,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, StackError
+from stack import Local, Stack, StackError, get_stack_effect
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
@@ -53,8 +53,9 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
     for var in reversed(uop.stack.inputs):
         stack.pop(var)
     for var in uop.stack.outputs:
-            stack.push(var)
+        stack.push(Local.unused(var))
     required = set(stack.defined)
+    required.discard("unused")
     for var in reversed(uop.stack.inputs):
         declare_variable(var, uop, required, out)
     for var in uop.stack.outputs:
@@ -156,6 +157,7 @@ TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 
 
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
+    locals: dict[str, Local] = {}
     try:
         out.start_line()
         if uop.properties.oparg:
@@ -165,10 +167,11 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
             out.emit(f"assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
-        if not uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
+            code, local = stack.pop(var)
+            out.emit(code)
+            if local.defined:
+                locals[local.name] = local
+        out.emit(stack.define_output_arrays(uop.stack.outputs))
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -178,9 +181,12 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
                     cast = f"uint{cache.size*16}_t"
                 out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
         emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
-        if uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
+        for i, var in enumerate(uop.stack.outputs):
+            if var.name in locals:
+                local = locals[var.name]
+            else:
+                local = Local.local(var)
+            out.emit(stack.push(local))
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
 
