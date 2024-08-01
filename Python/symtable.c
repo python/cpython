@@ -1207,20 +1207,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             ste->ste_child_free = 1;
     }
 
-    /* Splice children of inlined comprehensions into our children list */
-    for (i = PyList_GET_SIZE(ste->ste_children) - 1; i >= 0; --i) {
-        PyObject* c = PyList_GET_ITEM(ste->ste_children, i);
-        PySTEntryObject* entry;
-        assert(c && PySTEntry_Check(c));
-        entry = (PySTEntryObject*)c;
-        if (entry->ste_comp_inlined &&
-            PyList_SetSlice(ste->ste_children, i, i + 1,
-                            entry->ste_children) < 0)
-        {
-            goto error;
-        }
-    }
-
     /* Check if any local variables must be converted to cell variables */
     if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree, inlined_cells))
         goto error;
