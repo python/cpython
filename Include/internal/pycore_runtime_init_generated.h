@@ -799,9 +799,6 @@ extern "C" {
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
-    INIT_ID(b1), \
-    INIT_ID(b2), \
-    INIT_ID(b3), \
     INIT_ID(backtick), \
     INIT_ID(base), \
     INIT_ID(before), \
