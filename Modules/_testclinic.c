@@ -1034,6 +1034,29 @@ vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
 
 
 /*[clinic input]
+vararg_with_multiple_defaults
+
+    a: object
+    *args: object
+    b1: bool = False
+    b2: bool = False
+    b3: bool = False
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_multiple_defaults_impl(PyObject *module, PyObject *a,
+                                   PyObject *args, int b1, int b2, int b3)
+/*[clinic end generated code: output=66087a6689e6bee5 input=66e4b2858ad13769]*/
+{
+    PyObject *obj_b1 = b1 ? Py_True : Py_False;
+    PyObject *obj_b2 = b2 ? Py_True : Py_False;
+    PyObject *obj_b3 = b3 ? Py_True : Py_False;
+    return pack_arguments_newref(5, a, args, obj_b1, obj_b2, obj_b3);
+}
+
+
+/*[clinic input]
 vararg_with_only_defaults
 
     *args: object
@@ -1907,6 +1930,7 @@ static PyMethodDef tester_methods[] = {
     VARARG_AND_POSONLY_METHODDEF
     VARARG_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
+    VARARG_WITH_MULTIPLE_DEFAULTS_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
