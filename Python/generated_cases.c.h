@@ -469,37 +469,63 @@
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef container_st;
-            _PyStackRef sub_st;
+            _PyStackRef container;
+            _PyStackRef sub;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
-            sub_st = stack_pointer[-1];
-            container_st = stack_pointer[-2];
-            PyObject *container = PyStackRef_AsPyObjectBorrow(container_st);
-            DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
-            PyTypeObject *tp = Py_TYPE(container);
-            DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
-            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-            PyObject *cached = ht->_spec_cache.getitem;
-            DEOPT_IF(cached == NULL, BINARY_SUBSCR);
-            assert(PyFunction_Check(cached));
-            PyFunctionObject *getitem = (PyFunctionObject *)cached;
-            uint32_t cached_version = ht->_spec_cache.getitem_version;
-            DEOPT_IF(getitem->func_version != cached_version, BINARY_SUBSCR);
-            PyCodeObject *code = (PyCodeObject *)getitem->func_code;
-            assert(code->co_argcount == 2);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
-            STAT_INC(BINARY_SUBSCR, hit);
-            Py_INCREF(getitem);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
-            STACK_SHRINK(2);
-            new_frame->localsplus[0] = container_st;
-            new_frame->localsplus[1] = sub_st;
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
-            DISPATCH_INLINED(new_frame);
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
+            }
+            // _BINARY_SUBSCR_CHECK_FUNC
+            container = stack_pointer[-2];
+            {
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
+                DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                PyObject *getitem = ht->_spec_cache.getitem;
+                DEOPT_IF(getitem == NULL, BINARY_SUBSCR);
+                assert(PyFunction_Check(getitem));
+                uint32_t cached_version = ht->_spec_cache.getitem_version;
+                DEOPT_IF(((PyFunctionObject *)getitem)->func_version != cached_version, BINARY_SUBSCR);
+                PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem);
+                assert(code->co_argcount == 2);
+                DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
+                STAT_INC(BINARY_SUBSCR, hit);
+                Py_INCREF(getitem);
+            }
+            // _BINARY_SUBSCR_INIT_CALL
+            sub = stack_pointer[-1];
+            {
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                PyObject *getitem = ht->_spec_cache.getitem;
+                new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                new_frame->localsplus[0] = container;
+                new_frame->localsplus[1] = sub;
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            }
+            // _PUSH_FRAME
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+                LLTRACE_RESUME_FRAME();
+            }
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
