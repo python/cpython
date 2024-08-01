@@ -32,11 +32,12 @@ bound into a function.
 
 .. c:function:: Py_ssize_t PyCode_GetNumFree(PyCodeObject *co)
 
-   Return the number of free variables in a code object.
+   Return the number of :attr:`free variables <codeobject.co_freevars>` in a code object.
 
 .. c:function:: int PyUnstable_Code_GetFirstFree(PyCodeObject *co)
 
-   Return the position of the first free variable in a code object.
+   Return the position of the first :attr:`free variable <codeobject.co_freevars>`
+   in a code object.
 
    .. versionchanged:: 3.13
 
@@ -144,7 +145,8 @@ bound into a function.
 
    Equivalent to the Python code ``getattr(co, 'co_freevars')``.
    Returns a new reference to a :c:type:`PyTupleObject` containing the names of
-   the free variables. On error, ``NULL`` is returned and an exception is raised.
+   the free :term:`closure variables <closure variable>`. On error, ``NULL`` is returned
+   and an exception is raised.
 
    .. versionadded:: 3.11
 

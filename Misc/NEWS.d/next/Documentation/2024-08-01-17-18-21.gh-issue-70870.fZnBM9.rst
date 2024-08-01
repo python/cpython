@@ -1,0 +1,3 @@
+Clarified the dual usage of the term "free variable" (both the formal
+meaning of any reference to names defined outside the local scope, and the
+narrower pragmatic meaning of nonlocal variables named in ``co_freevars``).
