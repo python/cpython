@@ -3339,6 +3339,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.vararg_with_default(1, b=False), (1, (), False))
         self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), False))
         self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
+        self.assertEqual(ac_tester.vararg_with_default(a=1, b=False), (1, (), False))
 
     def test_vararg_with_only_defaults(self):
         self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
