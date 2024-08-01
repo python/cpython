@@ -561,8 +561,8 @@ Special read-only attributes
 
    * - .. attribute:: function.__closure__
      - ``None`` or a :class:`tuple` of cells that contain bindings for the names specified
-      in the :attr:`~codeobject.co_freevars` attribute of the function's
-      :attr:`code object <function.__code__>`.
+       in the :attr:`~codeobject.co_freevars` attribute of the function's
+       :attr:`code object <function.__code__>`.
 
        A cell object has the attribute ``cell_contents``.
        This can be used to get the value of the cell, as well as set the value.
