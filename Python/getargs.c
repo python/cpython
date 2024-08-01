@@ -2589,7 +2589,13 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
          * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
          * so the index is `i + 1`. */
         if (nargs < vararg && i != vararg) {
-            buf[i] = current_arg;
+            if (current_arg != NULL) {
+                // It might happen that in the previous iteration,
+                // we did "buf[i + 1] = current_arg" and that in
+                // this current loop iteration, current_arg == NULL.
+                // We do not want to put a NULL on a previously valid value.
+                buf[i] = current_arg;
+            }
         }
         else {
             buf[i + 1] = current_arg;
