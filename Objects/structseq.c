@@ -776,7 +776,7 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
     /* expected that it'll outlive the PyType_Spec */
     spec.name = desc->name;
     Py_ssize_t hidden = n_members - desc->n_in_sequence;
-    spec.basicsize = sizeof(PyStructSequence) + (hidden - 1) * sizeof(PyObject *);
+    spec.basicsize = (int)(sizeof(PyStructSequence) + (hidden - 1) * sizeof(PyObject *));
     spec.itemsize = sizeof(PyObject *);
     spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     spec.slots = slots;
