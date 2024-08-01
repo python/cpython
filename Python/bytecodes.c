@@ -786,6 +786,7 @@ dummy_func(
             PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
             PyObject *getitem = ht->_spec_cache.getitem;
             new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
+            SYNC_SP();
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -4756,10 +4757,6 @@ dummy_func(
             current_executor = (_PyExecutorObject*)executor;
 #endif
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
-        }
-
-        tier2 op(_GUARD_CODE, (version/2 -- )) {
-            DEOPT_IF(((PyCodeObject *)frame->f_executable)->co_version != version);
         }
 
         tier2 op(_FATAL_ERROR, (--)) {

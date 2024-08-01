@@ -855,13 +855,9 @@ translate_bytecode_to_trace(
                                     operand = 0;
                                 }
                                 ADD_TO_TRACE(uop, oparg, operand, target);
-                                /* We need to guard that the runtime code object is
-                                 * the same one we are projecting into */
                                 code = new_code;
                                 func = new_func;
                                 instr = _PyCode_CODE(code);
-                                assert(code->co_version != 0);
-                                ADD_TO_TRACE(_GUARD_CODE, 0, code->co_version, 0);
                                 DPRINTF(2,
                                     "Continuing in %s (%s:%d) at byte offset %d\n",
                                     PyUnicode_AsUTF8(code->co_qualname),

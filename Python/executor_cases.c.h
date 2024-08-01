@@ -1007,11 +1007,13 @@
             PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
             PyObject *getitem = ht->_spec_cache.getitem;
             new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            stack_pointer[-2].bits = (uintptr_t)new_frame;
-            stack_pointer += -1;
+            stack_pointer[0].bits = (uintptr_t)new_frame;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -5283,15 +5285,6 @@
             current_executor = (_PyExecutorObject*)executor;
             #endif
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
-            break;
-        }
-
-        case _GUARD_CODE: {
-            uint32_t version = (uint32_t)CURRENT_OPERAND();
-            if (((PyCodeObject *)frame->f_executable)->co_version != version) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             break;
         }
 
