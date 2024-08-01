@@ -3346,11 +3346,11 @@ class ClinicFunctionalTest(unittest.TestCase):
         func = ac_tester.vararg_with_multiple_defaults
         with self.assertRaises(TypeError):
             func()
-        self.assertEqual(func(1, b1=True), (1, (), True, False, False))
-        self.assertEqual(func(1, 2, 3, 4), (1, (2, 3, 4), False, False, False))
-        self.assertEqual(func(1, 2, 3, 4, b1=True), (1, (2, 3, 4), True, False, False))
-        self.assertEqual(func(a=1, b1=True), (1, (), True, False, False))
-        self.assertEqual(func(b1=True, a=1), (1, (), True, False, False))
+        self.assertEqual(func(1, kw1=True), (1, (), True, False))
+        self.assertEqual(func(1, 2, 3, 4), (1, (2, 3, 4), False, False))
+        self.assertEqual(func(1, 2, 3, 4, kw1=True), (1, (2, 3, 4), True, False))
+        self.assertEqual(func(a=1, kw1=True), (1, (), True, False))
+        self.assertEqual(func(kw1=True, a=1), (1, (), True, False))
 
     def test_vararg_with_only_defaults(self):
         self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))

@@ -1038,21 +1038,19 @@ vararg_with_multiple_defaults
 
     a: object
     *args: object
-    b1: bool = False
-    b2: bool = False
-    b3: bool = False
+    kw1: bool = False
+    kw2: bool = False
 
 [clinic start generated code]*/
 
 static PyObject *
 vararg_with_multiple_defaults_impl(PyObject *module, PyObject *a,
-                                   PyObject *args, int b1, int b2, int b3)
-/*[clinic end generated code: output=66087a6689e6bee5 input=66e4b2858ad13769]*/
+                                   PyObject *args, int kw1, int kw2)
+/*[clinic end generated code: output=ae7ee8d22dfc7fbf input=534d91e23e6d360b]*/
 {
-    PyObject *obj_b1 = b1 ? Py_True : Py_False;
-    PyObject *obj_b2 = b2 ? Py_True : Py_False;
-    PyObject *obj_b3 = b3 ? Py_True : Py_False;
-    return pack_arguments_newref(5, a, args, obj_b1, obj_b2, obj_b3);
+    PyObject *obj_kw1 = kw1 ? Py_True : Py_False;
+    PyObject *obj_kw2 = kw2 ? Py_True : Py_False;
+    return pack_arguments_newref(4, a, args, obj_kw1, obj_kw2);
 }
 
 
