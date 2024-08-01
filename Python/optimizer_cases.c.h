@@ -621,10 +621,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 */
-
-        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 */
-
         case _GET_AITER: {
             _Py_UopsSymbol *iter;
             iter = sym_new_not_null(ctx);
@@ -655,8 +651,6 @@
             ctx->done = true;
             break;
         }
-
-        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
         case _YIELD_VALUE: {
             _Py_UopsSymbol *res;
@@ -759,7 +753,7 @@
             for (int i = 0; i < totalargs; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
-            stack_pointer += (oparg >> 8) + (oparg & 0xFF);
+            stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1604,13 +1598,33 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 */
+        case _MAYBE_EXPAND_METHOD: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UopsSymbol *func;
+            _Py_UopsSymbol *maybe_self;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            func = sym_new_not_null(ctx);
+            maybe_self = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = maybe_self;
+            break;
+        }
 
-        /* _CALL is not a viable micro-op for tier 2 */
+        /* _DO_CALL is not a viable micro-op for tier 2 */
 
         case _CHECK_PERIODIC: {
             break;
         }
+
+        /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
             _Py_UopsSymbol **args;
@@ -2056,6 +2070,8 @@
             break;
         }
 
+        /* _INSTRUMENTED_LINE is not a viable micro-op for tier 2 */
+
         /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
@@ -2153,6 +2169,8 @@
         }
 
         case _EXIT_TRACE: {
+            PyObject *exit_p = (PyObject *)this_instr->operand;
+            (void)exit_p;
             ctx->done = true;
             break;
         }

@@ -1153,10 +1153,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 because it is instrumented */
-
-        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 because it is instrumented */
-
         case _GET_AITER: {
             _PyStackRef obj;
             _PyStackRef iter;
@@ -1304,8 +1300,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 because it is instrumented */
-
         case _YIELD_VALUE: {
             _PyStackRef retval;
             _PyStackRef value;
@@ -1446,9 +1440,11 @@
 
         case _UNPACK_SEQUENCE: {
             _PyStackRef seq;
+            _PyStackRef *output;
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
-            _PyStackRef *top = stack_pointer + oparg - 1;
+            output = &stack_pointer[-1];
+            _PyStackRef *top = output + oparg;
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
             PyStackRef_CLOSE(seq);
             if (res == 0) JUMP_TO_ERROR();
@@ -1538,14 +1534,15 @@
 
         case _UNPACK_EX: {
             _PyStackRef seq;
+            _PyStackRef *right;
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
-            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _PyStackRef *top = stack_pointer + totalargs - 1;
+            right = &stack_pointer[(oparg & 0xFF)];
+            _PyStackRef *top = right + (oparg >> 8);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             PyStackRef_CLOSE(seq);
             if (res == 0) JUMP_TO_ERROR();
-            stack_pointer += (oparg >> 8) + (oparg & 0xFF);
+            stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -3179,6 +3176,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         JUMP_TO_ERROR();
                     }
+                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -3590,14 +3588,45 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 because it is instrumented */
+        case _MAYBE_EXPAND_METHOD: {
+            _PyStackRef *args;
+            _PyStackRef self_or_null;
+            _PyStackRef callable;
+            _PyStackRef func;
+            _PyStackRef maybe_self;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
+            if (PyStackRef_TYPE(callable) == &PyMethod_Type && PyStackRef_IsNull(self_or_null)) {
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                PyObject *self = ((PyMethodObject *)callable_o)->im_self;
+                maybe_self = PyStackRef_FromPyObjectNew(self);
+                PyObject *method = ((PyMethodObject *)callable_o)->im_func;
+                func = PyStackRef_FromPyObjectNew(method);
+                /* Make sure that callable and all args are in memory */
+                args[-2] = func;
+                args[-1] = maybe_self;
+                PyStackRef_CLOSE(callable);
+            }
+            else {
+                func = callable;
+                maybe_self = self_or_null;
+            }
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = maybe_self;
+            break;
+        }
 
-        /* _CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* _DO_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _CHECK_PERIODIC: {
             CHECK_EVAL_BREAKER();
             break;
         }
+
+        /* _MONITOR_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _PY_FRAME_GENERAL: {
             _PyStackRef *args;
@@ -4913,6 +4942,8 @@
             break;
         }
 
+        /* _INSTRUMENTED_LINE is not a viable micro-op for tier 2 because it is instrumented */
+
         /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 because it is instrumented */
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 because it is instrumented */
@@ -5018,8 +5049,8 @@
         }
 
         case _EXIT_TRACE: {
-            oparg = CURRENT_OPARG();
-            _PyExitData *exit = &current_executor->exits[oparg];
+            PyObject *exit_p = (PyObject *)CURRENT_OPERAND();
+            _PyExitData *exit = (_PyExitData *)exit_p;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
@@ -5028,7 +5059,7 @@
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                       oparg, exit->temperature.as_counter,
+                       exit - current_executor->exits, exit->temperature.as_counter,
                        (int)(target - _PyCode_CODE(code)),
                        _PyOpcode_OpName[target->op.code]);
             }
@@ -5156,9 +5187,9 @@
         }
 
         case _DYNAMIC_EXIT: {
-            oparg = CURRENT_OPARG();
+            PyObject *exit_p = (PyObject *)CURRENT_OPERAND();
             tstate->previous_executor = (PyObject *)current_executor;
-            _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];
+            _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
@@ -5166,7 +5197,7 @@
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                       oparg, exit->temperature.as_counter,
+                       exit - current_executor->exits, exit->temperature.as_counter,
                        (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                        _PyOpcode_OpName[target->op.code]);
             }
