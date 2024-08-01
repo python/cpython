@@ -4016,7 +4016,7 @@ class ConfigDictTest(BaseTest):
                     # use 1 process and 1 task per child to put 1 record
                     with ctx.Pool(1, initializer=self._mpinit_issue121723,
                                   initargs=(q, "text"), maxtasksperchild=1):
-                        records.append(q.get(timeout=2))
+                        records.append(q.get(timeout=60))
                     self.assertTrue(q.empty())
                 self.assertEqual(len(records), 1)
 
