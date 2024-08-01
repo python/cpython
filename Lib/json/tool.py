@@ -1,6 +1,13 @@
 import sys
+import warnings
 
-from .__main__ import main
+from . import __main__
+
+
+def main():
+    warnings.warn('The json.tool module is deprecated',
+                  DeprecationWarning, stacklevel=2)
+    __main__.main()
 
 
 if __name__ == '__main__':
