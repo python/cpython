@@ -68,7 +68,7 @@ jobs:
             echo ""
             echo "The up to date ABI file should be attached to this build as an artifact."
             echo ""
-            echo "To learn more about this check: https://devguide.python.org/setup/#regenerate-the-abi-dump"
+            echo "To learn more about this check: https://devguide.python.org/getting-started/setup-building/index.html#regenerate-the-abi-dump"
             echo ""
             exit 1
           fi
