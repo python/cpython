@@ -1210,7 +1210,7 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
         if (opcode == _NOP) {
             nop_count++;
         }
-        if (is_terminator(&buffer[i]) {
+        if (is_terminator(&buffer[i])) {
             return i+1-nop_count;
         }
     }
