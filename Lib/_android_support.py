@@ -1,5 +1,6 @@
 import io
 import sys
+from threading import RLock
 
 
 # The maximum length of a log message in bytes, including the level marker and
@@ -11,9 +12,9 @@ import sys
 MAX_BYTES_PER_WRITE = 4000
 
 # UTF-8 uses a maximum of 4 bytes per character, so limiting text writes to this
-# size ensures that TextIOWrapper can always avoid exceeding MAX_BYTES_PER_WRITE.
+# size ensures that we can always avoid exceeding MAX_BYTES_PER_WRITE.
 # However, if the actual number of bytes per character is smaller than that,
-# then TextIOWrapper may still join multiple consecutive text writes into binary
+# then we may still join multiple consecutive text writes into binary
 # writes containing a larger number of characters.
 MAX_CHARS_PER_WRITE = MAX_BYTES_PER_WRITE // 4
 
@@ -35,9 +36,10 @@ def init_streams(android_log_write, stdout_prio, stderr_prio):
 class TextLogStream(io.TextIOWrapper):
     def __init__(self, android_log_write, prio, tag, **kwargs):
         kwargs.setdefault("encoding", "UTF-8")
-        kwargs.setdefault("line_buffering", True)
         super().__init__(BinaryLogStream(android_log_write, prio, tag), **kwargs)
-        self._CHUNK_SIZE = MAX_BYTES_PER_WRITE
+        self._lock = RLock()
+        self._pending_bytes = []
+        self._pending_bytes_count = 0
 
     def __repr__(self):
         return f"<TextLogStream {self.buffer.tag!r}>"
@@ -52,14 +54,43 @@ class TextLogStream(io.TextIOWrapper):
         s = str.__str__(s)
 
         # We want to emit one log message per line wherever possible, so split
-        # the string before sending it to the superclass. Note that
-        # "".splitlines() == [], so nothing will be logged for an empty string.
-        for line in s.splitlines(keepends=True):
-            while line:
-                super().write(line[:MAX_CHARS_PER_WRITE])
-                line = line[MAX_CHARS_PER_WRITE:]
+        # the string into lines first. Note that "".splitlines() == [], so
+        # nothing will be logged for an empty string.
+        with self._lock:
+            for line in s.splitlines(keepends=True):
+                while line:
+                    chunk = line[:MAX_CHARS_PER_WRITE]
+                    line = line[MAX_CHARS_PER_WRITE:]
+                    self._write_chunk(chunk)
 
         return len(s)
+
+    # The size and behavior of TextIOWrapper's buffer is not part of its public
+    # API, so we handle buffering ourselves to avoid truncation.
+    def _write_chunk(self, s):
+        b = s.encode(self.encoding, self.errors)
+        if self._pending_bytes_count + len(b) > MAX_BYTES_PER_WRITE:
+            self.flush()
+
+        self._pending_bytes.append(b)
+        self._pending_bytes_count += len(b)
+        if (
+            self.write_through
+            or b.endswith(b"\n")
+            or self._pending_bytes_count > MAX_BYTES_PER_WRITE
+        ):
+            self.flush()
+
+    def flush(self):
+        with self._lock:
+            self.buffer.write(b"".join(self._pending_bytes))
+            self._pending_bytes.clear()
+            self._pending_bytes_count = 0
+
+    # Since this is a line-based logging system, line buffering cannot be turned
+    # off, i.e. a newline always causes a flush.
+    def line_buffering(self):
+        return True
 
 
 class BinaryLogStream(io.RawIOBase):

@@ -147,6 +147,13 @@ class TestAndroidOutput(unittest.TestCase):
                 write("f\n\ng", ["exxf", ""])
                 write("\n", ["g"])
 
+                # Since this is a line-based logging system, line buffering
+                # cannot be turned off, i.e. a newline always causes a flush.
+                stream.reconfigure(line_buffering=False)
+                self.assertTrue(stream.line_buffering)
+
+                # However, buffering can be turned off completely if you want a
+                # flush after every write.
                 with self.unbuffered(stream):
                     write("\nx", ["", "x"])
                     write("\na\n", ["", "a"])
@@ -209,21 +216,21 @@ class TestAndroidOutput(unittest.TestCase):
                 # (MAX_BYTES_PER_WRITE).
                 #
                 # ASCII (1 byte per character)
-                write(("foobar" * 700) + "\n",
-                      [("foobar" * 666) + "foob",  # 4000 bytes
-                       "ar" + ("foobar" * 33)])  # 200 bytes
+                write(("foobar" * 700) + "\n",  # 4200 bytes in
+                      [("foobar" * 666) + "foob",  # 4000 bytes out
+                       "ar" + ("foobar" * 33)])  # 200 bytes out
 
                 # "Full-width" digits 0-9 (3 bytes per character)
                 s = "\uff10\uff11\uff12\uff13\uff14\uff15\uff16\uff17\uff18\uff19"
-                write((s * 150) + "\n",
-                      [s * 100,  # 3000 bytes
-                       s * 50])  # 1500 bytes
+                write((s * 150) + "\n",  # 4500 bytes in
+                      [s * 100,  # 3000 bytes out
+                       s * 50])  # 1500 bytes out
 
                 s = "0123456789"
-                write(s * 200, [])
-                write(s * 150, [])
-                write(s * 51, [s * 350])  # 3500 bytes
-                write("\n", [s * 51])  # 510 bytes
+                write(s * 200, [])  # 2000 bytes in
+                write(s * 150, [])  # 1500 bytes in
+                write(s * 51, [s * 350])  # 510 bytes in, 3500 bytes out
+                write("\n", [s * 51])  # 0 bytes in, 510 bytes out
 
     def test_bytes(self):
         for stream_name, level in [("stdout", "I"), ("stderr", "W")]:
