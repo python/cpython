@@ -1357,8 +1357,8 @@ dummy_func(
             (void)counter;
         }
 
-        op(_UNPACK_SEQUENCE, (seq -- unused[oparg])) {
-            _PyStackRef *top = stack_pointer + oparg - 1;
+        op(_UNPACK_SEQUENCE, (seq -- output[oparg])) {
+            _PyStackRef *top = output + oparg;
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
@@ -1401,9 +1401,8 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
-            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _PyStackRef *top = stack_pointer + totalargs - 1;
+        inst(UNPACK_EX, (seq -- left[oparg & 0xFF], unused, right[oparg >> 8])) {
+            _PyStackRef *top = right + (oparg >> 8);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
