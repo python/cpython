@@ -151,7 +151,7 @@ platform
 
 * Add :func:`platform.invalidate_caches` to invalidate the cached results.
 
-  (Contributed by Bénédikt Tran in :gh:`122525`.)
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
 
 pdb
 ---

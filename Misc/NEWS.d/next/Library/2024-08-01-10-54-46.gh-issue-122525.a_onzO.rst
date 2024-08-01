@@ -1,2 +1,0 @@
-Add :func:`platform.invalidate_caches` to invalidate cached results. Patch
-by Bénédikt Tran.

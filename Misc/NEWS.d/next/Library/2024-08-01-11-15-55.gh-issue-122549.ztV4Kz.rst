@@ -1,0 +1,1 @@
+Add :func:`platform.invalidate_caches` to invalidate cached results.
