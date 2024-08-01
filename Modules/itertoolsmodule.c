@@ -3454,12 +3454,87 @@ count_repr(countobject *lz)
                                 lz->long_cnt, lz->long_step);
 }
 
+
+static PyObject *
+count_peek(countobject *lz)
+{
+    if (lz->cnt != PY_SSIZE_T_MAX) {
+        return PyLong_FromSsize_t(lz->cnt);
+    } else {
+        return lz->long_cnt;
+    }
+}
+
+
+static PyObject *
+count_consume(countobject *lz, PyObject *seq)
+{
+    PyObject *it, *item;
+    PyObject *(*iternext)(PyObject *);
+    Py_ssize_t cnt;
+
+    /* Get iterator. */
+    it = PyObject_GetIter(seq);
+    if (it == NULL) {
+        return NULL;
+    }
+
+    /* Main Loop */
+    iternext = *Py_TYPE(it)->tp_iternext;
+    while ((item = iternext(it)) != NULL) {
+        Py_DECREF(item);
+#ifndef Py_GIL_DISABLED
+        if (lz->cnt == PY_SSIZE_T_MAX) {
+            count_nextlong(lz);
+        }
+        else {
+            lz->cnt++;
+        }
+#else
+        // free-threading version
+        // fast mode uses compare-exchange loop
+        // slow mode uses a critical section
+        cnt = _Py_atomic_load_ssize_relaxed(&lz->cnt);
+        for (;;) {
+            if (cnt == PY_SSIZE_T_MAX) {
+                Py_BEGIN_CRITICAL_SECTION(lz);
+                count_nextlong(lz);
+                Py_END_CRITICAL_SECTION();
+                break;
+            }
+            else if (_Py_atomic_compare_exchange_ssize(&lz->cnt, &cnt, cnt + 1)) {
+                break;
+            }
+        }
+#endif
+    }
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else {
+            Py_DECREF(it);
+            return NULL;
+        }
+    }
+    Py_DECREF(it);
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef count_methods[] = {
+    {"peek", (PyCFunction)count_peek, METH_NOARGS},
+    {"consume", (PyCFunction)count_consume, METH_O},
+    {NULL,              NULL}           /* sentinel */
+};
+
+
 static PyType_Slot count_slots[] = {
     {Py_tp_dealloc, count_dealloc},
     {Py_tp_repr, count_repr},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_count__doc__},
     {Py_tp_traverse, count_traverse},
+    {Py_tp_methods, count_methods},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, count_next},
     {Py_tp_new, itertools_count},
