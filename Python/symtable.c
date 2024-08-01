@@ -115,7 +115,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_scope_info = NULL;
 
     ste->ste_nested = 0;
-    ste->ste_free = 0;
     ste->ste_varargs = 0;
     ste->ste_varkeywords = 0;
     ste->ste_annotations_used = 0;
@@ -125,7 +124,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         (st->st_cur->ste_nested ||
          _PyST_IsFunctionLike(st->st_cur)))
         ste->ste_nested = 1;
-    ste->ste_child_free = 0;
     ste->ste_generator = 0;
     ste->ste_coroutine = 0;
     ste->ste_comprehension = NoComprehension;
@@ -299,8 +297,6 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         comptype,
         prefix,
         ste->ste_nested ? " nested" : "",
-        ste->ste_free ? " free" : "",
-        ste->ste_child_free ? " child_free" : "",
         ste->ste_generator ? " generator" : "",
         ste->ste_coroutine ? " coroutine" : "",
         ste->ste_varargs ? " varargs" : "",
@@ -692,7 +688,6 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
             return error_at_directive(ste, name);
         }
         SET_SCOPE(scopes, name, FREE);
-        ste->ste_free = 1;
         return PySet_Add(free, name) >= 0;
     }
     if (flags & DEF_BOUND) {
@@ -741,7 +736,6 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
         }
         if (contains) {
             SET_SCOPE(scopes, name, FREE);
-            ste->ste_free = 1;
             return PySet_Add(free, name) >= 0;
         }
     }
@@ -758,8 +752,6 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
             return 1;
         }
     }
-    if (ste->ste_nested)
-        ste->ste_free = 1;
     SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
     return 1;
 }
@@ -842,7 +834,6 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             }
         }
     }
-    comp->ste_free = PySet_Size(comp_free) > 0;
     if (remove_dunder_class && PyDict_DelItemString(comp->ste_symbols, "__class__") < 0) {
         return 0;
     }
@@ -1202,9 +1193,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         if (!temp)
             goto error;
         Py_DECREF(temp);
-        /* Check if any children have free variables */
-        if (entry->ste_free || entry->ste_child_free)
-            ste->ste_child_free = 1;
     }
 
     /* Splice children of inlined comprehensions into our children list */

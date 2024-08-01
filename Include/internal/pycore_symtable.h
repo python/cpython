@@ -106,9 +106,6 @@ typedef struct _symtable_entry {
     const char *ste_scope_info;
 
     int ste_nested;      /* true if block is nested */
-    unsigned ste_free : 1;        /* true if block has free variables */
-    unsigned ste_child_free : 1;  /* true if a child block has free vars,
-                                     including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
     unsigned ste_annotations_used : 1;  /* true if there are any annotations in this scope */
