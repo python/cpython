@@ -3471,7 +3471,6 @@ count_consume(countobject *lz, PyObject *seq)
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
-    Py_ssize_t cnt;
 
     /* Get iterator. */
     it = PyObject_GetIter(seq);
@@ -3494,7 +3493,7 @@ count_consume(countobject *lz, PyObject *seq)
         // free-threading version
         // fast mode uses compare-exchange loop
         // slow mode uses a critical section
-        cnt = _Py_atomic_load_ssize_relaxed(&lz->cnt);
+        Py_ssize_t cnt = _Py_atomic_load_ssize_relaxed(&lz->cnt);
         for (;;) {
             if (cnt == PY_SSIZE_T_MAX) {
                 Py_BEGIN_CRITICAL_SECTION(lz);
