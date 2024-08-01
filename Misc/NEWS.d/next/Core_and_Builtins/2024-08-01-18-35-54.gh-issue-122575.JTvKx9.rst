@@ -1,0 +1,2 @@
+Include :attr:`sys.flags.gil` as part of the sequence when :data:`sys.flags`
+is treated as a tuple.

@@ -587,6 +587,9 @@ always available.
       * - .. attribute:: flags.warn_default_encoding
         - :option:`-X warn_default_encoding <-X>`
 
+      * - .. attribute:: flags.gil
+        - :option:`-X gil <-X>`
+
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
 
@@ -612,6 +615,9 @@ always available.
 
    .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
+
+   .. versionchanged:: 3.13
+      Added the ``gil`` attribute.
 
 
 .. data:: float_info
