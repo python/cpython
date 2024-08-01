@@ -341,8 +341,23 @@ loops that truncate the stream.
    achieved by substituting multiplicative code such as: ``(start + step * i
    for i in count())``.
 
+   :meth:`peek` method of returned iterator object retrieves the current value of
+   a counter (that is to be returned from the next :meth:`__next__` call).
+   Also, :meth:`consume` method accepts *iterable* and increments the counter while
+   consuming the input.
+
+      >>> counter = count(0)
+      >>> counter.peek()
+      0
+      >>> counter.consume([1, 2, 3])
+      >>> counter.peek()
+      3
+
    .. versionchanged:: 3.1
       Added *step* argument and allowed non-integer arguments.
+
+   .. versionchanged:: 3.14
+      Added :meth:`peek` and :meth:`consume` methods to returned iterator object.
 
 
 .. function:: cycle(iterable)
