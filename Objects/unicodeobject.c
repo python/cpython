@@ -15265,7 +15265,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_init */
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
-    PyObject_Del,                 /* tp_free */
+    PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
 };
 
