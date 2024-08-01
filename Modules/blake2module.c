@@ -17,6 +17,8 @@
 #include "Python.h"
 #include "hashlib.h"
 #include "pycore_strhex.h"       // _Py_strhex()
+#include "pycore_typeobject.h"
+#include "pycore_moduleobject.h"
 
 // QUICK CPU AUTODETECTION
 //
