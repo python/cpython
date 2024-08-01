@@ -11196,7 +11196,7 @@ PyType_Freeze(PyTypeObject *type)
     }
 
     type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
-    PyType_Modified(type)
+    PyType_Modified(type);
 
     return 0;
 }
