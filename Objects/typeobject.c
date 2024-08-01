@@ -11194,7 +11194,10 @@ PyType_Freeze(PyTypeObject *type)
     if (check_immutable_bases(type->tp_name, bases) < 0) {
         return -1;
     }
+
     type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    PyType_Modified(type)
+
     return 0;
 }
 
