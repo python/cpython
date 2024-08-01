@@ -3454,7 +3454,6 @@ count_repr(countobject *lz)
                                 lz->long_cnt, lz->long_step);
 }
 
-
 static PyObject *
 count_peek(countobject *lz)
 {
@@ -3465,20 +3464,17 @@ count_peek(countobject *lz)
     }
 }
 
-
 static PyObject *
 count_consume(countobject *lz, PyObject *seq)
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
 
-    /* Get iterator. */
     it = PyObject_GetIter(seq);
     if (it == NULL) {
         return NULL;
     }
 
-    /* Main Loop */
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
         Py_DECREF(item);
@@ -3508,8 +3504,9 @@ count_consume(countobject *lz, PyObject *seq)
 #endif
     }
     if (PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+        if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
             PyErr_Clear();
+        }
         else {
             Py_DECREF(it);
             return NULL;
@@ -3519,13 +3516,11 @@ count_consume(countobject *lz, PyObject *seq)
     Py_RETURN_NONE;
 }
 
-
 static PyMethodDef count_methods[] = {
     {"peek", (PyCFunction)count_peek, METH_NOARGS},
     {"consume", (PyCFunction)count_consume, METH_O},
     {NULL,              NULL}           /* sentinel */
 };
-
 
 static PyType_Slot count_slots[] = {
     {Py_tp_dealloc, count_dealloc},
