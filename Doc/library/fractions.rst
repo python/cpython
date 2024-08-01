@@ -125,7 +125,7 @@ another rational number, or from a string.
 
    .. attribute:: denominator
 
-      Denominator of the Fraction in lowest terms and positive.
+      Positive denominator of the Fraction in lowest terms.
 
    .. method:: as_integer_ratio()
 
