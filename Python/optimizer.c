@@ -1374,7 +1374,7 @@ PyTypeObject _PyCounterOptimizer_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_methods = counter_optimizer_methods,
-    .tp_dealloc = (destructor)PyObject_Del,
+    .tp_dealloc = (destructor)PyObject_Free,
 };
 
 PyObject *
