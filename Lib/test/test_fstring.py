@@ -8,6 +8,7 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import datetime
 import dis
 import os
 import re
@@ -896,6 +897,7 @@ x = (
                              "f'{:2}'",
                              "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
+                             "F'{[F'{:'}[F'{:'}]]]",
                              ])
 
         self.assertAllRaise(SyntaxError,
@@ -1602,6 +1604,12 @@ x = (
         self.assertEqual(f'{f(a=4)}', '3=')
         self.assertEqual(x, 4)
 
+        # Check debug expressions in format spec
+        y = 20
+        self.assertEqual(f"{2:{y=}}", "yyyyyyyyyyyyyyyyyyy2")
+        self.assertEqual(f"{datetime.datetime.now():h1{y=}h2{y=}h3{y=}}",
+                         'h1y=20h2y=20h3y=20')
+
         # Make sure __format__ is being called.
         class C:
             def __format__(self, s):
@@ -1615,8 +1623,10 @@ x = (
         self.assertEqual(f'{C()=: }', 'C()=FORMAT- ')
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
+        self.assertEqual(f"{C():{20=}}", 'FORMAT-20=20')
 
         self.assertRaises(SyntaxError, eval, "f'{C=]'")
+
 
         # Make sure leading and following text works.
         x = 'foo'

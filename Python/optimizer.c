@@ -12,7 +12,6 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
-#include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -105,18 +104,6 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     instr->op.arg = index;
 }
 
-int
-PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject *new)
-{
-    if (instr->op.code != ENTER_EXECUTOR) {
-        PyErr_Format(PyExc_ValueError, "No executor to replace");
-        return -1;
-    }
-    int index = instr->op.arg;
-    assert(index >= 0);
-    insert_executor(code, instr, index, new);
-    return 0;
-}
 
 static int
 never_optimize(
@@ -144,7 +131,7 @@ static _PyOptimizerObject _PyOptimizer_Default = {
 };
 
 _PyOptimizerObject *
-PyUnstable_GetOptimizer(void)
+_Py_GetOptimizer(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->optimizer == &_PyOptimizer_Default) {
@@ -195,7 +182,7 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 }
 
 int
-PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
+_Py_SetTier2Optimizer(_PyOptimizerObject *optimizer)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, optimizer);
@@ -240,7 +227,7 @@ _PyOptimizer_Optimize(
 }
 
 _PyExecutorObject *
-PyUnstable_GetExecutor(PyCodeObject *code, int offset)
+_Py_GetExecutor(PyCodeObject *code, int offset)
 {
     int code_len = (int)Py_SIZE(code);
     for (int i = 0 ; i < code_len;) {
@@ -1349,7 +1336,7 @@ PyTypeObject _PyUOpOptimizer_Type = {
 };
 
 PyObject *
-PyUnstable_Optimizer_NewUOpOptimizer(void)
+_PyOptimizer_NewUOpOptimizer(void)
 {
     _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
     if (opt == NULL) {
@@ -1437,7 +1424,7 @@ PyTypeObject _PyCounterOptimizer_Type = {
 };
 
 PyObject *
-PyUnstable_Optimizer_NewCounter(void)
+_PyOptimizer_NewCounter(void)
 {
     _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&_PyCounterOptimizer_Type);
     if (opt == NULL) {

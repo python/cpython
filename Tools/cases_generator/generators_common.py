@@ -84,7 +84,7 @@ def replace_error(
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
     out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
+    c_offset = stack.peek_offset()
     try:
         offset = -int(c_offset)
         close = ";\n"

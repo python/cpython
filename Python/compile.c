@@ -672,8 +672,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        _Py_DECLARE_STR(dot, ".");
-        name = PyUnicode_Concat(base, &_Py_STR(dot));
+        name = PyUnicode_Concat(base, _Py_LATIN1_CHR('.'));
         Py_DECREF(base);
         if (name == NULL) {
             return ERROR;
@@ -6235,7 +6234,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case YieldFrom_kind:
         if (!_PyST_IsFunctionLike(c->u->u_ste)) {
-            return compiler_error(c, loc, "'yield' outside function");
+            return compiler_error(c, loc, "'yield from' outside function");
         }
         if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
             return compiler_error(c, loc, "'yield from' inside async function");

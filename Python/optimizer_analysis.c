@@ -21,7 +21,6 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
-#include "cpython/optimizer.h"
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
 #include "pycore_dict.h"
@@ -411,7 +410,7 @@ optimize_uops(
     if (_Py_uop_abstractcontext_init(ctx) < 0) {
         goto out_of_space;
     }
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
         return -1;
     }

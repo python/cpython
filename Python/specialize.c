@@ -29,6 +29,10 @@ GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
+#if PYSTATS_MAX_UOP_ID < MAX_UOP_ID
+#error "Not enough space allocated for pystats. Increase PYSTATS_MAX_UOP_ID to at least MAX_UOP_ID"
+#endif
+
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
         PyObject *val = PyLong_FromUnsignedLongLong(stats->field); \
@@ -1301,7 +1305,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
             }
             /* Cache entries must be unsigned values, so we offset the
              * dictoffset by MANAGED_DICT_OFFSET.
-             * We do the reverese offset in LOAD_ATTR_METHOD_LAZY_DICT */
+             * We do the reverse offset in LOAD_ATTR_METHOD_LAZY_DICT */
             dictoffset -= MANAGED_DICT_OFFSET;
             assert(((uint16_t)dictoffset) == dictoffset);
             cache->dict_offset = (uint16_t)dictoffset;

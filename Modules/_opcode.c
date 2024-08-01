@@ -5,9 +5,10 @@
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
-#include "internal/pycore_code.h"
-#include "internal/pycore_compile.h"
-#include "internal/pycore_intrinsics.h"
+#include "pycore_code.h"
+#include "pycore_compile.h"
+#include "pycore_intrinsics.h"
+#include "pycore_optimizer.h"     // _Py_GetExecutor()
 
 /*[clinic input]
 module _opcode
@@ -368,7 +369,7 @@ _opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
         return NULL;
     }
 #ifdef _Py_TIER2
-    return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, offset);
+    return (PyObject *)_Py_GetExecutor((PyCodeObject *)code, offset);
 #else
     PyErr_Format(PyExc_RuntimeError,
                  "Executors are not available in this build");
