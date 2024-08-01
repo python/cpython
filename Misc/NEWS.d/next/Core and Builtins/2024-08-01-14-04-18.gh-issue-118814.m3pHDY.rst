@@ -1,0 +1,3 @@
+Fix argument parsing by ``_PyArg_UnpackKeywordsWithVararg`` when passing
+positional as keyword arguments before variadic arguments. Patch by Bénédikt
+Tran.
