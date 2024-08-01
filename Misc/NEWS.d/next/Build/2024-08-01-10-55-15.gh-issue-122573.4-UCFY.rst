@@ -1,0 +1,2 @@
+The Windows build of CPython now requires 3.10 as a minimum version, because
+of the use of match case statements within the code of Python itself.
