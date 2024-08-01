@@ -152,7 +152,7 @@ blake2_get_state(PyObject *module)
 static inline Blake2State*
 blake2_get_state_from_type(PyTypeObject *module)
 {
-    void *state = PyType_GetModuleState(module);
+    void *state = _PyType_GetModuleState(module);
     assert(state != NULL);
     return (Blake2State *)state;
 }
