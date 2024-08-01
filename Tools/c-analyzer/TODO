@@ -56,10 +56,6 @@ Modules/posixmodule.c:initialized                                static int init
 Modules/signalmodule.c:initialized                               static int initialized
 Modules/timemodule.c:initialized                                 static int initialized
 Objects/dictobject.c:pydict_global_version                       static uint64_t pydict_global_version
-Objects/floatobject.c:detected_double_format                     static float_format_type detected_double_format
-Objects/floatobject.c:detected_float_format                      static float_format_type detected_float_format
-Objects/floatobject.c:double_format                              static float_format_type double_format
-Objects/floatobject.c:float_format                               static float_format_type
 Objects.longobject.c:_Py_quick_int_allocs                        Py_ssize_t _Py_quick_int_allocs
 Objects.longobject.c:_Py_quick_neg_int_allocs                    Py_ssize_t _Py_quick_neg_int_allocs
 Objects/moduleobject.c:max_module_number                         static Py_ssize_t max_module_number
