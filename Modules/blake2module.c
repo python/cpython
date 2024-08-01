@@ -269,8 +269,8 @@ static PyModuleDef_Slot _blake2_slots[] = {
 };
 
 static struct PyModuleDef blake2_module = {
-    PyModuleDef_HEAD_INIT,
-    "_blake2",
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_blake2",
     .m_doc = blake2mod__doc__,
     .m_size = sizeof(Blake2State),
     .m_methods = blake2mod_functions,
