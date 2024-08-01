@@ -144,7 +144,7 @@ typedef struct {
 static inline Blake2State*
 blake2_get_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (Blake2State *)state;
 }
