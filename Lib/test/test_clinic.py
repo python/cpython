@@ -2,8 +2,8 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
-from itertools import combinations, permutations
 from functools import partial
+from itertools import permutations
 from test import support, test_tools
 from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
@@ -2913,23 +2913,6 @@ class ClinicFunctionalTest(unittest.TestCase):
             fr"will become positional-only in Python 3\.14."
         )
         self.check_depr(regex, fn, *args, **kwds)
-
-    def check_unordered_calls(
-        self,
-        c_actual_func, py_expect_func,
-        base_args, more_args,
-        base_kwargs, more_kwargs
-    ):
-        for r in range(len(more_kwargs) + 1):
-            for morekwds in map(dict, combinations(more_kwargs.items(), r=r)):
-                for kwargs in permutations((base_kwargs | morekwds).items()):
-                    kwargs = dict(kwargs)
-                    for s in range(1 + len(more_args)):
-                        args = tuple(base_args) + more_args[:s]
-                        with self.subTest(args=args, kwargs=kwargs):
-                            actual = c_actual_func(*args, **kwargs)
-                            expect = py_expect_func(*args, **kwargs)
-                            self.assertEqual(actual, expect)
 
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
