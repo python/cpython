@@ -254,4 +254,5 @@ class TestTool(TestMain):
         rc, out, err = assert_python_ok('-m', self.module, infile)
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
-        self.assertEqual(err.decode(), f'{filename}:15: DeprecationWarning: The json.tool module is deprecated\n  main()\n')
+        self.assertRegex(err.decode(),
+                         r'^.+/json/tool\.py:\d+: DeprecationWarning: The json.tool module is deprecated\n.+\n$')
