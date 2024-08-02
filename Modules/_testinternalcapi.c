@@ -2035,27 +2035,22 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 }
 
 /*[clinic input]
-reset_version
+is_version_overflowed
 
     dict: object(type="PyDictObject *", subclass_of="&PyDict_Type")
 
 [clinic start generated code]*/
 
 static PyObject *
-reset_version_impl(PyObject *module, PyDictObject *dict)
-/*[clinic end generated code: output=9ba372a8b7ed5566 input=212f6cc66caef7af]*/
+is_version_overflowed_impl(PyObject *module, PyDictObject *dict)
+/*[clinic end generated code: output=e7d20960c423d073 input=a68a26cde1cc7a9e]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyDictKeysObject *dictkeys = dict->ma_keys;
-    if (dictkeys->dk_version != 0) {
-        Py_RETURN_NONE;
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(interp, dict->ma_keys);
+    if (keys_version != (uint16_t)keys_version){
+        Py_RETURN_TRUE;
     }
-    if (interp->dict_state.next_keys_version == 0) {
-        Py_RETURN_NONE;
-    }
-    interp->dict_state.next_keys_version = 1;
-    dictkeys->dk_version = 1;
-    Py_RETURN_NONE;
+    Py_RETURN_FALSE;
 }
 
 static PyMethodDef module_functions[] = {
@@ -2152,7 +2147,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
-    RESET_VERSION_METHODDEF
+    IS_VERSION_OVERFLOWED_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
