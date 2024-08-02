@@ -60,6 +60,11 @@ class Node:
         end = context.end
         return tokens[begin:end]
 
+    @property
+    def first_token(self) -> lx.Token:
+        context = self.context
+        assert context is not None
+        return context.owner.tokens[context.begin]
 
 @dataclass
 class Block(Node):

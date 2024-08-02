@@ -1817,10 +1817,10 @@ get_dotted_path(PyObject *obj, PyObject *name)
         if (_PyUnicode_EqualToASCIIString(subpath, "<locals>")) {
             if (obj == NULL)
                 PyErr_Format(PyExc_AttributeError,
-                             "Can't pickle local object %R", name);
+                             "Can't get local object %R", name);
             else
                 PyErr_Format(PyExc_AttributeError,
-                             "Can't pickle local attribute %R on %R", name, obj);
+                             "Can't get local attribute %R on %R", name, obj);
             Py_DECREF(dotted_path);
             return NULL;
         }
@@ -2507,7 +2507,7 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
 {
     if (self->proto < 5) {
         PyErr_SetString(st->PicklingError,
-                        "PickleBuffer can only pickled with protocol >= 5");
+                        "PickleBuffer can only be pickled with protocol >= 5");
         return -1;
     }
     const Py_buffer* view = PyPickleBuffer_GetBuffer(obj);
@@ -3123,6 +3123,7 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
             if (!PyTuple_Check(obj) || PyTuple_Size(obj) != 2) {
                 PyErr_SetString(PyExc_TypeError, "dict items "
                                 "iterator must return 2-tuples");
+                Py_DECREF(obj);
                 return -1;
             }
             i = save(state, self, PyTuple_GET_ITEM(obj, 0), 0);
