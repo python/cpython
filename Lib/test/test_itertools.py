@@ -531,6 +531,19 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(counter.peek(), 0)
         counter.consume([1, 2, 3])
         self.assertEqual(counter.peek(), 3)
+        # Only accepts iterables
+        with self.assertRaises(TypeError):
+            counter.consume(1)
+        counter.consume(range(1000))
+        self.assertEqual(counter.peek(), 1003)
+        # Test for non-int step
+        counter = count(0, Fraction(1, 3))
+        counter.consume(range(9))
+        self.assertEqual(counter.peek(), Fraction(9, 3))
+        # Test for large int
+        counter = count(sys.maxsize - 2)
+        counter.consume(range(10))
+        self.assertEqual(counter.peek(), sys.maxsize + 8)
 
     def test_count_with_step(self):
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])

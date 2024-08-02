@@ -341,10 +341,10 @@ loops that truncate the stream.
    achieved by substituting multiplicative code such as: ``(start + step * i
    for i in count())``.
 
-   ``peek`` method of returned iterator object retrieves the current value of
-   a counter (that is to be returned from the next ``__next__`` call).
-   Also, ``consume`` method accepts *iterable* and increments the counter while
-   consuming the input.
+   Use ``counter.peek()`` to get the current counter's value,
+   namely the value returned by the next ``next(counter)`` call,
+   and use ``counter.consume(iterable)`` to consume the *iterable*
+   and advance the counter by the number of consumed items.
 
       >>> counter = count(0)
       >>> counter.peek()
