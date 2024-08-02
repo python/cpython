@@ -1,0 +1,2 @@
+The ``regen-jit`` make target is no longer part of ``regen-all`` to avoid various
+race conditions when running ``regen-all``.
