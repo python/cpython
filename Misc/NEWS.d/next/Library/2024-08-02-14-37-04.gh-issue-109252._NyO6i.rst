@@ -1,0 +1,1 @@
+Fixed an existing issue with email header lib adding whitespace
