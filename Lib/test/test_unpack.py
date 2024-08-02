@@ -220,6 +220,7 @@ class TestCornerCases(unittest.TestCase):
             self.assertEqual(y, 399)
 
     def test_exception_context_when_len_fails(self):
+        """When `__len__()` raises an Exception, preserve exception context"""
         code = textwrap.dedent(
             f"""
             class CustomSeq:
@@ -237,6 +238,28 @@ class TestCornerCases(unittest.TestCase):
         except ValueError as exc:
             self.assertEqual(exc.args, ('too many values to unpack (expected 3)',))
             self.assertIsInstance(exc.__context__, RuntimeError)
+
+    def test_baseexception_propagation_when_len_fails(self):
+        """if `__len__()` raises a `BaseException`, propagate that as-is"""
+        code = textwrap.dedent(
+            """
+            class C:
+                def __len__(self):
+                    raise KeyboardInterrupt
+                def __getitem__(self, i):
+                    return i
+                    
+            x, y, z = C()
+            """
+        )
+        try:
+            exec(code)
+        except KeyboardInterrupt:
+            pass
+        except Exception as exc:
+            self.fail(f"Expected KeyboardInterrupt, found {type(exc).__name__}: {exc}")
+        else:
+            self.fail("KeyboardInterrupt not raised")
 
 if __name__ == "__main__":
     unittest.main()
