@@ -289,12 +289,13 @@ extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
+#ifndef Py_GIL_DISABLED
+#  define _Py_INCREF_TYPE Py_INCREF
+#  define _Py_DECREF_TYPE Py_DECREF
+#else
 static inline void
 _Py_INCREF_TYPE(PyTypeObject *type)
 {
-#ifndef Py_GIL_DISABLED
-    Py_INCREF(type);
-#else
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         assert(_Py_IsImmortal(type));
         return;
@@ -303,29 +304,26 @@ _Py_INCREF_TYPE(PyTypeObject *type)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
 
-    // Unsigned comparison so that `ht_id=-1`, which indicates that per-thread
-    // refcounting has been disabled on this type, is handled by the "else".
-    if ((size_t)ht->_ht_id < (size_t)tstate->types.size) {
+    // Unsigned comparison so that `unique_id=-1`, which indicates that
+    // per-thread refcounting has been disabled on this type, is handled by
+    // the "else".
+    if ((size_t)ht->unique_id < (size_t)tstate->types.size) {
 #  ifdef Py_REF_DEBUG
         _Py_INCREF_IncRefTotal();
 #  endif
         _Py_INCREF_STAT_INC();
-        tstate->types.refcounts[ht->_ht_id]++;
+        tstate->types.refcounts[ht->unique_id]++;
     }
     else {
         // The slow path resizes the thread-local refcount array if necessary.
-        // It handles the ht_id=-1 case to keep the inlinable function smaller.
+        // It handles the unique_id=-1 case to keep the inlinable function smaller.
         _PyType_IncrefSlow(ht);
     }
-#endif
 }
 
 static inline void
 _Py_DECREF_TYPE(PyTypeObject *type)
 {
-#ifndef Py_GIL_DISABLED
-    Py_DECREF(type);
-#else
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         assert(_Py_IsImmortal(type));
         return;
@@ -334,22 +332,23 @@ _Py_DECREF_TYPE(PyTypeObject *type)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
 
-    // Unsigned comparison so that `ht_id=-1`, which indicates that per-thread
-    // refcounting has been disabled on this type, is handled by the "else".
-    if ((size_t)ht->_ht_id < (size_t)tstate->types.size) {
+    // Unsigned comparison so that `unique_id=-1`, which indicates that
+    // per-thread refcounting has been disabled on this type, is handled by
+    // the "else".
+    if ((size_t)ht->unique_id < (size_t)tstate->types.size) {
 #  ifdef Py_REF_DEBUG
         _Py_DECREF_DecRefTotal();
 #  endif
         _Py_DECREF_STAT_INC();
-        tstate->types.refcounts[ht->_ht_id]--;
+        tstate->types.refcounts[ht->unique_id]--;
     }
     else {
         // Directly decref the type if the type id is not assigned or if
         // per-thread refcounting has been disabled on this type.
         Py_DECREF(type);
     }
-#endif
 }
+#endif
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and

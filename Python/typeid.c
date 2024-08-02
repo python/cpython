@@ -82,7 +82,7 @@ _PyType_AssignId(PyHeapTypeObject *type)
     LOCK_POOL(pool);
     if (pool->freelist == NULL) {
         if (resize_interp_type_id_pool(pool) < 0) {
-            type->_ht_id = -1;
+            type->unique_id = -1;
             UNLOCK_POOL(pool);
             return;
         }
@@ -92,7 +92,7 @@ _PyType_AssignId(PyHeapTypeObject *type)
     pool->freelist = entry->next;
     entry->type = type;
     _PyObject_SetDeferredRefcount((PyObject *)type);
-    type->_ht_id = (entry - pool->table);
+    type->unique_id = (entry - pool->table);
     UNLOCK_POOL(pool);
 }
 
@@ -102,18 +102,18 @@ _PyType_ReleaseId(PyHeapTypeObject *type)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_type_id_pool *pool = &interp->type_ids;
 
-    if (type->_ht_id < 0) {
+    if (type->unique_id < 0) {
         // The type doesn't have an id assigned.
         return;
     }
 
     LOCK_POOL(pool);
-    _Py_type_id_entry *entry = &pool->table[type->_ht_id];
+    _Py_type_id_entry *entry = &pool->table[type->unique_id];
     assert(entry->type == type);
     entry->next = pool->freelist;
     pool->freelist = entry;
 
-    type->_ht_id = -1;
+    type->unique_id = -1;
     UNLOCK_POOL(pool);
 }
 
@@ -121,14 +121,14 @@ void
 _PyType_IncrefSlow(PyHeapTypeObject *type)
 {
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (type->_ht_id < 0 || resize_local_refcounts(tstate) < 0) {
+    if (type->unique_id < 0 || resize_local_refcounts(tstate) < 0) {
         // just incref the type directly.
         Py_INCREF(type);
         return;
     }
 
-    assert(type->_ht_id < tstate->types.size);
-    tstate->types.refcounts[type->_ht_id]++;
+    assert(type->unique_id < tstate->types.size);
+    tstate->types.refcounts[type->unique_id]++;
 #ifdef Py_REF_DEBUG
     _Py_IncRefTotal((PyThreadState *)tstate);
 #endif
@@ -187,7 +187,7 @@ _PyType_FinalizeIdPool(PyInterpreterState *interp)
     for (Py_ssize_t i = 0; i < pool->size; i++) {
         PyHeapTypeObject *ht = pool->table[i].type;
         if (ht) {
-            ht->_ht_id = -1;
+            ht->unique_id = -1;
             pool->table[i].type = NULL;
         }
     }
