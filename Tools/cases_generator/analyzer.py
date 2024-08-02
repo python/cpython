@@ -217,7 +217,7 @@ Part = Uop | Skip | Flush
 
 @dataclass
 class Instruction:
-    where: lexer.Token
+    where: lx.Token
     name: str
     parts: list[Part]
     _properties: Properties | None
@@ -697,7 +697,7 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
 
 
 def add_instruction(
-    where: lexer.Token, name: str, parts: list[Part],
+    where: lx.Token, name: str, parts: list[Part],
     instructions: dict[str, Instruction]
 ) -> None:
     instructions[name] = Instruction(where, name, parts, None)
