@@ -54,12 +54,7 @@ Allocating Objects on the Heap
 
 .. c:function:: void PyObject_Del(void *op)
 
-   Releases memory allocated to an object using :c:macro:`PyObject_New` or
-   :c:macro:`PyObject_NewVar`.  This is normally called from the
-   :c:member:`~PyTypeObject.tp_dealloc` handler specified in the object's type.  The fields of
-   the object should not be accessed after this call as the memory is no
-   longer a valid Python object.
-
+   Same as :c:func:`PyObject_Free`.
 
 .. c:var:: PyObject _Py_NoneStruct
 
