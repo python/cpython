@@ -248,7 +248,7 @@ class TestCornerCases(unittest.TestCase):
                     raise KeyboardInterrupt
                 def __getitem__(self, i):
                     return i
-                    
+
             x, y, z = C()
             """
         )
