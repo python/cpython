@@ -244,7 +244,7 @@ added matters.  To illustrate::
       For backwards compatible, but unsafe, behavior, it must be set to
       ``False`` explicitly.
 
-      .. versionadded:: 3.13
+      .. versionadded:: 3.12.5
 
 
    The following :class:`Policy` method is intended to be called by code using

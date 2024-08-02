@@ -2260,3 +2260,20 @@ ipaddress
 
 * Fixed ``is_global`` and ``is_private`` behavior in ``IPv4Address``,
   ``IPv6Address``, ``IPv4Network`` and ``IPv6Network``.
+
+
+Notable changes in 3.12.5
+=========================
+
+email
+-----
+
+
+* Headers with embedded newlines are now quoted on output.
+
+  The :mod:`~email.generator` will now refuse to serialize (write) headers
+  that are improperly folded or delimited, such that they would be parsed as
+  multiple headers or joined with adjacent data.
+  If you need to turn this safety feature off,
+  set :attr:`~email.policy.Policy.verify_generated_headers`.
+  (Contributed by Bas Bloemsaat and Petr Viktorin in :gh:`121650`.)
