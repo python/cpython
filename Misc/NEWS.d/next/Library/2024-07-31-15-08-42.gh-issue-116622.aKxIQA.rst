@@ -1,0 +1,2 @@
+On Android, the ``FICLONE`` and ``FICLONERANGE`` constants are no longer
+exposed by :mod:`fcntl`, as these ioctls are blocked by SELinux.

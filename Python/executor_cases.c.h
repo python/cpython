@@ -966,7 +966,57 @@
             break;
         }
 
-        /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        case _BINARY_SUBSCR_CHECK_FUNC: {
+            _PyStackRef container;
+            container = stack_pointer[-2];
+            PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
+            if (!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+            PyObject *getitem = ht->_spec_cache.getitem;
+            if (getitem == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(PyFunction_Check(getitem));
+            uint32_t cached_version = ht->_spec_cache.getitem_version;
+            if (((PyFunctionObject *)getitem)->func_version != cached_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem);
+            assert(code->co_argcount == 2);
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(BINARY_SUBSCR, hit);
+            Py_INCREF(getitem);
+            break;
+        }
+
+        case _BINARY_SUBSCR_INIT_CALL: {
+            _PyStackRef sub;
+            _PyStackRef container;
+            _PyInterpreterFrame *new_frame;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+            PyObject *getitem = ht->_spec_cache.getitem;
+            new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            new_frame->localsplus[0] = container;
+            new_frame->localsplus[1] = sub;
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            stack_pointer[0].bits = (uintptr_t)new_frame;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LIST_APPEND: {
             _PyStackRef v;
@@ -1193,45 +1243,9 @@
             _PyStackRef aiter;
             _PyStackRef awaitable;
             aiter = stack_pointer[-1];
-            unaryfunc getter = NULL;
-            PyObject *next_iter = NULL;
-            PyObject *awaitable_o;
-            PyObject *aiter_o = PyStackRef_AsPyObjectBorrow(aiter);
-            PyTypeObject *type = Py_TYPE(aiter_o);
-            if (PyAsyncGen_CheckExact(aiter_o)) {
-                awaitable_o = type->tp_as_async->am_anext(aiter_o);
-                if (awaitable_o == NULL) {
-                    JUMP_TO_ERROR();
-                }
-            } else {
-                if (type->tp_as_async != NULL){
-                    getter = type->tp_as_async->am_anext;
-                }
-                if (getter != NULL) {
-                    next_iter = (*getter)(aiter_o);
-                    if (next_iter == NULL) {
-                        JUMP_TO_ERROR();
-                    }
-                }
-                else {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'async for' requires an iterator with "
-                                  "__anext__ method, got %.100s",
-                                  type->tp_name);
-                    JUMP_TO_ERROR();
-                }
-                awaitable_o = _PyCoro_GetAwaitableIter(next_iter);
-                if (awaitable_o == NULL) {
-                    _PyErr_FormatFromCause(
-                        PyExc_TypeError,
-                        "'async for' received an invalid object "
-                        "from __anext__: %.100s",
-                        Py_TYPE(next_iter)->tp_name);
-                    Py_DECREF(next_iter);
-                    JUMP_TO_ERROR();
-                } else {
-                    Py_DECREF(next_iter);
-                }
+            PyObject *awaitable_o = _PyEval_GetANext(PyStackRef_AsPyObjectBorrow(aiter));
+            if (awaitable_o == NULL) {
+                JUMP_TO_ERROR();
             }
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
             stack_pointer[0] = awaitable;
@@ -1245,25 +1259,8 @@
             _PyStackRef iter;
             oparg = CURRENT_OPARG();
             iterable = stack_pointer[-1];
-            PyObject *iter_o = _PyCoro_GetAwaitableIter(PyStackRef_AsPyObjectBorrow(iterable));
-            if (iter_o == NULL) {
-                _PyEval_FormatAwaitableError(tstate,
-                    Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable)), oparg);
-            }
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
             PyStackRef_CLOSE(iterable);
-            if (iter_o != NULL && PyCoro_CheckExact(iter_o)) {
-                PyObject *yf = _PyGen_yf((PyGenObject*)iter_o);
-                if (yf != NULL) {
-                    /* `iter` is a coroutine object that is being
-                       awaited, `yf` is a pointer to the current awaitable
-                       being awaited on. */
-                    Py_DECREF(yf);
-                    Py_CLEAR(iter_o);
-                    _PyErr_SetString(tstate, PyExc_RuntimeError,
-                                     "coroutine is being awaited already");
-                    /* The code below jumps to `error` if `iter` is NULL. */
-                }
-            }
             if (iter_o == NULL) JUMP_TO_ERROR();
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[-1] = iter;
@@ -1440,9 +1437,11 @@
 
         case _UNPACK_SEQUENCE: {
             _PyStackRef seq;
+            _PyStackRef *output;
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
-            _PyStackRef *top = stack_pointer + oparg - 1;
+            output = &stack_pointer[-1];
+            _PyStackRef *top = output + oparg;
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
             PyStackRef_CLOSE(seq);
             if (res == 0) JUMP_TO_ERROR();
@@ -1532,14 +1531,15 @@
 
         case _UNPACK_EX: {
             _PyStackRef seq;
+            _PyStackRef *right;
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
-            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _PyStackRef *top = stack_pointer + totalargs - 1;
+            right = &stack_pointer[(oparg & 0xFF)];
+            _PyStackRef *top = right + (oparg >> 8);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             PyStackRef_CLOSE(seq);
             if (res == 0) JUMP_TO_ERROR();
-            stack_pointer += (oparg >> 8) + (oparg & 0xFF);
+            stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1623,27 +1623,9 @@
         case _LOAD_NAME: {
             _PyStackRef v;
             oparg = CURRENT_OPARG();
-            PyObject *v_o;
-            PyObject *mod_or_class_dict = LOCALS();
-            if (mod_or_class_dict == NULL) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "no locals found");
-                if (true) JUMP_TO_ERROR();
-            }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v_o) < 0) JUMP_TO_ERROR();
-            if (v_o == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) JUMP_TO_ERROR();
-                if (v_o == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) JUMP_TO_ERROR();
-                    if (v_o == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        if (true) JUMP_TO_ERROR();
-                    }
-                }
-            }
+            PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
+            if (v_o == NULL) JUMP_TO_ERROR();
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
             stack_pointer += 1;
@@ -1656,38 +1638,8 @@
             _PyStackRef null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            PyObject *res_o;
-            if (PyDict_CheckExact(GLOBALS())
-                && PyDict_CheckExact(BUILTINS()))
-            {
-                res_o = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
-                    (PyDictObject *)BUILTINS(),
-                    name);
-                if (res_o == NULL) {
-                    if (!_PyErr_Occurred(tstate)) {
-                        /* _PyDict_LoadGlobal() returns NULL without raising
-                         * an exception if the key doesn't exist */
-                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                    }
-                    if (true) JUMP_TO_ERROR();
-                }
-            }
-            else {
-                /* Slow-path if globals or builtins is not a dict */
-                /* namespace 1: globals */
-                if (PyMapping_GetOptionalItem(GLOBALS(), name, &res_o) < 0) JUMP_TO_ERROR();
-                if (res_o == NULL) {
-                    /* namespace 2: builtins */
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &res_o) < 0) JUMP_TO_ERROR();
-                    if (res_o == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        if (true) JUMP_TO_ERROR();
-                    }
-                }
-            }
+            PyObject *res_o = _PyEval_LoadGlobal(GLOBALS(), BUILTINS(), name);
+            if (res_o == NULL) JUMP_TO_ERROR();
             null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -3173,6 +3125,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         JUMP_TO_ERROR();
                     }
+                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -3594,6 +3547,7 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
             if (PyStackRef_TYPE(callable) == &PyMethod_Type && PyStackRef_IsNull(self_or_null)) {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 PyObject *self = ((PyMethodObject *)callable_o)->im_self;
