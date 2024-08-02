@@ -3455,7 +3455,7 @@ count_repr(countobject *lz)
 }
 
 static PyObject *
-count_peek(countobject *lz)
+count_peek(countobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (lz->cnt != PY_SSIZE_T_MAX) {
         return PyLong_FromSsize_t(lz->cnt);

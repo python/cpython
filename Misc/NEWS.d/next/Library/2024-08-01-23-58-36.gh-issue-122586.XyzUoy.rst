@@ -1,1 +1,1 @@
-Added :meth:`peek` and :meth:`consume` methods to iterator object returned from :func:`itertools.count`.
+Added ``peek`` and ``consume`` methods to iterator object returned from :func:`itertools.count`.
