@@ -347,7 +347,7 @@ class Compat32(Policy):
 
     def _fold(self, name, value, sanitize):
         parts = []
-        parts.append('%s: ' % name)
+        parts.append('%s:' % name)
         if isinstance(value, str):
             if _has_surrogates(value):
                 if sanitize:
