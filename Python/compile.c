@@ -568,7 +568,7 @@ compiler_maybe_add_static_attribute_to_class(struct compiler *c, expr_ty e)
     assert(e->kind == Attribute_kind);
     expr_ty attr_value = e->v.Attribute.value;
     if (attr_value->kind != Name_kind ||
-        e->v.Attribute.ctx == Load ||
+        e->v.Attribute.ctx != Store ||
         !_PyUnicode_EqualToASCIIString(attr_value->v.Name.id, "self"))
     {
         return SUCCESS;
