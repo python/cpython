@@ -721,10 +721,6 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 }
 
 
-PyAPI_FUNC(PyObject *) _PyEval_GetANext(PyObject *aiter);
-PyAPI_FUNC(PyObject *) _PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name);
-PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
-
 /* _PyEval_EvalFrameDefault() is a *big* function,
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
