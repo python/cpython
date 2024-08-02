@@ -1978,6 +1978,24 @@ leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
 }
 
 static PyObject *
+swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
+                            Py_hash_t hash, PyObject *task)
+{
+    PyObject *prev_task;
+    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
+        return NULL;
+    }
+    if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
+        Py_XDECREF(prev_task);
+        return NULL;
+    }
+    if (prev_task == NULL) {
+        Py_RETURN_NONE;
+    }
+    return prev_task;
+}
+
+static PyObject *
 swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *prev_task;
@@ -1992,24 +2010,15 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         return prev_task;
     }
 
-    Py_hash_t hash;
-    hash = PyObject_Hash(loop);
+    Py_hash_t hash = PyObject_Hash(loop);
     if (hash == -1) {
         return NULL;
     }
-    prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
-    if (prev_task == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        prev_task = Py_None;
-    }
-    Py_INCREF(prev_task);
-    if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-        Py_DECREF(prev_task);
-        return NULL;
-    }
 
+    PyDictObject *current_tasks = (PyDictObject *)state->current_tasks;
+    Py_BEGIN_CRITICAL_SECTION(current_tasks);
+    prev_task = swap_current_task_lock_held(current_tasks, loop, hash, task);
+    Py_END_CRITICAL_SECTION();
     return prev_task;
 }
 
