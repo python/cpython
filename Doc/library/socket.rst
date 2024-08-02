@@ -708,7 +708,7 @@ Constants
           SHUT_WR
           SHUT_RDWR
 
-   These constants are used by the :meth:`shutdown` method of socket objects.
+   These constants are used by the :meth:`~socket.socket.shutdown` method of socket objects.
 
    .. availability:: not WASI.
 
