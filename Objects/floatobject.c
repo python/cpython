@@ -5,6 +5,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
@@ -1684,36 +1685,6 @@ typedef enum _py_float_format_type float_format_type;
 #define ieee_big_endian_format _py_float_format_ieee_big_endian
 #define ieee_little_endian_format _py_float_format_ieee_little_endian
 
-#ifdef __GNUC__
-__attribute__((always_inline))
-#endif
-static inline uint32_t
-byte_swap_uint32(uint32_t x) {
-    return (
-        ((x >> 24) & 0xff)
-        | ((x >> 8) & 0xff00)
-        | ((x & 0xff00) << 8)
-        | ((x & 0xff) << 24)
-    );
-}
-
-#ifdef __GNUC__
-__attribute__((always_inline))
-#endif
-static inline uint64_t
-byte_swap_uint64(uint64_t x) {
-    return (
-        ((x >> 56) & 0xff)
-        | ((x >> 40) & 0xff00)
-        | ((x >> 24) & 0xff0000)
-        | ((x >> 8) & 0xff000000)
-        | ((x & 0xff000000) << 8)
-        | ((x & 0xff0000) << 24)
-        | ((x & 0xff00) << 40)
-        | ((x & 0xff) << 56)
-    );
-}
-
 /* We attempt to determine if this machine is using IEEE
     floating point formats by peering at the bits of some
     carefully chosen values.  If it looks like we are on an
@@ -1736,7 +1707,8 @@ byte_swap_uint64(uint64_t x) {
 __attribute__((always_inline))
 #endif
 static inline float_format_type
-get_float_format(void) {
+get_float_format(void)
+{
     if (sizeof(float) == 4) {
         float y = 16711938.0;
         uint32_t z;
@@ -1745,8 +1717,8 @@ get_float_format(void) {
         {
             if (memcmp(&y, "\x4b\x7f\x01\x02", 4) == 0) {
                 return ieee_big_endian_format;
-            } else
-            if (memcmp(&y, "\x02\x01\x7f\x4b", 4) == 0) {
+            }
+            else if (memcmp(&y, "\x02\x01\x7f\x4b", 4) == 0) {
                 return ieee_little_endian_format;
             }
         }
@@ -1758,7 +1730,8 @@ get_float_format(void) {
 __attribute__((always_inline))
 #endif
 static inline float_format_type
-get_double_format(void) {
+get_double_format(void)
+{
     if (sizeof(float) == 4) {
         double y = 9006104071832581.0;
         uint64_t z;
@@ -1767,8 +1740,8 @@ get_double_format(void) {
         {
             if (memcmp(&y, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0) {
                 return ieee_big_endian_format;
-            } else
-            if (memcmp(&y, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0) {
+            }
+            else if (memcmp(&y, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0) {
                 return ieee_little_endian_format;
             }
         }
@@ -2131,15 +2104,17 @@ PyFloat_Pack4(double x, char *data, int le)
 {
     float_format_type format = get_float_format();
     if (format != unknown_format) {
-        float z = x;
-        if (isinf(z) && ! isinf(x))
+        float z = (float)x;
+        if (isinf(z) && ! isinf(x)) {
             goto Overflow;
+        }
         uint32_t *p = (uint32_t *)data;
         uint32_t s;
         memcpy(&s, &z, 4);
-        if ((format == ieee_big_endian_format && le)
-            || (format == ieee_little_endian_format && !le)) {
-            s = byte_swap_uint32(s);
+        if ((format == ieee_big_endian_format && le) ||
+            (format == ieee_little_endian_format && !le))
+        {
+            s = _Py_bswap32(s);
         }
         *p = s;
         return 0;
@@ -2162,9 +2137,9 @@ PyFloat_Pack4(double x, char *data, int le)
         sign = 1;
         x = -x;
     }
-    else
+    else {
         sign = 0;
-
+    }
     f = frexp(x, &e);
 
     /* Normalize f to be in the range [1.0, 2.0) */
@@ -2172,16 +2147,18 @@ PyFloat_Pack4(double x, char *data, int le)
         f *= 2.0;
         e--;
     }
-    else if (f == 0.0)
+    else if (f == 0.0) {
         e = 0;
+    }
     else {
         PyErr_SetString(PyExc_SystemError,
                         "frexp() result out of range");
         return -1;
     }
 
-    if (e >= 128)
+    if (e >= 128) {
         goto Overflow;
+    }
     else if (e < -126) {
         /* Gradual underflow */
         f = ldexp(f, 126 + e);
@@ -2235,9 +2212,10 @@ PyFloat_Pack8(double x, char *data, int le)
         uint64_t *p = (uint64_t *)data;
         uint64_t s;
         memcpy(&s, &x, 8);
-        if ((format == ieee_big_endian_format && le)
-            || (format == ieee_little_endian_format && !le)) {
-            s = byte_swap_uint64(s);
+        if ((format == ieee_big_endian_format && le) ||
+            (format == ieee_little_endian_format && !le))
+        {
+            s = _Py_bswap64(s);
         }
         *p = s;
         return 0;
@@ -2259,9 +2237,9 @@ PyFloat_Pack8(double x, char *data, int le)
         sign = 1;
         x = -x;
     }
-    else
+    else {
         sign = 0;
-
+    }
     f = frexp(x, &e);
 
     /* Normalize f to be in the range [1.0, 2.0) */
@@ -2269,16 +2247,18 @@ PyFloat_Pack8(double x, char *data, int le)
         f *= 2.0;
         e--;
     }
-    else if (f == 0.0)
+    else if (f == 0.0) {
         e = 0;
+    }
     else {
         PyErr_SetString(PyExc_SystemError,
                         "frexp() result out of range");
         return -1;
     }
 
-    if (e >= 1024)
+    if (e >= 1024) {
         goto Overflow;
+    }
     else if (e < -1022) {
         /* Gradual underflow */
         f = ldexp(f, 1022 + e);
@@ -2306,8 +2286,9 @@ PyFloat_Pack8(double x, char *data, int le)
             /* And it also propagated out of the next 28 bits. */
             fhi = 0;
             ++e;
-            if (e >= 2047)
+            if (e >= 2047) {
                 goto Overflow;
+            }
         }
     }
 
@@ -2411,12 +2392,13 @@ PyFloat_Unpack4(const char *data, int le)
     if (format != unknown_format) {
         float r;
         uint32_t s = *(uint32_t *)data;
-        if ((format == ieee_big_endian_format && le)
-            || (format == ieee_little_endian_format && !le)) {
-            s = byte_swap_uint32(s);
+        if ((format == ieee_big_endian_format && le) ||
+            (format == ieee_little_endian_format && !le))
+        {
+            s = _Py_bswap32(s);
         }
         memcpy(&r, &s, 4);
-        return r;
+        return (double)r;
     }
 
     unsigned char *p = (unsigned char *)data;
@@ -2459,16 +2441,18 @@ PyFloat_Unpack4(const char *data, int le)
     x = (double)f / 8388608.0;
 
     /* XXX This sadly ignores Inf/NaN issues */
-    if (e == 0)
+    if (e == 0) {
         e = -126;
+    }
     else {
         x += 1.0;
         e -= 127;
     }
     x = ldexp(x, e);
 
-    if (sign)
+    if (sign) {
         x = -x;
+    }
 
     return x;
 }
@@ -2480,9 +2464,10 @@ PyFloat_Unpack8(const char *data, int le)
     if (format != unknown_format) {
         double r;
         uint64_t s = *(uint64_t *)data;
-        if ((format == ieee_big_endian_format && le)
-            || (format == ieee_little_endian_format && !le)) {
-            s = byte_swap_uint64(s);
+        if ((format == ieee_big_endian_format && le) ||
+            (format == ieee_little_endian_format && !le))
+        {
+            s = _Py_bswap64(s);
         }
         memcpy(&r, &s, 8);
         return r;
@@ -2545,16 +2530,18 @@ PyFloat_Unpack8(const char *data, int le)
     x = (double)fhi + (double)flo / 16777216.0; /* 2**24 */
     x /= 268435456.0; /* 2**28 */
 
-    if (e == 0)
+    if (e == 0) {
         e = -1022;
+    }
     else {
         x += 1.0;
         e -= 1023;
     }
     x = ldexp(x, e);
 
-    if (sign)
+    if (sign) {
         x = -x;
+    }
 
     return x;
 }
