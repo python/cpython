@@ -231,7 +231,10 @@ class Generator:
                 if not folded.endswith(self.policy.linesep):
                     raise HeaderWriteError(
                         f'folded header does not end with {linesep!r}: {folded!r}')
-                if NEWLINE_WITHOUT_FWSP.search(folded.removesuffix(linesep)):
+                folded_no_linesep = folded
+                if folded.endswith(linesep):
+                    folded_no_linesep = folded[:-len(linesep)]
+                if NEWLINE_WITHOUT_FWSP.search(folded_no_linesep):
                     raise HeaderWriteError(
                         f'folded header contains newline: {folded!r}')
             self.write(folded)
