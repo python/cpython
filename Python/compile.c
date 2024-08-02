@@ -517,7 +517,6 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
     num_keys = PyList_GET_SIZE(sorted_keys);
 
     for (key_i = 0; key_i < num_keys; key_i++) {
-        long vi;
         k = PyList_GET_ITEM(sorted_keys, key_i);
         v = PyDict_GetItemWithError(src, k);
         if (!v) {
@@ -528,7 +527,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
             Py_DECREF(dest);
             return NULL;
         }
-        vi = PyLong_AsLong(v);
+        long vi = PyLong_AsLong(v);
         if (vi == -1 && PyErr_Occurred()) {
             Py_DECREF(sorted_keys);
             Py_DECREF(dest);
@@ -638,9 +637,7 @@ compiler_set_qualname(struct compiler *c)
 
             scope = _PyST_GetScope(parent->u_ste, mangled);
             Py_DECREF(mangled);
-            if (scope < 0) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(scope);
             assert(scope != GLOBAL_IMPLICIT);
             if (scope == GLOBAL_EXPLICIT)
                 force_global = 1;
@@ -4650,9 +4647,7 @@ is_import_originated(struct compiler *c, expr_ty e)
     }
 
     long flags = _PyST_GetSymbol(SYMTABLE(c)->st_top, e->v.Name.id);
-    if (flags < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(flags);
     return flags & DEF_IMPORT;
 }
 
@@ -4672,16 +4667,12 @@ can_optimize_super_call(struct compiler *c, expr_ty attr)
     PyObject *super_name = e->v.Call.func->v.Name.id;
     // detect statically-visible shadowing of 'super' name
     int scope = _PyST_GetScope(SYMTABLE_ENTRY(c), super_name);
-    if (scope < 0) {
-        return -1;
-    }
+    RETURN_IF_ERROR(scope);
     if (scope != GLOBAL_IMPLICIT) {
         return 0;
     }
     scope = _PyST_GetScope(SYMTABLE(c)->st_top, super_name);
-    if (scope < 0) {
-        return -1;
-    }
+    RETURN_IF_ERROR(scope);
     if (scope != 0) {
         return 0;
     }
@@ -4789,9 +4780,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 
     /* Check that the base object is not something that is imported */
     int ret = is_import_originated(c, meth->v.Attribute.value);
-    if (ret < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(ret);
     if (ret) {
         return 0;
     }
@@ -4821,9 +4810,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     location loc = LOC(meth);
 
     ret = can_optimize_super_call(c, meth);
-    if (ret < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(ret);
     if (ret) {
         RETURN_IF_ERROR(load_args_for_super(c, meth->v.Attribute.value));
         int opcode = asdl_seq_LEN(meth->v.Attribute.value->v.Call.args) ?
@@ -6100,9 +6087,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     case Attribute_kind:
         if (e->v.Attribute.ctx == Load) {
             int ret = can_optimize_super_call(c, e);
-            if (ret < 0) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(ret);
             if (ret) {
                 RETURN_IF_ERROR(load_args_for_super(c, e->v.Attribute.value));
                 int opcode = asdl_seq_LEN(e->v.Attribute.value->v.Call.args) ?
