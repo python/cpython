@@ -196,7 +196,9 @@ The module defines the following items:
    .. versionchanged:: 3.11
       Speed is improved by compressing all data at once instead of in a
       streamed fashion. Calls with *mtime* set to ``0`` are delegated to
-      :func:`zlib.compress` for better speed.
+      :func:`zlib.compress` for better speed. In this situation the
+      output may contain a gzip header "OS" byte value other than 255
+      "unknown" as supplied by the underlying zlib implementation.
 
    .. versionchanged:: 3.13
       The gzip header OS byte is guaranteed to be set to 255 when this function

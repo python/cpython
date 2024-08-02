@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import lexer
 import parser
 import re
@@ -27,6 +27,7 @@ class Properties:
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
+    needs_prev: bool = False
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -53,6 +54,7 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
+            needs_prev=any(p.needs_prev for p in properties),
         )
 
     @property
@@ -78,7 +80,7 @@ SKIP_PROPERTIES = Properties(
     uses_locals=False,
     has_free=False,
     side_exit=False,
-    pure=False,
+    pure=True,
 )
 
 
@@ -96,6 +98,20 @@ class Skip:
         return SKIP_PROPERTIES
 
 
+class Flush:
+
+    @property
+    def properties(self) -> Properties:
+        return SKIP_PROPERTIES
+
+    @property
+    def name(self) -> str:
+        return "flush"
+
+    @property
+    def size(self) -> int:
+        return 0
+
 @dataclass
 class StackItem:
     name: str
@@ -103,16 +119,19 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
+    used: bool = False
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
-        size = f"[{self.size}]" if self.size != "1" else ""
+        size = f"[{self.size}]" if self.size else ""
         type = "" if self.type is None else f"{self.type} "
         return f"{type}{self.name}{size}{cond} {self.peek}"
 
     def is_array(self) -> bool:
-        return self.type == "PyObject **"
+        return self.size != ""
 
+    def get_size(self) -> str:
+        return self.size if self.size else "1"
 
 @dataclass
 class StackEffect:
@@ -130,7 +149,6 @@ class CacheEntry:
 
     def __str__(self) -> str:
         return f"{self.name}/{self.size}"
-
 
 @dataclass
 class Uop:
@@ -193,11 +211,12 @@ class Uop:
         return False
 
 
-Part = Uop | Skip
+Part = Uop | Skip | Flush
 
 
 @dataclass
 class Instruction:
+    where: lexer.Token
     name: str
     parts: list[Part]
     _properties: Properties | None
@@ -293,7 +312,7 @@ def convert_stack_item(item: parser.StackEffect, replace_op_arg_1: str | None) -
     if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
         cond = replace_op_arg_1
     return StackItem(
-        item.name, item.type, cond, (item.size or "1")
+        item.name, item.type, cond, item.size
     )
 
 def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None) -> StackEffect:
@@ -301,9 +320,23 @@ def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | No
         convert_stack_item(i, replace_op_arg_1) for i in op.inputs if isinstance(i, parser.StackEffect)
     ]
     outputs: list[StackItem] = [convert_stack_item(i, replace_op_arg_1) for i in op.outputs]
+    # Mark variables with matching names at the base of the stack as "peek"
+    modified = False
     for input, output in zip(inputs, outputs):
-        if input.name == output.name:
+        if input.name == output.name and not modified:
             input.peek = output.peek = True
+        else:
+            modified = True
+    if isinstance(op, parser.InstDef):
+        output_names = [out.name for out in outputs]
+        for input in inputs:
+            if (variable_used(op, input.name) or
+                variable_used(op, "DECREF_INPUTS") or
+                (not input.peek and input.name in output_names)):
+                input.used = True
+        for output in outputs:
+            if variable_used(op, output.name):
+                output.used = True
     return StackEffect(inputs, outputs)
 
 
@@ -322,7 +355,13 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens
+    )
+
+def oparg_used(node: parser.InstDef) -> bool:
+    """Determine whether `oparg` is used in a node."""
+    return any(
+        token.kind == "IDENTIFIER" and token.text == "oparg" for token in node.tokens
     )
 
 def tier_variable(node: parser.InstDef) -> int | None:
@@ -353,6 +392,21 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 
 
 NON_ESCAPING_FUNCTIONS = (
+    "PyStackRef_FromPyObjectSteal",
+    "PyStackRef_AsPyObjectBorrow",
+    "PyStackRef_AsPyObjectSteal",
+    "PyStackRef_CLOSE",
+    "PyStackRef_DUP",
+    "PyStackRef_CLEAR",
+    "PyStackRef_IsNull",
+    "PyStackRef_TYPE",
+    "PyStackRef_False",
+    "PyStackRef_True",
+    "PyStackRef_None",
+    "PyStackRef_Is",
+    "PyStackRef_FromPyObjectNew",
+    "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectImmortal",
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GetManagedDict",
@@ -399,8 +453,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_SetStackPointer",
     "_PyType_HasFeature",
     "PyUnicode_Concat",
-    "_PyList_FromArraySteal",
-    "_PyTuple_FromArraySteal",
     "PySlice_New",
     "_Py_LeaveRecursiveCallPy",
     "CALL_STAT_INC",
@@ -413,6 +465,12 @@ NON_ESCAPING_FUNCTIONS = (
     "PyFloat_AS_DOUBLE",
     "_PyFrame_PushUnchecked",
     "Py_FatalError",
+    "STACKREFS_TO_PYOBJECTS",
+    "STACKREFS_TO_PYOBJECTS_CLEANUP",
+    "CONVERSION_FAILED",
+    "_PyList_FromArraySteal",
+    "_PyTuple_FromArraySteal",
+    "_PyTuple_FromStackRefSteal",
 )
 
 ESCAPING_FUNCTIONS = (
@@ -549,7 +607,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         error_without_pop=error_without_pop,
         deopts=deopts_if,
         side_exit=exits_if,
-        oparg=variable_used(op, "oparg"),
+        oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
         ends_with_eval_breaker=eval_breaker_at_end(op),
@@ -563,6 +621,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         tier=tier_variable(op),
+        needs_prev=variable_used(op, "prev_instr"),
     )
 
 
@@ -632,9 +691,10 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
 
 
 def add_instruction(
-    name: str, parts: list[Part], instructions: dict[str, Instruction]
+    where: lexer.Token, name: str, parts: list[Part],
+    instructions: dict[str, Instruction]
 ) -> None:
-    instructions[name] = Instruction(name, parts, None)
+    instructions[name] = Instruction(where, name, parts, None)
 
 
 def desugar_inst(
@@ -662,25 +722,28 @@ def desugar_inst(
         parts.append(uop)
     else:
         parts[uop_index] = uop
-    add_instruction(name, parts, instructions)
+    add_instruction(inst.first_token, name, parts, instructions)
 
 
 def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
-    parts: list[Uop | Skip] = []
+    parts: list[Part] = []
     for part in macro.uops:
         match part:
             case parser.OpName():
-                if part.name not in uops:
-                    analysis_error(f"No Uop named {part.name}", macro.tokens[0])
-                parts.append(uops[part.name])
+                if part.name == "flush":
+                    parts.append(Flush())
+                else:
+                    if part.name not in uops:
+                        raise analysis_error(f"No Uop named {part.name}", macro.tokens[0])
+                    parts.append(uops[part.name])
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:
                 assert False
     assert parts
-    add_instruction(macro.name, parts, instructions)
+    add_instruction(macro.first_token, macro.name, parts, instructions)
 
 
 def add_family(
@@ -738,12 +801,6 @@ def assign_opcodes(
     instmap["INSTRUMENTED_LINE"] = 254
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
-
-    # Special case: this instruction is implemented in ceval.c
-    # rather than bytecodes.c, so we need to add it explicitly
-    # here (at least until we add something to bytecodes.c to
-    # declare external instructions).
-    instrumented.append("INSTRUMENTED_LINE")
 
     specialized: set[str] = set()
     no_arg: list[str] = []

@@ -11,7 +11,7 @@ import threading
 import re
 import socket
 
-from test.support import verbose, run_with_tz, run_with_locale, cpython_only, requires_resource
+from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper
 from test.support import threading_helper
 import unittest

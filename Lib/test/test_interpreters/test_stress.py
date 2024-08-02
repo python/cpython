@@ -22,7 +22,6 @@ class StressTests(TestBase):
             interp = interpreters.create()
             alive.append(interp)
 
-    @unittest.skip('(temporary) gh-120524: there is a race that needs fixing')
     @support.requires_resource('cpu')
     def test_create_many_threaded(self):
         alive = []

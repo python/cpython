@@ -1502,7 +1502,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 #else
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    if (ioctl_works != 0 && raise != 0) {
+    if (raise != 0 && _Py_atomic_load_int_relaxed(&ioctl_works) != 0) {
         /* fast-path: ioctl() only requires one syscall */
         /* caveat: raise=0 is an indicator that we must be async-signal-safe
          * thus avoid using ioctl() so we skip the fast-path. */
@@ -1512,7 +1512,9 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             request = FIOCLEX;
         err = ioctl(fd, request, NULL);
         if (!err) {
-            ioctl_works = 1;
+            if (_Py_atomic_load_int_relaxed(&ioctl_works) == -1) {
+                _Py_atomic_store_int_relaxed(&ioctl_works, 1);
+            }
             return 0;
         }
 
@@ -1539,7 +1541,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
                with EACCES. While FIOCLEX is safe operation it may be
                unavailable because ioctl was denied altogether.
                This can be the case on Android. */
-            ioctl_works = 0;
+            _Py_atomic_store_int_relaxed(&ioctl_works, 0);
         }
         /* fallback to fcntl() if ioctl() does not work */
     }
