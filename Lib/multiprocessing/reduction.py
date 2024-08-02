@@ -139,15 +139,12 @@ else:
     __all__ += ['DupFd', 'sendfds', 'recvfds']
     import array
 
-    # On MacOSX we should acknowledge receipt of fds -- see Issue14669
-    ACKNOWLEDGE = sys.platform == 'darwin'
-
     def sendfds(sock, fds):
         '''Send an array of fds over an AF_UNIX socket.'''
         fds = array.array('i', fds)
         msg = bytes([len(fds) % 256])
         sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, fds)])
-        if ACKNOWLEDGE and sock.recv(1) != b'A':
+        if sock.recv(1) != b'A':
             raise RuntimeError('did not receive acknowledgement of fd')
 
     def recvfds(sock, size):
@@ -158,8 +155,7 @@ else:
         if not msg and not ancdata:
             raise EOFError
         try:
-            if ACKNOWLEDGE:
-                sock.send(b'A')
+            sock.send(b'A')  # Acknowledge
             if len(ancdata) != 1:
                 raise RuntimeError('received %d items of ancdata' %
                                    len(ancdata))
