@@ -342,7 +342,7 @@ loops that truncate the stream.
    for i in count())``.
 
    ``peek`` method of returned iterator object retrieves the current value of
-   a counter (that is to be returned from the next :meth:`__next__` call).
+   a counter (that is to be returned from the next ``__next__`` call).
    Also, ``consume`` method accepts *iterable* and increments the counter while
    consuming the input.
 
