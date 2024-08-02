@@ -565,10 +565,7 @@ The following functions and structs are used to create
    .. code-block:: c
 
       static PyType_Slot foo_slots[] = {
-         ...
          {Py_tp_token, Py_TP_USE_SPEC},
-         ...
-      };
 
    It can also be set to an arbitrary pointer, but you must ensure that:
 
