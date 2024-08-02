@@ -3459,8 +3459,7 @@ count_peek(countobject *lz, PyObject *Py_UNUSED(ignored))
 {
     PyObject *long_cnt = lz->long_cnt;
     if (long_cnt != NULL) {
-        Py_INCREF(long_cnt);
-        return long_cnt;
+        return Py_NewRef(long_cnt);
     }
     else {
         return PyLong_FromSsize_t(lz->cnt);
