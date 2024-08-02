@@ -2674,6 +2674,66 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(vararg_with_multiple_pos__doc__,
+"vararg_with_multiple_pos($module, /, a, b, *args)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_MULTIPLE_POS_METHODDEF    \
+    {"vararg_with_multiple_pos", _PyCFunction_CAST(vararg_with_multiple_pos), METH_FASTCALL|METH_KEYWORDS, vararg_with_multiple_pos__doc__},
+
+static PyObject *
+vararg_with_multiple_pos_impl(PyObject *module, PyObject *a, PyObject *b,
+                              PyObject *args);
+
+static PyObject *
+vararg_with_multiple_pos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg_with_multiple_pos",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject *a;
+    PyObject *b;
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 2, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    __clinic_args = args[2];
+    return_value = vararg_with_multiple_pos_impl(module, a, b, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(vararg_with_default__doc__,
 "vararg_with_default($module, /, a, *args, b=False)\n"
 "--\n"
@@ -2742,21 +2802,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(vararg_with_multiple_defaults__doc__,
-"vararg_with_multiple_defaults($module, /, a, *args, kw1=False,\n"
-"                              kw2=False)\n"
+PyDoc_STRVAR(vararg_with_more_defaults__doc__,
+"vararg_with_more_defaults($module, /, a, *args, kw1=False, kw2=False)\n"
 "--\n"
 "\n");
 
-#define VARARG_WITH_MULTIPLE_DEFAULTS_METHODDEF    \
-    {"vararg_with_multiple_defaults", _PyCFunction_CAST(vararg_with_multiple_defaults), METH_FASTCALL|METH_KEYWORDS, vararg_with_multiple_defaults__doc__},
+#define VARARG_WITH_MORE_DEFAULTS_METHODDEF    \
+    {"vararg_with_more_defaults", _PyCFunction_CAST(vararg_with_more_defaults), METH_FASTCALL|METH_KEYWORDS, vararg_with_more_defaults__doc__},
 
 static PyObject *
-vararg_with_multiple_defaults_impl(PyObject *module, PyObject *a,
-                                   PyObject *args, int kw1, int kw2);
+vararg_with_more_defaults_impl(PyObject *module, PyObject *a, PyObject *args,
+                               int kw1, int kw2);
 
 static PyObject *
-vararg_with_multiple_defaults(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+vararg_with_more_defaults(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2780,7 +2839,7 @@ vararg_with_multiple_defaults(PyObject *module, PyObject *const *args, Py_ssize_
     static const char * const _keywords[] = {"a", "kw1", "kw2", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "vararg_with_multiple_defaults",
+        .fname = "vararg_with_more_defaults",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -2814,7 +2873,89 @@ vararg_with_multiple_defaults(PyObject *module, PyObject *const *args, Py_ssize_
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = vararg_with_multiple_defaults_impl(module, a, __clinic_args, kw1, kw2);
+    return_value = vararg_with_more_defaults_impl(module, a, __clinic_args, kw1, kw2);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(vararg_with_more_defaults_and_pos__doc__,
+"vararg_with_more_defaults_and_pos($module, /, a, b, *args, kw1=False,\n"
+"                                  kw2=False)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_MORE_DEFAULTS_AND_POS_METHODDEF    \
+    {"vararg_with_more_defaults_and_pos", _PyCFunction_CAST(vararg_with_more_defaults_and_pos), METH_FASTCALL|METH_KEYWORDS, vararg_with_more_defaults_and_pos__doc__},
+
+static PyObject *
+vararg_with_more_defaults_and_pos_impl(PyObject *module, PyObject *a,
+                                       PyObject *b, PyObject *args, int kw1,
+                                       int kw2);
+
+static PyObject *
+vararg_with_more_defaults_and_pos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(kw1), &_Py_ID(kw2), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "kw1", "kw2", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg_with_more_defaults_and_pos",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = Py_MIN(nargs, 2) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *a;
+    PyObject *b;
+    PyObject *__clinic_args = NULL;
+    int kw1 = 0;
+    int kw2 = 0;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 2, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    __clinic_args = args[2];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[3]) {
+        kw1 = PyObject_IsTrue(args[3]);
+        if (kw1 < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    kw2 = PyObject_IsTrue(args[4]);
+    if (kw2 < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = vararg_with_more_defaults_and_pos_impl(module, a, b, __clinic_args, kw1, kw2);
 
 exit:
     Py_XDECREF(__clinic_args);
@@ -3497,4 +3638,4 @@ _testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dd2556e39e89b5f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbc17fb342e02e52 input=a9049054013a1b77]*/

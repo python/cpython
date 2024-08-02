@@ -2,6 +2,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
+from itertools import combinations, permutations
 from functools import partial
 from test import support, test_tools
 from test.support import os_helper
@@ -2913,6 +2914,23 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
         self.check_depr(regex, fn, *args, **kwds)
 
+    def check_unordered_calls(
+        self,
+        c_actual_func, py_expect_func,
+        base_args, more_args,
+        base_kwargs, more_kwargs
+    ):
+        for r in range(len(more_kwargs) + 1):
+            for morekwds in map(dict, combinations(more_kwargs.items(), r=r)):
+                for kwargs in permutations((base_kwargs | morekwds).items()):
+                    kwargs = dict(kwargs)
+                    for s in range(1 + len(more_args)):
+                        args = tuple(base_args) + more_args[:s]
+                        with self.subTest(args=args, kwargs=kwargs):
+                            actual = c_actual_func(*args, **kwargs)
+                            expect = py_expect_func(*args, **kwargs)
+                            self.assertEqual(actual, expect)
+
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.objects_converter()
@@ -3333,6 +3351,18 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.vararg(1, b=2)
         self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
 
+    def test_vararg_with_multiple_pos(self):
+        # vararg_with_multiple_pos(a, b, *args)
+        func = ac_tester.vararg_with_multiple_pos
+        with self.assertRaises(TypeError):
+            func()
+
+        self.assertTupleEqual(func(1, 2), (1, 2, ()))
+        self.assertTupleEqual(func(1, b=2), (1, 2, ()))
+        self.assertTupleEqual(func(a=1, b=2), (1, 2, ()))
+        self.assertTupleEqual(func(1, 2, 'c'), (1, 2, ('c',)))
+        self.assertTupleEqual(func(1, 2, 'c', 'd'), (1, 2, ('c', 'd')))
+
     def test_vararg_with_default(self):
         with self.assertRaises(TypeError):
             ac_tester.vararg_with_default()
@@ -3342,15 +3372,85 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.vararg_with_default(a=1, b=False), (1, (), False))
         self.assertEqual(ac_tester.vararg_with_default(b=False, a=1), (1, (), False))
 
-    def test_vararg_with_multiple_defaults(self):
-        func = ac_tester.vararg_with_multiple_defaults
+    def test_vararg_with_more_defaults(self):
+        # vararg_with_more_defaults(a, *args, kw1=False, kw2=False)
         with self.assertRaises(TypeError):
-            func()
-        self.assertEqual(func(1, kw1=True), (1, (), True, False))
-        self.assertEqual(func(1, 2, 3, 4), (1, (2, 3, 4), False, False))
-        self.assertEqual(func(1, 2, 3, 4, kw1=True), (1, (2, 3, 4), True, False))
-        self.assertEqual(func(a=1, kw1=True), (1, (), True, False))
-        self.assertEqual(func(kw1=True, a=1), (1, (), True, False))
+            ac_tester.vararg_with_more_defaults()
+
+        check = self.assertTupleEqual
+        fn = ac_tester.vararg_with_more_defaults
+
+        check(fn(1), (1, (), False, False))
+
+        check(fn(1, 'x'), (1, ('x',), False, False))
+        check(fn(1, 'x', kw1=True), (1, ('x',), True, False))
+        check(fn(1, 'x', kw2=True), (1, ('x',), False, True))
+        check(fn(1, 'x', kw1=True, kw2=True), (1, ('x',), True, True))
+        check(fn(1, 'x', kw2=True, kw1=True), (1, ('x',), True, True))
+
+        check(fn(1, 'x', 'y'), (1, ('x', 'y'), False, False))
+        check(fn(1, 'x', 'y', kw1=True), (1, ('x', 'y'), True, False))
+        check(fn(1, 'x', 'y', kw2=True), (1, ('x', 'y'), False, True))
+        check(fn(1, 'x', 'y', kw1=True, kw2=True), (1, ('x', 'y'), True, True))
+        check(fn(1, 'x', 'y', kw2=True, kw1=True), (1, ('x', 'y'), True, True))
+
+        check(fn(1, kw1=True), (1, (), True, False))
+        check(fn(1, kw2=True), (1, (), False, True))
+        check(fn(1, kw1=True, kw2=True), (1, (), True, True))
+        check(fn(1, kw2=True, kw1=True), (1, (), True, True))
+
+        check(fn(a=1), (1, (), False, False))
+        check(fn(a=1, kw1=True), (1, (), True, False))
+        check(fn(kw1=True, a=1), (1, (), True, False))
+        check(fn(a=1, kw2=True), (1, (), False, True))
+        check(fn(kw2=True, a=1), (1, (), False, True))
+
+        for kwds in permutations(dict(a=1, kw1=True, kw2=True).items()):
+            check(fn(**dict(kwds)), (1, (), True, True))
+
+    def test_vararg_with_more_defaults_and_pos(self):
+        # vararg_with_more_defaults_and_pos(a, b, *args, kw1=False, kw2=False)
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_with_more_defaults_and_pos()
+
+        check = self.assertTupleEqual
+        fn = ac_tester.vararg_with_more_defaults_and_pos
+
+        check(fn(1, 2), (1, 2, (), False, False))
+
+        check(fn(1, 2, kw1=True), (1, 2, (), True, False))
+        check(fn(1, 2, kw2=True), (1, 2, (), False, True))
+        check(fn(1, 2, kw1=True, kw2=True), (1, 2, (), True, True))
+        check(fn(1, 2, kw2=True, kw1=True), (1, 2, (), True, True))
+
+        check(fn(1, b=1), (1, 1, (), False, False))
+        check(fn(1, b=1, kw1=True), (1, 1, (), True, False))
+        check(fn(1, kw1=True, b=1), (1, 1, (), True, False))
+        check(fn(1, b=1, kw2=True), (1, 1, (), False, True))
+        check(fn(1, kw2=True, b=1), (1, 1, (), False, True))
+
+        check(fn(1, 2, 'x'), (1, 2, ('x',), False, False))
+        check(fn(1, 2, 'x', 'y'), (1, 2, ('x', 'y'), False, False))
+        check(fn(1, 2, 'x', kw1=True), (1, 2, ('x',), True, False))
+        check(fn(1, 2, 'x', 'y', kw1=True), (1, 2, ('x', 'y'), True, False))
+        check(fn(1, 2, 'x', kw2=True), (1, 2, ('x',), False, True))
+        check(fn(1, 2, 'x', 'y', kw2=True), (1, 2, ('x', 'y'), False, True))
+        check(fn(1, 2, 'x', kw1=True, kw2=True), (1, 2, ('x',), True, True))
+        check(fn(1, 2, 'x', 'y', kw1=True, kw2=True), (1, 2, ('x', 'y'), True, True))
+        check(fn(1, 2, 'x', kw2=True, kw1=True), (1, 2, ('x',), True, True))
+        check(fn(1, 2, 'x', 'y', kw2=True, kw1=True), (1, 2, ('x', 'y'), True, True))
+
+        check(fn(a=1, b=2), (1, 2, (), False, False))
+        check(fn(b=2, a=1), (1, 2, (), False, False))
+
+        for kwds in permutations(dict(a=1, b=2, kw1=True).items()):
+            check(fn(**dict(kwds)), (1, 2, (), True, False))
+        for kwds in permutations(dict(a=1, b=2, kw2=True).items()):
+            check(fn(**dict(kwds)), (1, 2, (), False, True))
+        for kwds in permutations(dict(b=2, kw1=True, kw2=True).items()):
+            check(fn(1, **dict(kwds)), (1, 2, (), True, True))
+        for kwds in permutations(dict(a=1, b=2, kw1=True, kw2=True).items()):
+            check(fn(**dict(kwds)), (1, 2, (), True, True))
 
     def test_vararg_with_only_defaults(self):
         self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))

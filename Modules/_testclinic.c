@@ -1015,6 +1015,24 @@ vararg_impl(PyObject *module, PyObject *a, PyObject *args)
 
 
 /*[clinic input]
+vararg_with_multiple_pos
+
+    a: object
+    b: object
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_multiple_pos_impl(PyObject *module, PyObject *a, PyObject *b,
+                              PyObject *args)
+/*[clinic end generated code: output=7fe8cbc4165d8592 input=49b49a877d24f459]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
 vararg_with_default
 
     a: object
@@ -1034,7 +1052,7 @@ vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
 
 
 /*[clinic input]
-vararg_with_multiple_defaults
+vararg_with_more_defaults
 
     a: object
     *args: object
@@ -1044,15 +1062,37 @@ vararg_with_multiple_defaults
 [clinic start generated code]*/
 
 static PyObject *
-vararg_with_multiple_defaults_impl(PyObject *module, PyObject *a,
-                                   PyObject *args, int kw1, int kw2)
-/*[clinic end generated code: output=ae7ee8d22dfc7fbf input=534d91e23e6d360b]*/
+vararg_with_more_defaults_impl(PyObject *module, PyObject *a, PyObject *args,
+                               int kw1, int kw2)
+/*[clinic end generated code: output=efb60dafc084a301 input=d84a0e8641b30838]*/
 {
     PyObject *obj_kw1 = kw1 ? Py_True : Py_False;
     PyObject *obj_kw2 = kw2 ? Py_True : Py_False;
     return pack_arguments_newref(4, a, args, obj_kw1, obj_kw2);
 }
 
+/*[clinic input]
+vararg_with_more_defaults_and_pos
+
+    a: object
+    b: object
+    *args: object
+    kw1: bool = False
+    kw2: bool = False
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_more_defaults_and_pos_impl(PyObject *module, PyObject *a,
+                                       PyObject *b, PyObject *args, int kw1,
+                                       int kw2)
+/*[clinic end generated code: output=9828348aee06bd21 input=447044ec4b59bb45]*/
+
+{
+    PyObject *obj_kw1 = kw1 ? Py_True : Py_False;
+    PyObject *obj_kw2 = kw2 ? Py_True : Py_False;
+    return pack_arguments_newref(5, a, b, args, obj_kw1, obj_kw2);
+}
 
 /*[clinic input]
 vararg_with_only_defaults
@@ -1927,8 +1967,10 @@ static PyMethodDef tester_methods[] = {
     POSONLY_VARARG_METHODDEF
     VARARG_AND_POSONLY_METHODDEF
     VARARG_METHODDEF
+    VARARG_WITH_MULTIPLE_POS_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
-    VARARG_WITH_MULTIPLE_DEFAULTS_METHODDEF
+    VARARG_WITH_MORE_DEFAULTS_METHODDEF
+    VARARG_WITH_MORE_DEFAULTS_AND_POS_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
