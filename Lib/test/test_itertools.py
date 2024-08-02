@@ -526,6 +526,12 @@ class TestBasicOps(unittest.TestCase):
         #check proper internal error handling for large "step' sizes
         count(1, maxsize+5); sys.exc_info()
 
+        # peek and consume
+        counter = count(0)
+        self.assertEqual(counter.peek(), 0)
+        counter.consume([1, 2, 3])
+        self.assertEqual(counter.peek(), 3)
+
     def test_count_with_step(self):
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
         self.assertEqual(lzip('abc',count(start=2,step=3)),
