@@ -247,7 +247,7 @@ Improved Error Messages
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
 * Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
-  with a tuple of names of attributes of this class which are accessed
+  with a tuple of names of attributes of this class which are assigned
   through ``self.X`` from any function in its body. (Contributed by Irit Katriel
   in :gh:`115775`.)
 
