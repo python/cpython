@@ -2126,25 +2126,22 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
         if (_PyErr_Occurred(tstate)) {
             /* The error can be a `TypeError` (for object that implements
                `__getitem__` but doesn't implement `__len__`).
-               For a `BaseException`, we ignore the context entirely and return
-               the raised BaseException.
                For any other kind of `Exception`, we raise `ValueError` while
                setting the raised exception as context.
+               For a `BaseException`, we don't modify it at all, and let it
+               propagate.
             */
-            if (!_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-                // Keep the BaseException as-is.
+            if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
+                _PyErr_Format(tstate, PyExc_ValueError,
+                              "too many values to unpack (expected %d)",
+                              argcnt);
             }
-            else if (!_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
+            else if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
                 PyObject *exc = _PyErr_GetRaisedException(tstate);
                 _PyErr_Format(tstate, PyExc_ValueError,
                               "too many values to unpack (expected %d)",
                               argcnt);
                 _PyErr_ChainExceptions1(exc);
-            }
-            else {
-                _PyErr_Format(tstate, PyExc_ValueError,
-                              "too many values to unpack (expected %d)",
-                              argcnt);
             }
         }
         else if (ll <= argcnt) {
