@@ -413,7 +413,6 @@ class Fraction(numbers.Rational):
 
     @property
     def numerator(a):
-        """The numerator of a rational number in lowest terms."""
         return a._numerator
 
     @property
