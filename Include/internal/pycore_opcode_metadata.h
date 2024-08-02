@@ -214,7 +214,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case IMPORT_NAME:
             return 2;
         case INSTRUMENTED_CALL:
-            return 0;
+            return 2 + oparg;
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 0;
         case INSTRUMENTED_CALL_KW:
@@ -230,6 +230,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case INSTRUMENTED_JUMP_BACKWARD:
             return 0;
         case INSTRUMENTED_JUMP_FORWARD:
+            return 0;
+        case INSTRUMENTED_LINE:
             return 0;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
             return 3;
@@ -503,7 +505,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case BINARY_SUBSCR_DICT:
             return 1;
         case BINARY_SUBSCR_GETITEM:
-            return 1;
+            return 0;
         case BINARY_SUBSCR_LIST_INT:
             return 1;
         case BINARY_SUBSCR_STR_INT:
@@ -659,7 +661,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case IMPORT_NAME:
             return 1;
         case INSTRUMENTED_CALL:
-            return 0;
+            return 1;
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 0;
         case INSTRUMENTED_CALL_KW:
@@ -676,6 +678,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case INSTRUMENTED_JUMP_FORWARD:
             return 0;
+        case INSTRUMENTED_LINE:
+            return 0;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
             return 1 + (oparg & 1);
         case INSTRUMENTED_POP_JUMP_IF_FALSE:
@@ -689,9 +693,9 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case INSTRUMENTED_RESUME:
             return 0;
         case INSTRUMENTED_RETURN_CONST:
-            return 0;
+            return 1;
         case INSTRUMENTED_RETURN_VALUE:
-            return 0;
+            return 1;
         case INSTRUMENTED_YIELD_VALUE:
             return 1;
         case INTERPRETER_EXIT:
@@ -899,7 +903,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case UNARY_NOT:
             return 1;
         case UNPACK_EX:
-            return 1 + (oparg >> 8) + (oparg & 0xFF);
+            return 1 + (oparg & 0xFF) + (oparg >> 8);
         case UNPACK_SEQUENCE:
             return oparg;
         case UNPACK_SEQUENCE_LIST:
@@ -1074,7 +1078,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_FROM] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [INSTRUMENTED_CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [INSTRUMENTED_CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_CALL_FUNCTION_EX] = { true, INSTR_FMT_IX, 0 },
     [INSTRUMENTED_CALL_KW] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
@@ -1083,6 +1087,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [INSTRUMENTED_INSTRUCTION] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [INSTRUMENTED_LINE] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
     [INSTRUMENTED_LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [INSTRUMENTED_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [INSTRUMENTED_POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
@@ -1226,6 +1231,7 @@ _PyOpcode_macro_expansion[256] = {
     [BINARY_SLICE] = { .nuops = 1, .uops = { { _BINARY_SLICE, 0, 0 } } },
     [BINARY_SUBSCR] = { .nuops = 1, .uops = { { _BINARY_SUBSCR, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_DICT, 0, 0 } } },
+    [BINARY_SUBSCR_GETITEM] = { .nuops = 4, .uops = { { _CHECK_PEP_523, 0, 0 }, { _BINARY_SUBSCR_CHECK_FUNC, 0, 0 }, { _BINARY_SUBSCR_INIT_CALL, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_LIST_INT, 0, 0 } } },
     [BINARY_SUBSCR_STR_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_STR_INT, 0, 0 } } },
     [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
