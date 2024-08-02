@@ -88,11 +88,11 @@ class TestAndroidOutput(unittest.TestCase):
                 tag = f"python.{stream_name}"
                 self.assertEqual(f"<TextLogStream '{tag}'>", repr(stream))
 
-                self.assertTrue(stream.writable())
-                self.assertFalse(stream.readable())
+                self.assertIs(stream.writable(), True)
+                self.assertIs(stream.readable(), False)
                 self.assertEqual("UTF-8", stream.encoding)
-                self.assertTrue(stream.line_buffering)
-                self.assertFalse(stream.write_through)
+                self.assertIs(stream.line_buffering, True)
+                self.assertIs(stream.write_through, False)
 
                 # stderr is backslashreplace by default; stdout is configured
                 # that way by libregrtest.main.
@@ -150,7 +150,7 @@ class TestAndroidOutput(unittest.TestCase):
                 # Since this is a line-based logging system, line buffering
                 # cannot be turned off, i.e. a newline always causes a flush.
                 stream.reconfigure(line_buffering=False)
-                self.assertTrue(stream.line_buffering)
+                self.assertIs(stream.line_buffering, True)
 
                 # However, buffering can be turned off completely if you want a
                 # flush after every write.
@@ -238,8 +238,8 @@ class TestAndroidOutput(unittest.TestCase):
                 stream = getattr(sys, stream_name).buffer
                 tag = f"python.{stream_name}"
                 self.assertEqual(f"<BinaryLogStream '{tag}'>", repr(stream))
-                self.assertTrue(stream.writable())
-                self.assertFalse(stream.readable())
+                self.assertIs(stream.writable(), True)
+                self.assertIs(stream.readable(), False)
 
                 def write(b, lines=None, *, write_len=None):
                     if write_len is None:

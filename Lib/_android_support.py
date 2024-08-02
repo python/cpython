@@ -89,6 +89,7 @@ class TextLogStream(io.TextIOWrapper):
 
     # Since this is a line-based logging system, line buffering cannot be turned
     # off, i.e. a newline always causes a flush.
+    @property
     def line_buffering(self):
         return True
 
