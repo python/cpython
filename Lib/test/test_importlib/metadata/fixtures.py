@@ -253,6 +253,40 @@ class EggInfoPkgPipInstalledNoToplevel(OnSysPath, SiteBuilder):
     }
 
 
+class EggInfoPkgPipInstalledExternalDataFiles(OnSysPath, SiteBuilder):
+    files: FilesSpec = {
+        "egg_with_module_pkg.egg-info": {
+            "PKG-INFO": "Name: egg_with_module-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                egg_with_module.py
+                setup.py
+                egg_with_module.json
+                egg_with_module_pkg.egg-info/PKG-INFO
+                egg_with_module_pkg.egg-info/SOURCES.txt
+                egg_with_module_pkg.egg-info/top_level.txt
+            """,
+            # installed-files.txt is written by pip, and is a strictly more
+            # accurate source than SOURCES.txt as to the installed contents of
+            # the package.
+            "installed-files.txt": """
+                ../../../etc/jupyter/jupyter_notebook_config.d/relative.json
+                /etc/jupyter/jupyter_notebook_config.d/absolute.json
+                ../egg_with_module.py
+                PKG-INFO
+                SOURCES.txt
+                top_level.txt
+            """,
+            # missing top_level.txt (to trigger fallback to installed-files.txt)
+        },
+        "egg_with_module.py": """
+            def main():
+                print("hello world")
+            """,
+    }
+
+
 class EggInfoPkgPipInstalledNoModules(OnSysPath, SiteBuilder):
     files: FilesSpec = {
         "egg_with_no_modules_pkg.egg-info": {

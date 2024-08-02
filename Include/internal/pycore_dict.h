@@ -16,8 +16,12 @@ extern "C" {
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 
-extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
-                             int (*predicate)(PyObject *value));
+// Delete an item from a dict if a predicate is true
+// Returns -1 on error, 1 if the item was deleted, 0 otherwise
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_DelItemIf(PyObject *mp, PyObject *key,
+                                  int (*predicate)(PyObject *value, void *arg),
+                                  void *arg);
 
 // "KnownHash" variants
 // Export for '_asyncio' shared extension
@@ -322,6 +326,8 @@ _PyInlineValuesSize(PyTypeObject *tp)
 
 int
 _PyDict_DetachFromObject(PyDictObject *dict, PyObject *obj);
+
+PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 
 #ifdef __cplusplus
 }

@@ -5,6 +5,7 @@ import unittest
 
 from collections import namedtuple
 import contextlib
+import io
 import json
 import os
 import os.path
@@ -47,6 +48,8 @@ API_ISOLATED = 3
 
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
+
+ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
 
 
 # If we are running from a build dir, but the stdlib has been installed,
@@ -412,6 +415,50 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         )
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
+
+    def test_static_types_inherited_slots(self):
+        script = textwrap.dedent("""
+            import test.support
+
+            results = {}
+            def add(cls, slot, own):
+                value = getattr(cls, slot)
+                try:
+                    subresults = results[cls.__name__]
+                except KeyError:
+                    subresults = results[cls.__name__] = {}
+                subresults[slot] = [repr(value), own]
+
+            for cls in test.support.iter_builtin_types():
+                for slot, own in test.support.iter_slot_wrappers(cls):
+                    add(cls, slot, own)
+            """)
+
+        ns = {}
+        exec(script, ns, ns)
+        all_expected = ns['results']
+        del ns
+
+        script += textwrap.dedent("""
+            import json
+            import sys
+            text = json.dumps(results)
+            print(text, file=sys.stderr)
+            """)
+        out, err = self.run_embedded_interpreter(
+                "test_repeated_init_exec", script, script)
+        results = err.split('--- Loop #')[1:]
+        results = [res.rpartition(' ---\n')[-1] for res in results]
+
+        self.maxDiff = None
+        for i, text in enumerate(results, start=1):
+            result = json.loads(text)
+            for classname, expected in all_expected.items():
+                with self.subTest(loop=i, cls=classname):
+                    slots = result.pop(classname)
+                    self.assertEqual(slots, expected)
+            self.assertEqual(result, {})
+        self.assertEqual(out, '')
 
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
@@ -1285,11 +1332,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ver = sys.version_info
             return [
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}{ver.minor}.zip'),
+                             f'python{ver.major}{ver.minor}{ABI_THREAD}.zip'),
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}'),
                 os.path.join(exec_prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}', 'lib-dynload'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}', 'lib-dynload'),
             ]
 
     @contextlib.contextmanager
@@ -1343,7 +1390,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1384,7 +1431,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1515,7 +1562,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 lib_dynload = os.path.join(pyvenv_home,
                                            sys.platlibdir,
-                                           f'python{ver.major}.{ver.minor}',
+                                           f'python{ver.major}.{ver.minor}{ABI_THREAD}',
                                            'lib-dynload')
                 os.makedirs(lib_dynload)
             else:

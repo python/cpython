@@ -250,7 +250,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
         }
     }
     m->md_def = module;
-#ifdef Py_GIL_DISABLE
+#ifdef Py_GIL_DISABLED
     m->md_gil = Py_MOD_GIL_USED;
 #endif
     return (PyObject*)m;

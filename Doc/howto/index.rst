@@ -2,16 +2,14 @@
  Python HOWTOs
 ***************
 
-Python HOWTOs are documents that cover a single, specific topic,
-and attempt to cover it fairly completely. Modelled on the Linux
-Documentation Project's HOWTO collection, this collection is an
+Python HOWTOs are documents that cover a specific topic in-depth.
+Modeled on the Linux Documentation Project's HOWTO collection, this collection is an
 effort to foster documentation that's more detailed than the
 Python Library Reference.
 
-Currently, the HOWTOs are:
-
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    cporting.rst
    curses.rst
@@ -36,3 +34,33 @@ Currently, the HOWTOs are:
    mro.rst
    free-threading-extensions.rst
 
+General:
+
+* :ref:`annotations-howto`
+* :ref:`argparse-tutorial`
+* :ref:`descriptorhowto`
+* :ref:`enum-howto`
+* :ref:`functional-howto`
+* :ref:`ipaddress-howto`
+* :ref:`logging-howto`
+* :ref:`logging-cookbook`
+* :ref:`regex-howto`
+* :ref:`sortinghowto`
+* :ref:`unicode-howto`
+* :ref:`urllib-howto`
+
+Advanced development:
+
+* :ref:`curses-howto`
+* :ref:`freethreading-extensions-howto`
+* :ref:`isolating-extensions-howto`
+* :ref:`python_2.3_mro`
+* :ref:`socket-howto`
+* :ref:`timerfd-howto`
+* :ref:`cporting-howto`
+
+Debugging and profiling:
+
+* :ref:`gdb`
+* :ref:`instrumentation`
+* :ref:`perf_profiling`

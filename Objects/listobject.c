@@ -452,7 +452,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
     p = self->ob_item + i;
     Py_XSETREF(*p, newitem);
     ret = 0;
-end:
+end:;
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -3581,6 +3581,23 @@ list_subscript(PyObject* _self, PyObject* item)
     }
 }
 
+static Py_ssize_t
+adjust_slice_indexes(PyListObject *lst,
+                     Py_ssize_t *start, Py_ssize_t *stop,
+                     Py_ssize_t step)
+{
+    Py_ssize_t slicelength = PySlice_AdjustIndices(Py_SIZE(lst), start, stop,
+                                                   step);
+
+    /* Make sure s[5:2] = [..] inserts at the right place:
+        before 5, not before 2. */
+    if ((step < 0 && *start < *stop) ||
+        (step > 0 && *start > *stop))
+        *stop = *start;
+
+    return slicelength;
+}
+
 static int
 list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
 {
@@ -3594,22 +3611,11 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
         return list_ass_item((PyObject *)self, i, value);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength;
+        Py_ssize_t start, stop, step;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
-                                            step);
-
-        if (step == 1)
-            return list_ass_slice(self, start, stop, value);
-
-        /* Make sure s[5:2] = [..] inserts at the right place:
-           before 5, not before 2. */
-        if ((step < 0 && start < stop) ||
-            (step > 0 && start > stop))
-            stop = start;
 
         if (value == NULL) {
             /* delete slice */
@@ -3617,6 +3623,12 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
             size_t cur;
             Py_ssize_t i;
             int res;
+
+            Py_ssize_t slicelength = adjust_slice_indexes(self, &start, &stop,
+                                                          step);
+
+            if (step == 1)
+                return list_ass_slice(self, start, stop, value);
 
             if (slicelength <= 0)
                 return 0;
@@ -3694,6 +3706,15 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
             }
             if (!seq)
                 return -1;
+
+            Py_ssize_t slicelength = adjust_slice_indexes(self, &start, &stop,
+                                                          step);
+
+            if (step == 1) {
+                int res = list_ass_slice(self, start, stop, seq);
+                Py_DECREF(seq);
+                return res;
+            }
 
             if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
                 PyErr_Format(PyExc_ValueError,

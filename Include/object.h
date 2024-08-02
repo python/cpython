@@ -204,17 +204,13 @@ struct _object {
 // Create a shared field from a refcnt and desired flags
 #define _Py_REF_SHARED(refcnt, flags) (((refcnt) << _Py_REF_SHARED_SHIFT) + (flags))
 
-// NOTE: In non-free-threaded builds, `struct _PyMutex` is defined in
-// pycore_lock.h. See pycore_lock.h for more details.
-struct _PyMutex { uint8_t v; };
-
 struct _object {
     // ob_tid stores the thread id (or zero). It is also used by the GC and the
     // trashcan mechanism as a linked list pointer and by the GC to store the
     // computed "gc_refs" refcount.
     uintptr_t ob_tid;
     uint16_t _padding;
-    struct _PyMutex ob_mutex;   // per-object lock
+    PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
@@ -331,11 +327,7 @@ static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
 
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
 static inline PyTypeObject* Py_TYPE(PyObject *ob) {
-#ifdef Py_GIL_DISABLED
-    return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
-#else
     return ob->ob_type;
-#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
@@ -425,11 +417,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
 
 
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_ptr(&ob->ob_type, type);
-#else
     ob->ob_type = type;
-#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
@@ -703,7 +691,7 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Object has up-to-date type attribute cache */
+/* Unused. Legacy flag */
 #define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
