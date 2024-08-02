@@ -270,7 +270,7 @@ Type Objects
    :c:macro:`Py_tp_token` token is equal to the given one.
 
    * If found, set *\*result* to a new :term:`strong reference`
-     to the found superclass and return ``1``.
+     to it and return ``1``.
    * If not found, set *\*result* to ``NULL`` and return ``0``.
    * On error, set *\*result* to ``NULL`` and return ``-1`` with an
      exception set.
