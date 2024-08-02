@@ -1732,7 +1732,7 @@ __attribute__((always_inline))
 static inline float_format_type
 get_double_format(void)
 {
-    if (sizeof(float) == 4) {
+    if (sizeof(double) == 8) {
         double y = 9006104071832581.0;
         uint64_t z;
         memcpy(&z, &y, 8);
