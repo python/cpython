@@ -1,0 +1,1 @@
+Add explicit black IDLE Hovertip foreground color needed for recent macOS.  Fixes Sonoma showing unreadable white on pale yellow.  Patch by John Riggles.
