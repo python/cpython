@@ -2536,7 +2536,12 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     }
 
-    /* create varargs tuple */
+    // Create the tuple of variadic arguments and place it at 'buf[vararg]'.
+    // The function has at most 'maxpos' positional arguments, possibly with
+    // default values or not and possibly positional-only. Since 'args' is
+    // an array of 'nargs' arguments representing the positional arguments
+    // of the call, there are only 'nargs - maxpos' arguments that will
+    // be considered as variadic and gathered into a single tuple.
     varargssize = nargs - maxpos;
     if (varargssize < 0) {
         varargssize = 0;
@@ -2545,19 +2550,23 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
     if (!buf[vararg]) {
         return NULL;
     }
-
-    /* copy tuple args */
-    for (i = 0; i < nargs; i++) {
-        if (i >= vararg) {
-            PyTuple_SET_ITEM(buf[vararg], i - vararg, Py_NewRef(args[i]));
-            continue;
-        }
-        else {
-            buf[i] = args[i];
-        }
+    for (i = 0; i < vararg; ++i) {
+        // copy the first arguments until the 'vararg' index
+        buf[i] = args[i];
     }
-
-    /* copy keyword args using kwtuple to drive process */
+    for (i = vararg; i < nargs; ++i) {
+        // remaining arguments are all considered as variadic ones
+        PyTuple_SET_ITEM(buf[vararg], i - vararg, Py_NewRef(args[i]));
+    }
+    // We need to place the keyword arguments correctly in "buf".
+    //
+    // The buffer is always of the following form:
+    //
+    //  buf = [x1, ..., xN]    (*args)   [k1, ..., kM]
+    //
+    // where x1, ..., xN are the positional arguments, '*args' is a tuple
+    // containing the variadic arguments (it will be untouched now) and
+    // k1, ..., kM are the keyword arguments that are not positionals.
     for (i = Py_MAX((int)nargs, posonly) - Py_SAFE_DOWNCAST(varargssize, Py_ssize_t, int); i < maxargs; i++) {
         PyObject *current_arg;
         if (nkwargs) {
@@ -2574,26 +2583,36 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
         else {
             current_arg = NULL;
         }
-
-        /* If an arguments is passed in as a keyword argument,
-         * it should be placed before `buf[vararg]`.
+        /*
+         * Assume that an argument at index `i` is passed in
+         * as a keyword argument. Depending on `i`, it should
+         * be placed before `buf[vararg]` or at `buf[i + 1]`.
          *
-         * For example:
-         * def f(a, /, b, *args):
-         *     pass
-         * f(1, b=2)
+         * It is placed at `buf[vararg]` if `nargs < vararg`
+         * and `i < vararg`, e.g.:
          *
-         * This `buf` array should be: [1, 2, NULL].
-         * In this case, nargs < vararg.
+         *      def f(a, /, b, *args): pass
          *
-         * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
-         * so the index is `i + 1`. */
-        if (nargs < vararg && i != vararg) {
+         * The `buf` array for "f(1, b=2)" is:
+         *
+         *      buf = [1, 2, NULL].
+         *
+         * On the other hand, if the argument is a real
+         * keyword argument (namely `i > vararg`), then
+         * it is placed at `buf[i + 1]` since `buf[vararg]`
+         * is already taken, e.g.:
+         *
+         *      def g(a, b, *args, c, d): ...
+         *
+         * The `buf` array for "f(a=1, b=2, c=3, d=4)" is:
+         *
+         *      buf = [1, 2, NULL, 3, 4].
+         */
+        if (nargs < vararg && i < vararg) {
             if (current_arg != NULL) {
                 // It might happen that in the previous iteration,
                 // we did "buf[i + 1] = current_arg" and that in
                 // this current loop iteration, current_arg == NULL.
-                // We do not want to put a NULL on a previously valid value.
                 buf[i] = current_arg;
             }
         }
