@@ -417,7 +417,6 @@ class Fraction(numbers.Rational):
 
     @property
     def denominator(a):
-        """The (positive) denominator of a rational number in lowest terms."""
         return a._denominator
 
     def __repr__(self):
