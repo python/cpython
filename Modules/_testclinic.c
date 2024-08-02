@@ -1071,6 +1071,7 @@ vararg_with_more_defaults_impl(PyObject *module, PyObject *a, PyObject *args,
     return pack_arguments_newref(4, a, args, obj_kw1, obj_kw2);
 }
 
+
 /*[clinic input]
 vararg_with_more_defaults_and_pos
 
@@ -1093,6 +1094,7 @@ vararg_with_more_defaults_and_pos_impl(PyObject *module, PyObject *a,
     PyObject *obj_kw2 = kw2 ? Py_True : Py_False;
     return pack_arguments_newref(5, a, b, args, obj_kw1, obj_kw2);
 }
+
 
 /*[clinic input]
 vararg_with_only_defaults
