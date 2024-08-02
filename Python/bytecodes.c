@@ -1466,27 +1466,9 @@ dummy_func(
         }
 
         inst(LOAD_NAME, (-- v)) {
-            PyObject *v_o;
-            PyObject *mod_or_class_dict = LOCALS();
-            if (mod_or_class_dict == NULL) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "no locals found");
-                ERROR_IF(true, error);
-            }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            ERROR_IF(PyMapping_GetOptionalItem(mod_or_class_dict, name, &v_o) < 0, error);
-            if (v_o == NULL) {
-                ERROR_IF(PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0, error);
-                if (v_o == NULL) {
-                    ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0, error);
-                    if (v_o == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                                    tstate, PyExc_NameError,
-                                    NAME_ERROR_MSG, name);
-                        ERROR_IF(true, error);
-                    }
-                }
-            }
+            PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
+            ERROR_IF(v_o == NULL, error);
             v = PyStackRef_FromPyObjectSteal(v_o);
         }
 

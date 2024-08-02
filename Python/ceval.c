@@ -3132,3 +3132,37 @@ _PyEval_GetAwaitable(PyObject *iterable, int oparg)
     return iter;
 }
 
+PyObject *
+_PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name)
+{
+
+    PyObject *value;
+    if (frame->f_locals == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError,
+                            "no locals found");
+        return NULL;
+    }
+    if (PyMapping_GetOptionalItem(frame->f_locals, name, &value) < 0) {
+        return NULL;
+    }
+    if (value != NULL) {
+        return value;
+    }
+    if (PyDict_GetItemRef(frame->f_globals, name, &value) < 0) {
+        return NULL;
+    }
+    if (value != NULL) {
+        return value;
+    }
+    if (PyMapping_GetOptionalItem(frame->f_builtins, name, &value) < 0) {
+        return NULL;
+    }
+    if (value == NULL) {
+        _PyEval_FormatExcCheckArg(
+                    tstate, PyExc_NameError,
+                    NAME_ERROR_MSG, name);
+    }
+    return value;
+}
+
+
