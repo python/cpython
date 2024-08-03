@@ -2569,7 +2569,7 @@ Verifying certificates
 
 When calling the :class:`SSLContext` constructor directly,
 :const:`CERT_NONE` is the default.  Since it does not authenticate the other
-peer, it can be insecure, especially in client mode where most of time you
+peer, it can be insecure, especially in client mode where most of the time you
 would like to ensure the authenticity of the server you're talking to.
 Therefore, when in client mode, it is highly recommended to use
 :const:`CERT_REQUIRED`.  However, it is in itself not sufficient; you also
