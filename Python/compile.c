@@ -563,8 +563,16 @@ compiler_unit_free(struct compiler_unit *u)
 }
 
 static int
-compiler_add_static_attribute_to_class(struct compiler *c, PyObject *attr)
+compiler_maybe_add_static_attribute_to_class(struct compiler *c, expr_ty e)
 {
+    assert(e->kind == Attribute_kind);
+    expr_ty attr_value = e->v.Attribute.value;
+    if (attr_value->kind != Name_kind ||
+        e->v.Attribute.ctx != Store ||
+        !_PyUnicode_EqualToASCIIString(attr_value->v.Name.id, "self"))
+    {
+        return SUCCESS;
+    }
     Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
     for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
         PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
@@ -573,7 +581,7 @@ compiler_add_static_attribute_to_class(struct compiler *c, PyObject *attr)
         assert(u);
         if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
             assert(u->u_static_attributes);
-            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, attr));
+            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, e->v.Attribute.attr));
             break;
         }
     }
@@ -6065,11 +6073,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
             ADDOP(c, loc, NOP);
             return SUCCESS;
         }
-        if (e->v.Attribute.value->kind == Name_kind &&
-            _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
-        {
-            RETURN_IF_ERROR(compiler_add_static_attribute_to_class(c, e->v.Attribute.attr));
-        }
+        RETURN_IF_ERROR(compiler_maybe_add_static_attribute_to_class(c, e));
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);

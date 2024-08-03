@@ -23,7 +23,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, StackError
+from stack import Local, Stack, StackError
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
@@ -98,19 +98,18 @@ def write_uop(
     debug: bool,
     skip_inputs: bool,
 ) -> None:
+    locals: dict[str, Local] = {}
     try:
         prototype = override if override else uop
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            res = stack.pop(var, extract_bits=True)
+            code, local = stack.pop(var, extract_bits=True)
             if not skip_inputs:
-                out.emit(res)
-        if not prototype.properties.stores_sp:
-            for i, var in enumerate(prototype.stack.outputs):
-                res = stack.push(var)
-                if not var.peek or is_override:
-                    out.emit(res)
+                out.emit(code)
+            if local.defined:
+                locals[local.name] = local
+        out.emit(stack.define_output_arrays(prototype.stack.outputs))
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -135,10 +134,12 @@ def write_uop(
         else:
             emit_default(out, uop)
 
-        if prototype.properties.stores_sp:
-            for i, var in enumerate(prototype.stack.outputs):
-                if not var.peek or is_override:
-                    out.emit(stack.push(var))
+        for var in prototype.stack.outputs:
+            if var.name in locals:
+                local = locals[var.name]
+            else:
+                local = Local.local(var)
+            out.emit(stack.push(local))
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:
