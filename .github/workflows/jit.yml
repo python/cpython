@@ -35,6 +35,7 @@ jobs:
       - name: Build tier two interpreter
         run: |
           ./configure --enable-experimental-jit=interpreter --with-pydebug
+          make regen-jit
           make all --jobs 4
       - name: Test tier two interpreter
         run: |
