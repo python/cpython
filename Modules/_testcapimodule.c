@@ -289,7 +289,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)PyObject_Del, /* tp_dealloc */
+    (destructor)PyObject_Free,  /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
@@ -3587,7 +3587,7 @@ static PyTypeObject matmulType = {
     0,
     0,
     PyType_GenericNew,                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 typedef struct {
@@ -3699,7 +3699,7 @@ static PyTypeObject awaitType = {
     0,
     0,
     awaitObject_new,                    /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 

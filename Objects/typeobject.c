@@ -1026,6 +1026,8 @@ type_modified_unlocked(PyTypeObject *type)
     if (type->tp_version_tag == 0) {
         return;
     }
+    // Cannot modify static builtin types.
+    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) == 0);
 
     PyObject *subclasses = lookup_tp_subclasses(type);
     if (subclasses != NULL) {
@@ -7454,7 +7456,7 @@ PyTypeObject PyBaseObject_Type = {
     object_init,                                /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     object_new,                                 /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 
@@ -8178,7 +8180,7 @@ type_ready_inherit(PyTypeObject *type)
 
     /* Sanity check for tp_free. */
     if (_PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
-        (type->tp_free == NULL || type->tp_free == PyObject_Del))
+        (type->tp_free == NULL || type->tp_free == PyObject_Free))
     {
         /* This base class needs to call tp_free, but doesn't have
          * one, or its tp_free is for non-gc'ed objects.
