@@ -1936,11 +1936,8 @@ class TestIsMethodDescriptor(unittest.TestCase):
             def a_property(self): pass
         class Slotermeyer:
             __slots__ = 'a_slot',
-        attribute_slot = Slotermeyer.__dict__['a_slot']
-        frame_locals = types.FrameType.f_locals
         def function():
             pass
-        a_lambda = lambda: None
 
         # Example builtin method descriptors (non-data descriptors):
 
@@ -1965,7 +1962,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertFalse(inspect.ismethoddescriptor(Owner.class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.static_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
-        self.assertFalse(inspect.ismethoddescriptor(a_lambda))
+        self.assertFalse(inspect.ismethoddescriptor(lambda: None))
 
         # Example builtin data descriptors:
 
@@ -1973,6 +1970,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
             inspect.ismethoddescriptor(Owner.__dict__['a_property']),
             'a property is not a method descriptor')
 
+        attribute_slot = Slotermeyer.__dict__['a_slot']
         if hasattr(types, 'MemberDescriptorType'):
             assert inspect.ismemberdescriptor(attribute_slot)
             self.assertFalse(
@@ -1984,6 +1982,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
                 inspect.ismethoddescriptor(attribute_slot),
                 'an attribute slot descriptor is not a method descriptor')
 
+        frame_locals = types.FrameType.f_locals
         if hasattr(types, 'GetSetDescriptorType'):
             assert inspect.isgetsetdescriptor(frame_locals)
             self.assertFalse(
@@ -2167,11 +2166,8 @@ class TestIsDataDescriptor(unittest.TestCase):
             def a_property(self): pass
         class Slotermeyer:
             __slots__ = 'a_slot',
-        attribute_slot = Slotermeyer.__dict__['a_slot']
-        frame_locals = types.FrameType.f_locals
         def function():
             pass
-        a_lambda = lambda: None
 
         # Example builtin method descriptors (non-data descriptors):
 
@@ -2196,7 +2192,7 @@ class TestIsDataDescriptor(unittest.TestCase):
         self.assertFalse(inspect.isdatadescriptor(Owner.class_method))
         self.assertFalse(inspect.isdatadescriptor(Owner.static_method))
         self.assertFalse(inspect.isdatadescriptor(function))
-        self.assertFalse(inspect.isdatadescriptor(a_lambda))
+        self.assertFalse(inspect.isdatadescriptor(lambda: None))
 
         # Example builtin data descriptors:
 
@@ -2204,6 +2200,7 @@ class TestIsDataDescriptor(unittest.TestCase):
             inspect.isdatadescriptor(Owner.__dict__['a_property']),
             'a property is a data descriptor')
 
+        attribute_slot = Slotermeyer.__dict__['a_slot']
         if hasattr(types, 'MemberDescriptorType'):
             assert inspect.ismemberdescriptor(attribute_slot)
             self.assertTrue(
@@ -2215,6 +2212,7 @@ class TestIsDataDescriptor(unittest.TestCase):
                 inspect.isdatadescriptor(attribute_slot),
                 'an attribute slot descriptor is a data descriptor')
 
+        frame_locals = types.FrameType.f_locals
         if hasattr(types, 'GetSetDescriptorType'):
             assert inspect.isgetsetdescriptor(frame_locals)
             self.assertTrue(
