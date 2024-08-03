@@ -1671,12 +1671,19 @@ Copying, renaming and deleting
    .. note::
 
       When deleting non-empty directories on platforms that lack the necessary
-      file descriptor-based functions, the :meth:`Path.delete` implementation
+      file descriptor-based functions, the :meth:`~Path.delete` implementation
       is susceptible to a symlink attack: given proper timing and
       circumstances, attackers can manipulate symlinks on the filesystem to
       delete files they would not be able to access otherwise. Applications
-      can use the :data:`Path.delete.avoids_symlink_attacks` method attribute
+      can use the :data:`~Path.delete.avoids_symlink_attacks` method attribute
       to determine whether the implementation is immune to this attack.
+
+   .. attribute:: delete.avoids_symlink_attacks
+
+      Indicates whether the current platform and implementation provides a
+      symlink attack resistant version of :meth:`~Path.delete`.  Currently
+      this is only true for platforms supporting fd-based directory access
+      functions.
 
    .. versionadded:: 3.14
 
