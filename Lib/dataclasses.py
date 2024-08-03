@@ -282,11 +282,12 @@ class Field:
                  'compare',
                  'metadata',
                  'kw_only',
+                 'frozen',
                  '_field_type',  # Private: not to be used by user code.
                  )
 
     def __init__(self, default, default_factory, init, repr, hash, compare,
-                 metadata, kw_only):
+                 metadata, kw_only, frozen):
         self.name = None
         self.type = None
         self.default = default
@@ -299,6 +300,7 @@ class Field:
                          if metadata is None else
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
+        self.frozen = frozen
         self._field_type = None
 
     @recursive_repr()
@@ -314,6 +316,7 @@ class Field:
                 f'compare={self.compare!r},'
                 f'metadata={self.metadata!r},'
                 f'kw_only={self.kw_only!r},'
+                f'frozen={self.frozen!r},'
                 f'_field_type={self._field_type}'
                 ')')
 
@@ -381,7 +384,7 @@ class _DataclassParams:
 # so that a type checker can be told (via overloads) that this is a
 # function whose type depends on its parameters.
 def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
-          hash=None, compare=True, metadata=None, kw_only=MISSING):
+          hash=None, compare=True, metadata=None, kw_only=MISSING, frozen=MISSING):
     """Return an object to identify dataclass fields.
 
     default is the default value of the field.  default_factory is a
@@ -401,7 +404,7 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
     return Field(default, default_factory, init, repr, hash, compare,
-                 metadata, kw_only)
+                 metadata, kw_only, frozen)
 
 
 def _fields_in_init_order(fields):
@@ -585,7 +588,7 @@ def _field_init(f, frozen, globals, self_name, slots):
         return None
 
     # Now, actually generate the field assignment.
-    return _field_assign(frozen, f.name, value, self_name)
+    return _field_assign(frozen or f.frozen, f.name, value, self_name)
 
 
 def _init_param(f):
@@ -665,12 +668,16 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         return_type=None)
 
 
-def _frozen_get_del_attr(cls, fields, func_builder):
+def _frozen_get_del_attr(cls, cls_marked_as_frozen, fields, func_builder):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    condition = 'type(self) is cls'
+    conditions = []
+    if cls_marked_as_frozen:
+        conditions.append('type(self) is cls')
     if fields:
-        condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
+        conditions.append('name in {' + ', '.join(repr(f.name) for f in fields) + '}')
+
+    condition = ' or '.join(conditions)
 
     func_builder.add_fn('__setattr__',
                         ('self', 'name', 'value'),
@@ -765,7 +772,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     return False
 
 
-def _get_field(cls, a_name, a_type, default_kw_only):
+def _get_field(cls, a_name, a_type, cls_marked_as_frozen, default_kw_only):
     # Return a Field object for this field name and type.  ClassVars and
     # InitVars are also returned, but marked as such (see f._field_type).
     # default_kw_only is the value of kw_only to use if there isn't a field()
@@ -824,6 +831,11 @@ def _get_field(cls, a_name, a_type, default_kw_only):
                 and _is_type(f.type, cls, dataclasses, dataclasses.InitVar,
                              _is_initvar))):
             f._field_type = _FIELD_INITVAR
+    
+    if f.frozen is MISSING:
+        f.frozen = cls_marked_as_frozen
+    elif not f.frozen and cls_marked_as_frozen:
+        raise ValueError(f'field `{f.name}` marked as not frozen on a frozen class `{cls.__name__}`')
 
     # Validations for individual fields.  This is delayed until now,
     # instead of in the Field() constructor, since only here do we
@@ -834,6 +846,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         if f.default_factory is not MISSING:
             raise TypeError(f'field {f.name} cannot have a '
                             'default factory')
+
         # Should I check for other field settings? default_factory
         # seems the most serious to check for.  Maybe add others.  For
         # example, how about init=False (or really,
@@ -1005,7 +1018,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             kw_only = True
         else:
             # Otherwise it's a field of some type.
-            cls_fields.append(_get_field(cls, name, type, kw_only))
+            cls_fields.append(_get_field(cls, name, type, any_frozen_base or frozen, kw_only))
 
     for f in cls_fields:
         fields[f.name] = f
@@ -1141,7 +1154,14 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             overwrite_error='Consider using functools.total_ordering')
 
     if frozen:
-        _frozen_get_del_attr(cls, field_list, func_builder)
+        # if dataclass is frozen, mark all fields as frozen
+        # and don't allow `__setattr__` to be called on them
+        _frozen_get_del_attr(cls, True, field_list, func_builder)
+    elif any(field.frozen for field in field_list):
+        # if dataclass is not frozen, but there are specific fields
+        # that are frozen, mark only them as for not allowed to `__setattr__`
+        frozen_fields = filter(lambda f: f.frozen, field_list)
+        _frozen_get_del_attr(cls, False, frozen_fields, func_builder)
 
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),

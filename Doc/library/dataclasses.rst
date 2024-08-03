@@ -294,6 +294,13 @@ Module contents
      parameters are computed.
 
     .. versionadded:: 3.10
+      
+   - *frozen*: mark specific field to be frozen, when ``True`` this field 
+     can only be set when initilizing the class instance, if ``frozen`` is 
+     set as the class level field cannot be marked as ``frozen=False``
+     this will result in :exc:`FrozenInstanceError` error
+
+    .. versionadded:: 3.13
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be

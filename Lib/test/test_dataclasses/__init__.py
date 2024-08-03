@@ -68,6 +68,7 @@ class TestCase(unittest.TestCase):
                            "init=True,repr=False,hash=None," \
                            "compare=True,metadata=mappingproxy({})," \
                            f"kw_only={MISSING!r}," \
+                           f"frozen={MISSING!r}," \
                            "_field_type=None)"
 
         self.assertEqual(repr_output, expected_output)
@@ -4247,6 +4248,25 @@ class TestReplace(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
                                              "keyword argument 'a'"):
             c1 = replace(c, x=20, a=5)
+
+    def test_frozen_fields(self):
+        @dataclass(frozen=False)
+        class C:
+            x: int = field(frozen=True)
+            y: int
+
+        c = C(1, 2)
+        c.y = 3  # make sure we can assign to non frozen field
+        self.assertEqual(c.y, 3)
+
+        c1 = replace(c, x=3)
+        self.assertEqual(c1.x, 3)
+
+        with self.assertRaisesRegex(FrozenInstanceError, "cannot assign to field 'x'"):
+            c.x = 3
+
+        with self.assertRaisesRegex(FrozenInstanceError, "cannot assign to field 'x'"):
+            c1.x = 4
 
     def test_invalid_field_name(self):
         @dataclass(frozen=True)
