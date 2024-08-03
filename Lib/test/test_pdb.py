@@ -3389,7 +3389,12 @@ def bœr():
         header = 'Nobody expects... blah, blah, blah'
         with ExitStack() as resources:
             resources.enter_context(patch('sys.stdout', stdout))
+            # patch pdb.Pdb.set_trace() to avoid entering the debugger
             resources.enter_context(patch.object(pdb.Pdb, 'set_trace'))
+            # We need to manually clear pdb.Pdb._last_pdb_instance so a
+            # new instance with stdout redirected could be created when
+            # pdb.set_trace() is called.
+            pdb.Pdb._last_pdb_instance = None
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
@@ -3512,10 +3517,12 @@ def bœr():
             print("hello")
         """
 
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         commands = """
             filename = $_frame.f_code.co_filename
             f = open(filename, "w")
             f.write("print('goodbye')")
+            import time; time.sleep(1)
             f.close()
             ll
         """
@@ -3525,10 +3532,12 @@ def bœr():
         self.assertIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_multiple_instances(self):
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         script = """
             import pdb; pdb.Pdb().set_trace()
             with open(__file__, "w") as f:
                 f.write("print('goodbye')\\n" * 5)
+                import time; time.sleep(1)
             import pdb; pdb.Pdb().set_trace()
         """
 

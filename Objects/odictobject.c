@@ -276,7 +276,7 @@ tp_dictoffset     (__dict__)       -                   -
 tp_init           __init__         object_init         dict_init
 tp_alloc          -                PyType_GenericAlloc (repeated)
 tp_new            __new__          object_new          dict_new
-tp_free           -                PyObject_Del        PyObject_GC_Del
+tp_free           -                PyObject_Free       PyObject_GC_Del
 ================= ================ =================== ================
 
 Relevant Methods

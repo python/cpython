@@ -462,7 +462,7 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     0,                                          /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 
