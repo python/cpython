@@ -526,11 +526,15 @@ _PySymtable_LookupOptional(struct symtable *st, void *key,
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
+    PyObject *v;
+    if (PyDict_GetItemRef(ste->ste_symbols, name, &v) < 0) {
+        return -1;
+    }
     if (!v) {
-        return PyErr_Occurred() ? -1 : 0;
+        return 0;
     }
     long symbol = PyLong_AsLong(v);
+    Py_DECREF(v);
     if (symbol < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_SystemError, "invalid symbol");
@@ -965,14 +969,15 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         if (contains) {
             flags |= DEF_COMP_CELL;
         }
-        v_scope = PyDict_GetItemWithError(scopes, name);
+        if (PyDict_GetItemRef(scopes, name, &v_scope) < 0) {
+            return 0;
+        }
         if (!v_scope) {
-            if (!PyErr_Occurred()) {
-                PyErr_SetObject(PyExc_KeyError, name);
-            }
+            PyErr_SetObject(PyExc_KeyError, name);
             return 0;
         }
         long scope = PyLong_AsLong(v_scope);
+        Py_DECREF(v_scope);
         if (scope == -1 && PyErr_Occurred()) {
             return 0;
         }
@@ -2231,7 +2236,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         if (ste->ste_comprehension) {
             long target_in_scope = symtable_lookup_entry(st, ste, target_name);
             if (target_in_scope < 0) {
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             if ((target_in_scope & DEF_COMP_ITER) &&
                 (target_in_scope & DEF_LOCAL)) {
@@ -2246,7 +2251,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         if (ste->ste_type == FunctionBlock) {
             long target_in_scope = symtable_lookup_entry(st, ste, target_name);
             if (target_in_scope < 0) {
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
@@ -2661,9 +2666,6 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 {
     Py_ssize_t i;
 
-    if (!args)
-        return -1;
-
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
         if (!symtable_add_def(st, arg->arg, DEF_PARAM, LOCATION(arg)))
@@ -2709,9 +2711,6 @@ static int
 symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 {
     Py_ssize_t i;
-
-    if (!args)
-        return -1;
 
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
