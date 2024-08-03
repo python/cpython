@@ -1426,8 +1426,8 @@ iterations of the loop.
 
 .. opcode:: COPY_FREE_VARS (n)
 
-   Copies the ``n`` free :term:`closure variables <closure variable>` from the closure into
-   the frame. Removes the need for special code on the caller's side when calling
+   Copies the ``n`` :term:`free (closure) variables <closure variable>` from the closure
+   into the frame. Removes the need for special code on the caller's side when calling
    closures.
 
    .. versionadded:: 3.11
@@ -1894,7 +1894,7 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free :term:`closure variable`.
+   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
    'free' in this context refers to names in the current scope that are
    referenced by inner scopes or names in outer scopes that are referenced
    from this scope.  It does *not* include references to global or builtin scopes.

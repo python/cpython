@@ -231,6 +231,8 @@ Glossary
       rather than being resolved at runtime from the globals or builtin namespaces.
       May be explicitly defined with the :keyword:`nonlocal` keyword to allow write access,
       or implicitly defined if the variable is only read without being written to.
+      Due to the name of the :attr:`codeobject.co_freevars` attribute, sometimes instead
+      referred to as a :term:`free variable`.
 
    complex number
       An extension of the familiar real number system in which all numbers are
@@ -452,10 +454,10 @@ Glossary
 
    free variable
       Formally, as defined in the :ref:`language execution model <bind_names>`, a free
-      variable is any variable used in a function which is not a local variable of that
-      function.
+      variable is any variable used in a namespace which is not a local variable in that
+      namespace.
       Pragmatically, due to the name of the :attr:`codeobject.co_freevars` attribute,
-      the term is also frequently used as a synonym for :term:`closure variable`.
+      the term is also sometimes used as a synonym for :term:`closure variable`.
 
    function
       A series of statements which returns some value to a caller. It can also

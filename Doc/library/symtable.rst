@@ -171,7 +171,7 @@ Examining Symbol Tables
 
    .. method:: get_frees()
 
-      Return a tuple containing names of free :term:`closure variables <closure variable>`
+      Return a tuple containing names of :term:`free (closure) variables <closure variable>`
       in this function.
 
 
