@@ -467,9 +467,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         code = textwrap.dedent("""
             try:
                 import _ssl
-                _ssl.txt2obj(txt='1.3')
             except ModuleNotFoundError:
-                pass
+                _ssl = None
+            _ssl.txt2obj(txt='1.3')
             print('1')
 
             import _queue
