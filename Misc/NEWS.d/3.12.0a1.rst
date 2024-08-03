@@ -102,7 +102,7 @@ well as generator expressions.
 .. section: Core and Builtins
 
 Added unicode check for ``name`` attribute of ``spec`` argument passed in
-:func:`_imp.create_builtin` function.
+:func:`!_imp.create_builtin` function.
 
 ..
 
@@ -483,7 +483,7 @@ Fix case of undefined behavior in ceval.c
 .. nonce: AfCi36
 .. section: Core and Builtins
 
-Convert :mod:`_functools` to argument clinic.
+Convert :mod:`!_functools` to argument clinic.
 
 ..
 
@@ -492,7 +492,7 @@ Convert :mod:`_functools` to argument clinic.
 .. nonce: wky0Fc
 .. section: Core and Builtins
 
-Do not expose ``KeyWrapper`` in :mod:`_functools`.
+Do not expose ``KeyWrapper`` in :mod:`!_functools`.
 
 ..
 
@@ -1731,7 +1731,7 @@ tracing functions implemented in C.
 .. nonce: lenv9h
 .. section: Core and Builtins
 
-:meth:`_warnings.warn_explicit` is ported to Argument Clinic.
+:meth:`!_warnings.warn_explicit` is ported to Argument Clinic.
 
 ..
 
@@ -3142,8 +3142,8 @@ test.test_codecs.EncodedFileTest`` instead.
 .. nonce: VhS1eS
 .. section: Library
 
-Made :class:`_struct.Struct` GC-tracked in order to fix a reference leak in
-the :mod:`_struct` module.
+Made :class:`!_struct.Struct` GC-tracked in order to fix a reference leak in
+the :mod:`!_struct` module.
 
 ..
 
@@ -3258,7 +3258,7 @@ on the main thread
 
 Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
 3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
-function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
+function is a built-in function. Since Python 3.10, :func:`!_pyio.open` is
 also a static method. Patch by Victor Stinner.
 
 ..
@@ -5610,7 +5610,7 @@ Accept os.PathLike for the argument to winsound.PlaySound
 
 Support native Windows case-insensitive path comparisons by using
 ``LCMapStringEx`` instead of :func:`str.lower` in :func:`ntpath.normcase`.
-Add ``LCMapStringEx`` to the :mod:`_winapi` module.
+Add ``LCMapStringEx`` to the :mod:`!_winapi` module.
 
 ..
 

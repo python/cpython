@@ -7,10 +7,17 @@ plugins {
 
 val PYTHON_DIR = File(projectDir, "../../..").canonicalPath
 val PYTHON_CROSS_DIR = "$PYTHON_DIR/cross-build"
+
 val ABIS = mapOf(
     "arm64-v8a" to "aarch64-linux-android",
     "x86_64" to "x86_64-linux-android",
-)
+).filter { File("$PYTHON_CROSS_DIR/${it.value}").exists() }
+if (ABIS.isEmpty()) {
+    throw GradleException(
+        "No Android ABIs found in $PYTHON_CROSS_DIR: see Android/README.md " +
+        "for building instructions."
+    )
+}
 
 val PYTHON_VERSION = File("$PYTHON_DIR/Include/patchlevel.h").useLines {
     for (line in it) {

@@ -3,6 +3,7 @@ import itertools
 import contextlib
 import pathlib
 import pickle
+import stat
 import sys
 import unittest
 import zipfile
@@ -21,12 +22,17 @@ class jaraco:
         Counter = Counter
 
 
+def _make_link(info: zipfile.ZipInfo):  # type: ignore[name-defined]
+    info.external_attr |= stat.S_IFLNK << 16
+
+
 def build_alpharep_fixture():
     """
     Create a zip file with this structure:
 
     .
     ├── a.txt
+    ├── n.txt (-> a.txt)
     ├── b
     │   ├── c.txt
     │   ├── d
@@ -47,6 +53,7 @@ def build_alpharep_fixture():
     - multiple files in a directory (b/c, b/f)
     - a directory containing only a directory (g/h)
     - a directory with files of different extensions (j/klm)
+    - a symlink (n) pointing to (a)
 
     "alpha" because it uses alphabet
     "rep" because it's a representative example
@@ -61,6 +68,9 @@ def build_alpharep_fixture():
     zf.writestr("j/k.bin", b"content of k")
     zf.writestr("j/l.baz", b"content of l")
     zf.writestr("j/m.bar", b"content of m")
+    zf.writestr("n.txt", b"a.txt")
+    _make_link(zf.infolist()[-1])
+
     zf.filename = "alpharep.zip"
     return zf
 
@@ -91,7 +101,7 @@ class TestPath(unittest.TestCase):
     def test_iterdir_and_types(self, alpharep):
         root = zipfile.Path(alpharep)
         assert root.is_dir()
-        a, b, g, j = root.iterdir()
+        a, k, b, g, j = root.iterdir()
         assert a.is_file()
         assert b.is_dir()
         assert g.is_dir()
@@ -111,7 +121,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_iterdir_on_file(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, b, g, j = root.iterdir()
+        a, k, b, g, j = root.iterdir()
         with self.assertRaises(ValueError):
             a.iterdir()
 
@@ -126,7 +136,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_open(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, b, g, j = root.iterdir()
+        a, k, b, g, j = root.iterdir()
         with a.open(encoding="utf-8") as strm:
             data = strm.read()
         self.assertEqual(data, "content of a")
@@ -230,7 +240,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_read(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, b, g, j = root.iterdir()
+        a, k, b, g, j = root.iterdir()
         assert a.read_text(encoding="utf-8") == "content of a"
         # Also check positional encoding arg (gh-101144).
         assert a.read_text("utf-8") == "content of a"
@@ -296,7 +306,7 @@ class TestPath(unittest.TestCase):
         reflect that change.
         """
         root = zipfile.Path(alpharep)
-        a, b, g, j = root.iterdir()
+        a, k, b, g, j = root.iterdir()
         alpharep.writestr('foo.txt', 'foo')
         alpharep.writestr('bar/baz.txt', 'baz')
         assert any(child.name == 'foo.txt' for child in root.iterdir())
@@ -513,12 +523,9 @@ class TestPath(unittest.TestCase):
 
     @pass_alpharep
     def test_is_symlink(self, alpharep):
-        """
-        See python/cpython#82102 for symlink support beyond this object.
-        """
-
         root = zipfile.Path(alpharep)
-        assert not root.is_symlink()
+        assert not root.joinpath('a.txt').is_symlink()
+        assert root.joinpath('n.txt').is_symlink()
 
     @pass_alpharep
     def test_relative_to(self, alpharep):

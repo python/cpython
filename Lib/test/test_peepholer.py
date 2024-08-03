@@ -1,6 +1,5 @@
 import dis
 from itertools import combinations, product
-import opcode
 import sys
 import textwrap
 import unittest
