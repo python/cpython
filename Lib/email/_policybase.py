@@ -310,6 +310,7 @@ class Compat32(Policy):
         value = value + ''.join(sourcelines[1:])
         return (name, value.lstrip(" \r\n\t").rstrip('\r\n'))
 
+
     def header_store_parse(self, name, value):
         """+
         The name and value are returned unmodified.
