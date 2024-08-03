@@ -469,7 +469,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 import _ssl
             except ModuleNotFoundError:
                 _ssl = None
-            _ssl.txt2obj(txt='1.3')
+            if _ssl is not None:
+                _ssl.txt2obj(txt='1.3')
             print('1')
 
             import _queue
