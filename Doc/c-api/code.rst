@@ -32,7 +32,7 @@ bound into a function.
 
 .. c:function:: Py_ssize_t PyCode_GetNumFree(PyCodeObject *co)
 
-   Return the number of free :term:`free (closure) variables <closure variable>`
+   Return the number of :term:`free (closure) variables <closure variable>`
    in a code object.
 
 .. c:function:: int PyUnstable_Code_GetFirstFree(PyCodeObject *co)
