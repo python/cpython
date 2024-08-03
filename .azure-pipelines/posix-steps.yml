@@ -18,9 +18,3 @@ steps:
 
 - script: make pythoninfo
   displayName: 'Display build info'
-
-- script: |
-    git fetch origin
-    ./python Tools/patchcheck/patchcheck.py --ci true
-  displayName: 'Run patchcheck.py'
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))

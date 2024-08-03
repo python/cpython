@@ -25,7 +25,7 @@ from generators_common import (
 )
 from cwriter import CWriter
 from typing import TextIO
-from stack import Stack, StackError
+from stack import Local, Stack, StackError, get_stack_effect
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -43,18 +43,12 @@ def declare_variable(var: StackItem, out: CWriter) -> None:
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
-    stack = Stack()
-    for part in inst.parts:
-        if not isinstance(part, Uop):
-            continue
-        try:
-            for var in reversed(part.stack.inputs):
-                stack.pop(var)
-            for var in part.stack.outputs:
-                 stack.push(var)
-        except StackError as ex:
-            raise analysis_error(ex.args[0], part.body[0]) from None
+    try:
+        stack = get_stack_effect(inst)
+    except StackError as ex:
+        raise analysis_error(ex.args[0], inst.where)
     required = set(stack.defined)
+    required.discard("unused")
     for part in inst.parts:
         if not isinstance(part, Uop):
             continue
@@ -80,16 +74,26 @@ def write_uop(
         stack.flush(out)
         return offset
     try:
+        locals: dict[str, Local] = {}
         out.start_line()
         if braces:
             out.emit(f"// {uop.name}\n")
+        peeks: list[Local] = []
         for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
+            code, local = stack.pop(var)
+            out.emit(code)
+            if var.peek:
+                peeks.append(local)
+            if local.defined:
+                locals[local.name] = local
+        # Push back the peeks, so that they remain on the logical
+        # stack, but their values are cached.
+        while peeks:
+            stack.push(peeks.pop())
         if braces:
             out.emit("{\n")
-        if not uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
+        out.emit(stack.define_output_arrays(uop.stack.outputs))
+
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -105,16 +109,22 @@ def write_uop(
                     out.emit(f"(void){cache.name};\n")
             offset += cache.size
         emit_tokens(out, uop, stack, inst)
-        if uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
+        for i, var in enumerate(uop.stack.outputs):
+            if not var.peek:
+                if var.name in locals:
+                    local = locals[var.name]
+                elif var.name == "unused":
+                    local = Local.unused(var)
+                else:
+                    local = Local.local(var)
+                out.emit(stack.push(local))
         if braces:
             out.start_line()
             out.emit("}\n")
         # out.emit(stack.as_comment() + "\n")
         return offset
     except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0]) from None
+        raise analysis_error(ex.args[0], uop.body[0])
 
 
 def uses_this(inst: Instruction) -> bool:
