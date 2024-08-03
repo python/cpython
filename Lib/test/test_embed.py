@@ -438,8 +438,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         # Test _PyArg_Parser initializations via _PyArg_UnpackKeywords()
         # https://github.com/python/cpython/issues/122334
         code = textwrap.dedent("""
-            import _ssl
-            _ssl.txt2obj(txt='1.3')
+            try:
+                import _ssl
+            except ModuleNotFoundError:
+                _ssl = None
+            if _ssl is not None:
+                _ssl.txt2obj(txt='1.3')
             print('1')
 
             import _queue
