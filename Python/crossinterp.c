@@ -699,7 +699,7 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
         Py_DECREF(tbexc);
         if (info->errdisplay == NULL) {
 #ifdef Py_DEBUG
-            PyErr_FormatUnraisable("Exception ignored while formating TracebackException");
+            PyErr_FormatUnraisable("Exception ignored while formatting TracebackException");
 #endif
             PyErr_Clear();
         }
