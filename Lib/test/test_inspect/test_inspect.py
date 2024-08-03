@@ -1715,18 +1715,19 @@ class TestIsMethodDescriptor(unittest.TestCase):
 
     def test_builtin_descriptors(self):
         builtin_slot_wrapper = int.__add__  # This one is mentioned in docs.
+        def function():
+            pass
         class Owner:
             def instance_method(self): pass
             @classmethod
             def class_method(cls): pass
             @staticmethod
             def static_method(): pass
+            partial_as_method = functools.partial(function)
             @property
             def a_property(self): pass
         class Slotermeyer:
             __slots__ = 'a_slot',
-        def function():
-            pass
 
         # Example builtin method descriptors (non-data descriptors):
 
@@ -1739,6 +1740,9 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertTrue(
             inspect.ismethoddescriptor(Owner.__dict__['static_method']),
             'a staticmethod object is a method descriptor')
+        self.assertTrue(
+            inspect.ismethoddescriptor(functools.partial(function)),
+            'a functools.partial object is a method descriptor')
 
         # `types.MethodType`/`types.FunctionType` instances (note that
         # they *are* method descriptors, but `ismethoddescriptor()`
@@ -1747,12 +1751,12 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertFalse(inspect.ismethoddescriptor(Owner().instance_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner().class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner().static_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner().partial_as_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.instance_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.static_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
         self.assertFalse(inspect.ismethoddescriptor(lambda: None))
-        self.assertTrue(inspect.ismethoddescriptor(functools.partial(function)))
 
         # Example builtin data descriptors:
 
@@ -1946,18 +1950,19 @@ class TestIsDataDescriptor(unittest.TestCase):
 
     def test_builtin_descriptors(self):
         builtin_slot_wrapper = int.__add__
+        def function():
+            pass
         class Owner:
             def instance_method(self): pass
             @classmethod
             def class_method(cls): pass
             @staticmethod
             def static_method(): pass
+            partial_as_method = functools.partial(function)
             @property
             def a_property(self): pass
         class Slotermeyer:
             __slots__ = 'a_slot',
-        def function():
-            pass
 
         # Example builtin method descriptors (non-data descriptors):
 
@@ -1970,6 +1975,9 @@ class TestIsDataDescriptor(unittest.TestCase):
         self.assertFalse(
             inspect.isdatadescriptor(Owner.__dict__['static_method']),
             'a staticmethod object is not a data descriptor')
+        self.assertFalse(
+            inspect.isdatadescriptor(functools.partial(function)),
+            'a functools.partial object is not a data descriptor')
 
         # ...so also `types.MethodType`/`types.FunctionType` instances
         # (not only that they are not data descriptors, but also
@@ -1978,6 +1986,7 @@ class TestIsDataDescriptor(unittest.TestCase):
         self.assertFalse(inspect.isdatadescriptor(Owner().instance_method))
         self.assertFalse(inspect.isdatadescriptor(Owner().class_method))
         self.assertFalse(inspect.isdatadescriptor(Owner().static_method))
+        self.assertFalse(inspect.isdatadescriptor(Owner().partial_as_method))
         self.assertFalse(inspect.isdatadescriptor(Owner.instance_method))
         self.assertFalse(inspect.isdatadescriptor(Owner.class_method))
         self.assertFalse(inspect.isdatadescriptor(Owner.static_method))
