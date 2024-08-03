@@ -3,6 +3,7 @@ import ntpath
 import operator
 import os
 import posixpath
+import shutil
 import sys
 from glob import _StringGlobber
 from itertools import chain
@@ -846,7 +847,6 @@ class Path(PathBase, PurePath):
                 def onexc(func, filename, err):
                     err.filename = filename
                     on_error(err)
-            import shutil
             shutil.rmtree(str(self), ignore_errors, onexc=onexc)
         else:
             try:
@@ -858,6 +858,7 @@ class Path(PathBase, PurePath):
                     else:
                         raise
 
+    delete.avoids_symlink_attacks = shutil.rmtree.avoids_symlink_attacks
 
     def rename(self, target):
         """

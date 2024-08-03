@@ -1670,11 +1670,13 @@ Copying, renaming and deleting
 
    .. note::
 
-      On platforms that lack the necessary file descriptor-based functions,
-      :func:`~Path.delete` implementation is susceptible to a symlink attack:
-      given proper timing and circumstances, attackers can manipulate symlinks
-      on the filesystem to delete files they would not be able to access
-      otherwise.
+      When deleting non-empty directories on platforms that lack the necessary
+      file descriptor-based functions, the :meth:`Path.delete` implementation
+      is susceptible to a symlink attack: given proper timing and
+      circumstances, attackers can manipulate symlinks on the filesystem to
+      delete files they would not be able to access otherwise. Applications
+      can use the :data:`Path.delete.avoids_symlink_attacks` method attribute
+      to determine whether the implementation is immune to this attack.
 
    .. versionadded:: 3.14
 

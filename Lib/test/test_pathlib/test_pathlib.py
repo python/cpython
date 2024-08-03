@@ -864,6 +864,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
     def test_delete_uses_safe_fd_version_if_available(self):
         if delete_use_fd_functions:
+            self.assertTrue(self.cls.delete.avoids_symlink_attacks)
             d = self.cls(self.base, 'a')
             d.mkdir()
             try:
@@ -879,6 +880,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                 self.assertRaises(Called, d.delete)
             finally:
                 os.open = real_open
+        else:
+            self.assertFalse(self.cls.delete.avoids_symlink_attacks)
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")

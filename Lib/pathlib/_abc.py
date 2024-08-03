@@ -959,6 +959,7 @@ class PathBase(PurePathBase):
         except OSError as err:
             err.filename = str(self)
             on_error(err)
+    delete.avoids_symlink_attacks = False
 
     def owner(self, *, follow_symlinks=True):
         """
