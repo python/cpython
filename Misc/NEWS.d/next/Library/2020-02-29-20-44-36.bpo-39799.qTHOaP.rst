@@ -1,0 +1,2 @@
+Fix ``urllib.parse.urljoin``.
+In RFC 3986, ``base``'s fragment is always discarded.
