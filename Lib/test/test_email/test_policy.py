@@ -423,7 +423,7 @@ class TestConcretePolicies(unittest.TestCase):
         self.assertRaises(ValueError,
                           instance.header_store_parse,
                           'From', 'spam\negg@foo.py')
-        
+
 class TestLeadingWhitespacePolicies(unittest.TestCase):
 
     def test_message_id(self):
