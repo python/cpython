@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_object_deferred.h"
 
 #include <stddef.h>
+#include <stdbool.h>
 
 /*
   This file introduces a new API for handling references on the stack, called
@@ -237,6 +238,38 @@ _PyObjectStack_FromStackRefStack(PyObject **dst, const _PyStackRef *src, size_t 
     }
 }
 
+// StackRef type checks
+
+static inline bool
+PyStackRef_GenCheck(_PyStackRef stackref)
+{
+    return PyGen_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+static inline bool
+PyStackRef_BoolCheck(_PyStackRef stackref)
+{
+    return PyBool_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+static inline bool
+PyStackRef_LongCheck(_PyStackRef stackref)
+{
+    return PyLong_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+static inline bool
+PyStackRef_ExceptionInstanceCheck(_PyStackRef stackref)
+{
+    return PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+
+static inline bool
+PyStackRef_FunctionCheck(_PyStackRef stackref)
+{
+    return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
 
 #ifdef __cplusplus
 }

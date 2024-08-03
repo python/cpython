@@ -19,6 +19,25 @@ Pending Removal in Python 3.14
   Use :class:`ast.Constant` instead.
   (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
+* :mod:`asyncio`:
+
+  * The child watcher classes :class:`!asyncio.MultiLoopChildWatcher`,
+    :class:`!asyncio.FastChildWatcher`, :class:`!asyncio.AbstractChildWatcher`
+    and :class:`!asyncio.SafeChildWatcher` are deprecated and
+    will be removed in Python 3.14.
+    (Contributed by Kumar Aditya in :gh:`94597`.)
+
+  * :func:`!asyncio.set_child_watcher`, :func:`!asyncio.get_child_watcher`,
+    :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher` and
+    :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
+    and will be removed in Python 3.14.
+    (Contributed by Kumar Aditya in :gh:`94597`.)
+
+  * The :meth:`~asyncio.get_event_loop` method of the
+    default event loop policy now emits a :exc:`DeprecationWarning` if there
+    is no current event loop set and it decides to create one.
+    (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
+
 * :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
   Prefer :class:`!Sequence` or :class:`~collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``,
