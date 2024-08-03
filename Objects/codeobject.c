@@ -340,7 +340,12 @@ intern_constants(PyObject *tuple)
     }
     if (new_tuple) {
 #ifdef Py_GIL_DISABLED
-        return intern_one_constant(new_tuple);
+        PyThreadState *tstate = PyThreadState_GET();
+        if (!_Py_IsImmortal(new_tuple) &&
+            _Py_atomic_load_int(&tstate->interp->gc.immortalize) >= 0
+        ) {
+            return intern_one_constant(new_tuple);
+        }
 #endif
         return new_tuple;
     }
