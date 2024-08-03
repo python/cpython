@@ -339,6 +339,9 @@ intern_constants(PyObject *tuple)
 #endif
     }
     if (new_tuple) {
+#ifdef Py_GIL_DISABLED
+        return intern_one_constant(new_tuple);
+#endif
         return new_tuple;
     }
     return Py_NewRef(tuple);
