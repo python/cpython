@@ -1677,7 +1677,6 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 #define LEAVE_RECURSIVE(ST) \
     do { \
         --(ST)->recursion_depth; \
-        return 1; \
     } while(0)
 
 
