@@ -1168,9 +1168,9 @@ Special read-only attributes
        that are referenced from at least one :term:`nested scope` inside the function
 
    * - .. attribute:: codeobject.co_freevars
-     - A :class:`tuple` containing the names of free
-       :term:`closure variables <closure variable>` that a :term:`nested scope` references
-       in an outer scope. See also :attr:`function.__closure__`.
+     - A :class:`tuple` containing the names of
+       :term:`free (closure) variables <closure variable>` that a :term:`nested scope`
+       references in an outer scope. See also :attr:`function.__closure__`.
 
        Note: references to global and builtin names are *not* included.
 
