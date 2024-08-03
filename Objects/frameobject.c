@@ -53,22 +53,27 @@ static int
 framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
 {
     /*
-     * Returns the fast locals index of the key
+     * Returns -2 (!) if an error occurred; exception will be set.
+     * Returns the fast locals index of the key on success:
      *   - if read == true, returns the index if the value is not NULL
      *   - if read == false, returns the index if the value is not hidden
+     * Otherwise returns -1.
      */
 
-    assert(PyUnicode_CheckExact(key));
-
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
-    int found_key = false;
+
+    // Ensure that the key is hashable.
+    Py_hash_t key_hash = PyObject_Hash(key);
+    if (key_hash == -1) {
+        return -2;
+    }
+    bool found = false;
 
     // We do 2 loops here because it's highly possible the key is interned
     // and we can do a pointer comparison.
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         if (name == key) {
-            found_key = true;
             if (read) {
                 if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
                     return i;
@@ -78,23 +83,35 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
                     return i;
                 }
             }
+            found = true;
         }
     }
-
-    if (!found_key) {
-        // This is unlikely, but we need to make sure. This means the key
-        // is not interned.
-        for (int i = 0; i < co->co_nlocalsplus; i++) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            if (_PyUnicode_EQ(name, key)) {
-                if (read) {
-                    if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
-                        return i;
-                    }
-                } else {
-                    if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
-                        return i;
-                    }
+    if (found) {
+        // This is an attempt to read an unset local variable or
+        // write to a variable that is hidden from regular write operations
+        return -1;
+    }
+    // This is unlikely, but we need to make sure. This means the key
+    // is not interned.
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        Py_hash_t name_hash = PyObject_Hash(name);
+        assert(name_hash != -1);  // keys are exact unicode
+        if (name_hash != key_hash) {
+            continue;
+        }
+        int same = PyObject_RichCompareBool(name, key, Py_EQ);
+        if (same < 0) {
+            return -2;
+        }
+        if (same) {
+            if (read) {
+                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                    return i;
+                }
+            } else {
+                if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
+                    return i;
                 }
             }
         }
@@ -109,13 +126,14 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
     PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
 
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, true);
-        if (i >= 0) {
-            PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
-            assert(value != NULL);
-            return Py_NewRef(value);
-        }
+    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    if (i == -2) {
+        return NULL;
+    }
+    if (i >= 0) {
+        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+        assert(value != NULL);
+        return Py_NewRef(value);
     }
 
     // Okay not in the fast locals, try extra locals
@@ -145,35 +163,36 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         return -1;
     }
 
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, false);
-        if (i >= 0) {
-            _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
+    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    if (i == -2) {
+        return -1;
+    }
+    if (i >= 0) {
+        _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
 
-            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-            PyObject *oldvalue = fast[i];
-            PyObject *cell = NULL;
-            if (kind == CO_FAST_FREE) {
-                // The cell was set when the frame was created from
-                // the function's closure.
-                assert(oldvalue != NULL && PyCell_Check(oldvalue));
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+        PyObject *oldvalue = fast[i];
+        PyObject *cell = NULL;
+        if (kind == CO_FAST_FREE) {
+            // The cell was set when the frame was created from
+            // the function's closure.
+            assert(oldvalue != NULL && PyCell_Check(oldvalue));
+            cell = oldvalue;
+        } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
+            if (PyCell_Check(oldvalue)) {
                 cell = oldvalue;
-            } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
-                if (PyCell_Check(oldvalue)) {
-                    cell = oldvalue;
-                }
             }
-            if (cell != NULL) {
-                oldvalue = PyCell_GET(cell);
-                if (value != oldvalue) {
-                    PyCell_SET(cell, Py_XNewRef(value));
-                    Py_XDECREF(oldvalue);
-                }
-            } else if (value != oldvalue) {
-                Py_XSETREF(fast[i], Py_NewRef(value));
-            }
-            return 0;
         }
+        if (cell != NULL) {
+            oldvalue = PyCell_GET(cell);
+            if (value != oldvalue) {
+                PyCell_SET(cell, Py_XNewRef(value));
+                Py_XDECREF(oldvalue);
+            }
+        } else if (value != oldvalue) {
+            Py_XSETREF(fast[i], Py_NewRef(value));
+        }
+        return 0;
     }
 
     // Okay not in the fast locals, try extra locals
@@ -543,11 +562,12 @@ framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
 
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, true);
-        if (i >= 0) {
-            return 1;
-        }
+    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    if (i == -2) {
+        return -1;
+    }
+    if (i >= 0) {
+        return 1;
     }
 
     PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
