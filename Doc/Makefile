@@ -6,6 +6,7 @@
 # You can set these variables from the command line.
 PYTHON       = python3
 VENVDIR      = ./venv
+UV           = uv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 JOBS         = auto
@@ -150,14 +151,10 @@ gettext: build
 htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
-.PHONY: ensure-sphinx-autobuild
-ensure-sphinx-autobuild: venv
-	$(call ensure_package,sphinx-autobuild)
-
 .PHONY: htmllive
 htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
 htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
-htmllive: ensure-sphinx-autobuild html
+htmllive: _ensure-sphinx-autobuild html
 
 .PHONY: clean
 clean: clean-venv
@@ -174,15 +171,15 @@ venv:
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		echo "Creating venv in $(VENVDIR)"; \
-		if uv --version > /dev/null; then \
-			uv venv $(VENVDIR); \
-			VIRTUAL_ENV=$(VENVDIR) uv pip install -r $(REQUIREMENTS); \
+		if $(UV) --version >/dev/null 2>&1; then \
+			$(UV) venv $(VENVDIR); \
+			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
 		else \
 			$(PYTHON) -m venv $(VENVDIR); \
 			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
 			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
-			echo "The venv has been created in the $(VENVDIR) directory"; \
 		fi; \
+		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
 .PHONY: dist
@@ -240,17 +237,24 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
-define ensure_package
-	if uv --version > /dev/null; then \
-		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install $(1); \
+.PHONY: _ensure-package
+_ensure-package: venv
+	if $(UV) --version >/dev/null 2>&1; then \
+		VIRTUAL_ENV=$(VENVDIR) $(UV) pip install $(PACKAGE); \
 	else \
-		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install $(1); \
+		$(VENVDIR)/bin/python3 -m pip install $(PACKAGE); \
 	fi
-endef
+
+.PHONY: _ensure-pre-commit
+_ensure-pre-commit:
+	make _ensure-package PACKAGE=pre-commit
+
+.PHONY: _ensure-sphinx-autobuild
+_ensure-sphinx-autobuild:
+	make _ensure-package PACKAGE=sphinx-autobuild
 
 .PHONY: check
-check: venv
-	$(call ensure_package,pre_commit)
+check: _ensure-pre-commit
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
