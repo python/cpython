@@ -92,7 +92,7 @@ else:
     copyfd = None
 
 
-if _winapi:
+if _winapi and hasattr(_winapi, 'CopyFile2'):
     def copyfile(source, target):
         """
         Copy from one file to another using CopyFile2 (Windows only).
