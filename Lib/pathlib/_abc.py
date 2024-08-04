@@ -840,8 +840,8 @@ class PathBase(PurePathBase):
                 else:
                     raise
 
-    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False,
-             dirs_exist_ok=False, ignore=None, on_error=None):
+    def copy(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
+             preserve_metadata=False, ignore=None, on_error=None):
         """
         Recursively copy this file or directory tree to the given destination.
         """

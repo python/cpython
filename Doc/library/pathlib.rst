@@ -1539,16 +1539,21 @@ Creating files and directories
 Copying, renaming and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target, *, follow_symlinks=True, \
-                      preserve_metadata=False, dirs_exist_ok=False, \
-                      ignore=None, on_error=None)
+.. method:: Path.copy(target, *, follow_symlinks=True, dirs_exist_ok=False, \
+                      preserve_metadata=False, ignore=None, on_error=None)
 
-   Copy this file or directory tree to the given *target*. If both paths are
-   existing files, the target file will be replaced.
+   Copy this file or directory tree to the given *target*.
 
-   If a symlink is encountered and *follow_symlinks* is true (the default),
-   the symlink's target is copied. Otherwise, the symlink is recreated at the
-   destination.
+   If the source is a file, the target will be replaced if it is an existing
+   file. If the source is a symlink and *follow_symlinks* is true (the
+   default), the symlink's target is copied. Otherwise, the symlink is
+   recreated at the destination.
+
+   If the source is a directory and *dirs_exist_ok* is false (the default), a
+   :exc:`FileExistsError` is raised if the target is an existing directory.
+   If *dirs_exists_ok* is true, the copying operation will continue if it
+   encounters existing directories, and files within the destination tree will
+   be overwritten by corresponding files from the source tree.
 
    If *preserve_metadata* is false (the default), only directory structures
    and file data are guaranteed to be copied. Set *preserve_metadata* to true
@@ -1556,12 +1561,6 @@ Copying, renaming and deleting
    modification times, and extended attributes are copied where supported.
    This argument has no effect when copying files on Windows (metadata is
    always preserved in this case.)
-
-   If the source and target are existing directories and *dirs_exist_ok* is
-   false (the default), a :exc:`FileExistsError` is raised. Otherwise, the
-   copying operation will continue if it encounters existing directories, and
-   files within the destination tree will be overwritten by corresponding
-   files from the source tree.
 
    If *ignore* is given, it should be a callable accepting one argument: a
    source file or directory path. The callable may return true to suppress
