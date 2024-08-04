@@ -1083,9 +1083,13 @@ iterations of the loop.
    Creates a tuple consuming *count* items from the stack, and pushes the
    resulting tuple onto the stack.::
 
-      assert count > 0
-      STACK, values = STACK[:-count], STACK[-count:]
-      STACK.append(tuple(values))
+      if count == 0:
+          value = ()
+      else:
+          STACK = STACK[:-count]
+          value = tuple(STACK[-count:])
+
+      STACK.append(value)
 
 
 .. opcode:: BUILD_LIST (count)
