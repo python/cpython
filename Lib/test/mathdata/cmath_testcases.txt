@@ -371,9 +371,9 @@ acosh1002 acosh 0.0 inf -> inf 1.5707963267948966
 acosh1003 acosh 2.3 inf -> inf 1.5707963267948966
 acosh1004 acosh -0.0 inf -> inf 1.5707963267948966
 acosh1005 acosh -2.3 inf -> inf 1.5707963267948966
-acosh1006 acosh 0.0 nan -> nan nan
+acosh1006 acosh 0.0 nan -> nan 1.5707963267948966         ignore-imag-sign
 acosh1007 acosh 2.3 nan -> nan nan
-acosh1008 acosh -0.0 nan -> nan nan
+acosh1008 acosh -0.0 nan -> nan 1.5707963267948966        ignore-imag-sign
 acosh1009 acosh -2.3 nan -> nan nan
 acosh1010 acosh -inf 0.0 -> inf 3.1415926535897931
 acosh1011 acosh -inf 2.3 -> inf 3.1415926535897931
