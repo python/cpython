@@ -1554,8 +1554,8 @@ Copying, renaming and deleting
    and file data are guaranteed to be copied. Set *preserve_metadata* to true
    to ensure that file and directory permissions, flags, last access and
    modification times, and extended attributes are copied where supported.
-   This argument has no effect on Windows, where metadata is always preserved
-   when copying.
+   This argument has no effect when copying files on Windows (metadata is
+   always preserved in this case.)
 
    If the source and target are existing directories and *dirs_exist_ok* is
    false (the default), a :exc:`FileExistsError` is raised. Otherwise, the
