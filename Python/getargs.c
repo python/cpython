@@ -2546,18 +2546,12 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
     if (varargssize < 0) {
         varargssize = 0;
     }
-    buf[vararg] = PyTuple_New(varargssize);
-    if (!buf[vararg]) {
-        return NULL;
-    }
-    for (i = 0; i < vararg; ++i) {
-        // copy the first arguments until the 'vararg' index
-        buf[i] = args[i];
-    }
-    for (i = vararg; i < nargs; ++i) {
-        // remaining arguments are all considered as variadic ones
-        PyTuple_SET_ITEM(buf[vararg], i - vararg, Py_NewRef(args[i]));
-    }
+
+    // copy the first arguments until the 'vararg' index
+    memcpy(buf, args, vararg * sizeof(PyObject *));
+    // remaining arguments are all considered as variadic ones
+    buf[vararg] = _PyTuple_FromArray(&args[vararg], varargssize);
+
     // We need to place the keyword arguments correctly in "buf".
     //
     // The buffer is always of the following form:
