@@ -19,18 +19,15 @@ requires_Decompress_copy = unittest.skipUnless(
         'requires Decompress.copy()')
 
 
-def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
+def _parse_version(version):
     # Register "1.2.3" as "1.2.3.0"
     # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
-    v = zlib_version.split('-', 1)[0].split('.')
-    if len(v) < 4:
+    v = version.split('-', 1)[0].split('.')
+    if not v[-1].isnumeric():
+        v.pop()
+    while len(v) < 4:
         v.append('0')
-    elif not v[-1].isnumeric():
-        v[-1] = '0'
     return tuple(map(int, v))
-
-
-ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
 
 
 # bpo-46623: On s390x, when a hardware accelerator is used, using different
@@ -69,6 +66,42 @@ class VersionTestCase(unittest.TestCase):
         # was compiled), and the API is stable between minor versions, so
         # testing only the major versions avoids spurious failures.
         self.assertEqual(zlib.ZLIB_RUNTIME_VERSION[0], zlib.ZLIB_VERSION[0])
+        self.assertEqual(zlib.zlib_runtime_version[0], zlib.zlib_version[0])
+
+    def _test_zlib_version(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 4)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v[3], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.revision, int)
+        self.assertIsInstance(v.subversion, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.revision)
+        self.assertEqual(v[3], v.subversion)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.revision, 0)
+        self.assertGreaterEqual(v.subversion, 0)
+
+    def test_zlib_version(self):
+        if support.verbose:
+            print(f'ZLIB_VERSION = {zlib.ZLIB_VERSION}', flush=True)
+            print(f'zlib_version = {zlib.zlib_version}', flush=True)
+        self._test_zlib_version(zlib.zlib_version)
+        self.assertEqual(zlib.zlib_version, _parse_version(zlib.ZLIB_VERSION))
+
+    def test_zlib_runtime_version(self):
+        if support.verbose:
+            print(f'ZLIB_RUNTIME_VERSION = {zlib.ZLIB_RUNTIME_VERSION}', flush=True)
+            print(f'zlib_runtime_version = {zlib.zlib_runtime_version}', flush=True)
+        self._test_zlib_version(zlib.zlib_runtime_version)
+        self.assertEqual(zlib.zlib_runtime_version,
+                         _parse_version(zlib.ZLIB_RUNTIME_VERSION))
 
 
 class ChecksumTestCase(unittest.TestCase):
@@ -489,7 +522,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                     'Z_PARTIAL_FLUSH']
 
         # Z_BLOCK has a known failure prior to 1.2.5.3
-        if ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 5, 3):
+        if zlib.zlib_version >= (1, 2, 5, 3):
             sync_opt.append('Z_BLOCK')
 
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
@@ -807,7 +840,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
-        supports_wbits_0 = ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 3, 5)
+        supports_wbits_0 = zlib.zlib_version >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()

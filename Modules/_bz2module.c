@@ -748,6 +748,56 @@ static PyType_Spec bz2_decompressor_type_spec = {
     .slots = bz2_decompressor_type_slots,
 };
 
+
+PyDoc_STRVAR(bzlib_version__doc__,
+"_bz2.bzlib_version\n\
+\n\
+Bzlib version information as a named tuple.");
+
+static PyStructSequence_Field bzlib_version_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc zlib_version_desc = {
+    "_bz2.bzlib_version",    /* name */
+    bzlib_version__doc__,    /* doc */
+    bzlib_version_fields,    /* fields */
+    3
+};
+
+static PyObject *
+make_bzlib_version(PyTypeObject *type, const char *string)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = 0, minor = 0, patch = 0;
+
+    sscanf(string, "%u.%u.%u", &major, &minor, &patch);
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetIntItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(patch)
+#undef SetIntItem
+
+    return version;
+}
+
+
 /* Module initialization. */
 
 static int
@@ -772,6 +822,24 @@ _bz2_exec(PyObject *module)
         return -1;
     }
 
+    /* bzlib_version */
+    if (PyModule_Add(module, "BZLIB_VERSION",
+            PyUnicode_FromString(BZ2_bzlibVersion())) < 0)
+    {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&zlib_version_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "bzlib_version",
+            make_bzlib_version(version_type, BZ2_bzlibVersion())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
     return 0;
 }
 

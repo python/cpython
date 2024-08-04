@@ -330,6 +330,27 @@ the following constants:
    .. versionadded:: 3.3
 
 
+.. data:: zlib_version
+
+   A named tuple containing the four components of the zlib library
+   version that was used for building the module:
+   *major*, *minor*, *revision*, and *subversion*.
+   All values are integers.
+   The components can also be accessed by name, so ``zlib.zlib_version[0]``
+   is equivalent to ``zlib.zlib_version.major`` and so on.
+   This may be different from the zlib library actually used at runtime, which
+   is available as :const:`zlib_runtime_version`.
+
+   .. versionadded:: 3.13
+
+
+.. data:: zlib_runtime_version
+
+   A named tuple containing the zlib library version actually loaded by the interpreter.
+
+   .. versionadded:: 3.13
+
+
 .. seealso::
 
    Module :mod:`gzip`

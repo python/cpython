@@ -1198,6 +1198,31 @@ class OpenTest(BaseTest):
             self.assertEqual(f.readlines(), [text])
 
 
+class MiscTests(unittest.TestCase):
+
+    def test_bzlib_version(self):
+        if support.verbose:
+            print(f'BZLIB_VERSION = {bz2.BZLIB_VERSION}', flush=True)
+            print(f'bzlib_version = {bz2.bzlib_version}', flush=True)
+        v = bz2.bzlib_version
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+
+        self.assertEqual(bz2.BZLIB_VERSION.split(',')[0], '%d.%d.%d' % v)
+
+
 def tearDownModule():
     support.reap_children()
 
