@@ -52,6 +52,7 @@ whose size is determined when the object is allocated.
 */
 
 #include "pystats.h"
+#include "alloc_info.h"
 
 /* Py_DEBUG implies Py_REF_DEBUG. */
 #if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
@@ -656,6 +657,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     _Py_INCREF_IncRefTotal();
 #endif
 #endif
+    on_incref(op);
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
