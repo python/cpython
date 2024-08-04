@@ -247,7 +247,7 @@ Improved Error Messages
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
 * Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
-  with a tuple of names of attributes of this class which are accessed
+  with a tuple of names of attributes of this class which are assigned
   through ``self.X`` from any function in its body. (Contributed by Irit Katriel
   in :gh:`115775`.)
 
@@ -735,6 +735,15 @@ doctest
 
 email
 -----
+
+* Headers with embedded newlines are now quoted on output.
+
+  The :mod:`~email.generator` will now refuse to serialize (write) headers
+  that are improperly folded or delimited, such that they would be parsed as
+  multiple headers or joined with adjacent data.
+  If you need to turn this safety feature off,
+  set :attr:`~email.policy.Policy.verify_generated_headers`.
+  (Contributed by Bas Bloemsaat and Petr Viktorin in :gh:`121650`.)
 
 * :func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now return
   ``('', '')`` 2-tuples in more situations where invalid email addresses are
@@ -1494,8 +1503,8 @@ New Deprecations
   (Contributed by Hugo van Kemenade in :gh:`80480`.)
 
 * :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
-  and :func:`!ctypes.ARRAY` functions.
-  Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
+  function. :term:`Soft-deprecate <soft deprecated>` the :func:`ctypes.ARRAY`
+  function in favor of multiplication.
   (Contributed by Victor Stinner in :gh:`105733`.)
 
 * :mod:`decimal`: Deprecate non-standard format specifier "N" for
@@ -2208,6 +2217,9 @@ Removed C APIs
   be used instead.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
+* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
+  (Contributed by Victor Stinner in :gh:`110014`.)
+
 Deprecated C APIs
 -----------------
 
@@ -2249,105 +2261,13 @@ Deprecated C APIs
   Refer to the deprecation notices on each function for their recommended replacements.
   (Soft deprecated as part of :pep:`667`.)
 
-Pending Removal in Python 3.14
-------------------------------
+.. Add deprecations above alphabetically, not here at the end.
 
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API.
+.. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
-* Functions to configure the Python initialization, deprecated in Python 3.11:
+.. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
-  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
-  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
-  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
-  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
-
-  The :c:func:`Py_InitializeFromConfig` API should be used with
-  :c:type:`PyConfig` instead.
-
-* Global configuration variables:
-
-  * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
-  * :c:var:`Py_VerboseFlag`: use :c:member:`PyConfig.verbose`
-  * :c:var:`Py_QuietFlag`: use :c:member:`PyConfig.quiet`
-  * :c:var:`Py_InteractiveFlag`: use :c:member:`PyConfig.interactive`
-  * :c:var:`Py_InspectFlag`: use :c:member:`PyConfig.inspect`
-  * :c:var:`Py_OptimizeFlag`: use :c:member:`PyConfig.optimization_level`
-  * :c:var:`Py_NoSiteFlag`: use :c:member:`PyConfig.site_import`
-  * :c:var:`Py_BytesWarningFlag`: use :c:member:`PyConfig.bytes_warning`
-  * :c:var:`Py_FrozenFlag`: use :c:member:`PyConfig.pathconfig_warnings`
-  * :c:var:`Py_IgnoreEnvironmentFlag`: use :c:member:`PyConfig.use_environment`
-  * :c:var:`Py_DontWriteBytecodeFlag`: use :c:member:`PyConfig.write_bytecode`
-  * :c:var:`Py_NoUserSiteDirectory`: use :c:member:`PyConfig.user_site_directory`
-  * :c:var:`Py_UnbufferedStdioFlag`: use :c:member:`PyConfig.buffered_stdio`
-  * :c:var:`Py_HashRandomizationFlag`: use :c:member:`PyConfig.use_hash_seed`
-    and :c:member:`PyConfig.hash_seed`
-  * :c:var:`Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`
-  * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`
-  * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
-  * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
-  * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
-  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
-  * :c:var:`!Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
-
-  The :c:func:`Py_InitializeFromConfig` API should be used with
-  :c:type:`PyConfig` instead.
-
-Pending Removal in Python 3.15
-------------------------------
-
-* The bundled copy of ``libmpdecimal``.
-* :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
-* :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
-* :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.
-* :c:type:`!Py_UNICODE_WIDE` type: use :c:type:`wchar_t` instead.
-* :c:type:`Py_UNICODE` type: use :c:type:`wchar_t` instead.
-* Python initialization functions:
-
-  * :c:func:`PySys_ResetWarnOptions`: clear :data:`sys.warnoptions` and
-    :data:`!warnings.filters` instead.
-  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix` instead.
-  * :c:func:`Py_GetPath`: get :data:`sys.path` instead.
-  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix` instead.
-  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable` instead.
-  * :c:func:`Py_GetProgramName`: get :data:`sys.executable` instead.
-  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
-    :envvar:`PYTHONHOME` environment variable instead.
-
-Pending Removal in Future Versions
-----------------------------------
-
-The following APIs were deprecated in earlier Python versions and will be
-removed, although there is currently no date scheduled for their removal.
-
-* :c:macro:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
-* :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`.
-* :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`.
-* :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`.
-* :c:func:`PyModule_GetFilename`: use :c:func:`PyModule_GetFilenameObject`.
-* :c:func:`PyOS_AfterFork`: use :c:func:`PyOS_AfterFork_Child()`.
-* :c:func:`PySlice_GetIndicesEx`.
-* :c:func:`!PyUnicode_AsDecodedObject`.
-* :c:func:`!PyUnicode_AsDecodedUnicode`.
-* :c:func:`!PyUnicode_AsEncodedObject`.
-* :c:func:`!PyUnicode_AsEncodedUnicode`.
-* :c:func:`PyUnicode_READY`: not needed since Python 3.12.
-* :c:func:`!_PyErr_ChainExceptions`.
-* :c:member:`!PyBytesObject.ob_shash` member:
-  call :c:func:`PyObject_Hash` instead.
-* :c:member:`!PyDictObject.ma_version_tag` member.
-* TLS API:
-
-  * :c:func:`PyThread_create_key`: use :c:func:`PyThread_tss_alloc`.
-  * :c:func:`PyThread_delete_key`: use :c:func:`PyThread_tss_free`.
-  * :c:func:`PyThread_set_key_value`: use :c:func:`PyThread_tss_set`.
-  * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`.
-  * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`.
-  * :c:func:`PyThread_ReInitTLS`: no longer needed.
-
-* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
-  (Contributed by Victor Stinner in :gh:`110014`.)
-
+.. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 Regression Test Changes
 =======================
