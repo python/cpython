@@ -1122,6 +1122,17 @@ PyDoc_STRVAR(rlock_exit_doc,
 Release the lock.");
 
 static PyObject *
+rlock_locked(rlockobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyBool_FromLong(_Py_atomic_load_ullong_relaxed(&self->rlock_owner) != 0);
+}
+
+PyDoc_STRVAR(rlock_locked_doc,
+"locked()\n\
+\n\
+Returns whether this lock is locked right now or not.");
+
+static PyObject *
 rlock_acquire_restore(rlockobject *self, PyObject *args)
 {
     PyThread_ident_t owner;
@@ -1266,6 +1277,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      (PyCFunction)rlock_release,
      METH_NOARGS, rlock_release_doc},
+    {"locked",       (PyCFunction)rlock_locked,
+     METH_NOARGS, rlock_locked_doc},
     {"_is_owned",     (PyCFunction)rlock_is_owned,
      METH_NOARGS, rlock_is_owned_doc},
     {"_acquire_restore", (PyCFunction)rlock_acquire_restore,
