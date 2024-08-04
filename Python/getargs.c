@@ -2536,12 +2536,14 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     }
 
-    // Create the tuple of variadic arguments and place it at 'buf[vararg]'.
-    // The function has at most 'maxpos' positional arguments, possibly with
-    // default values or not and possibly positional-only. Since 'args' is
-    // an array of 'nargs' arguments representing the positional arguments
-    // of the call, there are only 'nargs - maxpos' arguments that will
-    // be considered as variadic and gathered into a single tuple.
+    /*
+     * Create the tuple of variadic arguments and place it at 'buf[vararg]'.
+     * The function has at most 'maxpos' positional arguments, possibly with
+     * default values or not and possibly positional-only. Since 'args' is
+     * an array of 'nargs' arguments representing the positional arguments
+     * of the call, there are only 'nargs - maxpos' arguments that will
+     * be considered as variadic and gathered into a single tuple.
+     */
     varargssize = nargs - maxpos;
     if (varargssize < 0) {
         varargssize = 0;
@@ -2552,15 +2554,17 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
     // remaining arguments are all considered as variadic ones
     buf[vararg] = _PyTuple_FromArray(&args[vararg], varargssize);
 
-    // We need to place the keyword arguments correctly in "buf".
-    //
-    // The buffer is always of the following form:
-    //
-    //  buf = [x1, ..., xN]    (*args)   [k1, ..., kM]
-    //
-    // where x1, ..., xN are the positional arguments, '*args' is a tuple
-    // containing the variadic arguments (it will be untouched now) and
-    // k1, ..., kM are the keyword arguments that are not positionals.
+    /*
+     * We need to place the keyword arguments correctly in "buf".
+     *
+     * The buffer is always of the following form:
+     *
+     *  buf = [x1, ..., xN]    (*args)   [k1, ..., kM]
+     *
+     * where x1, ..., xN are the positional arguments, '*args' is a tuple
+     * containing the variadic arguments (it will be untouched now) and
+     * k1, ..., kM are the keyword arguments that are not positionals.
+     */
     for (i = Py_MAX((int)nargs, posonly) - Py_SAFE_DOWNCAST(varargssize, Py_ssize_t, int); i < maxargs; i++) {
         PyObject *current_arg;
         if (nkwargs) {
