@@ -363,9 +363,7 @@ class TestAndroidOutput(unittest.TestCase):
                             stream.write(obj)
 
     def test_rate_limit(self):
-        # See _android_support.py.
-        MAX_KB_PER_SECOND = 1024
-        BUCKET_KB = 128
+        # https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:system/logging/liblog/include/log/log_read.h;l=39
         PER_MESSAGE_OVERHEAD = 28
 
         # https://developer.android.com/ndk/reference/group/logging
@@ -382,28 +380,45 @@ class TestAndroidOutput(unittest.TestCase):
             1024 - PER_MESSAGE_OVERHEAD - len(tag) - len(message.format(0))
         ) + "\n"
 
-        # Make sure the token bucket is full.
-        sleep(BUCKET_KB / MAX_KB_PER_SECOND)
-        line_num = 0
+        # See _android_support.py. The default values of these parameters work
+        # well across a wide range of devices, but we'll use smaller values to
+        # ensure a quick and reliable test that doesn't flood the log too much.
+        MAX_KB_PER_SECOND = 100
+        BUCKET_KB = 10
+        with (
+            patch("_android_support.MAX_BYTES_PER_SECOND", MAX_KB_PER_SECOND * 1024),
+            patch("_android_support.BUCKET_SIZE", BUCKET_KB * 1024),
+        ):
+            # Make sure the token bucket is full.
+            sleep(BUCKET_KB / MAX_KB_PER_SECOND)
+            line_num = 0
 
-        # Send BUCKET_KB messages and return the rate at which they were consumed.
-        def write_bucketful():
-            nonlocal line_num
-            start = time()
-            max_line_num = line_num + BUCKET_KB
-            while line_num < max_line_num:
-                stream.write(message.format(line_num))
-                line_num += 1
-            return BUCKET_KB / (time() - start)
+            # Write BUCKET_KB messages, and return the rate at which they were
+            # accepted in KB per second.
+            def write_bucketful():
+                nonlocal line_num
+                start = time()
+                max_line_num = line_num + BUCKET_KB
+                while line_num < max_line_num:
+                    stream.write(message.format(line_num))
+                    line_num += 1
+                return BUCKET_KB / (time() - start)
 
-        # The first BUCKET_KB should be written with minimal delay.
-        self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
+            # The first bucketful should be written with minimal delay. The
+            # factor of 2 here is not arbitrary: it verifies that the system can
+            # write fast enough to empty the bucket within two bucketfuls, which
+            # the next part of the test depends on.
+            self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
 
-        # The next BUCKET_KB should be written at the rate limit.
-        rate = write_bucketful()
-        self.assertGreater(rate, MAX_KB_PER_SECOND * 0.75)
-        self.assertLess(rate, MAX_KB_PER_SECOND * 1.25)
+            # Write another bucketful to empty the token bucket completely.
+            write_bucketful()
 
-        # Once the token bucket is full again, we should go back to full speed.
-        sleep(BUCKET_KB / MAX_KB_PER_SECOND)
-        self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
+            # The next bucketful should be written at the rate limit.
+            self.assertAlmostEqual(
+                write_bucketful(), MAX_KB_PER_SECOND,
+                delta=MAX_KB_PER_SECOND * 0.1
+            )
+
+            # Once the token bucket refills, we should go back to full speed.
+            sleep(BUCKET_KB / MAX_KB_PER_SECOND)
+            self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
