@@ -47,7 +47,8 @@ def extract_warnings_from_compiler_output_json(
     but includes many json objects and may include other output
     that is not json.
     """
-    # Regex to find json arrays at the top level of the file in the compiler output
+    # Regex to find json arrays at the top level of the file
+    # in the compiler output
     json_arrays = re.findall(
         r"\[(?:[^[\]]|\[[^\]]*\])*\]", compiler_output
     )
@@ -64,7 +65,6 @@ def extract_warnings_from_compiler_output_json(
             for warning in warning_list:
                 locations = warning["locations"]
                 for location in locations:
-                    found_location = False
                     for key in ["caret", "start", "end"]:
                         if key in location:
                             compiler_warnings.append(
@@ -91,7 +91,8 @@ def extract_warnings_from_compiler_output_json(
 
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
-    Returns a dictionary where the key is the file and the data is the warnings in that file
+    Returns a dictionary where the key is the file and the data is the warnings
+    in that file
     """
     warnings_by_file = defaultdict(list)
     for warning in warnings:
@@ -105,8 +106,9 @@ def get_unexpected_warnings(
     files_with_warnings: dict[str, list[dict]],
 ) -> int:
     """
-    Returns failure status if warnings discovered in list of warnings are associated with a file
-    that is not found in the list of files with expected warnings
+    Returns failure status if warnings discovered in list of warnings
+    are associated with a file that is not found in the list of files
+    with expected warnings
     """
     unexpected_warnings = []
     for file in files_with_warnings.keys():
@@ -127,8 +129,8 @@ def get_unexpected_improvements(
     files_with_warnings: dict[str, list[dict]],
 ) -> int:
     """
-    Returns failure status if there are no warnings in the list of warnings for a file
-    that is in the list of files with expected warnings
+    Returns failure status if there are no warnings in the list of warnings
+    for a file that is in the list of files with expected warnings
     """
     unexpected_improvements = []
     for file in files_with_expected_warnings:
@@ -171,7 +173,8 @@ def main(argv: list[str] | None = None) -> int:
         "--fail-on-improvement",
         action="store_true",
         default=False,
-        help="Flag to fail if files that were expected to have warnings have no warnings",
+        help="Flag to fail if files that were expected "
+        "to have warnings have no warnings",
     )
     parser.add_argument(
         "-t",
