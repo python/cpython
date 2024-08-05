@@ -32,27 +32,9 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      - name: Configure tier two interpreter
-        run: |
-          ./configure --enable-experimental-jit=interpreter --with-pydebug
-      - name: Regen JIT
-        run: |
-          make regen-jit
-      - name: Check for changes
-        run: |
-          git add -u
-          changes=$(git status --porcelain)
-          # Check for changes in regenerated files
-          if test -n "$changes"; then
-            echo "Generated files not up to date."
-            echo "Perhaps you forgot to run make regen-jit. ;)"
-            echo "$changes"
-            echo ""
-            git diff --staged || true
-            exit 1
-          fi
       - name: Build tier two interpreter
         run: |
+          ./configure --enable-experimental-jit=interpreter --with-pydebug
           make all --jobs 4
       - name: Test tier two interpreter
         run: |

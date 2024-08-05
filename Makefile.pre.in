@@ -1668,7 +1668,7 @@ regen-all: regen-cases regen-typeslots \
 	regen-test-levenshtein regen-global-objects
 	@echo
 	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
-	@echo "make regen-configure, make regen-sbom, make regen-jit, and make regen-unicodedata should be run manually"
+	@echo "make regen-configure, make regen-sbom, and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
