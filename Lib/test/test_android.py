@@ -1,3 +1,4 @@
+import io
 import platform
 import queue
 import re
@@ -6,10 +7,11 @@ import sys
 import unittest
 from _android_support import TextLogStream
 from array import array
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from threading import Thread
 from test.support import LOOPBACK_TIMEOUT
 from time import sleep, time
+from unittest.mock import patch
 
 
 if sys.platform != "android":
@@ -82,9 +84,30 @@ class TestAndroidOutput(unittest.TestCase):
         finally:
             stream.reconfigure(write_through=False)
 
+    # In --verbose3 mode, sys.stdout and sys.stderr are captured, so we can't
+    # test them directly. Detect this mode and use some temporary streams with
+    # the same properties.
+    def stream_context(self, stream_name, level):
+        # https://developer.android.com/ndk/reference/group/logging
+        prio = {"I": 4, "W": 5}[level]
+
+        stack = ExitStack()
+        stack.enter_context(self.subTest(stream_name))
+        stream = getattr(sys, stream_name)
+        if isinstance(stream, io.StringIO):
+            stack.enter_context(
+                patch(
+                    f"sys.{stream_name}",
+                    TextLogStream(
+                        prio, f"python.{stream_name}", errors="backslashreplace"
+                    ),
+                )
+            )
+        return stack
+
     def test_str(self):
         for stream_name, level in [("stdout", "I"), ("stderr", "W")]:
-            with self.subTest(stream=stream_name):
+            with self.stream_context(stream_name, level):
                 stream = getattr(sys, stream_name)
                 tag = f"python.{stream_name}"
                 self.assertEqual(f"<TextLogStream '{tag}'>", repr(stream))
@@ -235,7 +258,7 @@ class TestAndroidOutput(unittest.TestCase):
 
     def test_bytes(self):
         for stream_name, level in [("stdout", "I"), ("stderr", "W")]:
-            with self.subTest(stream=stream_name):
+            with self.stream_context(stream_name, level):
                 stream = getattr(sys, stream_name).buffer
                 tag = f"python.{stream_name}"
                 self.assertEqual(f"<BinaryLogStream '{tag}'>", repr(stream))
