@@ -3140,7 +3140,7 @@ dummy_func(
             unused/1 +
             _LOAD_ATTR_METHOD_LAZY_DICT;
 
-        // Cache layout: counter/1, func_version/2
+        // Cache layout: counter/1, func_version/2, type_version/2
         // CALL_INTRINSIC_1/2, CALL_KW, and CALL_FUNCTION_EX aren't members!
         family(CALL, INLINE_CACHE_ENTRIES_CALL) = {
             CALL_BOUND_METHOD_EXACT_ARGS,
@@ -3287,8 +3287,8 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _MAYBE_EXPAND_METHOD + _DO_CALL + _CHECK_PERIODIC;
-        macro(INSTRUMENTED_CALL) = unused/3 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL + _CHECK_PERIODIC;
+        macro(CALL) = _SPECIALIZE_CALL + unused/4 + _MAYBE_EXPAND_METHOD + _DO_CALL + _CHECK_PERIODIC;
+        macro(INSTRUMENTED_CALL) = unused/5 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL + _CHECK_PERIODIC;
 
         op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -3326,6 +3326,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
+            unused/2 + // Skip over type version
             _PY_FRAME_GENERAL +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -3355,6 +3356,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_METHOD_VERSION +
+            unused/2 + // Skip over type version
             _EXPAND_METHOD +
             flush + // so that self is in the argument array
             _PY_FRAME_GENERAL +
@@ -3401,7 +3403,8 @@ dummy_func(
 
         macro(CALL_NON_PY_GENERAL) =
             unused/1 + // Skip over the counter
-            unused/2 +
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CHECK_IS_NOT_PY_CALLABLE +
             _CALL_NON_PY_GENERAL +
             _CHECK_PERIODIC;
@@ -3471,6 +3474,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
+            unused/2 + // Skip over type version
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
             flush + // In case the following deopt
             _CHECK_FUNCTION_VERSION +
@@ -3484,13 +3488,14 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
+            unused/2 + // Skip over type version
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
-        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res)) {
+        inst(CALL_TYPE_1, (unused/1, unused/2, unused/2, callable, null, arg -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
@@ -3516,8 +3521,9 @@ dummy_func(
         }
 
         macro(CALL_STR_1) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_STR_1 +
             _CHECK_PERIODIC;
 
@@ -3535,12 +3541,13 @@ dummy_func(
         }
 
         macro(CALL_TUPLE_1) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_TUPLE_1 +
             _CHECK_PERIODIC;
 
-        inst(CALL_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, callable, null, args[oparg] -- unused)) {
+        inst(CALL_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, unused/2, callable, null, args[oparg] -- unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             /* This instruction does the following:
              * 1. Creates the object (by calling ``object.__new__``)
@@ -3551,12 +3558,12 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
-            DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version));
+            DEOPT_IF(tp->tp_version_tag != read_u32(cache->type_version));
             assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
+            DEOPT_IF(init->func_version != read_u32(cache->func_version));
             PyCodeObject *code = (PyCodeObject *)init->func_code;
-            DEOPT_IF(code->co_argcount != oparg+1);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize));
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);
@@ -3631,8 +3638,9 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_CLASS) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC;
 
@@ -3665,8 +3673,9 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_O) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_BUILTIN_O +
             _CHECK_PERIODIC;
 
@@ -3706,8 +3715,9 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_FAST) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_BUILTIN_FAST +
             _CHECK_PERIODIC;
 
@@ -3748,12 +3758,13 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_FAST_WITH_KEYWORDS) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_BUILTIN_FAST_WITH_KEYWORDS +
             _CHECK_PERIODIC;
 
-        inst(CALL_LEN, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_LEN, (unused/1, unused/2, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* len(o) */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -3782,7 +3793,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        inst(CALL_ISINSTANCE, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_ISINSTANCE, (unused/1, unused/2, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* isinstance(o, o2) */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -3809,7 +3820,7 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- )) {
+        inst(CALL_LIST_APPEND, (unused/1, unused/2, unused/2, callable, self, arg -- )) {
             assert(oparg == 1);
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
@@ -3867,8 +3878,9 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_O) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_METHOD_DESCRIPTOR_O +
             _CHECK_PERIODIC;
 
@@ -3911,8 +3923,9 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
             _CHECK_PERIODIC;
 
@@ -3948,8 +3961,9 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_METHOD_DESCRIPTOR_NOARGS +
             _CHECK_PERIODIC;
 
@@ -3992,8 +4006,9 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_FAST) =
-            unused/1 +
-            unused/2 +
+            unused/1 + // Skip over the counter
+            unused/2 + // Skip over function version
+            unused/2 + // Skip over type version
             _CALL_METHOD_DESCRIPTOR_FAST +
             _CHECK_PERIODIC;
 

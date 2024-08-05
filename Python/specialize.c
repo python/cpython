@@ -1813,8 +1813,14 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
                 return -1;
             }
+            int version = _PyFunction_GetVersionForCurrentState(init);
+            if (version == 0) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
+                return -1;
+            }
             _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-            write_u32(cache->func_version, tp->tp_version_tag);
+            write_u32(cache->func_version, version);
+            write_u32(cache->type_version, tp->tp_version_tag);
             _Py_SET_OPCODE(*instr, CALL_ALLOC_AND_ENTER_INIT);
             return 0;
         }
