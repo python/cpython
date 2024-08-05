@@ -12,6 +12,7 @@
 struct validator {
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
+    int in_comp_iter_expr;          /* >0 in a comprehension iter expr */
 };
 
 #define ENTER_RECURSIVE(ST) \
@@ -37,6 +38,9 @@ static int validate_stmt(struct validator *, stmt_ty);
 static int validate_expr(struct validator *, expr_ty, expr_context_ty);
 static int validate_pattern(struct validator *, pattern_ty, int);
 static int validate_typeparam(struct validator *, type_param_ty);
+
+#define NAMED_EXPR_COMP_ITER_EXPR \
+"assignment expression cannot be used in a comprehension iterable expression"
 
 #define VALIDATE_POSITIONS(node) \
     if (node->lineno > node->end_lineno) { \
@@ -89,10 +93,21 @@ validate_comprehension(struct validator *state, asdl_comprehension_seq *gens)
     }
     for (Py_ssize_t i = 0; i < asdl_seq_LEN(gens); i++) {
         comprehension_ty comp = asdl_seq_GET(gens, i);
-        if (!validate_expr(state, comp->target, Store) ||
-            !validate_expr(state, comp->iter, Load) ||
-            !validate_exprs(state, comp->ifs, Load, 0))
+
+        if (!validate_expr(state, comp->target, Store)) {
             return 0;
+        }
+
+        state->in_comp_iter_expr++;
+        int res = validate_expr(state, comp->iter, Load);
+        state->in_comp_iter_expr--;
+        if (!res) {
+            return 0;
+        }
+
+        if (!validate_exprs(state, comp->ifs, Load, 0)) {
+            return 0;
+        }
     }
     return 1;
 }
@@ -390,6 +405,10 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
         if (exp->v.NamedExpr.target->kind != Name_kind) {
             PyErr_SetString(PyExc_TypeError,
                             "NamedExpr target must be a Name");
+            return 0;
+        }
+        if (state->in_comp_iter_expr) {
+            PyErr_SetString(PyExc_SyntaxError, NAMED_EXPR_COMP_ITER_EXPR);
             return 0;
         }
         ret = validate_expr(state, exp->v.NamedExpr.value, Load);
@@ -1060,6 +1079,7 @@ _PyAST_Validate(mod_ty mod)
     starting_recursion_depth = recursion_depth;
     state.recursion_depth = starting_recursion_depth;
     state.recursion_limit = Py_C_RECURSION_LIMIT;
+    state.in_comp_iter_expr = 0;
 
     switch (mod->kind) {
     case Module_kind:

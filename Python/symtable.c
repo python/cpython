@@ -52,9 +52,6 @@
 #define NAMED_EXPR_COMP_INNER_LOOP_CONFLICT \
 "comprehension inner loop cannot rebind assignment expression target '%U'"
 
-#define NAMED_EXPR_COMP_ITER_EXPR \
-"assignment expression cannot be used in a comprehension iterable expression"
-
 #define ANNOTATION_NOT_ALLOWED \
 "%s cannot be used within an annotation"
 
@@ -132,7 +129,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_comp_inlined = 0;
     ste->ste_comp_iter_target = 0;
     ste->ste_can_see_class_scope = 0;
-    ste->ste_comp_iter_expr = 0;
     ste->ste_needs_classdict = 0;
     ste->ste_annotation_block = NULL;
 
@@ -1335,13 +1331,6 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
         return 0;
     }
     PySTEntryObject *prev = st->st_cur;
-    /* bpo-37757: For now, disallow *all* assignment expressions in the
-     * outermost iterator expression of a comprehension, even those inside
-     * a nested comprehension or a lambda expression.
-     */
-    if (prev) {
-        ste->ste_comp_iter_expr = prev->ste_comp_iter_expr;
-    }
     /* No need to inherit ste_mangled_names in classes, where all names
      * are mangled. */
     if (prev && prev->ste_mangled_names != NULL && ste->ste_type != ClassBlock) {
@@ -2249,12 +2238,6 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
 static int
 symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 {
-    if (st->st_cur->ste_comp_iter_expr > 0) {
-        /* Assignment isn't allowed in a comprehension iterable expression */
-        PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_ITER_EXPR);
-        SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
-        return 0;
-    }
     if (st->st_cur->ste_comprehension) {
         /* Inside a comprehension body, so find the right target scope */
         if (!symtable_extend_namedexpr_scope(st, e->v.NamedExpr.target))
@@ -2806,9 +2789,7 @@ symtable_visit_comprehension(struct symtable *st, comprehension_ty lc)
     st->st_cur->ste_comp_iter_target = 1;
     VISIT(st, expr, lc->target);
     st->st_cur->ste_comp_iter_target = 0;
-    st->st_cur->ste_comp_iter_expr++;
     VISIT(st, expr, lc->iter);
-    st->st_cur->ste_comp_iter_expr--;
     VISIT_SEQ(st, expr, lc->ifs);
     if (lc->is_async) {
         st->st_cur->ste_coroutine = 1;
@@ -2834,9 +2815,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     comprehension_ty outermost = ((comprehension_ty)
                                     asdl_seq_GET(generators, 0));
     /* Outermost iterator is evaluated in current scope */
-    st->st_cur->ste_comp_iter_expr++;
     VISIT(st, expr, outermost->iter);
-    st->st_cur->ste_comp_iter_expr--;
     /* Create comprehension scope for the rest */
     if (!scope_name ||
         !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e, LOCATION(e))) {
