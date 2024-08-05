@@ -387,7 +387,7 @@ class TestAndroidOutput(unittest.TestCase):
         line_num = 0
 
         # Send BUCKET_KB messages and return the rate at which they were consumed.
-        def fill_bucket():
+        def write_bucketful():
             nonlocal line_num
             start = time()
             max_line_num = line_num + BUCKET_KB
@@ -397,13 +397,13 @@ class TestAndroidOutput(unittest.TestCase):
             return BUCKET_KB / (time() - start)
 
         # The first BUCKET_KB should be written with minimal delay.
-        self.assertGreater(fill_bucket(), MAX_KB_PER_SECOND * 2)
+        self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
 
         # The next BUCKET_KB should be written at the rate limit.
-        rate = fill_bucket()
+        rate = write_bucketful()
         self.assertGreater(rate, MAX_KB_PER_SECOND * 0.75)
         self.assertLess(rate, MAX_KB_PER_SECOND * 1.25)
 
         # Once the token bucket is full again, we should go back to full speed.
         sleep(BUCKET_KB / MAX_KB_PER_SECOND)
-        self.assertGreater(fill_bucket(), MAX_KB_PER_SECOND * 2)
+        self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
