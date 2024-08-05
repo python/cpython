@@ -1,2 +1,0 @@
-Fix :func:`inspect.signature` for the result of the
-:func:`functools.cmp_to_key` call.

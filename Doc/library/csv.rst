@@ -1,5 +1,5 @@
-:mod:`csv` --- CSV File Reading and Writing
-===========================================
+:mod:`!csv` --- CSV File Reading and Writing
+============================================
 
 .. module:: csv
    :synopsis: Write and read tabular data to and from delimited files.
@@ -349,8 +349,8 @@ The :mod:`csv` module defines the following constants:
    ``None``.  This is similar to :data:`QUOTE_ALL`, except that if a
    field value is ``None`` an empty (unquoted) string is written.
 
-   Instructs :class:`reader` objects to interpret an empty (unquoted) field as None and
-   to otherwise behave as :data:`QUOTE_ALL`.
+   Instructs :class:`reader` objects to interpret an empty (unquoted) field
+   as ``None`` and to otherwise behave as :data:`QUOTE_ALL`.
 
    .. versionadded:: 3.12
 

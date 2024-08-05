@@ -1,0 +1,1 @@
+Restore the removed ``_PyLong_NumBits()`` function. It is used by the pywin32 project. Patch by Ethan Smith

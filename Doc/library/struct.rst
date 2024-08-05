@@ -1,5 +1,5 @@
-:mod:`struct` --- Interpret bytes as packed binary data
-=======================================================
+:mod:`!struct` --- Interpret bytes as packed binary data
+========================================================
 
 .. testsetup:: *
 

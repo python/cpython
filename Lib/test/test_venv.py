@@ -24,7 +24,7 @@ from test.support import (captured_stdout, captured_stderr,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
-                                    TESTFN)
+                                    TESTFN, FakePath)
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -75,7 +75,7 @@ class BaseTest(unittest.TestCase):
             self.include = 'Include'
         else:
             self.bindir = 'bin'
-            self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
+            self.lib = ('lib', f'python{sysconfig._get_python_version_abi()}')
             self.include = 'include'
         executable = sys._base_executable
         self.exe = os.path.split(executable)[-1]
@@ -125,12 +125,12 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir)
         self._check_output_of_default_create()
 
-    def test_defaults_with_pathlib_path(self):
+    def test_defaults_with_pathlike(self):
         """
-        Test the create function with default arguments and a pathlib.Path path.
+        Test the create function with default arguments and a path-like path.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
     def _check_output_of_default_create(self):
@@ -572,7 +572,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         bad_itempath = self.env_dir + os.pathsep
         self.assertRaises(ValueError, venv.create, bad_itempath)
-        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+        self.assertRaises(ValueError, venv.create, FakePath(bad_itempath))
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate
@@ -593,7 +593,8 @@ class BasicTest(BaseTest):
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
-        stdlib_zip = "python%d%d.zip" % sys.version_info[:2]
+        abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+        stdlib_zip = f"python{sys.version_info.major}{sys.version_info.minor}{abi_thread}"
         zip_landmark = os.path.join(non_installed_dir,
                                     platlibdir,
                                     stdlib_zip)

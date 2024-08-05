@@ -10,7 +10,8 @@ import operator
 import stat
 import sys
 
-__all__ = ["glob", "iglob", "escape"]
+
+__all__ = ["glob", "iglob", "escape", "translate"]
 
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
@@ -327,8 +328,8 @@ def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     return re.compile(regex, flags=flags).match
 
 
-class _Globber:
-    """Class providing shell-style pattern matching and globbing.
+class _GlobberBase:
+    """Abstract class providing shell-style pattern matching and globbing.
     """
 
     def __init__(self, sep, case_sensitive, case_pedantic=False, recursive=False):
@@ -337,26 +338,37 @@ class _Globber:
         self.case_pedantic = case_pedantic
         self.recursive = recursive
 
-    # Low-level methods
+    # Abstract methods
 
-    lstat = staticmethod(os.lstat)
-    scandir = staticmethod(os.scandir)
-    parse_entry = operator.attrgetter('path')
-    concat_path = operator.add
+    @staticmethod
+    def lexists(path):
+        """Implements os.path.lexists().
+        """
+        raise NotImplementedError
 
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
+    @staticmethod
+    def scandir(path):
+        """Implements os.scandir().
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def add_slash(path):
+        """Returns a path with a trailing slash added.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def concat_path(path, text):
+        """Implements path concatenation.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir().
+        """
+        raise NotImplementedError
 
     # High-level methods
 
@@ -512,46 +524,28 @@ class _Globber:
             # Optimization: this path is already known to exist, e.g. because
             # it was returned from os.scandir(), so we skip calling lstat().
             yield path
-        else:
-            try:
-                self.lstat(path)
-                yield path
-            except OSError:
-                pass
+        elif self.lexists(path):
+            yield path
 
-    @classmethod
-    def walk(cls, root, top_down, on_error, follow_symlinks):
-        """Walk the directory tree from the given root, similar to os.walk().
-        """
-        paths = [root]
-        while paths:
-            path = paths.pop()
-            if isinstance(path, tuple):
-                yield path
-                continue
-            try:
-                with cls.scandir(path) as scandir_it:
-                    dirnames = []
-                    filenames = []
-                    if not top_down:
-                        paths.append((path, dirnames, filenames))
-                    for entry in scandir_it:
-                        name = entry.name
-                        try:
-                            if entry.is_dir(follow_symlinks=follow_symlinks):
-                                if not top_down:
-                                    paths.append(cls.parse_entry(entry))
-                                dirnames.append(name)
-                            else:
-                                filenames.append(name)
-                        except OSError:
-                            filenames.append(name)
-            except OSError as error:
-                if on_error is not None:
-                    on_error(error)
-            else:
-                if top_down:
-                    yield path, dirnames, filenames
-                    if dirnames:
-                        prefix = cls.add_slash(path)
-                        paths += [cls.concat_path(prefix, d) for d in reversed(dirnames)]
+
+class _StringGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for string paths.
+    """
+    lexists = staticmethod(os.path.lexists)
+    scandir = staticmethod(os.scandir)
+    parse_entry = operator.attrgetter('path')
+    concat_path = operator.add
+
+    if os.name == 'nt':
+        @staticmethod
+        def add_slash(pathname):
+            tail = os.path.splitroot(pathname)[2]
+            if not tail or tail[-1] in '\\/':
+                return pathname
+            return f'{pathname}\\'
+    else:
+        @staticmethod
+        def add_slash(pathname):
+            if not pathname or pathname[-1] == '/':
+                return pathname
+            return f'{pathname}/'

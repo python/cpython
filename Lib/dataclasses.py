@@ -5,9 +5,9 @@ import types
 import inspect
 import keyword
 import itertools
+import annotationlib
 import abc
 from reprlib import recursive_repr
-from types import FunctionType, GenericAlias
 
 
 __all__ = ['dataclass',
@@ -333,7 +333,7 @@ class Field:
             # it.
             func(self.default, owner, name)
 
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class _DataclassParams:
@@ -982,7 +982,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
-    cls_annotations = inspect.get_annotations(cls)
+    cls_annotations = annotationlib.get_annotations(
+        cls, format=annotationlib.Format.FORWARDREF)
 
     # Now find fields in our class.  While doing so, validate some
     # things, and set the default values (as class attributes) where
@@ -1199,10 +1200,17 @@ def _dataclass_setstate(self, state):
 
 def _get_slots(cls):
     match cls.__dict__.get('__slots__'):
-        # A class which does not define __slots__ at all is equivalent
-        # to a class defining __slots__ = ('__dict__', '__weakref__')
+        # `__dictoffset__` and `__weakrefoffset__` can tell us whether
+        # the base type has dict/weakref slots, in a way that works correctly
+        # for both Python classes and C extension types. Extension types
+        # don't use `__slots__` for slot creation
         case None:
-            yield from ('__dict__', '__weakref__')
+            slots = []
+            if getattr(cls, '__weakrefoffset__', -1) != 0:
+                slots.append('__weakref__')
+            if getattr(cls, '__dictrefoffset__', -1) != 0:
+                slots.append('__dict__')
+            yield from slots
         case str(slot):
             yield slot
         # Slots may be any iterable, but we cannot handle an iterator

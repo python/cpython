@@ -168,6 +168,31 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, raises=NameError)
 
+    def test_references___class___defined(self):
+        code = """
+            __class__ = 2
+            res = [__class__ for x in [1]]
+        """
+        self._check_in_scopes(
+                code, outputs={"res": [2]}, scopes=["module", "function"])
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
+    def test_references___class___enclosing(self):
+        code = """
+            __class__ = 2
+            class C:
+                res = [__class__ for x in [1]]
+            res = C.res
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_super_and_class_cell_in_sibling_comps(self):
+        code = """
+            [super for _ in [1]]
+            [__class__ for _ in [1]]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
     def test_inner_cell_shadows_outer(self):
         code = """
             items = [(lambda: i) for i in range(5)]
@@ -622,9 +647,14 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_frame_locals(self):
         code = """
-            val = [sys._getframe().f_locals for a in [0]][0]["a"]
+            val = "a" in [sys._getframe().f_locals for a in [0]][0]
         """
         import sys
+        self._check_in_scopes(code, {"val": False}, ns={"sys": sys})
+
+        code = """
+            val = [sys._getframe().f_locals["a"] for a in [0]][0]
+        """
         self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
 
     def _recursive_replace(self, maybe_code):

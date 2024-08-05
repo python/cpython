@@ -4,7 +4,6 @@ if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
 import contextlib
-import dataclasses
 import functools
 import _opcode
 import os
@@ -388,7 +387,7 @@ def skip_if_buildbot(reason=None):
         reason = 'not suitable for buildbots'
     try:
         isbuildbot = getpass.getuser().lower() == 'buildbot'
-    except (KeyError, EnvironmentError) as err:
+    except (KeyError, OSError) as err:
         warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
@@ -529,11 +528,20 @@ def suppress_immortalization(suppress=True):
         yield
         return
 
-    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    _testinternalcapi.suppress_immortalization(True)
     try:
         yield
     finally:
-        _testinternalcapi.set_immortalize_deferred(*old_values)
+        _testinternalcapi.suppress_immortalization(False)
+
+def skip_if_suppress_immortalization():
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return
+    return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
+                                "requires immortalization of deferred objects")
+
 
 MS_WINDOWS = (sys.platform == 'win32')
 
@@ -1180,6 +1188,26 @@ def no_tracing(func):
     return coverage_wrapper
 
 
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        assert not isinstance(func, type), func
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
+
+
 def refcount_test(test):
     """Decorator for tests which involve reference counting.
 
@@ -1193,8 +1221,8 @@ def refcount_test(test):
 
 def requires_limited_api(test):
     try:
-        import _testcapi
-        import _testlimitedcapi
+        import _testcapi  # noqa: F401
+        import _testlimitedcapi  # noqa: F401
     except ImportError:
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
@@ -1779,7 +1807,7 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
             config['gil'] = 'shared'
         elif gil == 2:
             config['gil'] = 'own'
-        else:
+        elif not isinstance(gil, str):
             raise NotImplementedError(gil)
     config = types.SimpleNamespace(**config)
     return _testinternalcapi.run_in_subinterp_with_config(code, config)
@@ -2271,7 +2299,7 @@ def clear_ignored_deprecations(*tokens: object) -> None:
 def requires_venv_with_pip():
     # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
     try:
-        import zlib
+        import zlib  # noqa: F401
     except ImportError:
         return unittest.skipIf(True, "venv: ensurepip requires zlib")
 
@@ -2580,21 +2608,118 @@ def copy_python_src_ignore(path, names):
     return ignored
 
 
+def iter_builtin_types():
+    for obj in __builtins__.values():
+        if not isinstance(obj, type):
+            continue
+        cls = obj
+        if cls.__module__ != 'builtins':
+            continue
+        yield cls
+
+
+def iter_slot_wrappers(cls):
+    assert cls.__module__ == 'builtins', cls
+
+    def is_slot_wrapper(name, value):
+        if not isinstance(value, types.WrapperDescriptorType):
+            assert not repr(value).startswith('<slot wrapper '), (cls, name, value)
+            return False
+        assert repr(value).startswith('<slot wrapper '), (cls, name, value)
+        assert callable(value), (cls, name, value)
+        assert name.startswith('__') and name.endswith('__'), (cls, name, value)
+        return True
+
+    ns = vars(cls)
+    unused = set(ns)
+    for name in dir(cls):
+        if name in ns:
+            unused.remove(name)
+
+        try:
+            value = getattr(cls, name)
+        except AttributeError:
+            # It's as though it weren't in __dir__.
+            assert name in ('__annotate__', '__annotations__', '__abstractmethods__'), (cls, name)
+            if name in ns and is_slot_wrapper(name, ns[name]):
+                unused.add(name)
+            continue
+
+        if not name.startswith('__') or not name.endswith('__'):
+            assert not is_slot_wrapper(name, value), (cls, name, value)
+        if not is_slot_wrapper(name, value):
+            if name in ns:
+                assert not is_slot_wrapper(name, ns[name]), (cls, name, value, ns[name])
+        else:
+            if name in ns:
+                assert ns[name] is value, (cls, name, value, ns[name])
+                yield name, True
+            else:
+                yield name, False
+
+    for name in unused:
+        value = ns[name]
+        if is_slot_wrapper(cls, name, value):
+            yield name, True
+
+
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         import _colorize
         original_fn = _colorize.can_colorize
-        variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
+        variables: dict[str, str | None] = {
+            "PYTHON_COLORS": None, "FORCE_COLOR": None, "NO_COLOR": None
+        }
         try:
             for key in variables:
                 variables[key] = os.environ.pop(key, None)
+            os.environ["NO_COLOR"] = "1"
             _colorize.can_colorize = lambda: False
             return func(*args, **kwargs)
         finally:
             _colorize.can_colorize = original_fn
+            del os.environ["NO_COLOR"]
             for key, value in variables.items():
                 if value is not None:
                     os.environ[key] = value
     return wrapper
+
+
+def initialized_with_pyrepl():
+    """Detect whether PyREPL was used during Python initialization."""
+    # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
+    return hasattr(sys.modules["__main__"], "__file__")
+
+
+WINDOWS_STATUS = {
+    0xC0000005: "STATUS_ACCESS_VIOLATION",
+    0xC00000FD: "STATUS_STACK_OVERFLOW",
+    0xC000013A: "STATUS_CONTROL_C_EXIT",
+}
+
+def get_signal_name(exitcode):
+    import signal
+
+    if exitcode < 0:
+        signum = -exitcode
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    # Shell exit code (ex: WASI build)
+    if 128 < exitcode < 256:
+        signum = exitcode - 128
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    try:
+        return WINDOWS_STATUS[exitcode]
+    except KeyError:
+        pass
+
+    return None

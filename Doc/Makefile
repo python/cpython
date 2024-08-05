@@ -6,6 +6,7 @@
 # You can set these variables from the command line.
 PYTHON       = python3
 VENVDIR      = ./venv
+UV           = uv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 JOBS         = auto
@@ -32,6 +33,7 @@ help:
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
 	@echo "  html       to make standalone HTML files"
+	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
 	@echo "  htmllive   to rebuild and reload HTML files in your browser"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
@@ -140,6 +142,11 @@ pydoc-topics: build
 	@echo "Building finished; now run this:" \
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
+.PHONY: gettext
+gettext: BUILDER = gettext
+gettext: SPHINXOPTS += '-d build/doctrees-gettext'
+gettext: build
+
 .PHONY: htmlview
 htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
@@ -147,7 +154,7 @@ htmlview: html
 .PHONY: htmllive
 htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
 htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
-htmllive: html
+htmllive: _ensure-sphinx-autobuild html
 
 .PHONY: clean
 clean: clean-venv
@@ -164,9 +171,14 @@ venv:
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		echo "Creating venv in $(VENVDIR)"; \
-		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
-		$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
+		if $(UV) --version >/dev/null 2>&1; then \
+			$(UV) venv $(VENVDIR); \
+			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
+		else \
+			$(PYTHON) -m venv $(VENVDIR); \
+			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
+			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
+		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
@@ -225,9 +237,24 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
+.PHONY: _ensure-package
+_ensure-package: venv
+	if $(UV) --version >/dev/null 2>&1; then \
+		VIRTUAL_ENV=$(VENVDIR) $(UV) pip install $(PACKAGE); \
+	else \
+		$(VENVDIR)/bin/python3 -m pip install $(PACKAGE); \
+	fi
+
+.PHONY: _ensure-pre-commit
+_ensure-pre-commit:
+	make _ensure-package PACKAGE=pre-commit
+
+.PHONY: _ensure-sphinx-autobuild
+_ensure-sphinx-autobuild:
+	make _ensure-package PACKAGE=sphinx-autobuild
+
 .PHONY: check
-check: venv
-	$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit
+check: _ensure-pre-commit
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve

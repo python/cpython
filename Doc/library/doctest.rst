@@ -1,5 +1,5 @@
-:mod:`doctest` --- Test interactive Python examples
-===================================================
+:mod:`!doctest` --- Test interactive Python examples
+====================================================
 
 .. module:: doctest
    :synopsis: Test pieces of code within docstrings.

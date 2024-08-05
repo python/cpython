@@ -58,6 +58,7 @@ int _PyTestCapi_Init_Immortal(PyObject *module);
 int _PyTestCapi_Init_GC(PyObject *module);
 int _PyTestCapi_Init_Hash(PyObject *module);
 int _PyTestCapi_Init_Time(PyObject *module);
+int _PyTestCapi_Init_Monitoring(PyObject *module);
 int _PyTestCapi_Init_Object(PyObject *module);
 
 #endif // Py_TESTCAPI_PARTS_H

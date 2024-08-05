@@ -1,2 +1,0 @@
-Implement :pep:`696`, adding support for defaults on type parameters.
-Patch by Jelle Zijlstra.
