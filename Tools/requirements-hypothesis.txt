@@ -1,4 +1,5 @@
 # Requirements file for hypothesis that
 # we use to run our property-based tests in CI.
 
+attrs<=23.2.0
 hypothesis==6.104.2
