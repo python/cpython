@@ -296,12 +296,22 @@ error:
 #define NSTATISTICS _PYPEGEN_NSTATISTICS
 #define memo_statistics _PyRuntime.parser.memo_statistics
 
+#ifdef Py_GIL_DISABLED
+#define MUTEX_LOCK() PyMutex_Lock(&_PyRuntime.parser.mutex)
+#define MUTEX_UNLOCK() PyMutex_Unlock(&_PyRuntime.parser.mutex)
+#else
+#define MUTEX_LOCK()
+#define MUTEX_UNLOCK()
+#endif
+
 void
 _PyPegen_clear_memo_statistics(void)
 {
+    MUTEX_LOCK();
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
     }
+    MUTEX_UNLOCK();
 }
 
 PyObject *
@@ -311,6 +321,8 @@ _PyPegen_get_memo_statistics(void)
     if (ret == NULL) {
         return NULL;
     }
+
+    MUTEX_LOCK();
     for (int i = 0; i < NSTATISTICS; i++) {
         PyObject *value = PyLong_FromLong(memo_statistics[i]);
         if (value == NULL) {
@@ -323,6 +335,7 @@ _PyPegen_get_memo_statistics(void)
             return NULL;
         }
     }
+    MUTEX_UNLOCK();
     return ret;
 }
 #endif
@@ -348,7 +361,9 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
                 if (count <= 0) {
                     count = 1;
                 }
+                MUTEX_LOCK();
                 memo_statistics[type] += count;
+                MUTEX_UNLOCK();
             }
 #endif
             p->mark = m->mark;
