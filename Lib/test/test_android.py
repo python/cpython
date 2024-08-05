@@ -4,11 +4,12 @@ import re
 import subprocess
 import sys
 import unittest
+from _android_support import TextLogStream
 from array import array
 from contextlib import contextmanager
 from threading import Thread
 from test.support import LOOPBACK_TIMEOUT
-from time import time
+from time import sleep, time
 
 
 if sys.platform != "android":
@@ -337,3 +338,49 @@ class TestAndroidOutput(unittest.TestCase):
                             fr"{type(obj).__name__}"
                         ):
                             stream.write(obj)
+
+    def test_rate_limit(self):
+        # See _android_support.py.
+        MAX_KB_PER_SECOND = 1024
+        BUCKET_KB = 128
+        PER_MESSAGE_OVERHEAD = 28
+
+        # https://developer.android.com/ndk/reference/group/logging
+        ANDROID_LOG_DEBUG = 3
+
+        # To avoid flooding the test script output, use a different tag rather
+        # than stdout or stderr.
+        tag = "python.rate_limit"
+        stream = TextLogStream(ANDROID_LOG_DEBUG, tag)
+
+        # Make a test message which consumes 1 KB of the logcat buffer.
+        message = "Line {:03d} "
+        message += "." * (
+            1024 - PER_MESSAGE_OVERHEAD - len(tag) - len(message.format(0))
+        ) + "\n"
+
+        # Make sure the token bucket is full.
+        sleep(BUCKET_KB / MAX_KB_PER_SECOND)
+        line_num = 0
+
+        # Send BUCKET_KB messages and return the rate at which they were consumed.
+        def fill_bucket():
+            nonlocal line_num
+            start = time()
+            max_line_num = line_num + BUCKET_KB
+            while line_num < max_line_num:
+                stream.write(message.format(line_num))
+                line_num += 1
+            return BUCKET_KB / (time() - start)
+
+        # The first BUCKET_KB should be written with minimal delay.
+        self.assertGreater(fill_bucket(), MAX_KB_PER_SECOND * 2)
+
+        # The next BUCKET_KB should be written at the rate limit.
+        rate = fill_bucket()
+        self.assertGreater(rate, MAX_KB_PER_SECOND * 0.75)
+        self.assertLess(rate, MAX_KB_PER_SECOND * 1.25)
+
+        # Once the token bucket is full again, we should go back to full speed.
+        sleep(BUCKET_KB / MAX_KB_PER_SECOND)
+        self.assertGreater(fill_bucket(), MAX_KB_PER_SECOND * 2)

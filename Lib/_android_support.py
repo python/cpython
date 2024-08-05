@@ -1,14 +1,14 @@
 import io
 import sys
 from threading import RLock
-
+from time import sleep, time
 
 # The maximum length of a log message in bytes, including the level marker and
-# tag, is defined as LOGGER_ENTRY_MAX_PAYLOAD in
-# platform/system/logging/liblog/include/log/log.h. As of API level 30, messages
-# longer than this will be be truncated by logcat. This limit has already been
-# reduced at least once in the history of Android (from 4076 to 4068 between API
-# level 23 and 26), so leave some headroom.
+# tag, is defined as LOGGER_ENTRY_MAX_PAYLOAD at
+# https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:system/logging/liblog/include/log/log.h;l=71.
+# Messages longer than this will be be truncated by logcat. This limit has already
+# been reduced at least once in the history of Android (from 4076 to 4068 between
+# API level 23 and 26), so leave some headroom.
 MAX_BYTES_PER_WRITE = 4000
 
 # UTF-8 uses a maximum of 4 bytes per character, so limiting text writes to this
@@ -27,16 +27,19 @@ def init_streams(android_log_write, stdout_prio, stderr_prio):
     if sys.executable:
         return  # Not embedded in an app.
 
+    global logcat
+    logcat = Logcat(android_log_write)
+
     sys.stdout = TextLogStream(
-        android_log_write, stdout_prio, "python.stdout", errors=sys.stdout.errors)
+        stdout_prio, "python.stdout", errors=sys.stdout.errors)
     sys.stderr = TextLogStream(
-        android_log_write, stderr_prio, "python.stderr", errors=sys.stderr.errors)
+        stderr_prio, "python.stderr", errors=sys.stderr.errors)
 
 
 class TextLogStream(io.TextIOWrapper):
-    def __init__(self, android_log_write, prio, tag, **kwargs):
+    def __init__(self, prio, tag, **kwargs):
         kwargs.setdefault("encoding", "UTF-8")
-        super().__init__(BinaryLogStream(android_log_write, prio, tag), **kwargs)
+        super().__init__(BinaryLogStream(prio, tag), **kwargs)
         self._lock = RLock()
         self._pending_bytes = []
         self._pending_bytes_count = 0
@@ -95,8 +98,7 @@ class TextLogStream(io.TextIOWrapper):
 
 
 class BinaryLogStream(io.RawIOBase):
-    def __init__(self, android_log_write, prio, tag):
-        self.android_log_write = android_log_write
+    def __init__(self, prio, tag):
         self.prio = prio
         self.tag = tag
 
@@ -117,10 +119,48 @@ class BinaryLogStream(io.RawIOBase):
 
         # Writing an empty string to the stream should have no effect.
         if b:
-            # Encode null bytes using "modified UTF-8" to avoid truncating the
-            # message. This should not affect the return value, as the caller
-            # may be expecting it to match the length of the input.
-            self.android_log_write(self.prio, self.tag,
-                                   b.replace(b"\x00", b"\xc0\x80"))
-
+            logcat.write(self.prio, self.tag, b)
         return len(b)
+
+
+# When a large volume of data is written to logcat at once, e.g. when a test
+# module fails in --verbose3 mode, there's a risk of overflowing logcat's own
+# buffer and losing messages. We avoid this by imposing a rate limit using the
+# token bucket algorithm, based on a conservative estimate of how fast `adb
+# logcat` can consume data.
+MAX_BYTES_PER_SECOND = 1024 * 1024
+
+# The logcat buffer size of a device can be determined by running `logcat -g`.
+# We set the token bucket size to half of the buffer size of our current minimum
+# API level, because other things on the system will be producing messages as
+# well.
+BUCKET_SIZE = 128 * 1024
+
+# https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:system/logging/liblog/include/log/log_read.h;l=39
+PER_MESSAGE_OVERHEAD = 28
+
+
+class Logcat:
+    def __init__(self, android_log_write):
+        self.android_log_write = android_log_write
+        self._lock = RLock()
+        self._bucket_level = 0
+        self._prev_write_time = time()
+
+    def write(self, prio, tag, message):
+        # Encode null bytes using "modified UTF-8" to avoid them truncating the
+        # message.
+        message = message.replace(b"\x00", b"\xc0\x80")
+
+        with self._lock:
+            now = time()
+            self._bucket_level += (
+                (now - self._prev_write_time) * MAX_BYTES_PER_SECOND)
+            self._bucket_level = min(self._bucket_level, BUCKET_SIZE)
+            self._prev_write_time = now
+
+            self._bucket_level -= PER_MESSAGE_OVERHEAD + len(tag) + len(message)
+            if self._bucket_level < 0:
+                sleep(-self._bucket_level / MAX_BYTES_PER_SECOND)
+
+            self.android_log_write(prio, tag, message)
