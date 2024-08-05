@@ -1,0 +1,2 @@
+Optimize :mod:`pickling <pickle>` by name objects without the ``__module__``
+attribute.

@@ -313,38 +313,45 @@ class _Unframer:
 
 # Tools used for pickling.
 
-def _getattribute(obj, name):
-    top = obj
-    for subpath in name.split('.'):
-        if subpath == '<locals>':
-            raise AttributeError("Can't get local attribute {!r} on {!r}"
-                                 .format(name, top))
-        try:
-            parent = obj
-            obj = getattr(obj, subpath)
-        except AttributeError:
-            raise AttributeError("Can't get attribute {!r} on {!r}"
-                                 .format(name, top)) from None
-    return obj, parent
+def _getattribute(obj, dotted_path):
+    for subpath in dotted_path:
+        obj = getattr(obj, subpath)
+    return obj
 
 def whichmodule(obj, name):
     """Find the module an object belong to."""
+    dotted_path = name.split('.')
     module_name = getattr(obj, '__module__', None)
-    if module_name is not None:
-        return module_name
-    # Protect the iteration by using a list copy of sys.modules against dynamic
-    # modules that trigger imports of other modules upon calls to getattr.
-    for module_name, module in sys.modules.copy().items():
-        if (module_name == '__main__'
-            or module_name == '__mp_main__'  # bpo-42406
-            or module is None):
-            continue
-        try:
-            if _getattribute(module, name)[0] is obj:
-                return module_name
-        except AttributeError:
-            pass
-    return '__main__'
+    if module_name is None and '<locals>' not in dotted_path:
+        # Protect the iteration by using a list copy of sys.modules against dynamic
+        # modules that trigger imports of other modules upon calls to getattr.
+        for module_name, module in sys.modules.copy().items():
+            if (module_name == '__main__'
+                or module_name == '__mp_main__'  # bpo-42406
+                or module is None):
+                continue
+            try:
+                if _getattribute(module, dotted_path) is obj:
+                    return module_name
+            except AttributeError:
+                pass
+        module_name = '__main__'
+    elif module_name is None:
+        module_name = '__main__'
+
+    try:
+        __import__(module_name, level=0)
+        module = sys.modules[module_name]
+        if _getattribute(module, dotted_path) is obj:
+            return module_name
+    except (ImportError, KeyError, AttributeError):
+        raise PicklingError(
+            "Can't pickle %r: it's not found as %s.%s" %
+            (obj, module_name, name)) from None
+
+    raise PicklingError(
+        "Can't pickle %r: it's not the same object as %s.%s" %
+        (obj, module_name, name))
 
 def encode_long(x):
     r"""Encode a long to a two's complement little-endian binary string.
@@ -1074,24 +1081,10 @@ class _Pickler:
 
         if name is None:
             name = getattr(obj, '__qualname__', None)
-        if name is None:
-            name = obj.__name__
+            if name is None:
+                name = obj.__name__
 
         module_name = whichmodule(obj, name)
-        try:
-            __import__(module_name, level=0)
-            module = sys.modules[module_name]
-            obj2, parent = _getattribute(module, name)
-        except (ImportError, KeyError, AttributeError):
-            raise PicklingError(
-                "Can't pickle %r: it's not found as %s.%s" %
-                (obj, module_name, name)) from None
-        else:
-            if obj2 is not obj:
-                raise PicklingError(
-                    "Can't pickle %r: it's not the same object as %s.%s" %
-                    (obj, module_name, name))
-
         if self.proto >= 2:
             code = _extension_registry.get((module_name, name))
             if code:
@@ -1103,10 +1096,7 @@ class _Pickler:
                 else:
                     write(EXT4 + pack("<i", code))
                 return
-        lastname = name.rpartition('.')[2]
-        if parent is module:
-            name = lastname
-        # Non-ASCII identifiers are supported only with protocols >= 3.
+
         if self.proto >= 4:
             self.save(module_name)
             self.save(name)
@@ -1616,7 +1606,16 @@ class _Unpickler:
                 module = _compat_pickle.IMPORT_MAPPING[module]
         __import__(module, level=0)
         if self.proto >= 4:
-            return _getattribute(sys.modules[module], name)[0]
+            module = sys.modules[module]
+            dotted_path = name.split('.')
+            if '<locals>' in dotted_path:
+                raise AttributeError(
+                    f"Can't get local attribute {name!r} on {module!r}")
+            try:
+                return _getattribute(module, dotted_path)
+            except AttributeError:
+                raise AttributeError(
+                    f"Can't get attribute {name!r} on {module!r}") from None
         else:
             return getattr(sys.modules[module], name)
 
