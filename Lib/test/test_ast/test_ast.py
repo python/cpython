@@ -148,7 +148,7 @@ class AST_Tests(unittest.TestCase):
                     self.assertEqual(to_tuple(ast_tree), f)
                     self._assertTrueorder(ast_tree, (0, 0))
                 with self.subTest(action="not_folding", input=i):
-                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
+                    ast_tree = ast.parse(i, "?", kind)
                     self.assertEqual(to_tuple(ast_tree), nf)
                     self._assertTrueorder(ast_tree, (0, 0))
 
