@@ -366,41 +366,6 @@ eval_tests = [
   "f'foo({a})'",
 ]
 
-eval_opt_tests = [
-    # Common arithmetic operations
-    # There's no snippet for `@` operand since we don't have
-    # builtin constant that implements `@` operator
-    "1 + 1",
-    "1 - 1",
-    "1 * 1",
-    "1 / 1",
-    "1 // 1",
-    "1 % 1",
-    "1 ** 1",
-    "1 << 1",
-    "1 >> 1",
-    "1 | 1",
-    "1 ^ 1",
-    "1 & 1",
-    # Unary operators
-    "~1",
-    "-1",
-    "+1",
-    # Transformation from list to tuple and from set to frozenset
-    "1 in [1, 2, 3]",
-    "1 in {1, 2, 3}",
-    # Tuple must be folded
-    "(1, 2, 3)",
-    # Subscription
-    "(1, 2, 3)[0]",
-]
-
-exec_opt_tests = [
-    # The same transformation as in eval_opt_tests
-    "for _ in [1, 2, 3]:\n pass",
-    "for _ in {1, 2, 3}:\n pass",
-]
-
 
 def main():
     if __name__ != '__main__':
@@ -413,20 +378,7 @@ def main():
                 tree = ast.parse(statement, "?", kind)
                 print("%r," % (to_tuple(tree),))
             print("]")
-    elif args == ["-g_opt"]:
-        for snippets, kind in ((eval_opt_tests, "eval"), (exec_opt_tests, "exec")):
-            folded = kind+"_results_folded = ["
-            not_folded = kind+"_results_not_folded =["
-            for snippet in snippets:
-                folded_tree = ast.parse(snippet, "?", kind, optimize=2)
-                not_folded_tree = ast.parse(snippet, "?", kind, optimize=-1)
-
-                folded += "%r," % (to_tuple(folded_tree),) + "\n"
-                not_folded += "%r," % (to_tuple(not_folded_tree),) + "\n"
-            folded += "]"
-            not_folded += "]"
-            print(folded)
-            print(not_folded)
+        print("main()")
 
 
 
