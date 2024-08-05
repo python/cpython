@@ -1959,10 +1959,10 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
        extra parameters of __import__ to fix that. */
     module = PyImport_Import(module_name);
     if (module == NULL) {
-        Py_DECREF(module_name);
         PyErr_Format(st->PicklingError,
                      "Can't pickle %R: import of module %R failed",
                      global, module_name);
+        Py_DECREF(module_name);
         return NULL;
     }
     if (check_dotted_path(module, global_name, dotted_path) < 0) {
@@ -1973,18 +1973,18 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
     PyObject *actual = getattribute(module, dotted_path);
     Py_DECREF(module);
     if (actual == NULL) {
-        Py_DECREF(module_name);
         PyErr_Format(st->PicklingError,
                      "Can't pickle %R: attribute lookup %S on %S failed",
                      global, global_name, module_name);
+        Py_DECREF(module_name);
         return NULL;
     }
     if (actual != global) {
         Py_DECREF(actual);
-        Py_DECREF(module_name);
         PyErr_Format(st->PicklingError,
                      "Can't pickle %R: it's not the same object as %S.%S",
                      global, module_name, global_name);
+        Py_DECREF(module_name);
         return NULL;
     }
     Py_DECREF(actual);
