@@ -74,6 +74,7 @@ def extract_warnings_from_compiler_output_json(
                                     "line": location[key]["line"],
                                     "column": location[key]["column"],
                                     "message": warning["message"],
+                                    "option": warning["option"],
                                 }
                             )
                             # Found a caret, start, or end in location so
@@ -112,6 +113,11 @@ def get_unexpected_warnings(
     """
     unexpected_warnings = []
     for file in files_with_warnings.keys():
+        for ignore_file in files_with_expected_warnings:
+            if file == ignore_file[0]:
+                if len(files_with_warnings[file]) > ignore_file[1]:
+                    unexpected_warnings.extend(files_with_warnings[file])
+                break
         if file not in files_with_expected_warnings:
             unexpected_warnings.extend(files_with_warnings[file])
 
@@ -134,8 +140,11 @@ def get_unexpected_improvements(
     """
     unexpected_improvements = []
     for file in files_with_expected_warnings:
-        if file not in files_with_warnings.keys():
+        if file[0] not in files_with_warnings.keys():
             unexpected_improvements.append(file)
+        else:
+            if (len(files_with_warnings[file[0]]) < file[1]):
+                unexpected_improvements.append(file)
 
     if unexpected_improvements:
         print("Unexpected improvements:")
@@ -214,11 +223,12 @@ def main(argv: list[str] | None = None) -> int:
         with Path(args.warning_ignore_file_path).open(
             encoding="UTF-8"
         ) as clean_files:
-            files_with_expected_warnings = {
-                file.strip()
+            files_with_expected_warnings = [
+                (file.strip().split()[0], int(file.strip().split()[1]))
                 for file in clean_files
                 if file.strip() and not file.startswith("#")
-            }
+            ]
+
 
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
