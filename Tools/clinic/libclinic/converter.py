@@ -545,7 +545,9 @@ def add_legacy_c_converter(
         if not kwargs:
             added_f = f
         else:
-            added_f = functools.partial(f, **kwargs)
+            # type ignore due to a mypy regression :(
+            # https://github.com/python/mypy/issues/17646
+            added_f = functools.partial(f, **kwargs)  # type: ignore[misc]
         if format_unit:
             legacy_converters[format_unit] = added_f
         return f
