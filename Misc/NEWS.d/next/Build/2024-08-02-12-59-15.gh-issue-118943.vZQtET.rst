@@ -1,2 +1,1 @@
-The ``regen-jit`` make target is no longer part of ``regen-all`` to avoid various
-race conditions when running ``regen-all``.
+Fix an issue where the experimental JIT could be built several times by the ``make regen-all`` target, leading to possible race conditions on heavily parallelized builds.
