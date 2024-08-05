@@ -1109,9 +1109,9 @@ free_delayed(uintptr_t ptr)
 #ifndef Py_GIL_DISABLED
     free_work_item(ptr);
 #else
-    if (_PyRuntime.stoptheworld.world_stopped) {
-        // Free immediately if the world is stopped, including during
-        // interpreter shutdown.
+    if (_PyRuntime.stoptheworld.world_stopped || Py_IsFinalizing()) {
+        // Free immediately if the world is stopped and during interpreter
+        // shutdown.
         free_work_item(ptr);
         return;
     }
@@ -1474,6 +1474,8 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 {
 #ifdef WITH_MIMALLOC
     if (_PyMem_MimallocEnabled()) {
+        Py_ssize_t leaked = _PyInterpreterState_GetAllocatedBlocks(interp);
+        interp->runtime->obmalloc.interpreter_leaks += leaked;
         return;
     }
 #endif

@@ -54,6 +54,7 @@ struct collection_state {
     struct visitor_args base;
     PyInterpreterState *interp;
     GCState *gcstate;
+    _PyGC_Reason reason;
     Py_ssize_t collected;
     Py_ssize_t uncollectable;
     Py_ssize_t long_lived_total;
@@ -570,6 +571,16 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         else {
             worklist_push(&state->unreachable, op);
         }
+    }
+    else if (state->reason == _Py_GC_REASON_SHUTDOWN &&
+             _PyObject_HasDeferredRefcount(op))
+    {
+        // Disable deferred refcounting for reachable objects as well during
+        // interpreter shutdown. This ensures that these objects are collected
+        // immediately when their last reference is removed.
+        disable_deferred_refcounting(op);
+        merge_refcount(op, 0);
+        state->long_lived_total++;
     }
     else {
         // object is reachable, restore `ob_tid`; we're done with these objects
@@ -1221,6 +1232,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     struct collection_state state = {
         .interp = interp,
         .gcstate = gcstate,
+        .reason = reason,
     };
 
     gc_collect_internal(interp, &state, generation);
