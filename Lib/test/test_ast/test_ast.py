@@ -22,6 +22,8 @@ from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
     eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results,
+)
+from test.test_ast.opt_snippets import (
     eval_opt_tests, eval_results_folded, eval_results_not_folded, exec_opt_tests,
     exec_results_folded, exec_results_not_folded,
 )
@@ -144,11 +146,11 @@ class AST_Tests(unittest.TestCase):
             ):
             for i, f, nf in zip(input, folded, not_folded):
                 with self.subTest(action="folding", input=i):
-                    ast_tree = ast.parse(i, "?", kind, optimize=1)
+                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST | ast.PyCF_OPTIMIZED_AST)
                     self.assertEqual(to_tuple(ast_tree), f)
                     self._assertTrueorder(ast_tree, (0, 0))
                 with self.subTest(action="not_folding", input=i):
-                    ast_tree = ast.parse(i, "?", kind)
+                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
                     self.assertEqual(to_tuple(ast_tree), nf)
                     self._assertTrueorder(ast_tree, (0, 0))
 
