@@ -35,8 +35,6 @@ saferepr()
 """
 
 import collections as _collections
-import dataclasses as _dataclasses
-import re
 import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
@@ -179,6 +177,9 @@ class PrettyPrinter:
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
+            # Lazy import to improve module import time
+            import dataclasses as _dataclasses
+
             if p is not None:
                 context[objid] = 1
                 p(self, object, stream, indent, allowance, context, level + 1)
@@ -197,6 +198,9 @@ class PrettyPrinter:
         stream.write(rep)
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
+        # Lazy import to improve module import time
+        import dataclasses as _dataclasses
+
         cls_name = object.__class__.__name__
         indent += len(cls_name) + 1
         items = [(f.name, getattr(object, f.name)) for f in _dataclasses.fields(object) if f.repr]
@@ -291,6 +295,9 @@ class PrettyPrinter:
             if len(rep) <= max_width1:
                 chunks.append(rep)
             else:
+                # Lazy import to improve module import time
+                import re
+
                 # A list of alternating (non-space, space) strings
                 parts = re.findall(r'\S*\s*', line)
                 assert parts
