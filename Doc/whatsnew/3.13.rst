@@ -884,6 +884,12 @@ mmap
   is inaccessible due to file system errors or access violations.
   (Contributed by Jannis Weigend in :gh:`118209`.)
 
+multiprocessing
+---------------
+
+* Add :meth:`multiprocessing.Queue.shutdown` for queue termination.
+  (Contributed by Laurie Opperman in :gh:`104230`.)
+
 opcode
 ------
 
