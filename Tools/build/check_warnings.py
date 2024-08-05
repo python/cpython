@@ -93,12 +93,17 @@ def extract_warnings_from_compiler_output_json(
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
     Returns a dictionary where the key is the file and the data is the warnings
-    in that file
+    in that file. Does not include duplicate warnings for a file from list of
+    provided warnings.
     """
     warnings_by_file = defaultdict(list)
+    warnings_added = set()
     for warning in warnings:
-        warnings_by_file[warning["file"]].append(warning)
-
+        warning_key = f"{warning['file']}-{warning['line']}-{warning['column']}-{warning['option']}"
+        if warning_key not in warnings_added:
+            warnings_added.add(warning_key)
+            warnings_by_file[warning["file"]].append(warning)
+            
     return warnings_by_file
 
 
@@ -113,12 +118,14 @@ def get_unexpected_warnings(
     """
     unexpected_warnings = []
     for file in files_with_warnings.keys():
+        found_file_in_ignore_list = False
         for ignore_file in files_with_expected_warnings:
             if file == ignore_file[0]:
                 if len(files_with_warnings[file]) > ignore_file[1]:
                     unexpected_warnings.extend(files_with_warnings[file])
+                found_file_in_ignore_list = True
                 break
-        if file not in files_with_expected_warnings:
+        if not found_file_in_ignore_list:
             unexpected_warnings.extend(files_with_warnings[file])
 
     if unexpected_warnings:
