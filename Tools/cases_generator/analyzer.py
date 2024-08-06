@@ -27,6 +27,7 @@ class Properties:
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
+    needs_prev: bool = False
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -53,6 +54,7 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
+            needs_prev=any(p.needs_prev for p in properties),
         )
 
     @property
@@ -214,6 +216,7 @@ Part = Uop | Skip | Flush
 
 @dataclass
 class Instruction:
+    where: lexer.Token
     name: str
     parts: list[Part]
     _properties: Properties | None
@@ -618,6 +621,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         tier=tier_variable(op),
+        needs_prev=variable_used(op, "prev_instr"),
     )
 
 
@@ -687,9 +691,10 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
 
 
 def add_instruction(
-    name: str, parts: list[Part], instructions: dict[str, Instruction]
+    where: lexer.Token, name: str, parts: list[Part],
+    instructions: dict[str, Instruction]
 ) -> None:
-    instructions[name] = Instruction(name, parts, None)
+    instructions[name] = Instruction(where, name, parts, None)
 
 
 def desugar_inst(
@@ -717,7 +722,7 @@ def desugar_inst(
         parts.append(uop)
     else:
         parts[uop_index] = uop
-    add_instruction(name, parts, instructions)
+    add_instruction(inst.first_token, name, parts, instructions)
 
 
 def add_macro(
@@ -738,7 +743,7 @@ def add_macro(
             case _:
                 assert False
     assert parts
-    add_instruction(macro.name, parts, instructions)
+    add_instruction(macro.first_token, macro.name, parts, instructions)
 
 
 def add_family(
@@ -796,12 +801,6 @@ def assign_opcodes(
     instmap["INSTRUMENTED_LINE"] = 254
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
-
-    # Special case: this instruction is implemented in ceval.c
-    # rather than bytecodes.c, so we need to add it explicitly
-    # here (at least until we add something to bytecodes.c to
-    # declare external instructions).
-    instrumented.append("INSTRUMENTED_LINE")
 
     specialized: set[str] = set()
     no_arg: list[str] = []
