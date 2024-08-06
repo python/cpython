@@ -1,0 +1,20 @@
+This updates the interned string deallocation function
+``_PyUnicode_ClearInterned`` to delete all interned strings during runtime
+finalization when calling ``Py_Finalize``, regardless of their reference
+count.
+
+Worth noting that if an extension accidentally holds onto a interned string,
+even after calling Py_Finalize, it will result in use-after-free error,
+leaving the user to a potential vulnerabilities. That said, the history of
+how these interned strings are handled have been changing during throughout
+different versions.
+
+For example, in Python 3.9 and older, interned strings were never deleted.
+Only special builds for Valgrind and Purity cleared them at exit. In Python
+3.10 and 3.11, interned strings are always deleted at exit. In Python 3.12,
+interned strings are deleted only if Python is built in debug mode: they
+are not deleted in release mode. In Python 3.13, interned strings will
+now be all deleted.
+
+Given how the guarantees changed throughout different versions, it is not
+expected that users actively rely on this behavior for their extensions.
