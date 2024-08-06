@@ -2803,12 +2803,7 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
         }
 
         err = RegOpenKeyExW(hkcr, ext, 0, KEY_READ, &subkey);
-        if (err == ERROR_FILE_NOT_FOUND) {
-            err = ERROR_SUCCESS;
-            continue;
-        } else if (err == ERROR_ACCESS_DENIED) {
-            /* Skip keys we can't access, as we do on the fallback WinReg implementation */
-            PyErr_SetFromWindowsErr((int) err);
+        if (err == ERROR_FILE_NOT_FOUND || ERROR_ACCESS_DENIED) {
             err = ERROR_SUCCESS;
             continue;
         } else if (err != ERROR_SUCCESS) {
