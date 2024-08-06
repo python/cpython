@@ -1721,7 +1721,7 @@ suspended:
 }
 
 PyDoc_STRVAR(clear__doc__,
-"F.clear(): clear most references held by the frame");
+"F.clear(): clear all references held by the frame");
 
 static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
