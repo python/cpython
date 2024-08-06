@@ -2482,7 +2482,7 @@ PyEval_GetLocals(void)
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
         PyObject *ret = f->f_locals_cache;
         if (ret == NULL) {
-            PyObject *ret = PyDict_New();
+            ret = PyDict_New();
             if (ret == NULL) {
                 Py_DECREF(locals);
                 return NULL;
