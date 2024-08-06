@@ -693,10 +693,7 @@ class Counter(dict):
                 if self:
                     self_get = self.get
                     for elem, count in iterable.items():
-                        if elem in self:
-                            self[elem] = count + self_get(elem)
-                        else:
-                            self[elem] = count
+                        self[elem] = count + self_get(elem, type(count)())
                 else:
                     # fast path when counter is empty
                     super().update(iterable)
@@ -707,11 +704,10 @@ class Counter(dict):
 
     def _count_elements(self, iterable):
         'Tally elements from the iterable.'
-        try:
-            for elem in iterable:
-                self[elem] += 1
-        except TypeError:
-            raise TypeError(f"Expected an iterable, got {type(iterable).__name__}")
+        # Reimplement this function to fit the custom Counter logic.
+        self_get = self.get
+        for elem in iterable:
+            self[elem] = self_get(elem, 0) + 1
 
     def subtract(self, iterable=None, /, **kwds):
         '''Like dict.update() but subtracts counts instead of replacing them.
