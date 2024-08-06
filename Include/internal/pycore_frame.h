@@ -200,7 +200,7 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
  * creating it if necessary.
- * Returns a borrowed referennce */
+ * Returns a borrowed reference */
 static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
@@ -212,9 +212,6 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
     }
     return _PyFrame_MakeAndSetFrameObject(frame);
 }
-
-void
-_PyFrame_ClearLocals(_PyInterpreterFrame *frame);
 
 /* Clears all references in the frame.
  * If take is non-zero, then the _PyInterpreterFrame frame

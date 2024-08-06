@@ -10,7 +10,7 @@ import types
 import textwrap
 import warnings
 from test import support
-from test.support import (script_helper, requires_debug_ranges,
+from test.support import (script_helper, requires_debug_ranges, run_code,
                           requires_specialization, C_RECURSION_LIMIT)
 from test.support.os_helper import FakePath
 
@@ -1828,6 +1828,33 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
+
+    def test_lambda_return_position(self):
+        snippets = [
+            "f = lambda: x",
+            "f = lambda: 42",
+            "f = lambda: 1 + 2",
+            "f = lambda: a + b",
+        ]
+        for snippet in snippets:
+            with self.subTest(snippet=snippet):
+                lamb = run_code(snippet)["f"]
+                positions = lamb.__code__.co_positions()
+                # assert that all positions are within the lambda
+                for i, pos in enumerate(positions):
+                    with self.subTest(i=i, pos=pos):
+                        start_line, end_line, start_col, end_col = pos
+                        if i == 0 and start_col == end_col == 0:
+                            # ignore the RESUME in the beginning
+                            continue
+                        self.assertEqual(start_line, 1)
+                        self.assertEqual(end_line, 1)
+                        code_start = snippet.find(":") + 2
+                        code_end = len(snippet)
+                        self.assertGreaterEqual(start_col, code_start)
+                        self.assertLessEqual(end_col, code_end)
+                        self.assertGreaterEqual(end_col, start_col)
+                        self.assertLessEqual(end_col, code_end)
 
 
 class TestExpressionStackSize(unittest.TestCase):

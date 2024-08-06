@@ -434,7 +434,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
-   The format follows the conventions of the ``%`` operator.  For floating point
+   The format follows the conventions of the ``%`` operator.  For floating-point
    values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
@@ -465,7 +465,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: str(float)
 
-   Formats a floating point number using the same format as the built-in function
+   Formats a floating-point number using the same format as the built-in function
    ``str(float)``, but takes the decimal point into account.
 
 

@@ -1110,7 +1110,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: NORMAL_PRIORITY_CLASS
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will have an normal priority. (default)
+   will have a normal priority. (default)
 
    .. versionadded:: 3.7
 

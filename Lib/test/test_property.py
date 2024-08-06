@@ -433,6 +433,40 @@ class PropertySubclassTests(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
+    def test_prefer_explicit_doc(self):
+        # Issue 25757: subclasses of property lose docstring
+        self.assertEqual(property(doc="explicit doc").__doc__, "explicit doc")
+        self.assertEqual(PropertySub(doc="explicit doc").__doc__, "explicit doc")
+
+        class Foo:
+            spam = PropertySub(doc="spam explicit doc")
+
+            @spam.getter
+            def spam(self):
+                """ignored as doc already set"""
+                return 1
+
+            def _stuff_getter(self):
+                """ignored as doc set directly"""
+            stuff = PropertySub(doc="stuff doc argument", fget=_stuff_getter)
+
+        #self.assertEqual(Foo.spam.__doc__, "spam explicit doc")
+        self.assertEqual(Foo.stuff.__doc__, "stuff doc argument")
+
+    def test_property_no_doc_on_getter(self):
+        # If a property's getter has no __doc__ then the property's doc should
+        # be None; test that this is consistent with subclasses as well; see
+        # GH-2487
+        class NoDoc:
+            @property
+            def __doc__(self):
+                raise AttributeError
+
+        self.assertEqual(property(NoDoc()).__doc__, None)
+        self.assertEqual(PropertySub(NoDoc()).__doc__, None)
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_property_setter_copies_getter_docstring(self):
         class Foo(object):
             def __init__(self): self._spam = 1

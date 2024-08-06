@@ -3,13 +3,21 @@ repos:
     rev: v0.3.4
     hooks:
       - id: ruff
-        name: Run Ruff on Lib/test/
+        name: Run Ruff (lint) on Doc/
+        args: [--exit-non-zero-on-fix]
+        files: ^Doc/
+      - id: ruff
+        name: Run Ruff (lint) on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff on Argument Clinic
+        name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
+      - id: ruff-format
+        name: Run Ruff (format) on Doc/
+        args: [--check]
+        files: ^Doc/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

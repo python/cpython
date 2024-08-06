@@ -2371,7 +2371,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
   AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
   AC_CACHE_CHECK([m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3])], [py_var], [
     AS_VAR_COPY([py_cflags], [CFLAGS])
-    AS_VAR_APPEND([CFLAGS], ["-W$2 -Werror"])
+    AS_VAR_APPEND([CFLAGS], [" -W$2 -Werror"])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
                       [AS_VAR_SET([py_var], [yes])],
                       [AS_VAR_SET([py_var], [no])])
@@ -3356,7 +3356,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -7300,11 +7300,19 @@ AS_CASE([$ac_sys_system],
       [Emscripten/node*], [],
       [WASI/*], [
         dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+        dnl Test modules that must be compiled as shared libraries are not supported
+        dnl (see Modules/Setup.stdlib.in).
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
+          [_testexternalinspection],
+          [_testimportmultiple],
+          [_testmultiphase],
+          [_testsinglephase],
           [fcntl],
           [mmap],
           [termios],
+          [xxlimited],
+          [xxlimited_35],
         )
       ]
     )

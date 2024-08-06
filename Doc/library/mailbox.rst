@@ -1278,7 +1278,7 @@ When an :class:`!MHMessage` instance is created based upon a
 
    .. method:: get_visible()
 
-      Return an :class:`Message` instance whose headers are the message's
+      Return a :class:`Message` instance whose headers are the message's
       visible headers and whose body is empty.
 
 

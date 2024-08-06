@@ -1251,16 +1251,17 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     MAINTAIN_TRACKING(mp, key, value);
 
     if (ix == DKIX_EMPTY) {
-        uint64_t new_version = _PyDict_NotifyEvent(
-                interp, PyDict_EVENT_ADDED, mp, key, value);
-        /* Insert into new slot. */
-        mp->ma_keys->dk_version = 0;
         assert(old_value == NULL);
         if (mp->ma_keys->dk_usable <= 0) {
             /* Need to resize. */
             if (insertion_resize(interp, mp, 1) < 0)
                 goto Fail;
         }
+
+        uint64_t new_version = _PyDict_NotifyEvent(
+                interp, PyDict_EVENT_ADDED, mp, key, value);
+        /* Insert into new slot. */
+        mp->ma_keys->dk_version = 0;
 
         Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
         dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
@@ -1335,9 +1336,6 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
 {
     assert(mp->ma_keys == Py_EMPTY_KEYS);
 
-    uint64_t new_version = _PyDict_NotifyEvent(
-            interp, PyDict_EVENT_ADDED, mp, key, value);
-
     int unicode = PyUnicode_CheckExact(key);
     PyDictKeysObject *newkeys = new_keys_object(
             interp, PyDict_LOG_MINSIZE, unicode);
@@ -1346,6 +1344,9 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
         Py_DECREF(value);
         return -1;
     }
+    uint64_t new_version = _PyDict_NotifyEvent(
+            interp, PyDict_EVENT_ADDED, mp, key, value);
+
     /* We don't decref Py_EMPTY_KEYS here because it is immortal. */
     mp->ma_keys = newkeys;
     mp->ma_values = NULL;
@@ -3324,15 +3325,15 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         return NULL;
 
     if (ix == DKIX_EMPTY) {
-        uint64_t new_version = _PyDict_NotifyEvent(
-                interp, PyDict_EVENT_ADDED, mp, key, defaultobj);
-        mp->ma_keys->dk_version = 0;
         value = defaultobj;
         if (mp->ma_keys->dk_usable <= 0) {
             if (insertion_resize(interp, mp, 1) < 0) {
                 return NULL;
             }
         }
+        uint64_t new_version = _PyDict_NotifyEvent(
+                interp, PyDict_EVENT_ADDED, mp, key, defaultobj);
+        mp->ma_keys->dk_version = 0;
         Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
         dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
         if (DK_IS_UNICODE(mp->ma_keys)) {

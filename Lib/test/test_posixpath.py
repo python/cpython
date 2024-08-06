@@ -347,13 +347,19 @@ class PosixPathTest(unittest.TestCase):
                      "no home directory on VxWorks")
     def test_expanduser_pwd2(self):
         pwd = import_helper.import_module('pwd')
-        for e in pwd.getpwall():
-            name = e.pw_name
-            home = e.pw_dir
+        for all_entry in pwd.getpwall():
+            name = all_entry.pw_name
+
+            # gh-121200: pw_dir can be different between getpwall() and
+            # getpwnam(), so use getpwnam() pw_dir as expanduser() does.
+            entry = pwd.getpwnam(name)
+            home = entry.pw_dir
             home = home.rstrip('/') or '/'
-            self.assertEqual(posixpath.expanduser('~' + name), home)
-            self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
-                             os.fsencode(home))
+
+            with self.subTest(all_entry=all_entry, entry=entry):
+                self.assertEqual(posixpath.expanduser('~' + name), home)
+                self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
+                                 os.fsencode(home))
 
     NORMPATH_CASES = [
         ("", "."),

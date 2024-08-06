@@ -1820,6 +1820,8 @@ class NameErrorTests(unittest.TestCase):
         except self.failureException:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
+        else:
+            self.fail("assertRaisesRegex should have failed.")
 
         self.assertIn("aab", err.getvalue())
 

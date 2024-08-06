@@ -1407,7 +1407,7 @@ class ProcessTestCase(BaseTestCase):
         t = threading.Thread(target=open_fds)
         t.start()
         try:
-            with self.assertRaises(EnvironmentError):
+            with self.assertRaises(OSError):
                 subprocess.Popen(NONEXISTING_CMD,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,

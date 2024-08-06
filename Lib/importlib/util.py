@@ -13,7 +13,6 @@ from ._bootstrap_external import spec_from_file_location
 
 import _imp
 import sys
-import threading
 import types
 
 
@@ -253,6 +252,9 @@ class LazyLoader(Loader):
 
     def exec_module(self, module):
         """Make the module load lazily."""
+        # Threading is only needed for lazy loading, and importlib.util can
+        # be pulled in at interpreter startup, so defer until needed.
+        import threading
         module.__spec__.loader = self.loader
         module.__loader__ = self.loader
         # Don't need to worry about deep-copying as trying to set an attribute

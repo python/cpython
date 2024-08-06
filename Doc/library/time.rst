@@ -69,7 +69,7 @@ An explanation of some terminology and conventions is in order.
   systems, the clock "ticks" only 50 or 100 times a second.
 
 * On the other hand, the precision of :func:`.time` and :func:`sleep` is better
-  than their Unix equivalents: times are expressed as floating point numbers,
+  than their Unix equivalents: times are expressed as floating-point numbers,
   :func:`.time` returns the most accurate time available (using Unix
   :c:func:`!gettimeofday` where available), and :func:`sleep` will accept a time
   with a nonzero fraction (Unix :c:func:`!select` is used to implement this, where
@@ -273,7 +273,7 @@ Functions
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
    as the dst flag if it is unknown) which expresses the time in *local* time, not
-   UTC.  It returns a floating point number, for compatibility with :func:`.time`.
+   UTC.  It returns a floating-point number, for compatibility with :func:`.time`.
    If the input value cannot be represented as a valid time, either
    :exc:`OverflowError` or :exc:`ValueError` will be raised (which depends on
    whether the invalid value is caught by Python or the underlying C libraries).
@@ -358,7 +358,7 @@ Functions
 .. function:: sleep(secs)
 
    Suspend execution of the calling thread for the given number of seconds.
-   The argument may be a floating point number to indicate a more precise sleep
+   The argument may be a floating-point number to indicate a more precise sleep
    time.
 
    If the sleep is interrupted by a signal and no exception is raised by the
@@ -642,13 +642,13 @@ Functions
 
 .. function:: time() -> float
 
-   Return the time in seconds since the epoch_ as a floating point
+   Return the time in seconds since the epoch_ as a floating-point
    number. The handling of `leap seconds`_ is platform dependent.
    On Windows and most Unix systems, the leap seconds are not counted towards
    the time in seconds since the epoch_. This is commonly referred to as `Unix
    time <https://en.wikipedia.org/wiki/Unix_time>`_.
 
-   Note that even though the time is always returned as a floating point
+   Note that even though the time is always returned as a floating-point
    number, not all systems provide time with a better precision than 1 second.
    While this function normally returns non-decreasing values, it can return a
    lower value than a previous call if the system clock has been set back

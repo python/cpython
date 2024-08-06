@@ -922,21 +922,21 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(Root(4) ** F(2, 1), Root(4, F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 1), Root(4, -F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 3), Root(4, -3.0))
-        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('3/2 ** X'))
         self.assertEqual(SymbolicReal('X') ** F(3, 2), SymbolicReal('X ** 1.5'))
 
-        self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(2.25, 0.0))
-        self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(1.0, 0.0))
+        self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(F(9,4), 0.0))
+        self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(F(1), 0.0))
         self.assertTypedEquals(F(3, 2) ** RectComplex(2, 0), Polar(2.25, 0.0))
         self.assertTypedEquals(F(1, 1) ** RectComplex(2, 3), Polar(1.0, 0.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 2), Polar(8.0, 3.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 1), Polar(64, 6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 1), Polar(0.015625, -6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 2), Polar(0.125, -3.0))
-        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('3/2 ** X'))
         self.assertEqual(SymbolicComplex('X') ** F(3, 2), SymbolicComplex('X ** 1.5'))
 
-        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('3/2 ** X'))
         self.assertEqual(Symbolic('X') ** F(3, 2), Symbolic('X ** 1.5'))
 
     def testMixingWithDecimal(self):

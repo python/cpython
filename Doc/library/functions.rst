@@ -57,7 +57,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer, a floating point number, or an object implementing
+   integer, a floating-point number, or an object implementing
    :meth:`~object.__abs__`.
    If the argument is a complex number, its magnitude is returned.
 
@@ -538,7 +538,7 @@ are always available.  They are listed here in alphabetical order.
    Take two (non-complex) numbers as arguments and return a pair of numbers
    consisting of their quotient and remainder when using integer division.  With
    mixed operand types, the rules for binary arithmetic operators apply.  For
-   integers, the result is the same as ``(a // b, a % b)``. For floating point
+   integers, the result is the same as ``(a // b, a % b)``. For floating-point
    numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a /
    b)`` but may be 1 less than that.  In any case ``q * b + a % b`` is very
    close to *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0
@@ -714,7 +714,7 @@ are always available.  They are listed here in alphabetical order.
       single: NaN
       single: Infinity
 
-   Return a floating point number constructed from a number or a string.
+   Return a floating-point number constructed from a number or a string.
 
    Examples:
 
@@ -755,8 +755,8 @@ are always available.  They are listed here in alphabetical order.
    Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
    "iNfINity" are all acceptable spellings for positive infinity.
 
-   Otherwise, if the argument is an integer or a floating point number, a
-   floating point number with the same value (within Python's floating point
+   Otherwise, if the argument is an integer or a floating-point number, a
+   floating-point number with the same value (within Python's floating-point
    precision) is returned.  If the argument is outside the range of a Python
    float, an :exc:`OverflowError` will be raised.
 
@@ -983,7 +983,7 @@ are always available.  They are listed here in alphabetical order.
    ``int(x)`` returns ``x.__int__()``.  If the argument defines :meth:`~object.__index__`,
    it returns ``x.__index__()``.  If the argument defines :meth:`~object.__trunc__`,
    it returns ``x.__trunc__()``.
-   For floating point numbers, this truncates towards zero.
+   For floating-point numbers, this truncates towards zero.
 
    If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
@@ -1440,7 +1440,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open file,mode,flags open
+   .. audit-event:: open path,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
@@ -1496,7 +1496,9 @@ are always available.  They are listed here in alphabetical order.
    returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
    type :class:`int` or :class:`float` and a non-integral exponent, a complex
    result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
-   to ``3j``.
+   to ``3j``. Whereas, for a negative base of type :class:`int` or :class:`float`
+   with an integral exponent, a float result is delivered. For example,
+   ``pow(-9, 2.0)`` returns ``81.0``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
    also be of integer type and *mod* must be nonzero. If *mod* is present and
@@ -1857,7 +1859,7 @@ are always available.  They are listed here in alphabetical order.
 
    For some use cases, there are good alternatives to :func:`sum`.
    The preferred, fast way to concatenate a sequence of strings is by calling
-   ``''.join(sequence)``.  To add floating point values with extended precision,
+   ``''.join(sequence)``.  To add floating-point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
 

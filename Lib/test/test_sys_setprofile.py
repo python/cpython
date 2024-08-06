@@ -267,6 +267,10 @@ class ProfileHookTestCase(TestCaseBase):
         self.check_events(g, [(1, 'call', g_ident),
                               (2, 'call', f_ident),
                               (2, 'return', f_ident),
+                              # once more; the generator is being garbage collected
+                              # and it will do a PY_THROW
+                              (2, 'call', f_ident),
+                              (2, 'return', f_ident),
                               (1, 'return', g_ident),
                               ])
 
@@ -473,6 +477,20 @@ class TestEdgeCases(unittest.TestCase):
         sys.settrace(prev_trace)
         sys.setprofile(lambda *args: None)
         f()
+
+    def test_method_with_c_function(self):
+        # gh-122029
+        # When we have a PyMethodObject whose im_func is a C function, we
+        # should record both the call and the return. f = classmethod(repr)
+        # is just a way to create a PyMethodObject with a C function.
+        class A:
+            f = classmethod(repr)
+        events = []
+        sys.setprofile(lambda frame, event, args: events.append(event))
+        A().f()
+        sys.setprofile(None)
+        # The last c_call is the call to sys.setprofile
+        self.assertEqual(events, ['c_call', 'c_return', 'c_call'])
 
 
 if __name__ == "__main__":

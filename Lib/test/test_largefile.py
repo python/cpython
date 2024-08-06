@@ -142,6 +142,9 @@ class TestFileMethods(LargeFileTest):
             f.truncate(1)
             self.assertEqual(f.tell(), 0)       # else pointer moved
             f.seek(0)
+            # Verify readall on a truncated file is well behaved. read()
+            # without a size can be unbounded, this should get just the byte
+            # that remains.
             self.assertEqual(len(f.read()), 1)  # else wasn't truncated
 
     def test_seekable(self):
@@ -152,6 +155,22 @@ class TestFileMethods(LargeFileTest):
                 f.seek(pos)
                 self.assertTrue(f.seekable())
 
+    @bigmemtest(size=size, memuse=2, dry_run=False)
+    def test_seek_readall(self, _size):
+        # Seek which doesn't change position should readall successfully.
+        with self.open(TESTFN, 'rb') as f:
+            self.assertEqual(f.seek(0, os.SEEK_CUR), 0)
+            self.assertEqual(len(f.read()), size + 1)
+
+        # Seek which changes (or might change) position should readall
+        # successfully.
+        with self.open(TESTFN, 'rb') as f:
+            self.assertEqual(f.seek(20, os.SEEK_SET), 20)
+            self.assertEqual(len(f.read()), size - 19)
+
+        with self.open(TESTFN, 'rb') as f:
+            self.assertEqual(f.seek(-3, os.SEEK_END), size - 2)
+            self.assertEqual(len(f.read()), 3)
 
 def skip_no_disk_space(path, required):
     def decorator(fun):

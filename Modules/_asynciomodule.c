@@ -2509,7 +2509,11 @@ static PyObject *
 _asyncio_Task_get_coro_impl(TaskObj *self)
 /*[clinic end generated code: output=bcac27c8cc6c8073 input=d2e8606c42a7b403]*/
 {
-    return Py_NewRef(self->task_coro);
+    if (self->task_coro) {
+        return Py_NewRef(self->task_coro);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]

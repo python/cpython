@@ -35,7 +35,7 @@ def testformat(formatstr, args, output=None, limit=None, overflowok=False):
         # when 'limit' is specified, it determines how many characters
         # must match exactly; lengths must always match.
         # ex: limit=5, '12345678' matches '12345___'
-        # (mainly for floating point format tests for which an exact match
+        # (mainly for floating-point format tests for which an exact match
         # can't be guaranteed due to rounding and representation errors)
         elif output and limit is not None and (
                 len(result)!=len(output) or result[:limit]!=output[:limit]):

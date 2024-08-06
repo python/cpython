@@ -881,11 +881,15 @@ Statements
 .. class:: AnnAssign(target, annotation, value, simple)
 
    An assignment with a type annotation. ``target`` is a single node and can
-   be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
+   be a :class:`Name`, an :class:`Attribute` or a :class:`Subscript`.
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
-   node. ``value`` is a single optional node. ``simple`` is a boolean integer
-   set to True for a :class:`Name` node in ``target`` that do not appear in
-   between parenthesis and are hence pure names and not expressions.
+   node. ``value`` is a single optional node.
+
+   ``simple`` is always either 0 (indicating a "complex" target) or 1
+   (indicating a "simple" target). A "simple" target consists solely of a
+   :class:`Name` node that does not appear between parentheses; all other
+   targets are considered complex. Only simple targets appear in
+   the :attr:`__annotations__` dictionary of modules and classes.
 
    .. doctest::
 
@@ -2000,7 +2004,7 @@ Function and class definitions
            YieldFrom(value)
 
    A ``yield`` or ``yield from`` expression. Because these are expressions, they
-   must be wrapped in a :class:`Expr` node if the value sent back is not used.
+   must be wrapped in an :class:`Expr` node if the value sent back is not used.
 
    .. doctest::
 

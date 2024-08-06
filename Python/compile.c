@@ -2966,7 +2966,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         co = optimize_and_assemble(c, 0);
     }
     else {
-        location loc = LOCATION(e->lineno, e->lineno, 0, 0);
+        location loc = LOC(e->v.Lambda.body);
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = optimize_and_assemble(c, 1);
     }
@@ -3024,10 +3024,17 @@ compiler_for(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
 
     VISIT(c, expr, s->v.For.iter);
+
+    loc = LOC(s->v.For.iter);
     ADDOP(c, loc, GET_ITER);
 
     USE_LABEL(c, start);
     ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
+
+    /* Add NOP to ensure correct line tracing of multiline for statements.
+     * It will be removed later if redundant.
+     */
+    ADDOP(c, LOC(s->v.For.target), NOP);
 
     USE_LABEL(c, body);
     VISIT(c, expr, s->v.For.target);
@@ -6110,7 +6117,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case YieldFrom_kind:
         if (!_PyST_IsFunctionLike(c->u->u_ste)) {
-            return compiler_error(c, loc, "'yield' outside function");
+            return compiler_error(c, loc, "'yield from' outside function");
         }
         if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
             return compiler_error(c, loc, "'yield from' inside async function");
@@ -7682,7 +7689,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     PyCodeObject *co = NULL;
     PyObject *consts = consts_dict_keys_inorder(u->u_metadata.u_consts);
     if (consts == NULL) {
-        goto error;
+        return NULL;
     }
     cfg_builder g;
     if (instr_sequence_to_cfg(&u->u_instr_sequence, &g) < 0) {
