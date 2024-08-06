@@ -20,6 +20,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
+#include "pycore_typeid.h"        // _PyType_FinalizeIdPool
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -1584,13 +1585,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
     }
     else {
-#ifdef Py_GIL_DISABLED
-        if (_Py_atomic_load_int(&interp->gc.immortalize) == 0) {
-            // Immortalize objects marked as using deferred reference counting
-            // the first time a non-main thread is created.
-            _PyGC_ImmortalizeDeferredObjects(interp);
-        }
-#endif
     }
 
 #ifdef Py_GIL_DISABLED
@@ -1741,6 +1735,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
 
+    // Merge our thread-local refcounts into the type's own refcount and
+    // free our local refcount array.
+    _PyType_FinalizeThreadLocalRefcounts((_PyThreadStateImpl *)tstate);
+
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
 #endif
@@ -1799,6 +1797,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
+    assert(tstate_impl->types.refcounts == NULL);
 #endif
 
     HEAD_UNLOCK(runtime);

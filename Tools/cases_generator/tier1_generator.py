@@ -20,8 +20,8 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
-    emit_tokens,
     type_and_null,
+    Emitter,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -62,26 +62,26 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                 declare_variable(var, out)
 
 def write_uop(
-    uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruction, braces: bool
+    uop: Part, emitter: Emitter, offset: int, stack: Stack, inst: Instruction, braces: bool
 ) -> int:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
         entries = "entries" if uop.size > 1 else "entry"
-        out.emit(f"/* Skip {uop.size} cache {entries} */\n")
+        emitter.emit(f"/* Skip {uop.size} cache {entries} */\n")
         return offset + uop.size
     if isinstance(uop, Flush):
-        out.emit(f"// flush\n")
-        stack.flush(out)
+        emitter.emit(f"// flush\n")
+        stack.flush(emitter.out)
         return offset
     try:
         locals: dict[str, Local] = {}
-        out.start_line()
+        emitter.out.start_line()
         if braces:
-            out.emit(f"// {uop.name}\n")
+            emitter.out.emit(f"// {uop.name}\n")
         peeks: list[Local] = []
         for var in reversed(uop.stack.inputs):
             code, local = stack.pop(var)
-            out.emit(code)
+            emitter.emit(code)
             if var.peek:
                 peeks.append(local)
             if local.defined:
@@ -91,8 +91,8 @@ def write_uop(
         while peeks:
             stack.push(peeks.pop())
         if braces:
-            out.emit("{\n")
-        out.emit(stack.define_output_arrays(uop.stack.outputs))
+            emitter.emit("{\n")
+        emitter.out.emit(stack.define_output_arrays(uop.stack.outputs))
 
         for cache in uop.caches:
             if cache.name != "unused":
@@ -102,13 +102,13 @@ def write_uop(
                 else:
                     type = f"uint{cache.size*16}_t "
                     reader = f"read_u{cache.size*16}"
-                out.emit(
+                emitter.emit(
                     f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
                 )
                 if inst.family is None:
-                    out.emit(f"(void){cache.name};\n")
+                    emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
-        emit_tokens(out, uop, stack, inst)
+        emitter.emit_tokens(uop, stack, inst)
         for i, var in enumerate(uop.stack.outputs):
             if not var.peek:
                 if var.name in locals:
@@ -117,11 +117,11 @@ def write_uop(
                     local = Local.unused(var)
                 else:
                     local = Local.local(var)
-                out.emit(stack.push(local))
+                emitter.emit(stack.push(local))
         if braces:
-            out.start_line()
-            out.emit("}\n")
-        # out.emit(stack.as_comment() + "\n")
+            emitter.out.start_line()
+            emitter.emit("}\n")
+        # emitter.emit(stack.as_comment() + "\n")
         return offset
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0])
@@ -152,6 +152,7 @@ def generate_tier1(
 """
     )
     out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         needs_this = uses_this(inst)
@@ -183,7 +184,7 @@ def generate_tier1(
         for part in inst.parts:
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-            offset = write_uop(part, out, offset, stack, inst, insert_braces)
+            offset = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
         if not inst.parts[-1].properties.always_exits:
             stack.flush(out)
