@@ -1160,9 +1160,12 @@ class CAPITest(unittest.TestCase):
     def test_pyeval_getlocals(self):
         # Test PyEval_GetLocals()
         x = 1
+        self.assertEqual(_testcapi.pyeval_getlocals(),
+            {'self': self,
+             'x': 1})
+
         y = 2
-        local_vars = _testcapi.pyeval_getlocals()
-        self.assertEqual(local_vars,
+        self.assertEqual(_testcapi.pyeval_getlocals(),
             {'self': self,
              'x': 1,
              'y': 2})
