@@ -693,7 +693,11 @@ class Counter(dict):
                 if self:
                     self_get = self.get
                     for elem, count in iterable.items():
-                        self[elem] = count + self_get(elem, 0)
+                        if elem in self:
+                            self[elem] += count
+                        else:
+                            self[elem] = count
+
                 else:
                     # fast path when counter is empty
                     super().update(iterable)
