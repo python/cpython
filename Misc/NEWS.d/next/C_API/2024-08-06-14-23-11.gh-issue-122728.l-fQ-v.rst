@@ -1,0 +1,2 @@
+Fix :c:func:`PyEval_GetLocals` to avoid :exc:`SystemError` ("bad argument to
+internal function"). Patch by Victor Stinner.

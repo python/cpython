@@ -1157,6 +1157,19 @@ class CAPITest(unittest.TestCase):
         gen = genf()
         self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
+    def test_pyeval_getlocals(self):
+        # Test PyEval_GetLocals()
+        x = 1
+        self.assertEqual(_testcapi.pyeval_getlocals(),
+            {'self': self,
+             'x': 1})
+
+        y = 2
+        self.assertEqual(_testcapi.pyeval_getlocals(),
+            {'self': self,
+             'x': 1,
+             'y': 2})
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
