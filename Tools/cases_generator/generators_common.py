@@ -57,169 +57,171 @@ def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
             parens -= 1
         out.emit(tkn)
 
-
-def replace_deopt(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    unused: Stack,
-    inst: Instruction | None,
-) -> None:
-    out.emit_at("DEOPT_IF", tkn)
-    out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "RPAREN")
-    next(tkn_iter)  # Semi colon
-    out.emit(", ")
-    assert inst is not None
-    assert inst.family is not None
-    out.emit(inst.family.name)
-    out.emit(");\n")
-
-
-def replace_error(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-) -> None:
-    out.emit_at("if ", tkn)
-    out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "COMMA")
-    label = next(tkn_iter).text
-    next(tkn_iter)  # RPAREN
-    next(tkn_iter)  # Semi colon
-    out.emit(") ")
-    c_offset = stack.peek_offset()
-    try:
-        offset = -int(c_offset)
-    except ValueError:
-        offset = -1
-    if offset > 0:
-        out.emit(f"goto pop_{offset}_")
-        out.emit(label)
-        out.emit(";\n")
-    elif offset == 0:
-        out.emit("goto ")
-        out.emit(label)
-        out.emit(";\n")
-    else:
-        out.emit("{\n")
-        stack.flush_locally(out)
-        out.emit("goto ")
-        out.emit(label)
-        out.emit(";\n")
-        out.emit("}\n")
-
-
-def replace_error_no_pop(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-) -> None:
-    next(tkn_iter)  # LPAREN
-    next(tkn_iter)  # RPAREN
-    next(tkn_iter)  # Semi colon
-    out.emit_at("goto error;", tkn)
-
-
-def replace_decrefs(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-) -> None:
-    next(tkn_iter)
-    next(tkn_iter)
-    next(tkn_iter)
-    out.emit_at("", tkn)
-    for var in uop.stack.inputs:
-        if var.name == "unused" or var.name == "null" or var.peek:
-            continue
-        if var.size:
-            out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-            out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
-            out.emit("}\n")
-        elif var.condition:
-            if var.condition == "1":
-                out.emit(f"PyStackRef_CLOSE({var.name});\n")
-            elif var.condition != "0":
-                out.emit(f"PyStackRef_XCLOSE({var.name});\n")
-        else:
-            out.emit(f"PyStackRef_CLOSE({var.name});\n")
-
-
-def replace_sync_sp(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-) -> None:
-    next(tkn_iter)
-    next(tkn_iter)
-    next(tkn_iter)
-    stack.flush(out)
-
-
-def replace_check_eval_breaker(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-) -> None:
-    next(tkn_iter)
-    next(tkn_iter)
-    next(tkn_iter)
-    if not uop.properties.ends_with_eval_breaker:
-        out.emit_at("CHECK_EVAL_BREAKER();", tkn)
-
-
-REPLACEMENT_FUNCTIONS = {
-    "EXIT_IF": replace_deopt,
-    "DEOPT_IF": replace_deopt,
-    "ERROR_IF": replace_error,
-    "ERROR_NO_POP": replace_error_no_pop,
-    "DECREF_INPUTS": replace_decrefs,
-    "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
-    "SYNC_SP": replace_sync_sp,
-}
-
 ReplacementFunctionType = Callable[
-    [CWriter, Token, Iterator[Token], Uop, Stack, Instruction | None], None
+    [Token, Iterator[Token], Uop, Stack, Instruction | None], None
 ]
 
+class Emitter:
 
-def emit_tokens(
-    out: CWriter,
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-    replacement_functions: Mapping[
-        str, ReplacementFunctionType
-    ] = REPLACEMENT_FUNCTIONS,
-) -> None:
-    tkns = uop.body[1:-1]
-    if not tkns:
-        return
-    tkn_iter = iter(tkns)
-    out.start_line()
-    for tkn in tkn_iter:
-        if tkn.kind == "IDENTIFIER" and tkn.text in replacement_functions:
-            replacement_functions[tkn.text](out, tkn, tkn_iter, uop, stack, inst)
+    out: CWriter
+    _replacers: dict[str, ReplacementFunctionType]
+
+    def __init__(self, out: CWriter):
+        self._replacers = {
+            "EXIT_IF": self.exit_if,
+            "DEOPT_IF": self.deopt_if,
+            "ERROR_IF": self.error_if,
+            "ERROR_NO_POP": self.error_no_pop,
+            "DECREF_INPUTS": self.decref_inputs,
+            "CHECK_EVAL_BREAKER": self.check_eval_breaker,
+            "SYNC_SP": self.sync_sp,
+        }
+        self.out = out
+
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        unused: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        self.out.emit_at("DEOPT_IF", tkn)
+        self.out.emit(next(tkn_iter))
+        emit_to(self.out, tkn_iter, "RPAREN")
+        next(tkn_iter)  # Semi colon
+        self.out.emit(", ")
+        assert inst is not None
+        assert inst.family is not None
+        self.out.emit(inst.family.name)
+        self.out.emit(");\n")
+
+    exit_if = deopt_if
+
+    def error_if(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        self.out.emit_at("if ", tkn)
+        self.out.emit(next(tkn_iter))
+        emit_to(self.out, tkn_iter, "COMMA")
+        label = next(tkn_iter).text
+        next(tkn_iter)  # RPAREN
+        next(tkn_iter)  # Semi colon
+        self.out.emit(") ")
+        c_offset = stack.peek_offset()
+        try:
+            offset = -int(c_offset)
+        except ValueError:
+            offset = -1
+        if offset > 0:
+            self.out.emit(f"goto pop_{offset}_")
+            self.out.emit(label)
+            self.out.emit(";\n")
+        elif offset == 0:
+            self.out.emit("goto ")
+            self.out.emit(label)
+            self.out.emit(";\n")
         else:
-            out.emit(tkn)
+            self.out.emit("{\n")
+            stack.flush_locally(self.out)
+            self.out.emit("goto ")
+            self.out.emit(label)
+            self.out.emit(";\n")
+            self.out.emit("}\n")
 
+    def error_no_pop(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        next(tkn_iter)  # LPAREN
+        next(tkn_iter)  # RPAREN
+        next(tkn_iter)  # Semi colon
+        self.out.emit_at("goto error;", tkn)
+
+    def decref_inputs(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        self.out.emit_at("", tkn)
+        for var in uop.stack.inputs:
+            if var.name == "unused" or var.name == "null" or var.peek:
+                continue
+            if var.size:
+                self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
+                self.out.emit("}\n")
+            elif var.condition:
+                if var.condition == "1":
+                    self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
+                elif var.condition != "0":
+                    self.out.emit(f"PyStackRef_XCLOSE({var.name});\n")
+            else:
+                self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
+
+
+    def sync_sp(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        stack.flush(self.out)
+
+
+    def check_eval_breaker(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        if not uop.properties.ends_with_eval_breaker:
+            self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
+
+    def emit_tokens(
+        self,
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        tkns = uop.body[1:-1]
+        if not tkns:
+            return
+        tkn_iter = iter(tkns)
+        self.out.start_line()
+        for tkn in tkn_iter:
+            if tkn.kind == "IDENTIFIER" and tkn.text in self._replacers:
+                self._replacers[tkn.text](tkn, tkn_iter, uop, stack, inst)
+            else:
+                self.out.emit(tkn)
+
+    def emit(self, txt: str | Token) -> None:
+        self.out.emit(txt)
 
 def cflags(p: Properties) -> str:
     flags: list[str] = []
