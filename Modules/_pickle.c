@@ -4517,10 +4517,14 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     if (!PyTuple_Check(reduce_value)) {
         PyErr_SetString(st->PicklingError,
                         "__reduce__ must return a string or tuple");
+        _PyErr_FormatNote("when serializing %T object", obj);
         goto error;
     }
 
     status = save_reduce(st, self, reduce_value, obj);
+    if (status < 0) {
+        _PyErr_FormatNote("when serializing %T object", obj);
+    }
 
     if (0) {
   error:

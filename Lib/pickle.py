@@ -600,18 +600,22 @@ class _Pickler:
             self.save_global(obj, rv)
             return
 
-        # Assert that reduce() returned a tuple
-        if not isinstance(rv, tuple):
-            raise PicklingError("%s must return string or tuple" % reduce)
+        try:
+            # Assert that reduce() returned a tuple
+            if not isinstance(rv, tuple):
+                raise PicklingError("%s must return string or tuple" % reduce)
 
-        # Assert that it returned an appropriately sized tuple
-        l = len(rv)
-        if not (2 <= l <= 6):
-            raise PicklingError("Tuple returned by %s must have "
-                                "two to six elements" % reduce)
+            # Assert that it returned an appropriately sized tuple
+            l = len(rv)
+            if not (2 <= l <= 6):
+                raise PicklingError("Tuple returned by %s must have "
+                                    "two to six elements" % reduce)
 
-        # Save the reduce() output and finally memoize the object
-        self.save_reduce(obj=obj, *rv)
+            # Save the reduce() output and finally memoize the object
+            self.save_reduce(obj=obj, *rv)
+        except BaseException as exc:
+            exc.add_note(f'when serializing {_T(obj)} object')
+            raise
 
     def persistent_id(self, obj):
         # This exists so a subclass can override it
