@@ -9682,10 +9682,10 @@ then :
 then :
   disable_safety=no
 else $as_nop
-  disable_saftey=yes
+  disable_safety=yes
 fi
 else $as_nop
-  disable_saftey=no
+  disable_safety=no
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_safety" >&5
@@ -9726,7 +9726,7 @@ fi
 printf "%s\n" "$ax_cv_check_cflags__Werror__fstack_protector_strong" >&6; }
 if test "x$ax_cv_check_cflags__Werror__fstack_protector_strong" = xyes
 then :
-  BASECFLAGS="$BASECFLAGS -fstack-protector-strong"
+  CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported" >&5
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
@@ -9765,7 +9765,7 @@ fi
 printf "%s\n" "$ax_cv_check_cflags__Werror__Wtrampolines" >&6; }
 if test "x$ax_cv_check_cflags__Werror__Wtrampolines" = xyes
 then :
-  BASECFLAGS="$BASECFLAGS -Wtrampolines"
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wtrampolines not supported" >&5
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
@@ -9778,7 +9778,14 @@ printf %s "checking for --enable-slower-safety... " >&6; }
 # Check whether --enable-slower-safety was given.
 if test ${enable_slower_safety+y}
 then :
-  enableval=$enable_slower_safety;
+  enableval=$enable_slower_safety; if test "x$disable_slower_safety" = xyes
+then :
+  enable_slower_safety=no
+else $as_nop
+  enable_slower_safety=yes
+fi
+else $as_nop
+  enable_slower_safety=no
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_slower_safety" >&5
@@ -9819,7 +9826,7 @@ fi
 printf "%s\n" "$ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" >&6; }
 if test "x$ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" = xyes
 then :
-  BASECFLAGS="$BASECFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
+  CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&5
 printf "%s\n" "$as_me: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&2;}
