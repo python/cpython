@@ -19,6 +19,7 @@ from generators_common import (
     cflags,
 )
 from cwriter import CWriter
+from lexer import ANN_REPLACED, ANN_SPECIALIZING
 from typing import TextIO
 from stack import get_stack_effect
 
@@ -245,9 +246,9 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
                     size = OPARG_KINDS["OPARG_SAVE_RETURN_OFFSET"]
                 if isinstance(part, Uop):
                     # Skip specializations
-                    if "specializing" in part.annotations:
+                    if ANN_SPECIALIZING in part.annotations:
                         continue
-                    if "replaced" in part.annotations:
+                    if ANN_REPLACED in part.annotations:
                         size = OPARG_KINDS["OPARG_REPLACED"]
                     expansions.append((part.name, size, offset if size else 0))
                 offset += part.size
@@ -282,9 +283,9 @@ def is_viable_expansion(inst: Instruction) -> bool:
     for part in inst.parts:
         if isinstance(part, Uop):
             # Skip specializing and replaced uops
-            if "specializing" in part.annotations:
+            if ANN_SPECIALIZING in part.annotations:
                 continue
-            if "replaced" in part.annotations:
+            if ANN_REPLACED in part.annotations:
                 continue
             if part.properties.tier == 1 or not part.is_viable():
                 return False

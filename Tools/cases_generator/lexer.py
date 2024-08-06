@@ -2,6 +2,8 @@
 # Originally by Mark Shannon (mark@hotpy.org)
 # https://gist.github.com/markshannon/db7ab649440b5af765451bb77c7dba34
 
+__all__: list[str] = []
+
 import re
 from dataclasses import dataclass
 from collections.abc import Iterator
@@ -13,78 +15,74 @@ def choice(*opts: str) -> str:
 
 # Regexes
 
-# Longer operators must go before shorter ones.
-
-PLUSPLUS = r"\+\+"
-MINUSMINUS = r"--"
-
-# ->
-ARROW = r"->"
-ELLIPSIS = r"\.\.\."
-
-# Assignment operators
-TIMESEQUAL = r"\*="
-DIVEQUAL = r"/="
-MODEQUAL = r"%="
-PLUSEQUAL = r"\+="
-MINUSEQUAL = r"-="
-LSHIFTEQUAL = r"<<="
-RSHIFTEQUAL = r">>="
-ANDEQUAL = r"&="
-OREQUAL = r"\|="
-XOREQUAL = r"\^="
-
-# Operators
-PLUS = r"\+"
-MINUS = r"-"
-TIMES = r"\*"
-DIVIDE = r"/"
-MOD = r"%"
-NOT = r"~"
-XOR = r"\^"
-LOR = r"\|\|"
-LAND = r"&&"
-LSHIFT = r"<<"
-RSHIFT = r">>"
-LE = r"<="
-GE = r">="
-EQ = r"=="
-NE = r"!="
-LT = r"<"
-GT = r">"
-LNOT = r"!"
-OR = r"\|"
-AND = r"&"
-EQUALS = r"="
-
-# ?
-CONDOP = r"\?"
-
-# Delimiters
-LPAREN = r"\("
-RPAREN = r"\)"
-LBRACKET = r"\["
-RBRACKET = r"\]"
-LBRACE = r"\{"
-RBRACE = r"\}"
-COMMA = r","
-PERIOD = r"\."
-SEMI = r";"
-COLON = r":"
-BACKSLASH = r"\\"
-
-operators = {op: pattern for op, pattern in globals().items() if op == op.upper()}
-for op in operators:
-    globals()[op] = op
-opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.items()}
+# Mapping from operator names to their regular expressions.
+operators = {
+    # Longer operators must go before shorter ones.
+    (PLUSPLUS := "PLUSPLUS"): r'\+\+',
+    (MINUSMINUS := "MINUSMINUS"): r"--",
+    # ->
+    (ARROW := "ARROW"): r"->",
+    (ELLIPSIS := "ELLIPSIS"): r"\.\.\.",
+    # Assignment operators
+    (TIMESEQUAL := "TIMESEQUAL"): r"\*=",
+    (DIVEQUAL := "DIVEQUAL"): r"/=",
+    (MODEQUAL := "MODEQUAL"): r"%=",
+    (PLUSEQUAL := "PLUSEQUAL"): r"\+=",
+    (MINUSEQUAL := "MINUSEQUAL"): r"-=",
+    (LSHIFTEQUAL := "LSHIFTEQUAL"): r"<<=",
+    (RSHIFTEQUAL := "RSHIFTEQUAL"): r">>=",
+    (ANDEQUAL := "ANDEQUAL"): r"&=",
+    (OREQUAL := "OREQUAL"): r"\|=",
+    (XOREQUAL := "XOREQUAL"): r"\^=",
+    # Operators
+    (PLUS := "PLUS"): r"\+",
+    (MINUS := "MINUS"): r"-",
+    (TIMES := "TIMES"): r"\*",
+    (DIVIDE := "DIVIDE"): r"/",
+    (MOD := "MOD"): r"%",
+    (NOT := "NOT"): r"~",
+    (XOR := "XOR"): r"\^",
+    (LOR := "LOR"): r"\|\|",
+    (LAND := "LAND"): r"&&",
+    (LSHIFT := "LSHIFT"): r"<<",
+    (RSHIFT := "RSHIFT"): r">>",
+    (LE := "LE"): r"<=",
+    (GE := "GE"): r">=",
+    (EQ := "EQ"): r"==",
+    (NE := "NE"): r"!=",
+    (LT := "LT"): r"<",
+    (GT := "GT"): r">",
+    (LNOT := "LNOT"): r"!",
+    (OR := "OR"): r"\|",
+    (AND := "AND"): r"&",
+    (EQUALS := "EQUALS"): r"=",
+    # ?
+    (CONDOP := "CONDOP"): r"\?",
+    # Delimiters
+    (LPAREN := "LPAREN"): r"\(",
+    (RPAREN := "RPAREN"): r"\)",
+    (LBRACKET := "LBRACKET"): r"\[",
+    (RBRACKET := "RBRACKET"): r"\]",
+    (LBRACE := "LBRACE"): r"\{",
+    (RBRACE := "RBRACE"): r"\}",
+    (COMMA := "COMMA"): r",",
+    (PERIOD := "PERIOD"): r"\.",
+    (SEMI := "SEMI"): r";",
+    (COLON := "COLON"): r":",
+    (BACKSLASH := "BACKSLASH"): r"\\",
+}
+__all__.extend(operators.keys())
+opmap = {__pattern.replace("\\", "") or "\\": __opname
+         for __opname, __pattern in operators.items()}
 
 # Macros
 macro = r"# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)"
 CMACRO = "CMACRO"
+__all__.append(CMACRO)
 
 id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
 IDENTIFIER = "IDENTIFIER"
-
+__all__.append(IDENTIFIER)
 
 suffix = r"([uU]?[lL]?[lL]?)"
 octal = r"0[0-7]+" + suffix
@@ -99,6 +97,7 @@ float = "((((" + fraction + ")" + exponent + "?)|([0-9]+" + exponent + "))[FfLl]
 
 number_re = choice(octal, hex, float, decimal)
 NUMBER = "NUMBER"
+__all__.append(NUMBER)
 
 simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
 decimal_escape = r"""(\d+)"""
@@ -111,11 +110,16 @@ str_re = '"' + string_char + '*"'
 STRING = "STRING"
 char = r"\'.\'"  # TODO: escape sequence
 CHARACTER = "CHARACTER"
+__all__.extend([STRING, CHARACTER])
 
 comment_re = r"(//.*)|/\*([^*]|\*[^/])*\*/"
 COMMENT = "COMMENT"
+__all__.append(COMMENT)
 
 newline = r"\n"
+NEWLINE = "NEWLINE"
+__all__.append(NEWLINE)
+
 invalid = (
     r"\S"  # A single non-space character that's not caught by any of the other patterns
 )
@@ -134,102 +138,63 @@ matcher = re.compile(
 )
 letter = re.compile(r"[a-zA-Z_]")
 
-
-kwds = []
-AUTO = "AUTO"
-kwds.append(AUTO)
-BREAK = "BREAK"
-kwds.append(BREAK)
-CASE = "CASE"
-kwds.append(CASE)
-CHAR = "CHAR"
-kwds.append(CHAR)
-CONST = "CONST"
-kwds.append(CONST)
-CONTINUE = "CONTINUE"
-kwds.append(CONTINUE)
-DEFAULT = "DEFAULT"
-kwds.append(DEFAULT)
-DO = "DO"
-kwds.append(DO)
-DOUBLE = "DOUBLE"
-kwds.append(DOUBLE)
-ELSE = "ELSE"
-kwds.append(ELSE)
-ENUM = "ENUM"
-kwds.append(ENUM)
-EXTERN = "EXTERN"
-kwds.append(EXTERN)
-FLOAT = "FLOAT"
-kwds.append(FLOAT)
-FOR = "FOR"
-kwds.append(FOR)
-GOTO = "GOTO"
-kwds.append(GOTO)
-IF = "IF"
-kwds.append(IF)
-INLINE = "INLINE"
-kwds.append(INLINE)
-INT = "INT"
-kwds.append(INT)
-LONG = "LONG"
-kwds.append(LONG)
-OFFSETOF = "OFFSETOF"
-kwds.append(OFFSETOF)
-RESTRICT = "RESTRICT"
-kwds.append(RESTRICT)
-RETURN = "RETURN"
-kwds.append(RETURN)
-SHORT = "SHORT"
-kwds.append(SHORT)
-SIGNED = "SIGNED"
-kwds.append(SIGNED)
-SIZEOF = "SIZEOF"
-kwds.append(SIZEOF)
-STATIC = "STATIC"
-kwds.append(STATIC)
-STRUCT = "STRUCT"
-kwds.append(STRUCT)
-SWITCH = "SWITCH"
-kwds.append(SWITCH)
-TYPEDEF = "TYPEDEF"
-kwds.append(TYPEDEF)
-UNION = "UNION"
-kwds.append(UNION)
-UNSIGNED = "UNSIGNED"
-kwds.append(UNSIGNED)
-VOID = "VOID"
-kwds.append(VOID)
-VOLATILE = "VOLATILE"
-kwds.append(VOLATILE)
-WHILE = "WHILE"
-kwds.append(WHILE)
-# An instruction in the DSL
-INST = "INST"
-kwds.append(INST)
-# A micro-op in the DSL
-OP = "OP"
-kwds.append(OP)
-# A macro in the DSL
-MACRO = "MACRO"
-kwds.append(MACRO)
-keywords = {name.lower(): name for name in kwds}
+# Mapping from keyword to their token kind.
+keywords = {
+    'auto': (AUTO := "AUTO"),
+    'break': (BREAK := "BREAK"),
+    'case': (CASE := "CASE"),
+    'char': (CHAR := "CHAR"),
+    'const': (CONST := "CONST"),
+    'continue': (CONTINUE := "CONTINUE"),
+    'default': (DEFAULT := "DEFAULT"),
+    'do': (DO := "DO"),
+    'double': (DOUBLE := "DOUBLE"),
+    'else': (ELSE := "ELSE"),
+    'enum': (ENUM := "ENUM"),
+    'extern': (EXTERN := "EXTERN"),
+    'float': (FLOAT := "FLOAT"),
+    'for': (FOR := "FOR"),
+    'goto': (GOTO := "GOTO"),
+    'if': (IF := "IF"),
+    'inline': (INLINE := "INLINE"),
+    'int': (INT := "INT"),
+    'long': (LONG := "LONG"),
+    'offsetof': (OFFSETOF := "OFFSETOF"),
+    'return': (RETURN := "RETURN"),
+    'short': (SHORT := "SHORT"),
+    'signed': (SIGNED := "SIGNED"),
+    'sizeof': (SIZEOF := "SIZEOF"),
+    'static': (STATIC := "STATIC"),
+    'struct': (STRUCT := "STRUCT"),
+    'switch': (SWITCH := "SWITCH"),
+    'typedef': (TYPEDEF := "TYPEDEF"),
+    'union': (UNION := "UNION"),
+    'unsigned': (UNSIGNED := "UNSIGNED"),
+    'void': (VOID := "VOID"),
+    'volatile': (VOLATILE := "VOLATILE"),
+    'while': (WHILE := "WHILE"),
+    # An instruction in the DSL.
+    'inst': (INST := "INST"),
+    # A micro-op in the DSL.
+    'op': (OP := "OP"),
+    # A macro in the DSL.
+    'macro': (MACRO := "MACRO"),
+}
+__all__.extend(keywords.values())
+KEYWORD = 'KEYWORD'
 
 ANNOTATION = "ANNOTATION"
 annotations = {
-    "specializing",
-    "override",
-    "register",
-    "replaced",
-    "pure",
-    "split",
-    "replicate",
-    "tier1",
-    "tier2",
+    ANN_SPECIALIZING := "specializing",
+    ANN_OVERRIDE := "override",
+    ANN_REGISTER := "register",
+    ANN_REPLACED := "replaced",
+    ANN_PURE := "pure",
+    ANN_SPLIT := "split",
+    ANN_REPLICATE := "replicate",
+    ANN_TIER_1 := "tier1",
+    ANN_TIER_2 := "tier2",
 }
-
-__all__ = []
-__all__.extend(kwds)
 
 
 def make_syntax_error(
@@ -307,7 +272,7 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
         elif text == "\n":
             linestart = start
             line += 1
-            kind = "\n"
+            kind = NEWLINE
         elif text[0] == "'":
             kind = CHARACTER
         elif text[0] == "#":
@@ -333,7 +298,7 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
                 line += newlines
         else:
             begin = line, start - linestart
-        if kind != "\n":
+        if kind != NEWLINE:
             yield Token(
                 filename, kind, text, begin, (line, start - linestart + len(text))
             )
@@ -353,7 +318,7 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
             col = 1 + dedent
         res.append(" " * (c - col))
         text = tkn.text
-        if dedent != 0 and tkn.kind == "COMMENT" and "\n" in text:
+        if dedent != 0 and tkn.kind == COMMENT and "\n" in text:
             if dedent < 0:
                 text = text.replace("\n", "\n" + " " * -dedent)
             # TODO: dedent > 0
