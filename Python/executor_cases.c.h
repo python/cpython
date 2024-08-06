@@ -2085,7 +2085,12 @@
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            if (_PyDict_SetItem_Take2((PyDictObject *)dict, PyStackRef_AsPyObjectSteal(key), PyStackRef_AsPyObjectSteal(value)) != 0) JUMP_TO_ERROR();
+            int err = _PyDict_SetItem_Take2(
+                (PyDictObject *)dict,
+                PyStackRef_AsPyObjectSteal(key),
+                PyStackRef_AsPyObjectSteal(value)
+            );
+            if (err != 0) JUMP_TO_ERROR();
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2895,7 +2900,8 @@
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyExceptionInstance_Check(left_o));
-            if (_PyEval_CheckExceptTypeValid(tstate, right_o) < 0) {
+            int err = _PyEval_CheckExceptTypeValid(tstate, right_o);
+            if (err < 0) {
                 PyStackRef_CLOSE(right);
                 if (true) JUMP_TO_ERROR();
             }

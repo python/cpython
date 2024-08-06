@@ -1508,7 +1508,8 @@
             // It converts all dict subtypes in kwargs into regular dicts.
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
             if (!PyTuple_CheckExact(callargs)) {
-                if (check_args_iterable(tstate, func, callargs) < 0) {
+                int err = check_args_iterable(tstate, func, callargs);
+                if (err < 0) {
                     goto error;
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
@@ -2502,7 +2503,8 @@
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyExceptionInstance_Check(left_o));
-            if (_PyEval_CheckExceptTypeValid(tstate, right_o) < 0) {
+            int err = _PyEval_CheckExceptTypeValid(tstate, right_o);
+            if (err < 0) {
                 PyStackRef_CLOSE(right);
                 if (true) goto pop_1_error;
             }
@@ -4033,7 +4035,8 @@
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             if (code_version != global_version && tstate->tracing == 0) {
-                if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
+                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                if (err) {
                     goto error;
                 }
                 next_instr = this_instr;
@@ -5546,7 +5549,12 @@
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            if (_PyDict_SetItem_Take2((PyDictObject *)dict, PyStackRef_AsPyObjectSteal(key), PyStackRef_AsPyObjectSteal(value)) != 0) goto pop_2_error;
+            int err = _PyDict_SetItem_Take2(
+                (PyDictObject *)dict,
+                PyStackRef_AsPyObjectSteal(key),
+                PyStackRef_AsPyObjectSteal(value)
+            );
+            if (err != 0) goto pop_2_error;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
