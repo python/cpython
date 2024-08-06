@@ -84,7 +84,7 @@ truth tests, identity tests, and boolean operations:
 
    Return ``a is None``.  Tests object identity.
 
-   .. versionadded:: 3.13
+   .. versionadded:: 3.14
 
 
 The mathematical and bitwise operations are the most numerous:

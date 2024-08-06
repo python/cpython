@@ -124,6 +124,13 @@ Add notes for JSON serialization errors that allow to identify the source
 of the error.
 (Contributed by Serhiy Storchaka in :gh:`122163`.)
 
+operator
+--------
+
+* A new function ``operator.is_none`` has been added, such that
+  ``operator.is_none(obj)`` is equivalent to ``obj is None``.
+  (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
+
 os
 --
 
