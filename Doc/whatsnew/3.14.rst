@@ -189,6 +189,11 @@ asyncio
 Deprecated
 ==========
 
+* Using :meth:`~object.__class_getitem__` on a metaclass
+  is deprecated since 3.14 and will be removed in 3.16,
+  instead, use :meth:`~object.__class_getitem__` on regular classes
+  or use :meth:`~object.__getitem__` on metaclasses.
+
 * :mod:`builtins`:
   Passing a complex number as the *real* or *imag* argument in the
   :func:`complex` constructor is now deprecated; it should only be passed

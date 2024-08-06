@@ -787,6 +787,37 @@ class ClassTests(unittest.TestCase):
             Type(i)
         self.assertEqual(calls, 100)
 
+    def testClassGetItemIsDeprecatedOnMetaclasses(self):
+        import warnings
+
+        class Meta(type):
+            def __class_getitem__(self, arg):
+                return 1
+        class NoMethod(metaclass=Meta): ...
+        class HasOwnMethod(metaclass=Meta):
+            def __class_getitem__(self, arg):
+                return 2
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Accessing __class_getitem__ on a metaclass",
+        ):
+            res = NoMethod[int]
+        self.assertEqual(res, 1)
+
+        with warnings.catch_warnings(record=True) as w:
+            self.assertEqual(HasOwnMethod[int], 2)
+        self.assertEqual(len(w), 0)
+
+        class CorrectMeta(type):
+            def __getitem__(self, arg):
+                return 3
+        class NoClassMethod(metaclass=CorrectMeta): ...
+
+        with warnings.catch_warnings(record=True) as w:
+            self.assertEqual(NoClassMethod[int], 3)
+        self.assertEqual(len(w), 0)
+
 
 from _testinternalcapi import has_inline_values
 
