@@ -752,7 +752,7 @@ static PyObject *
 _operator_is_not_none(PyObject *module, PyObject *a)
 /*[clinic end generated code: output=b0168a51451d9140 input=7587f38ebac51688]*/
 {
-    PyObject *result = Py_IsNotNone(a) ? Py_True : Py_False;
+    PyObject *result = Py_IsNone(a) ? Py_False : Py_True;
     return Py_NewRef(result);
 }
 
