@@ -6273,6 +6273,8 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
         rh.emit(self.next_rec())
+        self.assertLogFile(self.fn + ".1")
+        self.assertLogFile(self.fn + ".2")
         self.assertEqual(rh._format_count, 2)  # once per emit() call
         rh.close()
 
