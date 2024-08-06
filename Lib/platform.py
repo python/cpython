@@ -117,6 +117,7 @@ import re
 import sys
 import functools
 import itertools
+import struct
 try:
     import _wmi
 except ImportError:
@@ -203,6 +204,13 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
+            # We first check 'musl' in the binary, because the next
+            # condition of looking for 'libc' in binary will be
+            # true for the case of musl.
+            if b'musl' in binary:
+                mv = _get_musl_version(executable)
+                return "musl", mv
+
             if b'libc' in binary or b'GLIBC' in binary:
                 m = libc_search.search(binary, pos)
             else:
@@ -1439,6 +1447,121 @@ def freedesktop_os_release():
             )
 
     return _os_release_cache.copy()
+
+
+### musl libc version support
+# These functions were copied and adapted from the packaging module:
+# https://github.com/pypa/packaging/blob/4d8534061364e3cbfee582192ab81a095ec2db51/src/packaging/_musllinux.py
+# https://github.com/pypa/packaging/blob/4d8534061364e3cbfee582192ab81a095ec2db51/src/packaging/_elffile.py
+
+class ELFInvalid(ValueError):
+    pass
+
+
+class ELFFile:
+    """
+    Representation of an ELF executable.
+    """
+
+    def __init__(self, f):
+        self._f = f
+
+        try:
+            ident = self._read("16B")
+        except struct.error:
+            raise ELFInvalid("unable to parse identification")
+        magic = bytes(ident[:4])
+        if magic != b"\x7fELF":
+            raise ELFInvalid(f"invalid magic: {magic!r}")
+
+        self.capacity = ident[4]  # Format for program header (bitness).
+        self.encoding = ident[5]  # Data structure encoding (endianness).
+
+        try:
+            # e_fmt: Format for program header.
+            # p_fmt: Format for section header.
+            # p_idx: Indexes to find p_type, p_offset, and p_filesz.
+            e_fmt, self._p_fmt, self._p_idx = {
+                (1, 1): ("<HHIIIIIHHH", "<IIIIIIII", (0, 1, 4)),  # 32-bit LSB.
+                (1, 2): (">HHIIIIIHHH", ">IIIIIIII", (0, 1, 4)),  # 32-bit MSB.
+                (2, 1): ("<HHIQQQIHHH", "<IIQQQQQQ", (0, 2, 5)),  # 64-bit LSB.
+                (2, 2): (">HHIQQQIHHH", ">IIQQQQQQ", (0, 2, 5)),  # 64-bit MSB.
+            }[(self.capacity, self.encoding)]
+        except KeyError:
+            raise ELFInvalid(
+                f"unrecognized capacity ({self.capacity}) or "
+                f"encoding ({self.encoding})"
+            )
+
+        try:
+            (
+                _,
+                self.machine,  # Architecture type.
+                _,
+                _,
+                self._e_phoff,  # Offset of program header.
+                _,
+                self.flags,  # Processor-specific flags.
+                _,
+                self._e_phentsize,  # Size of section.
+                self._e_phnum,  # Number of sections.
+            ) = self._read(e_fmt)
+        except struct.error as e:
+            raise ELFInvalid("unable to parse machine and section information") from e
+
+    def _read(self, fmt):
+        return struct.unpack(fmt, self._f.read(struct.calcsize(fmt)))
+
+    @property
+    def interpreter(self):
+        """
+        The path recorded in the ``PT_INTERP`` section header.
+        """
+        for index in range(self._e_phnum):
+            self._f.seek(self._e_phoff + self._e_phentsize * index)
+            try:
+                data = self._read(self._p_fmt)
+            except struct.error:
+                continue
+            if data[self._p_idx[0]] != 3:  # Not PT_INTERP.
+                continue
+            self._f.seek(data[self._p_idx[1]])
+            return os.fsdecode(self._f.read(data[self._p_idx[2]])).strip("\0")
+        return None
+
+def _parse_musl_version(output):
+    lines = [n for n in (n.strip() for n in output.splitlines()) if n]
+    if len(lines) < 2 or lines[0][:4] != "musl":
+        return None
+    m = re.match(r"Version (\d+)\.(\d+)", lines[1])
+    if not m:
+        return None
+    return f"{m.group(1)}.{m.group(2)}"
+
+
+@functools.lru_cache()
+def _get_musl_version(executable):
+    """Detect currently-running musl runtime version.
+
+    This is done by checking the specified executable's dynamic linking
+    information, and invoking the loader to parse its output for a version
+    string. If the loader is musl, the output would be something like::
+
+        musl libc (x86_64)
+        Version 1.2.2
+        Dynamic Program Loader
+    """
+    import subprocess
+
+    try:
+        with open(executable, "rb") as f:
+            ld = ELFFile(f).interpreter
+    except (OSError, TypeError, ValueError):
+        return None
+    if ld is None or "musl" not in ld:
+        return None
+    proc = subprocess.run([ld], stderr=subprocess.PIPE, universal_newlines=True)
+    return _parse_musl_version(proc.stderr)
 
 
 ### Command line interface
