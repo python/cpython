@@ -103,7 +103,7 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
         if warning_key not in warnings_added:
             warnings_added.add(warning_key)
             warnings_by_file[warning["file"]].append(warning)
-            
+
     return warnings_by_file
 
 
