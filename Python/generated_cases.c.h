@@ -5875,7 +5875,6 @@
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
-                    assert(PyLong_Check(lasti));
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
                     goto error;
                 }
