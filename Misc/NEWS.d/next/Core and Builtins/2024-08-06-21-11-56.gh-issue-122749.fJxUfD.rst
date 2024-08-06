@@ -1,0 +1,4 @@
+The `collections.Counter` class can now aggregate all datatypes that
+implement the arithmetic operations, even if they do not implement the
+addition of `int(0)`, like `datetime.timedelta`. A bug limited these to
+work only in the first created bin of a `Counter` instance.
