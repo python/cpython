@@ -911,16 +911,16 @@ Security Options
 
    Disable compiler options that are recommended by `OpenSSF`_ for security reasons with no performance overhead.
    If this option is not enabled, CPython will be built based on safety compiler options with no slow down.
-   When this option is enabled, CPython will not include the compiler options listed below.
+   When this option is enabled, CPython will not be built with the compiler options listed below.
 
    Compiler options that are disabled with this option:
 
-   * ``-fstack-protector-strong``: `Enable run-time checks for stack-based buffer overflows.`_
-   * ``-Wtrampolines``: `Enable warnings about trampolines that require executable stacks`_
+   * `-fstack-protector-strong`_: Enable run-time checks for stack-based buffer overflows.
+   * `-Wtrampolines`_: Enable warnings about trampolines that require executable stacks.
 
    .. _OpenSSF: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md
-   .. _Enable run-time checks for stack-based buffer overflows.: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-run-time-checks-for-stack-based-buffer-overflows
-   .. _Enable warnings about trampolines that require executable stacks: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-warning-about-trampolines-that-require-executable-stacks
+   .. _-fstack-protector-strong: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-run-time-checks-for-stack-based-buffer-overflows
+   .. _-Wtrampolines: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-warning-about-trampolines-that-require-executable-stacks
 
    .. versionadded:: 3.14
 
@@ -928,14 +928,14 @@ Security Options
 
    Enable compiler options that are recommended by `OpenSSF`_ for security reasons which require overhead.
    If this option is not enabled, CPython will not be built based on safety compiler options which performance impact.
-   When this option is enabled, CPython will include the compiler options listed below.
+   When this option is enabled, CPython will be built with the compiler options listed below.
 
    Compiler options that are enabled with this option:
 
-   * ``-D_FORTIFY_SOURCE=3``: `Fortify sources with compile- and run-time checks for unsafe libc usage and buffer overflows`_
+   * `-D_FORTIFY_SOURCE=3`_: Fortify sources with compile- and run-time checks for unsafe libc usage and buffer overflows.
 
    .. _OpenSSF: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md
-   .. _Fortify sources with compile- and run-time checks for unsafe libc usage and buffer overflows: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#fortify-sources-for-unsafe-libc-usage-and-buffer-overflows
+   .. _-D_FORTIFY_SOURCE=3: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#fortify-sources-for-unsafe-libc-usage-and-buffer-overflows
 
    .. versionadded:: 3.14
 
