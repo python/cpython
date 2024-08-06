@@ -52,6 +52,7 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *,
         underscore_numbers=underscore_numbers)
     printer.pprint(object)
 
+
 def pformat(object, indent=1, width=80, depth=None, *,
             compact=False, sort_dicts=True, underscore_numbers=False):
     """Format a Python object into a pretty-printed representation."""
@@ -59,21 +60,26 @@ def pformat(object, indent=1, width=80, depth=None, *,
                          compact=compact, sort_dicts=sort_dicts,
                          underscore_numbers=underscore_numbers).pformat(object)
 
+
 def pp(object, *args, sort_dicts=False, **kwargs):
     """Pretty-print a Python object"""
     pprint(object, *args, sort_dicts=sort_dicts, **kwargs)
+
 
 def saferepr(object):
     """Version of repr() which can handle recursive data structures."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[0]
 
+
 def isreadable(object):
     """Determine if saferepr(object) is readable by eval()."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[1]
 
+
 def isrecursive(object):
     """Determine if object requires a recursive representation."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[2]
+
 
 class _safe_key:
     """Helper function for key functions when sorting unorderable objects.
@@ -97,9 +103,11 @@ class _safe_key:
             return ((str(type(self.obj)), id(self.obj)) < \
                     (str(type(other.obj)), id(other.obj)))
 
+
 def _safe_tuple(t):
     "Helper function for comparing 2-tuples"
     return _safe_key(t[0]), _safe_key(t[1])
+
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
@@ -639,8 +647,10 @@ class PrettyPrinter:
         rep = repr(object)
         return rep, (rep and not rep.startswith('<')), False
 
+
 _builtin_scalars = frozenset({str, bytes, bytearray, float, complex,
                               bool, type(None)})
+
 
 def _recursion(object):
     return ("<Recursion on %s with id=%s>"
