@@ -326,11 +326,13 @@ _PyPegen_get_memo_statistics(void)
     for (int i = 0; i < NSTATISTICS; i++) {
         PyObject *value = PyLong_FromLong(memo_statistics[i]);
         if (value == NULL) {
+            MUTEX_UNLOCK();
             Py_DECREF(ret);
             return NULL;
         }
         // PyList_SetItem borrows a reference to value.
         if (PyList_SetItem(ret, i, value) < 0) {
+            MUTEX_UNLOCK();
             Py_DECREF(ret);
             return NULL;
         }
