@@ -460,6 +460,25 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             self.assertEqual(result, {})
         self.assertEqual(out, '')
 
+    def test_getargs_reset_static_parser(self):
+        # Test _PyArg_Parser initializations via _PyArg_UnpackKeywords()
+        # https://github.com/python/cpython/issues/122334
+        code = textwrap.dedent("""
+            import _ssl
+            _ssl.txt2obj(txt='1.3')
+            print('1')
+
+            import _queue
+            _queue.SimpleQueue().put_nowait(item=None)
+            print('2')
+
+            import _zoneinfo
+            _zoneinfo.ZoneInfo.clear_cache(only_keys=['Foo/Bar'])
+            print('3')
+        """)
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
+
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):

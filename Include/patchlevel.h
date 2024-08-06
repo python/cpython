@@ -19,11 +19,11 @@
 #define PY_MAJOR_VERSION        3
 #define PY_MINOR_VERSION        13
 #define PY_MICRO_VERSION        0
-#define PY_RELEASE_LEVEL        PY_RELEASE_LEVEL_BETA
-#define PY_RELEASE_SERIAL       4
+#define PY_RELEASE_LEVEL        PY_RELEASE_LEVEL_GAMMA
+#define PY_RELEASE_SERIAL       1
 
 /* Version as a string */
-#define PY_VERSION              "3.13.0b4+"
+#define PY_VERSION              "3.13.0rc1+"
 /*--end constants--*/
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
