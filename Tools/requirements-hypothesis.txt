@@ -1,7 +1,4 @@
 # Requirements file for hypothesis that
 # we use to run our property-based tests in CI.
 
-# see https://github.com/python/cpython/issues/122686
-attrs<=23.2.0
-
-hypothesis==6.104.2
+hypothesis==6.108.10
