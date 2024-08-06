@@ -1,2 +1,0 @@
-Merge ``m_atan2()`` and ``c_atan2()`` helper function, move to
-``Modules/_math.h``.
