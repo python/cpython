@@ -17,8 +17,7 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
-    emit_tokens,
-    replace_sync_sp,
+    Emitter,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -89,6 +88,10 @@ def emit_default(out: CWriter, uop: Uop) -> None:
             else:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
 
+class OptimizerEmitter(Emitter):
+
+    pass
+
 
 def write_uop(
     override: Uop | None,
@@ -126,11 +129,8 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
-            replacement_funcs = {
-                "DECREF_INPUTS": decref_inputs,
-                "SYNC_SP": replace_sync_sp,
-            }
-            emit_tokens(out, override, stack, None, replacement_funcs)
+            emitter = OptimizerEmitter(out)
+            emitter.emit_tokens(override, stack, None)
         else:
             emit_default(out, uop)
 
