@@ -618,7 +618,7 @@ class ComplexTest(unittest.TestCase):
     def test_hash(self):
         for x in range(-30, 30):
             self.assertEqual(hash(x), hash(complex(x, 0)))
-            x /= 3.0    # now check against floating point
+            x /= 3.0    # now check against floating-point
             self.assertEqual(hash(x), hash(complex(x, 0.)))
 
         self.assertNotEqual(hash(2000005 - 1j), -1)

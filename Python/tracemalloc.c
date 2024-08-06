@@ -836,7 +836,7 @@ _PyTraceMalloc_Init(void)
 
     tracemalloc_tracebacks = hashtable_new(hashtable_hash_traceback,
                                            hashtable_compare_traceback,
-                                           NULL, raw_free);
+                                           raw_free, NULL);
 
     tracemalloc_traces = tracemalloc_create_traces_table();
     tracemalloc_domains = tracemalloc_create_domains_table();

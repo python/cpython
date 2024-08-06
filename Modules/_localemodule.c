@@ -62,7 +62,7 @@ module _locale
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ed98569b726feada]*/
 
-/* support functions for formatting floating point numbers */
+/* support functions for formatting floating-point numbers */
 
 /* the grouping is terminated by either 0 or CHAR_MAX */
 static PyObject*

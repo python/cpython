@@ -825,12 +825,12 @@ is simple::
    import random
    random.random()
 
-This returns a random floating point number in the range [0, 1).
+This returns a random floating-point number in the range [0, 1).
 
 There are also many other specialized generators in this module, such as:
 
 * ``randrange(a, b)`` chooses an integer in the range [a, b).
-* ``uniform(a, b)`` chooses a floating point number in the range [a, b).
+* ``uniform(a, b)`` chooses a floating-point number in the range [a, b).
 * ``normalvariate(mean, sdev)`` samples the normal (Gaussian) distribution.
 
 Some higher-level functions operate on sequences directly, such as:

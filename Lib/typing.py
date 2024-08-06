@@ -927,15 +927,24 @@ class ForwardRef(_Final, _root=True):
                 globalns = getattr(
                     sys.modules.get(self.__forward_module__, None), '__dict__', globalns
                 )
+
+            # type parameters require some special handling,
+            # as they exist in their own scope
+            # but `eval()` does not have a dedicated parameter for that scope.
+            # For classes, names in type parameter scopes should override
+            # names in the global scope (which here are called `localns`!),
+            # but should in turn be overridden by names in the class scope
+            # (which here are called `globalns`!)
             if type_params:
-                # "Inject" type parameters into the local namespace
-                # (unless they are shadowed by assignments *in* the local namespace),
-                # as a way of emulating annotation scopes when calling `eval()`
-                locals_to_pass = {param.__name__: param for param in type_params} | localns
-            else:
-                locals_to_pass = localns
+                globalns, localns = dict(globalns), dict(localns)
+                for param in type_params:
+                    param_name = param.__name__
+                    if not self.__forward_is_class__ or param_name not in globalns:
+                        globalns[param_name] = param
+                        localns.pop(param_name, None)
+
             type_ = _type_check(
-                eval(self.__forward_code__, globalns, locals_to_pass),
+                eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
                 allow_special_forms=self.__forward_is_class__,

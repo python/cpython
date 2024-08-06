@@ -215,7 +215,7 @@ properties:
 
 * A sign is shown only when the number is negative.
 
-Python distinguishes between integers, floating point numbers, and complex
+Python distinguishes between integers, floating-point numbers, and complex
 numbers:
 
 
@@ -259,18 +259,18 @@ Booleans (:class:`bool`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
-   pair: object; floating point
-   pair: floating point; number
+   pair: object; floating-point
+   pair: floating-point; number
    pair: C; language
    pair: Java; language
 
-These represent machine-level double precision floating point numbers. You are
+These represent machine-level double precision floating-point numbers. You are
 at the mercy of the underlying machine architecture (and C or Java
 implementation) for the accepted range and handling of overflow. Python does not
-support single-precision floating point numbers; the savings in processor and
+support single-precision floating-point numbers; the savings in processor and
 memory usage that are usually the reason for using these are dwarfed by the
 overhead of using objects in Python, so there is no reason to complicate the
-language with two kinds of floating point numbers.
+language with two kinds of floating-point numbers.
 
 
 :class:`numbers.Complex` (:class:`complex`)
@@ -281,7 +281,7 @@ language with two kinds of floating point numbers.
    pair: complex; number
 
 These represent complex numbers as a pair of machine-level double precision
-floating point numbers.  The same caveats apply as for floating point numbers.
+floating-point numbers.  The same caveats apply as for floating-point numbers.
 The real and imaginary parts of a complex number ``z`` can be retrieved through
 the read-only attributes ``z.real`` and ``z.imag``.
 
@@ -727,14 +727,7 @@ When an instance method object is derived from a :class:`classmethod` object, th
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from :ref:`function object <user-defined-funcs>`
-to instance method
-object happens each time the attribute is retrieved from the instance.  In
-some cases, a fruitful optimization is to assign the attribute to a local
-variable and call that local variable. Also notice that this
-transformation only happens for user-defined functions; other callable
-objects (and all non-callable objects) are retrieved without
-transformation.  It is also important to note that user-defined functions
+It is important to note that user-defined functions
 which are attributes of a class instance are not converted to bound
 methods; this *only* happens when the function is an attribute of the
 class.
@@ -1643,6 +1636,8 @@ Basic customization
 
    It is not guaranteed that :meth:`__del__` methods are called for objects
    that still exist when the interpreter exits.
+   :class:`weakref.finalize` provides a straightforward way to register
+   a cleanup function to be called when an object is garbage collected.
 
    .. note::
 

@@ -1497,7 +1497,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0, /)
 
-   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   Write the *buffers* contents to file descriptor *fd* at an offset *offset*,
    leaving the file offset unchanged.  *buffers* must be a sequence of
    :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
    array order. Entire contents of the first buffer is written before
@@ -3701,7 +3701,7 @@ features:
    new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
    *initval* is the initial value of the event counter. The initial value
-   must be an 32 bit unsigned integer. Please note that the initial value is
+   must be a 32 bit unsigned integer. Please note that the initial value is
    limited to a 32 bit unsigned int although the event counter is an unsigned
    64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
 
@@ -3780,7 +3780,7 @@ features:
 
 .. data:: EFD_SEMAPHORE
 
-   Provide semaphore-like semantics for reads from a :func:`eventfd` file
+   Provide semaphore-like semantics for reads from an :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
    .. availability:: Linux >= 2.6.30

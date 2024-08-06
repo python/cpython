@@ -280,10 +280,10 @@ Numbers
    length 1, to a C :c:expr:`int`.
 
 ``f`` (:class:`float`) [float]
-   Convert a Python floating point number to a C :c:expr:`float`.
+   Convert a Python floating-point number to a C :c:expr:`float`.
 
 ``d`` (:class:`float`) [double]
-   Convert a Python floating point number to a C :c:expr:`double`.
+   Convert a Python floating-point number to a C :c:expr:`double`.
 
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
@@ -607,10 +607,10 @@ Building values
       object of length 1.
 
    ``d`` (:class:`float`) [double]
-      Convert a C :c:expr:`double` to a Python floating point number.
+      Convert a C :c:expr:`double` to a Python floating-point number.
 
    ``f`` (:class:`float`) [float]
-      Convert a C :c:expr:`float` to a Python floating point number.
+      Convert a C :c:expr:`float` to a Python floating-point number.
 
    ``D`` (:class:`complex`) [Py_complex \*]
       Convert a C :c:type:`Py_complex` structure to a Python complex number.

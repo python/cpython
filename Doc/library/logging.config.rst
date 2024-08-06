@@ -752,9 +752,12 @@ The ``queue`` and ``listener`` keys are optional.
 
 If the ``queue`` key is present, the corresponding value can be one of the following:
 
-* An actual instance of :class:`queue.Queue` or a subclass thereof. This is of course
-  only possible if you are constructing or modifying the configuration dictionary in
-  code.
+* An object implementing the :class:`queue.Queue` public API. For instance,
+  this may be an actual instance of :class:`queue.Queue` or a subclass thereof,
+  or a proxy obtained by :meth:`multiprocessing.managers.SyncManager.Queue`.
+
+  This is of course only possible if you are constructing or modifying
+  the configuration dictionary in code.
 
 * A string that resolves to a callable which, when called with no arguments, returns
   the :class:`queue.Queue` instance to use. That callable could be a

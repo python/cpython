@@ -1,0 +1,3 @@
+Fixed missing audit events around interactive use of Python, now also
+properly firing for ``python -i``, as well as for ``python -m asyncio``. The
+event in question is ``cpython.run_stdin``.

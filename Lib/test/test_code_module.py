@@ -74,6 +74,39 @@ class TestInteractiveConsole(unittest.TestCase):
         self.console.interact()
         self.assertTrue(hook.called)
 
+    def test_sysexcepthook_crashing_doesnt_close_repl(self):
+        self.infunc.side_effect = ["1/0", "a = 123", "print(a)", EOFError('Finished')]
+        self.sysmod.excepthook = 1
+        self.console.interact()
+        self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
+        error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
+        self.assertIn("Error in sys.excepthook:", error)
+        self.assertEqual(error.count("'int' object is not callable"), 1)
+        self.assertIn("Original exception was:", error)
+        self.assertIn("division by zero", error)
+
+    def test_sysexcepthook_raising_BaseException(self):
+        self.infunc.side_effect = ["1/0", "a = 123", "print(a)", EOFError('Finished')]
+        s = "not so fast"
+        def raise_base(*args, **kwargs):
+            raise BaseException(s)
+        self.sysmod.excepthook = raise_base
+        self.console.interact()
+        self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
+        error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
+        self.assertIn("Error in sys.excepthook:", error)
+        self.assertEqual(error.count("not so fast"), 1)
+        self.assertIn("Original exception was:", error)
+        self.assertIn("division by zero", error)
+
+    def test_sysexcepthook_raising_SystemExit_gets_through(self):
+        self.infunc.side_effect = ["1/0"]
+        def raise_base(*args, **kwargs):
+            raise SystemExit
+        self.sysmod.excepthook = raise_base
+        with self.assertRaises(SystemExit):
+            self.console.interact()
+
     def test_banner(self):
         # with banner
         self.infunc.side_effect = EOFError('Finished')
