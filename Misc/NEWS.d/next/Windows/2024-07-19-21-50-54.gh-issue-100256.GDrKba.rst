@@ -1,2 +1,1 @@
-Skip inaccessible registry keys in the WinAPI mimetype implementation (similar to the
-behavior of the WinReg implementation)
+:mod:`mimetypes` no longer fails when it encounters an inaccessible registry key.
