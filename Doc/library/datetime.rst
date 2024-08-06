@@ -338,8 +338,8 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | ``q, r = divmod(t1, t2)``      | Computes the quotient and the remainder:      |
 |                                | ``q = t1 // t2`` (3) and ``r = t1 % t2``.     |
-|                                | q is an integer and r is a :class:`timedelta` |
-|                                | object.                                       |
+|                                | ``q`` is an integer and ``r`` is a            |
+|                                | :class:`timedelta` object.                    |
 +--------------------------------+-----------------------------------------------+
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
@@ -1213,7 +1213,7 @@ Supported operations:
 
    If both are naive, or both are aware and have the same :attr:`~.datetime.tzinfo` attribute,
    the :attr:`~.datetime.tzinfo` attributes are ignored, and the result is a :class:`timedelta`
-   object *t* such that ``datetime2 + t == datetime1``. No time zone adjustments
+   object ``t`` such that ``datetime2 + t == datetime1``. No time zone adjustments
    are done in this case.
 
    If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a-b`` acts
