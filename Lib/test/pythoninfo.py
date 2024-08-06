@@ -105,9 +105,13 @@ def collect_sys(info_add):
     )
     copy_attributes(info_add, sys, 'sys.%s', attributes)
 
-    call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
-    call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
-    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
+    for func in (
+        '_is_gil_enabled',
+        'getandroidapilevel',
+        'getrecursionlimit',
+        'getwindowsversion',
+    ):
+        call_func(info_add, f'sys.{func}', sys, func)
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):

@@ -1332,6 +1332,23 @@ class _TestQueue(BaseTestCase):
         self.assertTrue(not_serializable_obj.reduce_was_called)
         self.assertTrue(not_serializable_obj.on_queue_feeder_error_was_called)
 
+    def test_closed_queue_empty_exceptions(self):
+        # Assert that checking the emptiness of an unused closed queue
+        # does not raise an OSError. The rationale is that q.close() is
+        # a no-op upon construction and becomes effective once the queue
+        # has been used (e.g., by calling q.put()).
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.close()  # this is a no-op since the feeder thread is None
+            q.join_thread()  # this is also a no-op
+            self.assertTrue(q.empty())
+
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.put('foo')  # make sure that the queue is 'used'
+            q.close()  # close the feeder thread
+            q.join_thread()  # make sure to join the feeder thread
+            with self.assertRaisesRegex(OSError, 'is closed'):
+                q.empty()
+
     def test_closed_queue_put_get_exceptions(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
             q.close()
@@ -5815,6 +5832,15 @@ class TestSimpleQueue(unittest.TestCase):
         finally:
             parent_can_continue.set()
 
+    def test_empty_exceptions(self):
+        # Assert that checking emptiness of a closed queue raises
+        # an OSError, independently of whether the queue was used
+        # or not. This differs from Queue and JoinableQueue.
+        q = multiprocessing.SimpleQueue()
+        q.close()  # close the pipe
+        with self.assertRaisesRegex(OSError, 'is closed'):
+            q.empty()
+
     def test_empty(self):
         queue = multiprocessing.SimpleQueue()
         child_can_start = multiprocessing.Event()
@@ -6064,12 +6090,30 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertEqual(obj[0], 5)
         case.assertEqual(obj.count(5), 1)
         case.assertEqual(obj.index(5), 0)
+        obj += [7]
+        case.assertIsInstance(obj, multiprocessing.managers.ListProxy)
+        case.assertListEqual(list(obj), [5, 7])
+        obj *= 2
+        case.assertIsInstance(obj, multiprocessing.managers.ListProxy)
+        case.assertListEqual(list(obj), [5, 7, 5, 7])
+        double_obj = obj * 2
+        case.assertIsInstance(double_obj, list)
+        case.assertListEqual(list(double_obj), [5, 7, 5, 7, 5, 7, 5, 7])
+        double_obj = 2 * obj
+        case.assertIsInstance(double_obj, list)
+        case.assertListEqual(list(double_obj), [5, 7, 5, 7, 5, 7, 5, 7])
+        copied_obj = obj.copy()
+        case.assertIsInstance(copied_obj, list)
+        case.assertListEqual(list(copied_obj), [5, 7, 5, 7])
+        obj.extend(double_obj + copied_obj)
         obj.sort()
         obj.reverse()
         for x in obj:
             pass
-        case.assertEqual(len(obj), 1)
-        case.assertEqual(obj.pop(0), 5)
+        case.assertEqual(len(obj), 16)
+        case.assertEqual(obj.pop(0), 7)
+        obj.clear()
+        case.assertEqual(len(obj), 0)
 
     def test_list(self):
         o = self.manager.list()
@@ -6088,7 +6132,29 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertListEqual(list(obj.keys()), ['foo'])
         case.assertListEqual(list(obj.values()), [5])
         case.assertDictEqual(obj.copy(), {'foo': 5})
-        case.assertTupleEqual(obj.popitem(), ('foo', 5))
+        obj |= {'bar': 6}
+        case.assertIsInstance(obj, multiprocessing.managers.DictProxy)
+        case.assertDictEqual(dict(obj), {'foo': 5, 'bar': 6})
+        x = reversed(obj)
+        case.assertIsInstance(x, type(iter([])))
+        case.assertListEqual(list(x), ['bar', 'foo'])
+        x = {'bar': 7, 'baz': 7} | obj
+        case.assertIsInstance(x, dict)
+        case.assertDictEqual(dict(x), {'foo': 5, 'bar': 6, 'baz': 7})
+        x = obj | {'bar': 7, 'baz': 7}
+        case.assertIsInstance(x, dict)
+        case.assertDictEqual(dict(x), {'foo': 5, 'bar': 7, 'baz': 7})
+        x = obj.fromkeys(['bar'], 6)
+        case.assertIsInstance(x, dict)
+        case.assertDictEqual(x, {'bar': 6})
+        x = obj.popitem()
+        case.assertIsInstance(x, tuple)
+        case.assertTupleEqual(x, ('bar', 6))
+        obj.setdefault('bar', 0)
+        obj.update({'bar': 7})
+        case.assertEqual(obj.pop('bar'), 7)
+        obj.clear()
+        case.assertEqual(len(obj), 0)
 
     def test_dict(self):
         o = self.manager.dict()

@@ -123,6 +123,11 @@ The typical usage to inspect a crashed program is::
    0
    (Pdb)
 
+.. versionchanged:: 3.13
+   The implementation of :pep:`667` means that name assignments made via ``pdb``
+   will immediately affect the active scope, even when running inside an
+   :term:`optimized scope`.
+
 
 The module defines the following functions; each enters the debugger in a
 slightly different way:
@@ -285,6 +290,8 @@ There are three preset *convenience variables*:
 
 .. versionadded:: 3.12
 
+   Added the *convenience variable* feature.
+
 .. index::
    pair: .pdbrc; file
    triple: debugger; configuration; file
@@ -314,10 +321,16 @@ can be overridden by the local file.
    argument must be an identifier, ``help exec`` must be entered to get help on
    the ``!`` command.
 
-.. pdbcommand:: w(here)
+.. pdbcommand:: w(here) [count]
 
-   Print a stack trace, with the most recent frame at the bottom.  An arrow (``>``)
+   Print a stack trace, with the most recent frame at the bottom.  if *count*
+   is 0, print the current frame entry. If *count* is negative, print the least
+   recent - *count* frames. If *count* is positive, print the most recent
+   *count* frames.  An arrow (``>``)
    indicates the current frame, which determines the context of most commands.
+
+   .. versionchanged:: 3.14
+      *count* argument is added.
 
 .. pdbcommand:: d(own) [count]
 
@@ -334,7 +347,7 @@ can be overridden by the local file.
    With a *lineno* argument, set a break at line *lineno* in the current file.
    The line number may be prefixed with a *filename* and a colon,
    to specify a breakpoint in another file (possibly one that hasn't been loaded
-   yet).  The file is searched on :data:`sys.path`.  Accepatable forms of *filename*
+   yet).  The file is searched on :data:`sys.path`.  Acceptable forms of *filename*
    are ``/abspath/to/file.py``, ``relpath/file.py``, ``module`` and
    ``package.module``.
 
@@ -579,18 +592,17 @@ can be overridden by the local file.
 
 .. pdbcommand:: interact
 
-   Start an interactive interpreter (using the :mod:`code` module) whose global
-   namespace contains all the (global and local) names found in the current
-   scope. Use ``exit()`` or ``quit()`` to exit the interpreter and return to
-   the debugger.
+   Start an interactive interpreter (using the :mod:`code` module) in a new
+   global namespace initialised from the local and global namespaces for the
+   current scope. Use ``exit()`` or ``quit()`` to exit the interpreter and
+   return to the debugger.
 
    .. note::
 
-      Because interact creates a new global namespace with the current global
-      and local namespace for execution, assignment to variables will not
-      affect the original namespaces.
-      However, modification to the mutable objects will be reflected in the
-      original namespaces.
+      As ``interact`` creates a new dedicated namespace for code execution,
+      assignments to variables will not affect the original namespaces.
+      However, modifications to any referenced mutable objects will be reflected
+      in the original namespaces as usual.
 
    .. versionadded:: 3.2
 

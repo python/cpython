@@ -4,16 +4,12 @@ Writes the cases to executor_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
@@ -24,39 +20,46 @@ from generators_common import (
     emit_tokens,
     emit_to,
     REPLACEMENT_FUNCTIONS,
+    type_and_null,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from stack import Local, Stack, StackError, get_stack_effect
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+    var: StackItem, uop: Uop, required: set[str], out: CWriter
 ) -> None:
-    if var.name in variables:
+    if var.name not in required:
         return
-    type = var.type if var.type else "PyObject *"
-    variables.add(var.name)
+    required.remove(var.name)
+    type, null = type_and_null(var)
+    space = " " if type[-1].isalnum() else ""
     if var.condition:
-        out.emit(f"{type}{var.name} = NULL;\n")
+        out.emit(f"{type}{space}{var.name} = {null};\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        out.emit(f"{type}{var.name};\n")
+        out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
-    variables = {"unused"}
+    stack = Stack()
     for var in reversed(uop.stack.inputs):
-        declare_variable(var, uop, variables, out)
+        stack.pop(var)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, variables, out)
-
+        stack.push(Local.unused(var))
+    required = set(stack.defined)
+    required.discard("unused")
+    for var in reversed(uop.stack.inputs):
+        declare_variable(var, uop, required, out)
+    for var in uop.stack.outputs:
+        declare_variable(var, uop, required, out)
 
 def tier2_replace_error(
     out: CWriter,
@@ -154,6 +157,7 @@ TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 
 
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
+    locals: dict[str, Local] = {}
     try:
         out.start_line()
         if uop.properties.oparg:
@@ -163,10 +167,11 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
             out.emit(f"assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
-        if not uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
+            code, local = stack.pop(var)
+            out.emit(code)
+            if local.defined:
+                locals[local.name] = local
+        out.emit(stack.define_output_arrays(uop.stack.outputs))
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -176,11 +181,14 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
                     cast = f"uint{cache.size*16}_t"
                 out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
         emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
-        if uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
-    except SizeMismatch as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+        for i, var in enumerate(uop.stack.outputs):
+            if var.name in locals:
+                local = locals[var.name]
+            else:
+                local = Local.local(var)
+            out.emit(stack.push(local))
+    except StackError as ex:
+        raise analysis_error(ex.args[0], uop.body[0]) from None
 
 
 SKIPS = ("_EXTENDED_ARG",)

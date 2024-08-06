@@ -290,9 +290,15 @@ Miscellaneous options
 
 .. option:: -i
 
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.  The
+   Enter interactive mode after execution.
+
+   Using the :option:`-i` option will enter interactive mode in any of the following circumstances\:
+
+   * When a script is passed as first argument
+   * When the :option:`-c` option is used
+   * When the :option:`-m` option is used
+
+   Interactive mode will start even when :data:`sys.stdin` does not appear to be a terminal. The
    :envvar:`PYTHONSTARTUP` file is not read.
 
    This can be useful to inspect global variables or a stack trace when a script
@@ -441,6 +447,7 @@ Miscellaneous options
        -Wdefault  # Warn once per call location
        -Werror    # Convert to exceptions
        -Walways   # Warn every time
+       -Wall      # Same as -Walways
        -Wmodule   # Warn once per calling module
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
@@ -616,7 +623,8 @@ Miscellaneous options
 
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
      respectively. Only available in builds configured with
-     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
+     :ref:`free-threaded-cpython`.
 
      .. versionadded:: 3.13
 
@@ -785,6 +793,15 @@ conflict.
    This variable can also be modified by Python code using :data:`os.environ`
    to force inspect mode on program termination.
 
+   .. audit-event:: cpython.run_stdin "" ""
+
+   .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+      Emits audit events.
+
+   .. versionchanged:: 3.13
+      Uses PyREPL if possible, in which case :envvar:`PYTHONSTARTUP` is
+      also executed. Emits audit events.
+
 
 .. envvar:: PYTHONUNBUFFERED
 
@@ -908,6 +925,7 @@ conflict.
        PYTHONWARNINGS=default  # Warn once per call location
        PYTHONWARNINGS=error    # Convert to exceptions
        PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=all      # Same as PYTHONWARNINGS=always
        PYTHONWARNINGS=module   # Warn once per calling module
        PYTHONWARNINGS=once     # Warn once per Python process
        PYTHONWARNINGS=ignore   # Never warn
@@ -1206,7 +1224,7 @@ conflict.
    forced on. Setting it to ``0`` forces the GIL off.
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable.
+   precedence over this variable, and :ref:`free-threaded-cpython`.
 
    Needs Python configured with the :option:`--disable-gil` build option.
 

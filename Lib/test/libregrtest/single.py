@@ -57,7 +57,10 @@ def _run_suite(suite):
     result = runner.run(suite)
 
     if support.junit_xml_list is not None:
-        support.junit_xml_list.append(result.get_xml_element())
+        import xml.etree.ElementTree as ET
+        xml_elem = result.get_xml_element()
+        xml_str = ET.tostring(xml_elem).decode('ascii')
+        support.junit_xml_list.append(xml_str)
 
     if not result.testsRun and not result.skipped and not result.errors:
         raise support.TestDidNotRun
@@ -280,9 +283,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
 
         xml_list = support.junit_xml_list
         if xml_list:
-            import xml.etree.ElementTree as ET
-            result.xml_data = [ET.tostring(x).decode('us-ascii')
-                               for x in xml_list]
+            result.xml_data = xml_list
     finally:
         if use_timeout:
             faulthandler.cancel_dump_traceback_later()
