@@ -324,36 +324,6 @@ cmath_atan_impl(PyObject *module, Py_complex z)
     return r;
 }
 
-/* Windows screws up atan2 for inf and nan, and alpha Tru64 5.1 doesn't follow
-   C99 for atan2(0., 0.). */
-static double
-c_atan2(Py_complex z)
-{
-    if (isnan(z.real) || isnan(z.imag))
-        return Py_NAN;
-    if (isinf(z.imag)) {
-        if (isinf(z.real)) {
-            if (copysign(1., z.real) == 1.)
-                /* atan2(+-inf, +inf) == +-pi/4 */
-                return copysign(0.25*Py_MATH_PI, z.imag);
-            else
-                /* atan2(+-inf, -inf) == +-pi*3/4 */
-                return copysign(0.75*Py_MATH_PI, z.imag);
-        }
-        /* atan2(+-inf, x) == +-pi/2 for finite x */
-        return copysign(0.5*Py_MATH_PI, z.imag);
-    }
-    if (isinf(z.real) || z.imag == 0.) {
-        if (copysign(1., z.real) == 1.)
-            /* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
-            return copysign(0., z.imag);
-        else
-            /* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
-            return copysign(Py_MATH_PI, z.imag);
-    }
-    return atan2(z.imag, z.real);
-}
-
 
 static Py_complex atanh_special_values[7][7];
 
@@ -966,7 +936,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = c_atan2(z); /* should not cause any exception */
+    phi = m_atan2(z.imag, z.real); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -991,7 +961,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     double r, phi;
 
     errno = 0;
-    phi = c_atan2(z); /* should not cause any exception */
+    phi = m_atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();
