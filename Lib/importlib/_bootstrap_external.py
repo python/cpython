@@ -221,7 +221,7 @@ def _write_atomic(path, data, mode=0o666):
 
 _code_type = type(_write_atomic.__code__)
 
-MAGIC_NUMBER = (_imp.pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = _imp.pyc_magic_number_token.to_bytes(4, 'little')
 
 _PYCACHE = '__pycache__'
 _OPT = 'opt-'

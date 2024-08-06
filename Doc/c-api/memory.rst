@@ -734,7 +734,7 @@ The same code using the type-oriented function set::
        return PyErr_NoMemory();
    /* ...Do some I/O operation involving buf... */
    res = PyBytes_FromString(buf);
-   PyMem_Del(buf); /* allocated with PyMem_New */
+   PyMem_Free(buf); /* allocated with PyMem_New */
    return res;
 
 Note that in the two examples above, the buffer is always manipulated via
@@ -750,11 +750,11 @@ allocators operating on different heaps. ::
    ...
    PyMem_Del(buf3);  /* Wrong -- should be PyMem_Free() */
    free(buf2);       /* Right -- allocated via malloc() */
-   free(buf1);       /* Fatal -- should be PyMem_Del()  */
+   free(buf1);       /* Fatal -- should be PyMem_Free()  */
 
 In addition to the functions aimed at handling raw memory blocks from the Python
 heap, objects in Python are allocated and released with :c:macro:`PyObject_New`,
-:c:macro:`PyObject_NewVar` and :c:func:`PyObject_Del`.
+:c:macro:`PyObject_NewVar` and :c:func:`PyObject_Free`.
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.

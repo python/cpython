@@ -1352,7 +1352,7 @@ PyTypeObject _PyLineIterator = {
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
     0,                                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 static lineiterator *
@@ -1443,7 +1443,7 @@ PyTypeObject _PyPositionsIterator = {
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
     0,                                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 static PyObject*
