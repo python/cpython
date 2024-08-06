@@ -1,0 +1,1 @@
+Add `dataclass_factory` argument to `make_dataclass`
