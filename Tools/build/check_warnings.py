@@ -49,9 +49,7 @@ def extract_warnings_from_compiler_output_json(
     """
     # Regex to find json arrays at the top level of the file
     # in the compiler output
-    json_arrays = re.findall(
-        r"\[(?:[^[\]]|\[[^\]]*\])*\]", compiler_output
-    )
+    json_arrays = re.findall(r"\[(?:[^[\]]|\[[^\]]*\])*\]", compiler_output)
     compiler_warnings = []
     for array in json_arrays:
         try:
@@ -150,7 +148,7 @@ def get_unexpected_improvements(
         if file[0] not in files_with_warnings.keys():
             unexpected_improvements.append(file)
         else:
-            if (len(files_with_warnings[file[0]]) < file[1]):
+            if len(files_with_warnings[file[0]]) < file[1]:
                 unexpected_improvements.append(file)
 
     if unexpected_improvements:
