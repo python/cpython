@@ -698,16 +698,9 @@ class Counter(dict):
                     # fast path when counter is empty
                     super().update(iterable)
             else:
-                self._count_elements(iterable)
+                _count_elements(iterable)
         if kwds:
             self.update(kwds)
-
-    def _count_elements(self, iterable):
-        'Tally elements from the iterable.'
-        # Reimplement this function to fit the custom Counter logic.
-        self_get = self.get
-        for elem in iterable:
-            self[elem] = self_get(elem, 0) + 1
 
     def subtract(self, iterable=None, /, **kwds):
         '''Like dict.update() but subtracts counts instead of replacing them.
