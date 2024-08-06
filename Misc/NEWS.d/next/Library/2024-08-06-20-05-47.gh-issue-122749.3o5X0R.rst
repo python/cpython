@@ -1,0 +1,12 @@
+Python Counter Class Enhanced to Fix TypeError for Custom Objects
+The Python Counter class has been improved to handle custom objects without causing TypeError. The previous version had issues when adding counts for non-integer objects, like datetime.timedelta, during the update operation. This update ensures the smooth addition and initialisation of such elements.
+
+Key Improvement:
+The update method now checks if an element exists in the counter. If it does, it adds the count to the existing value; if not, it initialises the count. This prevents the TypeError and supports more data types.
+
+
+Benefits:
+Handles Custom Objects: Supports various data types without errors.
+Smooth Operations: Ensures proper addition and initialization of elements.
+Versatility: Extends the utility of the Counter class for complex tasks.
+This update makes the Counter class more robust and versatile, enhancing its usability for developers working with diverse data types in Python.
