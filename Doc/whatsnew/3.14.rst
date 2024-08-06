@@ -127,8 +127,10 @@ of the error.
 operator
 --------
 
-* A new function ``operator.is_none`` has been added, such that
-  ``operator.is_none(obj)`` is equivalent to ``obj is None``.
+* Two new functions ``operator.is_none`` and ``operator.is_not_none``
+  have been added, such that ``operator.is_none(obj)`` is equivalent
+  to ``obj is None`` and ``operator.is_not_none(obj)`` is equivalent
+  to ``obj is not None``.
   (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
 
 os
