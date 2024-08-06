@@ -1777,7 +1777,8 @@
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
-            if (PyMapping_GetOptionalItem(class_dict, name, &value_o) < 0) {
+            int err = PyMapping_GetOptionalItem(class_dict, name, &value_o);
+            if (err < 0) {
                 JUMP_TO_ERROR();
             }
             if (!value_o) {
@@ -1907,7 +1908,8 @@
             PyObject *iterable = PyStackRef_AsPyObjectBorrow(iterable_st);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
+                int matches = _PyErr_ExceptionMatches(tstate, PyExc_TypeError);
+                if (matches &&
                     (Py_TYPE(iterable)->tp_iter == NULL && !PySequence_Check(iterable)))
                 {
                     _PyErr_Clear(tstate);
@@ -2031,8 +2033,10 @@
             dict = stack_pointer[-2 - (oparg - 1)];
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
-            if (PyDict_Update(dict_o, update_o) < 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+            int err = PyDict_Update(dict_o, update_o);
+            if (err < 0) {
+                int matches = _PyErr_ExceptionMatches(tstate, PyExc_AttributeError);
+                if (matches) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   "'%.200s' object is not a mapping",
                                   Py_TYPE(update_o)->tp_name);
@@ -2057,7 +2061,8 @@
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
-            if (_PyDict_MergeEx(dict_o, update_o, 2) < 0) {
+            int err = _PyDict_MergeEx(dict_o, update_o, 2);
+            if (err < 0) {
                 _PyEval_FormatKwargsError(tstate, callable_o, update_o);
                 PyStackRef_CLOSE(update);
                 if (true) JUMP_TO_ERROR();
@@ -2182,7 +2187,8 @@
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
                 attr_o = NULL;
-                if (_PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o)) {
+                int is_meth = _PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o);
+                if (is_meth) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
@@ -2367,22 +2373,16 @@
                 JUMP_TO_JUMP_TARGET();
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            if (DK_IS_UNICODE(dict->ma_keys)) {
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-                attr_o = ep->me_value;
+            if (!DK_IS_UNICODE(dict->ma_keys)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
-            else {
-                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-                attr_o = ep->me_value;
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
+            if (ep->me_key != name) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
+            attr_o = ep->me_value;
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2601,35 +2601,20 @@
             }
             PyObject *old_value;
             uint64_t new_version;
-            if (DK_IS_UNICODE(dict->ma_keys)) {
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-                old_value = ep->me_value;
-                if (old_value == NULL) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
-                ep->me_value = PyStackRef_AsPyObjectSteal(value);
+            if (!DK_IS_UNICODE(dict->ma_keys)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
-            else {
-                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-                old_value = ep->me_value;
-                if (old_value == NULL) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
-                ep->me_value = PyStackRef_AsPyObjectSteal(value);
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
+            if (ep->me_key != name) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
-            Py_DECREF(old_value);
+            old_value = ep->me_value;
+            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
+            new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            ep->me_value = PyStackRef_AsPyObjectSteal(value);
+            Py_XDECREF(old_value);
             STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
@@ -2876,7 +2861,8 @@
             exc_value_st = stack_pointer[-2];
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             PyObject *match_type = PyStackRef_AsPyObjectBorrow(match_type_st);
-            if (_PyEval_CheckExceptStarTypeValid(tstate, match_type) < 0) {
+            int err = _PyEval_CheckExceptStarTypeValid(tstate, match_type);
+            if (err < 0) {
                 PyStackRef_CLOSE(exc_value_st);
                 PyStackRef_CLOSE(match_type_st);
                 if (true) JUMP_TO_ERROR();
@@ -3122,7 +3108,8 @@
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                    int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
+                    if (!matches) {
                         JUMP_TO_ERROR();
                     }
                     _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
