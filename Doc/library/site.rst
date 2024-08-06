@@ -32,8 +32,10 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS), where the
-optional suffix "t" indicates the :term:`free threading` build.  For each
+:file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
+optional suffix "t" indicates the :term:`free threading` build, and is
+appended if ``"t"`` is present in the :attr:`sys.abiflags` constant.)
+For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
@@ -42,8 +44,9 @@ added path for configuration files.
    Support for the "site-python" directory has been removed.
 
 .. versionchanged:: 3.13
-   The :term:`free threading` Python installations are identified by the "t"
-   suffix in the version-specific directory name, such as :file:`lib/python3.13t/`.
+   On Unix, :term:`Free threading <free threading>` Python installations are
+   identified by the "t" suffix in the version-specific directory name, such as
+   :file:`lib/python3.13t/`.
 
 If a file named "pyvenv.cfg" exists one directory above sys.executable,
 sys.prefix and sys.exec_prefix are set to that directory and
