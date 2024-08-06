@@ -63,7 +63,7 @@ class ParserBase:
 
     def splitext(self, path):
         """Split the path into a pair (root, ext), where *ext* is empty or
-        begins with a begins with a period and contains at most one period,
+        begins with a period and contains at most one period,
         and *root* is everything before the extension."""
         raise UnsupportedOperation(self._unsupported_msg('splitext()'))
 
