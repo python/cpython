@@ -356,7 +356,7 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
 def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
     """Look for PyStackRef_FromPyObjectNew() calls"""
 
-    def find_assignment_target(idx) -> list[lexer.Token]:
+    def find_assignment_target(idx: int) -> list[lexer.Token]:
         """Find the tokens that make up the left-hand side of an assignment"""
         offset = 1
         for tkn in reversed(node.block.tokens[:idx-1]):
