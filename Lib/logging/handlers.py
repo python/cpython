@@ -67,6 +67,7 @@ class BaseRotatingHandler(logging.FileHandler):
         self.mode = mode
         self.encoding = encoding
         self.errors = errors
+        self._msg = None  # cache to avoid reformatting - see gh-116267
 
     def emit(self, record):
         """
@@ -78,7 +79,13 @@ class BaseRotatingHandler(logging.FileHandler):
         try:
             if self.shouldRollover(record):
                 self.doRollover()
-            logging.FileHandler.emit(self, record)
+            if self._msg:
+                msg = self._msg
+                self._msg = None
+            else:
+                msg = self.format(record)
+            self.stream.write(msg + self.terminator)
+            self.flush()
         except Exception:
             self.handleError(record)
 
@@ -195,10 +202,11 @@ class RotatingFileHandler(BaseRotatingHandler):
         """
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
+        pos = self.stream.tell()
         if self.maxBytes > 0:                   # are we rolling over?
-            msg = "%s\n" % self.format(record)
+            self._msg = msg = self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
-            if self.stream.tell() + len(msg) >= self.maxBytes:
+            if self.stream.tell() + len(msg) + len(self.terminator) >= self.maxBytes:
                 # See bpo-45401: Never rollover anything other than regular files
                 if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
                     return False

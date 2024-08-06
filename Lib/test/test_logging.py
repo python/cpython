@@ -6258,6 +6258,24 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
         rh.close()
 
+    def test_format_once(self):
+        class InstrumentedHandler(logging.handlers.RotatingFileHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._format_count = 0
+
+            def format(self, record):
+                result = super().format(record)
+                self._format_count += 1
+                return result
+        rh = InstrumentedHandler(self.fn, encoding="utf-8",
+                                 backupCount=2, maxBytes=2)
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn)
+        rh.emit(self.next_rec())
+        self.assertEqual(rh._format_count, 2)  # once per emit() call
+        rh.close()
+
     @support.requires_zlib()
     def test_rotator(self):
         def namer(name):
