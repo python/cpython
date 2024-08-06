@@ -4204,6 +4204,26 @@ class TestMakeDataclass(unittest.TestCase):
                 C = make_dataclass(classname, ['a', 'b'])
                 self.assertEqual(C.__name__, classname)
 
+    def test_dataclass_factory_default(self):
+        C = make_dataclass('C', [('x', int)], dataclass_factory=dataclass)
+        c = C(10)
+        self.assertEqual(c.x, 10)
+
+    def test_dataclass_custom_factory(self):
+        def custom_dataclass(cls, *args, **kwargs):
+            def wrap(cls):
+                dc = dataclass(cls, *args, **kwargs)
+                dc.__custom__ = True
+                return dc
+
+            return wrap(cls)
+
+        C = make_dataclass('C', [('x', int)], dataclass_factory=custom_dataclass)
+        c = C(10)
+        self.assertEqual(c.x, 10)
+        self.assertEqual(c.__custom__, True)
+
+
 class TestReplace(unittest.TestCase):
     def test(self):
         @dataclass(frozen=True)
