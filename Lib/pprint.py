@@ -193,7 +193,7 @@ class PrettyPrinter:
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
-            elif (_dataclasses.is_dataclass(object) and
+            elif (is_dataclass(object) and
                   not isinstance(object, type) and
                   object.__dataclass_params__.repr and
                   # Check dataclass has generated repr method.
