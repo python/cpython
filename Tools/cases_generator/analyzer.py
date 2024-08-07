@@ -370,7 +370,7 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
         if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
             continue
 
-        if node.block.tokens[idx-1].kind != "EQUALS":
+        if idx == 0 or node.block.tokens[idx-1].kind != "EQUALS":
             raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
 
         lhs = find_assignment_target(idx)

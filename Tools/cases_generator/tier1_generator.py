@@ -92,6 +92,7 @@ def write_uop(
             stack.push(peeks.pop())
         if braces:
             emitter.emit("{\n")
+        emitter.out.emit(stack.define_output_arrays(uop.stack.outputs))
         outputs: list[Local] = []
         for var in uop.stack.outputs:
             if not var.peek:
@@ -102,7 +103,6 @@ def write_uop(
                 else:
                     local = Local.local(var)
                 outputs.append(local)
-        emitter.emit(stack.define_outputs(outputs))
 
         for cache in uop.caches:
             if cache.name != "unused":
@@ -119,7 +119,11 @@ def write_uop(
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
         emitter.emit_tokens(uop, stack, inst)
-        emitter.emit(stack.push_outputs())
+        for var in outputs:
+            if var.name in uop.deferred_refs.values():
+                # We've already spilled this when emitting tokens
+                var.cached = False
+            emitter.emit(stack.push(var))
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")

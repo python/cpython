@@ -169,7 +169,6 @@ class Stack:
         self.top_offset = StackOffset.empty()
         self.base_offset = StackOffset.empty()
         self.variables: list[Local] = []
-        self.outputs: list[Local] = []
         self.defined: set[str] = set()
 
     def pop(self, var: StackItem, extract_bits: bool = False) -> tuple[str, Local]:
@@ -245,28 +244,22 @@ class Stack:
                 self.defined.add(var.name)
             return ""
 
-    def define_outputs(self, outputs: list[Local]) -> str:
+    def define_output_arrays(self, outputs: list[StackItem]) -> str:
         res = []
         top_offset = self.top_offset.copy()
         for var in outputs:
-            if var.is_array() and var.item.used and not var.item.peek:
+            if var.is_array() and var.used and not var.peek:
                 c_offset = top_offset.to_c()
+                top_offset.push(var)
                 res.append(f"{var.name} = &stack_pointer[{c_offset}];\n")
-            self.outputs.append(var)
-            top_offset.push(var.item)
+            else:
+                top_offset.push(var)
         return "\n".join(res)
 
-    def push_outputs(self) -> str:
-        res = []
-        for var in self.outputs:
-            res.append(self.push(var))
-        self.outputs = []
-        return "".join(res)
-
     @staticmethod
-    def _do_emit(out: CWriter, var: Local, base_offset: StackOffset,
+    def _do_emit(out: CWriter, var: StackItem, base_offset: StackOffset,
                  cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
-        cast = f"({cast_type})" if var.item.type else ""
+        cast = f"({cast_type})" if var.type else ""
         bits = ".bits" if cast and not extract_bits else ""
         if var.condition == "0":
             return
@@ -282,7 +275,7 @@ class Stack:
         out.start_line()
         for var in variables:
             if var.cached and not var.in_memory and not var.item.peek and not var.name in UNUSED:
-                Stack._do_emit(out, var, base_offset, cast_type, extract_bits)
+                Stack._do_emit(out, var.item, base_offset, cast_type, extract_bits)
             base_offset.push(var.item)
         if base_offset.to_c() != top_offset.to_c():
             print("base", base_offset, "top", top_offset)
@@ -302,18 +295,22 @@ class Stack:
         self.base_offset.clear()
         self.top_offset.clear()
 
-    def flush_single_var(self, out: CWriter, var_name: str, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
-        assert any(var.name == var_name for var in self.outputs)
+    def flush_single_var(self, out: CWriter, var_name: str, outputs: list[StackItem],
+                         cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
+        assert any(var.name == var_name for var in outputs)
         base_offset = self.base_offset.copy()
         top_offset = self.top_offset.copy()
         for var in self.variables:
-            base_offset.push(var.item)
-        for var in self.outputs:
+            base_offset.push(var)
+        for var in outputs:
+            if any(var == v.item for v in self.variables):
+                # The variable is already on the stack, such as a peeked value
+                # in the tier1 generator
+                continue
             if var.name == var_name:
-                var.cached = False
                 Stack._do_emit(out, var, base_offset, cast_type, extract_bits)
-            base_offset.push(var.item)
-            top_offset.push(var.item)
+            base_offset.push(var)
+            top_offset.push(var)
         if base_offset.to_c() != top_offset.to_c():
             print("base", base_offset, "top", top_offset)
             assert False

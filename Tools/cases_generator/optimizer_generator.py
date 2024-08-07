@@ -112,14 +112,7 @@ def write_uop(
                 out.emit(code)
             if local.defined:
                 locals[local.name] = local
-        outputs: list[Local] = []
-        for var in prototype.stack.outputs:
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.local(var)
-            outputs.append(local)
-        out.emit(stack.define_outputs(outputs))
+        out.emit(stack.define_output_arrays(prototype.stack.outputs))
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -141,7 +134,12 @@ def write_uop(
         else:
             emit_default(out, uop)
 
-        out.emit(stack.push_outputs())
+        for var in prototype.stack.outputs:
+            if var.name in locals:
+                local = locals[var.name]
+            else:
+                local = Local.local(var)
+            out.emit(stack.push(local))
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:

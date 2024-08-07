@@ -225,7 +225,7 @@ class Emitter:
         # Flush the assignment to the stack.  Note that we don't flush the
         # stack pointer here, and instead are currently relying on initializing
         # unused portions of the stack to NULL.
-        stack.flush_single_var(self.out, target)
+        stack.flush_single_var(self.out, target, uop.stack.outputs)
 
 
     def emit_tokens(
