@@ -1169,6 +1169,13 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using unquote_plus(): %r != %r" % (expect, result))
 
+        # Test difference between unquote() and unquote_plus()
+        given = b"are+there+spaces..."
+        expect = "are there spaces..."
+        result = urllib.parse.unquote_plus(given)
+        self.assertEqual(expect, result,
+                         "using unquote_plus(): %r != %r" % (expect, result))
+
     def test_unquote_to_bytes(self):
         given = 'br%C3%BCckner_sapporo_20050930.doc'
         expect = b'br\xc3\xbcckner_sapporo_20050930.doc'

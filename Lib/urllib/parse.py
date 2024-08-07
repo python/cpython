@@ -813,6 +813,10 @@ def unquote_plus(string, encoding='utf-8', errors='replace'):
 
     unquote_plus('%7e/abc+def') -> '~/abc def'
     """
+    if isinstance(string, bytes):
+        string = string.replace(b'+', b' ')
+        return unquote_to_bytes(string).decode(encoding, errors)
+
     string = string.replace('+', ' ')
     return unquote(string, encoding, errors)
 
