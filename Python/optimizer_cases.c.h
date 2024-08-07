@@ -2279,6 +2279,18 @@
             _Py_UopsSymbol *bottom;
             _Py_UopsSymbol *top;
             bottom = stack_pointer[-1 - (oparg-1)];
+            if (sym_is_const(bottom)) {
+                PyObject *value = sym_get_const(bottom);
+                if (_Py_IsImmortal(value)) {
+                    REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)value);
+                }
+                else {
+                    if (PyList_Append(refs, value)) {
+                        goto error;
+                    }
+                    REPLACE_OP(this_instr, _LOAD_CONST_INLINE, 0, (uintptr_t)value);
+                }
+            }
             assert(oparg > 0);
             top = bottom;
             stack_pointer[0] = top;
