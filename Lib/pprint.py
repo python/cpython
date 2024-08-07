@@ -186,7 +186,7 @@ class PrettyPrinter:
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
             # Lazy import to improve module import time
-            import dataclasses as _dataclasses
+            from dataclasses import is_dataclass
 
             if p is not None:
                 context[objid] = 1
@@ -207,11 +207,11 @@ class PrettyPrinter:
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
         # Lazy import to improve module import time
-        import dataclasses as _dataclasses
+        from dataclasses import fields as dataclass_fields
 
         cls_name = object.__class__.__name__
         indent += len(cls_name) + 1
-        items = [(f.name, getattr(object, f.name)) for f in _dataclasses.fields(object) if f.repr]
+        items = [(f.name, getattr(object, f.name)) for f in dataclass_fields(object) if f.repr]
         stream.write(cls_name + '(')
         self._format_namespace_items(items, stream, indent, allowance, context, level)
         stream.write(')')
