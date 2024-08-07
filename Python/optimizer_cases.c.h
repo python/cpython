@@ -192,8 +192,12 @@
         }
 
         case _REPLACE_WITH_TRUE: {
+            _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            (void)value;
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+            res = sym_new_const(ctx, Py_True);
             stack_pointer[-1] = res;
             break;
         }

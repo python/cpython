@@ -922,6 +922,12 @@ dummy_func(void) {
         self_or_null = sym_new_unknown(ctx);
     }
 
+    op(_REPLACE_WITH_TRUE, (value -- res)) {
+        (void)value;
+        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+        res = sym_new_const(ctx, Py_True);
+    }
+
     op(_JUMP_TO_TOP, (--)) {
         ctx->done = true;
     }

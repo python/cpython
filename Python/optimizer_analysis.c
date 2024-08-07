@@ -543,6 +543,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 last_set_ip = pc;
                 break;
             case _POP_TOP:
+            case _POP_TOP_LOAD_CONST_INLINE_BORROW:
             {
                 _PyUOpInstruction *last = &buffer[pc-1];
                 while (last->opcode == _NOP) {
@@ -554,9 +555,14 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     last->opcode == _COPY
                 ) {
                     last->opcode = _NOP;
-                    buffer[pc].opcode = _NOP;
+                    if (buffer[pc].opcode == _POP_TOP_LOAD_CONST_INLINE_BORROW) {
+                        buffer[pc].opcode = _LOAD_CONST_INLINE_BORROW;
+                    }
+                    else {
+                        buffer[pc].opcode = _NOP;
+                    }
                 }
-                if (last->opcode == _REPLACE_WITH_TRUE) {
+                if (last->opcode == _POP_TOP_LOAD_CONST_INLINE_BORROW) {
                     last->opcode = _NOP;
                 }
                 break;
