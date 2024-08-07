@@ -153,7 +153,6 @@ typedef struct {
 typedef struct {
     _Py_BackoffCounter counter;
     uint16_t func_version[2];
-    uint16_t type_version[2];
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
