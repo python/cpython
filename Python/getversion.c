@@ -15,21 +15,12 @@ void _Py_InitVersion(void)
     }
     initialized = 1;
 #ifdef Py_GIL_DISABLED
-    const char *buildinfo_format = "%.80s experimental free-threading build (%.80s) %.80s";
-#else
-    const char *buildinfo_format = "%.80s (%.80s) %.80s";
-#endif
-    // The format string is defined above and is observably safe.
-    // Ignore warnings related to non-literal format strings.
-    #if defined(__GNUC__) && !defined(__clang__)
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wformat-nonliteral"
-    #endif
-    PyOS_snprintf(version, sizeof(version), buildinfo_format,
+    PyOS_snprintf(version, sizeof(version), "%.80s experimental free-threading build (%.80s) %.80s",
                   PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler());
-    #if defined(__GNUC__) && !defined(__clang__)
-    #pragma GCC diagnostic pop
-    #endif
+#else
+    PyOS_snprintf(version, sizeof(version), "%.80s (%.80s) %.80s",
+                  PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler());
+#endif
 }
 
 const char *
