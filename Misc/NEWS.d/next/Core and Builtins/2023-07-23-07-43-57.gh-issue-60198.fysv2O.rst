@@ -1,0 +1,1 @@
+Prevent :class:`memoryview` objects from pointing to free heap memory. Patch by Martin Panter and Furkan Onder.
