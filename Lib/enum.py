@@ -207,7 +207,7 @@ class property(DynamicClassAttribute):
             # use previous enum.property
             return self.fget(instance)
         elif self._attr_type == 'attr':
-            # look up previous attibute
+            # look up previous attribute
             return getattr(self._cls_type, self.name)
         elif self._attr_type == 'desc':
             # use previous descriptor
