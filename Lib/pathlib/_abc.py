@@ -847,9 +847,6 @@ class PathBase(PurePathBase):
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
-        if on_error is None:
-            def on_error(err):
-                raise err
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
@@ -871,6 +868,8 @@ class PathBase(PurePathBase):
                     if preserve_metadata:
                         src._copy_metadata(dst)
             except OSError as err:
+                if on_error is None:
+                    raise
                 on_error(err)
         return target
 
