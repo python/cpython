@@ -7418,7 +7418,9 @@ AC_ARG_WITH(
 ], [with_builtin_hashlib_hashes=$default_hashlib_hashes])
 
 AC_MSG_RESULT([$with_builtin_hashlib_hashes])
-AC_DEFINE_UNQUOTED([PY_BUILTIN_HASHLIB_HASHES], ["$with_builtin_hashlib_hashes"], [enabled builtin hash modules])
+AC_DEFINE_UNQUOTED([PY_BUILTIN_HASHLIB_HASHES],
+                   ["$with_builtin_hashlib_hashes"],
+                   [enabled builtin hash modules])
 
 as_save_IFS=$IFS
 IFS=,

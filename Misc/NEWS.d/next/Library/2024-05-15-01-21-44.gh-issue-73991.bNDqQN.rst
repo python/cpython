@@ -1,1 +1,1 @@
-Add :meth:`pathlib.Path.rmtree`, which recursively removes a directory.
+Add :meth:`pathlib.Path.delete`, which recursively removes a file or directory.

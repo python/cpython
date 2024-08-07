@@ -63,7 +63,7 @@ class ParserBase:
 
     def splitext(self, path):
         """Split the path into a pair (root, ext), where *ext* is empty or
-        begins with a begins with a period and contains at most one period,
+        begins with a period and contains at most one period,
         and *root* is everything before the extension."""
         raise UnsupportedOperation(self._unsupported_msg('splitext()'))
 
@@ -919,15 +919,15 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
 
-    def rmtree(self, ignore_errors=False, on_error=None):
+    def delete(self, ignore_errors=False, on_error=None):
         """
-        Recursively delete this directory tree.
+        Delete this file or directory (including all sub-directories).
 
-        If *ignore_errors* is true, exceptions raised from scanning the tree
-        and removing files and directories are ignored. Otherwise, if
-        *on_error* is set, it will be called to handle the error. If neither
-        *ignore_errors* nor *on_error* are set, exceptions are propagated to
-        the caller.
+        If *ignore_errors* is true, exceptions raised from scanning the
+        filesystem and removing files and directories are ignored. Otherwise,
+        if *on_error* is set, it will be called to handle the error. If
+        neither *ignore_errors* nor *on_error* are set, exceptions are
+        propagated to the caller.
         """
         if ignore_errors:
             def on_error(err):
@@ -935,14 +935,10 @@ class PathBase(PurePathBase):
         elif on_error is None:
             def on_error(err):
                 raise err
-        try:
-            if self.is_symlink():
-                raise OSError("Cannot call rmtree on a symbolic link")
-            elif self.is_junction():
-                raise OSError("Cannot call rmtree on a junction")
+        if self.is_dir(follow_symlinks=False):
             results = self.walk(
                 on_error=on_error,
-                top_down=False,  # Bottom-up so we rmdir() empty directories.
+                top_down=False,  # So we rmdir() empty directories.
                 follow_symlinks=False)
             for dirpath, dirnames, filenames in results:
                 for name in filenames:
@@ -955,10 +951,15 @@ class PathBase(PurePathBase):
                         dirpath.joinpath(name).rmdir()
                     except OSError as err:
                         on_error(err)
-            self.rmdir()
+            delete_self = self.rmdir
+        else:
+            delete_self = self.unlink
+        try:
+            delete_self()
         except OSError as err:
             err.filename = str(self)
             on_error(err)
+    delete.avoids_symlink_attacks = False
 
     def owner(self, *, follow_symlinks=True):
         """
