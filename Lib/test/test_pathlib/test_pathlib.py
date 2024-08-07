@@ -32,7 +32,7 @@ root_in_posix = False
 if hasattr(os, 'geteuid'):
     root_in_posix = (os.geteuid() == 0)
 
-rmtree_use_fd_functions = (
+delete_use_fd_functions = (
     {os.open, os.stat, os.unlink, os.rmdir} <= os.supports_dir_fd and
     os.listdir in os.supports_fd and os.stat in os.supports_follow_symlinks)
 
@@ -862,8 +862,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
 
-    def test_rmtree_uses_safe_fd_version_if_available(self):
-        if rmtree_use_fd_functions:
+    def test_delete_uses_safe_fd_version_if_available(self):
+        if delete_use_fd_functions:
+            self.assertTrue(self.cls.delete.avoids_symlink_attacks)
             d = self.cls(self.base, 'a')
             d.mkdir()
             try:
@@ -876,16 +877,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                     raise Called
 
                 os.open = _raiser
-                self.assertRaises(Called, d.rmtree)
+                self.assertRaises(Called, d.delete)
             finally:
                 os.open = real_open
+        else:
+            self.assertFalse(self.cls.delete.avoids_symlink_attacks)
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
     @os_helper.skip_unless_working_chmod
-    def test_rmtree_unwritable(self):
-        tmp = self.cls(self.base, 'rmtree')
+    def test_delete_unwritable(self):
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         child_file_path = tmp / 'a'
         child_dir_path = tmp / 'b'
@@ -902,7 +905,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             tmp.chmod(new_mode)
 
             errors = []
-            tmp.rmtree(on_error=errors.append)
+            tmp.delete(on_error=errors.append)
             # Test whether onerror has actually been called.
             self.assertEqual(len(errors), 3)
         finally:
@@ -911,9 +914,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             child_dir_path.chmod(old_child_dir_mode)
 
     @needs_windows
-    def test_rmtree_inner_junction(self):
+    def test_delete_inner_junction(self):
         import _winapi
-        tmp = self.cls(self.base, 'rmtree')
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         dir1 = tmp / 'dir1'
         dir2 = dir1 / 'dir2'
@@ -929,15 +932,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         link3 = dir1 / 'link3'
         _winapi.CreateJunction(str(file1), str(link3))
         # make sure junctions are removed but not followed
-        dir1.rmtree()
+        dir1.delete()
         self.assertFalse(dir1.exists())
         self.assertTrue(dir3.exists())
         self.assertTrue(file1.exists())
 
     @needs_windows
-    def test_rmtree_outer_junction(self):
+    def test_delete_outer_junction(self):
         import _winapi
-        tmp = self.cls(self.base, 'rmtree')
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         try:
             src = tmp / 'cheese'
@@ -946,22 +949,22 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             spam = src / 'spam'
             spam.write_text('')
             _winapi.CreateJunction(str(src), str(dst))
-            self.assertRaises(OSError, dst.rmtree)
-            dst.rmtree(ignore_errors=True)
+            self.assertRaises(OSError, dst.delete)
+            dst.delete(ignore_errors=True)
         finally:
-            tmp.rmtree(ignore_errors=True)
+            tmp.delete(ignore_errors=True)
 
     @needs_windows
-    def test_rmtree_outer_junction_on_error(self):
+    def test_delete_outer_junction_on_error(self):
         import _winapi
-        tmp = self.cls(self.base, 'rmtree')
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         dir_ = tmp / 'dir'
         dir_.mkdir()
         link = tmp / 'link'
         _winapi.CreateJunction(str(dir_), str(link))
         try:
-            self.assertRaises(OSError, link.rmtree)
+            self.assertRaises(OSError, link.delete)
             self.assertTrue(dir_.exists())
             self.assertTrue(link.exists(follow_symlinks=False))
             errors = []
@@ -969,18 +972,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             def on_error(error):
                 errors.append(error)
 
-            link.rmtree(on_error=on_error)
+            link.delete(on_error=on_error)
             self.assertEqual(len(errors), 1)
             self.assertIsInstance(errors[0], OSError)
             self.assertEqual(errors[0].filename, str(link))
         finally:
             os.unlink(str(link))
 
-    @unittest.skipUnless(rmtree_use_fd_functions, "requires safe rmtree")
-    def test_rmtree_fails_on_close(self):
+    @unittest.skipUnless(delete_use_fd_functions, "requires safe delete")
+    def test_delete_fails_on_close(self):
         # Test that the error handler is called for failed os.close() and that
         # os.close() is only called once for a file descriptor.
-        tmp = self.cls(self.base, 'rmtree')
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         dir1 = tmp / 'dir1'
         dir1.mkdir()
@@ -996,7 +999,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         close_count = 0
         with swap_attr(os, 'close', close) as orig_close:
             with self.assertRaises(OSError):
-                dir1.rmtree()
+                dir1.delete()
         self.assertTrue(dir2.is_dir())
         self.assertEqual(close_count, 2)
 
@@ -1004,7 +1007,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         errors = []
 
         with swap_attr(os, 'close', close) as orig_close:
-            dir1.rmtree(on_error=errors.append)
+            dir1.delete(on_error=errors.append)
         self.assertEqual(len(errors), 2)
         self.assertEqual(errors[0].filename, str(dir2))
         self.assertEqual(errors[1].filename, str(dir1))
@@ -1013,27 +1016,23 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
                      "fifo requires special path on VxWorks")
-    def test_rmtree_on_named_pipe(self):
+    def test_delete_on_named_pipe(self):
         p = self.cls(self.base, 'pipe')
         os.mkfifo(p)
-        try:
-            with self.assertRaises(NotADirectoryError):
-                p.rmtree()
-            self.assertTrue(p.exists())
-        finally:
-            p.unlink()
+        p.delete()
+        self.assertFalse(p.exists())
 
         p = self.cls(self.base, 'dir')
         p.mkdir()
         os.mkfifo(p / 'mypipe')
-        p.rmtree()
+        p.delete()
         self.assertFalse(p.exists())
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
     @os_helper.skip_unless_working_chmod
-    def test_rmtree_deleted_race_condition(self):
+    def test_delete_deleted_race_condition(self):
         # bpo-37260
         #
         # Test that a file or a directory deleted after it is enumerated
@@ -1057,7 +1056,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                 if p != keep:
                     p.unlink()
 
-        tmp = self.cls(self.base, 'rmtree')
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         paths = [tmp] + [tmp / f'child{i}' for i in range(6)]
         dirs = paths[1::2]
@@ -1075,7 +1074,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             path.chmod(new_mode)
 
         try:
-            tmp.rmtree(on_error=on_error)
+            tmp.delete(on_error=on_error)
         except:
             # Test failed, so cleanup artifacts.
             for path, mode in zip(paths, old_modes):
@@ -1083,13 +1082,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                     path.chmod(mode)
                 except OSError:
                     pass
-            tmp.rmtree()
+            tmp.delete()
             raise
 
-    def test_rmtree_does_not_choke_on_failing_lstat(self):
+    def test_delete_does_not_choke_on_failing_lstat(self):
         try:
             orig_lstat = os.lstat
-            tmp = self.cls(self.base, 'rmtree')
+            tmp = self.cls(self.base, 'delete')
 
             def raiser(fn, *args, **kwargs):
                 if fn != str(tmp):
@@ -1102,7 +1101,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             tmp.mkdir()
             foo = tmp / 'foo'
             foo.write_text('')
-            tmp.rmtree()
+            tmp.delete()
         finally:
             os.lstat = orig_lstat
 

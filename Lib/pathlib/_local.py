@@ -3,6 +3,7 @@ import ntpath
 import operator
 import os
 import posixpath
+import shutil
 import sys
 from glob import _StringGlobber
 from itertools import chain
@@ -830,24 +831,34 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    def rmtree(self, ignore_errors=False, on_error=None):
+    def delete(self, ignore_errors=False, on_error=None):
         """
-        Recursively delete this directory tree.
+        Delete this file or directory (including all sub-directories).
 
-        If *ignore_errors* is true, exceptions raised from scanning the tree
-        and removing files and directories are ignored. Otherwise, if
-        *on_error* is set, it will be called to handle the error. If neither
-        *ignore_errors* nor *on_error* are set, exceptions are propagated to
-        the caller.
+        If *ignore_errors* is true, exceptions raised from scanning the
+        filesystem and removing files and directories are ignored. Otherwise,
+        if *on_error* is set, it will be called to handle the error. If
+        neither *ignore_errors* nor *on_error* are set, exceptions are
+        propagated to the caller.
         """
-        if on_error:
-            def onexc(func, filename, err):
-                err.filename = filename
-                on_error(err)
-        else:
+        if self.is_dir(follow_symlinks=False):
             onexc = None
-        import shutil
-        shutil.rmtree(str(self), ignore_errors, onexc=onexc)
+            if on_error:
+                def onexc(func, filename, err):
+                    err.filename = filename
+                    on_error(err)
+            shutil.rmtree(str(self), ignore_errors, onexc=onexc)
+        else:
+            try:
+                self.unlink()
+            except OSError as err:
+                if not ignore_errors:
+                    if on_error:
+                        on_error(err)
+                    else:
+                        raise
+
+    delete.avoids_symlink_attacks = shutil.rmtree.avoids_symlink_attacks
 
     def rename(self, target):
         """

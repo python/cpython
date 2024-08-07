@@ -141,8 +141,7 @@ pathlib
     :func:`shutil.copyfile`.
   * :meth:`~pathlib.Path.copytree` copies one directory tree to another, like
     :func:`shutil.copytree`.
-  * :meth:`~pathlib.Path.rmtree` recursively removes a directory tree, like
-    :func:`shutil.rmtree`.
+  * :meth:`~pathlib.Path.delete` removes a file or directory tree.
 
   (Contributed by Barney Gale in :gh:`73991`.)
 
