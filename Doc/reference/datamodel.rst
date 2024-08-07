@@ -108,7 +108,7 @@ object identity is affected in some sense: for immutable types, operations that
 compute new values may actually return a reference to any existing object with
 the same type and value, while for mutable objects this is not allowed.
 For example, after ``a = 1; b = 1``, *a* and *b* may or may not refer to
-the same object ith the value one, depending on the implementation.
+the same object with the value one, depending on the implementation.
 This is because :class:`int` is an immutable type, so the reference to ``1``
 can be reused. This behaviour depends on the implementation used, so should
 not be relied upon, but is something to be aware of when making use of object
