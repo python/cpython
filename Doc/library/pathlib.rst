@@ -1560,8 +1560,8 @@ Copying, renaming and deleting
    and file data are guaranteed to be copied. Set *preserve_metadata* to true
    to ensure that file and directory permissions, flags, last access and
    modification times, and extended attributes are copied where supported.
-   This argument has no effect when copying files on Windows (metadata is
-   always preserved in this case.)
+   This argument has no effect when copying files on Windows (where 
+   metadata is always preserved).
 
    If *ignore* is given, it should be a callable accepting one argument: a
    source file or directory path. The callable may return true to suppress
