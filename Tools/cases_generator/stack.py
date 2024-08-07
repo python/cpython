@@ -230,17 +230,10 @@ class Stack:
 
     def push(self, var: Local) -> None:
         self.variables.append(var)
-        if var.is_array() and not var.defined and var.item.used:
-            assert var.in_memory
-            assert not var.cached
-            c_offset = self.top_offset.to_c()
-            self.top_offset.push(var.item)
+        self.top_offset.push(var.item)
+        if var.item.used:
             self.defined.add(var.name)
             var.defined = True
-        else:
-            self.top_offset.push(var.item)
-            if var.item.used:
-                self.defined.add(var.name)
 
     def define_output_arrays(self, outputs: list[StackItem]) -> str:
         res = []
