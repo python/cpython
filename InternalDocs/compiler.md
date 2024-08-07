@@ -616,15 +616,15 @@ Important files
   * [Lib/opcode.py](https://github.com/python/cpython/blob/main/Lib/opcode.py)
     : opcode utilities exposed to Python.
 
-  * [Lib/importlib/_bootstrap_external.py](https://github.com/python/cpython/blob/main/Lib/importlib/_bootstrap_external.py)
+  * [Include/core/pycore_magic_number.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_magic_number.h)
     : Home of the magic number (named ``MAGIC_NUMBER``) for bytecode versioning.
 
 
 Objects
 =======
 
-* [Objects/locations.md](https://github.com/python/cpython/blob/main/Objects/locations.md): Describes the location table
-* [Objects/frame_layout.md](https://github.com/python/cpython/blob/main/Objects/frame_layout.md): Describes the frame stack
+* [Locations](locations.md): Describes the location table
+* [Frames](frames.md): Describes frames and the frame stack
 * [Objects/object_layout.md](https://github.com/python/cpython/blob/main/Objects/object_layout.md): Describes object layout for 3.11 and later
 * [Exception Handling](exception_handling.md): Describes the exception table
 

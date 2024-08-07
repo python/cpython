@@ -3367,8 +3367,8 @@ class TestDateTime(TestDate):
             '2009-04-19T12:',               # Ends with time separator
             '2009-04-19T12:30:',            # Ends with time separator
             '2009-04-19T12:30:45.',         # Ends with time separator
-            '2009-04-19T12:30:45.123456+',  # Ends with timzone separator
-            '2009-04-19T12:30:45.123456-',  # Ends with timzone separator
+            '2009-04-19T12:30:45.123456+',  # Ends with timezone separator
+            '2009-04-19T12:30:45.123456-',  # Ends with timezone separator
             '2009-04-19T12:30:45.123456-05:00a',    # Extra text
             '2009-04-19T12:30:45.123-05:00a',       # Extra text
             '2009-04-19T12:30:45-05:00a',           # Extra text

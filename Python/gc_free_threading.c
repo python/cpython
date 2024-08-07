@@ -4,6 +4,7 @@
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyDict_MaybeUntrack()
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_object.h"
@@ -14,6 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
+#include "pycore_typeid.h"        // _PyType_MergeThreadLocalRefcounts
 
 #ifdef Py_GIL_DISABLED
 
@@ -163,7 +165,15 @@ disable_deferred_refcounting(PyObject *op)
 {
     if (_PyObject_HasDeferredRefcount(op)) {
         op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
-        op->ob_ref_shared -= (1 << _Py_REF_SHARED_SHIFT);
+        op->ob_ref_shared -= _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
+
+        if (PyType_Check(op)) {
+            // Disable thread-local refcounting for heap types
+            PyTypeObject *type = (PyTypeObject *)op;
+            if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+                _PyType_ReleaseId((PyHeapTypeObject *)op);
+            }
+        }
     }
 }
 
@@ -328,16 +338,6 @@ merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
 }
 
 static void
-merge_all_queued_objects(PyInterpreterState *interp, struct collection_state *state)
-{
-    HEAD_LOCK(&_PyRuntime);
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
-        merge_queued_objects((_PyThreadStateImpl *)p, state);
-    }
-    HEAD_UNLOCK(&_PyRuntime);
-}
-
-static void
 process_delayed_frees(PyInterpreterState *interp)
 {
     // In STW status, we can observe the latest write sequence by
@@ -388,7 +388,9 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     Py_ssize_t refcount = Py_REFCNT(op);
-    refcount -= _PyObject_HasDeferredRefcount(op);
+    if (_PyObject_HasDeferredRefcount(op)) {
+        refcount -= _Py_REF_DEFERRED;
+    }
     _PyObject_ASSERT(op, refcount >= 0);
 
     if (refcount > 0 && !_PyObject_HasDeferredRefcount(op)) {
@@ -456,6 +458,30 @@ mark_reachable(PyObject *op)
 
 #ifdef GC_DEBUG
 static bool
+validate_refcounts(const mi_heap_t *heap, const mi_heap_area_t *area,
+                   void *block, size_t block_size, void *args)
+{
+    PyObject *op = op_from_block(block, args, false);
+    if (op == NULL) {
+        return true;
+    }
+
+    _PyObject_ASSERT_WITH_MSG(op, !gc_is_unreachable(op),
+                              "object should not be marked as unreachable yet");
+
+    if (_Py_REF_IS_MERGED(op->ob_ref_shared)) {
+        _PyObject_ASSERT_WITH_MSG(op, op->ob_tid == 0,
+                                  "merged objects should have ob_tid == 0");
+    }
+    else if (!_Py_IsImmortal(op)) {
+        _PyObject_ASSERT_WITH_MSG(op, op->ob_tid != 0,
+                                  "unmerged objects should have ob_tid != 0");
+    }
+
+    return true;
+}
+
+static bool
 validate_gc_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
                     void *block, size_t block_size, void *args)
 {
@@ -495,6 +521,19 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         }
     }
 
+    return true;
+}
+
+static bool
+restore_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
+             void *block, size_t block_size, void *args)
+{
+    PyObject *op = op_from_block(block, args, false);
+    if (op == NULL) {
+        return true;
+    }
+    gc_restore_tid(op);
+    gc_clear_unreachable(op);
     return true;
 }
 
@@ -549,6 +588,13 @@ static int
 deduce_unreachable_heap(PyInterpreterState *interp,
                         struct collection_state *state)
 {
+
+#ifdef GC_DEBUG
+    // Check that all objects are marked as unreachable and that the computed
+    // reference count difference (stored in `ob_tid`) is non-negative.
+    gc_visit_heaps(interp, &validate_refcounts, &state->base);
+#endif
+
     // Identify objects that are directly reachable from outside the GC heap
     // by computing the difference between the refcount and the number of
     // incoming references.
@@ -563,6 +609,8 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.
     if (gc_visit_heaps(interp, &mark_heap_visitor, &state->base) < 0) {
+        // On out-of-memory, restore the refcounts and bail out.
+        gc_visit_heaps(interp, &restore_refs, &state->base);
         return -1;
     }
 
@@ -706,10 +754,6 @@ PyStatus
 _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
-
-    // gh-117783: immortalize objects that would use deferred refcounting
-    // once the first non-main thread is created (but not in subinterpreters).
-    gcstate->immortalize = _Py_IsMainInterpreter(interp) ? 0 : -1;
 
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
@@ -1058,15 +1102,26 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         state->gcstate->old[i-1].count = 0;
     }
 
-    // merge refcounts for all queued objects
-    merge_all_queued_objects(interp, state);
+    HEAD_LOCK(&_PyRuntime);
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
+
+        // merge per-thread refcount for types into the type's actual refcount
+        _PyType_MergeThreadLocalRefcounts(tstate);
+
+        // merge refcounts for all queued objects
+        merge_queued_objects(tstate, state);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+
     process_delayed_frees(interp);
 
     // Find unreachable objects
     int err = deduce_unreachable_heap(interp, state);
     if (err < 0) {
         _PyEval_StartTheWorld(interp);
-        goto error;
+        PyErr_NoMemory();
+        return;
     }
 
     // Print debugging information.
@@ -1100,7 +1155,12 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
-        goto error;
+        cleanup_worklist(&state->unreachable);
+        cleanup_worklist(&state->legacy_finalizers);
+        cleanup_worklist(&state->wrcb_to_call);
+        cleanup_worklist(&state->objs_to_decref);
+        PyErr_NoMemory();
+        return;
     }
 
     // Call tp_clear on objects in the unreachable set. This will cause
@@ -1110,15 +1170,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
-    return;
-
-error:
-    cleanup_worklist(&state->unreachable);
-    cleanup_worklist(&state->legacy_finalizers);
-    cleanup_worklist(&state->wrcb_to_call);
-    cleanup_worklist(&state->objs_to_decref);
-    PyErr_NoMemory();
-    PyErr_FormatUnraisable("Out of memory during garbage collection");
 }
 
 /* This is the main function.  Read this to understand how the
@@ -1789,32 +1840,6 @@ custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     return true;
-}
-
-// gh-117783: Immortalize objects that use deferred reference counting to
-// temporarily work around scaling bottlenecks.
-static bool
-immortalize_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
-                    void *block, size_t block_size, void *args)
-{
-    PyObject *op = op_from_block(block, args, false);
-    if (op != NULL && _PyObject_HasDeferredRefcount(op)) {
-        _Py_SetImmortal(op);
-        op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
-    }
-    return true;
-}
-
-void
-_PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp)
-{
-    struct visitor_args args;
-    _PyEval_StopTheWorld(interp);
-    if (interp->gc.immortalize == 0) {
-        gc_visit_heaps(interp, &immortalize_visitor, &args);
-        interp->gc.immortalize = 1;
-    }
-    _PyEval_StartTheWorld(interp);
 }
 
 void

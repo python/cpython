@@ -1,0 +1,3 @@
+Export the :c:func:`PySignal_SetWakeupFd` function. Previously, the function
+was documented but it couldn't be used in 3rd party code. Patch by Victor
+Stinner.

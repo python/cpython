@@ -60,6 +60,11 @@ class Node:
         end = context.end
         return tokens[begin:end]
 
+    @property
+    def first_token(self) -> lx.Token:
+        context = self.context
+        assert context is not None
+        return context.owner.tokens[context.begin]
 
 @dataclass
 class Block(Node):
@@ -285,7 +290,6 @@ class Parser(PLexer):
                 if not (size := self.expression()):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
-                type_text = "_PyStackRef *"
                 size_text = size.text.strip()
             return StackEffect(tkn.text, type_text, cond_text, size_text)
         return None

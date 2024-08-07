@@ -147,7 +147,7 @@ intern_strings(PyObject *tuple)
                             "non-string found in code slot");
             return -1;
         }
-        _PyUnicode_InternMortal(interp, &_PyTuple_ITEMS(tuple)[i]);
+        _PyUnicode_InternImmortal(interp, &_PyTuple_ITEMS(tuple)[i]);
     }
     return 0;
 }
@@ -1352,7 +1352,7 @@ PyTypeObject _PyLineIterator = {
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
     0,                                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 static lineiterator *
@@ -1443,7 +1443,7 @@ PyTypeObject _PyPositionsIterator = {
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
     0,                                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 static PyObject*

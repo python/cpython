@@ -832,20 +832,43 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
-    # gh-116090: This test doesn't really require specialization, but running
-    # it without specialization exposes a monitoring bug.
-    @requires_specialization
     def test_implicit_stop_iteration(self):
+        """Generators are documented as raising a StopIteration
+           when they terminate.
+           However, we don't do that if we can avoid it, for speed.
+           sys.monitoring handles that by injecting a STOP_ITERATION
+           event when we would otherwise have skip the RAISE event.
+           This test checks that both paths record an equivalent event.
+           """
 
         def gen():
             yield 1
             return 2
 
-        def implicit_stop_iteration():
-            for _ in gen():
+        def implicit_stop_iteration(iterator=None):
+            if iterator is None:
+                iterator = gen()
+            for _ in iterator:
                 pass
 
-        self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+        recorders=(ExceptionRecorder, StopiterationRecorder,)
+        expected = [("raise", StopIteration)]
+
+        # Make sure that the loop is unspecialized, and that it will not
+        # re-specialize immediately, so that we can we can test the
+        # unspecialized version of the loop first.
+        # Note: this assumes that we don't specialize loops over sets.
+        implicit_stop_iteration(set(range(100)))
+
+        # This will record a RAISE event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
+
+        # Now specialize, so that we see a STOP_ITERATION event.
+        for _ in range(100):
+            implicit_stop_iteration()
+
+        # This will record a STOP_ITERATION event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
 
     initial = [
         ("raise", ZeroDivisionError),
@@ -1575,7 +1598,7 @@ class TestLoadSuperAttr(CheckEvents):
             ('line', 'method', 2),
             ('line', 'method', 3),
             ('line', 'method', 2),
-            ('call', 'method', 1),
+            ('call', 'method', d["b"]),
             ('line', 'method', 1),
             ('line', 'method', 1),
             ('line', 'get_events', 11),

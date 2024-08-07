@@ -253,7 +253,7 @@ class WindowsConsole(Console):
         else:
             self.__posxy = wlen(newline), y
 
-            if "\x1b" in newline or y != self.__posxy[1]:
+            if "\x1b" in newline or y != self.__posxy[1] or '\x1a' in newline:
                 # ANSI escape characters are present, so we can't assume
                 # anything about the position of the cursor.  Moving the cursor
                 # to the left margin should work to get to a known position.
@@ -291,6 +291,9 @@ class WindowsConsole(Console):
         self.__write("\x1b[?12l")
 
     def __write(self, text: str) -> None:
+        if "\x1a" in text:
+            text = ''.join(["^Z" if x == '\x1a' else x for x in text])
+
         if self.out is not None:
             self.out.write(text.encode(self.encoding, "replace"))
             self.out.flush()
