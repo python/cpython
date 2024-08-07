@@ -1240,16 +1240,34 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p2.path, '+31641044153')
 
     def test_invalid_bracketed_hosts(self):
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[192.0.2.146]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[important.com:8000]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123r.IP]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v12ae]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v.IP]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123.]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af::2309::fae7:1234]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af:2309::fae7:1234:2342:438e:192.0.2.146]/Path?Query')
-        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@]v6a.ip[/Path')
+        cases = [
+            'Scheme://user@[192.0.2.146]/Path?Query',
+            'Scheme://user@[important.com:8000]/Path?Query',
+            'Scheme://user@[v123r.IP]/Path?Query',
+            'Scheme://user@[v12ae]/Path?Query',
+            'Scheme://user@[v.IP]/Path?Query',
+            'Scheme://user@[v123.]/Path?Query',
+            'Scheme://user@[v]/Path?Query',
+            'Scheme://user@[0439:23af::2309::fae7:1234]/Path?Query',
+            'Scheme://user@[0439:23af:2309::fae7:1234:2342:438e:192.0.2.146]/Path?Query',
+            'Scheme://user@]v6a.ip[/Path',
+            'Scheme://user@[v6a.ip/path?query',
+            'Scheme://user@v6a.ip]/path?query',
+            'Scheme://user@prefix.[v6a.ip]/path?query',
+            'Scheme://user@[v6a.ip].suffix/path?query',
+        ]
+
+        for case in cases:
+            with self.subTest(case=case):
+                with self.assertRaises(ValueError):
+                    urllib.parse.urlsplit(case).hostname
+                with self.assertRaises(ValueError):
+                    urllib.parse.urlparse(case).hostname
+                bytes_case = case.encode('utf8')
+                with self.assertRaises(ValueError):
+                    urllib.parse.urlsplit(bytes_case).hostname
+                with self.assertRaises(ValueError):
+                    urllib.parse.urlparse(bytes_case).hostname
 
     def test_splitting_bracketed_hosts(self):
         p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
