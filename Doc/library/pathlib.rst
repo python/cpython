@@ -1542,7 +1542,8 @@ Copying, renaming and deleting
 .. method:: Path.copy(target, *, follow_symlinks=True, dirs_exist_ok=False, \
                       preserve_metadata=False, ignore=None, on_error=None)
 
-   Copy this file or directory tree to the given *target*.
+   Copy this file or directory tree to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.
 
    If the source is a file, the target will be replaced if it is an existing
    file. If the source is a symlink and *follow_symlinks* is true (the

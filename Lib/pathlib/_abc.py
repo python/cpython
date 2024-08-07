@@ -852,26 +852,27 @@ class PathBase(PurePathBase):
                 raise err
         stack = [(self, target)]
         while stack:
-            source, target = stack.pop()
+            src, dst = stack.pop()
             try:
-                if not follow_symlinks and source.is_symlink():
-                    target._symlink_to_target_of(source)
+                if not follow_symlinks and src.is_symlink():
+                    dst._symlink_to_target_of(src)
                     if preserve_metadata:
-                        source._copy_metadata(target, follow_symlinks=False)
-                elif source.is_dir():
-                    children = source.iterdir()
-                    target.mkdir(exist_ok=dirs_exist_ok)
+                        src._copy_metadata(dst, follow_symlinks=False)
+                elif src.is_dir():
+                    children = src.iterdir()
+                    dst.mkdir(exist_ok=dirs_exist_ok)
                     for child in children:
                         if not (ignore and ignore(child)):
-                            stack.append((child, target.joinpath(child.name)))
+                            stack.append((child, dst.joinpath(child.name)))
                     if preserve_metadata:
-                        source._copy_metadata(target)
+                        src._copy_metadata(dst)
                 else:
-                    source._copy_data(target)
+                    src._copy_data(dst)
                     if preserve_metadata:
-                        source._copy_metadata(target)
+                        src._copy_metadata(dst)
             except OSError as err:
                 on_error(err)
+        return target
 
     def rename(self, target):
         """
