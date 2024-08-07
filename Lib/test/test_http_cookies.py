@@ -47,6 +47,18 @@ class CookieTests(unittest.TestCase):
                     'Set-Cookie: d=r',
                     'Set-Cookie: f=h'
                 ))
+            },
+
+            {'data': 'cookie="{"key": "value"}"',
+             'dict': {'cookie': '{"key": "value"}'},
+             'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
+             'output': 'Set-Cookie: cookie="{"key": "value"}"',
+            },
+
+            {'data': 'key="some value; surrounded by quotes"',
+             'dict': {'key': 'some value; surrounded by quotes'},
+             'repr': "<SimpleCookie: key='some value; surrounded by quotes'>",
+             'output': 'Set-Cookie: key="some value; surrounded by quotes"',
             }
         ]
 
