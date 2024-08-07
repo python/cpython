@@ -41,9 +41,6 @@
             value = GETLOCAL(oparg);
             if (sym_is_const(value)) {
                 PyObject *val = sym_get_const(value);
-                if (merge_const(refs, &val) < 0) {
-                    goto error;
-                }
                 int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
                 REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
             }
@@ -2245,9 +2242,6 @@
             bottom = stack_pointer[-1 - (oparg-1)];
             if (sym_is_const(bottom)) {
                 PyObject *value = sym_get_const(bottom);
-                if (merge_const(refs, &value) < 0) {
-                    goto error;
-                }
                 int opcode = _Py_IsImmortal(value) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
                 REPLACE_OP(this_instr, opcode, 0, (uintptr_t)value);
             }
