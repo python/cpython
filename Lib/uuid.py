@@ -374,7 +374,7 @@ def _get_command_stdout(command, *args):
         # for are actually localized, but in theory some system could do so.)
         env = dict(os.environ)
         env['LC_ALL'] = 'C'
-        # Empty strings will be quoted by popen so we should just ommit it
+        # Empty strings will be quoted by popen so we should just omit it
         if args != ('',):
             command = (executable, *args)
         else:
