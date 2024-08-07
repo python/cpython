@@ -1,4 +1,2 @@
-Enhance :meth:`asyncio.Runner.run` to accept the same object types as
-:meth:`~asyncio.loop.run_until_complete`. Instead of accepting
-only a :term:`coroutine`, it now accepts an :term:`awaitable`,
-:term:`coroutine`, :class:`asyncio.Future`, or :class:`asyncio.Task`.
+Allow :meth:`asyncio.Runner.run` to accept :term:`awaitable`
+objects instead of simply :term:`coroutine`\s.
