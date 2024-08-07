@@ -6,6 +6,7 @@ from analyzer import (
     Uop,
     Properties,
     StackItem,
+    analysis_error,
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator
@@ -75,6 +76,7 @@ class Emitter:
             "DECREF_INPUTS": self.decref_inputs,
             "CHECK_EVAL_BREAKER": self.check_eval_breaker,
             "SYNC_SP": self.sync_sp,
+            "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
         }
         self.out = out
 
@@ -202,6 +204,29 @@ class Emitter:
         next(tkn_iter)
         if not uop.properties.ends_with_eval_breaker:
             self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
+
+    def py_stack_ref_from_py_object_new(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        self.out.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.out.emit(";\n")
+
+        target = uop.deferred_refs[tkn]
+        if target is None:
+            # An assignment we don't handle, such as to a pointer or array.
+            return
+
+        # Flush the assignment to the stack.  Note that we don't flush the
+        # stack pointer here, and instead are currently relying on initializing
+        # unused portions of the stack to NULL.
+        stack.flush_single_var(self.out, target, uop.stack.outputs)
+
 
     def emit_tokens(
         self,
