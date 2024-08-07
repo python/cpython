@@ -223,6 +223,106 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io__BufferedIOBase_backread__doc__,
+"backread($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Read backwards and return up to n bytes.\n"
+"\n"
+"If the size argument is omitted, None, or negative, read and\n"
+"return all data until BOF (beginning of the file).\n"
+"\n"
+"If the size argument is positive, and the underlying raw stream is\n"
+"not \'interactive\', multiple raw reads may be issued to satisfy\n"
+"the byte count (unless BOF is reached first).\n"
+"However, for interactive raw streams (as well as sockets and pipes),\n"
+"at most one raw read will be issued, and a short result does not\n"
+"imply that BOF is imminent.\n"
+"\n"
+"Return an empty bytes object on BOF.\n"
+"\n"
+"Return None if the underlying raw stream was open in non-blocking\n"
+"mode and no data is available at the moment.");
+
+#define _IO__BUFFEREDIOBASE_BACKREAD_METHODDEF    \
+    {"backread", _PyCFunction_CAST(_io__BufferedIOBase_backread), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_backread__doc__},
+
+static PyObject *
+_io__BufferedIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
+                                  int Py_UNUSED(size));
+
+static PyObject *
+_io__BufferedIOBase_backread(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "backread",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int size = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__BufferedIOBase_backread_impl(self, cls, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_backreadinto__doc__,
+"backreadinto($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFEREDIOBASE_BACKREADINTO_METHODDEF    \
+    {"backreadinto", (PyCFunction)_io__BufferedIOBase_backreadinto, METH_O, _io__BufferedIOBase_backreadinto__doc__},
+
+static PyObject *
+_io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer);
+
+static PyObject *
+_io__BufferedIOBase_backreadinto(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer buffer = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("backreadinto", "argument", "read-write bytes-like object", arg);
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__BufferedIOBase_backreadinto_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
 "write($self, b, /)\n"
 "--\n"
@@ -818,6 +918,110 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io__Buffered_backread__doc__,
+"backread($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_BACKREAD_METHODDEF    \
+    {"backread", _PyCFunction_CAST(_io__Buffered_backread), METH_FASTCALL, _io__Buffered_backread__doc__},
+
+static PyObject *
+_io__Buffered_backread_impl(buffered *self, Py_ssize_t n);
+
+static PyObject *
+_io__Buffered_backread(buffered *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t n = -1;
+
+    if (!_PyArg_CheckPositional("backread", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &n)) {
+        goto exit;
+    }
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_backread_impl(self, n);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__Buffered_backreadinto__doc__,
+"backreadinto($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_BACKREADINTO_METHODDEF    \
+    {"backreadinto", (PyCFunction)_io__Buffered_backreadinto, METH_O, _io__Buffered_backreadinto__doc__},
+
+static PyObject *
+_io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer);
+
+static PyObject *
+_io__Buffered_backreadinto(buffered *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer buffer = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("backreadinto", "argument", "read-write bytes-like object", arg);
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_backreadinto_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__Buffered_backreadline__doc__,
+"backreadline($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_BACKREADLINE_METHODDEF    \
+    {"backreadline", _PyCFunction_CAST(_io__Buffered_backreadline), METH_FASTCALL, _io__Buffered_backreadline__doc__},
+
+static PyObject *
+_io__Buffered_backreadline_impl(buffered *self, Py_ssize_t size);
+
+static PyObject *
+_io__Buffered_backreadline(buffered *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size = -1;
+
+    if (!_PyArg_CheckPositional("backreadline", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_backreadline_impl(self, size);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__Buffered_tell__doc__,
 "tell($self, /)\n"
 "--\n"
@@ -1245,4 +1449,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8eead000083dc5fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34a6812de9b4315c input=a9049054013a1b77]*/

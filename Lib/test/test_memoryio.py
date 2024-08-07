@@ -2,8 +2,11 @@
 StringIO -- for unicode strings
 BytesIO -- for bytes
 """
-
+import test.support
+import types
 import unittest
+from functools import partial
+from itertools import product
 from test import support
 
 import gc
@@ -14,10 +17,12 @@ import sys
 import weakref
 
 class IntLike:
-    def __init__(self, num):
+    def __init__(self, num=0):
         self._num = num
     def __index__(self):
         return self._num
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self._num!r})'
     __int__ = __index__
 
 class MemorySeekTestMixin:
@@ -429,7 +434,147 @@ class MemoryTestMixin:
         del __main__.PickleTestMemIO
 
 
-class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
+class MemoryBackreadTestMixin(MemoryTestMixin):
+    def getdata(self, data, *, goto_eof=False):
+        assert isinstance(data, str | bytes)
+        buf = self.buftype(data) if isinstance(data, str) else data
+        mem = self.ioclass(buf)
+        if goto_eof:
+            mem.seek(0, 2)
+        return buf, mem
+
+    def _check_test_sequence(self, int_class, memio, test_sequence, method):
+        for n_i, r_i in test_sequence:  # (size, expect)
+            n = None if n_i is None else int_class(n_i)
+            assert isinstance(r_i, bytes)
+            self._check_call(memio, n, r_i, method)
+
+    def _check_call(self, memio, n, expect, method):
+        with self.subTest(m=memio.getvalue(), n=n, method=method):
+            f = getattr(memio, method)
+            if n is None:
+                curpos = memio.tell()
+                self.assertEqual(f(), expect)
+                newpos = memio.tell()
+
+                memio.seek(curpos, 0)
+                self.assertEqual(f(None), expect)
+                self.assertEqual(memio.tell(), newpos)
+
+                memio.seek(curpos, 0)
+                self.assertEqual(f(-1), expect)
+                self.assertEqual(memio.tell(), newpos)
+            else:
+                self.assertEqual(f(n), expect)
+
+    def check_backread(self, memio, n, expect):
+        self._check_call(memio, n, expect, 'backread')
+
+    def test_backread_no_limit(self):
+        for n in [None, -1, IntLike(-1)]:
+            for string in ['', 'a', '\n', '123']:
+                buf, mem = self.getdata(string, goto_eof=True)
+                self.check_backread(mem, n, buf[::-1])
+                self.check_backread(mem, n, self.BOF)
+
+            buf, mem = self.getdata('\n123', goto_eof=True)
+            self.check_backread(mem, n, buf[::-1])
+            self.check_backread(mem, n, self.BOF)
+
+            buf, mem = self.getdata('456\n123', goto_eof=True)
+            self.check_backread(mem, n, b'321\n654')
+            self.check_backread(mem, n, self.BOF)
+
+    def test_backread_stationary(self):
+        for n in [0, IntLike()]:
+            for string in ['', 'a', '\n', '\x00', '123', '\n123', '123\n', '123\n456\n', '\n123\n456']:
+                buf, mem = self.getdata(string, goto_eof=True)
+                self.check_backread(mem, n, self.BOF)
+                self.check_backread(mem, n, self.BOF)
+
+    def test_backread(self):
+        for ZZ in [int, IntLike]:
+            check_test_sequence = partial(self._check_test_sequence, ZZ, method='backread')
+
+            buf, mem = self.getdata("\x001234567890\x00", goto_eof=True)
+            seq = [(0, self.BOF), (1, b'\x00'), (4, b'0987'), (900, b'654321\x00'), (None, self.BOF)]
+            check_test_sequence(mem, seq)
+
+            mem.seek(0, 2)
+            check_test_sequence(mem, [(None, buf[::-1]), (None, self.BOF)])
+            self.assertEqual(mem.tell(), 0)
+
+            mem.seek(0, 2)
+            self.check_backread(mem, ZZ(1), b'\x00')
+            mem.seek(1)
+            self.check_backread(mem, ZZ(1), b'\x00')
+
+    def check_backreadline(self, memio, n, r):
+        expect = self.buftype(r) if isinstance(r, str) else r
+        self._check_call(memio, n, expect, 'backreadline')
+
+    def test_backreadline_no_limit(self):
+        for n in [None, -1, IntLike(-1)]:
+            for string in ['', 'a', '\n', '123']:
+                buf, mem = self.getdata(string, goto_eof=True)
+                self.check_backreadline(mem, n, buf)
+
+            buf, mem = self.getdata('\n123', goto_eof=True)
+            self.check_backreadline(mem, n, b'123\n')
+
+            buf, mem = self.getdata('456\n123', goto_eof=True)
+            self.check_backreadline(mem, n, b'123\n')
+            self.check_backreadline(mem, n, b'456')
+
+    def test_backreadline_stationary(self):
+        for n in [0, IntLike()]:
+            for string in ['', 'a', '\n', '\x00', '123', '\n123', '123\n', '123\n456\n', '\n123\n456']:
+                buf, mem = self.getdata(string, goto_eof=True)
+                self.check_backreadline(mem, n, self.BOF)
+                self.check_backreadline(mem, n, self.BOF)
+
+    def test_backreadline(self):
+        for ZZ in [int, IntLike]:
+            check_test_sequence = partial(self._check_test_sequence, ZZ, method='backreadline')
+
+            # tests for an empty buffer
+            buf, mem = self.getdata(self.BOF, goto_eof=True)
+            seq = [(None, self.BOF), (-1, self.BOF), (0, self.BOF), (42, self.BOF), (-1, self.BOF)]
+            check_test_sequence(mem, seq)
+            self.assertEqual(mem.tell(), 0)
+
+            # tests for a 1-character buffer
+            for c, n in product(['a', '\n'], [None, 1, 100]):
+                buf, mem = self.getdata(c, goto_eof=True)
+                check_test_sequence(mem, [(n, buf), (n, self.BOF), (-1, self.BOF)])
+                self.assertEqual(mem.tell(), 0)
+
+            # tests for an n-character buffer
+            buf, mem = self.getdata("1234\n5678\n90abcdef")
+            mem.seek(0, 2)
+            check_test_sequence(mem, [(None, b'90abcdef\n'), (None, b'5678\n'), (None, b'1234')])
+            self.assertEqual(mem.tell(), 0)
+
+            mem.seek(0, 2)
+            check_test_sequence(mem, [
+                (3, b'def'), (3, b'abc'), (2, b'90'),
+                (None, b'\n'), (None, b'5678\n'), (None, b'1234'),
+            ])
+            self.assertEqual(mem.tell(), 0)
+
+            mem.seek(0, 2)
+            check_test_sequence(mem, [
+                (3, b'def'), (4, b'0abc'), (3, b'9\n'),
+                (None, b'5678\n'), (None, b'1234'),
+            ])
+            self.assertEqual(mem.tell(), 0)
+
+    def test_reverse(self):
+        # todo: implement when the design has been decided
+        pass
+
+
+class PyBytesIOTest(MemoryBackreadTestMixin, MemorySeekTestMixin, unittest.TestCase):
     # Test _pyio.BytesIO; class also inherited for testing C implementation
 
     UnsupportedOperation = pyio.UnsupportedOperation
@@ -438,7 +583,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
     def buftype(s):
         return s.encode("ascii")
     ioclass = pyio.BytesIO
-    EOF = b""
+    BOF = EOF = b""
 
     def test_getbuffer(self):
         memio = self.ioclass(b"1234567890")
@@ -535,6 +680,79 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.seek(42)
         memio.readinto(b)
         self.assertEqual(b, b"")
+
+    def test_backreadinto(self):
+        # sanity checks
+        buf, mem = self.getdata("sanity checks", goto_eof=True)
+        self.assertRaises(TypeError, mem.backreadinto, "")
+        mem.close()
+        self.assertRaises(ValueError, mem.backreadinto, bytearray())
+
+        buf, mem = self.getdata("1234", goto_eof=True)
+        self.assertEqual(mem.backreadinto(b := bytearray()), 0)
+        self.assertEqual(mem.tell(), 4)     # no change of position
+        self.assertEqual(list(b), [])       # nothing is read
+
+        def check_backreadinto(mem, out, count, newpos, expect):
+            self.assertEqual(mem.backreadinto(out), count)
+            self.assertEqual(mem.tell(), newpos)
+            self.assertEqual(out, bytes(expect))
+
+        # special positions checks
+        buf, mem = self.getdata(self.BOF)
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(0), 0, 0, [])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(0), 0, 0, [])
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(2), 0, 0, [0, 0])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(2), 0, 0, [0, 0])
+
+        buf, mem = self.getdata("BOF/EOF checks")
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(0), 0, 0, [])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(0), 0, len(buf), [])
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(2), 0, 0, [0, 0])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(2), 2, len(buf) - 2, b'sk')
+
+        # API checks
+        buf, mem = self.getdata("\x0012345\x0067890\x00")
+
+        b = bytearray(b"hello")
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b), 5)
+        self.assertEqual(b, b"\x000987")
+        self.assertEqual(mem.backreadinto(b), 5)
+        self.assertEqual(b, b"6\x00543")
+        self.assertEqual(mem.backreadinto(b), 3)
+        self.assertEqual(b, b"21\x0043")
+
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b := bytearray(0)), 0)
+        self.assertEqual(list(b), [])
+
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b := bytearray(1)), 1)
+        self.assertEqual(list(b), [0])
+
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b := bytearray(2)), 2)
+        self.assertEqual(list(b), [0, ord('0')])
+
+        b = bytearray(b"some very long buffer!")
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b), 13)
+        self.assertEqual(b, b"\x0009876\x0054321\x00g buffer!")
+
+        import array
+        a = array.array('b', b"some very long buffer!")
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(a), 13)
+        self.assertEqual(a.tobytes(), b"\x0009876\x0054321\x00g buffer!")
 
     def test_relative_seek(self):
         buf = self.buftype("1234567890")

@@ -332,6 +332,46 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io__IOBase_backreadline__doc__,
+"backreadline($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Read backwards and return a line from the stream.\n"
+"\n"
+"If size is specified, at most size bytes will be read.\n"
+"\n"
+"The line terminator is always b\'\\n\' for binary files; for text\n"
+"files, the newlines argument to open can be used to select the line\n"
+"terminator(s) recognized.");
+
+#define _IO__IOBASE_BACKREADLINE_METHODDEF    \
+    {"backreadline", _PyCFunction_CAST(_io__IOBase_backreadline), METH_FASTCALL, _io__IOBase_backreadline__doc__},
+
+static PyObject *
+_io__IOBase_backreadline_impl(PyObject *self, Py_ssize_t limit);
+
+static PyObject *
+_io__IOBase_backreadline(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t limit = -1;
+
+    if (!_PyArg_CheckPositional("backreadline", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &limit)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io__IOBase_backreadline_impl(self, limit);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__IOBase_readlines__doc__,
 "readlines($self, hint=-1, /)\n"
 "--\n"
@@ -441,4 +481,64 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=dab5e9323d191e32 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_io__RawIOBase_backread__doc__,
+"backread($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO__RAWIOBASE_BACKREAD_METHODDEF    \
+    {"backread", _PyCFunction_CAST(_io__RawIOBase_backread), METH_FASTCALL, _io__RawIOBase_backread__doc__},
+
+static PyObject *
+_io__RawIOBase_backread_impl(PyObject *self, Py_ssize_t n);
+
+static PyObject *
+_io__RawIOBase_backread(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t n = -1;
+
+    if (!_PyArg_CheckPositional("backread", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        n = ival;
+    }
+skip_optional:
+    return_value = _io__RawIOBase_backread_impl(self, n);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__RawIOBase_backreadall__doc__,
+"backreadall($self, /)\n"
+"--\n"
+"\n"
+"Read until BOF, using multiple backread() call.");
+
+#define _IO__RAWIOBASE_BACKREADALL_METHODDEF    \
+    {"backreadall", (PyCFunction)_io__RawIOBase_backreadall, METH_NOARGS, _io__RawIOBase_backreadall__doc__},
+
+static PyObject *
+_io__RawIOBase_backreadall_impl(PyObject *self);
+
+static PyObject *
+_io__RawIOBase_backreadall(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__RawIOBase_backreadall_impl(self);
+}
+/*[clinic end generated code: output=717c64bd8765e547 input=a9049054013a1b77]*/

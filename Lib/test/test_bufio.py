@@ -53,13 +53,32 @@ class BufferSizeTest:
             self.try_one(teststring + b"x")
             self.try_one(teststring[:-1])
 
+    def backtry_one(self, s):
+        # TODO(picnixz): implement test
+        pass
+
+    def backdrive_one(self, pattern):
+        for length in lengths:
+            q, r = divmod(length, len(pattern))
+            rem = pattern[:r]
+            with self.subTest(pattern=pattern, length=length, q=q, r=r, rem=rem):
+                teststring = pattern * q + rem
+                self.assertEqual(len(teststring), length)
+                self.backtry_one(teststring)
+                self.backtry_one(teststring + b"x")
+                self.backtry_one(teststring[:-1])
+
     def test_primepat(self):
         # A pattern with prime length, to avoid simple relationships with
         # stdio buffer sizes.
         self.drive_one(b"1234567890\00\01\02\03\04\05\06")
+        self.drive_one(b"1234567890\00\01\02\03\04\05\06"[::-1])
+        self.backdrive_one(b"1234567890\00\01\02\03\04\05\06")
+        self.backdrive_one(b"1234567890\00\01\02\03\04\05\06"[::-1])
 
     def test_nullpat(self):
         self.drive_one(b'\0' * 1000)
+        self.backdrive_one(b'\0' * 1000)
 
 
 class CBufferSizeTest(BufferSizeTest, unittest.TestCase):

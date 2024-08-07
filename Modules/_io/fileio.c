@@ -876,6 +876,63 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
 }
 
 /*[clinic input]
+_io.FileIO.backread
+    cls: defining_class
+    size: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+
+Read backwards at most size bytes, returned as bytes.
+
+Only makes one system call, so less data may be returned than requested.
+In non-blocking mode, returns None if no data is available.
+Return an empty bytes object if the current position is 0.
+[clinic start generated code]*/
+
+static PyObject *
+_io_FileIO_backread_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
+/*[clinic end generated code: output=7604b666a3f9ec98 input=323578bc358cfdf8]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+/*[clinic input]
+_io.FileIO.backreadinto
+    cls: defining_class
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+
+Same as RawIOBase.backreadinto().
+[clinic start generated code]*/
+
+static PyObject *
+_io_FileIO_backreadinto_impl(fileio *self, PyTypeObject *cls,
+                             Py_buffer *buffer)
+/*[clinic end generated code: output=24dee5b2db71af8b input=d2adcec51004fa8a]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+/*[clinic input]
+_io.FileIO.backreadall
+
+Read all data backwards from the file, returned as bytes.
+
+In non-blocking mode, returns as much as is immediately available,
+or None if no data is available.  Return an empty bytes object if
+the current position is 0.
+[clinic start generated code]*/
+
+static PyObject *
+_io_FileIO_backreadall_impl(fileio *self)
+/*[clinic end generated code: output=e8d5c20f2fb382f6 input=636bb5acd714a2cf]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+/*[clinic input]
 _io.FileIO.write
     cls: defining_class
     b: Py_buffer
@@ -1193,6 +1250,9 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_READ_METHODDEF
     _IO_FILEIO_READALL_METHODDEF
     _IO_FILEIO_READINTO_METHODDEF
+    _IO_FILEIO_BACKREAD_METHODDEF
+    _IO_FILEIO_BACKREADALL_METHODDEF
+    _IO_FILEIO_BACKREADINTO_METHODDEF
     _IO_FILEIO_WRITE_METHODDEF
     _IO_FILEIO_SEEK_METHODDEF
     _IO_FILEIO_TELL_METHODDEF

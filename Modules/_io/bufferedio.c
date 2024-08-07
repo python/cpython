@@ -46,30 +46,26 @@ PyDoc_STRVAR(bufferediobase_doc,
     );
 
 static PyObject *
-_bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readinto1)
+_bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer,
+                                 PyObject *meth, const char *name)
 {
-    Py_ssize_t len;
-    PyObject *data;
-
-    PyObject *attr = readinto1
-        ? &_Py_ID(read1)
-        : &_Py_ID(read);
-    data = _PyObject_CallMethod(self, attr, "n", buffer->len);
-    if (data == NULL)
-        return NULL;
-
-    if (!PyBytes_Check(data)) {
-        Py_DECREF(data);
-        PyErr_SetString(PyExc_TypeError, "read() should return bytes");
+    PyObject *data = _PyObject_CallMethod(self, meth, "n", buffer->len);
+    if (data == NULL) {
         return NULL;
     }
 
-    len = PyBytes_GET_SIZE(data);
+    if (!PyBytes_Check(data)) {
+        Py_DECREF(data);
+        PyErr_Format(PyExc_TypeError, "%s() should return bytes", name);
+        return NULL;
+    }
+
+    Py_ssize_t len = PyBytes_GET_SIZE(data);
     if (len > buffer->len) {
         PyErr_Format(PyExc_ValueError,
-                     "read() returned too much data: "
+                     "%s() returned too much data: "
                      "%zd bytes requested, %zd returned",
-                     buffer->len, len);
+                     name, buffer->len, len);
         Py_DECREF(data);
         return NULL;
     }
@@ -91,7 +87,7 @@ static PyObject *
 _io__BufferedIOBase_readinto_impl(PyObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=8c8cda6684af8038 input=5273d20db7f56e1a]*/
 {
-    return _bufferediobase_readinto_generic(self, buffer, 0);
+    return _bufferediobase_readinto_generic(self, buffer, &_Py_ID(read), "read");
 }
 
 /*[clinic input]
@@ -105,7 +101,9 @@ static PyObject *
 _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=358623e4fd2b69d3 input=d6eb723dedcee654]*/
 {
-    return _bufferediobase_readinto_generic(self, buffer, 1);
+    // Same error message even when using read1() ("read() should return bytes"
+    // and not "read1() should return bytes") for compatibility purposes.
+    return _bufferediobase_readinto_generic(self, buffer, &_Py_ID(read1), "read");
 }
 
 static PyObject *
@@ -189,6 +187,54 @@ _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "read1");
+}
+
+/*[clinic input]
+_io._BufferedIOBase.backread
+
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read backwards and return up to n bytes.
+
+If the size argument is omitted, None, or negative, read and
+return all data until BOF (beginning of the file).
+
+If the size argument is positive, and the underlying raw stream is
+not 'interactive', multiple raw reads may be issued to satisfy
+the byte count (unless BOF is reached first).
+However, for interactive raw streams (as well as sockets and pipes),
+at most one raw read will be issued, and a short result does not
+imply that BOF is imminent.
+
+Return an empty bytes object on BOF.
+
+Return None if the underlying raw stream was open in non-blocking
+mode and no data is available at the moment.
+[clinic start generated code]*/
+
+static PyObject *
+_io__BufferedIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
+                                  int Py_UNUSED(size))
+/*[clinic end generated code: output=e2aa0f9e2adc3edc input=bcb772542528cbf1]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return bufferediobase_unsupported(state, "backread");
+}
+
+/*[clinic input]
+@critical_section
+_io._BufferedIOBase.backreadinto
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer)
+/*[clinic end generated code: output=089fdcf2b4b15522 input=8240e5a3d7c8fe26]*/
+{
+    return _bufferediobase_readinto_generic(self, buffer, &_Py_ID(backread), "backread");
 }
 
 /*[clinic input]
@@ -731,6 +777,12 @@ static PyObject *
 _bufferedreader_read_generic(buffered *self, Py_ssize_t);
 static Py_ssize_t
 _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len);
+static PyObject *
+_bufferedreader_backread_all(buffered *self);
+static PyObject *
+_bufferedreader_backread_fast(buffered *self, Py_ssize_t);
+static PyObject *
+_bufferedreader_backread_generic(buffered *self, Py_ssize_t);
 
 /*
  * Helpers
@@ -1307,6 +1359,77 @@ _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
     return _buffered_readline(self, size);
 }
 
+/*[clinic input]
+@critical_section
+_io._Buffered.backread
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__Buffered_backread_impl(buffered *self, Py_ssize_t n)
+/*[clinic end generated code: output=1d9419484778ae01 input=e0459b8a28c1bc41]*/
+{
+    CHECK_INITIALIZED(self);
+    if (n < -1) {
+        PyErr_SetString(PyExc_ValueError, "backread length must be non-negative or -1");
+        return NULL;
+    }
+    CHECK_CLOSED(self, "read of closed file");
+    PyObject *res;
+    if (n == -1) {
+        if (!ENTER_BUFFERED(self)) {
+            return NULL;
+        }
+        res = _bufferedreader_backread_all(self);
+    }
+    else {
+        if ((res = _bufferedreader_backread_fast(self, n)) != Py_None) {
+            return res;
+        }
+        Py_DECREF(res);
+        if (!ENTER_BUFFERED(self)) {
+            return NULL;
+        }
+        res = _bufferedreader_backread_generic(self, n);
+    }
+    LEAVE_BUFFERED(self);
+    return res;
+}
+
+/*[clinic input]
+@critical_section
+_io._Buffered.backreadinto
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer)
+/*[clinic end generated code: output=740fec02a2357570 input=d596047fa0898560]*/
+{
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+/*[clinic input]
+@critical_section
+_io._Buffered.backreadline
+    size: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__Buffered_backreadline_impl(buffered *self, Py_ssize_t size)
+/*[clinic end generated code: output=dab0e1127f375a53 input=bfaa97db6dc41727]*/
+{
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
 
 /*[clinic input]
 @critical_section
@@ -1899,6 +2022,33 @@ _bufferedreader_peek_unlocked(buffered *self)
     return PyBytes_FromStringAndSize(self->buffer, r);
 }
 
+static PyObject *
+_bufferedreader_backread_all(buffered *self)
+{
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+static PyObject *
+_bufferedreader_backread_fast(buffered *self, Py_ssize_t n)
+{
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+static PyObject *
+_bufferedreader_backread_generic(buffered *self, Py_ssize_t n)
+{
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
 
 /*
  * class BufferedWriter
@@ -2485,6 +2635,8 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
 #undef clinic_state
 
 static PyMethodDef bufferediobase_methods[] = {
+    _IO__BUFFEREDIOBASE_BACKREAD_METHODDEF
+    _IO__BUFFEREDIOBASE_BACKREADINTO_METHODDEF
     _IO__BUFFEREDIOBASE_DETACH_METHODDEF
     _IO__BUFFEREDIOBASE_READ_METHODDEF
     _IO__BUFFEREDIOBASE_READ1_METHODDEF
@@ -2525,6 +2677,9 @@ static PyMethodDef bufferedreader_methods[] = {
     _IO__BUFFERED_READINTO_METHODDEF
     _IO__BUFFERED_READINTO1_METHODDEF
     _IO__BUFFERED_READLINE_METHODDEF
+    _IO__BUFFERED_BACKREAD_METHODDEF
+    _IO__BUFFERED_BACKREADINTO_METHODDEF
+    _IO__BUFFERED_BACKREADLINE_METHODDEF
     _IO__BUFFERED_SEEK_METHODDEF
     _IO__BUFFERED_TELL_METHODDEF
     _IO__BUFFERED_TRUNCATE_METHODDEF
@@ -2704,6 +2859,9 @@ static PyMethodDef bufferedrandom_methods[] = {
     _IO__BUFFERED_READINTO_METHODDEF
     _IO__BUFFERED_READINTO1_METHODDEF
     _IO__BUFFERED_READLINE_METHODDEF
+    _IO__BUFFERED_BACKREAD_METHODDEF
+    _IO__BUFFERED_BACKREADINTO_METHODDEF
+    _IO__BUFFERED_BACKREADLINE_METHODDEF
     _IO__BUFFERED_PEEK_METHODDEF
     _IO_BUFFEREDWRITER_WRITE_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
