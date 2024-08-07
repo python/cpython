@@ -67,6 +67,9 @@ although there is currently no date scheduled for their removal.
   * ``EntryPoints`` tuple interface.
   * Implicit ``None`` on return values.
 
+* :mod:`logging`: the ``warn()`` method is deprecated, use ``warning()``
+  instead.
+
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
