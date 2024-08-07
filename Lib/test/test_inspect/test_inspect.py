@@ -1589,6 +1589,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         ])
 
     def test_getmembers_custom_duplicated_dir(self):
+        # Duplicates in `__dir__` must not fail and return just one result.
         class DuplicatedDir:
             attr = 1
             def __dir__(self):
