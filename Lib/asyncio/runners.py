@@ -87,7 +87,7 @@ class Runner:
         """Run code in the embedded event loop.
 
         The argument can be any awaitable object.
-        
+
         If the argument is a coroutine, it is wrapped in a Task.
 
         Return the awaitable's result or raise an exception.
