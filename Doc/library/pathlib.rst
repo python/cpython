@@ -1552,15 +1552,15 @@ Copying, renaming and deleting
 
    If the source is a directory and *dirs_exist_ok* is false (the default), a
    :exc:`FileExistsError` is raised if the target is an existing directory.
-   If *dirs_exists_ok* is true, the copying operation will continue if it
-   encounters existing directories, and files within the destination tree will
-   be overwritten by corresponding files from the source tree.
+   If *dirs_exists_ok* is true, the copying operation will overwrite
+   existing files within the destination tree with corresponding files
+   from the source tree.
 
    If *preserve_metadata* is false (the default), only directory structures
    and file data are guaranteed to be copied. Set *preserve_metadata* to true
    to ensure that file and directory permissions, flags, last access and
    modification times, and extended attributes are copied where supported.
-   This argument has no effect when copying files on Windows (where 
+   This argument has no effect when copying files on Windows (where
    metadata is always preserved).
 
    If *ignore* is given, it should be a callable accepting one argument: a

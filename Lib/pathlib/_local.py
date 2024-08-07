@@ -788,7 +788,7 @@ class Path(PathBase, PurePath):
     _write_metadata = write_file_metadata
 
     if copyfile:
-        def _copy_data(self, target):
+        def _copy_file(self, target):
             """
             Copy the contents of this file to the given target.
             """
@@ -797,7 +797,7 @@ class Path(PathBase, PurePath):
             except TypeError:
                 if not isinstance(target, PathBase):
                     raise
-                PathBase._copy_data(self, target)
+                PathBase._copy_file(self, target)
             else:
                 copyfile(os.fspath(self), target)
 

@@ -822,7 +822,7 @@ class PathBase(PurePathBase):
             metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
             target._write_metadata(metadata, follow_symlinks=follow_symlinks)
 
-    def _copy_data(self, target):
+    def _copy_file(self, target):
         """
         Copy the contents of this file to the given target.
         """
@@ -867,7 +867,7 @@ class PathBase(PurePathBase):
                     if preserve_metadata:
                         src._copy_metadata(dst)
                 else:
-                    src._copy_data(dst)
+                    src._copy_file(dst)
                     if preserve_metadata:
                         src._copy_metadata(dst)
             except OSError as err:
