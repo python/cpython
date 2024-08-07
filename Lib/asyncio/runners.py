@@ -86,10 +86,11 @@ class Runner:
     def run(self, coro, *, context=None):
         """Run code in the embedded event loop.
 
-        The argument can be an awaitable, coroutine, Future, or Task.
+        The argument can be any awaitable object.
+        
         If the argument is a coroutine, it is wrapped in a Task.
 
-        Return the coro's result or raise an exception.
+        Return the awaitable's result or raise an exception.
         """
 
         if events._get_running_loop() is not None:
