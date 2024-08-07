@@ -1251,7 +1251,7 @@ uop_optimize(
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    PyObject *refs = PyList_New(0);
+    PyObject *refs = PyDict_New();
     if (refs == NULL) {
         return -1;
     }
@@ -1290,7 +1290,21 @@ uop_optimize(
         Py_DECREF(refs);
         return -1;
     }
-    executor->refs = refs;
+    PyObject *refs_tuple = PyTuple_New(PyDict_GET_SIZE(refs));
+    if (refs_tuple == NULL) {
+        Py_DECREF(executor);
+        return -1;
+    }
+    PyObject *k, *v;
+    Py_ssize_t i = 0, p = 0;
+    Py_BEGIN_CRITICAL_SECTION(refs);
+    while (PyDict_Next(refs, &p, &k, &v)) {
+        PyTuple_SET_ITEM(refs_tuple, i++, Py_NewRef(v));
+    }
+    Py_END_CRITICAL_SECTION();
+    assert(i == Py_SIZE(refs_tuple));
+    Py_DECREF(refs);
+    executor->refs = refs_tuple;
     assert(length <= UOP_MAX_TRACE_LENGTH);
     *exec_ptr = executor;
     return 1;
