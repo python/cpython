@@ -468,7 +468,6 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CODE_COMPLEX_PARAMETERS 7
 #define SPEC_FAIL_CODE_NOT_OPTIMIZED 8
 
-
 #define SPEC_FAIL_LOAD_GLOBAL_NON_DICT 17
 #define SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT 18
 
@@ -1469,15 +1468,20 @@ binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 #endif   // Py_STATS
 
 static int
-function_kind(PyCodeObject *code) {
-    int flags = code->co_flags;
-    if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
-        return SPEC_FAIL_CODE_COMPLEX_PARAMETERS;
+function_kind(PyCodeObject *code)
+{
+    switch (_Py_Specialize_CheckCode(code)) {
+        case _Py_Specialize_ErrComplexParams: {
+            return SPEC_FAIL_CODE_COMPLEX_PARAMETERS;
+        }
+        case _Py_Specialize_ErrCodeUnoptimized: {
+            return SPEC_FAIL_CODE_NOT_OPTIMIZED;
+        }
+        case _Py_Specialize_Ok: {
+            return SIMPLE_FUNCTION;
+        }
     }
-    if ((flags & CO_OPTIMIZED) == 0) {
-        return SPEC_FAIL_CODE_NOT_OPTIMIZED;
-    }
-    return SIMPLE_FUNCTION;
+    Py_UNREACHABLE();
 }
 
 /* Returning false indicates a failure. */

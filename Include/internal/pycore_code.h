@@ -346,6 +346,27 @@ extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 
+/* Helpers shared by the specializer and instructions */
+
+typedef enum {
+    _Py_Specialize_Ok = 0,
+    _Py_Specialize_ErrComplexParams = 1,
+    _Py_Specialize_ErrCodeUnoptimized = 2,
+} _Py_Specialize_CheckCodeResult;
+
+static inline _Py_Specialize_CheckCodeResult
+_Py_Specialize_CheckCode(PyCodeObject *code)
+{
+    int flags = code->co_flags;
+    if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
+        return _Py_Specialize_ErrComplexParams;
+    }
+    if ((flags & CO_OPTIMIZED) == 0) {
+        return _Py_Specialize_ErrCodeUnoptimized;
+    }
+    return _Py_Specialize_Ok;
+}
+
 #ifdef Py_STATS
 
 #include "pycore_bitutils.h"  // _Py_bit_length
