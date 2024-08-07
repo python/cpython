@@ -180,7 +180,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                 local = locals[var.name]
             else:
                 local = Local.local(var)
-            emitter.emit(stack.push(local))
+            stack.push(local)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
 

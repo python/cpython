@@ -228,7 +228,7 @@ class Stack:
         in_memory = var.is_array() or var.peek
         return assign, Local(var, not var.is_array(), in_memory, True)
 
-    def push(self, var: Local) -> str:
+    def push(self, var: Local) -> None:
         self.variables.append(var)
         if var.is_array() and not var.defined and var.item.used:
             assert var.in_memory
@@ -237,12 +237,10 @@ class Stack:
             self.top_offset.push(var.item)
             self.defined.add(var.name)
             var.defined = True
-            return f"{var.name} = &stack_pointer[{c_offset}];\n"
         else:
             self.top_offset.push(var.item)
             if var.item.used:
                 self.defined.add(var.name)
-            return ""
 
     def define_output_arrays(self, outputs: list[StackItem]) -> str:
         res = []

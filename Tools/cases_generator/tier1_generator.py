@@ -117,7 +117,7 @@ def write_uop(
                     local = Local.unused(var)
                 else:
                     local = Local.local(var)
-                emitter.emit(stack.push(local))
+                stack.push(local)
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")
