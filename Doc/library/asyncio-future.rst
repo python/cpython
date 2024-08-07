@@ -31,7 +31,7 @@ Future Functions
    .. versionadded:: 3.5
 
 
-.. function:: ensure_future(obj, *, loop=None)
+.. function:: ensure_future(obj, *, loop=None, context=None)
 
    Return:
 
@@ -49,6 +49,9 @@ Future Functions
 
    If *obj* is neither of the above a :exc:`TypeError` is raised.
 
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` to use when creating a new task.
+
    .. important::
 
       See also the :func:`create_task` function which is the
@@ -64,6 +67,8 @@ Future Functions
       Deprecation warning is emitted if *obj* is not a Future-like object
       and *loop* is not specified and there is no running event loop.
 
+   .. versionchanged:: 3.12
+      Added the *context* parameter.
 
 .. function:: wrap_future(future, *, loop=None)
 
