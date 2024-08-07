@@ -2641,85 +2641,43 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
-    def test_rmtree(self):
+    def test_delete_file(self):
+        p = self.cls(self.base) / 'fileA'
+        p.delete()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
+
+    def test_delete_dir(self):
         base = self.cls(self.base)
-        base.joinpath('dirA').rmtree()
+        base.joinpath('dirA').delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirA').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').lstat)
-        base.joinpath('dirB').rmtree()
+        base.joinpath('dirB').delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirB').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'fileB').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').lstat)
-        base.joinpath('dirC').rmtree()
+        base.joinpath('dirC').delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirC').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD', 'fileD').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'fileC').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'novel.txt').stat)
 
-    def test_rmtree_errors(self):
-        tmp = self.cls(self.base, 'rmtree')
-        tmp.mkdir()
-        # filename is guaranteed not to exist
-        filename = tmp / 'foo'
-        self.assertRaises(FileNotFoundError, filename.rmtree)
-        # test that ignore_errors option is honored
-        filename.rmtree(ignore_errors=True)
-
-        # existing file
-        filename = tmp / "tstfile"
-        filename.write_text("")
-        with self.assertRaises(NotADirectoryError) as cm:
-            filename.rmtree()
-        self.assertEqual(cm.exception.filename, str(filename))
-        self.assertTrue(filename.exists())
-        # test that ignore_errors option is honored
-        filename.rmtree(ignore_errors=True)
-        self.assertTrue(filename.exists())
-
-    def test_rmtree_on_error(self):
-        tmp = self.cls(self.base, 'rmtree')
-        tmp.mkdir()
-        filename = tmp / "tstfile"
-        filename.write_text("")
-        errors = []
-
-        def on_error(error):
-            errors.append(error)
-
-        filename.rmtree(on_error=on_error)
-        self.assertEqual(len(errors), 2)
-        # First from scandir()
-        self.assertIsInstance(errors[0], NotADirectoryError)
-        self.assertEqual(errors[0].filename, str(filename))
-        # Then from munlink()
-        self.assertIsInstance(errors[1], NotADirectoryError)
-        self.assertEqual(errors[1].filename, str(filename))
-
     @needs_symlinks
-    def test_rmtree_outer_symlink(self):
-        tmp = self.cls(self.base, 'rmtree')
+    def test_delete_symlink(self):
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         dir_ = tmp / 'dir'
         dir_.mkdir()
         link = tmp / 'link'
         link.symlink_to(dir_)
-        self.assertRaises(OSError, link.rmtree)
+        link.delete()
         self.assertTrue(dir_.exists())
-        self.assertTrue(link.exists(follow_symlinks=False))
-        errors = []
-
-        def on_error(error):
-            errors.append(error)
-
-        link.rmtree(on_error=on_error)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], OSError)
-        self.assertEqual(errors[0].filename, str(link))
+        self.assertFalse(link.exists(follow_symlinks=False))
 
     @needs_symlinks
-    def test_rmtree_inner_symlink(self):
-        tmp = self.cls(self.base, 'rmtree')
+    def test_delete_inner_symlink(self):
+        tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
         dir1 = tmp / 'dir1'
         dir2 = dir1 / 'dir2'
@@ -2735,10 +2693,25 @@ class DummyPathTest(DummyPurePathTest):
         link3 = dir1 / 'link3'
         link3.symlink_to(file1)
         # make sure symlinks are removed but not followed
-        dir1.rmtree()
+        dir1.delete()
         self.assertFalse(dir1.exists())
         self.assertTrue(dir3.exists())
         self.assertTrue(file1.exists())
+
+    def test_delete_missing(self):
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        # filename is guaranteed not to exist
+        filename = tmp / 'foo'
+        self.assertRaises(FileNotFoundError, filename.delete)
+        # test that ignore_errors option is honored
+        filename.delete(ignore_errors=True)
+        # test on_error
+        errors = []
+        filename.delete(on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], FileNotFoundError)
+        self.assertEqual(errors[0].filename, str(filename))
 
     def setUpWalk(self):
         # Build:
