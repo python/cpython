@@ -171,6 +171,7 @@ class Stack:
         self.variables: list[Local] = []
         self.defined: set[str] = set()
 
+
     def pop(self, var: StackItem, extract_bits: bool = False) -> tuple[str, Local]:
         self.top_offset.pop(var)
         indirect = "&" if var.is_array() else ""
@@ -188,25 +189,18 @@ class Stack:
             if not var.used:
                 return "", popped
             self.defined.add(var.name)
-            # Always define array variables as it is free, and their offset might have changed
-            if var.is_array():
-                return (
-                    f"{var.name} = &stack_pointer[{self.top_offset.to_c()}];\n",
-                    Local.redefinition(var, popped)
-                )
-            if not popped.defined:
-                return (
-                    f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n",
-                    Local.redefinition(var, popped)
-                )
-            else:
+            if popped.defined:
                 if popped.name == var.name:
                     return "", popped
                 else:
-                    return (
-                        f"{var.name} = {popped.name};\n",
-                        Local.redefinition(var, popped)
-                    )
+                    defn = f"{var.name} = {popped.name};\n"
+            else:
+                if var.is_array():
+                    defn = f"{var.name} = &stack_pointer[{self.top_offset.to_c()}];\n"
+                else:
+                    defn = f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n"
+            return defn, Local.redefinition(var, popped)
+
         self.base_offset.pop(var)
         if var.name in UNUSED or not var.used:
             return "", Local.unused(var)
