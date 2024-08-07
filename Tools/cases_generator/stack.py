@@ -301,7 +301,7 @@ class Stack:
         base_offset = self.base_offset.copy()
         top_offset = self.top_offset.copy()
         for var in self.variables:
-            base_offset.push(var)
+            base_offset.push(var.item)
         for var in outputs:
             if any(var == v.item for v in self.variables):
                 # The variable is already on the stack, such as a peeked value

@@ -119,11 +119,11 @@ def write_uop(
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
         emitter.emit_tokens(uop, stack, inst)
-        for var in outputs:
-            if var.name in uop.deferred_refs.values():
+        for output in outputs:
+            if output.name in uop.deferred_refs.values():
                 # We've already spilled this when emitting tokens
-                var.cached = False
-            emitter.emit(stack.push(var))
+                output.cached = False
+            emitter.emit(stack.push(output))
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")

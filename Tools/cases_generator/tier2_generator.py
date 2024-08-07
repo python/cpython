@@ -182,11 +182,11 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
         emitter.emit_tokens(uop, stack, None)
-        for var in outputs:
-            if var.name in uop.deferred_refs.values():
+        for output in outputs:
+            if output.name in uop.deferred_refs.values():
                 # We've already spilled this when emitting tokens
-                var.cached = False
-            emitter.emit(stack.push(var))
+                output.cached = False
+            emitter.emit(stack.push(output))
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
 
