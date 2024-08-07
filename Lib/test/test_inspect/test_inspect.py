@@ -1550,70 +1550,40 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('f', b.f), inspect.getmembers(b))
         self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
 
-    def test_getmembers_function(self):
-        def func(arg: int = 1, *, kw = 2) -> None:
-            """Docstring."""
+    def test_getmembers_custom_dir(self):
+        class CorrectDir:
+            def __init__(self, attr):
+                self.attr = attr
+            def method(self):
+                return self.attr + 1
+            def __dir__(self):
+                return ['attr', 'method']
 
-        res = dict(inspect.getmembers(func))
-        expected = {k: getattr(func, k) for k in dir(func)}
-        self.assertEqual(res, expected)
+        cd = CorrectDir(5)
+        self.assertEqual(inspect.getmembers(cd), [
+            ('attr', 5),
+            ('method', cd.method),
+        ])
+        self.assertEqual(inspect.getmembers(cd, inspect.ismethod), [
+            ('method', cd.method),
+        ])
 
-    def test_getmembers_function_predicate(self):
-        def func(*, a: int = 1): ...
+    def test_getmembers_custom_broken_dir(self):
+        class BrokenDir:
+            existing = 1
+            def method(self):
+                return self.existing + 1
+            def __dir__(self):
+                return ['existing', 'missing', 'method']
 
-        res = dict(
-            inspect.getmembers(
-                func, lambda value: isinstance(value, dict),
-            ),
-        )
-        expected = {
-            k: v
-            for k in dir(func)
-            if isinstance((v := getattr(func, k)), dict)
-        }
-        self.assertEqual(res, expected)
-
-    def test_getmembers_traceback(self):
-        try:
-            raise ValueError(3)
-        except ValueError as ex:
-            trace = ex.__traceback__
-
-        res = dict(inspect.getmembers(trace))
-        expected = {k: getattr(trace, k) for k in dir(trace)}
-        self.assertEqual(res, expected)
-
-    def test_getmembers_frame(self):
-        ns = {}
-        def func(a=1):
-            ns['fr'] = inspect.currentframe()
-        func()
-
-        res = dict(inspect.getmembers(ns['fr']))
-        expected = {k: getattr(ns['fr'], k) for k in dir(ns['fr'])}
-        self.assertEqual(res, expected)
-
-    def test_getmembers_code(self):
-        def func(): ...
-
-        res = dict(inspect.getmembers(func.__code__))
-        expected = {k: getattr(func.__code__, k) for k in dir(func.__code__)}
-        self.assertEqual(res, expected)
-
-    def test_getmembers_coroutine(self):
-        async def func(): ...
-
-        coro = func()
-        self.addCleanup(coro.close)
-
-        res = dict(inspect.getmembers(coro))
-        expected = {k: getattr(coro, k) for k in dir(coro)}
-        self.assertEqual(res, expected)
-
-    def test_getmembers_builtin(self):
-        res = dict(inspect.getmembers(list))
-        expected = {k: getattr(list, k) for k in dir(list)}
-        self.assertEqual(res, expected)
+        bd = BrokenDir()
+        self.assertEqual(inspect.getmembers(bd), [
+            ('existing', 1),
+            ('method', bd.method),
+        ])
+        self.assertEqual(inspect.getmembers(bd, inspect.ismethod), [
+            ('method', bd.method),
+        ])
 
     def test_getmembers_VirtualAttribute(self):
         class M(type):
