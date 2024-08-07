@@ -166,6 +166,13 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
             if local.defined:
                 locals[local.name] = local
         emitter.emit(stack.define_output_arrays(uop.stack.outputs))
+        outputs: list[Local] = []
+        for var in uop.stack.outputs:
+            if var.name in locals:
+                local = locals[var.name]
+            else:
+                local = Local.local(var)
+            outputs.append(local)
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -175,12 +182,11 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
         emitter.emit_tokens(uop, stack, None)
-        for i, var in enumerate(uop.stack.outputs):
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.local(var)
-            emitter.emit(stack.push(local))
+        for output in outputs:
+            if output.name in uop.deferred_refs.values():
+                # We've already spilled this when emitting tokens
+                output.cached = False
+            emitter.emit(stack.push(output))
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
 

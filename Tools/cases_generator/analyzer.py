@@ -157,6 +157,7 @@ class Uop:
     annotations: list[str]
     stack: StackEffect
     caches: list[CacheEntry]
+    deferred_refs: dict[lexer.Token, str | None]
     body: list[lexer.Token]
     properties: Properties
     _size: int = -1
@@ -351,6 +352,47 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
             )
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
+
+def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
+    """Look for PyStackRef_FromPyObjectNew() calls"""
+
+    def find_assignment_target(idx: int) -> list[lexer.Token]:
+        """Find the tokens that make up the left-hand side of an assignment"""
+        offset = 1
+        for tkn in reversed(node.block.tokens[:idx-1]):
+            if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+                return node.block.tokens[idx-offset:idx-1]
+            offset += 1
+        return []
+
+    refs: dict[lexer.Token, str | None] = {}
+    for idx, tkn in enumerate(node.block.tokens):
+        if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
+            continue
+
+        if idx == 0 or node.block.tokens[idx-1].kind != "EQUALS":
+            raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
+
+        lhs = find_assignment_target(idx)
+        if len(lhs) == 0:
+            raise analysis_error("PyStackRef_FromPyObjectNew() must be assigned to an output", tkn)
+
+        if lhs[0].kind == "TIMES" or any(t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]):
+            # Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
+            # Assume that they are visible to the GC.
+            refs[tkn] = None
+            continue
+
+        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+            raise analysis_error("PyStackRef_FromPyObjectNew() must be assigned to an output", tkn)
+
+        name = lhs[0].text
+        if not any(var.name == name for var in node.outputs):
+            raise analysis_error(f"PyStackRef_FromPyObjectNew() must be assigned to an output, not '{name}'", tkn)
+
+        refs[tkn] = name
+
+    return refs
 
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
@@ -632,6 +674,7 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
         annotations=op.annotations,
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
+        deferred_refs=analyze_deferred_refs(op),
         body=op.block.tokens,
         properties=compute_properties(op),
     )
@@ -649,6 +692,7 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
                 annotations=op.annotations,
                 stack=analyze_stack(op, bit),
                 caches=analyze_caches(inputs),
+                deferred_refs=analyze_deferred_refs(op),
                 body=op.block.tokens,
                 properties=properties,
             )
@@ -671,6 +715,7 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
             annotations=op.annotations,
             stack=analyze_stack(op),
             caches=analyze_caches(inputs),
+            deferred_refs=analyze_deferred_refs(op),
             body=op.block.tokens,
             properties=properties,
         )

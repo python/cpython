@@ -1424,7 +1424,7 @@ dummy_func(
                                  "no locals found");
                 ERROR_IF(true, error);
             }
-            locals = PyStackRef_FromPyObjectNew(l);;
+            locals = PyStackRef_FromPyObjectNew(l);
         }
 
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
