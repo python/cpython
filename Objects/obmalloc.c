@@ -1109,7 +1109,10 @@ free_delayed(uintptr_t ptr)
 #ifndef Py_GIL_DISABLED
     free_work_item(ptr);
 #else
-    if (Py_IsFinalizing() || _PyRuntime.stoptheworld.world_stopped) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL ||
+        interp->stoptheworld.world_stopped)
+    {
         // Free immediately during interpreter shutdown or if the world is
         // stopped.
         free_work_item(ptr);
