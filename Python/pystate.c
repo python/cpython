@@ -9,9 +9,9 @@
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
 #include "pycore_frame.h"
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
-#include "pycore_object_stack.h"  // _PyObjectStackChunk_ClearFreeList()
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
@@ -20,6 +20,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
+#include "pycore_typeid.h"        // _PyType_FinalizeIdPool
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -1499,7 +1500,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->previous_executor = NULL;
     tstate->dict_global_version = 0;
 
-    tstate->asyncio_running_loop = NULL;
+    _tstate->asyncio_running_loop = NULL;
 
     tstate->delete_later = NULL;
 
@@ -1584,13 +1585,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
     }
     else {
-#ifdef Py_GIL_DISABLED
-        if (_Py_atomic_load_int(&interp->gc.immortalize) == 0) {
-            // Immortalize objects marked as using deferred reference counting
-            // the first time a non-main thread is created.
-            _PyGC_ImmortalizeDeferredObjects(interp);
-        }
-#endif
     }
 
 #ifdef Py_GIL_DISABLED
@@ -1702,7 +1696,10 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
-    Py_CLEAR(tstate->asyncio_running_loop);
+    Py_CLEAR(tstate->threading_local_key);
+    Py_CLEAR(tstate->threading_local_sentinel);
+
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
@@ -1735,8 +1732,12 @@ PyThreadState_Clear(PyThreadState *tstate)
 
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
+
+    // Merge our thread-local refcounts into the type's own refcount and
+    // free our local refcount array.
+    _PyType_FinalizeThreadLocalRefcounts((_PyThreadStateImpl *)tstate);
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
@@ -1796,6 +1797,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
+    assert(tstate_impl->types.refcounts == NULL);
 #endif
 
     HEAD_UNLOCK(runtime);

@@ -980,6 +980,7 @@ IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
+APP_STORE_COMPLIANCE_PATCH
 INSTALLTARGETS
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
@@ -1075,6 +1076,7 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
+with_app_store_compliance
 with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
@@ -1092,6 +1094,8 @@ enable_optimizations
 with_lto
 enable_bolt
 with_strict_overflow
+enable_safety
+enable_slower_safety
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1824,6 +1828,10 @@ Optional Features:
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
+  --disable-safety        disable usage of the security compiler options with
+                          no performance overhead
+  --enable-slower-safety  enable usage of the security compiler options with
+                          performance overhead
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
                           see Doc/library/sqlite3.rst (default is no)
@@ -1854,6 +1862,10 @@ Optional Packages:
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
                           Mac/README.rst (default is 'Python')
+  --with-app-store-compliance=[PATCH-FILE]
+                          Enable any patches required for compiliance with app
+                          stores. Optional PATCH-FILE specifies the custom
+                          patch to apply.
   --with-emscripten-target=[browser|node]
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
@@ -4427,6 +4439,53 @@ fi
 
 
 printf "%s\n" "#define _PYTHONFRAMEWORK \"${PYTHONFRAMEWORK}\"" >>confdefs.h
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-app-store-compliance" >&5
+printf %s "checking for --with-app-store-compliance... " >&6; }
+
+# Check whether --with-app_store_compliance was given.
+if test ${with_app_store_compliance+y}
+then :
+  withval=$with_app_store_compliance;
+    case "$withval" in
+    yes)
+      case $ac_sys_system in
+        Darwin|iOS)
+          # iOS is able to share the macOS patch
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          ;;
+        *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
+      esac
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
+printf "%s\n" "applying default app store compliance patch" >&6; }
+      ;;
+    *)
+      APP_STORE_COMPLIANCE_PATCH="${withval}"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying custom app store compliance patch" >&5
+printf "%s\n" "applying custom app store compliance patch" >&6; }
+      ;;
+    esac
+
+else $as_nop
+
+    case $ac_sys_system in
+      iOS)
+        # Always apply the compliance patch on iOS; we can use the macOS patch
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
+printf "%s\n" "applying default app store compliance patch" >&6; }
+        ;;
+      *)
+        # No default app compliance patching on any other platform
+        APP_STORE_COMPLIANCE_PATCH=
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not patching for app store compliance" >&5
+printf "%s\n" "not patching for app store compliance" >&6; }
+        ;;
+    esac
+
+fi
+
 
 
 
@@ -9613,7 +9672,28 @@ fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-safety" >&5
+printf %s "checking for --disable-safety... " >&6; }
+# Check whether --enable-safety was given.
+if test ${enable_safety+y}
+then :
+  enableval=$enable_safety; if test "x$enable_safety" = xyes
+then :
+  disable_safety=no
+else $as_nop
+  disable_safety=yes
+fi
+else $as_nop
+  disable_safety=no
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_safety" >&5
+printf "%s\n" "$disable_safety" >&6; }
+
+if test "$disable_safety" = "no"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
 then :
@@ -9646,13 +9726,13 @@ fi
 printf "%s\n" "$ax_cv_check_cflags__Werror__fstack_protector_strong" >&6; }
 if test "x$ax_cv_check_cflags__Werror__fstack_protector_strong" = xyes
 then :
-  BASECFLAGS="$BASECFLAGS -fstack-protector-strong"
+  CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported" >&5
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
 then :
@@ -9685,12 +9765,74 @@ fi
 printf "%s\n" "$ax_cv_check_cflags__Werror__Wtrampolines" >&6; }
 if test "x$ax_cv_check_cflags__Werror__Wtrampolines" = xyes
 then :
-  BASECFLAGS="$BASECFLAGS -Wtrampolines"
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wtrampolines not supported" >&5
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
 fi
 
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-slower-safety" >&5
+printf %s "checking for --enable-slower-safety... " >&6; }
+# Check whether --enable-slower-safety was given.
+if test ${enable_slower_safety+y}
+then :
+  enableval=$enable_slower_safety; if test "x$disable_slower_safety" = xyes
+then :
+  enable_slower_safety=no
+else $as_nop
+  enable_slower_safety=yes
+fi
+else $as_nop
+  enable_slower_safety=no
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_slower_safety" >&5
+printf "%s\n" "$enable_slower_safety" >&6; }
+
+if test "$enable_slower_safety" = "yes"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -D_FORTIFY_SOURCE=3" >&5
+printf %s "checking whether C compiler accepts -D_FORTIFY_SOURCE=3... " >&6; }
+if test ${ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -D_FORTIFY_SOURCE=3"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" >&6; }
+if test "x$ax_cv_check_cflags__Werror__D_FORTIFY_SOURCE_3" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&5
+printf "%s\n" "$as_me: WARNING: -D_FORTIFY_SOURCE=3 not supported" >&2;}
+fi
+
+fi
 
 case $GCC in
 yes)
@@ -28555,9 +28697,6 @@ fi
 
 # builtin hash modules
 default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
-
-printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hashes" >&5
 printf %s "checking for --with-builtin-hashlib-hashes... " >&6; }
 
@@ -28582,6 +28721,7 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_builtin_hashlib_hashes" >&5
 printf "%s\n" "$with_builtin_hashlib_hashes" >&6; }
+
 printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES \"$with_builtin_hashlib_hashes\"" >>confdefs.h
 
 

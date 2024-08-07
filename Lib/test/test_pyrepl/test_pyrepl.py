@@ -963,8 +963,8 @@ class TestMain(TestCase):
             mod = blue / "calx.py"
             mod.write_text("FOO = 42", encoding="utf-8")
             commands = [
-                "print(f'{" + var + "=}')" for var in expectations
-            ] + ["exit"]
+                "print(f'^{" + var + "=}')" for var in expectations
+            ] + ["exit()"]
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
             elif as_file:
@@ -989,10 +989,10 @@ class TestMain(TestCase):
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
             with self.subTest(var=var, expected=expected):
-                if m := re.search(rf"[\r\n]{var}=(.+?)[\r\n]", output):
+                if m := re.search(rf"\^{var}=(.+?)[\r\n]", output):
                     self._assertMatchOK(var, expected, actual=m.group(1))
                 else:
-                    self.fail(f"{var}= not found in output")
+                    self.fail(f"{var}= not found in output: {output!r}\n\n{output}")
 
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
@@ -1048,6 +1048,30 @@ class TestMain(TestCase):
         self.assertNotIn("True", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
+
+    @force_not_colorized
+    def test_bad_sys_excepthook_doesnt_crash_pyrepl(self):
+        env = os.environ.copy()
+        commands = ("import sys\n"
+                    "sys.excepthook = 1\n"
+                    "1/0\n"
+                    "exit()\n")
+
+        def check(output, exitcode):
+            self.assertIn("Error in sys.excepthook:", output)
+            self.assertEqual(output.count("'int' object is not callable"), 1)
+            self.assertIn("Original exception was:", output)
+            self.assertIn("division by zero", output)
+            self.assertEqual(exitcode, 0)
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        check(output, exit_code)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        check(output, exit_code)
 
     def test_not_wiping_history_file(self):
         # skip, if readline module is not available
@@ -1115,6 +1139,10 @@ class TestMain(TestCase):
             except OSError:
                 break
             output.append(data)
+        else:
+            os.close(master_fd)
+            process.kill()
+            self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
 
         os.close(master_fd)
         try:
@@ -1122,4 +1150,4 @@ class TestMain(TestCase):
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "\n".join(output), exit_code
+        return "".join(output), exit_code

@@ -16,8 +16,8 @@ Features and minimum versions required to build CPython:
 
 * On Windows, Microsoft Visual Studio 2017 or later is required.
 
-* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
-  point numbers and `floating point Not-a-Number (NaN)
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
+  floating-point numbers and `floating-point Not-a-Number (NaN)
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
 * Support for threads.
@@ -907,6 +907,25 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
+.. option:: --disable-safety
+
+   Disable compiler options that are recommended by `OpenSSF`_ for security reasons with no performance overhead.
+   If this option is not enabled, CPython will be built based on safety compiler options with no slow down.
+
+   .. _OpenSSF: https://openssf.org/
+
+   .. versionadded:: 3.14
+
+.. option:: --enable-slower-safety
+
+   Enable compiler options that are recommended by `OpenSSF`_ for security reasons which require overhead.
+   If this option is not enabled, CPython will not be built based on safety compiler options which performance impact.
+
+   .. _OpenSSF: https://openssf.org/
+
+   .. versionadded:: 3.14
+
+
 macOS Options
 -------------
 
@@ -944,6 +963,17 @@ See :source:`Mac/README.rst`.
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+.. option:: --with-app-store-compliance
+.. option:: --with-app-store-compliance=PATCH-FILE
+
+   The Python standard library contains strings that are known to trigger
+   automated inspection tool errors when submitted for distribution by
+   the macOS and iOS App Stores. If enabled, this option will apply the list of
+   patches that are known to correct app store compliance. A custom patch
+   file can also be specified. This option is disabled by default.
+
+   .. versionadded:: 3.13
 
 iOS Options
 -----------
@@ -1090,7 +1120,7 @@ Remove built files.
 make distclean
 ^^^^^^^^^^^^^^
 
-In addition to the the work done by ``make clean``, remove files
+In addition to the work done by ``make clean``, remove files
 created by the configure script.  ``configure`` will have to be run
 before building again. [#]_
 

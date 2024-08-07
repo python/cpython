@@ -68,8 +68,6 @@ struct _ts {
        pycore_ceval.h. */
     uintptr_t eval_breaker;
 
-    PyObject *asyncio_running_loop; // Strong reference
-
     struct {
         /* Has been initialized to a safe state.
 
@@ -194,6 +192,14 @@ struct _ts {
     PyObject *previous_executor;
 
     uint64_t dict_global_version;
+
+    /* Used to store/retrieve `threading.local` keys/values for this thread */
+    PyObject *threading_local_key;
+
+    /* Used by `threading.local`s to be remove keys/values for dying threads.
+       The PyThreadObject must hold the only reference to this value.
+    */
+    PyObject *threading_local_sentinel;
 };
 
 #ifdef Py_DEBUG

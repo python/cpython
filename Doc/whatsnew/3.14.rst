@@ -75,6 +75,16 @@ New Features
 Other Language Changes
 ======================
 
+* Incorrect usage of :keyword:`await` and asynchronous comprehensions
+  is now detected even if the code is optimized away by the :option:`-O`
+  command line option. For example, ``python -O -c 'assert await 1'``
+  now produces a :exc:`SyntaxError`. (Contributed by Jelle Zijlstra in :gh:`121637`.)
+
+* Writes to ``__debug__`` are now detected even if the code is optimized
+  away by the :option:`-O` command line option. For example,
+  ``python -O -c 'assert (__debug__ := 1)'`` now produces a
+  :exc:`SyntaxError`. (Contributed by Irit Katriel in :gh:`122245`.)
+
 * Added class methods :meth:`float.from_number` and :meth:`complex.from_number`
   to convert a number to :class:`float` or :class:`complex` type correspondingly.
   They raise an error if the argument is a string.
@@ -100,6 +110,20 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+fractions
+---------
+
+Added support for converting any objects that have the
+:meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
+(Contributed by Serhiy Storchaka in :gh:`82017`.)
+
+json
+----
+
+Add notes for JSON serialization errors that allow to identify the source
+of the error.
+(Contributed by Serhiy Storchaka in :gh:`122163`.)
+
 os
 --
 
@@ -111,11 +135,14 @@ os
 pathlib
 -------
 
-* Add :meth:`pathlib.Path.copy`, which copies the content of one file to
-  another, like :func:`shutil.copyfile`.
-  (Contributed by Barney Gale in :gh:`73991`.)
-* Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
-  another.
+* Add methods to :class:`pathlib.Path` to recursively copy or remove files:
+
+  * :meth:`~pathlib.Path.copy` copies the content of one file to another, like
+    :func:`shutil.copyfile`.
+  * :meth:`~pathlib.Path.copytree` copies one directory tree to another, like
+    :func:`shutil.copytree`.
+  * :meth:`~pathlib.Path.delete` removes a file or directory tree.
+
   (Contributed by Barney Gale in :gh:`73991`.)
 
 pdb
@@ -128,6 +155,12 @@ pdb
   :pdbcmd:`commands` are preserved across hard-coded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
+pickle
+------
+
+* Set the default protocol version on the :mod:`pickle` module to 5.
+  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
+
 symtable
 --------
 
@@ -139,6 +172,7 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+.. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
 =============
@@ -151,22 +185,32 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
-
-
-
 Deprecated
 ==========
 
-* Passing a complex number as the *real* or *imag* argument in the
+* :mod:`builtins`:
+  Passing a complex number as the *real* or *imag* argument in the
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
-* :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
+* :mod:`os`:
+  :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
+* :mod:`symtable`:
+  Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
+  (Contributed by Bénédikt Tran in :gh:`119698`.)
+
+.. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
 =======
@@ -226,7 +270,6 @@ asyncio
 
   (Contributed by Kumar Aditya in :gh:`120804`.)
 
-
 collections.abc
 ---------------
 
@@ -273,7 +316,7 @@ pathlib
   arguments are joined onto *other*.
 
 pty
-___
+---
 
 * Remove deprecated :func:`!pty.master_open` and :func:`!pty.slave_open`.
   They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
@@ -377,6 +420,12 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+.. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 Removed
 -------
