@@ -67,6 +67,7 @@ class BaseRotatingHandler(logging.FileHandler):
         self.mode = mode
         self.encoding = encoding
         self.errors = errors
+        self._msg = None  # cache to avoid reformatting - see gh-116267
 
     def emit(self, record):
         """
@@ -78,7 +79,15 @@ class BaseRotatingHandler(logging.FileHandler):
         try:
             if self.shouldRollover(record):
                 self.doRollover()
-            logging.FileHandler.emit(self, record)
+            if self._msg:
+                msg = self._msg
+                self._msg = None
+            else:
+                msg = self.format(record)
+            self.stream.write(msg + self.terminator)
+            self.flush()
+        except RecursionError:  # See issue bpo-36272
+            raise
         except Exception:
             self.handleError(record)
 
@@ -196,9 +205,9 @@ class RotatingFileHandler(BaseRotatingHandler):
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
-            msg = "%s\n" % self.format(record)
+            self._msg = msg = self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
-            if self.stream.tell() + len(msg) >= self.maxBytes:
+            if self.stream.tell() + len(msg) + len(self.terminator) >= self.maxBytes:
                 # See bpo-45401: Never rollover anything other than regular files
                 if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
                     return False
@@ -687,6 +696,8 @@ class SocketHandler(logging.Handler):
         try:
             s = self.makePickle(record)
             self.send(s)
+        except RecursionError:  # See issue bpo-36272
+            raise
         except Exception:
             self.handleError(record)
 
@@ -1016,6 +1027,8 @@ class SysLogHandler(logging.Handler):
                 self.socket.sendto(msg, self.address)
             else:
                 self.socket.sendall(msg)
+        except RecursionError:  # See issue bpo-36272
+            raise
         except Exception:
             self.handleError(record)
 
@@ -1096,6 +1109,8 @@ class SMTPHandler(logging.Handler):
                 smtp.login(self.username, self.password)
             smtp.send_message(msg)
             smtp.quit()
+        except RecursionError:  # See issue bpo-36272
+            raise
         except Exception:
             self.handleError(record)
 
@@ -1190,6 +1205,8 @@ class NTEventLogHandler(logging.Handler):
                 type = self.getEventType(record)
                 msg = self.format(record)
                 self._welu.ReportEvent(self.appname, id, cat, type, [msg])
+            except RecursionError:  # See issue bpo-36272
+                raise
             except Exception:
                 self.handleError(record)
 
@@ -1293,6 +1310,8 @@ class HTTPHandler(logging.Handler):
             if self.method == "POST":
                 h.send(data.encode('utf-8'))
             h.getresponse()    #can't do anything with the result
+        except RecursionError:  # See issue bpo-36272
+            raise
         except Exception:
             self.handleError(record)
 
@@ -1488,6 +1507,8 @@ class QueueHandler(logging.Handler):
         """
         try:
             self.enqueue(self.prepare(record))
+        except RecursionError:  # See issue bpo-36272
+            raise
         except Exception:
             self.handleError(record)
 
