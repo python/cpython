@@ -895,6 +895,8 @@ class TestReducePy(TestReduce, unittest.TestCase):
     def test_reduce_with_kwargs(self):
         with self.assertWarns(DeprecationWarning):
             self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+        with self.assertWarns(DeprecationWarning):
+            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
 
 
 class TestCmpToKey:
