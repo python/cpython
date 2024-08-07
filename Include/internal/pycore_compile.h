@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_symtable.h"  // _Py_SourceLocation
+#include "pycore_instruction_sequence.h"
+
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
 
@@ -27,7 +30,7 @@ extern int _PyCompile_AstOptimize(
     int optimize,
     struct _arena *arena);
 
-static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
+struct _Py_SourceLocation;
 
 extern int _PyAST_Optimize(
     struct _mod *,
@@ -35,37 +38,6 @@ extern int _PyAST_Optimize(
     int optimize,
     int ff_features);
 
-typedef struct {
-    int h_label;
-    int h_startdepth;
-    int h_preserve_lasti;
-} _PyCompile_ExceptHandlerInfo;
-
-typedef struct {
-    int i_opcode;
-    int i_oparg;
-    _PyCompilerSrcLocation i_loc;
-    _PyCompile_ExceptHandlerInfo i_except_handler_info;
-
-    /* Used by the assembler */
-    int i_target;
-    int i_offset;
-} _PyCompile_Instruction;
-
-typedef struct {
-    _PyCompile_Instruction *s_instrs;
-    int s_allocated;
-    int s_used;
-
-    int *s_labelmap;       /* label id --> instr offset */
-    int s_labelmap_size;
-    int s_next_free_label; /* next free label id */
-} _PyCompile_InstructionSequence;
-
-int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq, int lbl);
-int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
-                                         int opcode, int oparg,
-                                         _PyCompilerSrcLocation loc);
 
 typedef struct {
     PyObject *u_name;
@@ -104,15 +76,6 @@ int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 
 // Export for '_opcode' extension module
-PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasName(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasJump(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasFree(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasLocal(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasExc(int opcode);
-
 PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
 PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
 
@@ -128,12 +91,6 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyCompilerFlags *flags,
         int optimize,
         int compile_mode);
-
-// Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
-        PyObject *instructions,
-        PyObject *consts,
-        int nlocals);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyCodeObject*)

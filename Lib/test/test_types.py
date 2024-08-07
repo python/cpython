@@ -1,8 +1,12 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
+from test.support import (
+    run_with_locale, is_apple_mobile, cpython_only, no_rerun,
+    iter_builtin_types, iter_slot_wrappers,
+    MISSING_C_DOCSTRINGS,
+)
 import collections.abc
-from collections import namedtuple
+from collections import namedtuple, UserDict
 import copy
 import _datetime
 import gc
@@ -10,6 +14,7 @@ import inspect
 import pickle
 import locale
 import sys
+import textwrap
 import types
 import unittest.mock
 import weakref
@@ -1755,21 +1760,50 @@ class ClassCreationTests(unittest.TestCase):
 class SimpleNamespaceTests(unittest.TestCase):
 
     def test_constructor(self):
-        ns1 = types.SimpleNamespace()
-        ns2 = types.SimpleNamespace(x=1, y=2)
-        ns3 = types.SimpleNamespace(**dict(x=1, y=2))
+        def check(ns, expected):
+            self.assertEqual(len(ns.__dict__), len(expected))
+            self.assertEqual(vars(ns), expected)
+            # check order
+            self.assertEqual(list(vars(ns).items()), list(expected.items()))
+            for name in expected:
+                self.assertEqual(getattr(ns, name), expected[name])
+
+        check(types.SimpleNamespace(), {})
+        check(types.SimpleNamespace(x=1, y=2), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace(**dict(x=1, y=2)), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}, x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]], x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace(UserDict({'x': 1, 'y': 2}), x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]]), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([], x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace({}, x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace([]), {})
+        check(types.SimpleNamespace({}), {})
 
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(1, 2, 3)
+            types.SimpleNamespace([], [])  # too many positional arguments
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(**{1: 2})
-
-        self.assertEqual(len(ns1.__dict__), 0)
-        self.assertEqual(vars(ns1), {})
-        self.assertEqual(len(ns2.__dict__), 2)
-        self.assertEqual(vars(ns2), {'y': 2, 'x': 1})
-        self.assertEqual(len(ns3.__dict__), 2)
-        self.assertEqual(vars(ns3), {'y': 2, 'x': 1})
+            types.SimpleNamespace(1)  # not a mapping or iterable
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([1])  # non-iterable
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x']])  # not a pair
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x', 'y', 'z']])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(**{1: 2})  # non-string key
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace({1: 2})
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[1, 2]])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(UserDict({1: 2}))
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[[], 2]])  # non-hashable key
 
     def test_unbound(self):
         ns1 = vars(types.SimpleNamespace())
@@ -2314,6 +2348,83 @@ class FunctionTests(unittest.TestCase):
             types.FunctionType(
                 ex.__code__, {}, "func", None, None, 3,
             )
+
+
+class SubinterpreterTests(unittest.TestCase):
+
+    NUMERIC_METHODS = {
+        '__abs__',
+        '__add__',
+        '__bool__',
+        '__divmod__',
+        '__float__',
+        '__floordiv__',
+        '__index__',
+        '__int__',
+        '__lshift__',
+        '__mod__',
+        '__mul__',
+        '__neg__',
+        '__pos__',
+        '__pow__',
+        '__radd__',
+        '__rdivmod__',
+        '__rfloordiv__',
+        '__rlshift__',
+        '__rmod__',
+        '__rmul__',
+        '__rpow__',
+        '__rrshift__',
+        '__rshift__',
+        '__rsub__',
+        '__rtruediv__',
+        '__sub__',
+        '__truediv__',
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        global interpreters
+        try:
+            from test.support import interpreters
+        except ModuleNotFoundError:
+            raise unittest.SkipTest('subinterpreters required')
+        import test.support.interpreters.channels
+
+    @cpython_only
+    @no_rerun('channels (and queues) might have a refleak; see gh-122199')
+    def test_static_types_inherited_slots(self):
+        rch, sch = interpreters.channels.create()
+
+        slots = []
+        script = ''
+        for cls in iter_builtin_types():
+            for slot, own in iter_slot_wrappers(cls):
+                if cls is bool and slot in self.NUMERIC_METHODS:
+                    continue
+                slots.append((cls, slot, own))
+                script += textwrap.dedent(f"""
+                    text = repr({cls.__name__}.{slot})
+                    sch.send_nowait(({cls.__name__!r}, {slot!r}, text))
+                    """)
+
+        exec(script)
+        all_expected = []
+        for cls, slot, _ in slots:
+            result = rch.recv()
+            assert result == (cls.__name__, slot, result[-1]), (cls, slot, result)
+            all_expected.append(result)
+
+        interp = interpreters.create()
+        interp.exec('from test.support import interpreters')
+        interp.prepare_main(sch=sch)
+        interp.exec(script)
+
+        for i, (cls, slot, _) in enumerate(slots):
+            with self.subTest(cls=cls, slot=slot):
+                expected = all_expected[i]
+                result = rch.recv()
+                self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':

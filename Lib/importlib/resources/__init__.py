@@ -7,6 +7,16 @@ from ._common import (
     Anchor,
 )
 
+from ._functional import (
+    contents,
+    is_resource,
+    open_binary,
+    open_text,
+    path,
+    read_binary,
+    read_text,
+)
+
 from .abc import ResourceReader
 
 
@@ -16,4 +26,11 @@ __all__ = [
     'ResourceReader',
     'as_file',
     'files',
+    'contents',
+    'is_resource',
+    'open_binary',
+    'open_text',
+    'path',
+    'read_binary',
+    'read_text',
 ]

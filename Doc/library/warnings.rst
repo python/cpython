@@ -1,5 +1,5 @@
-:mod:`warnings` --- Warning control
-===================================
+:mod:`!warnings` --- Warning control
+====================================
 
 .. module:: warnings
    :synopsis: Issue warning messages and control their disposition.
@@ -144,6 +144,8 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   | ``"ignore"``  | never print matching warnings                |
   +---------------+----------------------------------------------+
   | ``"always"``  | always print matching warnings               |
+  +---------------+----------------------------------------------+
+  | ``"all"``     | alias to "always"                            |
   +---------------+----------------------------------------------+
   | ``"module"``  | print the first occurrence of matching       |
   |               | warnings for each module where the warning   |

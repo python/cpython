@@ -103,7 +103,9 @@ parse_qs_test_cases = [
 
 class UrlParseTestCase(unittest.TestCase):
 
-    def checkRoundtrips(self, url, parsed, split):
+    def checkRoundtrips(self, url, parsed, split, url2=None):
+        if url2 is None:
+            url2 = url
         result = urllib.parse.urlparse(url)
         self.assertSequenceEqual(result, parsed)
         t = (result.scheme, result.netloc, result.path,
@@ -111,7 +113,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertSequenceEqual(t, parsed)
         # put it back together and it should be the same
         result2 = urllib.parse.urlunparse(result)
-        self.assertSequenceEqual(result2, url)
+        self.assertSequenceEqual(result2, url2)
         self.assertSequenceEqual(result2, result.geturl())
 
         # the result of geturl() is a fixpoint; we can always parse it
@@ -137,7 +139,7 @@ class UrlParseTestCase(unittest.TestCase):
              result.query, result.fragment)
         self.assertSequenceEqual(t, split)
         result2 = urllib.parse.urlunsplit(result)
-        self.assertSequenceEqual(result2, url)
+        self.assertSequenceEqual(result2, url2)
         self.assertSequenceEqual(result2, result.geturl())
 
         # check the fixpoint property of re-parsing the result of geturl()
@@ -175,9 +177,45 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_roundtrips(self):
         str_cases = [
+            ('path/to/file',
+             ('', '', 'path/to/file', '', '', ''),
+             ('', '', 'path/to/file', '', '')),
+            ('/path/to/file',
+             ('', '', '/path/to/file', '', '', ''),
+             ('', '', '/path/to/file', '', '')),
+            ('//path/to/file',
+             ('', 'path', '/to/file', '', '', ''),
+             ('', 'path', '/to/file', '', '')),
+            ('////path/to/file',
+             ('', '', '//path/to/file', '', '', ''),
+             ('', '', '//path/to/file', '', '')),
+            ('/////path/to/file',
+             ('', '', '///path/to/file', '', '', ''),
+             ('', '', '///path/to/file', '', '')),
+            ('scheme:path/to/file',
+             ('scheme', '', 'path/to/file', '', '', ''),
+             ('scheme', '', 'path/to/file', '', '')),
+            ('scheme:/path/to/file',
+             ('scheme', '', '/path/to/file', '', '', ''),
+             ('scheme', '', '/path/to/file', '', '')),
+            ('scheme://path/to/file',
+             ('scheme', 'path', '/to/file', '', '', ''),
+             ('scheme', 'path', '/to/file', '', '')),
+            ('scheme:////path/to/file',
+             ('scheme', '', '//path/to/file', '', '', ''),
+             ('scheme', '', '//path/to/file', '', '')),
+            ('scheme://///path/to/file',
+             ('scheme', '', '///path/to/file', '', '', ''),
+             ('scheme', '', '///path/to/file', '', '')),
             ('file:///tmp/junk.txt',
              ('file', '', '/tmp/junk.txt', '', '', ''),
              ('file', '', '/tmp/junk.txt', '', '')),
+            ('file:////tmp/junk.txt',
+             ('file', '', '//tmp/junk.txt', '', '', ''),
+             ('file', '', '//tmp/junk.txt', '', '')),
+            ('file://///tmp/junk.txt',
+             ('file', '', '///tmp/junk.txt', '', '', ''),
+             ('file', '', '///tmp/junk.txt', '', '')),
             ('imap://mail.python.org/mbox1',
              ('imap', 'mail.python.org', '/mbox1', '', '', ''),
              ('imap', 'mail.python.org', '/mbox1', '', '')),
@@ -204,14 +242,57 @@ class UrlParseTestCase(unittest.TestCase):
               'action=download-manifest&url=https://example.com/app', ''),
              ('itms-services', '', '',
               'action=download-manifest&url=https://example.com/app', '')),
+            ('+scheme:path/to/file',
+             ('', '', '+scheme:path/to/file', '', '', ''),
+             ('', '', '+scheme:path/to/file', '', '')),
+            ('sch_me:path/to/file',
+             ('', '', 'sch_me:path/to/file', '', '', ''),
+             ('', '', 'sch_me:path/to/file', '', '')),
             ]
         def _encode(t):
             return (t[0].encode('ascii'),
                     tuple(x.encode('ascii') for x in t[1]),
                     tuple(x.encode('ascii') for x in t[2]))
         bytes_cases = [_encode(x) for x in str_cases]
+        str_cases += [
+            ('schème:path/to/file',
+             ('', '', 'schème:path/to/file', '', '', ''),
+             ('', '', 'schème:path/to/file', '', '')),
+            ]
         for url, parsed, split in str_cases + bytes_cases:
             self.checkRoundtrips(url, parsed, split)
+
+    def test_roundtrips_normalization(self):
+        str_cases = [
+            ('///path/to/file',
+             '/path/to/file',
+             ('', '', '/path/to/file', '', '', ''),
+             ('', '', '/path/to/file', '', '')),
+            ('scheme:///path/to/file',
+             'scheme:/path/to/file',
+             ('scheme', '', '/path/to/file', '', '', ''),
+             ('scheme', '', '/path/to/file', '', '')),
+            ('file:/tmp/junk.txt',
+             'file:///tmp/junk.txt',
+             ('file', '', '/tmp/junk.txt', '', '', ''),
+             ('file', '', '/tmp/junk.txt', '', '')),
+            ('http:/tmp/junk.txt',
+             'http:///tmp/junk.txt',
+             ('http', '', '/tmp/junk.txt', '', '', ''),
+             ('http', '', '/tmp/junk.txt', '', '')),
+            ('https:/tmp/junk.txt',
+             'https:///tmp/junk.txt',
+             ('https', '', '/tmp/junk.txt', '', '', ''),
+             ('https', '', '/tmp/junk.txt', '', '')),
+        ]
+        def _encode(t):
+            return (t[0].encode('ascii'),
+                    t[1].encode('ascii'),
+                    tuple(x.encode('ascii') for x in t[2]),
+                    tuple(x.encode('ascii') for x in t[3]))
+        bytes_cases = [_encode(x) for x in str_cases]
+        for url, url2, parsed, split in str_cases + bytes_cases:
+            self.checkRoundtrips(url, parsed, split, url2)
 
     def test_http_roundtrips(self):
         # urllib.parse.urlsplit treats 'http:' as an optimized special case,
@@ -1072,6 +1153,30 @@ class UrlParseTestCase(unittest.TestCase):
                 result_bytes = urllib.parse.parse_qsl(orig, separator=b';')
                 self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
 
+    def test_parse_qsl_bytes(self):
+        self.assertEqual(urllib.parse.parse_qsl(b'a=b'), [(b'a', b'b')])
+        self.assertEqual(urllib.parse.parse_qsl(bytearray(b'a=b')), [(b'a', b'b')])
+        self.assertEqual(urllib.parse.parse_qsl(memoryview(b'a=b')), [(b'a', b'b')])
+
+    def test_parse_qsl_false_value(self):
+        kwargs = dict(keep_blank_values=True, strict_parsing=True)
+        for x in '', b'', None, 0, 0.0, [], {}, memoryview(b''):
+            self.assertEqual(urllib.parse.parse_qsl(x, **kwargs), [])
+            self.assertRaises(ValueError, urllib.parse.parse_qsl, x, separator=1)
+
+    def test_parse_qsl_errors(self):
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, list(b'a=b'))
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, iter(b'a=b'))
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, 1)
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, object())
+
+        for separator in '', b'', None, 0, 1, 0.0, 1.5:
+            with self.assertRaises(ValueError):
+                urllib.parse.parse_qsl('a=b', separator=separator)
+        with self.assertRaises(UnicodeEncodeError):
+            urllib.parse.parse_qsl(b'a=b', separator='\xa6')
+        with self.assertRaises(UnicodeDecodeError):
+            urllib.parse.parse_qsl('a=b', separator=b'\xa6')
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
@@ -1402,13 +1507,6 @@ class Utility_Tests(unittest.TestCase):
 
 
 class DeprecationTest(unittest.TestCase):
-
-    def test_Quoter_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            old_class = urllib.parse.Quoter
-            self.assertIs(old_class, urllib.parse._Quoter)
-        self.assertIn('Quoter will be removed', str(cm.warning))
-
     def test_splittype_deprecation(self):
         with self.assertWarns(DeprecationWarning) as cm:
             urllib.parse.splittype('')

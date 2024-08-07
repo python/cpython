@@ -2,7 +2,7 @@
 /* set object implementation
 
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
-   Derived from Lib/sets.py and Objects/dictobject.c.
+   Derived from Objects/dictobject.c.
 
    The basic lookup function used by all operations.
    This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
@@ -184,14 +184,14 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
   found_unused_or_dummy:
     if (freeslot == NULL)
         goto found_unused;
-    so->used++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
     freeslot->key = key;
     freeslot->hash = hash;
     return 0;
 
   found_unused:
     so->fill++;
-    so->used++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
     entry->key = key;
     entry->hash = hash;
     if ((size_t)so->fill*5 < mask*3)
@@ -357,7 +357,7 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     old_key = entry->key;
     entry->key = dummy;
     entry->hash = -1;
-    so->used--;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
     Py_DECREF(old_key);
     return DISCARD_FOUND;
 }
@@ -365,13 +365,9 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 static int
 set_add_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash;
-
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = _PyASCIIObject_CAST(key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return -1;
     }
     return set_add_entry(so, key, hash);
 }
@@ -379,13 +375,9 @@ set_add_key(PySetObject *so, PyObject *key)
 static int
 set_contains_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash;
-
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = _PyASCIIObject_CAST(key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return -1;
     }
     return set_contains_entry(so, key, hash);
 }
@@ -393,13 +385,9 @@ set_contains_key(PySetObject *so, PyObject *key)
 static int
 set_discard_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash;
-
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = _PyASCIIObject_CAST(key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return -1;
     }
     return set_discard_entry(so, key, hash);
 }
@@ -409,7 +397,7 @@ set_empty_to_minsize(PySetObject *so)
 {
     memset(so->smalltable, 0, sizeof(so->smalltable));
     so->fill = 0;
-    so->used = 0;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, 0);
     so->mask = PySet_MINSIZE - 1;
     so->table = so->smalltable;
     so->hash = -1;
@@ -627,7 +615,7 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
             }
         }
         so->fill = other->fill;
-        so->used = other->used;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, other->used);
         return 0;
     }
 
@@ -636,7 +624,7 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
         setentry *newtable = so->table;
         size_t newmask = (size_t)so->mask;
         so->fill = other->used;
-        so->used = other->used;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, other->used);
         for (i = other->mask + 1; i > 0 ; i--, other_entry++) {
             key = other_entry->key;
             if (key != NULL && key != dummy) {
@@ -690,7 +678,7 @@ set_pop_impl(PySetObject *so)
     key = entry->key;
     entry->key = dummy;
     entry->hash = -1;
-    so->used--;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
     so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
@@ -721,17 +709,19 @@ _shuffle_bits(Py_uhash_t h)
    large primes with "interesting bit patterns" and that passed tests
    for good collision statistics on a variety of problematic datasets
    including powersets and graph structures (such as David Eppstein's
-   graph recipes in Lib/test/test_set.py) */
+   graph recipes in Lib/test/test_set.py).
+
+   This hash algorithm can be used on either a frozenset or a set.
+   When it is used on a set, it computes the hash value of the equivalent
+   frozenset without creating a new frozenset object. */
 
 static Py_hash_t
-frozenset_hash(PyObject *self)
+frozenset_hash_impl(PyObject *self)
 {
+    assert(PyAnySet_Check(self));
     PySetObject *so = (PySetObject *)self;
     Py_uhash_t hash = 0;
     setentry *entry;
-
-    if (so->hash != -1)
-        return so->hash;
 
     /* Xor-in shuffled bits from every entry's hash field because xor is
        commutative and a frozenset hash should be independent of order.
@@ -765,6 +755,20 @@ frozenset_hash(PyObject *self)
     if (hash == (Py_uhash_t)-1)
         hash = 590923713UL;
 
+    return (Py_hash_t)hash;
+}
+
+static Py_hash_t
+frozenset_hash(PyObject *self)
+{
+    PySetObject *so = (PySetObject *)self;
+    Py_uhash_t hash;
+
+    if (so->hash != -1) {
+        return so->hash;
+    }
+
+    hash = frozenset_hash_impl(self);
     so->hash = hash;
     return hash;
 }
@@ -834,7 +838,7 @@ static PyMethodDef setiter_methods[] = {
 
 static PyObject *setiter_iternext(setiterobject *si)
 {
-    PyObject *key;
+    PyObject *key = NULL;
     Py_ssize_t i, mask;
     setentry *entry;
     PySetObject *so = si->si_set;
@@ -843,30 +847,35 @@ static PyObject *setiter_iternext(setiterobject *si)
         return NULL;
     assert (PyAnySet_Check(so));
 
-    if (si->si_used != so->used) {
+    Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE(so->used);
+    Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE(si->si_used);
+    if (si_used != so_used) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Set changed size during iteration");
         si->si_used = -1; /* Make this state sticky */
         return NULL;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(so);
     i = si->si_pos;
     assert(i>=0);
     entry = so->table;
     mask = so->mask;
-    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy))
+    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
         i++;
+    }
+    if (i <= mask) {
+        key = Py_NewRef(entry[i].key);
+    }
+    Py_END_CRITICAL_SECTION();
     si->si_pos = i+1;
-    if (i > mask)
-        goto fail;
+    if (key == NULL) {
+        si->si_set = NULL;
+        Py_DECREF(so);
+        return NULL;
+    }
     si->len--;
-    key = entry[i].key;
-    return Py_NewRef(key);
-
-fail:
-    si->si_set = NULL;
-    Py_DECREF(so);
-    return NULL;
+    return key;
 }
 
 PyTypeObject PySetIter_Type = {
@@ -1180,7 +1189,9 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     Py_hash_t h;
 
     t = a->fill;     a->fill   = b->fill;        b->fill  = t;
-    t = a->used;     a->used   = b->used;        b->used  = t;
+    t = a->used;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(a->used, b->used);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(b->used, t);
     t = a->mask;     a->mask   = b->mask;        b->mask  = t;
 
     u = a->table;
@@ -2075,7 +2086,6 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
     Py_RETURN_TRUE;
 }
 
-// TODO: Make thread-safe in free-threaded builds
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
 {
@@ -2143,7 +2153,6 @@ set_add_impl(PySetObject *so, PyObject *key)
 static int
 set_contains_lock_held(PySetObject *so, PyObject *key)
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_contains_key(so, key);
@@ -2151,11 +2160,11 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return -1;
-        rv = set_contains_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_contains_entry(so, key, hash);
     }
     return rv;
 }
@@ -2209,7 +2218,6 @@ static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=0b9134a2a2200363 input=893e1cb1df98227a]*/
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2217,11 +2225,11 @@ set_remove_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
@@ -2250,7 +2258,6 @@ static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=eec3b687bf32759e input=861cb7fb69b4def0]*/
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2258,11 +2265,11 @@ set_discard_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
@@ -2329,6 +2336,13 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
 
+    if (Py_REFCNT(self) == 1 && self->fill == 0) {
+        self->hash = -1;
+        if (iterable == NULL) {
+            return 0;
+        }
+        return set_update_local(self, iterable);
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     if (self->fill)
         set_clear_internal(self);
@@ -2610,6 +2624,12 @@ PySet_Clear(PyObject *set)
     return 0;
 }
 
+void
+_PySet_ClearInternal(PySetObject *so)
+{
+    (void)set_clear_internal(so);
+}
+
 int
 PySet_Contains(PyObject *anyset, PyObject *key)
 {
@@ -2656,7 +2676,6 @@ PySet_Add(PyObject *anyset, PyObject *key)
     return rv;
 }
 
-// TODO: Make thread-safe in free-threaded builds
 int
 _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
 {
@@ -2669,6 +2688,23 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash
     if (set_next((PySetObject *)set, pos, &entry) == 0)
         return 0;
     *key = entry->key;
+    *hash = entry->hash;
+    return 1;
+}
+
+int
+_PySet_NextEntryRef(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
+{
+    setentry *entry;
+
+    if (!PyAnySet_Check(set)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(set);
+    if (set_next((PySetObject *)set, pos, &entry) == 0)
+        return 0;
+    *key = Py_NewRef(entry->key);
     *hash = entry->hash;
     return 1;
 }

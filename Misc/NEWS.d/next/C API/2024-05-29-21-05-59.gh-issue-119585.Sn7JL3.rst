@@ -1,0 +1,5 @@
+Fix crash when a thread state that was created by :c:func:`PyGILState_Ensure`
+calls a destructor that during :c:func:`PyThreadState_Clear` that
+calls back into :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
+This might occur when in the free-threaded build or when using thread-local
+variables whose destructors call :c:func:`PyGILState_Ensure`.

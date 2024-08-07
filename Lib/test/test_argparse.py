@@ -765,49 +765,6 @@ class TestBooleanOptionalAction(ParserTestCase):
 
         self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
 
-    def test_deprecated_init_kw(self):
-        # See gh-92248
-        parser = argparse.ArgumentParser()
-
-        with self.assertWarns(DeprecationWarning):
-            parser.add_argument(
-                '-a',
-                action=argparse.BooleanOptionalAction,
-                type=None,
-            )
-        with self.assertWarns(DeprecationWarning):
-            parser.add_argument(
-                '-b',
-                action=argparse.BooleanOptionalAction,
-                type=bool,
-            )
-
-        with self.assertWarns(DeprecationWarning):
-            parser.add_argument(
-                '-c',
-                action=argparse.BooleanOptionalAction,
-                metavar=None,
-            )
-        with self.assertWarns(DeprecationWarning):
-            parser.add_argument(
-                '-d',
-                action=argparse.BooleanOptionalAction,
-                metavar='d',
-            )
-
-        with self.assertWarns(DeprecationWarning):
-            parser.add_argument(
-                '-e',
-                action=argparse.BooleanOptionalAction,
-                choices=None,
-            )
-        with self.assertWarns(DeprecationWarning):
-            parser.add_argument(
-                '-f',
-                action=argparse.BooleanOptionalAction,
-                choices=(),
-            )
-
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
 
@@ -2190,7 +2147,9 @@ class TestAddSubparsers(TestCase):
         else:
             subparsers_kwargs['help'] = 'command help'
         subparsers = parser.add_subparsers(**subparsers_kwargs)
-        self.assertArgumentParserError(parser.add_subparsers)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'cannot have multiple subparser arguments',
+                               parser.add_subparsers)
 
         # add first sub-parser
         parser1_kwargs = dict(description='1 description')
@@ -4255,6 +4214,140 @@ class TestHelpUsagePositionalsOnlyWrap(HelpTestCase):
     version = ''
 
 
+class TestHelpUsageMetavarsSpacesParentheses(HelpTestCase):
+    # https://github.com/python/cpython/issues/62549
+    # https://github.com/python/cpython/issues/89743
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('-n1', metavar='()', help='n1'),
+        Sig('-o1', metavar='(1, 2)', help='o1'),
+        Sig('-u1', metavar=' (uu) ', help='u1'),
+        Sig('-v1', metavar='( vv )', help='v1'),
+        Sig('-w1', metavar='(w)w', help='w1'),
+        Sig('-x1', metavar='x(x)', help='x1'),
+        Sig('-y1', metavar='yy)', help='y1'),
+        Sig('-z1', metavar='(zz', help='z1'),
+        Sig('-n2', metavar='[]', help='n2'),
+        Sig('-o2', metavar='[1, 2]', help='o2'),
+        Sig('-u2', metavar=' [uu] ', help='u2'),
+        Sig('-v2', metavar='[ vv ]', help='v2'),
+        Sig('-w2', metavar='[w]w', help='w2'),
+        Sig('-x2', metavar='x[x]', help='x2'),
+        Sig('-y2', metavar='yy]', help='y2'),
+        Sig('-z2', metavar='[zz', help='z2'),
+    ]
+
+    usage = '''\
+        usage: PROG [-h] [-n1 ()] [-o1 (1, 2)] [-u1  (uu) ] [-v1 ( vv )] [-w1 (w)w]
+                    [-x1 x(x)] [-y1 yy)] [-z1 (zz] [-n2 []] [-o2 [1, 2]] [-u2  [uu] ]
+                    [-v2 [ vv ]] [-w2 [w]w] [-x2 x[x]] [-y2 yy]] [-z2 [zz]
+        '''
+    help = usage + '''\
+
+        options:
+          -h, --help  show this help message and exit
+          -n1 ()      n1
+          -o1 (1, 2)  o1
+          -u1  (uu)   u1
+          -v1 ( vv )  v1
+          -w1 (w)w    w1
+          -x1 x(x)    x1
+          -y1 yy)     y1
+          -z1 (zz     z1
+          -n2 []      n2
+          -o2 [1, 2]  o2
+          -u2  [uu]   u2
+          -v2 [ vv ]  v2
+          -w2 [w]w    w2
+          -x2 x[x]    x2
+          -y2 yy]     y2
+          -z2 [zz     z2
+        '''
+    version = ''
+
+
+class TestHelpUsageNoWhitespaceCrash(TestCase):
+
+    def test_all_suppressed_mutex_followed_by_long_arg(self):
+        # https://github.com/python/cpython/issues/62090
+        # https://github.com/python/cpython/issues/96310
+        parser = argparse.ArgumentParser(prog='PROG')
+        mutex = parser.add_mutually_exclusive_group()
+        mutex.add_argument('--spam', help=argparse.SUPPRESS)
+        parser.add_argument('--eggs-eggs-eggs-eggs-eggs-eggs')
+        usage = textwrap.dedent('''\
+        usage: PROG [-h]
+                    [--eggs-eggs-eggs-eggs-eggs-eggs EGGS_EGGS_EGGS_EGGS_EGGS_EGGS]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
+    def test_newline_in_metavar(self):
+        # https://github.com/python/cpython/issues/77048
+        mapping = ['123456', '12345', '12345', '123']
+        parser = argparse.ArgumentParser('11111111111111')
+        parser.add_argument('-v', '--verbose',
+                            help='verbose mode', action='store_true')
+        parser.add_argument('targets',
+                            help='installation targets',
+                            nargs='+',
+                            metavar='\n'.join(mapping))
+        usage = textwrap.dedent('''\
+        usage: 11111111111111 [-h] [-v]
+                              123456
+        12345
+        12345
+        123 [123456
+        12345
+        12345
+        123 ...]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
+    def test_empty_metavar_required_arg(self):
+        # https://github.com/python/cpython/issues/82091
+        parser = argparse.ArgumentParser(prog='PROG')
+        parser.add_argument('--nil', metavar='', required=True)
+        parser.add_argument('--a', metavar='A' * 70)
+        usage = (
+            'usage: PROG [-h] --nil \n'
+            '            [--a AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+            'AAAAAAAAAAAAAAAAAAAAAAA]\n'
+        )
+        self.assertEqual(parser.format_usage(), usage)
+
+    def test_all_suppressed_mutex_with_optional_nargs(self):
+        # https://github.com/python/cpython/issues/98666
+        parser = argparse.ArgumentParser(prog='PROG')
+        mutex = parser.add_mutually_exclusive_group()
+        mutex.add_argument(
+            '--param1',
+            nargs='?', const='default', metavar='NAME', help=argparse.SUPPRESS)
+        mutex.add_argument(
+            '--param2',
+            nargs='?', const='default', metavar='NAME', help=argparse.SUPPRESS)
+        usage = 'usage: PROG [-h]\n'
+        self.assertEqual(parser.format_usage(), usage)
+
+    def test_nested_mutex_groups(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument("--spam")
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            gg = g.add_mutually_exclusive_group()
+        gg.add_argument("--hax")
+        gg.add_argument("--hox", help=argparse.SUPPRESS)
+        gg.add_argument("--hex")
+        g.add_argument("--eggs")
+        parser.add_argument("--num")
+
+        usage = textwrap.dedent('''\
+        usage: PROG [-h] [--spam SPAM | [--hax HAX | --hex HEX] | --eggs EGGS]
+                    [--num NUM]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
+
 class TestHelpVariableExpansion(HelpTestCase):
     """Test that variables are expanded properly in help messages"""
 
@@ -5951,7 +6044,8 @@ class TestWrappingMetavar(TestCase):
 class TestExitOnError(TestCase):
 
     def setUp(self):
-        self.parser = argparse.ArgumentParser(exit_on_error=False)
+        self.parser = argparse.ArgumentParser(exit_on_error=False,
+                                              fromfile_prefix_chars='@')
         self.parser.add_argument('--integers', metavar='N', type=int)
 
     def test_exit_on_error_with_good_args(self):
@@ -5961,6 +6055,44 @@ class TestExitOnError(TestCase):
     def test_exit_on_error_with_bad_args(self):
         with self.assertRaises(argparse.ArgumentError):
             self.parser.parse_args('--integers a'.split())
+
+    def test_unrecognized_args(self):
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'unrecognized arguments: --foo bar',
+                               self.parser.parse_args, '--foo bar'.split())
+
+    def test_unrecognized_intermixed_args(self):
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'unrecognized arguments: --foo bar',
+                               self.parser.parse_intermixed_args, '--foo bar'.split())
+
+    def test_required_args(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar, baz',
+                               self.parser.parse_args, [])
+
+    def test_required_mutually_exclusive_args(self):
+        group = self.parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--bar')
+        group.add_argument('--baz')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'one of the arguments --bar --baz is required',
+                               self.parser.parse_args, [])
+
+    def test_ambiguous_option(self):
+        self.parser.add_argument('--foobaz')
+        self.parser.add_argument('--fooble', action='store_true')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "ambiguous option: --foob could match --foobaz, --fooble",
+                               self.parser.parse_args, ['--foob'])
+
+    def test_os_error(self):
+        self.parser.add_argument('file')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "No such file or directory: 'no-such-file'",
+                               self.parser.parse_args, ['@no-such-file'])
 
 
 def tearDownModule():

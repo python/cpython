@@ -98,6 +98,7 @@
     <ClCompile Include="..\Modules\_testcapi\vectorcall.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
     <ClCompile Include="..\Modules\_testcapi\abstract.c" />
+    <ClCompile Include="..\Modules\_testcapi\bytes.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testcapi\dict.c" />
     <ClCompile Include="..\Modules\_testcapi\set.c" />
@@ -120,8 +121,11 @@
     <ClCompile Include="..\Modules\_testcapi\codec.c" />
     <ClCompile Include="..\Modules\_testcapi\hash.c" />
     <ClCompile Include="..\Modules\_testcapi\time.c" />
+    <ClCompile Include="..\Modules\_testcapi\object.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />
+    <ClCompile Include="..\Modules\_testcapi\run.c" />
+    <ClCompile Include="..\Modules\_testcapi\monitoring.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

@@ -290,6 +290,8 @@ extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t
 extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootEnd);
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
+extern void _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *rootsize);
+
 // Macros to protect CRT calls against instant termination when passed an
 // invalid parameter (bpo-23524). IPH stands for Invalid Parameter Handler.
 // Usage:
@@ -323,6 +325,9 @@ extern int _PyFile_Flush(PyObject *);
 #ifndef MS_WINDOWS
 extern int _Py_GetTicksPerSecond(long *ticks_per_second);
 #endif
+
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(int) _Py_IsValidFD(int fd);
 
 #ifdef __cplusplus
 }

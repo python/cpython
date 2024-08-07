@@ -25,8 +25,14 @@ from .identifiers import (
 )
 from .utils import (
     FormatCounterFormatter,
+    NULL,
+    Null,
+    Sentinels,
+    VersionTuple,
     compute_checksum,
     create_regex,
+    unknown,
+    unspecified,
     write_file,
 )
 
@@ -57,8 +63,14 @@ __all__ = [
 
     # Utility functions
     "FormatCounterFormatter",
+    "NULL",
+    "Null",
+    "Sentinels",
+    "VersionTuple",
     "compute_checksum",
     "create_regex",
+    "unknown",
+    "unspecified",
     "write_file",
 ]
 

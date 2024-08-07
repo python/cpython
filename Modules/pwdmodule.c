@@ -1,9 +1,16 @@
 
 /* UNIX password file access module */
 
+// Need limited C API version 3.13 for PyMem_RawRealloc()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
+
 #include "Python.h"
 #include "posixmodule.h"
 
+#include <errno.h>                // ERANGE
 #include <pwd.h>                  // getpwuid()
 #include <unistd.h>               // sysconf()
 
@@ -83,7 +90,7 @@ mkpwent(PyObject *module, struct passwd *p)
         if (item == NULL) {                                  \
             goto error;                                      \
         }                                                    \
-        PyStructSequence_SET_ITEM(v, setIndex++, item);      \
+        PyStructSequence_SetItem(v, setIndex++, item);       \
     } while(0)
 
     SET_STRING(p->pw_name);
@@ -337,6 +344,7 @@ pwdmodule_exec(PyObject *module)
 static PyModuleDef_Slot pwdmodule_slots[] = {
     {Py_mod_exec, pwdmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
