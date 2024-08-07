@@ -1832,6 +1832,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyTypes_FiniTypes(interp);
 
     _PyTypes_Fini(interp);
+    _PyType_FinalizeIdPool(interp);
 
     _PyCode_Fini(interp);
 
