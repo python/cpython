@@ -81,6 +81,12 @@ dummy_func(void) {
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        if (sym_is_const(value)) {
+            PyObject *val = sym_get_const(value);
+            if (_Py_IsImmortal(val)) {
+                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            }
+        }
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -323,10 +329,31 @@ dummy_func(void) {
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
         }
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
         }
+    }
+
+    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
+        _Py_UopsSymbol *res;
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+            PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
+        }
+        else {
+            res = sym_new_type(ctx, &PyUnicode_Type);
+        }
+        GETLOCAL(this_instr->operand) = res;
     }
 
     op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
