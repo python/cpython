@@ -118,7 +118,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 1)
+        self.assertEqual(w[0].lineno, 2)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
@@ -128,7 +128,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r"invalid escape sequence '\z'")
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 1)
+        self.assertEqual(exc.lineno, 2)
         self.assertEqual(exc.offset, 1)
 
         # Check that the warning is raised ony once if there are syntax errors
@@ -155,7 +155,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(str(w[0].message),
                          r"invalid octal escape sequence '\407'")
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 1)
+        self.assertEqual(w[0].lineno, 2)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
@@ -165,7 +165,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r"invalid octal escape sequence '\407'")
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 1)
+        self.assertEqual(exc.lineno, 2)
         self.assertEqual(exc.offset, 1)
 
     def test_eval_str_raw(self):
@@ -207,7 +207,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 1)
+        self.assertEqual(w[0].lineno, 2)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
@@ -217,7 +217,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r"invalid escape sequence '\z'")
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 1)
+        self.assertEqual(exc.lineno, 2)
 
     def test_eval_bytes_invalid_octal_escape(self):
         for i in range(0o400, 0o1000):
@@ -231,7 +231,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(str(w[0].message),
                          r"invalid octal escape sequence '\407'")
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 1)
+        self.assertEqual(w[0].lineno, 2)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
@@ -241,7 +241,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r"invalid octal escape sequence '\407'")
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 1)
+        self.assertEqual(exc.lineno, 2)
 
     def test_eval_bytes_raw(self):
         self.assertEqual(eval(""" br'x' """), b'x')
