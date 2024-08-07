@@ -1044,11 +1044,12 @@ def _warn_kwargs(func):
         if kwargs:
             import os
             import warnings
-            warnings.warn("""\
-Calling functools.reduce with keyword arguments is deprecated
-in Python 3.14 and will be forbidden in Python 3.16.""",
-                         DeprecationWarning,
-                         skip_file_prefixes=(os.path.dirname(__file__),))
+            warnings.warn(
+                'Calling functools.reduce with keyword arguments'
+                + ' is deprecated in Python 3.14 and will be'
+                + ' forbidden in Python 3.16.',
+                DeprecationWarning,
+                skip_file_prefixes=(os.path.dirname(__file__),))
         return func(*args, **kwargs)
     return wrapper
 
