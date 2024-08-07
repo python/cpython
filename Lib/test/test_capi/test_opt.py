@@ -991,7 +991,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_BOTH_INT", uops)
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
         # Try again, but between the runs, set the global to a float.
         # This should result in no executor the second time.
         ns = {}

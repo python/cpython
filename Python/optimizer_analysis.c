@@ -301,9 +301,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
 #define REPLACE_OP(INST, OP, ARG, OPERAND)    \
-    INST->opcode = OP;            \
-    INST->oparg = ARG;            \
-    INST->operand = OPERAND;
+    (INST)->opcode = OP;            \
+    (INST)->oparg = ARG;            \
+    (INST)->operand = OPERAND;
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
@@ -392,7 +392,8 @@ optimize_uops(
     _PyUOpInstruction *trace,
     int trace_len,
     int curr_stacklen,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    PyObject *refs
 )
 {
 
@@ -580,7 +581,8 @@ _Py_uop_analyze_and_optimize(
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    PyObject *refs
 )
 {
     OPT_STAT_INC(optimizer_attempts);
@@ -592,7 +594,7 @@ _Py_uop_analyze_and_optimize(
 
     length = optimize_uops(
         _PyFrame_GetCode(frame), buffer,
-        length, curr_stacklen, dependencies);
+        length, curr_stacklen, dependencies, refs);
 
     if (length <= 0) {
         return length;

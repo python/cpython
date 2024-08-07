@@ -62,6 +62,9 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -98,6 +101,9 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_INT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -133,6 +139,9 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_UNICODE
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -167,6 +176,12 @@
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
+            // _NOP
+            {
+            }
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_UNICODE
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -229,6 +244,9 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -265,6 +283,9 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_INT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -300,6 +321,9 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
@@ -336,6 +360,9 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            // _NOP
+            {
+            }
             // _GUARD_BOTH_INT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
