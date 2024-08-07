@@ -2035,6 +2035,29 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 }
 
 
+#include "_testinternalcapi/tpslots_generated.h"
+
+static PyObject *
+get_type_slot_wrapper_names(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *slots = PyList_New(Py_ARRAY_LENGTH(slotdefs)-1);
+    if (slots == NULL) {
+        return NULL;
+    }
+    Py_ssize_t i;
+    const struct pytype_slot *p;
+    for (i = 0, p = slotdefs; p->slot != NULL; p++, i++) {
+        PyObject *item = Py_BuildValue("ss", p->slot, p->attr);
+        if (item == NULL) {
+            Py_DECREF(slots);
+            return NULL;
+        }
+        PyList_SET_ITEM(slots, i, item);
+    }
+    return slots;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2129,6 +2152,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    {"get_type_slot_wrapper_names", get_type_slot_wrapper_names, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

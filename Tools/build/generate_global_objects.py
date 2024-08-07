@@ -2,6 +2,8 @@ import contextlib
 import io
 import os.path
 import re
+import textwrap
+
 
 SCRIPT_NAME = 'Tools/build/generate_global_objects.py'
 __file__ = os.path.abspath(__file__)
@@ -175,6 +177,29 @@ def iter_global_strings():
                     yield varname, string, filename, lno, line
 
 
+def iter_tp_slots():
+    regex = re.compile(r'^ +\w+SLOT\((\w+), (\w+),')
+    filename = os.path.join(ROOT, 'Objects', 'typeobject.c')
+    with open(filename, encoding='utf-8') as infile:
+        for line in infile:
+            if line.startswith('static pytype_slotdef slotdefs[] = {'):
+                break
+        for line in infile:
+            m = regex.match(line)
+            if not m:
+                line = line.strip()
+                if line == '{NULL}':
+                    break
+                assert line != '};', (line,)
+                assert 'SLOT(' not in line, (line,)
+                continue
+            attr, slot = m.groups()
+            yield slot, attr
+            # Add in slots that aren't in slotdefs.
+            if slot == 'am_anext':
+                yield 'am_send', None
+
+
 def iter_to_marker(lines, marker):
     for line in lines:
         if line.rstrip() == marker:
@@ -218,8 +243,15 @@ class Printer:
 
 
 @contextlib.contextmanager
-def open_for_changes(filename, orig):
+def open_for_changes(filename, orig=None):
     """Like open() but only write to the file if it changed."""
+    if orig is None:
+        try:
+            with open(filename, encoding='utf-8') as infile:
+                orig = infile.read()
+        except FileNotFoundError:
+            orig = None
+
     outfile = io.StringIO()
     yield outfile
     text = outfile.getvalue()
@@ -448,6 +480,65 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
 
 
 #######################################
+# info about types
+
+def generate_tp_slot_names():
+    filename = os.path.join(
+                ROOT, 'Modules', '_testinternalcapi', 'tpslots_generated.h')
+    template = textwrap.dedent(f"""
+        {START}
+
+        struct pytype_slot {{
+            const char *slot;
+            const char *attr;
+        }};
+
+        // These are derived from the "slotdefs" array in Objects/typeobject.c.
+        static const struct pytype_slot slotdefs[] = {{
+            %s
+
+            /* sentinel */
+            {{NULL}}
+        }};
+
+        {END}
+        """)
+    subslots = {
+        'bf_': 'tp_as_buffer',
+        'am_': 'tp_as_async',
+        'nb_': 'tp_as_number',
+        'mp_': 'tp_as_mapping',
+        'sq_': 'tp_as_sequence',
+    }
+    rows = []
+    groups = []
+    for slot, attr in iter_tp_slots():
+        if slot.startswith('tp_'):
+            group = 'primary'
+        else:
+            subslot = slot
+            slot = subslots[slot[:3]]
+            group = slot[6:]
+            slot = f'{slot}.{subslot}'
+
+        if not groups:
+            groups.append(group)
+        elif groups[-1] != group:
+            assert group not in groups, (group, groups)
+            rows.append('')
+            rows.append(f'    /* {group} */')
+            groups.append(group)
+
+        if attr is None:
+            rows.append('    /* Does not have a corresponding slot wrapper: */')
+            attr = 'NULL'
+        rows.append(f'    {{"{slot}", "{attr}"}},')
+    text = template % (os.linesep.join(rows).strip())
+    with open_for_changes(filename) as outfile:
+        outfile.write(text)
+
+
+#######################################
 # the script
 
 def main() -> None:
@@ -457,6 +548,8 @@ def main() -> None:
     generated_immortal_objects = generate_runtime_init(identifiers, strings)
     generate_static_strings_initializer(identifiers, strings)
     generate_global_object_finalizers(generated_immortal_objects)
+
+    generate_tp_slot_names()
 
 
 if __name__ == '__main__':
