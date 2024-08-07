@@ -1569,12 +1569,15 @@ class TestClassesAndFunctions(unittest.TestCase):
         ])
 
     def test_getmembers_custom_broken_dir(self):
+        # inspect.getmembers calls `dir()` on the passed object inside.
+        # if `__dir__` mentions some non-existent attribute,
+        # we still need to return others correctly.
         class BrokenDir:
             existing = 1
             def method(self):
                 return self.existing + 1
             def __dir__(self):
-                return ['existing', 'missing', 'method']
+                return ['method', 'missing', 'existing']
 
         bd = BrokenDir()
         self.assertEqual(inspect.getmembers(bd), [
@@ -1583,6 +1586,17 @@ class TestClassesAndFunctions(unittest.TestCase):
         ])
         self.assertEqual(inspect.getmembers(bd, inspect.ismethod), [
             ('method', bd.method),
+        ])
+
+    def test_getmembers_custom_duplicated_dir(self):
+        class DuplicatedDir:
+            attr = 1
+            def __dir__(self):
+                return ['attr', 'attr']
+
+        dd = DuplicatedDir()
+        self.assertEqual(inspect.getmembers(dd), [
+            ('attr', 1),
         ])
 
     def test_getmembers_VirtualAttribute(self):
