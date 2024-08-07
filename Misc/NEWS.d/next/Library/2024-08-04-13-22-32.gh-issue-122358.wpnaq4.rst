@@ -1,1 +1,1 @@
-Remove re._compile, leaving a compatibility alias to re.compile.
+Remove :func:`!re._compile`, leaving a compatibility alias to :func:`re.compile`.
