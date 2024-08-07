@@ -1,0 +1,2 @@
+Add :c:func:`PyIter_NextItem` to replace :c:func:`PyIter_Next`, which has an
+ambiguous return value. Patch by Irit Katriel and Erlend Aasland.

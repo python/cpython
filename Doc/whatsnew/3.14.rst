@@ -404,6 +404,10 @@ New Features
 
   (Contributed by Victor Stinner in :gh:`119182`.)
 
+* Add :c:func:`PyIter_NextItem` to replace :c:func:`PyIter_Next`,
+  which has an ambiguous return value.
+  (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
+
 Porting to Python 3.14
 ----------------------
 

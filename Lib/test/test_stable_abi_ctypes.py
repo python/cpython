@@ -371,6 +371,7 @@ SYMBOL_NAMES = (
     "PyInterpreterState_New",
     "PyIter_Check",
     "PyIter_Next",
+    "PyIter_NextItem",
     "PyIter_Send",
     "PyListIter_Type",
     "PyListRevIter_Type",
