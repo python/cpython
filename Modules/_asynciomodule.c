@@ -3530,16 +3530,8 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 
     Py_VISIT(state->context_kwname);
 
-#ifndef Py_GIL_DISABLED
-    // Visit freelist.
-    PyObject *next = (PyObject*) state->fi_freelist;
-    while (next != NULL) {
-        PyObject *current = next;
-        Py_VISIT(current);
-        next = (PyObject*) ((futureiterobject*) current)->future;
-    }
-#endif
-
+    // GH-122695: Do not traverse the freelist here, as that can cause problems
+    // with gc.get_referents()
     return 0;
 }
 
