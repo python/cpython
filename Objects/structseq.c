@@ -280,7 +280,7 @@ structseq_repr(PyStructSequence *obj)
     writer.overallocate = 1;
     /* count 5 characters per item: "x=1, " */
     writer.min_length = (PyUnicode_GET_LENGTH(type_name) + 1
-                         + VISIBLE_SIZE(obj) * 5 + 1);
+                         + REAL_SIZE(obj) * 5 + 1);
 
     if (_PyUnicodeWriter_WriteStr(&writer, type_name) < 0) {
         Py_DECREF(type_name);
@@ -292,7 +292,7 @@ structseq_repr(PyStructSequence *obj)
         goto error;
     }
 
-    for (Py_ssize_t i=0; i < VISIBLE_SIZE(obj); i++) {
+    for (Py_ssize_t i=0; i < REAL_SIZE(obj); i++) {
         if (i > 0) {
             /* Write ", " */
             if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
@@ -303,9 +303,7 @@ structseq_repr(PyStructSequence *obj)
         /* Write "name=repr" */
         const char *name_utf8 = typ->tp_members[i].name;
         if (name_utf8 == NULL) {
-            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %zd name is NULL"
-                         " for type %.500s", i, typ->tp_name);
-            goto error;
+            continue;
         }
 
         PyObject *name = PyUnicode_DecodeUTF8(name_utf8, strlen(name_utf8), NULL);
