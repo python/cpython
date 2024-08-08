@@ -597,14 +597,6 @@ translate_bytecode_to_trace(
 
         DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
 
-        if (opcode == ENTER_EXECUTOR) {
-            assert(oparg < 256);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg];
-            opcode = executor->vm_data.opcode;
-            DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
-            oparg = executor->vm_data.oparg;
-        }
-
         if (opcode == EXTENDED_ARG) {
             instr++;
             opcode = instr->op.code;
@@ -613,6 +605,10 @@ translate_bytecode_to_trace(
                 instr--;
                 goto done;
             }
+        }
+
+        if (opcode == ENTER_EXECUTOR) {
+            goto done;
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
         RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
