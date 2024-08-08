@@ -364,6 +364,55 @@ Module functions
       and *uri* is deprecated.
       They will become keyword-only parameters in Python 3.15.
 
+.. function:: Binary(data)
+
+   Create a Binary object to handle binary data in SQLite.
+
+   :param data:
+   The binary data to be encapsulated. This should be a 
+   :term:`bytes-like object`.
+
+   The :func:`Binary` function encapsulates binary data to ensure proper handling
+   by SQLite. It is used to signal to the sqlite3 module that the data should be
+   treated as a BLOB (Binary Large Object) rather than text.
+
+   By using :func:`Binary`, developers can ensure robust handling of binary data in SQLite,
+   preventing data corruption and enhancing application reliability.
+
+   .. rubric:: Basic example of storing and retrieving binary data
+
+   .. code-block:: python
+
+      import sqlite3
+      import pickle
+
+      # Create a connection and cursor
+      conn = sqlite3.connect(':memory:')
+      cursor = conn.cursor()
+
+      # Create a table
+      cursor.execute('''
+      CREATE TABLE files (
+         id INTEGER PRIMARY KEY,
+         name TEXT,
+         data BLOB)
+      ''')
+
+      # Insert binary data
+      binary_data = pickle.dumps({'foo': 42, 'bar': 1337})
+      values = ('example.pkl', sqlite3.Binary(binary_data))
+      cursor.execute('INSERT INTO files (name, data) VALUES (?, ?)', values)
+      conn.commit()
+
+      # Retrieve binary data
+      cursor.execute('SELECT data FROM files WHERE name=?', ('example.pkl',))
+      blob_data = cursor.fetchone()[0]
+      conn.close()
+
+      # Deserialize the binary data using pickle
+      retrieved_data = pickle.loads(blob_data)
+      print(retrieved_data)  # This should print: {'foo': 42, 'bar': 1337}
+
 .. function:: complete_statement(statement)
 
    Return ``True`` if the string *statement* appears to contain
