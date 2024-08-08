@@ -892,8 +892,16 @@ def calcvobjsize(fmt):
     return struct.calcsize(_vheader + fmt + _align)
 
 
-_TPFLAGS_HAVE_GC = 1<<14
+_TPFLAGS_STATIC_BUILTIN = 1<<1
+_TPFLAGS_DISALLOW_INSTANTIATION = 1<<7
+_TPFLAGS_IMMUTABLETYPE = 1<<8
 _TPFLAGS_HEAPTYPE = 1<<9
+_TPFLAGS_BASETYPE = 1<<10
+_TPFLAGS_READY = 1<<12
+_TPFLAGS_READYING = 1<<13
+_TPFLAGS_HAVE_GC = 1<<14
+_TPFLAGS_BASE_EXC_SUBCLASS = 1<<30
+_TPFLAGS_TYPE_SUBCLASS = 1<<31
 
 def check_sizeof(test, o, size):
     try:
@@ -2608,26 +2616,65 @@ def copy_python_src_ignore(path, names):
     return ignored
 
 
+def walk_class_hierarchy(top, *, topdown=True):
+    # This is based on the logic in os.walk().
+    assert isinstance(top, type), repr(top)
+    stack = [top]
+    while stack:
+        top = stack.pop()
+        if isinstance(top, tuple):
+            yield top
+            continue
+
+        subs = type(top).__subclasses__(top)
+        if topdown:
+            # Yield before subclass traversal if going top down.
+            yield top, subs
+            # Traverse into subclasses.
+            for sub in reversed(subs):
+                stack.append(sub)
+        else:
+            # Yield after subclass traversal if going bottom up.
+            stack.append((top, subs))
+            # Traverse into subclasses.
+            for sub in reversed(subs):
+                stack.append(sub)
+
+
 def iter_builtin_types():
-    seen = set()
-    for obj in __builtins__.values():
-        if not isinstance(obj, type):
-            continue
-        cls = obj
-        if cls.__module__ != 'builtins':
-            continue
-        if cls == ExceptionGroup:
-            # It's a heap type.
-            continue
-        if cls in seen:
-            continue
-        seen.add(cls)
-        yield cls
+    if hasattr(object, '__flags__'):
+        # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
+        import datetime
+        seen = set()
+        for cls, subs in walk_class_hierarchy(object):
+            if cls in seen:
+                continue
+            seen.add(cls)
+            if not (cls.__flags__ & _TPFLAGS_STATIC_BUILTIN):
+                # Do not walk its subclasses.
+                subs[:] = []
+                continue
+            yield cls
+    else:
+        # Fall back to a naive approach.
+        seen = set()
+        for obj in __builtins__.values():
+            if not isinstance(obj, type):
+                continue
+            cls = obj
+            # XXX?
+            if cls.__module__ != 'builtins':
+                continue
+            if cls == ExceptionGroup:
+                # It's a heap type.
+                continue
+            if cls in seen:
+                continue
+            seen.add(cls)
+            yield cls
 
 
 def iter_slot_wrappers(cls):
-    assert cls.__module__ == 'builtins', cls
-
     def is_slot_wrapper(name, value):
         if not isinstance(value, types.WrapperDescriptorType):
             assert not repr(value).startswith('<slot wrapper '), (cls, name, value)
