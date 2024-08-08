@@ -1584,20 +1584,30 @@ Note that if ``name`` is a submodule (contains a dot),
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
-To import a Python source file directly, use the following recipe::
+This recipe should be used with caution: it is an approximation of an import statement where the file path is specified directly, rather than :data:`sys.path` being searched.
+Alternatives should first be considered, such as modifying :data:`sys.path` when a proper module is required, or using :func:`runpy.run_path` when the global namespace resulting from running a Python file is appropriate.
 
-  import importlib.util
-  import sys
+To import a Python source file directly from a path, use the following recipe::
 
-  # For illustrative purposes.
-  import tokenize
-  file_path = tokenize.__file__
-  module_name = tokenize.__name__
+    import importlib.util
+    import sys
 
-  spec = importlib.util.spec_from_file_location(module_name, file_path)
-  module = importlib.util.module_from_spec(spec)
-  sys.modules[module_name] = module
-  spec.loader.exec_module(module)
+
+    def import_from_path(module_name, file_path):
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        return module
+
+
+    # For illustrative purposes only (use of `json` is arbitrary).
+    import json
+    file_path = json.__file__
+    module_name = json.__name__
+
+    # Similar outcome as `import json`.
+    json = import_from_path(module_name, file_path)
 
 
 Implementing lazy imports
@@ -1621,7 +1631,6 @@ The example below shows how to implement lazy imports::
     >>> #but it is not loaded in memory yet.
     >>> lazy_typing.TYPE_CHECKING
     False
-
 
 
 Setting up an importer
