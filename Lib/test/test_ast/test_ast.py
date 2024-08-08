@@ -3145,3 +3145,7 @@ class ASTOptimiziationTests(unittest.TestCase):
         optimized_target = ast.For(target=ast.Name(id="_", ctx=ast.Store()), iter=ast.Constant(value=()), body=[ast.Pass()])
 
         self.assert_ast(code, non_optimized_target, optimized_target)
+
+
+if __name__ == "__main__":
+    unittest.main()
