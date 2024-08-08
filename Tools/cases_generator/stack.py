@@ -325,15 +325,15 @@ class Stack:
         top_offset = self.top_offset.copy()
         for var in self.variables:
             base_offset.push(var.item)
-        for var in outputs:
-            if any(var == v.item for v in self.variables):
+        for output in outputs:
+            if any(output == v.item for v in self.variables):
                 # The variable is already on the stack, such as a peeked value
                 # in the tier1 generator
                 continue
-            if var.name == var_name:
-                Stack._do_emit(out, var, base_offset, cast_type, extract_bits)
-            base_offset.push(var)
-            top_offset.push(var)
+            if output.name == var_name:
+                Stack._do_emit(out, output, base_offset, cast_type, extract_bits)
+            base_offset.push(output)
+            top_offset.push(output)
         if base_offset.to_c() != top_offset.to_c():
             print("base", base_offset, "top", top_offset)
             assert False
