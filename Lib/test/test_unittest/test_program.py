@@ -128,9 +128,16 @@ class Test_TestProgram(unittest.TestCase):
                                 testLoader=self.TestLoader(self.FooBar))
         self.assertTrue(hasattr(program, 'result'))
         out = stream.getvalue()
-        self.assertIn('\nFAIL: testFail ', out)
-        self.assertIn('\nERROR: testError ', out)
-        self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
+        self.assertIn(
+            '\nFAIL: test.test_unittest.test_program.Test_TestProgram.FooBar.testFail\n',
+            out)
+        self.assertIn(
+            '\nERROR: test.test_unittest.test_program.Test_TestProgram.FooBar.testError\n',
+            out)
+        self.assertIn(
+            ('\nUNEXPECTED SUCCESS: test.test_unittest.test_program.Test_TestProgram.'
+             'FooBar.testUnexpectedSuccess\n'),
+            out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
@@ -145,9 +152,16 @@ class Test_TestProgram(unittest.TestCase):
                 testLoader=self.TestLoader(self.FooBar))
         self.assertEqual(cm.exception.code, 1)
         out = stream.getvalue()
-        self.assertIn('\nFAIL: testFail ', out)
-        self.assertIn('\nERROR: testError ', out)
-        self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
+        self.assertIn(
+            '\nFAIL: test.test_unittest.test_program.Test_TestProgram.FooBar.testFail\n',
+            out)
+        self.assertIn(
+            '\nERROR: test.test_unittest.test_program.Test_TestProgram.FooBar.testError\n',
+            out)
+        self.assertIn(
+            ('\nUNEXPECTED SUCCESS: test.test_unittest.test_program.Test_TestProgram.'
+             'FooBar.testUnexpectedSuccess\n'),
+            out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
@@ -160,9 +174,16 @@ class Test_TestProgram(unittest.TestCase):
                 testRunner=unittest.TextTestRunner(stream=stream),
                 testLoader=self.TestLoader(self.FooBar))
         out = stream.getvalue()
-        self.assertIn('\nFAIL: testFail ', out)
-        self.assertIn('\nERROR: testError ', out)
-        self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
+        self.assertIn(
+            '\nFAIL: test.test_unittest.test_program.Test_TestProgram.FooBar.testFail\n',
+            out)
+        self.assertIn(
+            '\nERROR: test.test_unittest.test_program.Test_TestProgram.FooBar.testError\n',
+            out)
+        self.assertIn(
+            ('\nUNEXPECTED SUCCESS: test.test_unittest.test_program.Test_TestProgram.'
+             'FooBar.testUnexpectedSuccess\n'),
+            out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
