@@ -405,7 +405,9 @@ I/O Base Classes
 
    .. method:: seek(offset, whence=os.SEEK_SET, /)
 
-      Change the stream position to the given byte *offset*,
+      Change the stream position to the given *offset*,
+      treated as a byte offset for binary streams
+      and a character offset for text streams,
       interpreted relative to the position indicated by *whence*,
       and return the new absolute position.
       Values for *whence* are:
