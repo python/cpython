@@ -44,7 +44,7 @@ class _BaseLayout:
                 type=ftype,
                 size=size,
                 offset=offset,
-                bit_size=-1 if bit_size is None else bit_size,
+                bit_size=bit_size,
             )
             self.offset += self.size
 

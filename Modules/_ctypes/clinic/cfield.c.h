@@ -11,7 +11,7 @@ preserve
 
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
-                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t bit_size);
+                  Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj);
 
 static PyObject *
 PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -45,14 +45,13 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 4;
     PyObject *name;
     PyObject *desc;
     Py_ssize_t size;
     Py_ssize_t offset;
-    Py_ssize_t bit_size = -1;
+    PyObject *bit_size_obj;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 4, 5, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 5, 5, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -86,25 +85,10 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         }
         offset = ival;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[4]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bit_size = ival;
-    }
-skip_optional_pos:
-    return_value = PyCField_new_impl(type, name, desc, size, offset, bit_size);
+    bit_size_obj = fastargs[4];
+    return_value = PyCField_new_impl(type, name, desc, size, offset, bit_size_obj);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1eaa4a49317f1f01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1bda1136bd0147ad input=a9049054013a1b77]*/

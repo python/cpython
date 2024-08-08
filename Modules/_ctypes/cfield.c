@@ -204,17 +204,21 @@ _ctypes.CField.__new__ as PyCField_new
     type as desc: object
     size: Py_ssize_t
     offset: Py_ssize_t
-    bit_size: Py_ssize_t = -1
+    bit_size as bit_size_obj: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
-                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t bit_size)
-/*[clinic end generated code: output=79ce818b0a937343 input=f7d8d0284e8fb708]*/
+                  Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj)
+/*[clinic end generated code: output=0959e4b1c957425f input=418beea0b785cc4e]*/
 {
     PyTypeObject *tp = type;
+    ctypes_state *st = get_module_state_by_class(tp);
     CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
+    if (!self) {
+        return NULL;
+    }
     if (PyUnicode_CheckExact(name)) {
         self->name = Py_NewRef(name);
     } else {
@@ -223,10 +227,34 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
             goto error;
         }
     }
+
+    if (bit_size_obj == Py_None) {
+        self->bit_size = -1;
+    } else {
+        self->bit_size = PyLong_AsSsize_t(bit_size_obj);
+        if (self->bit_size < 0) {
+            if (!PyErr_Occurred()) {
+                PyErr_Format(PyExc_ValueError,
+                             "number of bits invalid for bit field %R",
+                             self->name);
+            }
+            goto error;
+        }
+    }
+
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        goto error;
+    }
+    if (info == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "type of field %R must be a C type", self->name);
+        goto error;
+    }
+
     self->desc = Py_NewRef(desc);
     self->size = size;
     self->offset = offset;
-    self->bit_size = bit_size;
 
     self->setfunc = NULL; // XXX
     self->getfunc = NULL; // XXX
