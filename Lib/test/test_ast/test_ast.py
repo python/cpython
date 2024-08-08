@@ -21,7 +21,7 @@ from test.support import os_helper, script_helper
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
-    eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results,
+    eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
 )
 
 
@@ -134,7 +134,6 @@ class AST_Tests(unittest.TestCase):
                 for tree in [tree1, tree2]:
                     res = to_tuple(tree.body[0])
                     self.assertEqual(res, expected)
-
 
     def test_invalid_position_information(self):
         invalid_linenos = [
