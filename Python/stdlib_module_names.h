@@ -224,6 +224,7 @@ static const char* _Py_stdlib_module_names[] = {
 "resource",
 "rlcompleter",
 "runpy",
+"saslprep",
 "sched",
 "secrets",
 "select",
