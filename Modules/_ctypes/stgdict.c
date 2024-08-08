@@ -250,6 +250,10 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     int big_endian;
     int arrays_seen = 0;
 
+    // The following are NULL or hold strong references.
+    // They're cleared on error.
+    PyObject *prop = NULL;
+
     if (fields == NULL) {
         return 0;
     }
@@ -482,8 +486,19 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
-        PyObject *prop;
         Py_ssize_t bitsize = 0;
+
+        prop = PySequence_Fast_GET_ITEM(layout_fields, i);
+        if (!prop) {
+            goto error;
+        }
+        Py_INCREF(prop);
+        if (!PyType_IsSubtype(Py_TYPE(prop), st->PyCField_Type)) {
+            PyErr_Format(PyExc_TypeError,
+                        "fields must be of type CField, got %T", prop);
+            goto error;
+
+        }
 
         if (!pair || !PyArg_ParseTuple(pair, "UO|n", &name, &desc, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
@@ -549,20 +564,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         } else
             bitsize = 0;
 
-        prop = PySequence_Fast_GET_ITEM(layout_fields, i);
-        if (!prop) {
-            Py_DECREF(pair);
-            goto error;
-        }
-        Py_INCREF(prop);
-        if (!PyType_IsSubtype(Py_TYPE(prop), st->PyCField_Type)) {
-            PyErr_Format(PyExc_TypeError,
-                        "fields must be of type CField, got %T", prop);
-            Py_DECREF(pair);
-            goto error;
-
-        }
-
         if (isStruct) {
             const char *fieldfmt = info->format ? info->format : "B";
             const char *fieldname = PyUnicode_AsUTF8(name);
@@ -586,7 +587,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                                    pack, big_endian, layout_mode);
             if (res < 0) {
                 Py_DECREF(pair);
-                Py_DECREF(prop);
                 goto error;
             }
 
@@ -600,7 +600,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 PyMem_Free(ptr);
                 if (stginfo->format == NULL) {
                     Py_DECREF(pair);
-                    Py_DECREF(prop);
                     goto error;
                 }
             }
@@ -610,7 +609,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             buf = PyMem_Malloc(len + 2 + 1);
             if (buf == NULL) {
                 Py_DECREF(pair);
-                Py_DECREF(prop);
                 PyErr_NoMemory();
                 goto error;
             }
@@ -628,7 +626,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             if (stginfo->format == NULL) {
                 Py_DECREF(pair);
-                Py_DECREF(prop);
                 goto error;
             }
         } else /* union */ {
@@ -650,12 +647,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         total_align = max(align, total_align);
 
         if (-1 == PyObject_SetAttr(type, name, prop)) {
-            Py_DECREF(prop);
             Py_DECREF(pair);
             goto error;
         }
         Py_DECREF(pair);
-        Py_DECREF(prop);
+        Py_CLEAR(prop);
     }
 
     if (!isStruct) {
@@ -979,5 +975,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     return MakeAnonFields(type);
 error:
+    Py_XDECREF(prop);
     return -1;
 }
