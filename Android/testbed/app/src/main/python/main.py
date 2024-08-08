@@ -10,10 +10,7 @@ import sys
 # profile save"), so disabling it should not weaken the tests.
 signal.pthread_sigmask(signal.SIG_UNBLOCK, [signal.SIGUSR1])
 
-sys.argv[1:] = [
-    "-uall",  # Enable all resources
-    "-W",  # Display test output on failure
-] + shlex.split(os.environ["PYTHON_ARGS"])
+sys.argv[1:] = shlex.split(os.environ["PYTHON_ARGS"])
 
 # The test module will call sys.exit to indicate whether the tests passed.
 runpy.run_module("test")

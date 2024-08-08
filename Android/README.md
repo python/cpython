@@ -25,7 +25,7 @@ you don't already have the SDK, here's how to install it:
 The `android.py` script also requires the following commands to be on the `PATH`:
 
 * `curl`
-* `java`
+* `java` (or set the `JAVA_HOME` environment variable)
 * `tar`
 * `unzip`
 
@@ -81,23 +81,28 @@ call. For example, if you want a pydebug build that also caches the results from
 ## Testing
 
 Before running the test suite, follow the instructions in the previous section
-to build for all supported architectures.
+to build the architecture you want to test.
 
-The test suite can be run in two modes:
+The test script can be run in two modes:
 
 * In `--connected` mode, it runs on a device or emulator you have already
-  connected to the build machine. For example:
+  connected to the build machine. List the available devices with
+  `$ANDROID_HOME/platform-tools/adb devices -l`, then pass a device ID to the
+  script like this:
 
   ```sh
   ./android.py test --connected emulator-5554
   ```
 
-* In `--managed` mode, it uses a temporary emulator defined in the
+* In `--managed` mode, it uses a temporary headless emulator defined in the
   `managedDevices` section of testbed/app/build.gradle.kts. This mode is slower,
-  but more reproducible. For example:
+  but more reproducible.
+
+  We currently define two devices: `minVersion` and `maxVersion`, corresponding
+  to our minimum and maximum supported Android versions. For example:
 
   ```sh
-  ./android.py test --managed targetSdk
+  ./android.py test --managed maxVersion
   ```
 
 By default, the only messages the script will show are Python's own stdout and

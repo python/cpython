@@ -1,4 +1,5 @@
 import com.android.build.api.variant.*
+import kotlin.math.max
 
 plugins {
     id("com.android.application")
@@ -68,12 +69,18 @@ android {
     testOptions {
         managedDevices {
             localDevices {
-                // In the future we may add a "minSdk" device, but managed
-                // devices have a minimum API level of 27.
-                create("targetSdk") {
+                create("minVersion") {
                     device = "Small Phone"
-                    apiLevel = defaultConfig.targetSdk!!
                     systemImageSource = "aosp-atd"
+
+                    // Managed devices have a minimum API level of 27.
+                    apiLevel = max(27, defaultConfig.minSdk!!)
+                }
+
+                create("maxVersion") {
+                    device = "Small Phone"
+                    systemImageSource = "aosp-atd"
+                    apiLevel = defaultConfig.targetSdk!!
                 }
             }
         }
