@@ -5,8 +5,11 @@ from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
 from random import random
-from math import isnan, copysign
+from math import atan2, isnan, copysign
+from functools import reduce
+from itertools import combinations
 import operator
+import _testcapi
 
 INF = float("inf")
 NAN = float("nan")
@@ -391,6 +394,45 @@ class ComplexTest(unittest.TestCase):
                         complex_pow = "overflow"
                     self.assertEqual(str(float_pow), str(int_pow))
                     self.assertEqual(str(complex_pow), str(int_pow))
+
+        # Check that complex numbers with special components
+        # are correctly handled.
+        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
+                                                     -3, INF, -INF, NAN], 2)]
+        exponents = [0, 1, 2, 3, 4, 5, 6, 19]
+        for z in values:
+            for e in exponents:
+                try:
+                    r_pow = z**e
+                except OverflowError:
+                    continue
+                r_pro = reduce(lambda x, y: x*y, [z]*e) if e else 1+0j
+                if str(r_pow) == str(r_pro):
+                    continue
+
+                self.assertNotIn(z.real, {0.0, -0.0, INF, -INF, NAN})
+                self.assertNotIn(z.imag, {0.0, -0.0, INF, -INF, NAN})
+
+                # We might fail here, because associativity of multiplication
+                # is broken already for floats.
+                # Consider z = 1-1j.  Then z*z*z*z = ((z*z)*z)*z = -4+0j,
+                # while in the algorithm for pow() a diffenent grouping
+                # of operations is used: z**4 = (z*z)*(z*z) = -4-0j.
+                #
+                # Fallback to the generic complex power algorithm.
+                r_pro, r_pro_errno = _testcapi._py_c_pow(z, e)
+                self.assertEqual(r_pro_errno, 0)
+                self.assertClose(r_pow, r_pro)
+                if not isnan(r_pow.real):
+                    self.assertEqual(copysign(1, r_pow.real),
+                                     copysign(1, r_pro.real))
+                else:
+                    self.assertTrue(isnan(r_pro.real))
+                if not isnan(r_pow.imag):
+                    self.assertEqual(copysign(1, r_pow.imag),
+                                     copysign(1, r_pro.imag))
+                else:
+                    self.assertTrue(isnan(r_pro.imag))
 
     def test_boolcontext(self):
         for i in range(100):
