@@ -2647,18 +2647,6 @@ test_frame_getvarstring(PyObject *self, PyObject *args)
 
 
 static PyObject *
-eval_get_func_name(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncName(func));
-}
-
-static PyObject *
-eval_get_func_desc(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncDesc(func));
-}
-
-static PyObject *
 gen_get_code(PyObject *self, PyObject *gen)
 {
     if (!PyGen_Check(gen)) {
@@ -3286,12 +3274,6 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
-static PyObject *
-pyeval_getlocals(PyObject *module, PyObject *Py_UNUSED(args))
-{
-    return Py_XNewRef(PyEval_GetLocals());
-}
-
 struct atexit_data {
     int called;
     PyThreadState *tstate;
@@ -3462,8 +3444,6 @@ static PyMethodDef TestMethods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
-    {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
-    {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
@@ -3483,7 +3463,6 @@ static PyMethodDef TestMethods[] = {
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
-    {"pyeval_getlocals", pyeval_getlocals, METH_NOARGS},
     {"test_atexit", test_atexit, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
