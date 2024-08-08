@@ -544,6 +544,7 @@ translate_bytecode_to_trace(
     int buffer_size,
     _PyBloomFilter *dependencies, bool progress_needed)
 {
+    bool first = true;
     PyCodeObject *code = _PyFrame_GetCode(frame);
     PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
     assert(PyFunction_Check(func));
@@ -578,7 +579,6 @@ translate_bytecode_to_trace(
             2 * INSTR_IP(initial_instr, code));
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
     uint32_t target = 0;
-    bool first = true;
 
     for (;;) {
         target = INSTR_IP(instr, code);
