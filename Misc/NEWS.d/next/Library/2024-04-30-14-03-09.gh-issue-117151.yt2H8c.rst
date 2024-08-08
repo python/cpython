@@ -1,0 +1,4 @@
+Increase ``io.DEFAULT_BUFFER_SIZE`` from 8k to 128k. Adjust :func:`open` on
+Linux to use ``max(io.DEFAULT_BUFFER_SIZE, device block size)`` rather than
+the device block size. Improve I/O write performance by up to 5 times.
+Patch by Romain Morotti.

@@ -484,7 +484,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         }
 #endif /* defined(S_ISDIR) */
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-        if (fdfstat.st_blksize > 1)
+        if (fdfstat.st_blksize > DEFAULT_BUFFER_SIZE)
             self->blksize = fdfstat.st_blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
         if (fdfstat.st_size < PY_SSIZE_T_MAX) {
