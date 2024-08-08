@@ -16,6 +16,12 @@
 
 #include "osdefs.h"               // SEP
 
+#include "clinic/exceptions.c.h"
+
+/*[clinic input]
+class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=90558eb0fbf8a3d0]*/
 
 /* Compatibility aliases */
 PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
@@ -307,8 +313,15 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+BaseException.__traceback__
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+BaseException___traceback___get_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=17cf874a52339398 input=a2277f0de62170cf]*/
 {
     if (self->traceback == NULL) {
         Py_RETURN_NONE;
@@ -316,17 +329,25 @@ BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     return Py_NewRef(self->traceback);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+BaseException.__traceback__
+[clinic start generated code]*/
+
 static int
-BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
+BaseException___traceback___set_impl(PyBaseExceptionObject *self,
+                                     PyObject *value)
+/*[clinic end generated code: output=a82c86d9f29f48f0 input=12676035676badad]*/
 {
-    if (tb == NULL) {
+    if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
         return -1;
     }
-    if (PyTraceBack_Check(tb)) {
-        Py_XSETREF(self->traceback, Py_NewRef(tb));
+    if (PyTraceBack_Check(value)) {
+        Py_XSETREF(self->traceback, Py_NewRef(value));
     }
-    else if (tb == Py_None) {
+    else if (value == Py_None) {
         Py_CLEAR(self->traceback);
     }
     else {
@@ -336,6 +357,7 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(
     }
     return 0;
 }
+
 
 static PyObject *
 BaseException_get_context(PyObject *self, void *Py_UNUSED(ignored))
@@ -399,7 +421,7 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
+    BASEEXCEPTION___TRACEBACK___GETSETDEF
     {"__context__", BaseException_get_context,
      BaseException_set_context, PyDoc_STR("exception context")},
     {"__cause__", BaseException_get_cause,
@@ -419,7 +441,7 @@ PyException_GetTraceback(PyObject *self)
 int
 PyException_SetTraceback(PyObject *self, PyObject *tb)
 {
-    return BaseException_set_tb(_PyBaseExceptionObject_cast(self), tb, NULL);
+    return BaseException___traceback___set_impl(_PyBaseExceptionObject_cast(self), tb);
 }
 
 PyObject *
