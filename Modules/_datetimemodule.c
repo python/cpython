@@ -1853,7 +1853,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
 #ifdef Py_NORMALIZE_CENTURY
     /* Buffer of maximum size of formatted year permitted by long. */
-    char buf[SIZEOF_LONG*5/2+2];
+    char buf[SIZEOF_LONG * 5 / 2 + 2
+#ifdef Py_STRFTIME_C99_SUPPORT
+    /* Need 6 more to accomodate dashes, 2-digit month and day for %F. */
+             + 6
+#endif
+    ];
 #endif
 
     assert(object && format && timetuple);
@@ -1950,7 +1955,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
 #ifdef Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G') {
+        else if (ch == 'Y' || ch == 'G'
+#ifdef Py_STRFTIME_C99_SUPPORT
+                 || ch == 'F' || ch == 'C'
+#endif
+        ) {
             /* 0-pad year with century as necessary */
             PyObject *item = PyTuple_GET_ITEM(timetuple, 0);
             long year_long = PyLong_AsLong(item);
@@ -1980,8 +1989,30 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Done;
                 }
             }
-
-            ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+#ifdef Py_STRFTIME_C99_SUPPORT
+            if (ch == 'F') {
+                item = PyTuple_GET_ITEM(timetuple, 1);
+                long month = PyLong_AsLong(item);
+                if (month == -1 && PyErr_Occurred()) {
+                    goto Done;
+                }
+                item = PyTuple_GET_ITEM(timetuple, 2);
+                long day = PyLong_AsLong(item);
+                if (day == -1 && PyErr_Occurred()) {
+                    goto Done;
+                }
+                ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld-%02ld-%02ld",
+                                          year_long, month, day);
+            }
+            else {
+#endif
+                ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+#ifdef Py_STRFTIME_C99_SUPPORT
+                if (ch == 'C') {
+                    ntoappend -= 2;
+                }
+            }
+#endif
             ptoappend = buf;
         }
 #endif
