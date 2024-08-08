@@ -3106,7 +3106,7 @@ class ASTOptimiziationTests(unittest.TestCase):
             result_code = code % op
             non_optimized_target = self.create_unaryop(op)
             optimized_target = ast.Constant(eval(result_code))
-    
+
             with self.subTest(
                 result_code=result_code,
                 non_optimized_target=non_optimized_target,
@@ -3140,7 +3140,7 @@ class ASTOptimiziationTests(unittest.TestCase):
 
     def test_folding_iter(self):
         code = "for _ in []: pass"
-        
+
         non_optimized_target = ast.For(target=ast.Name(id="_", ctx=ast.Store()), iter=ast.List(), body=[ast.Pass()])
         optimized_target = ast.For(target=ast.Name(id="_", ctx=ast.Store()), iter=ast.Constant(value=()), body=[ast.Pass()])
 
