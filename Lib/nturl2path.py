@@ -3,7 +3,9 @@
 This module only exists to provide OS-specific code
 for urllib.requests, thus do not use directly.
 """
-# Testing is done through test_urllib.
+__all__ = ["url2pathname", "pathname2url"]
+
+import urllib.parse
 
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
@@ -14,7 +16,7 @@ def url2pathname(url):
     #   ///C:/foo/bar/spam.foo
     # become
     #   C:\foo\bar\spam.foo
-    import string, urllib.parse
+    import string
     # Windows itself uses ":" even in URLs.
     url = url.replace(':', '|')
     if not '|' in url:
@@ -49,7 +51,6 @@ def pathname2url(p):
     #   C:\foo\bar\spam.foo
     # becomes
     #   ///C:/foo/bar/spam.foo
-    import urllib.parse
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
     if p[:4] == '\\\\?\\':
