@@ -555,7 +555,7 @@ Important files
   * [Python/assemble.c](https://github.com/python/cpython/blob/main/Python/assemble.c):
     Constructs a code object from a sequence of pseudo instructions.
 
-  * [Python/instruction_sequence.c.c](https://github.com/python/cpython/blob/main/Python/instruction_sequence.c.c):
+  * [Python/instruction_sequence.c](https://github.com/python/cpython/blob/main/Python/instruction_sequence.c):
     A data structure representing a sequence of bytecode-like pseudo-instructions.
 
 * [Include/](https://github.com/python/cpython/blob/main/Include/)
