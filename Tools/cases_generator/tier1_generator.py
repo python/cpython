@@ -33,6 +33,7 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 FOOTER = "#undef TIER_ONE\n"
 
+
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
@@ -61,8 +62,14 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                 required.remove(var.name)
                 declare_variable(var, out)
 
+
 def write_uop(
-    uop: Part, emitter: Emitter, offset: int, stack: Stack, inst: Instruction, braces: bool
+    uop: Part,
+    emitter: Emitter,
+    offset: int,
+    stack: Stack,
+    inst: Instruction,
+    braces: bool,
 ) -> int:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
@@ -123,7 +130,7 @@ def write_uop(
             if output.name in uop.deferred_refs.values():
                 # We've already spilled this when emitting tokens
                 output.cached = False
-            emitter.emit(stack.push(output))
+            stack.push(output)
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")
