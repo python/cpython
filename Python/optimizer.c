@@ -588,8 +588,6 @@ translate_bytecode_to_trace(
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
 
-        /* Special case the first instruction,
-         * so that we can guarantee forward progress */
         if (!first && instr == initial_instr) {
             // We have looped around to the start:
             RESERVE(1);
@@ -615,6 +613,8 @@ translate_bytecode_to_trace(
         RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
         ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
 
+        /* Special case the first instruction,
+         * so that we can guarantee forward progress */
         if (first && progress_needed) {
             assert(first);
             if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
