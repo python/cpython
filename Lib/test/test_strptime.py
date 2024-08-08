@@ -8,9 +8,11 @@ import os
 import sys
 from test import support
 from test.support import skip_if_buggy_ucrt_strfptime, warnings_helper
+from test.support.parameterize import parameterize
 from datetime import date as datetime_date
 
 import _strptime
+
 
 class getlang_Tests(unittest.TestCase):
     """Test _getlang"""
@@ -354,7 +356,7 @@ class StrptimeTests(unittest.TestCase):
         # Test julian directives
         self.helper('j', 7)
 
-    def test_offset(self):
+    def test_z_directive_offset(self):
         one_hour = 60 * 60
         half_hour = 30 * 60
         half_minute = 30
@@ -370,22 +372,39 @@ class StrptimeTests(unittest.TestCase):
         (*_, offset), _, offset_fraction = _strptime._strptime("-013030.000001", "%z")
         self.assertEqual(offset, -(one_hour + half_hour + half_minute))
         self.assertEqual(offset_fraction, -1)
-        (*_, offset), _, offset_fraction = _strptime._strptime("+01:00", "%z")
+
+    @parameterize(
+        ["directive"],
+        [
+            ("%z",),
+            ("%:z",),
+        ]
+    )
+    def test_iso_offset(self, directive: str):
+        """
+        Tests offset for the '%:z' directive from ISO 8601.
+        Since '%z' directive also accepts '%:z'-formatted strings for backwards compatibility,
+        we're testing that here too.
+        """
+        one_hour = 60 * 60
+        half_hour = 30 * 60
+        half_minute = 30
+        (*_, offset), _, offset_fraction = _strptime._strptime("+01:00", directive)
         self.assertEqual(offset, one_hour)
         self.assertEqual(offset_fraction, 0)
-        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30", "%z")
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30", directive)
         self.assertEqual(offset, -(one_hour + half_hour))
         self.assertEqual(offset_fraction, 0)
-        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30", "%z")
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30", directive)
         self.assertEqual(offset, -(one_hour + half_hour + half_minute))
         self.assertEqual(offset_fraction, 0)
-        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30.000001", "%z")
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30.000001", directive)
         self.assertEqual(offset, -(one_hour + half_hour + half_minute))
         self.assertEqual(offset_fraction, -1)
-        (*_, offset), _, offset_fraction = _strptime._strptime("+01:30:30.001", "%z")
+        (*_, offset), _, offset_fraction = _strptime._strptime("+01:30:30.001", directive)
         self.assertEqual(offset, one_hour + half_hour + half_minute)
         self.assertEqual(offset_fraction, 1000)
-        (*_, offset), _, offset_fraction = _strptime._strptime("Z", "%z")
+        (*_, offset), _, offset_fraction = _strptime._strptime("Z", directive)
         self.assertEqual(offset, 0)
         self.assertEqual(offset_fraction, 0)
 

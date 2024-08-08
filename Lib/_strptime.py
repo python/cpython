@@ -202,7 +202,10 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
+            # "z" shouldn't support colons. Both ":?" should be removed. However, for backwards
+            # compatibility, we must keep them (see gh-121237)
             'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
+            ':z': r"(?P<colon_z>[+-]\d\d:[0-5]\d(:[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -254,13 +257,16 @@ class TimeRE(dict):
         year_in_format = False
         day_of_month_in_format = False
         while '%' in format:
-            directive_index = format.index('%')+1
-            format_char = format[directive_index]
+            directive_index = format.index('%') + 1
+            directive = format[directive_index]
+            if directive == ":":
+                # Special case for "%:z", which has an extra character
+                directive += format[directive_index + 1]
             processed_format = "%s%s%s" % (processed_format,
-                                           format[:directive_index-1],
-                                           self[format_char])
-            format = format[directive_index+1:]
-            match format_char:
+                                           format[:directive_index - 1],
+                                           self[directive])
+            format = format[directive_index + len(directive):]
+            match directive:
                 case 'Y' | 'y' | 'G':
                     year_in_format = True
                 case 'd':
@@ -446,8 +452,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 week_of_year_start = 0
         elif group_key == 'V':
             iso_week = int(found_dict['V'])
-        elif group_key == 'z':
-            z = found_dict['z']
+        elif group_key in ('z', 'colon_z'):
+            z = found_dict[group_key]
             if z == 'Z':
                 gmtoff = 0
             else:
@@ -455,7 +461,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     z = z[:3] + z[4:]
                     if len(z) > 5:
                         if z[5] != ':':
-                            msg = f"Inconsistent use of : in {found_dict['z']}"
+                            msg = f"Inconsistent use of : in {found_dict[group_key]}"
                             raise ValueError(msg)
                         z = z[:5] + z[6:]
                 hours = int(z[1:3])

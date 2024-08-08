@@ -10,11 +10,11 @@ import zipfile
 import zipfile._path
 
 from test.support.os_helper import temp_dir, FakePath
+from test.support.parameterize import parameterize, Invoked
 
 from ._functools import compose
 from ._itertools import Counter
 
-from ._test_params import parameterize, Invoked
 
 
 class jaraco:
