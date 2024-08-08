@@ -34,6 +34,11 @@ adb = Path(
     + (".exe" if os.name == "nt" else "")
 )
 
+gradlew = Path(
+    f"{TESTBED_DIR}/gradlew"
+    + (".bat" if os.name == "nt" else "")
+)
+
 
 def delete_glob(pattern):
     # Path.glob doesn't accept non-relative patterns.
@@ -224,6 +229,21 @@ def setup_testbed(context):
              f"{temp_dir}/{outer_jar}", "gradle-wrapper.jar"])
 
 
+def setup_testbed_if_needed(context):
+    if not gradlew.exists():
+        setup_testbed(context)
+
+
+# run_testbed will build the app automatically, but it hides the Gradle output
+# by default, so it's useful to have this as a separate command for the buildbot.
+def build_testbed(context):
+    setup_testbed_if_needed(context)
+    run(
+        [gradlew, "--console", "plain", "packageDebug", "packageDebugAndroidTest"],
+        cwd=TESTBED_DIR,
+    )
+
+
 # Work around a bug involving sys.exit and TaskGroups
 # (https://github.com/python/cpython/issues/101515).
 def exit(*args):
@@ -403,8 +423,7 @@ async def gradle_task(context):
         env["ANDROID_SERIAL"] = context.connected
 
     async with async_process(
-        f"{TESTBED_DIR}/gradlew" + (".bat" if os.name == "nt" else ""),
-        "--console", "plain",
+        gradlew, "--console", "plain",
         f"{task_prefix}DebugAndroidTest",
         "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
         + shlex.join(context.args),
@@ -432,8 +451,7 @@ async def run_testbed(context):
             f"the Android SDK manager."
         )
 
-    if not (TESTBED_DIR / "gradlew").exists():
-        setup_testbed(context)
+    setup_testbed_if_needed(context)
 
     # In --managed mode, Gradle will create a device with an unpredictable name.
     # So we save a list of the running devices before starting Gradle, and
@@ -479,6 +497,8 @@ def main():
 
     subcommands.add_parser(
         "setup-testbed", help="Download the testbed Gradle wrapper")
+    subcommands.add_parser(
+        "build-testbed", help="Build the testbed app")
     test = subcommands.add_parser(
         "test", help="Run the test suite")
     test.add_argument(
@@ -502,6 +522,7 @@ def main():
                 "build": build_all,
                 "clean": clean_all,
                 "setup-testbed": setup_testbed,
+                "build-testbed": build_testbed,
                 "test": run_testbed}
 
     result = dispatch[context.subcommand](context)
