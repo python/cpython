@@ -1809,7 +1809,7 @@ get_dotted_path(PyObject *name)
 }
 
 static int
-check_dotted_path(PyObject *obj, PyObject *name, PyObject *dotted_path)
+check_dotted_path(PickleState *st, PyObject *obj, PyObject *dotted_path)
 {
     Py_ssize_t i, n;
     n = PyList_GET_SIZE(dotted_path);
@@ -1817,12 +1817,8 @@ check_dotted_path(PyObject *obj, PyObject *name, PyObject *dotted_path)
     for (i = 0; i < n; i++) {
         PyObject *subpath = PyList_GET_ITEM(dotted_path, i);
         if (_PyUnicode_EqualToASCIIString(subpath, "<locals>")) {
-            if (obj == NULL)
-                PyErr_Format(PyExc_AttributeError,
-                             "Can't get local object %R", name);
-            else
-                PyErr_Format(PyExc_AttributeError,
-                             "Can't get local attribute %R on %R", name, obj);
+            PyErr_Format(st->PicklingError,
+                         "Can't pickle local object %R", obj);
             return -1;
         }
     }
@@ -1830,7 +1826,7 @@ check_dotted_path(PyObject *obj, PyObject *name, PyObject *dotted_path)
 }
 
 static PyObject *
-getattribute(PyObject *obj, PyObject *names)
+getattribute(PyObject *obj, PyObject *names, int raises)
 {
     Py_ssize_t i, n;
 
@@ -1840,7 +1836,12 @@ getattribute(PyObject *obj, PyObject *names)
     for (i = 0; i < n; i++) {
         PyObject *name = PyList_GET_ITEM(names, i);
         PyObject *parent = obj;
-        (void)PyObject_GetOptionalAttr(parent, name, &obj);
+        if (raises) {
+            obj = PyObject_GetAttr(parent, name);
+        }
+        else {
+            (void)PyObject_GetOptionalAttr(parent, name, &obj);
+        }
         Py_DECREF(parent);
         if (obj == NULL) {
             return NULL;
@@ -1848,7 +1849,6 @@ getattribute(PyObject *obj, PyObject *names)
     }
     return obj;
 }
-
 
 static int
 _checkmodule(PyObject *module_name, PyObject *module,
@@ -1862,7 +1862,7 @@ _checkmodule(PyObject *module_name, PyObject *module,
         return -1;
     }
 
-    PyObject *candidate = getattribute(module, dotted_path);
+    PyObject *candidate = getattribute(module, dotted_path, 0);
     if (candidate == NULL) {
         return -1;
     }
@@ -1882,6 +1882,9 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
     Py_ssize_t i;
     PyObject *modules;
 
+    if (check_dotted_path(st, global, dotted_path) < 0) {
+        return NULL;
+    }
     if (PyObject_GetOptionalAttr(global, &_Py_ID(__module__), &module_name) < 0) {
         return NULL;
     }
@@ -1890,9 +1893,6 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
         Py_CLEAR(module_name);
-        if (check_dotted_path(NULL, global_name, dotted_path) < 0) {
-            return NULL;
-        }
         PyThreadState *tstate = _PyThreadState_GET();
         modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
         if (modules == NULL) {
@@ -1959,23 +1959,28 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
        extra parameters of __import__ to fix that. */
     module = PyImport_Import(module_name);
     if (module == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: import of module %R failed",
-                     global, module_name);
+        if (PyErr_ExceptionMatches(PyExc_ImportError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_Format(st->PicklingError,
+                         "Can't pickle %R: %S", global, exc);
+            _PyErr_ChainExceptions1(exc);
+        }
         Py_DECREF(module_name);
         return NULL;
     }
-    if (check_dotted_path(module, global_name, dotted_path) < 0) {
-        Py_DECREF(module_name);
-        Py_DECREF(module);
-        return NULL;
-    }
-    PyObject *actual = getattribute(module, dotted_path);
+    PyObject *actual = getattribute(module, dotted_path, 1);
     Py_DECREF(module);
     if (actual == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: attribute lookup %S on %S failed",
-                     global, global_name, module_name);
+        assert(PyErr_Occurred());
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_Format(st->PicklingError,
+                         "Can't pickle %R: it's not found as %S.%S",
+                         global, module_name, global_name);
+            _PyErr_ChainExceptions1(exc);
+        }
         Py_DECREF(module_name);
         return NULL;
     }
@@ -3769,11 +3774,14 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             }
             encoded = unicode_encoder(module_name);
             if (encoded == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    PyObject *exc = PyErr_GetRaisedException();
                     PyErr_Format(st->PicklingError,
-                                 "can't pickle module identifier '%S' using "
+                                 "can't pickle module identifier %R using "
                                  "pickle protocol %i",
                                  module_name, self->proto);
+                    _PyErr_ChainExceptions1(exc);
+                }
                 goto error;
             }
             if (_Pickler_Write(self, PyBytes_AS_STRING(encoded),
@@ -3788,11 +3796,14 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             /* Save the name of the module. */
             encoded = unicode_encoder(global_name);
             if (encoded == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    PyObject *exc = PyErr_GetRaisedException();
                     PyErr_Format(st->PicklingError,
-                                 "can't pickle global identifier '%S' using "
+                                 "can't pickle global identifier %R using "
                                  "pickle protocol %i",
                                  global_name, self->proto);
+                    _PyErr_ChainExceptions1(exc);
+                }
                 goto error;
             }
             if (_Pickler_Write(self, PyBytes_AS_STRING(encoded),
@@ -3953,8 +3964,9 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
     size = PyTuple_Size(args);
     if (size < 2 || size > 6) {
-        PyErr_SetString(st->PicklingError, "tuple returned by "
-                        "__reduce__ must contain 2 through 6 elements");
+        PyErr_SetString(st->PicklingError,
+                        "tuple returned by __reduce__ "
+                        "must contain 2 through 6 elements");
         return -1;
     }
 
@@ -3964,13 +3976,15 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
         return -1;
 
     if (!PyCallable_Check(callable)) {
-        PyErr_SetString(st->PicklingError, "first item of the tuple "
-                        "returned by __reduce__ must be callable");
+        PyErr_Format(st->PicklingError,
+                     "first item of the tuple returned by __reduce__ "
+                     "must be callable, not %T", callable);
         return -1;
     }
     if (!PyTuple_Check(argtup)) {
-        PyErr_SetString(st->PicklingError, "second item of the tuple "
-                        "returned by __reduce__ must be a tuple");
+        PyErr_Format(st->PicklingError,
+                     "second item of the tuple returned by __reduce__ "
+                     "must be a tuple, not %T", argtup);
         return -1;
     }
 
@@ -3980,27 +3994,27 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
     if (listitems == Py_None)
         listitems = NULL;
     else if (!PyIter_Check(listitems)) {
-        PyErr_Format(st->PicklingError, "fourth element of the tuple "
-                     "returned by __reduce__ must be an iterator, not %s",
-                     Py_TYPE(listitems)->tp_name);
+        PyErr_Format(st->PicklingError,
+                     "fourth item of the tuple returned by __reduce__ "
+                     "must be an iterator, not %T", listitems);
         return -1;
     }
 
     if (dictitems == Py_None)
         dictitems = NULL;
     else if (!PyIter_Check(dictitems)) {
-        PyErr_Format(st->PicklingError, "fifth element of the tuple "
-                     "returned by __reduce__ must be an iterator, not %s",
-                     Py_TYPE(dictitems)->tp_name);
+        PyErr_Format(st->PicklingError,
+                     "fifth item of the tuple returned by __reduce__ "
+                     "must be an iterator, not %T", dictitems);
         return -1;
     }
 
     if (state_setter == Py_None)
         state_setter = NULL;
     else if (!PyCallable_Check(state_setter)) {
-        PyErr_Format(st->PicklingError, "sixth element of the tuple "
-                     "returned by __reduce__ must be a function, not %s",
-                     Py_TYPE(state_setter)->tp_name);
+        PyErr_Format(st->PicklingError,
+                     "sixth item of the tuple returned by __reduce__ "
+                     "must be callable, not %T", state_setter);
         return -1;
     }
 
@@ -4026,30 +4040,30 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         if (PyTuple_GET_SIZE(argtup) != 3) {
             PyErr_Format(st->PicklingError,
-                         "length of the NEWOBJ_EX argument tuple must be "
-                         "exactly 3, not %zd", PyTuple_GET_SIZE(argtup));
+                         "__newobj_ex__ expected 3 arguments, got %zd",
+                         PyTuple_GET_SIZE(argtup));
             return -1;
         }
 
         cls = PyTuple_GET_ITEM(argtup, 0);
         if (!PyType_Check(cls)) {
             PyErr_Format(st->PicklingError,
-                         "first item from NEWOBJ_EX argument tuple must "
-                         "be a class, not %.200s", Py_TYPE(cls)->tp_name);
+                         "first argument to __newobj_ex__() "
+                         "must be a class, not %T", cls);
             return -1;
         }
         args = PyTuple_GET_ITEM(argtup, 1);
         if (!PyTuple_Check(args)) {
             PyErr_Format(st->PicklingError,
-                         "second item from NEWOBJ_EX argument tuple must "
-                         "be a tuple, not %.200s", Py_TYPE(args)->tp_name);
+                         "second argument to __newobj_ex__() "
+                         "must be a tuple, not %T", args);
             return -1;
         }
         kwargs = PyTuple_GET_ITEM(argtup, 2);
         if (!PyDict_Check(kwargs)) {
             PyErr_Format(st->PicklingError,
-                         "third item from NEWOBJ_EX argument tuple must "
-                         "be a dict, not %.200s", Py_TYPE(kwargs)->tp_name);
+                         "third argument to __newobj_ex__() "
+                         "must be a dict, not %T", kwargs);
             return -1;
         }
 
@@ -4112,14 +4126,17 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         /* Sanity checks. */
         if (PyTuple_GET_SIZE(argtup) < 1) {
-            PyErr_SetString(st->PicklingError, "__newobj__ arglist is empty");
+            PyErr_Format(st->PicklingError,
+                         "__newobj__ expected at least 1 argument, got %zd",
+                         PyTuple_GET_SIZE(argtup));
             return -1;
         }
 
         cls = PyTuple_GET_ITEM(argtup, 0);
         if (!PyType_Check(cls)) {
-            PyErr_SetString(st->PicklingError, "args[0] from "
-                            "__newobj__ args is not a type");
+            PyErr_Format(st->PicklingError,
+                         "first argument to __newobj__() "
+                         "must be a class, not %T", cls);
             return -1;
         }
 
@@ -4128,13 +4145,14 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
             if (obj_class == NULL) {
                 return -1;
             }
-            p = obj_class != cls;
-            Py_DECREF(obj_class);
-            if (p) {
-                PyErr_SetString(st->PicklingError, "args[0] from "
-                                "__newobj__ args has the wrong class");
+            if (obj_class != cls) {
+                PyErr_Format(st->PicklingError,
+                             "first argument to __newobj__() "
+                             "must be %R, not %R", obj_class, cls);
+                Py_DECREF(obj_class);
                 return -1;
             }
+            Py_DECREF(obj_class);
         }
         /* XXX: These calls save() are prone to infinite recursion. Imagine
            what happen if the value returned by the __reduce__() method of
@@ -4427,8 +4445,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
             }
             else {
                 PyErr_Format(st->PicklingError,
-                             "can't pickle '%.200s' object: %R",
-                             type->tp_name, obj);
+                             "Can't pickle %T object", obj);
                 goto error;
             }
         }
@@ -4444,8 +4461,8 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     }
 
     if (!PyTuple_Check(reduce_value)) {
-        PyErr_SetString(st->PicklingError,
-                        "__reduce__ must return a string or tuple");
+        PyErr_Format(st->PicklingError,
+                     "__reduce__ must return a string or tuple, not %T", reduce_value);
         goto error;
     }
 
@@ -7048,17 +7065,16 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
             Py_DECREF(module);
             return NULL;
         }
-        if (check_dotted_path(module, global_name, dotted_path) < 0) {
-            Py_DECREF(dotted_path);
-            Py_DECREF(module);
-            return NULL;
-        }
-        global = getattribute(module, dotted_path);
-        Py_DECREF(dotted_path);
-        if (global == NULL && !PyErr_Occurred()) {
+        global = getattribute(module, dotted_path, 1);
+        assert(global != NULL || PyErr_Occurred());
+        if (global == NULL && PyList_GET_SIZE(dotted_path) > 1) {
+            PyObject *exc = PyErr_GetRaisedException();
             PyErr_Format(PyExc_AttributeError,
-                         "Can't get attribute %R on %R", global_name, module);
+                         "Can't resolve path %R on module %R",
+                         global_name, module_name);
+            _PyErr_ChainExceptions1(exc);
         }
+        Py_DECREF(dotted_path);
     }
     else {
         global = PyObject_GetAttr(module, global_name);
