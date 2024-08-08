@@ -226,6 +226,14 @@ Glossary
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
 
+   closure variable
+      A variable referenced from a :term:`nested scope` that is defined in an outer scope
+      rather than being resolved at runtime from the globals or builtin namespaces.
+      May be explicitly defined with the :keyword:`nonlocal` keyword to allow write access,
+      or implicitly defined if the variable is only read without being written to.
+      Due to the name of the :attr:`codeobject.co_freevars` attribute, sometimes instead
+      referred to as a :term:`free variable`.
+
    complex number
       An extension of the familiar real number system in which all numbers are
       expressed as a sum of a real part and an imaginary part.  Imaginary
@@ -443,6 +451,13 @@ Glossary
       simultaneously within the same interpreter.  This is in contrast to
       the :term:`global interpreter lock` which allows only one thread to
       execute Python bytecode at a time.  See :pep:`703`.
+
+   free variable
+      Formally, as defined in the :ref:`language execution model <bind_names>`, a free
+      variable is any variable used in a namespace which is not a local variable in that
+      namespace.
+      Pragmatically, due to the name of the :attr:`codeobject.co_freevars` attribute,
+      the term is also sometimes used as a synonym for :term:`closure variable`.
 
    function
       A series of statements which returns some value to a caller. It can also

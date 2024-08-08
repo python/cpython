@@ -199,7 +199,7 @@ Standard names are defined for the following types:
 .. data:: CellType
 
    The type for cell objects: such objects are used as containers for
-   a function's free variables.
+   a function's :term:`closure variables <closure variable>`.
 
    .. versionadded:: 3.8
 

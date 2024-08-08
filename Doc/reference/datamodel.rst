@@ -564,8 +564,9 @@ Special read-only attributes
        in which the function was defined.
 
    * - .. attribute:: function.__closure__
-     - ``None`` or a :class:`tuple` of cells that contain bindings for the
-       function's free variables.
+     - ``None`` or a :class:`tuple` of cells that contain bindings for the names specified
+       in the :attr:`~codeobject.co_freevars` attribute of the function's
+       :attr:`code object <function.__code__>`.
 
        A cell object has the attribute ``cell_contents``.
        This can be used to get the value of the cell, as well as set the value.
@@ -1168,10 +1169,14 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_cellvars
      - A :class:`tuple` containing the names of :ref:`local variables <naming>`
-       that are referenced by nested functions inside the function
+       that are referenced from at least one :term:`nested scope` inside the function
 
    * - .. attribute:: codeobject.co_freevars
-     - A :class:`tuple` containing the names of free variables in the function
+     - A :class:`tuple` containing the names of
+       :term:`free (closure) variables <closure variable>` that a :term:`nested scope`
+       references in an outer scope. See also :attr:`function.__closure__`.
+
+       Note: references to global and builtin names are *not* included.
 
    * - .. attribute:: codeobject.co_code
      - A string representing the sequence of :term:`bytecode` instructions in
