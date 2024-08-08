@@ -23,7 +23,6 @@
 #endif
 
 #include <Python.h>
-#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 
@@ -512,7 +511,7 @@ mmap_read_method(mmap_object *self,
     Py_ssize_t num_bytes = PY_SSIZE_T_MAX, remaining;
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
+    if (!PyArg_ParseTuple(args, "|n?:read", &num_bytes))
         return NULL;
     CHECK_VALID(NULL);
 
