@@ -2674,6 +2674,24 @@ def iter_builtin_types():
             yield cls
 
 
+def identify_type_slots(*, reverse=False):
+    if _testinternalcapi is not None:
+        pairs = _testinternalcapi.identify_type_slots()
+        if reverse:
+            pairs = ((a, s) for s, a in pairs)
+        slots = {}
+        duplicates = {}
+        for key, value in pairs:
+            if key in slots:
+                assert key not in duplicates, (key, value)
+                duplicates[key] = value
+            else:
+                slots[key] = value
+        return slots, duplicates
+    else:
+        raise NotImplementedError
+
+
 def iter_slot_wrappers(cls):
     def is_slot_wrapper(name, value):
         if not isinstance(value, types.WrapperDescriptorType):
