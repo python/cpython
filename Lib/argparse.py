@@ -608,9 +608,7 @@ class HelpFormatter(object):
         except AttributeError:
             pass
         else:
-            self._indent()
             yield from get_subactions()
-            self._dedent()
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
