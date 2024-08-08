@@ -1,0 +1,3 @@
+Default buffer size :func:`os.write` on Windows no longer or splits the write.
+Writing to the Windows console is still split to maintain responsiveness of
+interrupts, but at a much larger size.
