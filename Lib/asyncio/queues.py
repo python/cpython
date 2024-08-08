@@ -30,6 +30,20 @@ class QueueShutDown(Exception):
     pass
 
 
+class _AsyncQueueIterator:
+    def __init__(self, queue):
+        self._queue = queue
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return await self._queue.get()
+        except QueueShutDown:
+            raise StopAsyncIteration
+
+
 class Queue(mixins._LoopBoundMixin):
     """A queue, useful for coordinating producer and consumer coroutines.
 
@@ -75,6 +89,9 @@ class Queue(mixins._LoopBoundMixin):
             if not waiter.done():
                 waiter.set_result(None)
                 break
+
+    def __aiter__(self):
+        return _AsyncQueueIterator(self)
 
     def __repr__(self):
         return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'
