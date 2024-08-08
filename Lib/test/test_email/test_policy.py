@@ -424,6 +424,17 @@ class TestConcretePolicies(unittest.TestCase):
                           instance.header_store_parse,
                           'From', 'spam\negg@foo.py')
 
+class TestLeadingWhitespacePolicies(unittest.TestCase):
+
+    def test_message_id(self):
+        # Create an email message from a string
+        message = email.message_from_string("Message-id:\r\n\t<abcdef@example.com>\r\n\r\n")
+        # Assert that the 'message-id' header matches the expected value
+        self.assertEqual(
+            message['message-id'],
+            '<abcdef@example.com>',
+            f"Expected '<abcdef@example.com>' but got {message['message-id']!r}"
+        )
 
 if __name__ == '__main__':
     unittest.main()
