@@ -296,7 +296,10 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.post_parsing.append('/* Post parse cleanup for ' + name + ' */\n' + post_parsing.rstrip() + '\n')
 
         # cleanup
-        cleanup = self.cleanup()
+        if parameter.is_vararg():
+            cleanup = f"Py_XDECREF({self.parser_name});"
+        else:
+            cleanup = self.cleanup()
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 

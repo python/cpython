@@ -64,7 +64,7 @@ _pickle_Pickler_dump(PicklerObject *self, PyTypeObject *cls, PyObject *const *ar
     PyObject *argsbuf[1];
     PyObject *obj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -181,7 +181,7 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int fix_imports = 1;
     PyObject *buffer_callback = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -298,7 +298,7 @@ _pickle_Unpickler_persistent_load(UnpicklerObject *self, PyTypeObject *cls, PyOb
     PyObject *argsbuf[1];
     PyObject *pid;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -377,7 +377,7 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyTypeObject *cls, PyObject 
     PyObject *module_name;
     PyObject *global_name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -487,7 +487,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *errors = "strict";
     PyObject *buffers = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -679,7 +679,7 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int fix_imports = 1;
     PyObject *buffer_callback = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -782,7 +782,7 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int fix_imports = 1;
     PyObject *buffer_callback = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -891,7 +891,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     const char *errors = "strict";
     PyObject *buffers = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1017,7 +1017,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     const char *errors = "strict";
     PyObject *buffers = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1077,4 +1077,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a9452cf1219f2e7a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a506d99b5471c17 input=a9049054013a1b77]*/

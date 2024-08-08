@@ -9,6 +9,7 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -1478,7 +1479,7 @@ keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1534,7 +1535,7 @@ keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *a;
     PyObject *b;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1592,7 +1593,7 @@ keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *b = Py_None;
     PyObject *c = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1662,7 +1663,7 @@ keywords_opt_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *c = Py_None;
     PyObject *d = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1741,7 +1742,7 @@ keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *b = Py_None;
     PyObject *c = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1807,7 +1808,7 @@ posonly_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *a;
     PyObject *b;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1863,7 +1864,7 @@ posonly_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *a;
     PyObject *b;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1921,7 +1922,7 @@ posonly_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *b;
     PyObject *c;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1982,7 +1983,7 @@ posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *c = Py_None;
     PyObject *d = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2053,7 +2054,7 @@ posonly_opt_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *c = Py_None;
     PyObject *d = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2129,7 +2130,7 @@ posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *c = Py_None;
     PyObject *d = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2200,7 +2201,7 @@ posonly_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *c = Py_None;
     PyObject *d = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2277,7 +2278,7 @@ posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *d = Py_None;
     PyObject *e = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2352,7 +2353,7 @@ posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *d = Py_None;
     PyObject *e = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2435,7 +2436,7 @@ posonly_opt_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_
     PyObject *c = Py_None;
     PyObject *d = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2510,7 +2511,7 @@ keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *argsbuf[1];
     PyObject *a;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2527,33 +2528,7 @@ PyDoc_STRVAR(varpos__doc__,
 "\n");
 
 #define VARPOS_METHODDEF    \
-    {"varpos", _PyCFunction_CAST(varpos), METH_FASTCALL, varpos__doc__},
-
-static PyObject *
-varpos_impl(PyObject *module, PyObject *args);
-
-static PyObject *
-varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
-
-    if (!_PyArg_CheckPositional("varpos", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = varpos_impl(module, __clinic_args);
-
-exit:
-    Py_XDECREF(__clinic_args);
-    return return_value;
-}
+    {"varpos", (PyCFunction)varpos, METH_VARARGS, varpos__doc__},
 
 PyDoc_STRVAR(posonly_varpos__doc__,
 "posonly_varpos($module, a, b, /, *args)\n"
@@ -2580,17 +2555,60 @@ posonly_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     a = args[0];
     b = args[1];
-    __clinic_args = PyTuple_New(nargs - 2);
-    if (!__clinic_args) {
+    __clinic_args = _PyTuple_FromArray(args + 2, nargs - 2);
+    if (__clinic_args == NULL) {
         goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 2; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[2 + i]));
     }
     return_value = posonly_varpos_impl(module, a, b, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(posonly_req_opt_varpos__doc__,
+"posonly_req_opt_varpos($module, a, b=False, /, *args)\n"
+"--\n"
+"\n");
+
+#define POSONLY_REQ_OPT_VARPOS_METHODDEF    \
+    {"posonly_req_opt_varpos", _PyCFunction_CAST(posonly_req_opt_varpos), METH_FASTCALL, posonly_req_opt_varpos__doc__},
+
+static PyObject *
+posonly_req_opt_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
+                            PyObject *args);
+
+static PyObject *
+posonly_req_opt_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b = Py_False;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("posonly_req_opt_varpos", nargs, 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = args[1];
+skip_optional:
+    __clinic_args = nargs > 2
+        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = posonly_req_opt_varpos_impl(module, a, b, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -2635,22 +2653,30 @@ posonly_poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
     PyObject *a;
     PyObject *b;
     PyObject *__clinic_args = NULL;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 2, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    a = args[0];
-    b = args[1];
-    __clinic_args = args[2];
+    a = fastargs[0];
+    b = fastargs[1];
+    __clinic_args = nargs > 2
+        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = posonly_poskw_varpos_impl(module, a, b, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -2694,20 +2720,28 @@ poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
     PyObject *a;
     PyObject *__clinic_args = NULL;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    a = args[0];
-    __clinic_args = args[1];
+    a = fastargs[0];
+    __clinic_args = nargs > 1
+        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = poskw_varpos_impl(module, a, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -2752,30 +2786,38 @@ poskw_varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
     int b = 0;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    a = args[0];
-    __clinic_args = args[1];
+    a = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    b = PyObject_IsTrue(args[2]);
+    b = PyObject_IsTrue(fastargs[1]);
     if (b < 0) {
         goto exit;
     }
 skip_optional_kwonly:
+    __clinic_args = nargs > 1
+        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = poskw_varpos_kwonly_opt_impl(module, a, __clinic_args, b);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -2820,34 +2862,42 @@ poskw_varpos_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
     PyObject *b = Py_False;
     PyObject *c = Py_False;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    a = args[0];
-    __clinic_args = args[1];
+    a = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2]) {
-        b = args[2];
+    if (fastargs[1]) {
+        b = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    c = args[3];
+    c = fastargs[2];
 skip_optional_kwonly:
+    __clinic_args = nargs > 1
+        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = poskw_varpos_kwonly_opt2_impl(module, a, __clinic_args, b, c);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -2891,25 +2941,31 @@ varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *__clinic_args = NULL;
     PyObject *b = Py_False;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    __clinic_args = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    b = args[1];
+    b = fastargs[0];
 skip_optional_kwonly:
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = varpos_kwonly_opt_impl(module, __clinic_args, b);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -2954,34 +3010,40 @@ varpos_kwonly_req_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *__clinic_args = NULL;
     PyObject *a;
     PyObject *b = Py_False;
     PyObject *c = Py_False;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 1, 0, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 1, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    __clinic_args = args[0];
-    a = args[1];
+    a = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2]) {
-        b = args[2];
+    if (fastargs[1]) {
+        b = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    c = args[3];
+    c = fastargs[2];
 skip_optional_kwonly:
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = varpos_kwonly_req_opt_impl(module, __clinic_args, a, b, c);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -3027,7 +3089,8 @@ gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[4];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 2) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *pos1;
     PyObject *pos2;
@@ -3035,28 +3098,35 @@ gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *kw1 = Py_None;
     PyObject *kw2 = Py_None;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 2, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    pos1 = args[0];
-    pos2 = args[1];
-    varargs = args[2];
+    pos1 = fastargs[0];
+    pos2 = fastargs[1];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3]) {
-        kw1 = args[3];
+    if (fastargs[2]) {
+        kw1 = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    kw2 = args[4];
+    kw2 = fastargs[3];
 skip_optional_kwonly:
+    varargs = nargs > 2
+        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        : PyTuple_New(0);
+    if (varargs == NULL) {
+        goto exit;
+    }
     return_value = gh_32092_oob_impl(module, pos1, pos2, varargs, kw1, kw2);
 
 exit:
+    /* Cleanup for varargs */
     Py_XDECREF(varargs);
+
     return return_value;
 }
 
@@ -3102,27 +3172,35 @@ gh_32092_kw_pass(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *pos;
     PyObject *__clinic_args = NULL;
     PyObject *kw = Py_None;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    pos = args[0];
-    __clinic_args = args[1];
+    pos = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    kw = args[2];
+    kw = fastargs[1];
 skip_optional_kwonly:
+    __clinic_args = nargs > 1
+        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = gh_32092_kw_pass_impl(module, pos, __clinic_args, kw);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -3133,33 +3211,7 @@ PyDoc_STRVAR(gh_99233_refcount__doc__,
 "Proof-of-concept of GH-99233 refcount error bug.");
 
 #define GH_99233_REFCOUNT_METHODDEF    \
-    {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
-
-static PyObject *
-gh_99233_refcount_impl(PyObject *module, PyObject *args);
-
-static PyObject *
-gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
-
-    if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = gh_99233_refcount_impl(module, __clinic_args);
-
-exit:
-    Py_XDECREF(__clinic_args);
-    return return_value;
-}
+    {"gh_99233_refcount", (PyCFunction)gh_99233_refcount, METH_VARARGS, gh_99233_refcount__doc__},
 
 PyDoc_STRVAR(gh_99240_double_free__doc__,
 "gh_99240_double_free($module, a, b, /)\n"
@@ -3237,30 +3289,38 @@ null_or_tuple_for_varargs(PyObject *module, PyObject *const *args, Py_ssize_t na
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name;
     PyObject *constraints = NULL;
     int covariant = 0;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    name = args[0];
-    constraints = args[1];
+    name = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    covariant = PyObject_IsTrue(args[2]);
+    covariant = PyObject_IsTrue(fastargs[1]);
     if (covariant < 0) {
         goto exit;
     }
 skip_optional_kwonly:
+    constraints = nargs > 1
+        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        : PyTuple_New(0);
+    if (constraints == NULL) {
+        goto exit;
+    }
     return_value = null_or_tuple_for_varargs_impl(module, name, constraints, covariant);
 
 exit:
+    /* Cleanup for constraints */
     Py_XDECREF(constraints);
+
     return return_value;
 }
 
@@ -3307,7 +3367,7 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *argsbuf[1];
     const char *path;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -3373,7 +3433,7 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *argsbuf[1];
     const char *path;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -3442,7 +3502,7 @@ clone_with_conv_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
                 .name = "clone_with_conv_f1",
             };
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -3505,7 +3565,7 @@ clone_with_conv_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
                 .name = "clone_with_conv_f2",
             };
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -3589,7 +3649,7 @@ _testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, 
     PyObject *argsbuf[1];
     PyObject *arg;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -3629,18 +3689,24 @@ _testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[0];
+    PyObject * const *fastargs;
     PyObject *__clinic_args = NULL;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    __clinic_args = args[0];
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = _testclinic_TestClass_defclass_varpos_impl(self, cls, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -3675,22 +3741,28 @@ _testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
     PyObject *a;
     PyObject *b;
     PyObject *__clinic_args = NULL;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 2, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 1, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    a = args[0];
-    b = args[1];
-    __clinic_args = args[2];
+    a = fastargs[0];
+    b = fastargs[1];
+    __clinic_args = _PyTuple_FromArray(args + 2, nargs - 2);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = _testclinic_TestClass_defclass_posonly_varpos_impl(self, cls, a, b, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
-/*[clinic end generated code: output=76ecbb38c632bde8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4dbf2d15659b41a input=a9049054013a1b77]*/

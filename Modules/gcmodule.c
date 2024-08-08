@@ -221,8 +221,8 @@ Return the list of objects that directly refer to any of 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=296a09587f6a86b5 input=bae96961b14a0922]*/
+gc_get_referrers(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=e11e352b7e0cdce0 input=bae96961b14a0922]*/
 {
     if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
         return NULL;
@@ -269,8 +269,8 @@ Return the list of objects that are directly referred to by 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
+gc_get_referents(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=9efb544e74953e38 input=b3ceab0c34038cbf]*/
 {
     if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
         return NULL;

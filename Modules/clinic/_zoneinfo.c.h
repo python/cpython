@@ -55,7 +55,7 @@ zoneinfo_ZoneInfo_from_file(PyTypeObject *type, PyTypeObject *cls, PyObject *con
     PyObject *file_obj;
     PyObject *key = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -116,7 +116,7 @@ zoneinfo_ZoneInfo_no_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *cons
     PyObject *argsbuf[1];
     PyObject *key;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -173,7 +173,7 @@ zoneinfo_ZoneInfo_clear_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *c
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *only_keys = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -221,7 +221,7 @@ zoneinfo_ZoneInfo_utcoffset(PyObject *self, PyTypeObject *cls, PyObject *const *
     PyObject *argsbuf[1];
     PyObject *dt;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -264,7 +264,7 @@ zoneinfo_ZoneInfo_dst(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
     PyObject *argsbuf[1];
     PyObject *dt;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -308,7 +308,7 @@ zoneinfo_ZoneInfo_tzname(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     PyObject *argsbuf[1];
     PyObject *dt;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -353,7 +353,7 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
     PyObject *key;
     unsigned char from_cache;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -372,4 +372,4 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2a15f32fdd2ab6cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c92c60d6c3241d6f input=a9049054013a1b77]*/

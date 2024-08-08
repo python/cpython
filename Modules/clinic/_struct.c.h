@@ -57,7 +57,7 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *format;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -159,7 +159,7 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -357,7 +357,7 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -436,4 +436,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=67bd299e5d72fee0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c11cb40bebddc0a input=a9049054013a1b77]*/

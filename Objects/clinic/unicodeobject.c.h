@@ -246,7 +246,7 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -338,7 +338,7 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int tabsize = 8;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -958,7 +958,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *new;
     Py_ssize_t count = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1282,7 +1282,7 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1404,7 +1404,7 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1484,7 +1484,7 @@ unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int keepends = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1838,7 +1838,7 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -1888,4 +1888,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9fee62bd337f809b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8abe66fb123b96da input=a9049054013a1b77]*/

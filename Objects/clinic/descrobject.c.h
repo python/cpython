@@ -51,7 +51,7 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *mapping;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -141,7 +141,7 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *fdel = NULL;
     PyObject *doc = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -173,4 +173,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=050e331316a04207 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74a4ad2f7bef2b0c input=a9049054013a1b77]*/

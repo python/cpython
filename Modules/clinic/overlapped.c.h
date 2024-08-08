@@ -484,7 +484,7 @@ _overlapped_Overlapped(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     HANDLE event = INVALID_HANDLE_VALUE;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -1239,4 +1239,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=958cbddbcc355f47 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f6cd189f280532c input=a9049054013a1b77]*/

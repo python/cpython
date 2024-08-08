@@ -48,7 +48,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *x = NULL;
     PyObject *obase = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -315,7 +315,7 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -426,7 +426,7 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -476,4 +476,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=a53f5ba9a6c16737 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c25ba2c37f5ae49 input=a9049054013a1b77]*/

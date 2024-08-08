@@ -41,7 +41,7 @@ _elementtree_Element_append(ElementObject *self, PyTypeObject *cls, PyObject *co
     PyObject *argsbuf[1];
     PyObject *subelement;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -198,7 +198,7 @@ _elementtree_Element___setstate__(ElementObject *self, PyTypeObject *cls, PyObje
     PyObject *argsbuf[1];
     PyObject *state;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -241,7 +241,7 @@ _elementtree_Element_extend(ElementObject *self, PyTypeObject *cls, PyObject *co
     PyObject *argsbuf[1];
     PyObject *elements;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -298,7 +298,7 @@ _elementtree_Element_find(ElementObject *self, PyTypeObject *cls, PyObject *cons
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -362,7 +362,7 @@ _elementtree_Element_findtext(ElementObject *self, PyTypeObject *cls, PyObject *
     PyObject *default_value = Py_None;
     PyObject *namespaces = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -430,7 +430,7 @@ _elementtree_Element_findall(ElementObject *self, PyTypeObject *cls, PyObject *c
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -492,7 +492,7 @@ _elementtree_Element_iterfind(ElementObject *self, PyTypeObject *cls, PyObject *
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -554,7 +554,7 @@ _elementtree_Element_get(ElementObject *self, PyObject *const *args, Py_ssize_t 
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -615,7 +615,7 @@ _elementtree_Element_iter(ElementObject *self, PyTypeObject *cls, PyObject *cons
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *tag = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -763,7 +763,7 @@ _elementtree_Element_makeelement(ElementObject *self, PyTypeObject *cls, PyObjec
     PyObject *tag;
     PyObject *attrib;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -883,7 +883,7 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     int insert_comments = 0;
     int insert_pis = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -1114,7 +1114,7 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
     PyObject *target = Py_None;
     const char *encoding = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -1236,4 +1236,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bd28eba33d9c1f25 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=386bfc0b02ea9531 input=a9049054013a1b77]*/

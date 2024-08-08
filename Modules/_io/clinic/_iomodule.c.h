@@ -175,7 +175,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -390,7 +390,7 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[1];
     PyObject *path;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -404,4 +404,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d60f4e778a600a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca839985e0d5219c input=a9049054013a1b77]*/

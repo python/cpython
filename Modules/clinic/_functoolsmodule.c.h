@@ -56,7 +56,7 @@ _functools_cmp_to_key(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *argsbuf[1];
     PyObject *mycmp;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -114,4 +114,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=755265bb6d5ea751 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=913ff19f52a6c0c6 input=a9049054013a1b77]*/

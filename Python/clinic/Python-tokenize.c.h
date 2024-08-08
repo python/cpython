@@ -49,7 +49,7 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int extra_tokens;
     const char *encoding = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 1, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -80,4 +80,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dcd6ec48f06a092e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c4d4137d988ae0d input=a9049054013a1b77]*/

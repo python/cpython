@@ -72,7 +72,7 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int last_node = 0;
     int usedforsecurity = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -265,4 +265,4 @@ _blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=e18eeaee40623bfc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d65f094670bd0ba7 input=a9049054013a1b77]*/
