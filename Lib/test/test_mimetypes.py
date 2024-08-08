@@ -241,6 +241,7 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
             self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
             self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
+            self.assertEqual(mimetypes.guess_extension('video/3gpp'), '.3gp')
             self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
             self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
 
