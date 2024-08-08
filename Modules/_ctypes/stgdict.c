@@ -253,6 +253,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     // The following are NULL or hold strong references.
     // They're cleared on error.
     PyObject *prop_obj = NULL;
+    PyObject *layout_fields = NULL;
 
     if (fields == NULL) {
         return 0;
@@ -399,8 +400,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    PyObject *layout_fields = PySequence_Fast(layout,
-                                              "layout must return a sequence");
+    layout_fields = PySequence_Fast(layout, "layout must return a sequence");
     Py_DECREF(layout);
     if (!layout_fields) {
         goto error;
@@ -629,6 +629,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         Py_CLEAR(prop_obj);
     }
+    Py_CLEAR(layout_fields);
 
     if (!isStruct) {
         size = union_size;
@@ -952,5 +953,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     return MakeAnonFields(type);
 error:
     Py_XDECREF(prop_obj);
+    Py_XDECREF(layout_fields);
     return -1;
 }
