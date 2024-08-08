@@ -3071,7 +3071,7 @@ class ASTOptimiziationTests(unittest.TestCase):
 
     def create_unaryop(self, operand):
         return ast.UnaryOp(op=self.unaryop[operand], operand=ast.Constant(1))
-    
+
     def assert_ast(self, code, non_optimized_target, optimized_target):
         # Searching for not optimized node in not optimized AST
         self.assertTrue(self.find_node(code, optimize=-1, target=non_optimized_target))
@@ -3097,7 +3097,6 @@ class ASTOptimiziationTests(unittest.TestCase):
                 optimized_target=optimized_target
             ):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
-                
 
     def test_folding_unaryop(self):
         code = "%s1"
@@ -3114,8 +3113,7 @@ class ASTOptimiziationTests(unittest.TestCase):
                 optimized_target=optimized_target
             ):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
-                
-    
+
     def test_folding_tuple(self):
         code = "(1,)"
 
@@ -3147,4 +3145,3 @@ class ASTOptimiziationTests(unittest.TestCase):
         optimized_target = ast.For(target=ast.Name(id="_", ctx=ast.Store()), iter=ast.Constant(value=()), body=[ast.Pass()])
 
         self.assert_ast(code, non_optimized_target, optimized_target)
-    
