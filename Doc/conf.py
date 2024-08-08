@@ -201,7 +201,10 @@ nitpick_ignore = [
     # Undocumented modules that users shouldn't have to worry about
     # (implementation details of `os.path`):
     ('py:mod', 'ntpath'),
+    ('py:mod', 'ntpath.pure'),
     ('py:mod', 'posixpath'),
+    ('py:mod', 'posixpath.pure'),
+    ('py:mod', 'os.path.pure'),
 ]
 
 # Temporary undocumented names.

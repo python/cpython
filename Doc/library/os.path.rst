@@ -4,8 +4,8 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/genericpath.py`, :source:`Lib/posixpath.py` (for POSIX) and
-:source:`Lib/ntpath.py` (for Windows).
+**Source code:** :source:`Lib/genericpath.py`, :source:`Lib/posixpath/` (for POSIX) and
+:source:`Lib/ntpath/` (for Windows).
 
 .. index:: single: path; operations
 
@@ -42,8 +42,8 @@ the :mod:`glob` module.)
    a path that is *always* in one of the different formats.  They all have the
    same interface:
 
-   * :mod:`posixpath` for UNIX-style paths
-   * :mod:`ntpath` for Windows paths
+   * :mod:`posixpath.pure` for UNIX-style paths
+   * :mod:`ntpath.pure` for Windows paths
 
 
 .. versionchanged:: 3.8
