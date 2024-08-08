@@ -131,6 +131,10 @@ write code that handles both IP versions correctly.  Address objects are
 
       The appropriate version number: ``4`` for IPv4, ``6`` for IPv6.
 
+      .. versionchanged:: 3.14
+
+         Made available on the class.
+
    .. attribute:: max_prefixlen
 
       The total number of bits in the address representation for this
@@ -139,6 +143,10 @@ write code that handles both IP versions correctly.  Address objects are
       The prefix defines the number of leading bits in an  address that
       are compared to determine whether or not an address is part of a
       network.
+
+      .. versionchanged:: 3.14
+
+         Made available on the class.
 
    .. attribute:: compressed
    .. attribute:: exploded
