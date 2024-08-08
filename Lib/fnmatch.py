@@ -77,23 +77,38 @@ def translate(pat):
     There is no way to quote meta-characters.
     """
 
-    STAR = object()
-    parts = _translate(pat, STAR, '.')
-    return _join_translated_parts(parts, STAR)
+    parts, indices = _translate(pat, '*', '.')
+    return _join_translated_parts(parts, indices)
 
+_set_ops_re = re.compile(r'([&~|])')
 
 def _translate(pat, STAR, QUESTION_MARK):
     res = []
     add = res.append
+    indices = []
+    pending = []  # pending characters to escape
+
     i, n = 0, len(pat)
     while i < n:
         c = pat[i]
         i = i+1
         if c == '*':
+            if pending:
+                add(re.escape(''.join(pending)))
+                pending = []
+            # store the position of the wildcard
+            indices.append(len(res))
+            add(STAR)
             # compress consecutive `*` into one
-            if (not res) or res[-1] is not STAR:
-                add(STAR)
+            while i < n and pat[i] == '*':
+                i += 1
         elif c == '?':
+            # Handling '?' one at a time seems to more efficient
+            # even if there are consecutive '?' that could have
+            # been written directly.
+            if pending:
+                add(re.escape(''.join(pending)))
+                pending = []
             add(QUESTION_MARK)
         elif c == '[':
             j = i
@@ -104,8 +119,11 @@ def _translate(pat, STAR, QUESTION_MARK):
             while j < n and pat[j] != ']':
                 j = j+1
             if j >= n:
-                add('\\[')
+                pending.append('[')
             else:
+                if pending:
+                    add(re.escape(''.join(pending)))
+                    pending = []
                 stuff = pat[i:j]
                 if '-' not in stuff:
                     stuff = stuff.replace('\\', r'\\')
@@ -133,8 +151,6 @@ def _translate(pat, STAR, QUESTION_MARK):
                     # Hyphens that create ranges shouldn't be escaped.
                     stuff = '-'.join(s.replace('\\', r'\\').replace('-', r'\-')
                                      for s in chunks)
-                # Escape set operations (&&, ~~ and ||).
-                stuff = re.sub(r'([&~|])', r'\\\1', stuff)
                 i = j+1
                 if not stuff:
                     # Empty range: never match.
@@ -143,50 +159,31 @@ def _translate(pat, STAR, QUESTION_MARK):
                     # Negated empty range: match any character.
                     add('.')
                 else:
+                    # Escape set operations (&&, ~~ and ||).
+                    stuff = _set_ops_re.sub(r'\\\1', stuff)
                     if stuff[0] == '!':
                         stuff = '^' + stuff[1:]
                     elif stuff[0] in ('^', '['):
                         stuff = '\\' + stuff
                     add(f'[{stuff}]')
         else:
-            add(re.escape(c))
+            pending.append(c)
+    if pending:
+        add(re.escape(''.join(pending)))
     assert i == n
-    return res
+    return res, indices
 
 
-def _join_translated_parts(inp, STAR):
-    # Deal with STARs.
-    res = []
-    add = res.append
-    i, n = 0, len(inp)
-    # Fixed pieces at the start?
-    while i < n and inp[i] is not STAR:
-        add(inp[i])
-        i += 1
-    # Now deal with STAR fixed STAR fixed ...
-    # For an interior `STAR fixed` pairing, we want to do a minimal
-    # .*? match followed by `fixed`, with no possibility of backtracking.
-    # Atomic groups ("(?>...)") allow us to spell that directly.
-    # Note: people rely on the undocumented ability to join multiple
-    # translate() results together via "|" to build large regexps matching
-    # "one of many" shell patterns.
-    while i < n:
-        assert inp[i] is STAR
-        i += 1
-        if i == n:
-            add(".*")
-            break
-        assert inp[i] is not STAR
-        fixed = []
-        while i < n and inp[i] is not STAR:
-            fixed.append(inp[i])
-            i += 1
-        fixed = "".join(fixed)
-        if i == n:
-            add(".*")
-            add(fixed)
-        else:
-            add(f"(?>.*?{fixed})")
-    assert i == n
-    res = "".join(res)
+def _join_translated_parts(parts, indices):
+    if not indices:
+        return fr'(?s:{"".join(parts)})\Z'
+    iter_indices = iter(indices)
+    i, j = 0, next(iter_indices)
+    buffer = parts[i:j]
+    i = j + 1
+    for j in iter_indices:
+        buffer.append(f'(?>.*?{"".join(parts[i:j])})')
+        i = j + 1
+    buffer.append(f'.*{"".join(parts[i:])}')
+    res = ''.join(buffer)
     return fr'(?s:{res})\Z'

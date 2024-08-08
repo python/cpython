@@ -250,6 +250,70 @@ class TranslateTestCase(unittest.TestCase):
         self.assertTrue(re.match(fatre, 'cbabcaxc'))
         self.assertFalse(re.match(fatre, 'dabccbad'))
 
+    def test_translate_wildcards(self):
+        for pattern, expect in [
+            ('ab*', r'(?s:ab.*)\Z'),
+            ('ab*cd', r'(?s:ab.*cd)\Z'),
+            ('ab*cd*', r'(?s:ab(?>.*?cd).*)\Z'),
+            ('ab*cd*12', r'(?s:ab(?>.*?cd).*12)\Z'),
+            ('ab*cd*12*', r'(?s:ab(?>.*?cd)(?>.*?12).*)\Z'),
+            ('ab*cd*12*34', r'(?s:ab(?>.*?cd)(?>.*?12).*34)\Z'),
+            ('ab*cd*12*34*', r'(?s:ab(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
+        ]:
+            translated = translate(pattern)
+            self.assertEqual(translated, expect, pattern)
+
+        for pattern, expect in [
+            ('*ab', r'(?s:.*ab)\Z'),
+            ('*ab*', r'(?s:(?>.*?ab).*)\Z'),
+            ('*ab*cd', r'(?s:(?>.*?ab).*cd)\Z'),
+            ('*ab*cd*', r'(?s:(?>.*?ab)(?>.*?cd).*)\Z'),
+            ('*ab*cd*12', r'(?s:(?>.*?ab)(?>.*?cd).*12)\Z'),
+            ('*ab*cd*12*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*)\Z'),
+            ('*ab*cd*12*34', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*34)\Z'),
+            ('*ab*cd*12*34*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
+        ]:
+            translated = translate(pattern)
+            self.assertEqual(translated, expect, pattern)
+
+    def test_translate_expressions(self):
+        for pattern, expect in [
+            ('[', r'(?s:\[)\Z'),
+            ('[!', r'(?s:\[!)\Z'),
+            ('[]', r'(?s:\[\])\Z'),
+            ('[abc', r'(?s:\[abc)\Z'),
+            ('[!abc', r'(?s:\[!abc)\Z'),
+            ('[abc]', r'(?s:[abc])\Z'),
+            ('[!abc]', r'(?s:[^abc])\Z'),
+            ('[!abc][!def]', r'(?s:[^abc][^def])\Z'),
+            # with [[
+            ('[[', r'(?s:\[\[)\Z'),
+            ('[[a', r'(?s:\[\[a)\Z'),
+            ('[[]', r'(?s:[\[])\Z'),
+            ('[[]a', r'(?s:[\[]a)\Z'),
+            ('[[]]', r'(?s:[\[]\])\Z'),
+            ('[[]a]', r'(?s:[\[]a\])\Z'),
+            ('[[a]', r'(?s:[\[a])\Z'),
+            ('[[a]]', r'(?s:[\[a]\])\Z'),
+            ('[[a]b', r'(?s:[\[a]b)\Z'),
+            # backslashes
+            ('[\\', r'(?s:\[\\)\Z'),
+            (r'[\]', r'(?s:[\\])\Z'),
+            (r'[\\]', r'(?s:[\\\\])\Z'),
+        ]:
+            translated = translate(pattern)
+            self.assertEqual(translated, expect, pattern)
+
+    def test_indices_locations(self):
+        from fnmatch import _translate
+
+        blocks = ['a^b', '***', '?', '?', '[a-z]', '[1-9]', '*', '++', '[[a']
+        parts, indices = _translate(''.join(blocks), '*', '.')
+        expect_parts = [r'a\^b', '*', '.', '.', '[a-z]', '[1-9]', '*', r'\+\+\[\[a']
+        self.assertListEqual(parts, expect_parts)
+        self.assertListEqual(indices, [1, 6])
+
+
 class FilterTestCase(unittest.TestCase):
 
     def test_filter(self):
