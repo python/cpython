@@ -75,17 +75,16 @@ class Local:
     def is_array(self) -> bool:
         return self.item.is_array()
 
-
         return Local(self.item, self.cached, self.in_memory, self.defined)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Local):
             return NotImplemented
         return (
-            self.item is other.item and
-            self.cached is other.cached and
-            self.in_memory is other.in_memory and
-            self.defined is other.defined
+            self.item is other.item
+            and self.cached is other.cached
+            and self.in_memory is other.in_memory
+            and self.defined is other.defined
         )
 
 
@@ -178,12 +177,12 @@ class StackOffset:
             return NotImplemented
         return self.to_c() == other.to_c()
 
+
 class StackError(Exception):
     pass
 
 
 class Stack:
-
     def __init__(self) -> None:
         self.top_offset = StackOffset.empty()
         self.base_offset = StackOffset.empty()
@@ -366,7 +365,7 @@ class Stack:
         other = Stack()
         other.top_offset = self.top_offset.copy()
         other.base_offset = self.base_offset.copy()
-        other.variables = [ var.copy() for var in self.variables ]
+        other.variables = [var.copy() for var in self.variables]
         other.defined = set(self.defined)
         return other
 
@@ -374,10 +373,10 @@ class Stack:
         if not isinstance(other, Stack):
             return NotImplemented
         return (
-            self.top_offset == other.top_offset and
-            self.base_offset == other.base_offset and
-            self.variables == other.variables and
-            self.defined == other.defined
+            self.top_offset == other.top_offset
+            and self.base_offset == other.base_offset
+            and self.variables == other.variables
+            and self.defined == other.defined
         )
 
 
