@@ -1527,10 +1527,11 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     seen = set()
     annotations = {}
     defaults = {}
+    any_marker = object()
     for item in fields:
         if isinstance(item, str):
             name = item
-            tp = 'typing.Any'
+            tp = any_marker
         elif len(item) == 2:
             name, tp, = item
         elif len(item) == 3:
@@ -1549,11 +1550,20 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         seen.add(name)
         annotations[name] = tp
 
+    def annotate_method(format):
+        if format != 1:
+            raise NotImplementedError
+        from typing import Any
+        return {
+            ann: Any if t is any_marker else t
+            for ann, t in annotations.items()
+        }
+
     # Update 'ns' with the user-supplied namespace plus our calculated values.
     def exec_body_callback(ns):
+        ns['__annotate__'] = annotate_method
         ns.update(namespace)
         ns.update(defaults)
-        ns['__annotations__'] = annotations
 
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclasses.
