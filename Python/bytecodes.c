@@ -862,13 +862,14 @@ dummy_func(
             PyStackRef_CLOSE(list_st);
         }
 
-        inst(STORE_SUBSCR_DICT, (unused/1, value, dict_st, sub_st -- )) {
-            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+        inst(STORE_SUBSCR_DICT, (unused/1, value, dict_st, sub -- )) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
             DEOPT_IF(!PyDict_CheckExact(dict));
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, PyStackRef_AsPyObjectSteal(value));
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
+                                            PyStackRef_AsPyObjectSteal(sub),
+                                            PyStackRef_AsPyObjectSteal(value));
             PyStackRef_CLOSE(dict_st);
             ERROR_IF(err, error);
         }
@@ -1182,7 +1183,6 @@ dummy_func(
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
-                    assert(PyLong_Check(lasti));
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
                     ERROR_NO_POP();
                 }
@@ -1424,7 +1424,7 @@ dummy_func(
                                  "no locals found");
                 ERROR_IF(true, error);
             }
-            locals = PyStackRef_FromPyObjectNew(l);;
+            locals = PyStackRef_FromPyObjectNew(l);
         }
 
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
