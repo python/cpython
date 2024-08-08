@@ -99,6 +99,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\bytes.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\complex.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\dict.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\eval.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\float.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\list.c" />
