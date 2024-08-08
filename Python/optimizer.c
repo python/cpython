@@ -200,11 +200,11 @@ _PyOptimizer_Optimize(
         int index = get_index_for_executor(code, start);
         if (index < 0) {
             /* Out of memory. Don't raise and assume that the
-            * error will show up elsewhere.
-            *
-            * If an optimizer has already produced an executor,
-            * it might get confused by the executor disappearing,
-            * but there is not much we can do about that here. */
+             * error will show up elsewhere.
+             *
+             * If an optimizer has already produced an executor,
+             * it might get confused by the executor disappearing,
+             * but there is not much we can do about that here. */
             Py_DECREF(*executor_ptr);
             return 0;
         }
@@ -588,6 +588,8 @@ translate_bytecode_to_trace(
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
 
+        /* Special case the first instruction,
+         * so that we can guarantee forward progress */
         if (!first && instr == initial_instr) {
             // We have looped around to the start:
             RESERVE(1);
@@ -606,7 +608,6 @@ translate_bytecode_to_trace(
                 goto done;
             }
         }
-
         if (opcode == ENTER_EXECUTOR) {
             goto done;
         }

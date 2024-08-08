@@ -183,10 +183,10 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
 
-// The number of traces that will be stitched together via side exits for a
-// single instruction before requiring progress. In practice, this is the number
-// of different classes/functions/etc. that tier two can handle for a single
-// tier one instruction.
+// The maximum number of side exits that we can take before requiring forward
+// progress (and inserting a new ENTER_EXECUTOR instruction). In practice, this
+// is the "maximum amount of polymorphism" that an isolated trace tree can
+// handle before rejoining the rest of the program.
 #define MAX_CHAIN_DEPTH 4
 
 typedef struct _Py_UopsSymbol _Py_UopsSymbol;
