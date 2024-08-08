@@ -1,0 +1,1 @@
+Fixed crash in optional :func:`!decimal.IEEEContext()` function.
