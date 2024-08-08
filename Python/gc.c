@@ -1513,12 +1513,12 @@ gc_collect_region(PyThreadState *tstate,
     if (untrack & UNTRACK_DICTS) {
         untrack_dicts(from);
     }
+    /* Move reachable objects to next generation. */
     validate_consistent_old_space(to);
     if (from != to) {
         gc_list_merge(from, to);
     }
     validate_consistent_old_space(to);
-    /* Move reachable objects to next generation. */
 
     /* All objects in unreachable are trash, but objects reachable from
      * legacy finalizers (e.g. tp_del) can't safely be deleted.
