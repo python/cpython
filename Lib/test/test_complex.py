@@ -268,6 +268,43 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, operator.mul, 1j, None)
         self.assertRaises(TypeError, operator.mul, None, 1j)
 
+        self.assertComplexesAreIdentical((1e300+1j) * complex(INF, INF),
+                                         complex(NAN, INF))
+        self.assertComplexesAreIdentical(complex(INF, INF) * (1e300+1j),
+                                         complex(NAN, INF))
+        self.assertComplexesAreIdentical((1e300+1j) * complex(NAN, INF),
+                                         complex(-INF, INF))
+        self.assertComplexesAreIdentical(complex(NAN, INF) * (1e300+1j),
+                                         complex(-INF, INF))
+        self.assertComplexesAreIdentical((1e300+1j) * complex(INF, NAN),
+                                         complex(INF, INF))
+        self.assertComplexesAreIdentical(complex(INF, NAN) * (1e300+1j),
+                                         complex(INF, INF))
+        self.assertComplexesAreIdentical(complex(INF, 1) * complex(NAN, INF),
+                                         complex(NAN, INF))
+        self.assertComplexesAreIdentical(complex(INF, 1) * complex(INF, NAN),
+                                         complex(INF, NAN))
+        self.assertComplexesAreIdentical(complex(NAN, INF) * complex(INF, 1),
+                                         complex(NAN, INF))
+        self.assertComplexesAreIdentical(complex(INF, NAN) * complex(INF, 1),
+                                         complex(INF, NAN))
+        self.assertComplexesAreIdentical(complex(NAN, 1) * complex(1, INF),
+                                         complex(-INF, NAN))
+        self.assertComplexesAreIdentical(complex(1, NAN) * complex(1, INF),
+                                         complex(NAN, INF))
+
+        self.assertComplexesAreIdentical(complex(1e200, NAN) * complex(1e200, NAN),
+                                         complex(INF, NAN))
+        self.assertComplexesAreIdentical(complex(1e200, NAN) * complex(NAN, 1e200),
+                                         complex(NAN, INF))
+        self.assertComplexesAreIdentical(complex(NAN, 1e200) * complex(1e200, NAN),
+                                         complex(NAN, INF))
+        self.assertComplexesAreIdentical(complex(NAN, 1e200) * complex(NAN, 1e200),
+                                         complex(-INF, NAN))
+
+        self.assertComplexesAreIdentical(complex(NAN, NAN) * complex(NAN, NAN),
+                                         complex(NAN, NAN))
+
     def test_mod(self):
         # % is no longer supported on complex numbers
         with self.assertRaises(TypeError):
@@ -309,6 +346,7 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(pow(1j, 200), 1)
         self.assertRaises(ValueError, pow, 1+1j, 1+1j, 1+1j)
         self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
+        self.assertRaises(OverflowError, pow, 1e200+1j, 5)
         self.assertRaises(TypeError, pow, 1j, None)
         self.assertRaises(TypeError, pow, None, 1j)
         self.assertAlmostEqual(pow(1j, 0.5), 0.7071067811865476+0.7071067811865475j)
