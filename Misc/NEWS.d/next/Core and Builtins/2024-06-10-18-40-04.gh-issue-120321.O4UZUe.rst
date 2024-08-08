@@ -1,0 +1,1 @@
+Fix generator ``send`` crashing on free-threaded builds. Thanks to ``rostan-t`` for the reproducer.
