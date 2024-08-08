@@ -534,6 +534,17 @@ visit_decref(PyObject *op, void *parent)
     return 0;
 }
 
+int
+_PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
+{
+    _PyStackRef *i = frame->localsplus;
+    /* locals and stack */
+    for (; i < frame->stackpointer; i++) {
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(*i));
+    }
+    return 0;
+}
+
 /* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
  * for all objects in containers, and is GC_REACHABLE for all tracked gc
  * objects not in containers.  The ones with gc_refs > 0 are directly
