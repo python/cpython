@@ -1,0 +1,1 @@
+stdin.read() no longer throws a TypeError if no input is provided when stdin is set to non-blocking.
