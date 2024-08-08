@@ -2352,36 +2352,6 @@ class FunctionTests(unittest.TestCase):
 
 class SubinterpreterTests(unittest.TestCase):
 
-    NUMERIC_METHODS = {
-        '__abs__',
-        '__add__',
-        '__bool__',
-        '__divmod__',
-        '__float__',
-        '__floordiv__',
-        '__index__',
-        '__int__',
-        '__lshift__',
-        '__mod__',
-        '__mul__',
-        '__neg__',
-        '__pos__',
-        '__pow__',
-        '__radd__',
-        '__rdivmod__',
-        '__rfloordiv__',
-        '__rlshift__',
-        '__rmod__',
-        '__rmul__',
-        '__rpow__',
-        '__rrshift__',
-        '__rshift__',
-        '__rsub__',
-        '__rtruediv__',
-        '__sub__',
-        '__truediv__',
-    }
-
     @classmethod
     def setUpClass(cls):
         global interpreters
@@ -2396,35 +2366,52 @@ class SubinterpreterTests(unittest.TestCase):
     def test_static_types_inherited_slots(self):
         rch, sch = interpreters.channels.create()
 
-        slots = []
-        script = ''
-        for cls in iter_builtin_types():
-            for slot, own in iter_slot_wrappers(cls):
-                if cls is bool and slot in self.NUMERIC_METHODS:
-                    continue
-                slots.append((cls, slot, own))
-                script += textwrap.dedent(f"""
-                    text = repr({cls.__name__}.{slot})
-                    sch.send_nowait(({cls.__name__!r}, {slot!r}, text))
-                    """)
+        script = textwrap.dedent("""
+            import test.support
+            results = []
+            for cls in test.support.iter_builtin_types():
+                for attr, _ in test.support.iter_slot_wrappers(cls):
+                    wrapper = getattr(cls, attr)
+                    res = (cls, attr, wrapper)
+                    results.append(res)
+            results = tuple((repr(c), a, repr(w)) for c, a, w in results)
+            sch.send_nowait(results)
+            """)
+        def collate_results(raw):
+            results = {}
+            duplicates = {}
+            for cls, attr, wrapper in raw:
+                key = cls, attr
+                if attr in ('__delattr__',):
+                    if key in results:
+                        results = duplicates
+                assert key not in results, (results, key, wrapper)
+                results[key] = wrapper
+            return results, duplicates
 
         exec(script)
-        all_expected = []
-        for cls, slot, _ in slots:
-            result = rch.recv()
-            assert result == (cls.__name__, slot, result[-1]), (cls, slot, result)
-            all_expected.append(result)
+        raw = rch.recv_nowait()
+        main_results, main_duplicates = collate_results(raw)
 
         interp = interpreters.create()
         interp.exec('from test.support import interpreters')
         interp.prepare_main(sch=sch)
         interp.exec(script)
+        raw = rch.recv_nowait()
+        interp_results, interp_duplicates = collate_results(raw)
 
-        for i, (cls, slot, _) in enumerate(slots):
-            with self.subTest(cls=cls, slot=slot):
-                expected = all_expected[i]
-                result = rch.recv()
-                self.assertEqual(result, expected)
+        for key, expected in main_results.items():
+            cls, attr = key
+            with self.subTest(cls=cls, slotattr=attr):
+                actual = interp_results.pop(key)
+                self.assertEqual(actual, expected)
+                if key in main_duplicates:
+                    expected = main_duplicates[key]
+                    actual = interp_duplicates.pop(key)
+                    self.assertEqual(actual, expected)
+        self.maxDiff = None
+        self.assertEqual(interp_results, {})
+        self.assertEqual(interp_duplicates, {})
 
 
 if __name__ == '__main__':

@@ -420,45 +420,64 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support
-
-            results = {}
-            def add(cls, slot, own):
-                value = getattr(cls, slot)
-                try:
-                    subresults = results[cls.__name__]
-                except KeyError:
-                    subresults = results[cls.__name__] = {}
-                subresults[slot] = [repr(value), own]
-
+            results = []
             for cls in test.support.iter_builtin_types():
-                for slot, own in test.support.iter_slot_wrappers(cls):
-                    add(cls, slot, own)
+                for attr, _ in test.support.iter_slot_wrappers(cls):
+                    wrapper = getattr(cls, attr)
+                    res = (cls, attr, wrapper)
+                    results.append(res)
+            results = ((repr(c), a, repr(w)) for c, a, w in results)
             """)
+        def collate_results(raw):
+            results = {}
+            duplicates = {}
+            for cls, attr, wrapper in raw:
+                key = cls, attr
+                if attr in ('__delattr__',):
+                    if key in results:
+                        results = duplicates
+                assert key not in results, (results, key, wrapper)
+                results[key] = wrapper
+            return results, duplicates
 
         ns = {}
         exec(script, ns, ns)
-        all_expected = ns['results']
+        main_results, main_duplicates = collate_results(ns['results'])
         del ns
 
         script += textwrap.dedent("""
             import json
             import sys
-            text = json.dumps(results)
+            text = json.dumps(list(results))
             print(text, file=sys.stderr)
             """)
         out, err = self.run_embedded_interpreter(
                 "test_repeated_init_exec", script, script)
-        results = err.split('--- Loop #')[1:]
-        results = [res.rpartition(' ---\n')[-1] for res in results]
+        _results = err.split('--- Loop #')[1:]
+        (_embedded, _reinit,
+         ) = [json.loads(res.rpartition(' ---\n')[-1]) for res in _results]
+        embedded_results, embedded_duplicates = collate_results(_embedded)
+        reinit_results, reinit_duplicates = collate_results(_reinit)
 
+        for key, expected in main_results.items():
+            cls, attr = key
+            for src, results, duplicates in [
+                ('embedded', embedded_results, embedded_duplicates),
+                ('reinit', reinit_results, reinit_duplicates),
+            ]:
+                with self.subTest(src, cls=cls, slotattr=attr):
+                    actual = results.pop(key)
+                    self.assertEqual(actual, expected)
+                    if key in main_duplicates:
+                        expected = main_duplicates[key]
+                        actual = duplicates.pop(key)
+                        self.assertEqual(actual, expected)
         self.maxDiff = None
-        for i, text in enumerate(results, start=1):
-            result = json.loads(text)
-            for classname, expected in all_expected.items():
-                with self.subTest(loop=i, cls=classname):
-                    slots = result.pop(classname)
-                    self.assertEqual(slots, expected)
-            self.assertEqual(result, {})
+        self.assertEqual(embedded_results, {})
+        self.assertEqual(embedded_duplicates, {})
+        self.assertEqual(reinit_results, {})
+        self.assertEqual(reinit_duplicates, {})
+
         self.assertEqual(out, '')
 
     def test_getargs_reset_static_parser(self):
