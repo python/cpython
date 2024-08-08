@@ -271,9 +271,9 @@ typedef struct CFieldObject {
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     int anonymous;
 
-    Py_ssize_t bit_size;
-    PyObject *name;                     /* exact PyUnicode */
-    PyObject *desc;                     /* underlying ctype; any PyObject */
+    Py_ssize_t bit_size;            /* -1 if not a bitfield */
+    PyObject *name;                 /* exact PyUnicode */
+    PyObject *desc;                 /* underlying ctype; must have StgInfo */
 } CFieldObject;
 
 /****************************************************************

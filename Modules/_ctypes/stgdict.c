@@ -484,9 +484,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
 
     for (i = 0; i < len; ++i) {
-        PyObject *pair = PySequence_GetItem(fields, i);
-        Py_ssize_t bitsize = 0;
-
         prop_obj = PySequence_Fast_GET_ITEM(layout_fields, i);
         if (!prop_obj) {
             goto error;
@@ -499,21 +496,14 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
         }
         CFieldObject *prop = (CFieldObject *)prop_obj; // borrow from prop_obj
+        Py_ssize_t bitsize = prop->bit_size;
 
-        PyObject *_dummy;
-        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &_dummy, &_dummy, &bitsize)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "'_fields_' must be a sequence of (name, C type) pairs");
-            Py_XDECREF(pair);
-            goto error;
-        }
         if (PyCArrayTypeObject_Check(st, prop->desc)) {
             arrays_seen = 1;
         }
 
         StgInfo *info;
         if (PyStgInfo_FromType(st, prop->desc, &info) < 0) {
-            Py_DECREF(pair);
             goto error;
         }
         assert(info);
@@ -523,7 +513,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             stginfo->flags |= TYPEFLAG_HASPOINTER;
         stginfo->flags |= info->flags & (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD);
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
-        if (PyTuple_Size(pair) == 3) { /* bits specified */
+        if (bitsize != -1) { /* bits specified */
             stginfo->flags |= TYPEFLAG_HASBITFIELD;
             switch(info->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
@@ -546,18 +536,17 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 PyErr_Format(PyExc_TypeError,
                              "bit fields not allowed for type %s",
                              ((PyTypeObject *)prop->desc)->tp_name);
-                Py_DECREF(pair);
                 goto error;
             }
             if (bitsize <= 0 || bitsize > info->size * 8) {
                 PyErr_Format(PyExc_ValueError,
                                 "number of bits invalid for bit field %R",
-                                prop->name);
-                Py_DECREF(pair);
+                                prop->name, bitsize);
                 goto error;
             }
-        } else
+        } else {
             bitsize = 0;
+        }
 
         if (isStruct) {
             const char *fieldfmt = info->format ? info->format : "B";
@@ -570,7 +559,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             if (fieldname == NULL)
             {
-                Py_DECREF(pair);
                 goto error;
             }
 
@@ -581,7 +569,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
             if (res < 0) {
-                Py_DECREF(pair);
                 goto error;
             }
 
@@ -594,7 +581,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 stginfo->format = _ctypes_alloc_format_padding(ptr, padding);
                 PyMem_Free(ptr);
                 if (stginfo->format == NULL) {
-                    Py_DECREF(pair);
                     goto error;
                 }
             }
@@ -603,7 +589,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             buf = PyMem_Malloc(len + 2 + 1);
             if (buf == NULL) {
-                Py_DECREF(pair);
                 PyErr_NoMemory();
                 goto error;
             }
@@ -620,7 +605,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             PyMem_Free(buf);
 
             if (stginfo->format == NULL) {
-                Py_DECREF(pair);
                 goto error;
             }
         } else /* union */ {
@@ -634,7 +618,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
             if (res < 0) {
-                Py_DECREF(pair);
                 goto error;
             }
             union_size = max(size, union_size);
@@ -642,10 +625,8 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         total_align = max(align, total_align);
 
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
-            Py_DECREF(pair);
             goto error;
         }
-        Py_DECREF(pair);
         Py_CLEAR(prop_obj);
     }
 
