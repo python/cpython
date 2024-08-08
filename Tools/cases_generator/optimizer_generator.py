@@ -18,6 +18,7 @@ from generators_common import (
     ROOT,
     write_header,
     Emitter,
+    TokenIterator,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -65,7 +66,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
 def decref_inputs(
     out: CWriter,
     tkn: Token,
-    tkn_iter: Iterator[Token],
+    tkn_iter: TokenIterator,
     uop: Uop,
     stack: Stack,
     inst: Instruction | None,

@@ -20,6 +20,7 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
+    TokenIterator,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -69,85 +70,100 @@ class Tier2Emitter(Emitter):
     def error_if(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("if ", tkn)
-        self.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert(lparen.kind == "LPAREN")
+        first_tkn = next(tkn_iter)
+        self.out.emit(first_tkn)
         emit_to(self.out, tkn_iter, "COMMA")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.emit(") JUMP_TO_ERROR();\n")
+        return first_tkn.text != "true" and first_tkn.text != "1"
+
 
     def error_no_pop(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.out.emit_at("JUMP_TO_ERROR();", tkn)
+        return False
 
     def deopt_if(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("if ", tkn)
-        self.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert(lparen.kind == "LPAREN")
+        first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
+        return first_tkn.text != "true" and first_tkn.text != "1"
 
     def exit_if(  # type: ignore[override]
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("if ", tkn)
-        self.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
+        return first_tkn.text != "true" and first_tkn.text != "1"
 
     def oparg(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
             self.emit(tkn)
-            return
+            return True
         amp = next(tkn_iter)
         if amp.text != "&":
             self.emit(tkn)
             self.emit(amp)
-            return
+            return True
         one = next(tkn_iter)
         assert one.text == "1"
         self.out.emit_at(uop.name[-1], tkn)
+        return True
 
 
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
@@ -230,8 +246,6 @@ def generate_tier2(
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)
-            if uop.properties.ends_with_eval_breaker:
-                out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("break;\n")
         out.start_line()
         out.emit("}")

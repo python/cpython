@@ -4,7 +4,6 @@ import parser
 import re
 from typing import Optional
 
-
 @dataclass
 class Properties:
     escapes: bool
@@ -14,7 +13,6 @@ class Properties:
     oparg: bool
     jumps: bool
     eval_breaker: bool
-    ends_with_eval_breaker: bool
     needs_this: bool
     always_exits: bool
     stores_sp: bool
@@ -44,7 +42,6 @@ class Properties:
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
             eval_breaker=any(p.eval_breaker for p in properties),
-            ends_with_eval_breaker=any(p.ends_with_eval_breaker for p in properties),
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
@@ -70,7 +67,6 @@ SKIP_PROPERTIES = Properties(
     oparg=False,
     jumps=False,
     eval_breaker=False,
-    ends_with_eval_breaker=False,
     needs_this=False,
     always_exits=False,
     stores_sp=False,
@@ -587,10 +583,6 @@ EXITS = {
 }
 
 
-def eval_breaker_at_end(op: parser.InstDef) -> bool:
-    return op.tokens[-5].text == "CHECK_EVAL_BREAKER"
-
-
 def always_exits(op: parser.InstDef) -> bool:
     depth = 0
     tkn_iter = iter(op.tokens)
@@ -679,7 +671,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
-        ends_with_eval_breaker=eval_breaker_at_end(op),
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "SYNC_SP"),

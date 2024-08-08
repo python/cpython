@@ -60,6 +60,14 @@ class Local:
         assert var.is_array() == prev.is_array()
         return Local(var, prev.cached, prev.in_memory, True)
 
+    def copy(self) -> "Local":
+        return Local(
+            self.item,
+            self.cached,
+            self.in_memory,
+            self.defined
+        )
+
     @property
     def size(self) -> str:
         return self.item.size
@@ -302,18 +310,6 @@ class Stack:
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
         out.start_line()
 
-    def flush_locally(
-        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False
-    ) -> None:
-        self._do_flush(
-            out,
-            self.variables[:],
-            self.base_offset.copy(),
-            self.top_offset.copy(),
-            cast_type,
-            extract_bits,
-        )
-
     def flush(
         self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False
     ) -> None:
@@ -361,7 +357,7 @@ class Stack:
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
 
-    def copy(self) -> Stack:
+    def copy(self) -> "Stack":
         other = Stack()
         other.top_offset = self.top_offset.copy()
         other.base_offset = self.base_offset.copy()
@@ -379,6 +375,11 @@ class Stack:
             and self.defined == other.defined
         )
 
+
+    def merge(self, other:"Stack") -> "Stack":
+        if self != other:
+            raise StackError("unequal stacks")
+        return self
 
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
@@ -405,3 +406,5 @@ def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
                 local = Local.unused(var)
             stack.push(local)
     return stack
+
+UNREACHABLE = Stack()

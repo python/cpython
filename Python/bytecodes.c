@@ -961,7 +961,9 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
-            if (err) ERROR_NO_POP();
+            if (err) {
+                ERROR_NO_POP();
+            }
         }
 
         macro(INSTRUMENTED_RETURN_VALUE) =
@@ -1154,7 +1156,9 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
             LOAD_SP();
-            if (err) ERROR_NO_POP();
+            if (err) {
+                ERROR_NO_POP();
+            }
             if (frame->instr_ptr != this_instr) {
                 next_instr = frame->instr_ptr;
                 DISPATCH();
@@ -1262,10 +1266,12 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            if (PyDict_CheckExact(ns))
+            if (PyDict_CheckExact(ns)) {
                 err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
-            else
+            }
+            else {
                 err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            }
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -4134,7 +4140,9 @@ dummy_func(
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
-                if (err) ERROR_NO_POP();
+                if (err) {
+                    ERROR_NO_POP();
+                }
                 result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
 
                 if (!PyFunction_Check(func) && !PyMethod_Check(func)) {

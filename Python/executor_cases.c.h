@@ -1404,10 +1404,12 @@
                 PyStackRef_CLOSE(v);
                 if (true) JUMP_TO_ERROR();
             }
-            if (PyDict_CheckExact(ns))
-            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
-            else
-            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            if (PyDict_CheckExact(ns)) {
+                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            }
+            else {
+                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            }
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;

@@ -963,11 +963,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1289,11 +1289,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1358,11 +1358,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1426,11 +1426,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1480,11 +1480,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1529,7 +1529,9 @@
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
                 result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
                 if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
                     if (PyStackRef_IsNull(result)) {
@@ -1578,10 +1580,12 @@
                 assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
-            stack_pointer[-3 - (oparg & 1)] = result;
-            stack_pointer += -2 - (oparg & 1);
+            stack_pointer += -3 - (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             CHECK_EVAL_BREAKER();
+            stack_pointer[0] = result;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -1775,10 +1779,12 @@
                 goto error;
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-3 - oparg] = res;
-            stack_pointer += -2 - oparg;
+            stack_pointer += -3 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             CHECK_EVAL_BREAKER();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -1926,11 +1932,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1997,11 +2003,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2055,11 +2061,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2116,11 +2122,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2189,11 +2195,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2383,11 +2389,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-3] = res;
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2419,11 +2425,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-3] = res;
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -3751,11 +3757,11 @@
             }
             // _CHECK_PERIODIC
             {
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer += -1 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                CHECK_EVAL_BREAKER();
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4080,7 +4086,9 @@
                 int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
             }
             // _RETURN_VALUE
             retval = val;
@@ -4120,7 +4128,9 @@
                 int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
             }
             // _RETURN_VALUE
             retval = val;
@@ -4164,7 +4174,9 @@
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
                 LOAD_SP();
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
                 if (frame->instr_ptr != this_instr) {
                     next_instr = frame->instr_ptr;
                     DISPATCH();
@@ -6538,10 +6550,12 @@
                 PyStackRef_CLOSE(v);
                 if (true) goto pop_1_error;
             }
-            if (PyDict_CheckExact(ns))
-            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
-            else
-            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            if (PyDict_CheckExact(ns)) {
+                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            }
+            else {
+                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            }
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;

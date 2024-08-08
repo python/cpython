@@ -9,10 +9,38 @@ from analyzer import (
     analysis_error,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator
+from typing import Callable, Mapping, TextIO, Iterator, Iterable
 from lexer import Token
 from stack import Stack
 
+
+class TokenIterator:
+
+    ahead: Token | None
+    iterator: Iterator[Token]
+
+    def __init__(self, tkns: Iterable[Token]):
+        self.iterator = iter(tkns)
+        self.ahead = None
+
+    def __iter__(self) -> "TokenIterator":
+        return self
+
+    def __next__(self) -> Token:
+        if self.ahead is None:
+            return next(self.iterator)
+        else:
+            res = self.ahead
+            self.ahead = None
+            return res
+
+    def peek(self) -> Token | None:
+        if self.ahead is None:
+            try:
+                self.ahead = next(self.iterator)
+            except StopIteration:
+                pass
+        return self.ahead
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_INPUT = (ROOT / "Python/bytecodes.c").absolute().as_posix()
@@ -47,22 +75,27 @@ def write_header(
     )
 
 
-def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
+def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
     parens = 0
     for tkn in tkn_iter:
         if tkn.kind == end and parens == 0:
-            return
+            return tkn
         if tkn.kind == "LPAREN":
             parens += 1
         if tkn.kind == "RPAREN":
             parens -= 1
         out.emit(tkn)
+    raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
 
 
 ReplacementFunctionType = Callable[
-    [Token, Iterator[Token], Uop, Stack, Instruction | None], None
+    [Token, TokenIterator, Uop, Stack, Instruction | None], bool
 ]
 
+def always_true(tkn: Token | None) -> bool:
+    if tkn is None:
+        return False
+    return tkn.text == "true" or tkn.text == "1"
 
 class Emitter:
     out: CWriter
@@ -84,13 +117,16 @@ class Emitter:
     def deopt_if(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("DEOPT_IF", tkn)
-        self.out.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert(lparen.kind == "LPAREN")
+        first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.out.emit(", ")
@@ -98,19 +134,23 @@ class Emitter:
         assert inst.family is not None
         self.out.emit(inst.family.name)
         self.out.emit(");\n")
+        return not always_true(first_tkn)
 
     exit_if = deopt_if
 
     def error_if(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("if ", tkn)
-        self.out.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert(lparen.kind == "LPAREN")
+        first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "COMMA")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
@@ -131,33 +171,35 @@ class Emitter:
             self.out.emit(";\n")
         else:
             self.out.emit("{\n")
-            stack.flush_locally(self.out)
+            stack.copy().flush(self.out)
             self.out.emit("goto ")
             self.out.emit(label)
             self.out.emit(";\n")
             self.out.emit("}\n")
+        return first_tkn.text != "true" and first_tkn.text != "1"
 
     def error_no_pop(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.out.emit_at("goto error;", tkn)
+        return False
 
     def decref_inputs(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
@@ -176,42 +218,45 @@ class Emitter:
                     self.out.emit(f"PyStackRef_XCLOSE({var.name});\n")
             else:
                 self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
+        return True
 
     def sync_sp(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
         stack.flush(self.out)
+        return True
 
     def check_eval_breaker(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        if not uop.properties.ends_with_eval_breaker:
-            self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
+        stack.flush(self.out)
+        self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
+        return True
 
     def py_stack_ref_from_py_object_new(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit(tkn)
         emit_to(self.out, tkn_iter, "SEMI")
         self.out.emit(";\n")
@@ -219,12 +264,96 @@ class Emitter:
         target = uop.deferred_refs[tkn]
         if target is None:
             # An assignment we don't handle, such as to a pointer or array.
-            return
+            return True
 
         # Flush the assignment to the stack.  Note that we don't flush the
         # stack pointer here, and instead are currently relying on initializing
         # unused portions of the stack to NULL.
         stack.flush_single_var(self.out, target, uop.stack.outputs)
+        return True
+
+    def _emit_if(
+        self,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> tuple[bool, Token, Stack]:
+        """ Returns (reachable?, closing '}', stack)."""
+        tkn = next(tkn_iter)
+        assert (tkn.kind == "LPAREN")
+        self.out.emit(tkn)
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        if_stack = stack.copy()
+        reachable, rbrace, if_stack = self._emit_block(tkn_iter, uop, if_stack, inst, True)
+        maybe_else = tkn_iter.peek()
+        if maybe_else and maybe_else.kind == "ELSE":
+            self.emit(rbrace)
+            self.emit(next(tkn_iter))
+            maybe_if = tkn_iter.peek()
+            if maybe_if and maybe_if.kind == "IF":
+                self.emit(next(tkn_iter))
+                else_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, inst)
+            else:
+                else_reachable, rbrace, stack = self._emit_block(tkn_iter, uop, stack, inst, True)
+            if not reachable:
+                # Discard the if stack
+                reachable = else_reachable
+            elif not else_reachable:
+                # Discard the else stack
+                stack = if_stack
+            else:
+                stack = stack.merge(if_stack)
+        else:
+            if reachable:
+                stack = stack.merge(if_stack)
+            else:
+                # Discard the if stack
+                reachable = True
+        return reachable, rbrace, stack
+
+    def _emit_block(
+        self,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+        emit_first_brace: bool
+    ) -> tuple[bool, Token, Stack]:
+        """ Returns (reachable?, closing '}', stack)."""
+        braces = 1
+        tkn = next(tkn_iter)
+        reachable = True
+        if tkn.kind != "LBRACE":
+            raise analysis_error(f"Expected '{{' found {tkn.text}", tkn)
+        if emit_first_brace:
+            self.emit(tkn)
+        for tkn in tkn_iter:
+            if tkn.kind == "LBRACE":
+                self.out.emit(tkn)
+                braces += 1
+            elif tkn.kind == "RBRACE":
+                braces -= 1
+                if braces == 0:
+                    return reachable, tkn, stack
+                self.out.emit(tkn)
+            elif tkn.kind == "GOTO":
+                reachable = False;
+                self.out.emit(tkn)
+            elif tkn.kind == "IDENTIFIER" and tkn.text in self._replacers:
+                if not self._replacers[tkn.text](tkn, tkn_iter, uop, stack, inst):
+                    reachable = False
+            elif tkn.kind == "IF":
+                self.out.emit(tkn)
+                if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, inst)
+                if reachable:
+                    reachable = if_reachable
+                self.out.emit(rbrace)
+            else:
+                self.out.emit(tkn)
+        raise analysis_error("Expecting closing brace. Reached end of file", tkn)
+
 
     def emit_tokens(
         self,
@@ -232,16 +361,9 @@ class Emitter:
         stack: Stack,
         inst: Instruction | None,
     ) -> None:
-        tkns = uop.body[1:-1]
-        if not tkns:
-            return
-        tkn_iter = iter(tkns)
+        tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
-        for tkn in tkn_iter:
-            if tkn.kind == "IDENTIFIER" and tkn.text in self._replacers:
-                self._replacers[tkn.text](tkn, tkn_iter, uop, stack, inst)
-            else:
-                self.out.emit(tkn)
+        self._emit_block(tkn_iter, uop, stack, inst, False)
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)
