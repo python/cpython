@@ -1610,14 +1610,8 @@ FutureIter_dealloc(futureiterobject *it)
 
     if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
-        assert(state->fi_freelist != it);
         it->future = (FutureObj*) state->fi_freelist;
         state->fi_freelist = it;
-
-        // GH-122695: Since the freelist is traversed, gc.get_referents()
-        // can return this object, causing a double free when the object
-        // is deallocated for a second time.
-        Py_INCREF(it);
     }
     else {
         PyObject_GC_Del(it);
@@ -3579,10 +3573,6 @@ module_free_freelists(asyncio_state *state)
 
         current = next;
         next = (PyObject*) ((futureiterobject*) current)->future;
-
-        // GH-122695: We need to own a reference to this to prevent
-        // a double free.
-        assert(Py_REFCNT(current) == 1);
         PyObject_GC_Del(current);
     }
     assert(state->fi_freelist_len == 0);
@@ -3617,13 +3607,8 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 
     Py_VISIT(state->context_kwname);
 
-    // Visit freelist.
-    PyObject *next = (PyObject*) state->fi_freelist;
-    while (next != NULL) {
-        PyObject *current = next;
-        Py_VISIT(current);
-        next = (PyObject*) ((futureiterobject*) current)->future;
-    }
+    // GH-122695: Do not traverse the freelist here, as that can cause problems
+    // with gc.get_referents()
     return 0;
 }
 
