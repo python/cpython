@@ -1054,7 +1054,7 @@ def evaluate_forward_ref(
     evaluating the forward reference. This parameter must be provided (though
     it may be an empty tuple) if *owner* is not given and the forward reference
     does not already have an owner set. *format* specifies the format of the
-    annotation and is a member of the annoations.Format enum.
+    annotation and is a member of the annotationlib.Format enum.
 
     """
     if type_params is _sentinel:
