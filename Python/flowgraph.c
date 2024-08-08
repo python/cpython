@@ -1567,6 +1567,33 @@ apply_static_swaps(basicblock *block, int i)
     }
 }
 
+// Attempt to get the next non-NOP instruction from the current instruction
+// inst at position i in basic block bb. Return 1 if successful or 0 if
+// running out of blocks.
+static int
+next_instruction(basicblock **bb, cfg_instr **inst, int *i)
+{
+    ++*inst;
+    ++*i;
+    for (;;) {
+        if (*i < (*bb)->b_iused) {
+            if ((*inst)->i_opcode != NOP) {
+                return 1;
+            }
+            ++*inst;
+            ++*i;
+        }
+        else {
+            *bb = (*bb)->b_next;
+            if (!*bb) {
+                return 0;
+            }
+            *inst = (*bb)->b_instr;
+            *i = 0;
+        }
+    }
+}
+
 static int
 basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *consts)
 {
@@ -1587,7 +1614,13 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
         if (opcode != LOAD_CONST) {
             continue;
         }
-        int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
+        basicblock *next_block = bb;
+        cfg_instr *next_inst = inst;
+        int next_i = i;
+        if (!next_instruction(&next_block, &next_inst, &next_i)) {
+            continue;
+        }
+        int nextop = next_inst->i_opcode;
         switch(nextop) {
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
@@ -1605,10 +1638,10 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
                 INSTR_SET_OP0(inst, NOP);
                 int jump_if_true = nextop == POP_JUMP_IF_TRUE;
                 if (is_true == jump_if_true) {
-                    bb->b_instr[i+1].i_opcode = JUMP;
+                    next_inst->i_opcode = JUMP;
                 }
                 else {
-                    INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
+                    INSTR_SET_OP0(next_inst, NOP);
                 }
                 break;
             }
@@ -1632,18 +1665,18 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
                     Py_DECREF(cnt);
                     break;
                 }
-                if (bb->b_iused <= i + 2) {
+                cfg_instr *is_instr = next_inst;
+                if (!next_instruction(&next_block, &next_inst, &next_i)) {
                     break;
                 }
-                cfg_instr *is_instr = &bb->b_instr[i + 1];
-                cfg_instr *jump_instr = &bb->b_instr[i + 2];
+                cfg_instr *jump_instr = next_inst;
                 // Get rid of TO_BOOL regardless:
                 if (jump_instr->i_opcode == TO_BOOL) {
                     INSTR_SET_OP0(jump_instr, NOP);
-                    if (bb->b_iused <= i + 3) {
+                    if (!next_instruction(&next_block, &next_inst, &next_i)) {
                         break;
                     }
-                    jump_instr = &bb->b_instr[i + 3];
+                    jump_instr = next_inst;
                 }
                 bool invert = is_instr->i_oparg;
                 if (jump_instr->i_opcode == POP_JUMP_IF_FALSE) {
@@ -1660,8 +1693,8 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
             }
             case RETURN_VALUE:
             {
-                INSTR_SET_OP0(inst, NOP);
-                INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
+                INSTR_SET_OP1(inst, RETURN_CONST, oparg);
+                INSTR_SET_OP0(next_inst, NOP);
                 break;
             }
             case TO_BOOL:
@@ -1681,7 +1714,7 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
                     return ERROR;
                 }
                 INSTR_SET_OP0(inst, NOP);
-                INSTR_SET_OP1(&bb->b_instr[i + 1], LOAD_CONST, index);
+                INSTR_SET_OP1(next_inst, LOAD_CONST, index);
                 break;
             }
         }

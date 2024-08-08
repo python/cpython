@@ -995,6 +995,20 @@ class TestSpecifics(unittest.TestCase):
             self.assertEqual('RETURN_CONST', opcodes[1].opname)
             self.assertEqual(None, opcodes[1].argval)
 
+    @support.cpython_only
+    def test_return_ifexp_const_optimization(self):
+        # gh-121246: Check that the CPython-specific peephole optimizer would
+        # properly convert pairs of LOAD_CONST + RETURN_VALUE into
+        # RETURN_CONST even if they are separated by NOP or in different
+        # blocks of instructions as a result of prior optimizations for
+        # returning different constants from a ternary operation
+        def return_ifexp(x):
+            return 1 if x else 0
+
+        opcodes = list(dis.get_instructions(return_ifexp))
+        for i in -2, -1:
+            self.assertEqual('RETURN_CONST', opcodes[i].opname)
+
     def test_consts_in_conditionals(self):
         def and_true(x):
             return True and x
