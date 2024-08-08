@@ -84,9 +84,14 @@ class Runner:
         return self._loop
 
     def run(self, coro, *, context=None):
-        """Run a coroutine inside the embedded event loop."""
-        if not coroutines.iscoroutine(coro):
-            raise ValueError("a coroutine was expected, got {!r}".format(coro))
+        """Run code in the embedded event loop.
+
+        The argument can be any awaitable object.
+
+        If the argument is a coroutine, it is wrapped in a Task.
+
+        Return the awaitable's result or raise an exception.
+        """
 
         if events._get_running_loop() is not None:
             # fail fast with short traceback
@@ -97,7 +102,8 @@ class Runner:
 
         if context is None:
             context = self._context
-        task = self._loop.create_task(coro, context=context)
+
+        task = tasks.ensure_future(coro, loop=self._loop, context=context)
 
         if (threading.current_thread() is threading.main_thread()
             and signal.getsignal(signal.SIGINT) is signal.default_int_handler
