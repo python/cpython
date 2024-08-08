@@ -3405,6 +3405,7 @@ sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
     return 1;
 }
 
+/* Returns 0 on success, -1 with exception set on failure, or error code if not. */
 static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int raise)
@@ -3489,7 +3490,7 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
-    if (res < 0)
+    if (res == -1 && PyErr_Occurred())
         return NULL;
 
     Py_RETURN_NONE;
@@ -3520,7 +3521,7 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
-    if (res < 0)
+    if (res == -1 && PyErr_Occurred())
         return NULL;
 
     return PyLong_FromLong((long) res);
