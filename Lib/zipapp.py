@@ -1,6 +1,7 @@
 import contextlib
 import os
 import pathlib
+import re
 import shutil
 import stat
 import sys
@@ -74,7 +75,8 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False):
+                   filter=None, compressed=False, include_pattern=None,
+                   exclude_pattern=None):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -137,6 +139,11 @@ def create_archive(source, target=None, interpreter=None, main=None,
                        zipfile.ZIP_STORED)
         with zipfile.ZipFile(fd, 'w', compression=compression) as z:
             for child in sorted(source.rglob('*')):
+                child_path = str(child)
+                if include_pattern and not include_pattern.search(child_path):
+                    continue
+                if exclude_pattern and exclude_pattern.search(child_path):
+                    continue
                 arcname = child.relative_to(source)
                 if filter is None or filter(arcname) and child.resolve() != arcname.resolve():
                     z.write(child, arcname.as_posix())
@@ -177,6 +184,17 @@ def main(args=None):
                  "Files are stored uncompressed by default.")
     parser.add_argument('--info', default=False, action='store_true',
             help="Display the interpreter from the archive.")
+    parser.add_argument('--include-pattern', default=None,
+            help=(
+                    "Accept a regex filtering for files to be allowed in output"
+                    " archive. This will run first if `--exclude-pattern` is also used."
+                ))
+    parser.add_argument('--exclude-pattern', default=None,
+            help=(
+                    "Accept a regex filtering files to be denied inclusion in output"
+                    " archive. This will run second if `--include-pattern` is also used."
+                    " Usage example: `python -m zipapp myapp -o myapp.pyz --exclude-pattern='.*notthis.*'`"
+                ))
     parser.add_argument('source',
             help="Source directory (or existing archive).")
 
@@ -197,9 +215,13 @@ def main(args=None):
         if args.main:
             raise SystemExit("Cannot change the main function when copying")
 
+    include_pattern = re.compile(args.include_pattern) if args.include_pattern else None
+    exclude_pattern = re.compile(args.exclude_pattern) if args.exclude_pattern else None
+
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
-                   compressed=args.compress)
+                   compressed=args.compress, include_pattern=include_pattern,
+                   exclude_pattern=exclude_pattern)
 
 
 if __name__ == '__main__':
