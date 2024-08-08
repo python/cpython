@@ -8,6 +8,7 @@ import time
 import unittest
 
 from test import support
+from test.support.testcase import FloatsAreIdenticalMixin
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
@@ -1093,21 +1094,14 @@ class InfNanTest(unittest.TestCase):
 
 fromHex = float.fromhex
 toHex = float.hex
-class HexFloatTestCase(unittest.TestCase):
+class HexFloatTestCase(FloatsAreIdenticalMixin, unittest.TestCase):
     MAX = fromHex('0x.fffffffffffff8p+1024')  # max normal
     MIN = fromHex('0x1p-1022')                # min normal
     TINY = fromHex('0x0.0000000000001p-1022') # min subnormal
     EPS = fromHex('0x0.0000000000001p0') # diff between 1.0 and next float up
 
     def identical(self, x, y):
-        # check that floats x and y are identical, or that both
-        # are NaNs
-        if isnan(x) or isnan(y):
-            if isnan(x) == isnan(y):
-                return
-        elif x == y and (x != 0.0 or copysign(1.0, x) == copysign(1.0, y)):
-            return
-        self.fail('%r not identical to %r' % (x, y))
+        self.assertFloatsAreIdentical(x, y)
 
     def test_ends(self):
         self.identical(self.MIN, ldexp(1.0, -1022))
