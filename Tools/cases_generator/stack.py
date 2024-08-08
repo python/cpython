@@ -38,9 +38,9 @@ def var_size(var: StackItem) -> str:
     else:
         return "1"
 
+
 @dataclass
 class Local:
-
     item: StackItem
     cached: bool
     in_memory: bool
@@ -74,6 +74,7 @@ class Local:
 
     def is_array(self) -> bool:
         return self.item.is_array()
+
 
 @dataclass
 class StackOffset:
@@ -171,7 +172,6 @@ class Stack:
         self.variables: list[Local] = []
         self.defined: set[str] = set()
 
-
     def pop(self, var: StackItem, extract_bits: bool = False) -> tuple[str, Local]:
         self.top_offset.pop(var)
         indirect = "&" if var.is_array() else ""
@@ -184,7 +184,9 @@ class Stack:
                 )
             if var.name in UNUSED:
                 if popped.name not in UNUSED and popped.name in self.defined:
-                    raise StackError(f"Value is declared unused, but is already cached by prior operation")
+                    raise StackError(
+                        f"Value is declared unused, but is already cached by prior operation"
+                    )
                 return "", popped
             if not var.used:
                 return "", popped
@@ -207,14 +209,12 @@ class Stack:
         self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
         bits = ".bits" if cast and not extract_bits else ""
-        assign = (
-            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
-        )
+        assign = f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
         if var.condition:
             if var.condition == "1":
                 assign = f"{assign}\n"
             elif var.condition == "0":
-               return "", Local.unused(var)
+                return "", Local.unused(var)
             else:
                 assign = f"if ({var.condition}) {{ {assign} }}\n"
         else:
@@ -242,24 +242,38 @@ class Stack:
         return "\n".join(res)
 
     @staticmethod
-    def _do_emit(out: CWriter, var: StackItem, base_offset: StackOffset,
-                 cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
+    def _do_emit(
+        out: CWriter,
+        var: StackItem,
+        base_offset: StackOffset,
+        cast_type: str = "uintptr_t",
+        extract_bits: bool = False,
+    ) -> None:
         cast = f"({cast_type})" if var.type else ""
         bits = ".bits" if cast and not extract_bits else ""
         if var.condition == "0":
             return
         if var.condition and var.condition != "1":
             out.emit(f"if ({var.condition}) ")
-        out.emit(
-            f"stack_pointer[{base_offset.to_c()}]{bits} = {cast}{var.name};\n"
-        )
+        out.emit(f"stack_pointer[{base_offset.to_c()}]{bits} = {cast}{var.name};\n")
 
     @staticmethod
-    def _do_flush(out: CWriter, variables: list[Local], base_offset: StackOffset, top_offset: StackOffset,
-                  cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
+    def _do_flush(
+        out: CWriter,
+        variables: list[Local],
+        base_offset: StackOffset,
+        top_offset: StackOffset,
+        cast_type: str = "uintptr_t",
+        extract_bits: bool = False,
+    ) -> None:
         out.start_line()
         for var in variables:
-            if var.cached and not var.in_memory and not var.item.peek and not var.name in UNUSED:
+            if (
+                var.cached
+                and not var.in_memory
+                and not var.item.peek
+                and not var.name in UNUSED
+            ):
                 Stack._do_emit(out, var.item, base_offset, cast_type, extract_bits)
             base_offset.push(var.item)
         if base_offset.to_c() != top_offset.to_c():
@@ -271,17 +285,41 @@ class Stack:
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
         out.start_line()
 
-    def flush_locally(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
-        self._do_flush(out, self.variables[:], self.base_offset.copy(), self.top_offset.copy(), cast_type, extract_bits)
+    def flush_locally(
+        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False
+    ) -> None:
+        self._do_flush(
+            out,
+            self.variables[:],
+            self.base_offset.copy(),
+            self.top_offset.copy(),
+            cast_type,
+            extract_bits,
+        )
 
-    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
-        self._do_flush(out, self.variables, self.base_offset, self.top_offset, cast_type, extract_bits)
+    def flush(
+        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False
+    ) -> None:
+        self._do_flush(
+            out,
+            self.variables,
+            self.base_offset,
+            self.top_offset,
+            cast_type,
+            extract_bits,
+        )
         self.variables = []
         self.base_offset.clear()
         self.top_offset.clear()
 
-    def flush_single_var(self, out: CWriter, var_name: str, outputs: list[StackItem],
-                         cast_type: str = "uintptr_t", extract_bits: bool = False) -> None:
+    def flush_single_var(
+        self,
+        out: CWriter,
+        var_name: str,
+        outputs: list[StackItem],
+        cast_type: str = "uintptr_t",
+        extract_bits: bool = False,
+    ) -> None:
         assert any(var.name == var_name for var in outputs)
         base_offset = self.base_offset.copy()
         top_offset = self.top_offset.copy()
@@ -309,7 +347,8 @@ class Stack:
 
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
-    def stacks(inst : Instruction | PseudoInstruction) -> Iterator[StackEffect]:
+
+    def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
         if isinstance(inst, Instruction):
             for uop in inst.parts:
                 if isinstance(uop, Uop):
