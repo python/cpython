@@ -201,6 +201,7 @@ PyCField_FromDesc_msvc(
 _ctypes.CField.__new__ as PyCField_new
 
     name: object(subclass_of='&PyUnicode_Type')
+    type as desc: object
     size: Py_ssize_t
     offset: Py_ssize_t
     bit_size: Py_ssize_t = -1
@@ -208,9 +209,9 @@ _ctypes.CField.__new__ as PyCField_new
 [clinic start generated code]*/
 
 static PyObject *
-PyCField_new_impl(PyTypeObject *type, PyObject *name, Py_ssize_t size,
-                  Py_ssize_t offset, Py_ssize_t bit_size)
-/*[clinic end generated code: output=c8973d95f5944d97 input=cf50946ed6d90492]*/
+PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
+                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t bit_size)
+/*[clinic end generated code: output=79ce818b0a937343 input=f7d8d0284e8fb708]*/
 {
     PyTypeObject *tp = type;
     CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
@@ -222,6 +223,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, Py_ssize_t size,
             goto error;
         }
     }
+    self->desc = Py_NewRef(desc);
     self->size = size;
     self->offset = offset;
     self->bit_size = bit_size;
@@ -401,6 +403,7 @@ PyCField_traverse(CFieldObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->proto);
+    Py_VISIT(self->desc);
     return 0;
 }
 
@@ -408,6 +411,7 @@ static int
 PyCField_clear(CFieldObject *self)
 {
     Py_CLEAR(self->proto);
+    Py_CLEAR(self->desc);
     return 0;
 }
 

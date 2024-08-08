@@ -484,7 +484,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
 
     for (i = 0; i < len; ++i) {
-        PyObject *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
         Py_ssize_t bitsize = 0;
 
@@ -502,28 +501,22 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         CFieldObject *prop = (CFieldObject *)prop_obj; // borrow from prop_obj
 
         PyObject *_dummy;
-        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &_dummy, &desc, &bitsize)) {
+        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &_dummy, &_dummy, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
                             "'_fields_' must be a sequence of (name, C type) pairs");
             Py_XDECREF(pair);
             goto error;
         }
-        if (PyCArrayTypeObject_Check(st, desc)) {
+        if (PyCArrayTypeObject_Check(st, prop->desc)) {
             arrays_seen = 1;
         }
 
         StgInfo *info;
-        if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        if (PyStgInfo_FromType(st, prop->desc, &info) < 0) {
             Py_DECREF(pair);
             goto error;
         }
-        if (info == NULL) {
-            Py_DECREF(pair);
-            PyErr_Format(PyExc_TypeError,
-                         "second item in _fields_ tuple (index %zd) must be a C type",
-                         i);
-            goto error;
-        }
+        assert(info);
 
         stginfo->ffi_type_pointer.elements[ffi_ofs + i] = &info->ffi_type_pointer;
         if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
@@ -552,7 +545,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             default:
                 PyErr_Format(PyExc_TypeError,
                              "bit fields not allowed for type %s",
-                             ((PyTypeObject *)desc)->tp_name);
+                             ((PyTypeObject *)prop->desc)->tp_name);
                 Py_DECREF(pair);
                 goto error;
             }
@@ -583,7 +576,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            int res = PyCField_InitFromDesc(st, prop, desc, i,
+            int res = PyCField_InitFromDesc(st, prop, prop->desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
@@ -636,7 +629,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             bitofs = 0;
             offset = 0;
             align = 0;
-            int res = PyCField_InitFromDesc(st, prop, desc, i,
+            int res = PyCField_InitFromDesc(st, prop, prop->desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);

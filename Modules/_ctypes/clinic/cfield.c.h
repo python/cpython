@@ -10,8 +10,8 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
-PyCField_new_impl(PyTypeObject *type, PyObject *name, Py_ssize_t size,
-                  Py_ssize_t offset, Py_ssize_t bit_size);
+PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
+                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t bit_size);
 
 static PyObject *
 PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -19,14 +19,14 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), &_Py_ID(size), &_Py_ID(offset), &_Py_ID(bit_size), },
+        .ob_item = { &_Py_ID(name), &_Py_ID(type), &_Py_ID(size), &_Py_ID(offset), &_Py_ID(bit_size), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -35,23 +35,24 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "size", "offset", "bit_size", NULL};
+    static const char * const _keywords[] = {"name", "type", "size", "offset", "bit_size", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "CField",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 3;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 4;
     PyObject *name;
+    PyObject *desc;
     Py_ssize_t size;
     Py_ssize_t offset;
     Py_ssize_t bit_size = -1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 3, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 4, 5, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -60,9 +61,10 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     name = fastargs[0];
+    desc = fastargs[1];
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[1]);
+        PyObject *iobj = _PyNumber_Index(fastargs[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -74,7 +76,7 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[2]);
+        PyObject *iobj = _PyNumber_Index(fastargs[3]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -89,7 +91,7 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[3]);
+        PyObject *iobj = _PyNumber_Index(fastargs[4]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -100,9 +102,9 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         bit_size = ival;
     }
 skip_optional_pos:
-    return_value = PyCField_new_impl(type, name, size, offset, bit_size);
+    return_value = PyCField_new_impl(type, name, desc, size, offset, bit_size);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8e63c9e14920d7d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1eaa4a49317f1f01 input=a9049054013a1b77]*/
