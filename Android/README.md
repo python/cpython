@@ -110,4 +110,8 @@ stderr. Add the `-v` option to also show Gradle output, and non-Python logcat
 messages.
 
 Any other arguments on the `android.py test` command line will be passed through
-to `python -m test`. Use `--` to separate them from android.py's own options.
+to `python -m test` – use `--` to separate them from android.py's own options.
+See the [Python Developer's
+Guide](https://devguide.python.org/testing/run-write-tests/) for common options
+– most of them will work on Android, except for those that involve subprocesses,
+such as `-j`.
