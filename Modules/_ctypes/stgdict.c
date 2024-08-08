@@ -505,11 +505,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stginfo->flags |= TYPEFLAG_HASPOINTER;
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
-        if (bitsize != -1) { /* bits specified */
-            // empty
-        } else {
-            bitsize = 0;
-        }
 
         if (isStruct) {
             const char *fieldfmt = info->format ? info->format : "B";

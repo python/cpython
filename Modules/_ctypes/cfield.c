@@ -356,7 +356,7 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
     self->getfunc = getfunc;
     self->index = index;
 
-    int is_bitfield = !!bitsize;
+    int is_bitfield = bitsize >= 0;
     if(!is_bitfield) {
         assert(info->size >= 0);
         // assert: no overflow;
