@@ -15,6 +15,7 @@
 #include "pycore_long.h"              // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"      // _PyModule_GetState()
 #include "pycore_object.h"            // _PyNone_Type
+#include "pycore_pyerrors.h"          // _PyErr_FormatNote
 #include "pycore_pystate.h"           // _PyThreadState_GET()
 #include "pycore_runtime.h"           // _Py_ID()
 #include "pycore_setobject.h"         // _PySet_NextEntry()
@@ -2759,8 +2760,10 @@ store_tuple_elements(PickleState *state, PicklerObject *self, PyObject *t,
 
         if (element == NULL)
             return -1;
-        if (save(state, self, element, 0) < 0)
+        if (save(state, self, element, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %zd", t, i);
             return -1;
+        }
     }
 
     return 0;
@@ -2879,11 +2882,12 @@ save_tuple(PickleState *state, PicklerObject *self, PyObject *obj)
  * Returns 0 on success, <0 on error.
  */
 static int
-batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
+batch_list(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *origobj)
 {
     PyObject *obj = NULL;
     PyObject *firstitem = NULL;
     int i, n;
+    Py_ssize_t total = 0;
 
     const char mark_op = MARK;
     const char append_op = APPEND;
@@ -2898,7 +2902,7 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
 
     if (self->proto == 0) {
         /* APPENDS isn't available; do one at a time. */
-        for (;;) {
+        for (;; total++) {
             obj = PyIter_Next(iter);
             if (obj == NULL) {
                 if (PyErr_Occurred())
@@ -2907,8 +2911,10 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
             }
             i = save(state, self, obj, 0);
             Py_DECREF(obj);
-            if (i < 0)
+            if (i < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
                 return -1;
+            }
             if (_Pickler_Write(self, &append_op, 1) < 0)
                 return -1;
         }
@@ -2934,8 +2940,10 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
                 goto error;
 
             /* Only one item to write */
-            if (save(state, self, firstitem, 0) < 0)
+            if (save(state, self, firstitem, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
                 goto error;
+            }
             if (_Pickler_Write(self, &append_op, 1) < 0)
                 goto error;
             Py_CLEAR(firstitem);
@@ -2948,16 +2956,22 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             goto error;
 
-        if (save(state, self, firstitem, 0) < 0)
+        if (save(state, self, firstitem, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
             goto error;
+        }
         Py_CLEAR(firstitem);
+        total++;
         n = 1;
 
         /* Fetch and save up to BATCHSIZE items */
         while (obj) {
-            if (save(state, self, obj, 0) < 0)
+            if (save(state, self, obj, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
                 goto error;
+            }
             Py_CLEAR(obj);
+            total++;
             n += 1;
 
             if (n == BATCHSIZE)
@@ -3013,8 +3027,10 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         Py_INCREF(item);
         int err = save(state, self, item, 0);
         Py_DECREF(item);
-        if (err < 0)
+        if (err < 0) {
+            _PyErr_FormatNote("when serializing %T item 0", obj);
             return -1;
+        }
         if (_Pickler_Write(self, &append_op, 1) < 0)
             return -1;
         return 0;
@@ -3031,8 +3047,10 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
             Py_INCREF(item);
             int err = save(state, self, item, 0);
             Py_DECREF(item);
-            if (err < 0)
+            if (err < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
                 return -1;
+            }
             total++;
             if (++this_batch == BATCHSIZE)
                 break;
@@ -3092,7 +3110,7 @@ save_list(PickleState *state, PicklerObject *self, PyObject *obj)
                 Py_DECREF(iter);
                 goto error;
             }
-            status = batch_list(state, self, iter);
+            status = batch_list(state, self, iter, obj);
             _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
@@ -3120,7 +3138,7 @@ save_list(PickleState *state, PicklerObject *self, PyObject *obj)
  * ugly to bear.
  */
 static int
-batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
+batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *origobj)
 {
     PyObject *obj = NULL;
     PyObject *firstitem = NULL;
@@ -3148,8 +3166,13 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
                 return -1;
             }
             i = save(state, self, PyTuple_GET_ITEM(obj, 0), 0);
-            if (i >= 0)
+            if (i >= 0) {
                 i = save(state, self, PyTuple_GET_ITEM(obj, 1), 0);
+                if (i < 0) {
+                    _PyErr_FormatNote("when serializing %T item %R",
+                                      origobj, PyTuple_GET_ITEM(obj, 0));
+                }
+            }
             Py_DECREF(obj);
             if (i < 0)
                 return -1;
@@ -3185,8 +3208,11 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
             /* Only one item to write */
             if (save(state, self, PyTuple_GET_ITEM(firstitem, 0), 0) < 0)
                 goto error;
-            if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0)
+            if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %R",
+                                  origobj, PyTuple_GET_ITEM(firstitem, 0));
                 goto error;
+            }
             if (_Pickler_Write(self, &setitem_op, 1) < 0)
                 goto error;
             Py_CLEAR(firstitem);
@@ -3201,8 +3227,11 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
 
         if (save(state, self, PyTuple_GET_ITEM(firstitem, 0), 0) < 0)
             goto error;
-        if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0)
+        if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %R",
+                              origobj, PyTuple_GET_ITEM(firstitem, 0));
             goto error;
+        }
         Py_CLEAR(firstitem);
         n = 1;
 
@@ -3213,9 +3242,13 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
                     "iterator must return 2-tuples");
                 goto error;
             }
-            if (save(state, self, PyTuple_GET_ITEM(obj, 0), 0) < 0 ||
-                save(state, self, PyTuple_GET_ITEM(obj, 1), 0) < 0)
+            if (save(state, self, PyTuple_GET_ITEM(obj, 0), 0) < 0)
                 goto error;
+            if (save(state, self, PyTuple_GET_ITEM(obj, 1), 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %R",
+                                  origobj, PyTuple_GET_ITEM(obj, 0));
+                goto error;
+            }
             Py_CLEAR(obj);
             n += 1;
 
@@ -3276,6 +3309,7 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
             goto error;
         }
         if (save(state, self, value, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %R", obj, key);
             goto error;
         }
         Py_CLEAR(key);
@@ -3297,6 +3331,7 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
                 goto error;
             }
             if (save(state, self, value, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %R", obj, key);
                 goto error;
             }
             Py_CLEAR(key);
@@ -3371,7 +3406,7 @@ save_dict(PickleState *state, PicklerObject *self, PyObject *obj)
                 Py_DECREF(iter);
                 goto error;
             }
-            status = batch_dict(state, self, iter);
+            status = batch_dict(state, self, iter, obj);
             _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
@@ -3441,8 +3476,10 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
         while (_PySet_NextEntryRef(obj, &ppos, &item, &hash)) {
             err = save(state, self, item, 0);
             Py_CLEAR(item);
-            if (err < 0)
+            if (err < 0) {
+                _PyErr_FormatNote("when serializing %T element", obj);
                 break;
+            }
             if (++i == BATCHSIZE)
                 break;
         }
@@ -3514,6 +3551,7 @@ save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
             break;
         }
         if (save(state, self, item, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T element", obj);
             Py_DECREF(item);
             Py_DECREF(iter);
             return -1;
@@ -4054,10 +4092,17 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
         }
 
         if (self->proto >= 4) {
-            if (save(st, self, cls, 0) < 0 ||
-                save(st, self, args, 0) < 0 ||
-                save(st, self, kwargs, 0) < 0 ||
-                _Pickler_Write(self, &newobj_ex_op, 1) < 0) {
+            if (save(st, self, cls, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T class", obj);
+                return -1;
+            }
+            if (save(st, self, args, 0) < 0 ||
+                save(st, self, kwargs, 0) < 0)
+            {
+                _PyErr_FormatNote("when serializing %T __new__ arguments", obj);
+                return -1;
+            }
+            if (_Pickler_Write(self, &newobj_ex_op, 1) < 0) {
                 return -1;
             }
         }
@@ -4094,14 +4139,18 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
             }
 
             if (save(st, self, callable, 0) < 0 ||
-                save(st, self, newargs, 0) < 0 ||
-                _Pickler_Write(self, &reduce_op, 1) < 0) {
+                save(st, self, newargs, 0) < 0)
+            {
+                _PyErr_FormatNote("when serializing %T reconstructor", obj);
                 Py_DECREF(newargs);
                 Py_DECREF(callable);
                 return -1;
             }
             Py_DECREF(newargs);
             Py_DECREF(callable);
+            if (_Pickler_Write(self, &reduce_op, 1) < 0) {
+                return -1;
+            }
         }
     }
     else if (use_newobj) {
@@ -4165,6 +4214,7 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         /* Save the class and its __new__ arguments. */
         if (save(st, self, cls, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T class", obj);
             return -1;
         }
 
@@ -4174,18 +4224,27 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         p = save(st, self, newargtup, 0);
         Py_DECREF(newargtup);
-        if (p < 0)
+        if (p < 0) {
+            _PyErr_FormatNote("when serializing %T __new__ arguments", obj);
             return -1;
+        }
 
         /* Add NEWOBJ opcode. */
         if (_Pickler_Write(self, &newobj_op, 1) < 0)
             return -1;
     }
     else { /* Not using NEWOBJ. */
-        if (save(st, self, callable, 0) < 0 ||
-            save(st, self, argtup, 0) < 0 ||
-            _Pickler_Write(self, &reduce_op, 1) < 0)
+        if (save(st, self, callable, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T reconstructor", obj);
             return -1;
+        }
+        if (save(st, self, argtup, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T reconstructor arguments", obj);
+            return -1;
+        }
+        if (_Pickler_Write(self, &reduce_op, 1) < 0) {
+            return -1;
+        }
     }
 
     /* obj can be NULL when save_reduce() is used directly. A NULL obj means
@@ -4210,16 +4269,19 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
             return -1;
     }
 
-    if (listitems && batch_list(st, self, listitems) < 0)
+    if (listitems && batch_list(st, self, listitems, obj) < 0)
         return -1;
 
-    if (dictitems && batch_dict(st, self, dictitems) < 0)
+    if (dictitems && batch_dict(st, self, dictitems, obj) < 0)
         return -1;
 
     if (state) {
         if (state_setter == NULL) {
-            if (save(st, self, state, 0) < 0 ||
-                _Pickler_Write(self, &build_op, 1) < 0)
+            if (save(st, self, state, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T state", obj);
+                return -1;
+            }
+            if (_Pickler_Write(self, &build_op, 1) < 0)
                 return -1;
         }
         else {
@@ -4235,9 +4297,18 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
             const char tupletwo_op = TUPLE2;
             const char pop_op = POP;
-            if (save(st, self, state_setter, 0) < 0 ||
-                save(st, self, obj, 0) < 0 || save(st, self, state, 0) < 0 ||
-                _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
+            if (save(st, self, state_setter, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T state setter", obj);
+                return -1;
+            }
+            if (save(st, self, obj, 0) < 0) {
+                return -1;
+            }
+            if (save(st, self, state, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T state", obj);
+                return -1;
+            }
+            if (_Pickler_Write(self, &tupletwo_op, 1) < 0 ||
                 _Pickler_Write(self, &reduce_op, 1) < 0 ||
                 _Pickler_Write(self, &pop_op, 1) < 0)
                 return -1;
@@ -4446,10 +4517,14 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     if (!PyTuple_Check(reduce_value)) {
         PyErr_SetString(st->PicklingError,
                         "__reduce__ must return a string or tuple");
+        _PyErr_FormatNote("when serializing %T object", obj);
         goto error;
     }
 
     status = save_reduce(st, self, reduce_value, obj);
+    if (status < 0) {
+        _PyErr_FormatNote("when serializing %T object", obj);
+    }
 
     if (0) {
   error:
