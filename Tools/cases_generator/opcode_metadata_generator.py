@@ -4,15 +4,12 @@ Writes the metadata to pycore_opcode_metadata.h by default.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     PseudoInstruction,
     analyze_files,
-    Skip,
     Uop,
 )
 from generators_common import (
@@ -20,7 +17,6 @@ from generators_common import (
     ROOT,
     write_header,
     cflags,
-    StackOffset,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -95,6 +91,7 @@ def emit_stack_effect_function(
 def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     popped_data: list[tuple[str, str]] = []
     pushed_data: list[tuple[str, str]] = []
+
     def add(inst: Instruction | PseudoInstruction) -> None:
         stack = get_stack_effect(inst)
         popped = (-stack.base_offset).to_c()
@@ -155,7 +152,6 @@ def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
         if inst.family is not None:
             deopt = inst.family.name
         deopts.append((inst.name, deopt))
-    deopts.append(("INSTRUMENTED_LINE", "INSTRUMENTED_LINE"))
     for name, deopt in sorted(deopts):
         out.emit(f"[{name}] = {deopt},\n")
     out.emit("};\n\n")
@@ -183,7 +179,6 @@ def generate_name_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
     names = list(analysis.instructions) + list(analysis.pseudos)
-    names.append("INSTRUMENTED_LINE")
     for name in sorted(names):
         out.emit(f'[{name}] = "{name}",\n')
     out.emit("};\n")

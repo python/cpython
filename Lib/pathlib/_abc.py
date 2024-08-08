@@ -16,21 +16,13 @@ import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-
-
-__all__ = ["UnsupportedOperation"]
+from ._os import UnsupportedOperation, copyfileobj
 
 
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
-
-class UnsupportedOperation(NotImplementedError):
-    """An exception that is raised when an unsupported operation is called on
-    a path object.
-    """
-    pass
 
 
 class ParserBase:
@@ -71,7 +63,7 @@ class ParserBase:
 
     def splitext(self, path):
         """Split the path into a pair (root, ext), where *ext* is empty or
-        begins with a begins with a period and contains at most one period,
+        begins with a period and contains at most one period,
         and *root* is everything before the extension."""
         raise UnsupportedOperation(self._unsupported_msg('splitext()'))
 
@@ -563,6 +555,15 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
+    def _samefile_safe(self, other_path):
+        """
+        Like samefile(), but returns False rather than raising OSError.
+        """
+        try:
+            return self.samefile(other_path)
+        except (OSError, ValueError):
+            return False
+
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -780,6 +781,94 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
 
+    # Metadata keys supported by this path type.
+    _readable_metadata = _writable_metadata = frozenset()
+
+    def _read_metadata(self, keys=None, *, follow_symlinks=True):
+        """
+        Returns path metadata as a dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
+
+    def _write_metadata(self, metadata, *, follow_symlinks=True):
+        """
+        Sets path metadata from the given dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
+
+    def _copy_metadata(self, target, *, follow_symlinks=True):
+        """
+        Copies metadata (permissions, timestamps, etc) from this path to target.
+        """
+        # Metadata types supported by both source and target.
+        keys = self._readable_metadata & target._writable_metadata
+        if keys:
+            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
+            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
+
+    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+        """
+        Copy the contents of this file to the given target. If this file is a
+        symlink and follow_symlinks is false, a symlink will be created at the
+        target.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
+        if not follow_symlinks and self.is_symlink():
+            target.symlink_to(self.readlink())
+            if preserve_metadata:
+                self._copy_metadata(target, follow_symlinks=False)
+            return
+        with self.open('rb') as source_f:
+            try:
+                with target.open('wb') as target_f:
+                    copyfileobj(source_f, target_f)
+            except IsADirectoryError as e:
+                if not target.exists():
+                    # Raise a less confusing exception.
+                    raise FileNotFoundError(
+                        f'Directory does not exist: {target}') from e
+                else:
+                    raise
+        if preserve_metadata:
+            self._copy_metadata(target)
+
+    def copytree(self, target, *, follow_symlinks=True,
+                 preserve_metadata=False, dirs_exist_ok=False,
+                 ignore=None, on_error=None):
+        """
+        Recursively copy this directory tree to the given destination.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if on_error is None:
+            def on_error(err):
+                raise err
+        stack = [(self, target)]
+        while stack:
+            source_dir, target_dir = stack.pop()
+            try:
+                sources = source_dir.iterdir()
+                target_dir.mkdir(exist_ok=dirs_exist_ok)
+                if preserve_metadata:
+                    source_dir._copy_metadata(target_dir)
+                for source in sources:
+                    if ignore and ignore(source):
+                        continue
+                    try:
+                        if source.is_dir(follow_symlinks=follow_symlinks):
+                            stack.append((source, target_dir.joinpath(source.name)))
+                        else:
+                            source.copy(target_dir.joinpath(source.name),
+                                        follow_symlinks=follow_symlinks,
+                                        preserve_metadata=preserve_metadata)
+                    except OSError as err:
+                        on_error(err)
+            except OSError as err:
+                on_error(err)
+
     def rename(self, target):
         """
         Rename this path to the target path.
@@ -829,6 +918,48 @@ class PathBase(PurePathBase):
         Remove this directory.  The directory must be empty.
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
+
+    def delete(self, ignore_errors=False, on_error=None):
+        """
+        Delete this file or directory (including all sub-directories).
+
+        If *ignore_errors* is true, exceptions raised from scanning the
+        filesystem and removing files and directories are ignored. Otherwise,
+        if *on_error* is set, it will be called to handle the error. If
+        neither *ignore_errors* nor *on_error* are set, exceptions are
+        propagated to the caller.
+        """
+        if ignore_errors:
+            def on_error(err):
+                pass
+        elif on_error is None:
+            def on_error(err):
+                raise err
+        if self.is_dir(follow_symlinks=False):
+            results = self.walk(
+                on_error=on_error,
+                top_down=False,  # So we rmdir() empty directories.
+                follow_symlinks=False)
+            for dirpath, dirnames, filenames in results:
+                for name in filenames:
+                    try:
+                        dirpath.joinpath(name).unlink()
+                    except OSError as err:
+                        on_error(err)
+                for name in dirnames:
+                    try:
+                        dirpath.joinpath(name).rmdir()
+                    except OSError as err:
+                        on_error(err)
+            delete_self = self.rmdir
+        else:
+            delete_self = self.unlink
+        try:
+            delete_self()
+        except OSError as err:
+            err.filename = str(self)
+            on_error(err)
+    delete.avoids_symlink_attacks = False
 
     def owner(self, *, follow_symlinks=True):
         """

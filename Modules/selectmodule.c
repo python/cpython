@@ -262,7 +262,7 @@ A file descriptor is either a socket or file object, or a small integer
 gotten from a fileno() method call on one of those.
 
 The optional 4th argument specifies a timeout in seconds; it may be
-a floating point number to specify fractions of seconds.  If it is absent
+a floating-point number to specify fractions of seconds.  If it is absent
 or None, the call will never time out.
 
 The return value is a tuple of three lists corresponding to the first three
@@ -277,7 +277,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=e467f5d68033de00]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=1199d5e101abca4a]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -473,6 +473,7 @@ update_ufd_array(pollObject *self)
 }
 
 /*[clinic input]
+@critical_section
 select.poll.register
 
     fd: fildes
@@ -486,7 +487,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=34e16cfb28d3c900]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=c475e029ce6c2830]*/
 {
     PyObject *key, *value;
     int err;
@@ -514,6 +515,7 @@ select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
 
 
 /*[clinic input]
+@critical_section
 select.poll.modify
 
     fd: fildes
@@ -528,7 +530,7 @@ Modify an already registered file descriptor.
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=1a7b88bf079eff17 input=a8e383df075c32cf]*/
+/*[clinic end generated code: output=1a7b88bf079eff17 input=38c9db5346711872]*/
 {
     PyObject *key, *value;
     int err;
@@ -566,6 +568,7 @@ select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
 
 
 /*[clinic input]
+@critical_section
 select.poll.unregister
 
     fd: fildes
@@ -576,7 +579,7 @@ Remove a file descriptor being tracked by the polling object.
 
 static PyObject *
 select_poll_unregister_impl(pollObject *self, int fd)
-/*[clinic end generated code: output=8c9f42e75e7d291b input=4b4fccc1040e79cb]*/
+/*[clinic end generated code: output=8c9f42e75e7d291b input=ae6315d7f5243704]*/
 {
     PyObject *key;
 
@@ -599,6 +602,7 @@ select_poll_unregister_impl(pollObject *self, int fd)
 }
 
 /*[clinic input]
+@critical_section
 select.poll.poll
 
     timeout as timeout_obj: object = None
@@ -614,7 +618,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=c2f6953ec45e5622]*/
+/*[clinic end generated code: output=876e837d193ed7e4 input=54310631457efdec]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
@@ -857,6 +861,7 @@ internal_devpoll_register(devpollObject *self, int fd,
 }
 
 /*[clinic input]
+@critical_section
 select.devpoll.register
 
     fd: fildes
@@ -872,12 +877,13 @@ Register a file descriptor with the polling object.
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask)
-/*[clinic end generated code: output=6e07fe8b74abba0c input=22006fabe9567522]*/
+/*[clinic end generated code: output=6e07fe8b74abba0c input=8d48bd2653a61c42]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 0);
 }
 
 /*[clinic input]
+@critical_section
 select.devpoll.modify
 
     fd: fildes
@@ -893,12 +899,13 @@ Modify a possible already registered file descriptor.
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
-/*[clinic end generated code: output=bc2e6d23aaff98b4 input=09fa335db7cdc09e]*/
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=773b37e9abca2460]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 1);
 }
 
 /*[clinic input]
+@critical_section
 select.devpoll.unregister
 
     fd: fildes
@@ -909,7 +916,7 @@ Remove a file descriptor being tracked by the polling object.
 
 static PyObject *
 select_devpoll_unregister_impl(devpollObject *self, int fd)
-/*[clinic end generated code: output=95519ffa0c7d43fe input=b4ea42a4442fd467]*/
+/*[clinic end generated code: output=95519ffa0c7d43fe input=6052d368368d4d05]*/
 {
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
@@ -926,6 +933,7 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
 }
 
 /*[clinic input]
+@critical_section
 select.devpoll.poll
     timeout as timeout_obj: object = None
       The maximum time to wait in milliseconds, or else None (or a negative
@@ -940,7 +948,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=3c3f0a355ec2bedb]*/
+/*[clinic end generated code: output=2654e5457cca0b3c input=fe7a3f6dcbc118c5]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL;
@@ -1059,6 +1067,7 @@ devpoll_internal_close(devpollObject *self)
 }
 
 /*[clinic input]
+@critical_section
 select.devpoll.close
 
 Close the devpoll file descriptor.
@@ -1068,7 +1077,7 @@ Further operations on the devpoll object will raise an exception.
 
 static PyObject *
 select_devpoll_close_impl(devpollObject *self)
-/*[clinic end generated code: output=26b355bd6429f21b input=6273c30f5560a99b]*/
+/*[clinic end generated code: output=26b355bd6429f21b input=408fde21a377ccfb]*/
 {
     errno = devpoll_internal_close(self);
     if (errno < 0) {
@@ -1088,6 +1097,7 @@ devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
 }
 
 /*[clinic input]
+@critical_section
 select.devpoll.fileno
 
 Return the file descriptor.
@@ -1095,7 +1105,7 @@ Return the file descriptor.
 
 static PyObject *
 select_devpoll_fileno_impl(devpollObject *self)
-/*[clinic end generated code: output=26920929f8d292f4 input=ef15331ebde6c368]*/
+/*[clinic end generated code: output=26920929f8d292f4 input=8c9db2efa1ade538]*/
 {
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
@@ -1378,6 +1388,7 @@ pyepoll_dealloc(pyEpoll_Object *self)
 }
 
 /*[clinic input]
+@critical_section
 select.epoll.close
 
 Close the epoll control file descriptor.
@@ -1387,7 +1398,7 @@ Further operations on the epoll object will raise an exception.
 
 static PyObject *
 select_epoll_close_impl(pyEpoll_Object *self)
-/*[clinic end generated code: output=ee2144c446a1a435 input=ca6c66ba5a736bfd]*/
+/*[clinic end generated code: output=ee2144c446a1a435 input=f626a769192e1dbe]*/
 {
     errno = pyepoll_internal_close(self);
     if (errno < 0) {
@@ -2023,10 +2034,8 @@ finally:
 }
 
 static int
-kqueue_tracking_add(_selectstate *state, kqueue_queue_Object *self) {
-    if (!state->kqueue_tracking_initialized) {
-        kqueue_tracking_init(PyType_GetModule(Py_TYPE(self)));
-    }
+kqueue_tracking_add_lock_held(_selectstate *state, kqueue_queue_Object *self)
+{
     assert(self->kqfd >= 0);
     _kqueue_list_item *item = PyMem_New(_kqueue_list_item, 1);
     if (item == NULL) {
@@ -2039,8 +2048,23 @@ kqueue_tracking_add(_selectstate *state, kqueue_queue_Object *self) {
     return 0;
 }
 
+static int
+kqueue_tracking_add(_selectstate *state, kqueue_queue_Object *self)
+{
+    int ret;
+    PyObject *module = PyType_GetModule(Py_TYPE(self));
+    Py_BEGIN_CRITICAL_SECTION(module);
+    if (!state->kqueue_tracking_initialized) {
+        kqueue_tracking_init(module);
+    }
+    ret = kqueue_tracking_add_lock_held(state, self);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
 static void
-kqueue_tracking_remove(_selectstate *state, kqueue_queue_Object *self) {
+kqueue_tracking_remove_lock_held(_selectstate *state, kqueue_queue_Object *self)
+{
     _kqueue_list *listptr = &state->kqueue_open_list;
     while (*listptr != NULL) {
         _kqueue_list_item *item = *listptr;
@@ -2054,6 +2078,14 @@ kqueue_tracking_remove(_selectstate *state, kqueue_queue_Object *self) {
     // The item should be in the list when we remove it,
     // and it should only be removed once at close time.
     assert(0);
+}
+
+static void
+kqueue_tracking_remove(_selectstate *state, kqueue_queue_Object *self)
+{
+    Py_BEGIN_CRITICAL_SECTION(PyType_GetModule(Py_TYPE(self)));
+    kqueue_tracking_remove_lock_held(state, self);
+    Py_END_CRITICAL_SECTION();
 }
 
 static int
@@ -2150,6 +2182,7 @@ kqueue_queue_finalize(kqueue_queue_Object *self)
 }
 
 /*[clinic input]
+@critical_section
 select.kqueue.close
 
 Close the kqueue control file descriptor.
@@ -2159,7 +2192,7 @@ Further operations on the kqueue object will raise an exception.
 
 static PyObject *
 select_kqueue_close_impl(kqueue_queue_Object *self)
-/*[clinic end generated code: output=d1c7df0b407a4bc1 input=0b12d95430e0634c]*/
+/*[clinic end generated code: output=d1c7df0b407a4bc1 input=6d763c858b17b690]*/
 {
     errno = kqueue_queue_internal_close(self);
     if (errno < 0) {

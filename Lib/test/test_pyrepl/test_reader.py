@@ -2,10 +2,9 @@ import itertools
 import functools
 import rlcompleter
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
-from test.support import import_helper
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
 
@@ -88,6 +87,12 @@ class TestReader(TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(0, 0)
         self.assertEqual(reader.pos, 0)
+
+    def test_control_characters(self):
+        code = 'flag = "🏳️‍🌈"'
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, 'flag = "🏳️\\u200d🌈"')
 
     def test_setpos_from_xy_multiple_lines(self):
         # fmt: off
