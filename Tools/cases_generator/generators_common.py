@@ -58,12 +58,13 @@ def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
             parens -= 1
         out.emit(tkn)
 
+
 ReplacementFunctionType = Callable[
     [Token, Iterator[Token], Uop, Stack, Instruction | None], None
 ]
 
-class Emitter:
 
+class Emitter:
     out: CWriter
     _replacers: dict[str, ReplacementFunctionType]
 
@@ -176,7 +177,6 @@ class Emitter:
             else:
                 self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
 
-
     def sync_sp(
         self,
         tkn: Token,
@@ -189,7 +189,6 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         stack.flush(self.out)
-
 
     def check_eval_breaker(
         self,
@@ -227,7 +226,6 @@ class Emitter:
         # unused portions of the stack to NULL.
         stack.flush_single_var(self.out, target, uop.stack.outputs)
 
-
     def emit_tokens(
         self,
         uop: Uop,
@@ -247,6 +245,7 @@ class Emitter:
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)
+
 
 def cflags(p: Properties) -> str:
     flags: list[str] = []

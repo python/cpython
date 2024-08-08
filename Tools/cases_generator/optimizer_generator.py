@@ -88,8 +88,8 @@ def emit_default(out: CWriter, uop: Uop) -> None:
             else:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
 
-class OptimizerEmitter(Emitter):
 
+class OptimizerEmitter(Emitter):
     pass
 
 
@@ -139,7 +139,7 @@ def write_uop(
                 local = locals[var.name]
             else:
                 local = Local.local(var)
-            out.emit(stack.push(local))
+            stack.push(local)
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:
@@ -161,8 +161,9 @@ def generate_abstract_interpreter(
     out.emit("\n")
     base_uop_names = set([uop.name for uop in base.uops.values()])
     for abstract_uop_name in abstract.uops:
-        assert abstract_uop_name in base_uop_names,\
-            f"All abstract uops should override base uops, but {abstract_uop_name} is not."
+        assert (
+            abstract_uop_name in base_uop_names
+        ), f"All abstract uops should override base uops, but {abstract_uop_name} is not."
 
     for uop in base.uops.values():
         override: Uop | None = None
@@ -192,7 +193,7 @@ def generate_abstract_interpreter(
 
 
 def generate_tier2_abstract_from_files(
-    filenames: list[str], outfilename: str, debug: bool=False
+    filenames: list[str], outfilename: str, debug: bool = False
 ) -> None:
     assert len(filenames) == 2, "Need a base file and an abstract cases file."
     base = analyze_files([filenames[0]])
@@ -211,7 +212,7 @@ arg_parser.add_argument(
 )
 
 
-arg_parser.add_argument("input", nargs='*', help="Abstract interpreter definition file")
+arg_parser.add_argument("input", nargs="*", help="Abstract interpreter definition file")
 
 arg_parser.add_argument(
     "base", nargs="*", help="The base instruction definition file(s)"

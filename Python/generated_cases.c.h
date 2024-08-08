@@ -882,7 +882,6 @@
                 }
             }
             // _DO_CALL
-            args = &stack_pointer[-oparg];
             self_or_null = maybe_self;
             callable = func;
             {
@@ -3651,7 +3650,6 @@
                 }
             }
             // _MONITOR_CALL
-            args = &stack_pointer[-oparg];
             {
                 int is_meth = !PyStackRef_IsNull(maybe_self);
                 PyObject *function = PyStackRef_AsPyObjectBorrow(func);
@@ -3672,7 +3670,6 @@
                 if (err) goto error;
             }
             // _DO_CALL
-            args = &stack_pointer[-oparg];
             self_or_null = maybe_self;
             callable = func;
             {
