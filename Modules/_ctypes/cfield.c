@@ -228,6 +228,16 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
         }
     }
 
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        goto error;
+    }
+    if (info == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "type of field %R must be a C type", self->name);
+        goto error;
+    }
+
     if (bit_size_obj == Py_None) {
         self->bit_size = -1;
     } else {
@@ -240,16 +250,35 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
             }
             goto error;
         }
-    }
+        switch(info->ffi_type_pointer.type) {
+            case FFI_TYPE_UINT8:
+            case FFI_TYPE_UINT16:
+            case FFI_TYPE_UINT32:
+            case FFI_TYPE_SINT64:
+            case FFI_TYPE_UINT64:
+                break;
 
-    StgInfo *info;
-    if (PyStgInfo_FromType(st, desc, &info) < 0) {
-        goto error;
-    }
-    if (info == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "type of field %R must be a C type", self->name);
-        goto error;
+            case FFI_TYPE_SINT8:
+            case FFI_TYPE_SINT16:
+            case FFI_TYPE_SINT32:
+                if (info->getfunc != _ctypes_get_fielddesc("c")->getfunc
+                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc)
+                {
+                    break;
+                }
+                _Py_FALLTHROUGH;  /* else fall through */
+            default:
+                PyErr_Format(PyExc_TypeError,
+                             "bit fields not allowed for type %s",
+                             ((PyTypeObject*)desc)->tp_name);
+                goto error;
+            }
+            if (self->bit_size <= 0 || self->bit_size > info->size * 8) {
+                PyErr_Format(PyExc_ValueError,
+                                "number of bits invalid for bit field %R",
+                                self->name);
+                goto error;
+        }
     }
 
     self->desc = Py_NewRef(desc);

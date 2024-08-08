@@ -515,35 +515,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
         if (bitsize != -1) { /* bits specified */
             stginfo->flags |= TYPEFLAG_HASBITFIELD;
-            switch(info->ffi_type_pointer.type) {
-            case FFI_TYPE_UINT8:
-            case FFI_TYPE_UINT16:
-            case FFI_TYPE_UINT32:
-            case FFI_TYPE_SINT64:
-            case FFI_TYPE_UINT64:
-                break;
-
-            case FFI_TYPE_SINT8:
-            case FFI_TYPE_SINT16:
-            case FFI_TYPE_SINT32:
-                if (info->getfunc != _ctypes_get_fielddesc("c")->getfunc
-                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc)
-                {
-                    break;
-                }
-                _Py_FALLTHROUGH;  /* else fall through */
-            default:
-                PyErr_Format(PyExc_TypeError,
-                             "bit fields not allowed for type %s",
-                             ((PyTypeObject *)prop->desc)->tp_name);
-                goto error;
-            }
-            if (bitsize <= 0 || bitsize > info->size * 8) {
-                PyErr_Format(PyExc_ValueError,
-                                "number of bits invalid for bit field %R",
-                                prop->name, bitsize);
-                goto error;
-            }
         } else {
             bitsize = 0;
         }
