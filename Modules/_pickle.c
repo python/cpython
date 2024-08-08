@@ -2140,7 +2140,7 @@ save_long(PicklerObject *self, PyObject *obj)
 
     if (self->proto >= 2) {
         /* Linear-time pickling. */
-        size_t nbits;
+        uint64_t nbits;
         size_t nbytes;
         unsigned char *pdata;
         char header[5];
@@ -2155,7 +2155,7 @@ save_long(PicklerObject *self, PyObject *obj)
             return 0;
         }
         nbits = _PyLong_NumBits(obj);
-        if (nbits == (size_t)-1 && PyErr_Occurred())
+        if (nbits == (uint64_t)-1 && PyErr_Occurred())
             goto error;
         /* How many bytes do we need?  There are nbits >> 3 full
          * bytes of data, and nbits & 7 leftover bits.  If there
@@ -2171,7 +2171,7 @@ save_long(PicklerObject *self, PyObject *obj)
          * for in advance, though, so we always grab an extra
          * byte at the start, and cut it back later if possible.
          */
-        nbytes = (nbits >> 3) + 1;
+        nbytes = (size_t)((nbits >> 3) + 1);
         if (nbytes > 0x7fffffffL) {
             PyErr_SetString(PyExc_OverflowError,
                             "int too large to pickle");

@@ -86,7 +86,7 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 // OverflowError and returns -1.0 for x, 0 for e.
 //
 // Export for 'math' shared extension
-PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e);
+PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, int64_t *e);
 
 extern PyObject* _PyLong_FromBytes(const char *, Py_ssize_t, int);
 
@@ -105,10 +105,10 @@ PyAPI_DATA(PyObject*) _PyLong_DivmodNear(PyObject *, PyObject *);
 PyAPI_DATA(PyObject*) _PyLong_Format(PyObject *obj, int base);
 
 // Export for 'math' shared extension
-PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, size_t);
+PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, uint64_t);
 
 // Export for 'math' shared extension
-PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, size_t);
+PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, uint64_t);
 
 PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
