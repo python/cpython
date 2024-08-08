@@ -853,9 +853,8 @@ class AbstractUnpickleTests:
                 self.assertEqual(getattr(obj, slot, None),
                                  getattr(objcopy, slot, None), msg=msg)
 
-    def check_unpickling_error(self, errors, data):
-        with self.subTest(data=data), \
-             self.assertRaises(errors):
+    def check_unpickling_error_strict(self, errors, data):
+        with self.assertRaises(errors):
             try:
                 self.loads(data)
             except BaseException as exc:
@@ -863,6 +862,10 @@ class AbstractUnpickleTests:
                     print('%-32r - %s: %s' %
                           (data, exc.__class__.__name__, exc))
                 raise
+
+    def check_unpickling_error(self, errors, data):
+        with self.subTest(data=data):
+            self.check_unpickling_error_strict(errors, data)
 
     def test_load_from_data0(self):
         self.assert_is_copy(self._testdata, self.loads(DATA0))
@@ -1114,6 +1117,100 @@ class AbstractUnpickleTests:
         # Issue #12847
         dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
         self.check_unpickling_error(ValueError, dumped)
+
+    def itersize(self, start, stop):
+        # Produce geometrical increasing sequence from start to stop
+        # (inclusively) for tests.
+        size = start
+        while size < stop:
+            yield size
+            size <<= 1
+        yield stop
+
+    def _test_truncated_data(self, dumped, expected_error=None):
+        if expected_error is None:
+            expected_error = self.truncated_data_error
+        # BytesIO
+        with self.assertRaisesRegex(*expected_error):
+            self.loads(dumped)
+        if hasattr(self, 'unpickler'):
+            try:
+                with open(TESTFN, 'wb') as f:
+                    f.write(dumped)
+                # buffered file
+                with open(TESTFN, 'rb') as f:
+                    u = self.unpickler(f)
+                    with self.assertRaisesRegex(*expected_error):
+                        u.load()
+                # unbuffered file
+                with open(TESTFN, 'rb', buffering=0) as f:
+                    u = self.unpickler(f)
+                    with self.assertRaisesRegex(*expected_error):
+                        u.load()
+            finally:
+                os_helper.unlink(TESTFN)
+
+    def test_truncated_large_binstring(self):
+        data = lambda size: b'T' + struct.pack('<I', size) + b'.' * 5
+        self.assertEqual(self.loads(data(4)), '....') # self-testing
+        for size in self.itersize(1 << 10, min(sys.maxsize - 5, (1 << 31) - 1)):
+            self._test_truncated_data(data(size))
+        self._test_truncated_data(data(1 << 31),
+            (pickle.UnpicklingError, 'truncated|exceeds|negative byte count'))
+
+    def test_truncated_large_binunicode(self):
+        data = lambda size: b'X' + struct.pack('<I', size) + b'.' * 5
+        self.assertEqual(self.loads(data(4)), '....') # self-testing
+        for size in self.itersize(1 << 10, min(sys.maxsize - 5, (1 << 32) - 1)):
+            self._test_truncated_data(data(size))
+
+    def test_truncated_large_binbytes(self):
+        data = lambda size: b'B' + struct.pack('<I', size) + b'.' * 5
+        self.assertEqual(self.loads(data(4)), b'....') # self-testing
+        for size in self.itersize(1 << 10, min(sys.maxsize, 1 << 31)):
+            self._test_truncated_data(data(size))
+
+    def test_truncated_large_long4(self):
+        data = lambda size: b'\x8b' + struct.pack('<I', size) + b'.' * 5
+        self.assertEqual(self.loads(data(4)), 0x2e2e2e2e) # self-testing
+        for size in self.itersize(1 << 10, min(sys.maxsize - 5, (1 << 31) - 1)):
+            self._test_truncated_data(data(size))
+        self._test_truncated_data(data(1 << 31),
+            (pickle.UnpicklingError, 'LONG pickle has negative byte count'))
+
+    def test_truncated_large_frame(self):
+        data = lambda size: b'\x95' + struct.pack('<Q', size) + b'N.'
+        self.assertIsNone(self.loads(data(2))) # self-testing
+        for size in self.itersize(1 << 10, sys.maxsize - 9):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1),
+                ((OverflowError, ValueError),
+                 'FRAME length exceeds|frame size > sys.maxsize'))
+
+    def test_truncated_large_binunicode8(self):
+        data = lambda size: b'\x8d' + struct.pack('<Q', size) + b'.' * 5
+        self.assertEqual(self.loads(data(4)), '....') # self-testing
+        for size in self.itersize(1 << 10, sys.maxsize - 9):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1), self.size_overflow_error)
+
+    def test_truncated_large_binbytes8(self):
+        data = lambda size: b'\x8e' + struct.pack('<Q', size) + b'.' * 5
+        self.assertEqual(self.loads(data(4)), b'....') # self-testing
+        for size in self.itersize(1 << 10, sys.maxsize):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1), self.size_overflow_error)
+
+    def test_truncated_large_bytearray8(self):
+        data = lambda size: b'\x96' + struct.pack('<Q', size) + b'.' * 5
+        self.assertEqual(self.loads(data(4)), bytearray(b'....')) # self-testing
+        for size in self.itersize(1 << 10, sys.maxsize):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1), self.size_overflow_error)
 
     def test_badly_escaped_string(self):
         self.check_unpickling_error(ValueError, b"S'\\'\n.")
