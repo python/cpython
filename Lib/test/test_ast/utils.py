@@ -3,8 +3,6 @@ def to_tuple(t):
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]
-    elif isinstance(t, (tuple, frozenset)):
-        return t
     result = [t.__class__.__name__]
     if hasattr(t, 'lineno') and hasattr(t, 'col_offset'):
         result.append((t.lineno, t.col_offset))
