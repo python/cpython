@@ -3,6 +3,7 @@ import contextvars
 import functools
 import gc
 import random
+import threading
 import time
 import unittest
 import weakref
@@ -360,6 +361,74 @@ class ContextTest(unittest.TestCase):
         finally:
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
+
+    @isolated_context
+    def test_context_manager_works(self):
+        cvar = contextvars.ContextVar('cvar', default='initial')
+        self.assertEqual(cvar.get(), 'initial')
+        with contextvars.copy_context():
+            self.assertEqual(cvar.get(), 'initial')
+            cvar.set('updated')
+            self.assertEqual(cvar.get(), 'updated')
+        self.assertEqual(cvar.get(), 'initial')
+
+    def test_context_manager_as_binding(self):
+        ctx = contextvars.copy_context()
+        with ctx as ctx_as_binding:
+            self.assertIs(ctx_as_binding, ctx)
+
+    @isolated_context
+    def test_context_manager_enter_again_after_exit(self):
+        cvar = contextvars.ContextVar('cvar', default='initial')
+        self.assertEqual(cvar.get(), 'initial')
+        with contextvars.copy_context() as ctx:
+            cvar.set('updated')
+            self.assertEqual(cvar.get(), 'updated')
+        self.assertEqual(cvar.get(), 'initial')
+        with ctx:
+            self.assertEqual(cvar.get(), 'updated')
+        self.assertEqual(cvar.get(), 'initial')
+
+    @threading_helper.requires_working_threading()
+    def test_context_manager_rejects_exit_from_different_thread(self):
+        ctx = contextvars.copy_context()
+        thread = threading.Thread(target=ctx.__enter__)
+        thread.start()
+        thread.join()
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(None, None, None)
+
+    def test_context_manager_rejects_recursive_enter_mgr_then_mgr(self):
+        with contextvars.copy_context() as ctx:
+            with self.assertRaises(RuntimeError):
+                with ctx:
+                    pass
+
+    def test_context_manager_rejects_recursive_enter_mgr_then_run(self):
+        with contextvars.copy_context() as ctx:
+            with self.assertRaises(RuntimeError):
+                ctx.run(lambda: None)
+
+    def test_context_manager_rejects_recursive_enter_run_then_mgr(self):
+        ctx = contextvars.copy_context()
+
+        def fn():
+            with self.assertRaises(RuntimeError):
+                with ctx:
+                    pass
+
+        ctx.run(fn)
+
+    def test_context_manager_rejects_noncurrent_exit(self):
+        with contextvars.copy_context() as ctx:
+            with contextvars.copy_context():
+                with self.assertRaises(RuntimeError):
+                    ctx.__exit__(None, None, None)
+
+    def test_context_manager_rejects_nonentered_exit(self):
+        ctx = contextvars.copy_context()
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(None, None, None)
 
 
 # HAMT Tests

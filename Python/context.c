@@ -144,7 +144,6 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
     }
 
     if (ts->context != (PyObject *)ctx) {
-        /* Can only happen if someone misuses the C API */
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot exit context: thread state references "
                         "a different context object");
@@ -522,6 +521,69 @@ context_tp_contains(PyContext *self, PyObject *key)
 
 
 /*[clinic input]
+_contextvars.Context.__enter__
+
+Context manager enter.
+
+Automatically called by the 'with' statement.  Using the Context object as a
+context manager is an alternative to calling the Context.run() method.  Example
+usage:
+
+    var = contextvars.ContextVar('var')
+    var.set('initial')
+
+    with contextvars.copy_context():
+        # The current Context is a new copy of the previous Context.  Updating a
+        # context variable inside this 'with' statement only affects the new
+        # copy.
+        var.set('updated')
+        do_something_interesting()
+
+    # Now that the 'with' statement is done executing, the value of the 'var'
+    # context variable has reverted back to its value before the 'with'
+    # statement.
+    assert var.get() == 'initial'
+[clinic start generated code]*/
+
+static PyObject *
+_contextvars_Context___enter___impl(PyContext *self)
+/*[clinic end generated code: output=7374aea8983b777a input=22868e8274d3cd32]*/
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    if (_PyContext_Enter(ts, (PyObject *)self)) {
+        return NULL;
+    }
+    return Py_NewRef(self);
+}
+
+
+/*[clinic input]
+_contextvars.Context.__exit__
+    exc_type: object
+    exc_val: object
+    exc_tb: object
+    /
+
+Context manager exit.
+
+Automatically called at the conclusion of a 'with' statement when the Context is
+used as a context manager.  See the Context.__enter__() method for more details.
+[clinic start generated code]*/
+
+static PyObject *
+_contextvars_Context___exit___impl(PyContext *self, PyObject *exc_type,
+                                   PyObject *exc_val, PyObject *exc_tb)
+/*[clinic end generated code: output=4608fa9151f968f1 input=ff70cbbf6a112b1d]*/
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    if (_PyContext_Exit(ts, (PyObject *)self)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 _contextvars.Context.get
     key: object
     default: object = None
@@ -641,6 +703,8 @@ context_run(PyContext *self, PyObject *const *args,
 
 
 static PyMethodDef PyContext_methods[] = {
+    _CONTEXTVARS_CONTEXT___ENTER___METHODDEF
+    _CONTEXTVARS_CONTEXT___EXIT___METHODDEF
     _CONTEXTVARS_CONTEXT_GET_METHODDEF
     _CONTEXTVARS_CONTEXT_ITEMS_METHODDEF
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF

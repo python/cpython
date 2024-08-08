@@ -4,6 +4,73 @@ preserve
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(_contextvars_Context___enter____doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n"
+"Context manager enter.\n"
+"\n"
+"Automatically called by the \'with\' statement.  Using the Context object as a\n"
+"context manager is an alternative to calling the Context.run() method.  Example\n"
+"usage:\n"
+"\n"
+"    var = contextvars.ContextVar(\'var\')\n"
+"    var.set(\'initial\')\n"
+"\n"
+"    with contextvars.copy_context():\n"
+"        var.set(\'updated\')\n"
+"        do_something_interesting()\n"
+"\n"
+"    assert var.get() == \'initial\'");
+
+#define _CONTEXTVARS_CONTEXT___ENTER___METHODDEF    \
+    {"__enter__", (PyCFunction)_contextvars_Context___enter__, METH_NOARGS, _contextvars_Context___enter____doc__},
+
+static PyObject *
+_contextvars_Context___enter___impl(PyContext *self);
+
+static PyObject *
+_contextvars_Context___enter__(PyContext *self, PyObject *Py_UNUSED(ignored))
+{
+    return _contextvars_Context___enter___impl(self);
+}
+
+PyDoc_STRVAR(_contextvars_Context___exit____doc__,
+"__exit__($self, exc_type, exc_val, exc_tb, /)\n"
+"--\n"
+"\n"
+"Context manager exit.\n"
+"\n"
+"Automatically called at the conclusion of a \'with\' statement when the Context is\n"
+"used as a context manager.  See the Context.__enter__() method for more details.");
+
+#define _CONTEXTVARS_CONTEXT___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_contextvars_Context___exit__), METH_FASTCALL, _contextvars_Context___exit____doc__},
+
+static PyObject *
+_contextvars_Context___exit___impl(PyContext *self, PyObject *exc_type,
+                                   PyObject *exc_val, PyObject *exc_tb);
+
+static PyObject *
+_contextvars_Context___exit__(PyContext *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *exc_type;
+    PyObject *exc_val;
+    PyObject *exc_tb;
+
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
+        goto exit;
+    }
+    exc_type = args[0];
+    exc_val = args[1];
+    exc_tb = args[2];
+    return_value = _contextvars_Context___exit___impl(self, exc_type, exc_val, exc_tb);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_contextvars_Context_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -179,4 +246,4 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=b667826178444c3f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc58ec8c9e83aceb input=a9049054013a1b77]*/
