@@ -142,6 +142,49 @@ class TestDict(TestCase):
             for ref in thread_list:
                 self.assertIsNone(ref())
 
+    def test_racing_set_object_dict(self):
+        """Races assigning to __dict__ should be thread safe"""
+
+        class C: pass
+        f = C()
+        f.__dict__ = {"foo": 42}
+        THREAD_COUNT = 10
+        class MyDict(dict): pass
+
+        def writer_func():
+            for i in range(1000):
+                f.__dict__ = {"foo": 100}
+
+        def reader_func():
+            for i in range(1000):
+                f.foo
+
+        lists = []
+        readers = []
+        writers = []
+        for x in range(THREAD_COUNT):
+            thread_list = []
+            lists.append(thread_list)
+            writer = Thread(target=partial(writer_func))
+            writers.append(writer)
+
+        for x in range(THREAD_COUNT):
+            thread_list = []
+            lists.append(thread_list)
+            reader = Thread(target=partial(reader_func))
+            readers.append(reader)
+
+        for writer in writers:
+            writer.start()
+        for reader in readers:
+            reader.start()
+
+        for writer in writers:
+            writer.join()
+
+        for reader in readers:
+            reader.join()
+
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_dict_version(self):
         dict_version = _testcapi.dict_version
