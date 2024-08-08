@@ -2038,7 +2038,7 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 #include "_testinternalcapi/tpslots_generated.h"
 
 static PyObject *
-get_type_slot_wrapper_names(PyObject *self, PyObject *Py_UNUSED(ignored))
+identify_type_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *slots = PyList_New(Py_ARRAY_LENGTH(slotdefs)-1);
     if (slots == NULL) {
@@ -2152,7 +2152,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
-    {"get_type_slot_wrapper_names", get_type_slot_wrapper_names, METH_NOARGS},
+    {"identify_type_slots", identify_type_slots, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
