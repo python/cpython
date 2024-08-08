@@ -1038,12 +1038,32 @@ function.
    .. attribute:: BoundArguments.args
 
       A tuple of positional arguments values.  Dynamically computed from the
-      :attr:`arguments` attribute.
+      :attr:`arguments` attribute. Includes ambiguous arguments (See Note).
 
    .. attribute:: BoundArguments.kwargs
 
       A dict of keyword arguments values.  Dynamically computed from the
-      :attr:`arguments` attribute.
+      :attr:`arguments` attribute. Includes ambiguous arguments (See Note).
+
+   .. note::
+
+      The allocation in :attr:`args` and :attr:`kwargs` may not match the
+      inserted *args* and *kwargs* in :meth:`Signature.bind` or
+      :meth:`Signature.bind_partial`. This concerns arguments of the kind
+      *POSITIONAL_OR_KEYWORD* in cases where they can be passed ambiguously
+      as args or kwargs. In cases of ambiguity the dynamic computation of
+      args and kwargs always simplifies the given arguments as much as
+      possible, by dropping keywords and saving them positionally in args.
+      For example::
+
+         >>> def test(a=1, b=2, c=3):
+         ...     pass
+         ...
+         >>> boundargs = signature(test).bind(a=10, c=13)
+         >>> boundargs.args
+         (10,)
+         >>> boundargs.kwargs
+         {'c': 13}
 
    .. attribute:: BoundArguments.signature
 
