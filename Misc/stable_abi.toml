@@ -2508,6 +2508,8 @@
 
 [function.Py_TYPE]
     added = '3.14'
+[function.PyIter_NextItem]
+    added = '3.14'
 [function.PyType_GetBaseByToken]
     added = '3.14'
 [const.Py_tp_token]
