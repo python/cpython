@@ -286,7 +286,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         (
             "%U=== Symtable for %U ===\n"
             "%U%s%s\n"
-            "%U%s%s%s%s%s%s%s%s%s%s%s%s%s\n"
+            "%U%s%s%s%s%s%s%s%s%s%s%s\n"
             "%Ulineno: %d col_offset: %d\n"
             "%U--- Symbols ---\n"
         ),
