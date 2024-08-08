@@ -33,16 +33,17 @@ class _BaseLayout:
         for field in self.fields:
             field = tuple(field)
             try:
-                name, ftype, bits = field
+                name, ftype, bit_size = field
             except ValueError:
                 name, ftype = field
-                bits = None
+                bit_size = None
             size = ctypes.sizeof(ftype)
             offset = self.offset
             yield CField(
                 name=name,
                 size=size,
                 offset=offset,
+                bit_size=-1 if bit_size is None else bit_size,
             )
             self.offset += self.size
 

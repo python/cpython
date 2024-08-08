@@ -200,21 +200,31 @@ PyCField_FromDesc_msvc(
 @classmethod
 _ctypes.CField.__new__ as PyCField_new
 
-    name: str
+    name: object(subclass_of='&PyUnicode_Type')
     size: Py_ssize_t
     offset: Py_ssize_t
+    bit_size: Py_ssize_t = -1
 
 [clinic start generated code]*/
 
 static PyObject *
-PyCField_new_impl(PyTypeObject *type, const char *name, Py_ssize_t size,
-                  Py_ssize_t offset)
-/*[clinic end generated code: output=109dac517c651e4b input=25b7b4a2d83d7ef9]*/
+PyCField_new_impl(PyTypeObject *type, PyObject *name, Py_ssize_t size,
+                  Py_ssize_t offset, Py_ssize_t bit_size)
+/*[clinic end generated code: output=c8973d95f5944d97 input=cf50946ed6d90492]*/
 {
     PyTypeObject *tp = type;
     CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
+    if (PyUnicode_CheckExact(name)) {
+        self->name = Py_NewRef(name);
+    } else {
+        self->name = PyObject_Str(name);
+        if (!self->name) {
+            goto error;
+        }
+    }
     self->size = size;
     self->offset = offset;
+    self->bit_size = bit_size;
 
     self->setfunc = NULL; // XXX
     self->getfunc = NULL; // XXX
@@ -222,6 +232,9 @@ PyCField_new_impl(PyTypeObject *type, const char *name, Py_ssize_t size,
     self->proto = NULL; // XXX
 
     return (PyObject *)self;
+error:
+    Py_DECREF(self);
+    return NULL;
 }
 
 
@@ -231,7 +244,6 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, PyObject *desc, Py_s
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian, LayoutMode layout_mode)
 {
-    PyTypeObject *tp = st->PyCField_Type;
     if (self == NULL) {
         return -1;
     }
@@ -404,8 +416,10 @@ PyCField_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    (void)PyCField_clear((CFieldObject *)self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    CFieldObject *self_cf = (CFieldObject *)self;
+    (void)PyCField_clear(self_cf);
+    Py_CLEAR(self_cf->name);
+    Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
 

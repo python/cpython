@@ -270,6 +270,9 @@ typedef struct CFieldObject {
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     int anonymous;
+
+    Py_ssize_t bit_size;
+    PyObject *name;
 } CFieldObject;
 
 /****************************************************************
