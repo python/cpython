@@ -430,13 +430,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     if (baseinfo) {
-        stginfo->flags |= (baseinfo->flags &
-                           (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD));
-    }
-    if (!isStruct) {
-        stginfo->flags |= TYPEFLAG_HASUNION;
-    }
-    if (baseinfo) {
         size = offset = baseinfo->size;
         align = baseinfo->align;
         union_size = 0;
@@ -511,10 +504,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         stginfo->ffi_type_pointer.elements[ffi_ofs + i] = &info->ffi_type_pointer;
         if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stginfo->flags |= TYPEFLAG_HASPOINTER;
-        stginfo->flags |= info->flags & (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD);
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
         if (bitsize != -1) { /* bits specified */
-            stginfo->flags |= TYPEFLAG_HASBITFIELD;
+            // empty
         } else {
             bitsize = 0;
         }

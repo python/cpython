@@ -383,8 +383,6 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
-#define TYPEFLAG_HASUNION 0x400
-#define TYPEFLAG_HASBITFIELD 0x800
 
 #define DICTFLAG_FINAL 0x1000
 

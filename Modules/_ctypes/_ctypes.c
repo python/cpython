@@ -664,9 +664,6 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
         Py_DECREF(attrdict);
         return -1;
     }
-    if (!isStruct) {
-        info->flags |= TYPEFLAG_HASUNION;
-    }
 
     info->format = _ctypes_alloc_format_string(NULL, "B");
     if (info->format == NULL) {
@@ -2534,6 +2531,10 @@ converters_from_argtypes(ctypes_state *st, PyObject *ob)
             return -1;
         }
 
+        // TYPEFLAG_HASUNION and TYPEFLAG_HASBITFIELD used to be set
+        // if there were any unions/bitfields;
+        // if the check is re-enabled we either need to loop here or
+        // restore the flag
         if (stginfo != NULL) {
             if (stginfo->flags & TYPEFLAG_HASUNION) {
                 Py_DECREF(converters);
