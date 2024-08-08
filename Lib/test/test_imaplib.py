@@ -497,6 +497,56 @@ class NewIMAPTestsMixin():
 
     # command tests
 
+    def test_idle_capability(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                'does not support IDLE'):
+            with client.idle():
+                pass
+
+    class IdleCmdHandler(SimpleIMAPHandler):
+        capabilities = 'IDLE'
+        def cmd_IDLE(self, tag, args):
+            self._send_textline('+ idling')
+            self._send_line(b'* 2 EXISTS')
+            self._send_line(b'* 0 RECENT')
+            time.sleep(1)
+            self._send_line(b'* 1 RECENT')
+            r = yield
+            if r == b'DONE\r\n':
+                self._send_tagged(tag, 'OK', 'Idle completed')
+            else:
+                self._send_tagged(tag, 'BAD', 'Expected DONE')
+
+    def test_idle_iter(self):
+        client, _ = self._setup(self.IdleCmdHandler)
+        client.login('user', 'pass')
+        with client.idle() as idler:
+            # iteration should produce responses
+            typ, datum = next(idler)
+            self.assertEqual(typ, 'EXISTS')
+            self.assertEqual(datum, b'2')
+            typ, datum = next(idler)
+            self.assertEqual(typ, 'RECENT')
+            self.assertEqual(datum, b'0')
+        # iteration should have consumed untagged responses
+        _, data = client.response('EXISTS')
+        self.assertEqual(data, [None])
+        # responses not iterated should remain after idle
+        _, data = client.response('RECENT')
+        self.assertEqual(data, [b'1'])
+
+    def test_idle_burst(self):
+        client, _ = self._setup(self.IdleCmdHandler)
+        client.login('user', 'pass')
+        # burst() should yield immediately available responses
+        with client.idle() as idler:
+            batch = list(idler.burst())
+            self.assertEqual(len(batch), 2)
+        # burst() should not have consumed later responses
+        _, data = client.response('RECENT')
+        self.assertEqual(data, [b'1'])
+
     def test_login(self):
         client, _ = self._setup(SimpleIMAPHandler)
         typ, data = client.login('user', 'pass')
