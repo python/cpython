@@ -1,0 +1,1 @@
+:meth:`ipaddress.IPv4Network.hosts` and :meth:`ipaddress.IPv6Network.hosts` will now return an iterator when there is a single IP in the network, containing this IP address.
