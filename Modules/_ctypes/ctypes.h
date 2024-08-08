@@ -223,7 +223,7 @@ typedef enum {
 
 struct CFieldObject;
 extern int
-PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self, PyObject *desc, Py_ssize_t index,
+PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign,
@@ -266,14 +266,13 @@ typedef struct CFieldObject {
     Py_ssize_t size;
     Py_ssize_t index;                   /* Index into CDataObject's
                                        object array */
-    PyObject *proto;                    /* a type or NULL */
+    PyObject *proto;                /* underlying ctype; must have StgInfo */
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     int anonymous;
 
     Py_ssize_t bit_size;            /* -1 if not a bitfield */
     PyObject *name;                 /* exact PyUnicode */
-    PyObject *desc;                 /* underlying ctype; must have StgInfo */
 } CFieldObject;
 
 /****************************************************************

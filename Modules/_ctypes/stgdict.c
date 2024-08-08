@@ -498,12 +498,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         CFieldObject *prop = (CFieldObject *)prop_obj; // borrow from prop_obj
         Py_ssize_t bitsize = prop->bit_size;
 
-        if (PyCArrayTypeObject_Check(st, prop->desc)) {
+        if (PyCArrayTypeObject_Check(st, prop->proto)) {
             arrays_seen = 1;
         }
 
         StgInfo *info;
-        if (PyStgInfo_FromType(st, prop->desc, &info) < 0) {
+        if (PyStgInfo_FromType(st, prop->proto, &info) < 0) {
             goto error;
         }
         assert(info);
@@ -535,7 +535,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            int res = PyCField_InitFromDesc(st, prop, prop->desc, i,
+            int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
@@ -584,7 +584,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             bitofs = 0;
             offset = 0;
             align = 0;
-            int res = PyCField_InitFromDesc(st, prop, prop->desc, i,
+            int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);

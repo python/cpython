@@ -10,7 +10,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
-PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
+PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj);
 
 static PyObject *
@@ -45,13 +45,14 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 4;
     PyObject *name;
-    PyObject *desc;
+    PyObject *proto;
     Py_ssize_t size;
     Py_ssize_t offset;
-    PyObject *bit_size_obj;
+    PyObject *bit_size_obj = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 5, 5, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 4, 5, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -60,7 +61,7 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     name = fastargs[0];
-    desc = fastargs[1];
+    proto = fastargs[1];
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = _PyNumber_Index(fastargs[2]);
@@ -85,10 +86,14 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         }
         offset = ival;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     bit_size_obj = fastargs[4];
-    return_value = PyCField_new_impl(type, name, desc, size, offset, bit_size_obj);
+skip_optional_pos:
+    return_value = PyCField_new_impl(type, name, proto, size, offset, bit_size_obj);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1bda1136bd0147ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ffea985028c6e110 input=a9049054013a1b77]*/

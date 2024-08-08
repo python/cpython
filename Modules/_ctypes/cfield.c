@@ -201,7 +201,7 @@ PyCField_FromDesc_msvc(
 _ctypes.CField.__new__ as PyCField_new
 
     name: object(subclass_of='&PyUnicode_Type')
-    type as desc: object
+    type as proto: object
     size: Py_ssize_t
     offset: Py_ssize_t
     bit_size as bit_size_obj: object = None
@@ -209,9 +209,9 @@ _ctypes.CField.__new__ as PyCField_new
 [clinic start generated code]*/
 
 static PyObject *
-PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
+PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj)
-/*[clinic end generated code: output=0959e4b1c957425f input=418beea0b785cc4e]*/
+/*[clinic end generated code: output=fd7dec6f142d5f41 input=60fae319c86d236e]*/
 {
     PyTypeObject *tp = type;
     ctypes_state *st = get_module_state_by_class(tp);
@@ -229,7 +229,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
     }
 
     StgInfo *info;
-    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+    if (PyStgInfo_FromType(st, proto, &info) < 0) {
         goto error;
     }
     if (info == NULL) {
@@ -270,7 +270,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
             default:
                 PyErr_Format(PyExc_TypeError,
                              "bit fields not allowed for type %s",
-                             ((PyTypeObject*)desc)->tp_name);
+                             ((PyTypeObject*)proto)->tp_name);
                 goto error;
             }
             if (self->bit_size <= 0 || self->bit_size > info->size * 8) {
@@ -281,14 +281,13 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *desc,
         }
     }
 
-    self->desc = Py_NewRef(desc);
+    self->proto = Py_NewRef(proto);
     self->size = size;
     self->offset = offset;
 
     self->setfunc = NULL; // XXX
     self->getfunc = NULL; // XXX
     self->index = 0; // XXX
-    self->proto = NULL; // XXX
 
     return (PyObject *)self;
 error:
@@ -298,7 +297,7 @@ error:
 
 
 int
-PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, PyObject *desc, Py_ssize_t index,
+PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian, LayoutMode layout_mode)
@@ -306,8 +305,9 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, PyObject *desc, Py_s
     if (self == NULL) {
         return -1;
     }
+    assert(self->proto);
     StgInfo *info;
-    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+    if (PyStgInfo_FromType(st, self->proto, &info) < 0) {
         return -1;
     }
     if (!info) {
@@ -316,7 +316,7 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, PyObject *desc, Py_s
         return -1;
     }
 
-    PyObject* proto = desc;
+    PyObject* proto = self->proto;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
@@ -355,8 +355,6 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, PyObject *desc, Py_s
     self->setfunc = setfunc;
     self->getfunc = getfunc;
     self->index = index;
-
-    self->proto = Py_NewRef(proto);
 
     int is_bitfield = !!bitsize;
     if(!is_bitfield) {
@@ -460,7 +458,6 @@ PyCField_traverse(CFieldObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->proto);
-    Py_VISIT(self->desc);
     return 0;
 }
 
@@ -468,7 +465,6 @@ static int
 PyCField_clear(CFieldObject *self)
 {
     Py_CLEAR(self->proto);
-    Py_CLEAR(self->desc);
     return 0;
 }
 
