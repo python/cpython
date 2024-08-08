@@ -226,6 +226,42 @@ Disallow: /folder1/
     bad = ['/folder1/anotherfile.html']
 
 
+class LongestMatchUserAgentTest(BaseRobotTest, unittest.TestCase):
+    # https://tools.ietf.org/html/draft-koster-rep-00#section-3.2
+    # The most specific rule should be used
+    robots_txt = """\
+User-agent: FooBot
+Disallow: /folder1/
+Allow: /folder1/myfile.html
+    """
+    agent = 'foobot'
+    good = ['/folder1/myfile.html']
+    bad = ['/folder1/anotherfile.html']
+
+
+class LongestMatchDefaultUserAgentTest(BaseRobotTest, unittest.TestCase):
+    # https://tools.ietf.org/html/draft-koster-rep-00#section-3.2
+    # The most specific rule should be used
+    robots_txt = """\
+User-agent: *
+Disallow: /folder1/
+Allow: /folder1/myfile.html
+    """
+    good = ['/folder1/myfile.html']
+    bad = ['/folder1/anotherfile.html']
+
+
+class EquivalentRulesTest(BaseRobotTest, unittest.TestCase):
+    # https://tools.ietf.org/html/draft-koster-rep-00#section-2.2.2
+    # The most specific rule should be used
+    robots_txt = """\
+User-agent: *
+Disallow: /folder1/
+Allow: /folder1/
+    """
+    good = ['/folder1/myfile.html', '/folder1', '/folder1']
+
+
 class DisallowQueryStringTest(BaseRobotTest, unittest.TestCase):
     # see issue #6325 for details
     robots_txt = """\
@@ -374,7 +410,7 @@ class NetworkTestCase(unittest.TestCase):
     def test_can_fetch(self):
         self.assertTrue(self.parser.can_fetch('*', self.url('elsewhere')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.base_url))
-        self.assertFalse(self.parser.can_fetch('Nutch', self.url('brian')))
+        self.assertTrue(self.parser.can_fetch('Nutch', self.url('brian')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.url('webstats')))
         self.assertFalse(self.parser.can_fetch('*', self.url('webstats')))
         self.assertTrue(self.parser.can_fetch('*', self.base_url))

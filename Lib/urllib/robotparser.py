@@ -56,6 +56,12 @@ class RobotFileParser:
         self.url = url
         self.host, self.path = urllib.parse.urlparse(url)[1:3]
 
+    def _sort_rulelines(self):
+        for entry in self.entries:
+            entry.sort_rulelines()
+        if self.default_entry:
+            self.default_entry.sort_rulelines()
+
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
         try:
@@ -150,6 +156,7 @@ class RobotFileParser:
                     self.sitemaps.append(line[1])
         if state == 2:
             self._add_entry(entry)
+        self._sort_rulelines()
 
     def can_fetch(self, useragent, url):
         """using the parsed robots.txt decide if useragent can fetch url"""
@@ -249,6 +256,16 @@ class Entry:
             ret.append(f"Request-rate: {rate.requests}/{rate.seconds}")
         ret.extend(map(str, self.rulelines))
         return '\n'.join(ret)
+
+    def sort_rulelines(self):
+        """Rules need to be sorted with the longest path first to ensure that
+        the longest rule is used for matching:
+        https://tools.ietf.org/html/draft-koster-rep-00#section-3.2
+
+        If an allow and disallow rule is equivalent (same path), the allow
+        SHOULD be used: https://tools.ietf.org/html/draft-koster-rep-00#section-2.2.2
+        """
+        self.rulelines.sort(key=lambda x: (len(x.path), x.allowance), reverse=True)
 
     def applies_to(self, useragent):
         """check if this entry applies to the specified agent"""
