@@ -252,7 +252,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     // The following are NULL or hold strong references.
     // They're cleared on error.
-    PyObject *prop = NULL;
+    PyObject *prop_obj = NULL;
 
     if (fields == NULL) {
         return 0;
@@ -484,23 +484,25 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
 
     for (i = 0; i < len; ++i) {
-        PyObject *name = NULL, *desc = NULL;
+        PyObject *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
         Py_ssize_t bitsize = 0;
 
-        prop = PySequence_Fast_GET_ITEM(layout_fields, i);
-        if (!prop) {
+        prop_obj = PySequence_Fast_GET_ITEM(layout_fields, i);
+        if (!prop_obj) {
             goto error;
         }
-        Py_INCREF(prop);
-        if (!PyType_IsSubtype(Py_TYPE(prop), st->PyCField_Type)) {
+        Py_INCREF(prop_obj);
+        if (!PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type)) {
             PyErr_Format(PyExc_TypeError,
-                        "fields must be of type CField, got %T", prop);
+                        "fields must be of type CField, got %T", prop_obj);
             goto error;
 
         }
+        CFieldObject *prop = (CFieldObject *)prop_obj; // borrow from prop_obj
 
-        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &name, &desc, &bitsize)) {
+        PyObject *_dummy;
+        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &_dummy, &desc, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
                             "'_fields_' must be a sequence of (name, C type) pairs");
             Py_XDECREF(pair);
@@ -557,7 +559,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             if (bitsize <= 0 || bitsize > info->size * 8) {
                 PyErr_Format(PyExc_ValueError,
                                 "number of bits invalid for bit field %R",
-                                name);
+                                prop->name);
                 Py_DECREF(pair);
                 goto error;
             }
@@ -566,7 +568,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
         if (isStruct) {
             const char *fieldfmt = info->format ? info->format : "B";
-            const char *fieldname = PyUnicode_AsUTF8(name);
+            const char *fieldname = PyUnicode_AsUTF8(prop->name);
             char *ptr;
             Py_ssize_t len;
             char *buf;
@@ -581,7 +583,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            int res = PyCField_InitFromDesc(st, (CFieldObject*)prop, desc, i,
+            int res = PyCField_InitFromDesc(st, prop, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
@@ -592,7 +594,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* number of bytes between the end of the last field and the start
                of this one */
-            padding = ((CFieldObject *)prop)->offset - last_size;
+            padding = prop->offset - last_size;
 
             if (padding > 0) {
                 ptr = stginfo->format;
@@ -634,7 +636,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             bitofs = 0;
             offset = 0;
             align = 0;
-            int res = PyCField_InitFromDesc(st, (CFieldObject*)prop, desc, i,
+            int res = PyCField_InitFromDesc(st, prop, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian, layout_mode);
@@ -646,12 +648,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         total_align = max(align, total_align);
 
-        if (-1 == PyObject_SetAttr(type, name, prop)) {
+        if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             Py_DECREF(pair);
             goto error;
         }
         Py_DECREF(pair);
-        Py_CLEAR(prop);
+        Py_CLEAR(prop_obj);
     }
 
     if (!isStruct) {
@@ -975,6 +977,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     return MakeAnonFields(type);
 error:
-    Py_XDECREF(prop);
+    Py_XDECREF(prop_obj);
     return -1;
 }

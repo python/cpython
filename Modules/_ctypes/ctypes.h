@@ -272,7 +272,7 @@ typedef struct CFieldObject {
     int anonymous;
 
     Py_ssize_t bit_size;
-    PyObject *name;
+    PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
 
 /****************************************************************
