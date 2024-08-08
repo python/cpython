@@ -901,6 +901,18 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertRaises(imaplib.IMAP4.error,
                               self.imap_class, *server.server_address)
 
+    def test_truncated_large_literal(self):
+        class BadHandler(SimpleIMAPHandler):
+            def handle(self):
+                self._send_textline('* OK {%d}' % size)
+                self._send_textline('IMAP4rev1')
+
+        for w in range(15, 64):
+            size = 1 << w
+            with self.reaped_server(BadHandler) as server:
+                self.assertRaises(imaplib.IMAP4.abort,
+                                  self.imap_class, *server.server_address)
+
     @threading_helper.reap_threads
     def test_simple_with_statement(self):
         # simplest call
