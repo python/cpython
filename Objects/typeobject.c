@@ -3912,6 +3912,7 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+    et->ht_token = NULL;
 
 #ifdef Py_GIL_DISABLED
     _PyType_AssignId(et);
@@ -4936,6 +4937,11 @@ _PyType_FromMetaclass_impl(
                 }
             }
             break;
+        case Py_tp_token:
+            {
+                res->ht_token = slot->pfunc == Py_TP_USE_SPEC ? spec : slot->pfunc;
+            }
+            break;
         default:
             {
                 /* Copy other slots directly */
@@ -5103,8 +5109,15 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         PyErr_BadInternalCall();
         return NULL;
     }
+    int slot_offset = pyslot_offsets[slot].slot_offset;
 
-    parent_slot = *(void**)((char*)type + pyslot_offsets[slot].slot_offset);
+    if (slot_offset >= (int)sizeof(PyTypeObject)) {
+        if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            return NULL;
+        }
+    }
+
+    parent_slot = *(void**)((char*)type + slot_offset);
     if (parent_slot == NULL) {
         return NULL;
     }
@@ -5232,6 +5245,96 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
     }
     return module;
 }
+
+
+static PyTypeObject *
+get_base_by_token_recursive(PyTypeObject *type, void *token)
+{
+    PyObject *bases = type->tp_bases;
+    assert(bases != NULL);
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            return base;
+        }
+        base = get_base_by_token_recursive(base, token);
+        if (base != NULL) {
+            return base;
+        }
+    }
+    return NULL;
+}
+
+static inline int
+_token_found(PyTypeObject *type, PyTypeObject **result)
+{
+    if (result != NULL) {
+        *result = (PyTypeObject *)Py_NewRef(type);
+    }
+    return 1;
+}
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+{
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        goto error;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        goto error;
+    }
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // Static type MRO contains no heap type,
+        // which type_ready_mro() ensures.
+        goto not_found;
+    }
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+        return _token_found(type, result);
+    }
+    PyObject *mro = type->tp_mro;
+    if (mro == NULL) {
+        PyTypeObject *base = get_base_by_token_recursive(type, token);
+        if (base != NULL) {
+            return _token_found(base, result);
+        }
+        goto not_found;
+    }
+    assert(PyTuple_Check(mro));
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            return _token_found(base, result);
+        }
+    }
+not_found:
+    if (result != NULL) {
+        *result = NULL;
+    }
+    return 0;
+error:
+    if (result != NULL) {
+        *result = NULL;
+    }
+    return -1;
+}
+
 
 void *
 PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
@@ -5924,6 +6027,7 @@ type_dealloc(PyObject *self)
 #ifdef Py_GIL_DISABLED
     _PyType_ReleaseId(et);
 #endif
+    et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
