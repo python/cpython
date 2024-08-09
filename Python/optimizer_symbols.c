@@ -53,6 +53,7 @@ static _Py_UopsSymbol NO_SPACE_SYMBOL = {
     .typ = NULL,
     .const_val = NULL,
     .type_version = 0,
+    .function_version = 0,
 };
 
 _Py_UopsSymbol *
@@ -77,6 +78,7 @@ sym_new(_Py_UOpsContext *ctx)
     self->typ = NULL;
     self->const_val = NULL;
     self->type_version = 0;
+    self->function_version = 0;
 
     return self;
 }
@@ -163,6 +165,24 @@ _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned
     }
     sym->type_version = version;
     return true;
+}
+
+void
+_Py_uop_sym_set_function_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, uint32_t version)
+{
+    sym->function_version = version;
+}
+
+uint32_t
+_Py_uop_sym_get_function_version(_Py_UopsSymbol *sym)
+{
+    return sym->function_version;
+}
+
+bool
+_Py_uop_sym_matches_function_version(_Py_UopsSymbol *sym, uint32_t version)
+{
+    return _Py_uop_sym_get_function_version(sym) == version;
 }
 
 void
