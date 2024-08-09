@@ -352,10 +352,6 @@ in a module, ``__name__`` is the module's name in the Python package namespace.
       .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
 
-      .. versionchanged:: 3.13
-         Remove the undocumented ``warn()`` method which was an alias to the
-         :meth:`warning` method.
-
 
    .. method:: Logger.info(msg, *args, **kwargs)
 
@@ -367,6 +363,10 @@ in a module, ``__name__`` is the module's name in the Python package namespace.
 
       Logs a message with level :const:`WARNING` on this logger. The arguments are
       interpreted as for :meth:`debug`.
+
+      .. note:: There is an obsolete method ``warn`` which is functionally
+         identical to ``warning``. As ``warn`` is deprecated, please do not use
+         it - use ``warning`` instead.
 
    .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -1126,11 +1126,6 @@ information into logging calls. For a usage example, see the section on
 
    .. versionchanged:: 3.13
 
-      Remove the undocumented :meth:`!warn`` method which was an alias to the
-      :meth:`!warning` method.
-
-   .. versionchanged:: 3.13
-
       The *merge_extra* argument was added.
 
 
@@ -1223,10 +1218,6 @@ functions.
    .. note:: There is an obsolete function ``warn`` which is functionally
       identical to ``warning``. As ``warn`` is deprecated, please do not use
       it - use ``warning`` instead.
-
-   .. versionchanged:: 3.13
-      Remove the undocumented ``warn()`` function which was an alias to the
-      :func:`warning` function.
 
 
 .. function:: error(msg, *args, **kwargs)
