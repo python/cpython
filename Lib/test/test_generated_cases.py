@@ -60,7 +60,7 @@ class TestEffects(unittest.TestCase):
         stack.pop(y)
         stack.pop(x)
         for out in outputs:
-            stack.push(Local.local(out))
+            stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
         self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
 
@@ -247,14 +247,13 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
-    def test_predictions_and_eval_breaker(self):
+    def test_predictions(self):
         input = """
         inst(OP1, (arg -- rest)) {
         }
         inst(OP3, (arg -- res)) {
             DEOPT_IF(xxx);
             res = Py_None;
-            CHECK_EVAL_BREAKER();
         }
         family(OP1, INLINE_CACHE_ENTRIES_OP1) = { OP3 };
     """
@@ -275,6 +274,45 @@ class TestGeneratedCases(unittest.TestCase):
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
             _PyStackRef res;
             DEOPT_IF(xxx, OP1);
+            res = Py_None;
+            stack_pointer[-1] = res;
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_eval_breaker(self):
+        input = """
+        inst(A, (arg -- res)) {
+            CHECK_EVAL_BREAKER();
+            res = Py_None;
+        }
+        inst(B, (arg -- res)) {
+            res = Py_None;
+            CHECK_EVAL_BREAKER();
+        }
+    """
+        output = """
+        TARGET(A) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(A);
+            _PyStackRef res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            CHECK_EVAL_BREAKER();
+            res = Py_None;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(B) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(B);
+            _PyStackRef res;
             res = Py_None;
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();

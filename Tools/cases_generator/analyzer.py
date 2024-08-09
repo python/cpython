@@ -155,6 +155,7 @@ class Uop:
     stack: StackEffect
     caches: list[CacheEntry]
     deferred_refs: dict[lexer.Token, str | None]
+    output_stores: list[lexer.Token]
     body: list[lexer.Token]
     properties: Properties
     _size: int = -1
@@ -359,17 +360,33 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
+def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
+    """Find the tokens that make up the left-hand side of an assignment"""
+    offset = 0
+    for tkn in reversed(node.block.tokens[: idx]):
+        if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+            return node.block.tokens[idx - offset : idx]
+        offset += 1
+    return []
+
+
+def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
+    res: list[lexer.Token] = []
+    outnames = [ out.name for out in node.outputs ]
+    for idx, tkn in enumerate(node.block.tokens):
+        if tkn.kind != "EQUALS":
+            continue
+        lhs = find_assignment_target(node, idx)
+        assert lhs
+        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+            continue
+        name = lhs[0]
+        if name.text in outnames:
+            res.append(name)
+    return res
+
 def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
     """Look for PyStackRef_FromPyObjectNew() calls"""
-
-    def find_assignment_target(idx: int) -> list[lexer.Token]:
-        """Find the tokens that make up the left-hand side of an assignment"""
-        offset = 1
-        for tkn in reversed(node.block.tokens[: idx - 1]):
-            if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
-                return node.block.tokens[idx - offset : idx - 1]
-            offset += 1
-        return []
 
     refs: dict[lexer.Token, str | None] = {}
     for idx, tkn in enumerate(node.block.tokens):
@@ -379,7 +396,7 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
         if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
             raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
 
-        lhs = find_assignment_target(idx)
+        lhs = find_assignment_target(node, idx - 1)
         if len(lhs) == 0:
             raise analysis_error(
                 "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
@@ -698,6 +715,7 @@ def make_uop(
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
         deferred_refs=analyze_deferred_refs(op),
+        output_stores=find_stores_outputs(op),
         body=op.block.tokens,
         properties=compute_properties(op),
     )
@@ -718,6 +736,7 @@ def make_uop(
                 stack=analyze_stack(op, bit),
                 caches=analyze_caches(inputs),
                 deferred_refs=analyze_deferred_refs(op),
+                output_stores=find_stores_outputs(op),
                 body=op.block.tokens,
                 properties=properties,
             )
@@ -741,6 +760,7 @@ def make_uop(
             stack=analyze_stack(op),
             caches=analyze_caches(inputs),
             deferred_refs=analyze_deferred_refs(op),
+            output_stores=find_stores_outputs(op),
             body=op.block.tokens,
             properties=properties,
         )

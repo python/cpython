@@ -131,7 +131,7 @@ def write_uop(
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
             emitter = OptimizerEmitter(out)
-            emitter.emit_tokens(override, stack, None)
+            emitter.emit_tokens(override, stack, [], None)
         else:
             emit_default(out, uop)
 
@@ -139,7 +139,7 @@ def write_uop(
             if var.name in locals:
                 local = locals[var.name]
             else:
-                local = Local.local(var)
+                local = Local.undefined(var)
             stack.push(local)
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)

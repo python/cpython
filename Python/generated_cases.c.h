@@ -1580,12 +1580,10 @@
                 assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
-            stack_pointer += -3 - (oparg & 1);
+            stack_pointer[-3 - (oparg & 1)] = result;
+            stack_pointer += -2 - (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             CHECK_EVAL_BREAKER();
-            stack_pointer[0] = result;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -1779,12 +1777,10 @@
                 goto error;
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer += -3 - oparg;
+            stack_pointer[-3 - oparg] = res;
+            stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             CHECK_EVAL_BREAKER();
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 

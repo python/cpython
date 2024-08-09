@@ -109,7 +109,7 @@ def write_uop(
                 elif var.name == "unused":
                     local = Local.unused(var)
                 else:
-                    local = Local.local(var)
+                    local = Local.undefined(var)
                 outputs.append(local)
 
         for cache in uop.caches:
@@ -126,7 +126,7 @@ def write_uop(
                 if inst.family is None:
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
-        emitter.emit_tokens(uop, stack, inst)
+        emitter.emit_tokens(uop, stack, outputs, inst)
         for output in outputs:
             if output.name in uop.deferred_refs.values():
                 # We've already spilled this when emitting tokens

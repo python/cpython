@@ -74,6 +74,7 @@ class Tier2Emitter(Emitter):
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -96,6 +97,7 @@ class Tier2Emitter(Emitter):
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
@@ -110,6 +112,7 @@ class Tier2Emitter(Emitter):
         tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -131,6 +134,7 @@ class Tier2Emitter(Emitter):
         tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -151,6 +155,7 @@ class Tier2Emitter(Emitter):
         tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
@@ -188,7 +193,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
             if var.name in locals:
                 local = locals[var.name]
             else:
-                local = Local.local(var)
+                local = Local.undefined(var)
             outputs.append(local)
         for cache in uop.caches:
             if cache.name != "unused":
@@ -198,7 +203,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        emitter.emit_tokens(uop, stack, None)
+        emitter.emit_tokens(uop, stack, outputs, None)
         for output in outputs:
             if output.name in uop.deferred_refs.values():
                 # We've already spilled this when emitting tokens

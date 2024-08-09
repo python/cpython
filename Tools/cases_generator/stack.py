@@ -51,9 +51,9 @@ class Local:
         return Local(defn, False, defn.is_array(), False)
 
     @staticmethod
-    def local(defn: StackItem) -> "Local":
+    def undefined(defn: StackItem) -> "Local":
         array = defn.is_array()
-        return Local(defn, not array, array, True)
+        return Local(defn, not array, array, False)
 
     @staticmethod
     def redefinition(var: StackItem, prev: "Local") -> "Local":

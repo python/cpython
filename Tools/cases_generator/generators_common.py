@@ -11,7 +11,7 @@ from analyzer import (
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Stack
+from stack import Stack, Local
 
 
 class TokenIterator:
@@ -89,13 +89,34 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
 
 
 ReplacementFunctionType = Callable[
-    [Token, TokenIterator, Uop, Stack, Instruction | None], bool
+    [Token, TokenIterator, Uop, Stack, list[Local], Instruction | None], bool
 ]
 
 def always_true(tkn: Token | None) -> bool:
     if tkn is None:
         return False
     return tkn.text == "true" or tkn.text == "1"
+
+def push_defined_locals(outputs: list[Local], stack:Stack, tkn: Token) -> None:
+    while outputs:
+        out = outputs[0]
+        if out.defined:
+            stack.push(out)
+            outputs.pop(0)
+        else:
+            break
+    undefined = ""
+    for out in outputs:
+        if out.defined:
+            raise analysis_error(
+                f"Locals not defined in stack order. "
+                f"Expected  '{out.name}' is defined before '{undefined}'",
+                tkn
+            )
+        else:
+            undefined = out.name
+
+
 
 class Emitter:
     out: CWriter
@@ -120,6 +141,7 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         unused: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("DEOPT_IF", tkn)
@@ -144,6 +166,7 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -184,6 +207,7 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
@@ -198,6 +222,7 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
@@ -226,6 +251,7 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
@@ -240,11 +266,13 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
+        push_defined_locals(outputs, stack, tkn)
         stack.flush(self.out)
         self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
         return True
@@ -255,6 +283,7 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> bool:
         self.out.emit(tkn)
@@ -277,6 +306,7 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> tuple[bool, Token, Stack]:
         """ Returns (reachable?, closing '}', stack)."""
@@ -286,7 +316,7 @@ class Emitter:
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
         if_stack = stack.copy()
-        reachable, rbrace, if_stack = self._emit_block(tkn_iter, uop, if_stack, inst, True)
+        reachable, rbrace, if_stack = self._emit_block(tkn_iter, uop, if_stack, outputs, inst, True)
         maybe_else = tkn_iter.peek()
         if maybe_else and maybe_else.kind == "ELSE":
             self.emit(rbrace)
@@ -294,9 +324,9 @@ class Emitter:
             maybe_if = tkn_iter.peek()
             if maybe_if and maybe_if.kind == "IF":
                 self.emit(next(tkn_iter))
-                else_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, inst)
+                else_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, outputs, inst)
             else:
-                else_reachable, rbrace, stack = self._emit_block(tkn_iter, uop, stack, inst, True)
+                else_reachable, rbrace, stack = self._emit_block(tkn_iter, uop, stack, outputs, inst, True)
             if not reachable:
                 # Discard the if stack
                 reachable = else_reachable
@@ -318,11 +348,13 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
         emit_first_brace: bool
     ) -> tuple[bool, Token, Stack]:
         """ Returns (reachable?, closing '}', stack)."""
         braces = 1
+        out_stores = set(uop.output_stores)
         tkn = next(tkn_iter)
         reachable = True
         if tkn.kind != "LBRACE":
@@ -341,12 +373,21 @@ class Emitter:
             elif tkn.kind == "GOTO":
                 reachable = False;
                 self.out.emit(tkn)
-            elif tkn.kind == "IDENTIFIER" and tkn.text in self._replacers:
-                if not self._replacers[tkn.text](tkn, tkn_iter, uop, stack, inst):
-                    reachable = False
+            elif tkn.kind == "IDENTIFIER":
+                if tkn.text in self._replacers:
+                    if not self._replacers[tkn.text](tkn, tkn_iter, uop, stack, outputs, inst):
+                        reachable = False
+                else:
+                    if tkn in out_stores:
+                        for out in outputs:
+                            if out.name == tkn.text:
+                                out.defined = True
+                                out.in_memory = False
+                                break
+                    self.out.emit(tkn)
             elif tkn.kind == "IF":
                 self.out.emit(tkn)
-                if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, inst)
+                if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, outputs, inst)
                 if reachable:
                     reachable = if_reachable
                 self.out.emit(rbrace)
@@ -359,11 +400,12 @@ class Emitter:
         self,
         uop: Uop,
         stack: Stack,
+        outputs: list[Local],
         inst: Instruction | None,
     ) -> None:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
-        self._emit_block(tkn_iter, uop, stack, inst, False)
+        self._emit_block(tkn_iter, uop, stack, outputs, inst, False)
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)
