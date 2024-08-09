@@ -322,7 +322,7 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
-    def test_multiple_star_in_args(self):
+    def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
         block = """
             /*[clinic input]
@@ -331,6 +331,20 @@ class ClinicWholeFileTest(TestCase):
                 pos_arg: object
                 *args: object
                 *
+                kw_arg: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
+
+    def test_vararg_after_star(self):
+        err = "'my_test_func' uses '*' more than once."
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                *
+                *args: object
                 kw_arg: object
             [clinic start generated code]*/
         """
@@ -1787,13 +1801,43 @@ class ClinicParserTest(TestCase):
         )
         self.expect_failure(block, err, lineno=4)
 
+    def test_parameters_required_after_depr_star3(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                *args: object
+                b: int
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '* [from ...]' without "
+            "following parameters."
+        )
+        self.expect_failure(block, err, lineno=4)
+
     def test_depr_star_must_come_before_star(self):
         block = """
             module foo
             foo.bar
-                this: int
+                a: int
                 *
                 * [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '* [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_before_vararg(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: object
+                * [from 3.14]
+                b: int
             Docstring.
         """
         err = "Function 'bar': '* [from ...]' must precede '*'"
@@ -1908,13 +1952,26 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar' uses '/' more than once."
         self.expect_failure(block, err)
 
-    def test_mix_star_and_slash(self):
+    def test_slash_after_star(self):
         block = """
             module foo
             foo.bar
                x: int
                y: int
                *
+               z: int
+               /
+        """
+        err = "Function 'bar': '/' must precede '*'"
+        self.expect_failure(block, err)
+
+    def test_slash_after_vararg(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               *args: object
                z: int
                /
         """
@@ -1960,6 +2017,19 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/ [from ...]' must precede '*'"
         self.expect_failure(block, err, lineno=4)
 
+    def test_vararg_must_come_after_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: object
+                / [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
     def test_depr_slash_must_come_after_slash(self):
         block = """
             module foo
@@ -1987,7 +2057,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err)
 
     def test_parameters_no_more_than_one_vararg(self):
-        err = "Too many var args"
+        err = "Function 'bar' uses '*' more than once."
         block = """
             module foo
             foo.bar
@@ -3319,13 +3389,6 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.posonly_vararg(1, 2, 3, b=4)
 
-    def test_vararg_and_posonly(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_and_posonly()
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_and_posonly(1, b=2)
-        self.assertEqual(ac_tester.vararg_and_posonly(1, 2, 3, 4), (1, (2, 3, 4)))
-
     def test_vararg(self):
         with self.assertRaises(TypeError):
             ac_tester.vararg()
@@ -3362,6 +3425,17 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+
+    def test_vararg_kwonly_req_opt(self):
+        fn = ac_tester.vararg_kwonly_req_opt
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(a=1), ((), 1, None, None))
+        self.assertEqual(fn(a=1, b=2), ((), 1, 2, None))
+        self.assertEqual(fn(a=1, b=2, c=3), ((), 1, 2, 3))
+        self.assertRaises(TypeError, fn, 1)
+        self.assertEqual(fn(1, a=2), ((1,), 2, None, None))
+        self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, None))
+        self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
 
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
