@@ -7013,6 +7013,7 @@ SRCDIRS="\
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
+  Modules/_fnmatch \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
@@ -7697,6 +7698,7 @@ PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
 PY_STDLIB_MOD_SIMPLE([_contextvars])
 PY_STDLIB_MOD_SIMPLE([_csv])
+PY_STDLIB_MOD_SIMPLE([_fnmatch], [-I\$(srcdir)/Modules/_fnmatch], [])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
 PY_STDLIB_MOD_SIMPLE([_lsprof])

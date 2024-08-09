@@ -16,24 +16,72 @@ import functools
 
 __all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
 
-def fnmatch(name, pat):
-    """Test whether FILENAME matches PATTERN.
+try:
+    from _fnmatch import filter
+except ImportError:
+    def filter(names, pat):
+        """Construct a list from the names in *names* matching *pat*."""
+        result = []
+        pat = os.path.normcase(pat)
+        match = _compile_pattern(pat)
+        if os.path is posixpath:
+            # normcase on posix is NOP. Optimize it away from the loop.
+            for name in names:
+                if match(name):
+                    result.append(name)
+        else:
+            for name in names:
+                if match(os.path.normcase(name)):
+                    result.append(name)
+        return result
 
-    Patterns are Unix shell style:
+try:
+    from _fnmatch import fnmatch
+except ImportError:
+    def fnmatch(name, pat):
+        """Test whether *name* matches *pat*.
 
-    *       matches everything
-    ?       matches any single character
-    [seq]   matches any character in seq
-    [!seq]  matches any char not in seq
+        Patterns are Unix shell style:
 
-    An initial period in FILENAME is not special.
-    Both FILENAME and PATTERN are first case-normalized
-    if the operating system requires it.
-    If you don't want this, use fnmatchcase(FILENAME, PATTERN).
-    """
-    name = os.path.normcase(name)
-    pat = os.path.normcase(pat)
-    return fnmatchcase(name, pat)
+        *       matches everything
+        ?       matches any single character
+        [seq]   matches any character in seq
+        [!seq]  matches any char not in seq
+
+        An initial period in *name* is not special.
+        Both *name* and *pat* are first case-normalized
+        if the operating system requires it.
+
+        If you don't want this, use fnmatchcase(name, pat).
+        """
+        name = os.path.normcase(name)
+        pat = os.path.normcase(pat)
+        return fnmatchcase(name, pat)
+
+try:
+    from _fnmatch import fnmatchcase
+except ImportError:
+    def fnmatchcase(name, pat):
+        """Test whether *name* matches *pat*, including case.
+
+        This is a version of fnmatch() which doesn't case-normalize
+        its arguments.
+        """
+        match = _compile_pattern(pat)
+        return match(name) is not None
+
+try:
+    from _fnmatch import translate
+except ImportError:
+    def translate(pat):
+        """Translate a shell pattern *pat* to a regular expression.
+
+        There is no way to quote meta-characters.
+        """
+
+        STAR = object()
+        parts = _translate(pat, STAR, '.')
+        return _join_translated_parts(parts, STAR)
 
 @functools.lru_cache(maxsize=32768, typed=True)
 def _compile_pattern(pat):
@@ -44,43 +92,6 @@ def _compile_pattern(pat):
     else:
         res = translate(pat)
     return re.compile(res).match
-
-def filter(names, pat):
-    """Construct a list from those elements of the iterable NAMES that match PAT."""
-    result = []
-    pat = os.path.normcase(pat)
-    match = _compile_pattern(pat)
-    if os.path is posixpath:
-        # normcase on posix is NOP. Optimize it away from the loop.
-        for name in names:
-            if match(name):
-                result.append(name)
-    else:
-        for name in names:
-            if match(os.path.normcase(name)):
-                result.append(name)
-    return result
-
-def fnmatchcase(name, pat):
-    """Test whether FILENAME matches PATTERN, including case.
-
-    This is a version of fnmatch() which doesn't case-normalize
-    its arguments.
-    """
-    match = _compile_pattern(pat)
-    return match(name) is not None
-
-
-def translate(pat):
-    """Translate a shell PATTERN to a regular expression.
-
-    There is no way to quote meta-characters.
-    """
-
-    STAR = object()
-    parts = _translate(pat, STAR, '.')
-    return _join_translated_parts(parts, STAR)
-
 
 def _translate(pat, STAR, QUESTION_MARK):
     res = []

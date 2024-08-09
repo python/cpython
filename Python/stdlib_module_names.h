@@ -32,6 +32,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_dbm",
 "_decimal",
 "_elementtree",
+"_fnmatch",
 "_frozen_importlib",
 "_frozen_importlib_external",
 "_functools",

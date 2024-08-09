@@ -860,6 +860,7 @@ extern "C" {
     INIT_ID(col_offset), \
     INIT_ID(command), \
     INIT_ID(comment_factory), \
+    INIT_ID(compile), \
     INIT_ID(compile_mode), \
     INIT_ID(consts), \
     INIT_ID(context), \
@@ -913,6 +914,7 @@ extern "C" {
     INIT_ID(entrypoint), \
     INIT_ID(env), \
     INIT_ID(errors), \
+    INIT_ID(escape), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
     INIT_ID(exc_type), \
@@ -941,6 +943,7 @@ extern "C" {
     INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
+    INIT_ID(find), \
     INIT_ID(find_class), \
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
@@ -1084,6 +1087,7 @@ extern "C" {
     INIT_ID(n_unnamed_fields), \
     INIT_ID(name), \
     INIT_ID(name_from), \
+    INIT_ID(names), \
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
     INIT_ID(narg), \
@@ -1097,6 +1101,7 @@ extern "C" {
     INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
+    INIT_ID(normcase), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
     INIT_ID(nt), \
@@ -1126,6 +1131,7 @@ extern "C" {
     INIT_ID(pages), \
     INIT_ID(parent), \
     INIT_ID(password), \
+    INIT_ID(pat), \
     INIT_ID(path), \
     INIT_ID(pattern), \
     INIT_ID(peek), \
@@ -1223,6 +1229,7 @@ extern "C" {
     INIT_ID(strict), \
     INIT_ID(strict_mode), \
     INIT_ID(string), \
+    INIT_ID(sub), \
     INIT_ID(sub_key), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \

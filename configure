@@ -801,6 +801,8 @@ MODULE__JSON_FALSE
 MODULE__JSON_TRUE
 MODULE__HEAPQ_FALSE
 MODULE__HEAPQ_TRUE
+MODULE__FNMATCH_FALSE
+MODULE__FNMATCH_TRUE
 MODULE__CSV_FALSE
 MODULE__CSV_TRUE
 MODULE__CONTEXTVARS_FALSE
@@ -27759,6 +27761,7 @@ SRCDIRS="\
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
+  Modules/_fnmatch \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
@@ -29239,6 +29242,28 @@ fi
 then :
 
 
+
+
+fi
+
+
+        if test "$py_cv_module__fnmatch" != "n/a"
+then :
+  py_cv_module__fnmatch=yes
+fi
+   if test "$py_cv_module__fnmatch" = yes; then
+  MODULE__FNMATCH_TRUE=
+  MODULE__FNMATCH_FALSE='#'
+else
+  MODULE__FNMATCH_TRUE='#'
+  MODULE__FNMATCH_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__FNMATCH_STATE=$py_cv_module__fnmatch$as_nl"
+  if test "x$py_cv_module__fnmatch" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__FNMATCH_CFLAGS=-I\$(srcdir)/Modules/_fnmatch$as_nl"
 
 
 fi
@@ -31824,6 +31849,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CSV_TRUE}" && test -z "${MODULE__CSV_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CSV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__FNMATCH_TRUE}" && test -z "${MODULE__FNMATCH_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__FNMATCH\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__HEAPQ_TRUE}" && test -z "${MODULE__HEAPQ_FALSE}"; then
