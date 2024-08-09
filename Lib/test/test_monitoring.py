@@ -1518,8 +1518,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 4, 4),
             ('line', 'func', 5),
             ('line', 'meth', 1),
-            ('jump', 'func', 5, '[offset=118]'),
-            ('branch', 'func', '[offset=122]', '[offset=126]'),
+            ('jump', 'func', 5, '[offset=120]'),
+            ('branch', 'func', '[offset=128]', '[offset=130]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1533,8 +1533,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 5),
             ('line', 'meth', 1),
             ('return', 'meth', None),
-            ('jump', 'func', 5, '[offset=118]'),
-            ('branch', 'func', '[offset=122]', '[offset=126]'),
+            ('jump', 'func', 5, '[offset=120]'),
+            ('branch', 'func', '[offset=128]', '[offset=130]'),
             ('return', 'func', None),
             ('line', 'get_events', 11)])
 
@@ -1970,7 +1970,8 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             ( 1, E.PY_RETURN, capi.fire_event_py_return, 20),
             ( 2, E.CALL, capi.fire_event_call, callable, 40),
             ( 1, E.JUMP, capi.fire_event_jump, 60),
-            ( 1, E.BRANCH, capi.fire_event_branch, 70),
+            ( 1, E.BRANCH_TAKEN, capi.fire_event_branch_taken, 70),
+            ( 1, E.BRANCH_NOT_TAKEN, capi.fire_event_branch_not_taken, 80),
             ( 1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
             ( 1, E.RAISE, capi.fire_event_raise, ValueError(2)),
             ( 1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),

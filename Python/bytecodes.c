@@ -142,6 +142,8 @@ dummy_func(
         pure inst(NOP, (--)) {
         }
 
+        macro(NOT_TAKEN) = NOP;
+
         family(RESUME, 0) = {
             RESUME_CHECK,
         };
@@ -2570,7 +2572,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
-            JUMPBY(oparg * flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
@@ -2579,7 +2581,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
-            JUMPBY(oparg * flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 
         op(_IS_NONE, (value -- b)) {
@@ -2766,13 +2768,11 @@ dummy_func(
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
-            _Py_CODEUNIT *target;
             _PyStackRef iter_stackref = TOP();
             PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
-                target = next_instr;
             }
             else {
                 if (_PyErr_Occurred(tstate)) {
@@ -2789,9 +2789,9 @@ dummy_func(
                 STACK_SHRINK(1);
                 PyStackRef_CLOSE(iter_stackref);
                 /* Skip END_FOR and POP_TOP */
-                target = next_instr + oparg + 2;
+                _Py_CODEUNIT *target = next_instr + oparg + 2;
+                INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH_TAKEN);
             }
-            INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
         }
 
         op(_ITER_CHECK_LIST, (iter -- iter)) {
@@ -4390,60 +4390,58 @@ dummy_func(
             INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
         }
 
+        inst(INSTRUMENTED_NOT_TAKEN, ( -- )) {
+            INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_NOT_TAKEN);
+        }
+
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_True);
-            int offset = flag * oparg;
+            int jump = PyStackRef_Is(cond, PyStackRef_True);
             #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            this_instr[1].cache = (this_instr[1].cache << 1) | jump;
             #endif
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_TAKEN);
+            }
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_False);
-            int offset = flag * oparg;
+            int jump = PyStackRef_Is(cond, PyStackRef_False);
             #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            this_instr[1].cache = (this_instr[1].cache << 1) | jump;
             #endif
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_TAKEN);
+            }
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_Is(value_stackref, PyStackRef_None);
-            int offset;
-            if (flag) {
-                offset = oparg;
+            int jump = PyStackRef_Is(value_stackref, PyStackRef_None);
+            #if ENABLE_SPECIALIZATION
+            this_instr[1].cache = (this_instr[1].cache << 1) | jump;
+            #endif
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_TAKEN);
             }
             else {
                 PyStackRef_CLOSE(value_stackref);
-                offset = 0;
             }
-            #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | flag;
-            #endif
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            int offset;
-            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None);
-            if (nflag) {
-                offset = 0;
-            }
-            else {
-                PyStackRef_CLOSE(value_stackref);
-                offset = oparg;
-            }
+            int jump = !PyStackRef_Is(value_stackref, PyStackRef_None);
             #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | !nflag;
+            this_instr[1].cache = (this_instr[1].cache << 1) | jump;
             #endif
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            if (jump) {
+                PyStackRef_CLOSE(value_stackref);
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_TAKEN);
+            }
         }
 
         tier1 inst(EXTENDED_ARG, ( -- )) {
