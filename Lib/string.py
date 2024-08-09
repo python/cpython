@@ -251,8 +251,13 @@ class Formatter:
 
     def get_value(self, key, args, kwargs):
         if isinstance(key, int):
+            # "1234[x]"
             return args[key]
+        elif key == "":
+            # "[x]"
+            return args[0]
         else:
+            # "abcd[x]"
             return kwargs[key]
 
 
