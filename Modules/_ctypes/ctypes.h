@@ -517,7 +517,7 @@ _PyStgInfo_FromType_NoState(PyObject *type)
         return NULL;
     }
     if (PyCType_Type == NULL) {
-        PyErr_SetString(PyExc_TypeError, "PyCType_Type expected");
+        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%T'", type);
         return NULL;
     }
     StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
