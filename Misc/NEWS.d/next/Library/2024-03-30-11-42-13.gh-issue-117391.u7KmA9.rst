@@ -1,0 +1,4 @@
+Add ``convert_keys`` parameter to JSON encoding, to allow passing dict keys that
+are not supported types in JSON through the encoder's
+:meth:`json.JSONEncoder.default()` method.
+Patch by Charles Cazabon.
