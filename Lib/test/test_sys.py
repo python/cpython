@@ -803,11 +803,17 @@ class SysModuleTest(unittest.TestCase):
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
-                 "warn_default_encoding", "safe_path", "int_max_str_digits")
+                 "warn_default_encoding", "safe_path", "int_max_str_digits",
+                 "gil")
+        attr_types = {
+            "dev_mode": bool,
+            "safe_path": bool,
+            "gil": (int, type(None)),
+        }
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            attr_type = bool if attr in ("dev_mode", "safe_path") else int
-            self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
+            expected_type = attr_types.get(attr, int)
+            self.assertIsInstance(getattr(sys.flags, attr), expected_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
 
