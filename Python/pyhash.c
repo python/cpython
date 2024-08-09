@@ -263,12 +263,12 @@ fnv(const void *src, Py_ssize_t len)
     x ^= (Py_uhash_t) *p << 7;
     while (blocks--) {
         PY_UHASH_CPY(block.bytes, p);
-        x = (_PyHASH_MULTIPLIER * x) ^ block.value;
+        x = (PyHASH_MULTIPLIER * x) ^ block.value;
         p += SIZEOF_PY_UHASH_T;
     }
     /* add remainder */
     for (; remainder > 0; remainder--)
-        x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
+        x = (PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
     x ^= (Py_uhash_t) len;
     x ^= (Py_uhash_t) _Py_HashSecret.fnv.suffix;
     if (x == (Py_uhash_t) -1) {

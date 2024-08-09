@@ -27,12 +27,13 @@ This module provides runtime support for type hints.
 
 Consider the function below::
 
-   def moon_weight(earth_weight: float) -> str:
-       return f'On the moon, you would weigh {earth_weight * 0.166} kilograms.'
+   def surface_area_of_cube(edge_length: float) -> str:
+       return f"The surface area of the cube is {6 * edge_length ** 2}."
 
-The function ``moon_weight`` takes an argument expected to be an instance of :class:`float`,
-as indicated by the *type hint* ``earth_weight: float``. The function is expected to
-return an instance of :class:`str`, as indicated by the ``-> str`` hint.
+The function ``surface_area_of_cube`` takes an argument expected to
+be an instance of :class:`float`, as indicated by the :term:`type hint`
+``edge_length: float``. The function is expected to return an instance
+of :class:`str`, as indicated by the ``-> str`` hint.
 
 While type hints can be simple classes like :class:`float` or :class:`str`,
 they can also be more complex. The :mod:`typing` module provides a vocabulary of
@@ -97,8 +98,9 @@ Type aliases are useful for simplifying complex type signatures. For example::
    # The static type checker will treat the previous type signature as
    # being exactly equivalent to this one.
    def broadcast_message(
-           message: str,
-           servers: Sequence[tuple[tuple[str, int], dict[str, str]]]) -> None:
+       message: str,
+       servers: Sequence[tuple[tuple[str, int], dict[str, str]]]
+   ) -> None:
        ...
 
 The :keyword:`type` statement is new in Python 3.12. For backwards
@@ -1454,8 +1456,8 @@ These can be used as types in annotations. They all support subscription using
    to write such functions in a type-safe manner.
 
    If a ``TypeIs`` function is a class or instance method, then the type in
-   ``TypeIs`` maps to the type of the second parameter after ``cls`` or
-   ``self``.
+   ``TypeIs`` maps to the type of the second parameter (after ``cls`` or
+   ``self``).
 
    In short, the form ``def foo(arg: TypeA) -> TypeIs[TypeB]: ...``,
    means that if ``foo(arg)`` returns ``True``, then ``arg`` is an instance
@@ -1871,8 +1873,8 @@ without the dedicated syntax, as documented below.
    of ``*args``::
 
       def call_soon[*Ts](
-               callback: Callable[[*Ts], None],
-               *args: *Ts
+          callback: Callable[[*Ts], None],
+          *args: *Ts
       ) -> None:
           ...
           callback(*args)
@@ -3080,35 +3082,37 @@ Introspection helpers
    Return a dictionary containing type hints for a function, method, module
    or class object.
 
-   This is often the same as ``obj.__annotations__``. In addition,
-   forward references encoded as string literals are handled by evaluating
-   them in ``globals``, ``locals`` and (where applicable)
-   :ref:`type parameter <type-params>` namespaces.
-   For a class ``C``, return
-   a dictionary constructed by merging all the ``__annotations__`` along
-   ``C.__mro__`` in reverse order.
+   This is often the same as ``obj.__annotations__``, but this function makes
+   the following changes to the annotations dictionary:
 
-   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
-   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example:
+   * Forward references encoded as string literals or :class:`ForwardRef`
+     objects are handled by evaluating them in *globalns*, *localns*, and
+     (where applicable) *obj*'s :ref:`type parameter <type-params>` namespace.
+     If *globalns* or *localns* is not given, appropriate namespace
+     dictionaries are inferred from *obj*.
+   * ``None`` is replaced with :class:`types.NoneType`.
+   * If :func:`@no_type_check <no_type_check>` has been applied to *obj*, an
+     empty dictionary is returned.
+   * If *obj* is a class ``C``, the function returns a dictionary that merges
+     annotations from ``C``'s base classes with those on ``C`` directly. This
+     is done by traversing ``C.__mro__`` and iteratively combining
+     ``__annotations__`` dictionaries. Annotations on classes appearing
+     earlier in the :term:`method resolution order` always take precedence over
+     annotations on classes appearing later in the method resolution order.
+   * The function recursively replaces all occurrences of ``Annotated[T, ...]``
+     with ``T``, unless *include_extras* is set to ``True`` (see
+     :class:`Annotated` for more information).
 
-   .. testcode::
-
-       class Student(NamedTuple):
-           name: Annotated[str, 'some marker']
-
-       assert get_type_hints(Student) == {'name': str}
-       assert get_type_hints(Student, include_extras=False) == {'name': str}
-       assert get_type_hints(Student, include_extras=True) == {
-           'name': Annotated[str, 'some marker']
-       }
+   See also :func:`inspect.get_annotations`, a lower-level function that
+   returns annotations more directly.
 
    .. note::
 
-      :func:`get_type_hints` does not work with imported
-      :ref:`type aliases <type-aliases>` that include forward references.
-      Enabling postponed evaluation of annotations (:pep:`563`) may remove
-      the need for most forward references.
+      If any forward references in the annotations of *obj* are not resolvable
+      or are not valid Python code, this function will raise an exception
+      such as :exc:`NameError`. For example, this can happen with imported
+      :ref:`type aliases <type-aliases>` that include forward references,
+      or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.

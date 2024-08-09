@@ -5,6 +5,7 @@ import math
 import os.path
 import platform
 import random
+import re
 import shlex
 import signal
 import subprocess
@@ -262,6 +263,12 @@ def clear_caches():
     else:
         for f in typing._cleanups:
             f()
+
+        import inspect
+        abs_classes = filter(inspect.isabstract, typing.__dict__.values())
+        for abc in abs_classes:
+            for obj in abc.__subclasses__() + [abc]:
+                obj._abc_caches_clear()
 
     try:
         fractions = sys.modules['fractions']
@@ -712,3 +719,24 @@ def get_signal_name(exitcode):
         pass
 
     return None
+
+
+ILLEGAL_XML_CHARS_RE = re.compile(
+    '['
+    # Control characters; newline (\x0A and \x0D) and TAB (\x09) are legal
+    '\x00-\x08\x0B\x0C\x0E-\x1F'
+    # Surrogate characters
+    '\uD800-\uDFFF'
+    # Special Unicode characters
+    '\uFFFE'
+    '\uFFFF'
+    # Match multiple sequential invalid characters for better effiency
+    ']+')
+
+def _sanitize_xml_replace(regs):
+    text = regs[0]
+    return ''.join(f'\\x{ord(ch):02x}' if ch <= '\xff' else ascii(ch)[1:-1]
+                   for ch in text)
+
+def sanitize_xml(text):
+    return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)

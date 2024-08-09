@@ -2787,7 +2787,7 @@
                         if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                             goto error;
                         }
-                        monitor_raise(tstate, frame, this_instr);
+                        _PyEval_MonitorRaise(tstate, frame, this_instr);
                         _PyErr_Clear(tstate);
                     }
                     /* iterator ended normally */
@@ -3307,7 +3307,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, this_instr);
+                    _PyEval_MonitorRaise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -4381,18 +4381,35 @@
                 goto error;
             }
             if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    goto error;
-                }
-                if (v == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                if (PyDict_CheckExact(GLOBALS())
+                    && PyDict_CheckExact(BUILTINS()))
+                {
+                    v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                        (PyDictObject *)BUILTINS(),
+                        name);
+                    if (v == NULL) {
+                        if (!_PyErr_Occurred(tstate)) {
+                            /* _PyDict_LoadGlobal() returns NULL without raising
+                             * an exception if the key doesn't exist */
+                            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                NAME_ERROR_MSG, name);
+                        }
                         goto error;
                     }
+                }
+                else {
+                    /* Slow-path if globals or builtins is not a dict */
+                    /* namespace 1: globals */
+                    if (PyMapping_GetOptionalItem(GLOBALS(), name, &v) < 0) goto pop_1_error;
                     if (v == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        goto error;
+                        /* namespace 2: builtins */
+                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) goto pop_1_error;
+                        if (v == NULL) {
+                            _PyEval_FormatExcCheckArg(
+                                tstate, PyExc_NameError,
+                                NAME_ERROR_MSG, name);
+                            if (true) goto pop_1_error;
+                        }
                     }
                 }
             }
@@ -4747,7 +4764,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_CELL);
             // "initial" is probably NULL but not if it's an arg (or set
-            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            // via the f_locals proxy before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
@@ -5300,7 +5317,7 @@
                 if (retval == NULL) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                     ) {
-                        monitor_raise(tstate, frame, this_instr);
+                        _PyEval_MonitorRaise(tstate, frame, this_instr);
                     }
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         assert(retval != NULL);

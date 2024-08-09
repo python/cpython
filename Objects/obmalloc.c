@@ -386,8 +386,16 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 )
 {
 #ifdef MS_WINDOWS
+    /* Unlike free(), VirtualFree() does not special-case NULL to noop. */
+    if (ptr == NULL) {
+        return;
+    }
     VirtualFree(ptr, 0, MEM_RELEASE);
 #elif defined(ARENAS_USE_MMAP)
+    /* Unlike free(), munmap() does not special-case NULL to noop. */
+    if (ptr == NULL) {
+        return;
+    }
     munmap(ptr, size);
 #else
     free(ptr);

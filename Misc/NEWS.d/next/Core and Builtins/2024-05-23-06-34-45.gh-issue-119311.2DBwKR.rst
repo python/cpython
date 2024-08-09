@@ -1,2 +1,0 @@
-Fix bug where names are unexpectedly mangled in the bases of generic
-classes.

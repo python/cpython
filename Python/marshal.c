@@ -14,6 +14,7 @@
 #include "pycore_long.h"             // _PyLong_DigitCount
 #include "pycore_setobject.h"        // _PySet_NextEntry()
 #include "marshal.h"                 // Py_MARSHAL_VERSION
+#include "pycore_pystate.h"          // _PyInterpreterState_GET()
 
 #ifdef __APPLE__
 #  include "TargetConditionals.h"
@@ -1184,8 +1185,12 @@ r_object(RFILE *p)
             v = PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, ptr, n);
             if (v == NULL)
                 break;
-            if (is_interned)
-                PyUnicode_InternInPlace(&v);
+            if (is_interned) {
+                // marshal is meant to serialize .pyc files with code
+                // objects, and code-related strings are currently immortal.
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternImmortal(interp, &v);
+            }
             retval = v;
             R_REF(retval);
             break;
@@ -1217,8 +1222,12 @@ r_object(RFILE *p)
         }
         if (v == NULL)
             break;
-        if (is_interned)
-            PyUnicode_InternInPlace(&v);
+        if (is_interned) {
+            // marshal is meant to serialize .pyc files with code
+            // objects, and code-related strings are currently immortal.
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            _PyUnicode_InternImmortal(interp, &v);
+        }
         retval = v;
         R_REF(retval);
         break;
@@ -1918,7 +1927,7 @@ machine architecture issues.\n\
 Not all Python object types are supported; in general, only objects\n\
 whose value is independent from a particular invocation of Python can be\n\
 written and read by this module. The following types are supported:\n\
-None, integers, floating point numbers, strings, bytes, bytearrays,\n\
+None, integers, floating-point numbers, strings, bytes, bytearrays,\n\
 tuples, lists, sets, dictionaries, and code objects, where it\n\
 should be understood that tuples, lists and dictionaries are only\n\
 supported as long as the values contained therein are themselves\n\
@@ -1929,7 +1938,7 @@ Variables:\n\
 \n\
 version -- indicates the format that the module uses. Version 0 is the\n\
     historical format, version 1 shares interned strings and version 2\n\
-    uses a binary format for floating point numbers.\n\
+    uses a binary format for floating-point numbers.\n\
     Version 3 shares common object references (New in version 3.4).\n\
 \n\
 Functions:\n\

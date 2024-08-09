@@ -491,6 +491,37 @@ def test_pdb_pp_repr_exc():
     (Pdb) continue
     """
 
+def test_pdb_empty_line():
+    """Test that empty line repeats the last command.
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     y = 2
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'p x',
+    ...     '',  # Should repeat p x
+    ...     'n ;; p 0 ;; p x',  # Fill cmdqueue with multiple commands
+    ...     '',  # Should still repeat p x
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(3)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p x
+    1
+    (Pdb)
+    1
+    (Pdb) n ;; p 0 ;; p x
+    0
+    1
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(4)test_function()
+    -> y = 2
+    (Pdb)
+    1
+    (Pdb) continue
+    """
 
 def do_nothing():
     pass
@@ -3460,6 +3491,23 @@ def bœr():
         # The file was edited, but restart should clear the state and consider
         # the file as up to date
         self.assertNotIn("WARNING:", stdout)
+
+    def test_post_mortem_restart(self):
+        script = """
+            def foo():
+                raise ValueError("foo")
+            foo()
+        """
+
+        commands = """
+            continue
+            restart
+            continue
+            quit
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("Restarting", stdout)
 
     def test_relative_imports(self):
         self.module_name = 't_main'

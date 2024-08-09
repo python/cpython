@@ -589,9 +589,17 @@ compiler_unit_free(struct compiler_unit *u)
     PyMem_Free(u);
 }
 
-static struct compiler_unit *
-get_class_compiler_unit(struct compiler *c)
+static int
+compiler_maybe_add_static_attribute_to_class(struct compiler *c, expr_ty e)
 {
+    assert(e->kind == Attribute_kind);
+    expr_ty attr_value = e->v.Attribute.value;
+    if (attr_value->kind != Name_kind ||
+        e->v.Attribute.ctx != Store ||
+        !_PyUnicode_EqualToASCIIString(attr_value->v.Name.id, "self"))
+    {
+        return SUCCESS;
+    }
     Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
     for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
         PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
@@ -599,10 +607,12 @@ get_class_compiler_unit(struct compiler *c)
                                                               capsule, CAPSULE_NAME);
         assert(u);
         if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
-            return u;
+            assert(u->u_static_attributes);
+            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, e->v.Attribute.attr));
+            break;
         }
     }
-    return NULL;
+    return SUCCESS;
 }
 
 static int
@@ -672,8 +682,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        _Py_DECLARE_STR(dot, ".");
-        name = PyUnicode_Concat(base, &_Py_STR(dot));
+        name = PyUnicode_Concat(base, _Py_LATIN1_CHR('.'));
         Py_DECREF(base);
         if (name == NULL) {
             return ERROR;
@@ -3043,7 +3052,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         co = optimize_and_assemble(c, 0);
     }
     else {
-        location loc = LOCATION(e->lineno, e->lineno, 0, 0);
+        location loc = LOC(e->v.Lambda.body);
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = optimize_and_assemble(c, 1);
     }
@@ -3101,10 +3110,17 @@ compiler_for(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
 
     VISIT(c, expr, s->v.For.iter);
+
+    loc = LOC(s->v.For.iter);
     ADDOP(c, loc, GET_ITER);
 
     USE_LABEL(c, start);
     ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
+
+    /* Add NOP to ensure correct line tracing of multiline for statements.
+     * It will be removed later if redundant.
+     */
+    ADDOP(c, LOC(s->v.For.target), NOP);
 
     USE_LABEL(c, body);
     VISIT(c, expr, s->v.For.target);
@@ -6228,7 +6244,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case YieldFrom_kind:
         if (!_PyST_IsFunctionLike(c->u->u_ste)) {
-            return compiler_error(c, loc, "'yield' outside function");
+            return compiler_error(c, loc, "'yield from' outside function");
         }
         if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
             return compiler_error(c, loc, "'yield from' inside async function");
@@ -6277,17 +6293,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP(c, loc, NOP);
             return SUCCESS;
         }
-        if (e->v.Attribute.value->kind == Name_kind &&
-            _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
-        {
-            struct compiler_unit *class_u = get_class_compiler_unit(c);
-            if (class_u != NULL) {
-                assert(class_u->u_scope_type == COMPILER_SCOPE_CLASS);
-                assert(class_u->u_static_attributes);
-                RETURN_IF_ERROR(
-                    PySet_Add(class_u->u_static_attributes, e->v.Attribute.attr));
-            }
-        }
+        RETURN_IF_ERROR(compiler_maybe_add_static_attribute_to_class(c, e));
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);

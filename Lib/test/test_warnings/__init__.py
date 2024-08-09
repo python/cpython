@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 import linecache
 import os
+import importlib
+import inspect
 from io import StringIO
 import re
 import sys
@@ -884,37 +886,46 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # warn_explicit() should neither raise a SystemError nor cause an
         # assertion failure, in case the return value of get_source() has a
         # bad splitlines() method.
-        def get_bad_loader(splitlines_ret_val):
+        get_source_called = []
+        def get_module_globals(*, splitlines_ret_val):
+            class BadSource(str):
+                def splitlines(self):
+                    return splitlines_ret_val
+
             class BadLoader:
                 def get_source(self, fullname):
-                    class BadSource(str):
-                        def splitlines(self):
-                            return splitlines_ret_val
+                    get_source_called.append(splitlines_ret_val)
                     return BadSource('spam')
-            return BadLoader()
+
+            loader = BadLoader()
+            spec = importlib.machinery.ModuleSpec('foobar', loader)
+            return {'__loader__': loader,
+                    '__spec__': spec,
+                    '__name__': 'foobar'}
+
 
         wmod = self.module
         with original_warnings.catch_warnings(module=wmod):
             wmod.filterwarnings('default', category=UserWarning)
 
+            linecache.clearcache()
             with support.captured_stderr() as stderr:
                 wmod.warn_explicit(
                     'foo', UserWarning, 'bar', 1,
-                    module_globals={'__loader__': get_bad_loader(42),
-                                    '__name__': 'foobar'})
+                    module_globals=get_module_globals(splitlines_ret_val=42))
             self.assertIn('UserWarning: foo', stderr.getvalue())
+            self.assertEqual(get_source_called, [42])
 
-            show = wmod._showwarnmsg
-            try:
+            linecache.clearcache()
+            with support.swap_attr(wmod, '_showwarnmsg', None):
                 del wmod._showwarnmsg
                 with support.captured_stderr() as stderr:
                     wmod.warn_explicit(
                         'eggs', UserWarning, 'bar', 1,
-                        module_globals={'__loader__': get_bad_loader([42]),
-                                        '__name__': 'foobar'})
+                        module_globals=get_module_globals(splitlines_ret_val=[42]))
                 self.assertIn('UserWarning: eggs', stderr.getvalue())
-            finally:
-                wmod._showwarnmsg = show
+            self.assertEqual(get_source_called, [42, [42]])
+            linecache.clearcache()
 
     @support.cpython_only
     def test_issue31411(self):
@@ -1681,6 +1692,29 @@ class DeprecatedTests(unittest.TestCase):
         self.assertFalse(any(
             isinstance(cell.cell_contents, deprecated) for cell in d.__closure__
         ))
+
+    def test_inspect(self):
+        @deprecated("depr")
+        def sync():
+            pass
+
+        @deprecated("depr")
+        async def coro():
+            pass
+
+        class Cls:
+            @deprecated("depr")
+            def sync(self):
+                pass
+
+            @deprecated("depr")
+            async def coro(self):
+                pass
+
+        self.assertFalse(inspect.iscoroutinefunction(sync))
+        self.assertTrue(inspect.iscoroutinefunction(coro))
+        self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
+        self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
 
 def setUpModule():
     py_warnings.onceregistry.clear()

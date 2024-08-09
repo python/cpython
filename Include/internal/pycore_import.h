@@ -20,7 +20,7 @@ PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
-extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
+extern void _PyImport_ReleaseLock(PyInterpreterState *interp);
 
 // This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
@@ -94,11 +94,7 @@ struct _import_state {
 #endif
     PyObject *import_func;
     /* The global import lock. */
-    struct {
-        PyThread_type_lock mutex;
-        unsigned long thread;
-        int level;
-    } lock;
+    _PyRecursiveMutex lock;
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
     struct {
         int import_level;
@@ -123,11 +119,6 @@ struct _import_state {
 #define IMPORTS_INIT \
     { \
         DLOPENFLAGS_INIT \
-        .lock = { \
-            .mutex = NULL, \
-            .thread = PYTHREAD_INVALID_THREAD_ID, \
-            .level = 0, \
-        }, \
         .find_and_load = { \
             .header = 1, \
         }, \
@@ -178,11 +169,6 @@ extern PyStatus _PyImport_InitCore(
 extern PyStatus _PyImport_InitExternal(PyThreadState *tstate);
 extern void _PyImport_FiniCore(PyInterpreterState *interp);
 extern void _PyImport_FiniExternal(PyInterpreterState *interp);
-
-
-#ifdef HAVE_FORK
-extern PyStatus _PyImport_ReInitLock(PyInterpreterState *interp);
-#endif
 
 
 extern PyObject* _PyImport_GetBuiltinModuleNames(void);

@@ -78,7 +78,8 @@ class PyclbrTest(TestCase):
 
             objname = obj.__name__
             if objname.startswith("__") and not objname.endswith("__"):
-                objname = "_%s%s" % (oclass.__name__, objname)
+                if stripped_typename := oclass.__name__.lstrip('_'):
+                    objname = f"_{stripped_typename}{objname}"
             return objname == name
 
         # Make sure the toplevel functions and classes are the same.
@@ -111,12 +112,16 @@ class PyclbrTest(TestCase):
                 for m in py_item.__dict__.keys():
                     if ismethod(py_item, getattr(py_item, m), m):
                         actualMethods.append(m)
-                foundMethods = []
-                for m in value.methods.keys():
-                    if m[:2] == '__' and m[-2:] != '__':
-                        foundMethods.append('_'+name+m)
-                    else:
-                        foundMethods.append(m)
+
+                if stripped_typename := name.lstrip('_'):
+                    foundMethods = []
+                    for m in value.methods.keys():
+                        if m.startswith('__') and not m.endswith('__'):
+                            foundMethods.append(f"_{stripped_typename}{m}")
+                        else:
+                            foundMethods.append(m)
+                else:
+                    foundMethods = list(value.methods.keys())
 
                 try:
                     self.assertListEq(foundMethods, actualMethods, ignore)
@@ -150,8 +155,9 @@ class PyclbrTest(TestCase):
                                             "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
-    def test_decorators(self):
-        self.checkModule('test.pyclbr_input', ignore=['om'])
+    def test_cases(self):
+        # see test.pyclbr_input for the rationale behind the ignored symbols
+        self.checkModule('test.pyclbr_input', ignore=['om', 'f'])
 
     def test_nested(self):
         mb = pyclbr

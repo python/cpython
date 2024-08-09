@@ -314,17 +314,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         /* gh-115999 tracks progress on addressing this. */ \
         static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) ((void)COUNTER)
 #else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
     } while (0);
-#endif
 
 #define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+#endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"

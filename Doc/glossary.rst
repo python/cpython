@@ -438,6 +438,12 @@ Glossary
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
 
+   free threading
+      A threading model where multiple threads can run Python bytecode
+      simultaneously within the same interpreter.  This is in contrast to
+      the :term:`global interpreter lock` which allows only one thread to
+      execute Python bytecode at a time.  See :pep:`703`.
+
    function
       A series of statements which returns some value to a caller. It can also
       be passed zero or more :term:`arguments <argument>` which may be used in
@@ -688,6 +694,9 @@ Glossary
 
          CPython does not consistently apply the requirement that an iterator
          define :meth:`~iterator.__iter__`.
+         And also please note that the free-threading CPython does not guarantee
+         the thread-safety of iterator operations.
+
 
    key function
       A key function or collation function is a callable that returns a value

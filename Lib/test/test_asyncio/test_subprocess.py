@@ -873,6 +873,21 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
+    @unittest.skipIf(sys.platform != 'linux', "Linux only")
+    def test_subprocess_send_signal_race(self):
+        # See https://github.com/python/cpython/issues/87744
+        async def main():
+            for _ in range(10):
+                proc = await asyncio.create_subprocess_exec('sleep', '0.1')
+                await asyncio.sleep(0.1)
+                try:
+                    proc.send_signal(signal.SIGUSR1)
+                except ProcessLookupError:
+                    pass
+                self.assertNotEqual(await proc.wait(), 255)
+
+        self.loop.run_until_complete(main())
+
 
 if sys.platform != 'win32':
     # Unix

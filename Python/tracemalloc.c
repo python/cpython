@@ -312,7 +312,7 @@ traceback_hash(traceback_t *traceback)
     /* code based on tuplehash() of Objects/tupleobject.c */
     Py_uhash_t x, y;  /* Unsigned for defined overflow behavior. */
     int len = traceback->nframe;
-    Py_uhash_t mult = _PyHASH_MULTIPLIER;
+    Py_uhash_t mult = PyHASH_MULTIPLIER;
     frame_t *frame;
 
     x = 0x345678UL;
@@ -838,7 +838,7 @@ _PyTraceMalloc_Init(void)
 
     tracemalloc_tracebacks = hashtable_new(hashtable_hash_traceback,
                                            hashtable_compare_traceback,
-                                           NULL, raw_free);
+                                           raw_free, NULL);
 
     tracemalloc_traces = tracemalloc_create_traces_table();
     tracemalloc_domains = tracemalloc_create_domains_table();

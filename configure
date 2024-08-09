@@ -930,6 +930,7 @@ DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 JIT_STENCILS_H
 REGEN_JIT_COMMAND
+ABI_THREAD
 ABIFLAGS
 LN
 MKDIR_P
@@ -981,6 +982,7 @@ IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
+APP_STORE_COMPLIANCE_PATCH
 INSTALLTARGETS
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
@@ -1076,6 +1078,7 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
+with_app_store_compliance
 with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
@@ -1855,6 +1858,10 @@ Optional Packages:
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
                           Mac/README.rst (default is 'Python')
+  --with-app-store-compliance=[PATCH-FILE]
+                          Enable any patches required for compiliance with app
+                          stores. Optional PATCH-FILE specifies the custom
+                          patch to apply.
   --with-emscripten-target=[browser|node]
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
@@ -4101,7 +4108,7 @@ printf "%s\n" "\"$MACHDEP\"" >&6; }
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -4430,6 +4437,53 @@ fi
 printf "%s\n" "#define _PYTHONFRAMEWORK \"${PYTHONFRAMEWORK}\"" >>confdefs.h
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-app-store-compliance" >&5
+printf %s "checking for --with-app-store-compliance... " >&6; }
+
+# Check whether --with-app_store_compliance was given.
+if test ${with_app_store_compliance+y}
+then :
+  withval=$with_app_store_compliance;
+    case "$withval" in
+    yes)
+      case $ac_sys_system in
+        Darwin|iOS)
+          # iOS is able to share the macOS patch
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          ;;
+        *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
+      esac
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
+printf "%s\n" "applying default app store compliance patch" >&6; }
+      ;;
+    *)
+      APP_STORE_COMPLIANCE_PATCH="${withval}"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying custom app store compliance patch" >&5
+printf "%s\n" "applying custom app store compliance patch" >&6; }
+      ;;
+    esac
+
+else $as_nop
+
+    case $ac_sys_system in
+      iOS)
+        # Always apply the compliance patch on iOS; we can use the macOS patch
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
+printf "%s\n" "applying default app store compliance patch" >&6; }
+        ;;
+      *)
+        # No default app compliance patching on any other platform
+        APP_STORE_COMPLIANCE_PATCH=
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not patching for app store compliance" >&5
+printf "%s\n" "not patching for app store compliance" >&6; }
+        ;;
+    esac
+
+fi
+
+
+
 
 if test "$cross_compiling" = yes; then
 	case "$host" in
@@ -4451,8 +4505,12 @@ if test "$cross_compiling" = yes; then
 		_host_device=${_host_device:=os}
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking iOS deployment target" >&5
+printf %s "checking iOS deployment target... " >&6; }
 		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
-		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=12.0}
+		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $IPHONEOS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 
 		case "$host_cpu" in
 			aarch64)
@@ -8089,7 +8147,9 @@ fi
 
 # For calculating the .so ABI tag.
 
+
 ABIFLAGS=""
+ABI_THREAD=""
 
 # Check for --disable-gil
 # --disable-gil
@@ -8119,6 +8179,7 @@ printf "%s\n" "#define Py_GIL_DISABLED 1" >>confdefs.h
 
   # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
+  ABI_THREAD="t"
 fi
 
 # Check for --with-pydebug
@@ -9614,7 +9675,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wextra -Werror"
+    as_fn_append CFLAGS " -Wextra -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9732,7 +9793,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-result -Werror"
+    as_fn_append CFLAGS " -Wunused-result -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9777,7 +9838,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-parameter -Werror"
+    as_fn_append CFLAGS " -Wunused-parameter -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9818,7 +9879,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    as_fn_append CFLAGS " -Wint-conversion -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9859,7 +9920,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
+    as_fn_append CFLAGS " -Wmissing-field-initializers -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9900,7 +9961,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wsign-compare -Werror"
+    as_fn_append CFLAGS " -Wsign-compare -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9941,7 +10002,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunreachable-code -Werror"
+    as_fn_append CFLAGS " -Wunreachable-code -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9993,7 +10054,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
+    as_fn_append CFLAGS " -Wstrict-prototypes -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -12892,7 +12953,7 @@ then
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -24536,11 +24597,11 @@ fi
 
 
 
-BINLIBDEST='$(LIBDIR)/python$(VERSION)'
+BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
 
 
 # Check for --with-platlibdir
-# /usr/$LIDIRNAME/python$VERSION
+# /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 
 PLATLIBDIR="lib"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
@@ -24559,7 +24620,7 @@ then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)'
+  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -24573,9 +24634,9 @@ fi
 
 
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 
@@ -25868,24 +25929,10 @@ have_curses=no
 have_panel=no
 
 
-ac_fn_c_check_header_compile "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
-if test "x$ac_cv_header_curses_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_CURSES_H 1" >>confdefs.h
 
-fi
-ac_fn_c_check_header_compile "$LINENO" "ncurses.h" "ac_cv_header_ncurses_h" "$ac_includes_default"
-if test "x$ac_cv_header_ncurses_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_NCURSES_H 1" >>confdefs.h
-
-fi
+# Check for ncursesw/panelw first. If that fails, try ncurses/panel.
 
 
-if test "x$ac_cv_header_ncurses_h" = xyes
-then :
-
-  if test "$ac_sys_system" != "Darwin"; then
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncursesw" >&5
@@ -25945,146 +25992,100 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$CURSES_PKG_ERRORS" >&5
 
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
-printf %s "checking for initscr in -lncursesw... " >&6; }
-if test ${ac_cv_lib_ncursesw_initscr+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lncursesw  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char initscr ();
-int
-main (void)
-{
-return initscr ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_ncursesw_initscr=yes
-else $as_nop
-  ac_cv_lib_ncursesw_initscr=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncursesw_initscr" >&5
-printf "%s\n" "$ac_cv_lib_ncursesw_initscr" >&6; }
-if test "x$ac_cv_lib_ncursesw_initscr" = xyes
-then :
-
-          printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
-
-          have_curses=ncursesw
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+	have_curses=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
-printf %s "checking for initscr in -lncursesw... " >&6; }
-if test ${ac_cv_lib_ncursesw_initscr+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lncursesw  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char initscr ();
-int
-main (void)
-{
-return initscr ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_ncursesw_initscr=yes
-else $as_nop
-  ac_cv_lib_ncursesw_initscr=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncursesw_initscr" >&5
-printf "%s\n" "$ac_cv_lib_ncursesw_initscr" >&6; }
-if test "x$ac_cv_lib_ncursesw_initscr" = xyes
-then :
-
-          printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
-
-          have_curses=ncursesw
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+	have_curses=no
 else
 	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
 	CURSES_LIBS=$pkg_cv_CURSES_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
-      printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
+printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
-      have_curses=ncursesw
+   have_curses=yes
 
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panelw" >&5
+printf %s "checking for panelw... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panelw") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "panelw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
 fi
-  fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panelw") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "panelw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-  if test "x$have_curses" = xno
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panelw" 2>&1`
+        else
+	        PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panelw" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PANEL_PKG_ERRORS" >&5
+
+	have_panel=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	have_panel=no
+else
+	PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+	PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_PANELW 1" >>confdefs.h
+
+     have_panel=yes
+fi
+fi
+
+
+if test "x$have_curses" = xno
 then :
+
 
 
 pkg_failed=no
@@ -26145,378 +26146,20 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$CURSES_PKG_ERRORS" >&5
 
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncurses" >&5
-printf %s "checking for initscr in -lncurses... " >&6; }
-if test ${ac_cv_lib_ncurses_initscr+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lncurses  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char initscr ();
-int
-main (void)
-{
-return initscr ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_ncurses_initscr=yes
-else $as_nop
-  ac_cv_lib_ncurses_initscr=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncurses_initscr" >&5
-printf "%s\n" "$ac_cv_lib_ncurses_initscr" >&6; }
-if test "x$ac_cv_lib_ncurses_initscr" = xyes
-then :
-
-          have_curses=ncurses
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncurses"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+	have_curses=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncurses" >&5
-printf %s "checking for initscr in -lncurses... " >&6; }
-if test ${ac_cv_lib_ncurses_initscr+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lncurses  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char initscr ();
-int
-main (void)
-{
-return initscr ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_ncurses_initscr=yes
-else $as_nop
-  ac_cv_lib_ncurses_initscr=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncurses_initscr" >&5
-printf "%s\n" "$ac_cv_lib_ncurses_initscr" >&6; }
-if test "x$ac_cv_lib_ncurses_initscr" = xyes
-then :
-
-          have_curses=ncurses
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncurses"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+	have_curses=no
 else
 	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
 	CURSES_LIBS=$pkg_cv_CURSES_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
-      have_curses=ncurses
+printf "%s\n" "#define HAVE_NCURSES 1" >>confdefs.h
 
-fi
-
-fi
-
-
-fi
-CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
-
-if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
-
-  as_fn_append CURSES_CFLAGS " -D_XOPEN_SOURCE_EXTENDED=1"
-  printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
-
-fi
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking curses module flags" >&5
-printf %s "checking curses module flags... " >&6; }
-if test "x$have_curses" = xno
-then :
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-else $as_nop
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)" >&5
-printf "%s\n" "$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)" >&6; }
-
-fi
-
-ac_fn_c_check_header_compile "$LINENO" "panel.h" "ac_cv_header_panel_h" "$ac_includes_default"
-if test "x$ac_cv_header_panel_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_PANEL_H 1" >>confdefs.h
-
-fi
-
-
-if test "x$ac_cv_header_panel_h" = xyes
-then :
-
-
-  if test "$ac_sys_system" != "Darwin"; then
-        if test "x$have_curses" = xncursesw
-then :
-
-
-pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panelw" >&5
-printf %s "checking for panelw... " >&6; }
-
-if test -n "$PANEL_CFLAGS"; then
-    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "panelw") 2>&5
-  ac_status=$?
-  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "panelw" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$PANEL_LIBS"; then
-    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "panelw") 2>&5
-  ac_status=$?
-  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "panelw" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panelw" 2>&1`
-        else
-	        PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panelw" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$PANEL_PKG_ERRORS" >&5
-
-
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanelw" >&5
-printf %s "checking for update_panels in -lpanelw... " >&6; }
-if test ${ac_cv_lib_panelw_update_panels+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpanelw  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char update_panels ();
-int
-main (void)
-{
-return update_panels ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_panelw_update_panels=yes
-else $as_nop
-  ac_cv_lib_panelw_update_panels=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_panelw_update_panels" >&5
-printf "%s\n" "$ac_cv_lib_panelw_update_panels" >&6; }
-if test "x$ac_cv_lib_panelw_update_panels" = xyes
-then :
-
-            have_panel=panelw
-            PANEL_CFLAGS=${PANEL_CFLAGS-""}
-            PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-elif test $pkg_failed = untried; then
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanelw" >&5
-printf %s "checking for update_panels in -lpanelw... " >&6; }
-if test ${ac_cv_lib_panelw_update_panels+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpanelw  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char update_panels ();
-int
-main (void)
-{
-return update_panels ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_panelw_update_panels=yes
-else $as_nop
-  ac_cv_lib_panelw_update_panels=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_panelw_update_panels" >&5
-printf "%s\n" "$ac_cv_lib_panelw_update_panels" >&6; }
-if test "x$ac_cv_lib_panelw_update_panels" = xyes
-then :
-
-            have_panel=panelw
-            PANEL_CFLAGS=${PANEL_CFLAGS-""}
-            PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-else
-	PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
-	PANEL_LIBS=$pkg_cv_PANEL_LIBS
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-        have_panel=panelw
-
-fi
-
-fi
-  fi
-
-  if test "x$have_curses" = xncurses
-then :
-
+   have_curses=yes
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panel" >&5
@@ -26576,168 +26219,256 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PANEL_PKG_ERRORS" >&5
 
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanel" >&5
-printf %s "checking for update_panels in -lpanel... " >&6; }
-if test ${ac_cv_lib_panel_update_panels+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpanel  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char update_panels ();
-int
-main (void)
-{
-return update_panels ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_panel_update_panels=yes
-else $as_nop
-  ac_cv_lib_panel_update_panels=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_panel_update_panels" >&5
-printf "%s\n" "$ac_cv_lib_panel_update_panels" >&6; }
-if test "x$ac_cv_lib_panel_update_panels" = xyes
-then :
-
-          have_panel=panel
-          PANEL_CFLAGS=${PANEL_CFLAGS-""}
-          PANEL_LIBS=${PANEL_LIBS-"-lpanel"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+	have_panel=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanel" >&5
-printf %s "checking for update_panels in -lpanel... " >&6; }
-if test ${ac_cv_lib_panel_update_panels+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpanel  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char update_panels ();
-int
-main (void)
-{
-return update_panels ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_panel_update_panels=yes
-else $as_nop
-  ac_cv_lib_panel_update_panels=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_panel_update_panels" >&5
-printf "%s\n" "$ac_cv_lib_panel_update_panels" >&6; }
-if test "x$ac_cv_lib_panel_update_panels" = xyes
-then :
-
-          have_panel=panel
-          PANEL_CFLAGS=${PANEL_CFLAGS-""}
-          PANEL_LIBS=${PANEL_LIBS-"-lpanel"}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+	have_panel=no
 else
 	PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
 	PANEL_LIBS=$pkg_cv_PANEL_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
-      have_panel=panel
+printf "%s\n" "#define HAVE_PANEL 1" >>confdefs.h
+
+     have_panel=yes
+fi
+fi
+
 
 fi
 
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  # Make sure we've got the header defines.
+  as_fn_append CPPFLAGS " $CURSES_CFLAGS $PANEL_CFLAGS"
+  ac_fn_c_check_header_compile "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_curses_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSESW_CURSES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "ncursesw/ncurses.h" "ac_cv_header_ncursesw_ncurses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_ncurses_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSESW_NCURSES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "ncursesw/panel.h" "ac_cv_header_ncursesw_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_panel_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSESW_PANEL_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "ncurses/curses.h" "ac_cv_header_ncurses_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_curses_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSES_CURSES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "ncurses/ncurses.h" "ac_cv_header_ncurses_ncurses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_ncurses_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSES_NCURSES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "ncurses/panel.h" "ac_cv_header_ncurses_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_panel_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSES_PANEL_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_curses_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_CURSES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "ncurses.h" "ac_cv_header_ncurses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "panel.h" "ac_cv_header_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_panel_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_PANEL_H 1" >>confdefs.h
+
 fi
 
 
-fi
-PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+  # Check that we're able to link with crucial curses/panel functions. This
+  # also serves as a fallback in case pkg-config failed.
+  as_fn_append LIBS " $CURSES_LIBS $PANEL_LIBS"
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
+printf %s "checking for library containing initscr... " >&6; }
+if test ${ac_cv_search_initscr+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking panel flags" >&5
-printf %s "checking panel flags... " >&6; }
-if test "x$have_panel" = xno
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char initscr ();
+int
+main (void)
+{
+return initscr ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' ncursesw ncurses
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_initscr=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_initscr+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_initscr+y}
 then :
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
+else $as_nop
+  ac_cv_search_initscr=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_initscr" >&5
+printf "%s\n" "$ac_cv_search_initscr" >&6; }
+ac_res=$ac_cv_search_initscr
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  if test "x$have_curses" = xno
+then :
+  have_curses=yes
+       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
+fi
+else $as_nop
+  have_curses=no
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing update_panels" >&5
+printf %s "checking for library containing update_panels... " >&6; }
+if test ${ac_cv_search_update_panels+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char update_panels ();
+int
+main (void)
+{
+return update_panels ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' panelw panel
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_update_panels=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_update_panels+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_update_panels+y}
+then :
 
 else $as_nop
+  ac_cv_search_update_panels=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_update_panels" >&5
+printf "%s\n" "$ac_cv_search_update_panels" >&6; }
+ac_res=$ac_cv_search_update_panels
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  if test "x$have_panel" = xno
+then :
+  have_panel=yes
+       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}
+fi
+else $as_nop
+  have_panel=no
+fi
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)" >&5
-printf "%s\n" "$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)" >&6; }
+
+
+
+if test "have_curses" != "no"
+then :
+
+CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
+if test "x$ac_sys_system" = xDarwin
+then :
+
+
+  as_fn_append CURSES_CFLAGS " -D_XOPEN_SOURCE_EXTENDED=1"
 
 fi
 
-# first curses header check
-ac_save_cppflags="$CPPFLAGS"
-if test "$cross_compiling" = no; then
-  CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
-fi
+PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 # On Solaris, term.h requires curses.h
 ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
-#ifdef HAVE_CURSES_H
-#include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
 #endif
 
 "
@@ -26757,7 +26488,22 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
 int
 main (void)
 {
@@ -26787,10 +26533,6 @@ printf "%s\n" "#define MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
 
 fi
 
-# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
-# structs since version 5.7.  If the macro is defined as zero before including
-# [n]curses.h, ncurses will expose fields of the structs regardless of the
-# configuration.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether WINDOW has _flags" >&5
 printf %s "checking whether WINDOW has _flags... " >&6; }
 if test ${ac_cv_window_has_flags+y}
@@ -26800,8 +26542,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-  #define NCURSES_OPAQUE 0
-  #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -26846,8 +26600,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -26892,8 +26658,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -26938,8 +26716,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -26984,8 +26774,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27030,8 +26832,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27076,8 +26890,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27122,8 +26948,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27168,8 +27006,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27214,8 +27064,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27260,8 +27122,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27306,8 +27180,20 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
 
 int
 main (void)
@@ -27342,6 +27228,13 @@ fi
 
 
 CPPFLAGS=$ac_save_cppflags
+
+fi
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
@@ -30412,7 +30305,7 @@ then :
 
     if true
 then :
-  if test "$have_curses" != "no"
+  if test "$have_curses" = "yes"
 then :
   py_cv_module__curses=yes
 else $as_nop
@@ -30451,7 +30344,7 @@ then :
 
     if true
 then :
-  if test "$have_panel" != "no"
+  if test "$have_curses" = "yes" && test "$have_panel" = "yes"
 then :
   py_cv_module__curses_panel=yes
 else $as_nop

@@ -764,6 +764,14 @@ test_thread_state(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+gilstate_ensure_release(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyGILState_Release(state);
+    Py_RETURN_NONE;
+}
+
 #ifndef MS_WINDOWS
 static PyThread_type_lock wait_done = NULL;
 
@@ -2407,7 +2415,7 @@ type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
     }
     assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
     type->tp_version_tag = version;
-    type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+    type->tp_versions_used++;
     Py_RETURN_NONE;
 }
 
@@ -3312,6 +3320,24 @@ function_set_warning(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    Py_BEGIN_CRITICAL_SECTION(module);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2(module, module);
+    Py_END_CRITICAL_SECTION2();
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+pyeval_getlocals(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    return Py_XNewRef(PyEval_GetLocals());
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3351,6 +3377,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"test_reftracer",          test_reftracer,                  METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
+    {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
 #ifndef MS_WINDOWS
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
     {"_end_spawned_pthread",    end_spawned_pthread,             METH_NOARGS},
@@ -3454,6 +3481,8 @@ static PyMethodDef TestMethods[] = {
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
+    {"test_critical_sections", test_critical_sections, METH_NOARGS},
+    {"pyeval_getlocals", pyeval_getlocals, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

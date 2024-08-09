@@ -336,9 +336,10 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_caches* and *adaptive* parameters.
 
    .. versionchanged:: 3.13
-      The *show_caches* parameter is deprecated and has no effect. The *cache_info*
-      field of each instruction is populated regardless of its value.
-
+      The *show_caches* parameter is deprecated and has no effect. The iterator
+      generates the :class:`Instruction` instances with the *cache_info*
+      field populated (regardless of the value of *show_caches*) and it no longer
+      generates separate items for the cache entries.
 
 .. function:: findlinestarts(code)
 
@@ -1101,11 +1102,15 @@ iterations of the loop.
 .. opcode:: BUILD_TUPLE (count)
 
    Creates a tuple consuming *count* items from the stack, and pushes the
-   resulting tuple onto the stack.::
+   resulting tuple onto the stack::
 
-      assert count > 0
-      STACK, values = STACK[:-count], STACK[-count:]
-      STACK.append(tuple(values))
+      if count == 0:
+          value = ()
+      else:
+          STACK = STACK[:-count]
+          value = tuple(STACK[-count:])
+
+      STACK.append(value)
 
 
 .. opcode:: BUILD_LIST (count)
@@ -1747,7 +1752,7 @@ iterations of the loop.
    | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
    |                                   | ``StopIteration`` exception.      |
    +-----------------------------------+-----------------------------------+
-   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async generator value    |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
    |                                   | operation                         |

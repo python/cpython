@@ -145,7 +145,8 @@ extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *,
 static inline int
 _PyEval_IsGILEnabled(PyThreadState *tstate)
 {
-    return tstate->interp->ceval.gil->enabled != 0;
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    return _Py_atomic_load_int_relaxed(&gil->enabled) != 0;
 }
 
 // Enable or disable the GIL used by the interpreter that owns tstate, which
@@ -254,6 +255,7 @@ PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(int) _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 
