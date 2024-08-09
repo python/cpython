@@ -3529,17 +3529,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
-
-#ifndef Py_GIL_DISABLED
-    // Visit freelist.
-    PyObject *next = (PyObject*) state->fi_freelist;
-    while (next != NULL) {
-        PyObject *current = next;
-        Py_VISIT(current);
-        next = (PyObject*) ((futureiterobject*) current)->future;
-    }
-#endif
-
     return 0;
 }
 
