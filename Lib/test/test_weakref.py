@@ -82,7 +82,7 @@ class TestBase(unittest.TestCase):
 
 
 @contextlib.contextmanager
-def collect_in_thread(period=0.0001):
+def collect_in_thread(period=0.005):
     """
     Ensure GC collections happen in a different thread, at a high frequency.
     """
@@ -2025,6 +2025,7 @@ class MappingTestCase(TestBase):
             raise exc[0]
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_key_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
@@ -2038,6 +2039,7 @@ class MappingTestCase(TestBase):
         self.check_threaded_weak_dict_copy(weakref.WeakKeyDictionary, True)
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_value_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.

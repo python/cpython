@@ -40,6 +40,7 @@
 # EXE_SUFFIX        -- [in, opt] '.exe' on Windows/Cygwin/similar
 # VERSION_MAJOR     -- [in] sys.version_info.major
 # VERSION_MINOR     -- [in] sys.version_info.minor
+# ABI_THREAD        -- [in] either 't' for free-threaded builds or ''
 # PYWINVER          -- [in] the Windows platform-specific version (e.g. 3.8-32)
 
 # ** Values read from the environment **
@@ -172,17 +173,18 @@
 # ******************************************************************************
 
 platlibdir = config.get('platlibdir') or PLATLIBDIR
+ABI_THREAD = ABI_THREAD or ''
 
 if os_name == 'posix' or os_name == 'darwin':
     BUILDDIR_TXT = 'pybuilddir.txt'
     BUILD_LANDMARK = 'Modules/Setup.local'
     DEFAULT_PROGRAM_NAME = f'python{VERSION_MAJOR}'
-    STDLIB_SUBDIR = f'{platlibdir}/python{VERSION_MAJOR}.{VERSION_MINOR}'
+    STDLIB_SUBDIR = f'{platlibdir}/python{VERSION_MAJOR}.{VERSION_MINOR}{ABI_THREAD}'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}/os.py', f'{STDLIB_SUBDIR}/os.pyc']
-    PLATSTDLIB_LANDMARK = f'{platlibdir}/python{VERSION_MAJOR}.{VERSION_MINOR}/lib-dynload'
+    PLATSTDLIB_LANDMARK = f'{platlibdir}/python{VERSION_MAJOR}.{VERSION_MINOR}{ABI_THREAD}/lib-dynload'
     BUILDSTDLIB_LANDMARKS = ['Lib/os.py']
     VENV_LANDMARK = 'pyvenv.cfg'
-    ZIP_LANDMARK = f'{platlibdir}/python{VERSION_MAJOR}{VERSION_MINOR}.zip'
+    ZIP_LANDMARK = f'{platlibdir}/python{VERSION_MAJOR}{VERSION_MINOR}{ABI_THREAD}.zip'
     DELIM = ':'
     SEP = '/'
 

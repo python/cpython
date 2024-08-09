@@ -1352,9 +1352,21 @@ termios_exec(PyObject *mod)
     }
 
     while (constant->name != NULL) {
-        if (PyModule_AddIntConstant(
-            mod, constant->name, constant->value) < 0) {
-            return -1;
+        if (strncmp(constant->name, "TIO", 3) == 0) {
+            // gh-119770: Convert value to unsigned int for ioctl() constants,
+            // constants can be negative on macOS whereas ioctl() expects an
+            // unsigned long 'request'.
+            unsigned int value = constant->value & UINT_MAX;
+            if (PyModule_Add(mod, constant->name,
+                             PyLong_FromUnsignedLong(value)) < 0) {
+                return -1;
+            }
+        }
+        else {
+            if (PyModule_AddIntConstant(
+                mod, constant->name, constant->value) < 0) {
+                return -1;
+            }
         }
         ++constant;
     }

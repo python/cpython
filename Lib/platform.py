@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """ This module tries to retrieve as much platform-identifying data as
     possible. It makes this information available via function APIs.
 
@@ -548,7 +546,7 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
     warnings._deprecated('java_ver', remove=(3, 15))
     # Import the needed APIs
     try:
-        import java.lang
+        import java.lang  # noqa: F401
     except ImportError:
         return release, vendor, vminfo, osinfo
 

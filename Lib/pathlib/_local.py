@@ -3,6 +3,7 @@ import ntpath
 import operator
 import os
 import posixpath
+import shutil
 import sys
 from glob import _StringGlobber
 from itertools import chain
@@ -17,7 +18,9 @@ try:
 except ImportError:
     grp = None
 
-from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from ._os import (UnsupportedOperation, copyfile, file_metadata_keys,
+                  read_file_metadata, write_file_metadata)
+from ._abc import PurePathBase, PathBase
 
 
 __all__ = [
@@ -672,7 +675,9 @@ class Path(PathBase, PurePath):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         root_dir = str(self)
-        results = self._globber.walk(root_dir, top_down, on_error, follow_symlinks)
+        if not follow_symlinks:
+            follow_symlinks = os._walk_symlinks_as_files
+        results = os.walk(root_dir, top_down, on_error, follow_symlinks)
         for path_str, dirnames, filenames in results:
             if root_dir == '.':
                 path_str = path_str[2:]
@@ -778,6 +783,31 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
+    _readable_metadata = _writable_metadata = file_metadata_keys
+    _read_metadata = read_file_metadata
+    _write_metadata = write_file_metadata
+
+    if copyfile:
+        def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+            """
+            Copy the contents of this file to the given target. If this file is a
+            symlink and follow_symlinks is false, a symlink will be created at the
+            target.
+            """
+            try:
+                target = os.fspath(target)
+            except TypeError:
+                if not isinstance(target, PathBase):
+                    raise
+            else:
+                try:
+                    copyfile(os.fspath(self), target, follow_symlinks)
+                    return
+                except UnsupportedOperation:
+                    pass  # Fall through to generic code.
+            PathBase.copy(self, target, follow_symlinks=follow_symlinks,
+                          preserve_metadata=preserve_metadata)
+
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
@@ -800,6 +830,35 @@ class Path(PathBase, PurePath):
         Remove this directory.  The directory must be empty.
         """
         os.rmdir(self)
+
+    def delete(self, ignore_errors=False, on_error=None):
+        """
+        Delete this file or directory (including all sub-directories).
+
+        If *ignore_errors* is true, exceptions raised from scanning the
+        filesystem and removing files and directories are ignored. Otherwise,
+        if *on_error* is set, it will be called to handle the error. If
+        neither *ignore_errors* nor *on_error* are set, exceptions are
+        propagated to the caller.
+        """
+        if self.is_dir(follow_symlinks=False):
+            onexc = None
+            if on_error:
+                def onexc(func, filename, err):
+                    err.filename = filename
+                    on_error(err)
+            shutil.rmtree(str(self), ignore_errors, onexc=onexc)
+        else:
+            try:
+                self.unlink()
+            except OSError as err:
+                if not ignore_errors:
+                    if on_error:
+                        on_error(err)
+                    else:
+                        raise
+
+    delete.avoids_symlink_attacks = shutil.rmtree.avoids_symlink_attacks
 
     def rename(self, target):
         """
