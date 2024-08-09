@@ -47,7 +47,7 @@ class CAPITest(unittest.TestCase):
         # Test PyTuple_New()
         tuple_new = _testlimitedcapi.tuple_new
         size = _testlimitedcapi.tuple_size
-        checknull = _testcapi._check_item_is_NULL
+        checknull = _testcapi._check_tuple_item_is_NULL
 
         tup1 = tuple_new(0)
         self.assertEqual(tup1, ())
@@ -177,7 +177,7 @@ class CAPITest(unittest.TestCase):
     def test_tuple_setitem(self):
         # Test PyTuple_SetItem()
         setitem = _testlimitedcapi.tuple_setitem
-        checknull = _testcapi._check_item_is_NULL
+        checknull = _testcapi._check_tuple_item_is_NULL
 
         tup = ([1], [2])
         self.assertEqual(setitem(tup, 0, []), ([], [2]))
@@ -201,7 +201,7 @@ class CAPITest(unittest.TestCase):
     def test_tuple_set_item(self):
         # Test PyTuple_SET_ITEM()
         set_item = _testcapi.tuple_set_item
-        checknull = _testcapi._check_item_is_NULL
+        checknull = _testcapi._check_tuple_item_is_NULL
 
         tup = ([1], [2])
         self.assertEqual(set_item(tup, 0, []), ([], [2]))
@@ -222,15 +222,17 @@ class CAPITest(unittest.TestCase):
     def test__tuple_resize(self):
         # Test _PyTuple_Resize()
         resize = _testcapi._tuple_resize
-        checknull = _testcapi._check_item_is_NULL
+        checknull = _testcapi._check_tuple_item_is_NULL
 
         a = ()
         b = resize(a, 0, False)
+        self.assertEqual(len(a), 0)
         self.assertEqual(len(b), 0)
-        self.assertEqual(len(a), 0)
         b = resize(a, 2, False)
-        self.assertEqual(len(b), 2)
         self.assertEqual(len(a), 0)
+        self.assertEqual(len(b), 2)
+        self.assertTrue(checknull(b, 0))
+        self.assertTrue(checknull(b, 1))
 
         a = ([1], [2], [3])
         b = resize(a, 3)
@@ -240,7 +242,8 @@ class CAPITest(unittest.TestCase):
         b = resize(a, 5)
         self.assertEqual(len(b), 5)
         self.assertEqual(b[:3], a)
-        self.assertTrue(all(checknull(b, i) for i in range(3, 5)))
+        self.assertTrue(checknull(b, 3))
+        self.assertTrue(checknull(b, 4))
 
         a = ()
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)

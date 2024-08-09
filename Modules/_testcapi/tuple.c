@@ -22,6 +22,20 @@ tuple_get_item(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
+tuple_copy(PyObject *tuple)
+{
+    Py_ssize_t size = PyTuple_GET_SIZE(tuple);
+    PyObject *newtuple = PyTuple_New(size);
+    if (!newtuple) {
+        return NULL;
+    }
+    for (Py_ssize_t n = 0; n < size; n++) {
+        PyTuple_SET_ITEM(newtuple, n, Py_XNewRef(PyTuple_GET_ITEM(tuple, n)));
+    }
+    return newtuple;
+}
+
+static PyObject *
 tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value, *newtuple;
@@ -31,13 +45,9 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(value);
     if (PyTuple_CheckExact(obj)) {
-        Py_ssize_t size = PyTuple_GET_SIZE(obj);
-        newtuple = PyTuple_New(size);
+        newtuple = tuple_copy(obj);
         if (!newtuple) {
             return NULL;
-        }
-        for (Py_ssize_t n = 0; n < size; n++) {
-            PyTuple_SET_ITEM(newtuple, n, Py_XNewRef(PyTuple_GET_ITEM(obj, n)));
         }
 
         PyObject *val = PyTuple_GET_ITEM(newtuple, i);
@@ -65,15 +75,10 @@ _tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
         return NULL;
     }
     if (new) {
-        Py_ssize_t size = PyTuple_Size(tup);
-        PyObject *newtup = PyTuple_New(size);
-        if (!newtup) {
+        tup = tuple_copy(tup);
+        if (!tup) {
             return NULL;
         }
-        for (Py_ssize_t n = 0; n < size; n++) {
-            PyTuple_SET_ITEM(newtup, n, Py_XNewRef(PyTuple_GET_ITEM(tup, n)));
-        }
-        tup = newtup;
     }
     else {
         NULLABLE(tup);
@@ -88,7 +93,7 @@ _tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
-_check_item_is_NULL(PyObject *Py_UNUSED(module), PyObject *args)
+_check_tuple_item_is_NULL(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj;
     Py_ssize_t i;
@@ -104,7 +109,7 @@ static PyMethodDef test_methods[] = {
     {"tuple_get_item", tuple_get_item, METH_VARARGS},
     {"tuple_set_item", tuple_set_item, METH_VARARGS},
     {"_tuple_resize", _tuple_resize, METH_VARARGS},
-    {"_check_item_is_NULL", _check_item_is_NULL, METH_VARARGS},
+    {"_check_tuple_item_is_NULL", _check_tuple_item_is_NULL, METH_VARARGS},
     {NULL},
 };
 
