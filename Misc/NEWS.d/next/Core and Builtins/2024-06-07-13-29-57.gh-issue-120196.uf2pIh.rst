@@ -1,0 +1,2 @@
+Improve performance of ASCII decoding and maximum character checking
+by allowing vectorization by the compiler on suitable platforms.
