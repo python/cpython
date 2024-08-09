@@ -51,13 +51,15 @@ extern void _PyEval_SignalReceived(void);
 typedef int _Py_add_pending_call_result;
 #define _Py_ADD_PENDING_SUCCESS 0
 #define _Py_ADD_PENDING_FULL -1
+#define _Py_ADD_PENDING_TIMED_OUT -2
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_add_pending_call_result) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     _Py_pending_call_func func,
     void *arg,
-    int flags);
+    int flags,
+    PY_TIMEOUT_T timeout);
 
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
