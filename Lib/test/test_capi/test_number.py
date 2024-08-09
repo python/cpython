@@ -180,7 +180,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(a, r)
         self.assertRaises(TypeError, inplaceadd, ndarray([1], (1,)), 2)
 
-    def test_misc_multiply(self)
+    def test_misc_multiply(self):
         # PyNumber_Multiply(), PyNumber_InPlaceMultiply()
         multiply = _testcapi.number_multiply
         inplacemultiply = _testcapi.number_inplacemultiply
