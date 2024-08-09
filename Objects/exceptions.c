@@ -1632,6 +1632,30 @@ ImportError_str(PyImportErrorObject *self)
 }
 
 static PyObject *
+ImportError_repr(PyImportErrorObject *self)
+{
+    int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
+    PyObject *r = BaseException_repr((PyBaseExceptionObject *)self);
+    if (r && (self->name || self->path)) {
+        /* remove ')' */
+        Py_SETREF(r, PyUnicode_Substring(r, 0, PyUnicode_GET_LENGTH(r) - 1));
+        if (r && self->name) {
+            Py_SETREF(r, PyUnicode_FromFormat("%U%sname=%R",
+                            r, hasargs ? ", " : "", self->name));
+            hasargs = 1;
+        }
+        if (r && self->path) {
+            Py_SETREF(r, PyUnicode_FromFormat("%U%spath=%R",
+                            r, hasargs ? ", " : "", self->path));
+        }
+        if (r) {
+            Py_SETREF(r, PyUnicode_FromFormat("%U)", r));
+        }
+    }
+    return r;
+}
+
+static PyObject *
 ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
@@ -1696,12 +1720,23 @@ static PyMethodDef ImportError_methods[] = {
     {NULL}
 };
 
-ComplexExtendsException(PyExc_Exception, ImportError,
-                        ImportError, 0 /* new */,
-                        ImportError_methods, ImportError_members,
-                        0 /* getset */, ImportError_str,
-                        "Import can't find module, or can't find name in "
-                        "module.");
+static PyTypeObject _PyExc_ImportError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "ImportError",
+    sizeof(PyImportErrorObject), 0,
+    (destructor)ImportError_dealloc, 0, 0, 0, 0,
+    (reprfunc)ImportError_repr, 0, 0, 0, 0, 0,
+    (reprfunc)ImportError_str, 0, 0, 0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    PyDoc_STR("Import can't find module, or can't find name in "
+              "module."),
+    (traverseproc)ImportError_traverse,
+    (inquiry)ImportError_clear, 0, 0, 0, 0, ImportError_methods,
+    ImportError_members, 0, &_PyExc_Exception,
+    0, 0, 0, offsetof(PyImportErrorObject, dict),
+    (initproc)ImportError_init,
+};
+PyObject *PyExc_ImportError = (PyObject *)&_PyExc_ImportError;
 
 /*
  *    ModuleNotFoundError extends ImportError
