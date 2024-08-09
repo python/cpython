@@ -687,6 +687,33 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if f:
             f.close()
 
+    def _request_path_split(self, path):
+        """Parse a path that can include an optional query and fragment.
+        """
+        # We only handle the 'abs_path' case for the Request-URI part of the
+        # request line (the second word).  We don't handle the case of a URL
+        # containing a scheme or netloc.
+        path, _, query = path.partition('?')
+        path, _, fragment = path.partition('#')
+        return urllib.parse.SplitResult('', '', path, query, fragment)
+
+    def _get_redirect_url_for_dir(self):
+        """Returns URL with trailing slash on path, if required.  If not
+        required, returns None.
+        """
+        # Previous versions of this class used urllib.parse.urlsplit() here.
+        # However, the 'path' is being treated as a local filesystem path and
+        # it can't have a scheme or netloc.  We need to avoid parsing it
+        # incorrectly.  For example, as reported in gh-87389, a path starting
+        # with a double slash should not be treated as a relative URI.  Also, a
+        # path with a colon in the first component could also be parsed
+        # wrongly.
+        parts = self._request_path_split(self.path)
+        if parts.path.endswith('/'):
+            return None  # already has slash, no redirect needed
+        return urllib.parse.urlunsplit(('', '', parts.path + '/', parts.query,
+                                        parts.fragment))
+
     def send_head(self):
         """Common code for GET and HEAD commands.
 
@@ -701,13 +728,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
-            parts = urllib.parse.urlsplit(self.path)
-            if not parts.path.endswith('/'):
+            new_url = self._get_redirect_url_for_dir()
+            if new_url:
                 # redirect browser - doing basically what apache does
                 self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-                new_parts = (parts[0], parts[1], parts[2] + '/',
-                             parts[3], parts[4])
-                new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
                 self.send_header("Content-Length", "0")
                 self.end_headers()
@@ -840,9 +864,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         probably be diagnosed.)
 
         """
-        # abandon query parameters
-        path = path.split('?',1)[0]
-        path = path.split('#',1)[0]
+        # extract only path, abandon query parameters and fragment
+        path = self._request_path_split(path).path
         # Don't forget explicit trailing slash when normalizing. Issue17324
         trailing_slash = path.rstrip().endswith('/')
         try:
