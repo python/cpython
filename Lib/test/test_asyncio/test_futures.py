@@ -680,6 +680,7 @@ class CFutureTests(BaseFutureTests, test_utils.TestCase):
         import _asyncio
         it = iter(self._new_future(loop=self.loop))
         del it
+        gc.collect()
         evil = gc.get_referents(_asyncio)
 
 
