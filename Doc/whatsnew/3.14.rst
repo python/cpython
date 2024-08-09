@@ -408,6 +408,9 @@ New Features
   which has an ambiguous return value.
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
 
+* Add :c:func:`Py_HashBytes` to compute and return the hash value of a buffer.
+  (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
+
 Porting to Python 3.14
 ----------------------
 

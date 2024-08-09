@@ -11672,7 +11672,7 @@ unicode_hash(PyObject *self)
     if (hash != -1) {
         return hash;
     }
-    x = _Py_HashBytes(PyUnicode_DATA(self),
+    x = Py_HashBytes(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
 
     FT_ATOMIC_STORE_SSIZE_RELAXED(_PyUnicode_HASH(self), x);
