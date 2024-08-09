@@ -2409,29 +2409,25 @@ class SubinterpreterTests(unittest.TestCase):
             """)
         def collate_results(raw):
             results = {}
-            duplicates = {}
             for cls, attr, wrapper in raw:
                 # XXX This should not be necessary.
                 if cls == repr(bool) and attr in self.NUMERIC_METHODS:
                     continue
                 key = cls, attr
-                if attr in ('__delattr__',):
-                    if key in results:
-                        results = duplicates
                 assert key not in results, (results, key, wrapper)
                 results[key] = wrapper
-            return results, duplicates
+            return results
 
         exec(script)
         raw = rch.recv_nowait()
-        main_results, main_duplicates = collate_results(raw)
+        main_results = collate_results(raw)
 
         interp = interpreters.create()
         interp.exec('from test.support import interpreters')
         interp.prepare_main(sch=sch)
         interp.exec(script)
         raw = rch.recv_nowait()
-        interp_results, interp_duplicates = collate_results(raw)
+        interp_results = collate_results(raw)
 
         for key, expected in main_results.items():
             cls, attr = key
@@ -2441,17 +2437,12 @@ class SubinterpreterTests(unittest.TestCase):
                 if cls == "<class 'collections.OrderedDict'>" and attr == '__len__':
                     continue
                 self.assertEqual(actual, expected)
-                if key in main_duplicates:
-                    expected = main_duplicates[key]
-                    actual = interp_duplicates.pop(key)
-                    self.assertEqual(actual, expected)
         # XXX This should not be necessary.
         interp_results = {k: v for k, v in interp_results.items() if k[1] != '__hash__'}
         # XXX This should not be necessary.
         interp_results.pop(("<class 'collections.OrderedDict'>", '__getitem__'), None)
         self.maxDiff = None
         self.assertEqual(interp_results, {})
-        self.assertEqual(interp_duplicates, {})
 
 
 if __name__ == '__main__':

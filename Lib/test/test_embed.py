@@ -430,19 +430,15 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             """)
         def collate_results(raw):
             results = {}
-            duplicates = {}
             for cls, attr, wrapper in raw:
                 key = cls, attr
-                if attr in ('__delattr__',):
-                    if key in results:
-                        results = duplicates
                 assert key not in results, (results, key, wrapper)
                 results[key] = wrapper
-            return results, duplicates
+            return results
 
         ns = {}
         exec(script, ns, ns)
-        main_results, main_duplicates = collate_results(ns['results'])
+        main_results = collate_results(ns['results'])
         del ns
 
         script += textwrap.dedent("""
@@ -456,27 +452,21 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         _results = err.split('--- Loop #')[1:]
         (_embedded, _reinit,
          ) = [json.loads(res.rpartition(' ---\n')[-1]) for res in _results]
-        embedded_results, embedded_duplicates = collate_results(_embedded)
-        reinit_results, reinit_duplicates = collate_results(_reinit)
+        embedded_results = collate_results(_embedded)
+        reinit_results = collate_results(_reinit)
 
         for key, expected in main_results.items():
             cls, attr = key
-            for src, results, duplicates in [
-                ('embedded', embedded_results, embedded_duplicates),
-                ('reinit', reinit_results, reinit_duplicates),
+            for src, results in [
+                ('embedded', embedded_results),
+                ('reinit', reinit_results),
             ]:
                 with self.subTest(src, cls=cls, slotattr=attr):
                     actual = results.pop(key)
                     self.assertEqual(actual, expected)
-                    if key in main_duplicates:
-                        expected = main_duplicates[key]
-                        actual = duplicates.pop(key)
-                        self.assertEqual(actual, expected)
         self.maxDiff = None
         self.assertEqual(embedded_results, {})
-        self.assertEqual(embedded_duplicates, {})
         self.assertEqual(reinit_results, {})
-        self.assertEqual(reinit_duplicates, {})
 
         self.assertEqual(out, '')
 

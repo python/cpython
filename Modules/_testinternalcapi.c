@@ -2042,26 +2042,10 @@ get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-#include "_testinternalcapi/tpslots_generated.h"
-
 static PyObject *
-identify_type_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
+identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *slots = PyList_New(Py_ARRAY_LENGTH(slotdefs)-1);
-    if (slots == NULL) {
-        return NULL;
-    }
-    Py_ssize_t i;
-    const struct pytype_slot *p;
-    for (i = 0, p = slotdefs; p->slot != NULL; p++, i++) {
-        PyObject *item = Py_BuildValue("ss", p->slot, p->attr);
-        if (item == NULL) {
-            Py_DECREF(slots);
-            return NULL;
-        }
-        PyList_SET_ITEM(slots, i, item);
-    }
-    return slots;
+    return _PyType_GetSlotWrapperNames();
 }
 
 
@@ -2160,7 +2144,7 @@ static PyMethodDef module_functions[] = {
 #endif
     GH_119213_GETARGS_METHODDEF
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
-    {"identify_type_slots", identify_type_slots, METH_NOARGS},
+    {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
