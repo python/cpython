@@ -1,7 +1,6 @@
 import argparse
 import json
 import sys
-import warnings
 
 
 def main():
@@ -72,7 +71,6 @@ def main():
 
 
 if __name__ == '__main__':
-    warnings.warn('The json.tool module is deprecated', DeprecationWarning)
     try:
         main()
     except BrokenPipeError as exc:

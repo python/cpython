@@ -20,8 +20,6 @@ class TestMain(unittest.TestCase):
             :"yes"}  ]
            """
     module = 'json'
-    env_vars = {}
-    warnings_expected = False
 
     expect_without_sort_keys = textwrap.dedent("""\
     [
@@ -93,8 +91,7 @@ class TestMain(unittest.TestCase):
         args = sys.executable, '-m', self.module
         process = subprocess.run(args, input=self.data, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, self.expect)
-        if not self.warnings_expected:
-            self.assertEqual(process.stderr, '')
+        self.assertEqual(process.stderr, '')
 
     def _create_infile(self, data=None):
         infile = os_helper.TESTFN
@@ -105,7 +102,7 @@ class TestMain(unittest.TestCase):
 
     def test_infile_stdout(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, infile, **self.env_vars)
+        rc, out, err = assert_python_ok('-m', self.module, infile)
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, b'')
@@ -119,7 +116,7 @@ class TestMain(unittest.TestCase):
         ''').encode()
 
         infile = self._create_infile(data)
-        rc, out, err = assert_python_ok('-m', self.module, infile, **self.env_vars)
+        rc, out, err = assert_python_ok('-m', self.module, infile)
 
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), expect.splitlines())
@@ -128,7 +125,7 @@ class TestMain(unittest.TestCase):
     def test_infile_outfile(self):
         infile = self._create_infile()
         outfile = os_helper.TESTFN + '.out'
-        rc, out, err = assert_python_ok('-m', self.module, infile, outfile, **self.env_vars)
+        rc, out, err = assert_python_ok('-m', self.module, infile, outfile)
         self.addCleanup(os.remove, outfile)
         with open(outfile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
@@ -138,7 +135,7 @@ class TestMain(unittest.TestCase):
 
     def test_writing_in_place(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, infile, infile, **self.env_vars)
+        rc, out, err = assert_python_ok('-m', self.module, infile, infile)
         with open(infile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(rc, 0)
@@ -149,18 +146,17 @@ class TestMain(unittest.TestCase):
         args = sys.executable, '-m', self.module, '--json-lines'
         process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, self.jsonlines_expect)
-        if not self.warnings_expected:
-            self.assertEqual(process.stderr, '')
+        self.assertEqual(process.stderr, '')
 
     def test_help_flag(self):
-        rc, out, err = assert_python_ok('-m', self.module, '-h', **self.env_vars)
+        rc, out, err = assert_python_ok('-m', self.module, '-h')
         self.assertEqual(rc, 0)
         self.assertTrue(out.startswith(b'usage: '))
         self.assertEqual(err, b'')
 
     def test_sort_keys_flag(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, '--sort-keys', infile, **self.env_vars)
+        rc, out, err = assert_python_ok('-m', self.module, '--sort-keys', infile)
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
@@ -177,8 +173,7 @@ class TestMain(unittest.TestCase):
         args = sys.executable, '-m', self.module, '--indent', '2'
         process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
-        if not self.warnings_expected:
-            self.assertEqual(process.stderr, '')
+        self.assertEqual(process.stderr, '')
 
     def test_no_indent(self):
         input_ = '[1,\n2]'
@@ -186,8 +181,7 @@ class TestMain(unittest.TestCase):
         args = sys.executable, '-m', self.module, '--no-indent'
         process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
-        if not self.warnings_expected:
-            self.assertEqual(process.stderr, '')
+        self.assertEqual(process.stderr, '')
 
     def test_tab(self):
         input_ = '[1, 2]'
@@ -195,8 +189,7 @@ class TestMain(unittest.TestCase):
         args = sys.executable, '-m', self.module, '--tab'
         process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
-        if not self.warnings_expected:
-            self.assertEqual(process.stderr, '')
+        self.assertEqual(process.stderr, '')
 
     def test_compact(self):
         input_ = '[ 1 ,\n 2]'
@@ -204,14 +197,13 @@ class TestMain(unittest.TestCase):
         args = sys.executable, '-m', self.module, '--compact'
         process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
-        if not self.warnings_expected:
-            self.assertEqual(process.stderr, '')
+        self.assertEqual(process.stderr, '')
 
     def test_no_ensure_ascii_flag(self):
         infile = self._create_infile('{"key":"💩"}')
         outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
-        assert_python_ok('-m', self.module, '--no-ensure-ascii', infile, outfile, **self.env_vars)
+        assert_python_ok('-m', self.module, '--no-ensure-ascii', infile, outfile)
         with open(outfile, "rb") as f:
             lines = f.read().splitlines()
         # asserting utf-8 encoded output file
@@ -222,7 +214,7 @@ class TestMain(unittest.TestCase):
         infile = self._create_infile('{"key":"💩"}')
         outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
-        assert_python_ok('-m', self.module, infile, outfile, **self.env_vars)
+        assert_python_ok('-m', self.module, infile, outfile)
         with open(outfile, "rb") as f:
             lines = f.read().splitlines()
         # asserting an ascii encoded output file
@@ -244,15 +236,3 @@ class TestMain(unittest.TestCase):
 @support.requires_subprocess()
 class TestTool(TestMain):
     module = 'json.tool'
-    env_vars = {'PYTHONWARNINGS': 'ignore'}
-    warnings_expected = True
-
-    def test_with_warnings(self):
-        import json.tool
-        filename = json.tool.__file__
-        infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, infile)
-        self.assertEqual(rc, 0)
-        self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
-        self.assertRegex(err.decode(),
-                         r'^.+/json/tool\.py:\d+: DeprecationWarning: The json.tool module is deprecated\n.+\n$')
