@@ -13,11 +13,11 @@ packaging<25
 Pygments<3
 requests<3
 snowballstemmer<3
-sphinxcontrib-applehelp<2.1
-sphinxcontrib-devhelp<2.1
+sphinxcontrib-applehelp>=1.0.6,<2.1
+sphinxcontrib-devhelp>=1.0.6,<2.1
 sphinxcontrib-htmlhelp<2.2
 sphinxcontrib-jsmath<1.1
-sphinxcontrib-qthelp<2.1
+sphinxcontrib-qthelp>=1.0.6,<2.1
 sphinxcontrib-serializinghtml<2.1
 
 # Direct dependencies of Jinja2 (Jinja is a dependency of Sphinx, see above)
