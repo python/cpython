@@ -161,6 +161,12 @@ pickle
 * Set the default protocol version on the :mod:`pickle` module to 5.
   For more details, please see :ref:`pickle protocols <pickle-protocols>`.
 
+socket
+------
+
+Add constants for the ISO-TP CAN protocol.
+(Contributed by Patrick Menschel and Stefan Tatschner in :gh:`86819`.)
+
 symtable
 --------
 
