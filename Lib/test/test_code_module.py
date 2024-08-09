@@ -1,5 +1,6 @@
 "Test InteractiveConsole and InteractiveInterpreter from code module"
 import sys
+import traceback
 import unittest
 from textwrap import dedent
 from contextlib import ExitStack
@@ -11,6 +12,7 @@ code = import_helper.import_module('code')
 
 
 class TestInteractiveConsole(unittest.TestCase):
+    maxDiff = None
 
     def setUp(self):
         self.console = code.InteractiveConsole()
@@ -58,21 +60,118 @@ class TestInteractiveConsole(unittest.TestCase):
             raise AssertionError("no console stdout")
 
     def test_syntax_error(self):
-        self.infunc.side_effect = ["undefined", EOFError('Finished')]
+        self.infunc.side_effect = ["def f():",
+                                   "    x = ?",
+                                   "",
+                                    EOFError('Finished')]
         self.console.interact()
-        for call in self.stderr.method_calls:
-            if 'NameError' in ''.join(call[1]):
-                break
-        else:
-            raise AssertionError("No syntax error from console")
+        output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
+        output = output[output.index('(InteractiveConsole)'):]
+        output = output[:output.index('\nnow exiting')]
+        self.assertEqual(output.splitlines()[1:], [
+            '  File "<console>", line 2',
+            '    x = ?',
+            '        ^',
+            'SyntaxError: invalid syntax'])
+        self.assertIs(self.sysmod.last_type, SyntaxError)
+        self.assertIs(type(self.sysmod.last_value), SyntaxError)
+        self.assertIsNone(self.sysmod.last_traceback)
+        self.assertIsNone(self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
+
+    def test_indentation_error(self):
+        self.infunc.side_effect = ["  1", EOFError('Finished')]
+        self.console.interact()
+        output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
+        output = output[output.index('(InteractiveConsole)'):]
+        output = output[:output.index('\nnow exiting')]
+        self.assertEqual(output.splitlines()[1:], [
+            '  File "<console>", line 1',
+            '    1',
+            'IndentationError: unexpected indent'])
+        self.assertIs(self.sysmod.last_type, IndentationError)
+        self.assertIs(type(self.sysmod.last_value), IndentationError)
+        self.assertIsNone(self.sysmod.last_traceback)
+        self.assertIsNone(self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
+
+    def test_unicode_error(self):
+        self.infunc.side_effect = ["'\ud800'", EOFError('Finished')]
+        self.console.interact()
+        output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
+        output = output[output.index('(InteractiveConsole)'):]
+        output = output[output.index('\n') + 1:]
+        self.assertTrue(output.startswith('UnicodeEncodeError: '), output)
+        self.assertIs(self.sysmod.last_type, UnicodeEncodeError)
+        self.assertIs(type(self.sysmod.last_value), UnicodeEncodeError)
+        self.assertIsNone(self.sysmod.last_traceback)
+        self.assertIsNone(self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
     def test_sysexcepthook(self):
-        self.infunc.side_effect = ["raise ValueError('')",
+        self.infunc.side_effect = ["def f():",
+                                   "    raise ValueError('BOOM!')",
+                                   "",
+                                   "f()",
                                     EOFError('Finished')]
         hook = mock.Mock()
         self.sysmod.excepthook = hook
         self.console.interact()
-        self.assertTrue(hook.called)
+        hook.assert_called()
+        hook.assert_called_with(self.sysmod.last_type,
+                                self.sysmod.last_value,
+                                self.sysmod.last_traceback)
+        self.assertIs(self.sysmod.last_type, ValueError)
+        self.assertIs(type(self.sysmod.last_value), ValueError)
+        self.assertIs(self.sysmod.last_traceback, self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
+        self.assertEqual(traceback.format_exception(self.sysmod.last_exc), [
+            'Traceback (most recent call last):\n',
+            '  File "<console>", line 1, in <module>\n',
+            '  File "<console>", line 2, in f\n',
+            'ValueError: BOOM!\n'])
+
+    def test_sysexcepthook_syntax_error(self):
+        self.infunc.side_effect = ["def f():",
+                                   "    x = ?",
+                                   "",
+                                    EOFError('Finished')]
+        hook = mock.Mock()
+        self.sysmod.excepthook = hook
+        self.console.interact()
+        hook.assert_called()
+        hook.assert_called_with(self.sysmod.last_type,
+                                self.sysmod.last_value,
+                                self.sysmod.last_traceback)
+        self.assertIs(self.sysmod.last_type, SyntaxError)
+        self.assertIs(type(self.sysmod.last_value), SyntaxError)
+        self.assertIsNone(self.sysmod.last_traceback)
+        self.assertIsNone(self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
+        self.assertEqual(traceback.format_exception(self.sysmod.last_exc), [
+            '  File "<console>", line 2\n',
+            '    x = ?\n',
+            '        ^\n',
+            'SyntaxError: invalid syntax\n'])
+
+    def test_sysexcepthook_indentation_error(self):
+        self.infunc.side_effect = ["  1", EOFError('Finished')]
+        hook = mock.Mock()
+        self.sysmod.excepthook = hook
+        self.console.interact()
+        hook.assert_called()
+        hook.assert_called_with(self.sysmod.last_type,
+                                self.sysmod.last_value,
+                                self.sysmod.last_traceback)
+        self.assertIs(self.sysmod.last_type, IndentationError)
+        self.assertIs(type(self.sysmod.last_value), IndentationError)
+        self.assertIsNone(self.sysmod.last_traceback)
+        self.assertIsNone(self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
+        self.assertEqual(traceback.format_exception(self.sysmod.last_exc), [
+            '  File "<console>", line 1\n',
+            '    1\n',
+            'IndentationError: unexpected indent\n'])
 
     def test_sysexcepthook_crashing_doesnt_close_repl(self):
         self.infunc.side_effect = ["1/0", "a = 123", "print(a)", EOFError('Finished')]
@@ -164,6 +263,11 @@ class TestInteractiveConsole(unittest.TestCase):
         ValueError
         """)
         self.assertIn(expected, output)
+        self.assertIs(self.sysmod.last_type, ValueError)
+        self.assertIs(type(self.sysmod.last_value), ValueError)
+        self.assertIs(self.sysmod.last_traceback, self.sysmod.last_value.__traceback__)
+        self.assertIsNotNone(self.sysmod.last_traceback)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
     def test_context_tb(self):
         self.infunc.side_effect = ["try: ham\nexcept: eggs\n",
@@ -182,6 +286,11 @@ class TestInteractiveConsole(unittest.TestCase):
         NameError: name 'eggs' is not defined
         """)
         self.assertIn(expected, output)
+        self.assertIs(self.sysmod.last_type, NameError)
+        self.assertIs(type(self.sysmod.last_value), NameError)
+        self.assertIs(self.sysmod.last_traceback, self.sysmod.last_value.__traceback__)
+        self.assertIsNotNone(self.sysmod.last_traceback)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
 
 if __name__ == "__main__":
