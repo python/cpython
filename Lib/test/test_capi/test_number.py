@@ -86,7 +86,7 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(check(1+2j))
 
         self.assertFalse(check([]))
-        self.assertFalse(check("1 + 1j"))
+        self.assertFalse(check("abc"))
         self.assertFalse(check(object()))
         self.assertFalse(check(NULL))
 
