@@ -556,6 +556,12 @@ class UrlParseTestCase(unittest.TestCase):
         # issue 23703: don't duplicate filename
         self.checkJoin('a', 'b', 'b')
 
+        # issue 32779: clear the query string when joining with '?'
+        self.checkJoin('http://a/b/c?d=e', '?', 'http://a/b/c')
+        self.checkJoin('http://a/b/c?d=e', 'http:?', 'http://a/b/c')
+        self.checkJoin('http://a/b/c#d?e=f', '?#g', 'http://a/b/c#g')
+        self.checkJoin('http://a/b/c?d=e#f', '#?', 'http://a/b/c?d=e#?')
+
     def test_RFC2732(self):
         str_cases = [
             ('http://Test.python.org:5432/foo/', 'test.python.org', 5432),

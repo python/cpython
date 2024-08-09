@@ -1,0 +1,1 @@
+Fix urljoining with '?', a URL containing only a bare query string.
