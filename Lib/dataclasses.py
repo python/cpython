@@ -656,7 +656,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
-        # (instead of just concatenting the lists together).
+        # (instead of just concatenating the lists together).
         _init_params += ['*']
         _init_params += [_init_param(f) for f in kw_only_fields]
     func_builder.add_fn('__init__',

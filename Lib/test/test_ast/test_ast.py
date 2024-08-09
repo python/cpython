@@ -2701,13 +2701,13 @@ class EndPositionTests(unittest.TestCase):
 
 
 class NodeTransformerTests(ASTTestMixin, unittest.TestCase):
-    def assertASTTransformation(self, tranformer_class,
+    def assertASTTransformation(self, transformer_class,
                                 initial_code, expected_code):
         initial_ast = ast.parse(dedent(initial_code))
         expected_ast = ast.parse(dedent(expected_code))
 
-        tranformer = tranformer_class()
-        result_ast = ast.fix_missing_locations(tranformer.visit(initial_ast))
+        transformer = transformer_class()
+        result_ast = ast.fix_missing_locations(transformer.visit(initial_ast))
 
         self.assertASTEqual(result_ast, expected_ast)
 
