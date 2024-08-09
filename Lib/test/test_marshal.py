@@ -401,6 +401,19 @@ class BugsTestCase(unittest.TestCase):
                     _, dump_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
                     self.assertEqual(dump_0, dump_1)
 
+    def test_raise_after_first_unmarshallable(self):
+        # gh-106287: marshal.dumps should fail after the first unmarshallable
+        # item of container, rather than trying to process remaining items
+        nested = []
+        for i in range(4000):
+            nested = [0, nested]
+        x = ({int}, 1, {'a': 2, 'b': 3, 'c': [1, 2, 3, 4]}, 2 + 3j, nested, memoryview(b''))
+        # this should report that given object is unmarshallable rather deeply nested
+        # and shouldn't cause assertion failure as it did before
+        with self.assertRaises(ValueError) as cm:
+            marshal.dumps(x)
+        self.assertIn("unmarshallable object", str(cm.exception))
+
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
 
