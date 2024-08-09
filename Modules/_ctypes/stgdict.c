@@ -247,7 +247,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     PyObject *tmp;
     int pack;
     Py_ssize_t ffi_ofs;
-    int big_endian;
     int arrays_seen = 0;
 
     // The following are NULL or hold strong references.
@@ -257,17 +256,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     if (fields == NULL) {
         return 0;
-    }
-
-    int rc = PyObject_HasAttrWithError(type, &_Py_ID(_swappedbytes_));
-    if (rc < 0) {
-        goto error;
-    }
-    if (rc) {
-        big_endian = !PY_BIG_ENDIAN;
-    }
-    else {
-        big_endian = PY_BIG_ENDIAN;
     }
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
@@ -525,7 +513,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, layout_mode);
+                                   pack, layout_mode);
             if (res < 0) {
                 goto error;
             }
@@ -574,7 +562,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, layout_mode);
+                                   pack, layout_mode);
             if (res < 0) {
                 goto error;
             }

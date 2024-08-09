@@ -27,6 +27,8 @@ class _BaseLayout:
             # Setting `_align_ = 0` amounts to using the default alignment
             self.align == 1
 
+        self.swapped_bytes = hasattr(cls, '_swappedbytes_')
+
         self.total_align = max(self.align, base_align)
 
     def __iter__(self):
@@ -45,6 +47,7 @@ class _BaseLayout:
                 size=size,
                 offset=offset,
                 bit_size=bit_size,
+                swapped_bytes=self.swapped_bytes,
             )
             self.offset += self.size
 

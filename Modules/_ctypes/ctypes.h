@@ -227,7 +227,7 @@ PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self, Py_ssize_t in
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign,
-                int pack, int is_big_endian, LayoutMode layout_mode);
+                int pack, LayoutMode layout_mode);
 
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
@@ -273,6 +273,7 @@ typedef struct CFieldObject {
 
     Py_ssize_t bit_size;            /* -1 if not a bitfield */
     PyObject *name;                 /* exact PyUnicode */
+    bool big_endian;                 /* boolean */
 } CFieldObject;
 
 /****************************************************************

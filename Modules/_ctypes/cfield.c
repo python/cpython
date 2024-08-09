@@ -205,13 +205,15 @@ _ctypes.CField.__new__ as PyCField_new
     size: Py_ssize_t
     offset: Py_ssize_t
     bit_size as bit_size_obj: object = None
+    swapped_bytes: bool = False
 
 [clinic start generated code]*/
 
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
-                  Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj)
-/*[clinic end generated code: output=fd7dec6f142d5f41 input=60fae319c86d236e]*/
+                  Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj,
+                  int swapped_bytes)
+/*[clinic end generated code: output=0eb12310fd6fd816 input=a71fc465f25b600a]*/
 {
     PyTypeObject *tp = type;
     ctypes_state *st = get_module_state_by_class(tp);
@@ -285,6 +287,12 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     self->size = size;
     self->offset = offset;
 
+    if (swapped_bytes) {
+        self->big_endian = !PY_BIG_ENDIAN;
+    } else {
+        self->big_endian = PY_BIG_ENDIAN;
+    }
+
     self->setfunc = NULL; // XXX
     self->getfunc = NULL; // XXX
     self->index = 0; // XXX
@@ -300,7 +308,7 @@ int
 PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian, LayoutMode layout_mode)
+                int pack, LayoutMode layout_mode)
 {
     if (self == NULL) {
         return -1;
@@ -389,7 +397,7 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
         return -1;
     }
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
-    if(big_endian && is_bitfield) {
+    if(self->big_endian && is_bitfield) {
         self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
     }
     return 0;
