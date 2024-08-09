@@ -3529,9 +3529,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
-
-    // GH-122695: Do not traverse the freelist here, as that can cause problems
-    // with gc.get_referents()
     return 0;
 }
 
