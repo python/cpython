@@ -1,14 +1,14 @@
 import itertools
 import operator
-import unittest
 import sys
+import unittest
 import warnings
 
 from test.support import cpython_only, import_helper
 from _testbuffer import ndarray
 
 _testcapi = import_helper.import_module('_testcapi')
-from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+from _testcapi import PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
 
 NULL = None
 
