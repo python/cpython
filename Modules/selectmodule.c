@@ -263,7 +263,7 @@ A file descriptor is either a socket or file object, or a small integer
 gotten from a fileno() method call on one of those.
 
 The optional 4th argument specifies a timeout in seconds; it may be
-a floating point number to specify fractions of seconds.  If it is absent
+a floating-point number to specify fractions of seconds.  If it is absent
 or None, the call will never time out.
 
 The return value is a tuple of three lists corresponding to the first three
@@ -278,7 +278,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=e467f5d68033de00]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=1199d5e101abca4a]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -818,10 +818,10 @@ static int devpoll_flush(devpollObject *self)
         ** clear what to do if a partial write occurred. For now, raise
         ** an exception and see if we actually found this problem in
         ** the wild.
-        ** See http://bugs.python.org/issue6397.
+        ** See https://github.com/python/cpython/issues/50646.
         */
         PyErr_Format(PyExc_OSError, "failed to write all pollfds. "
-                "Please, report at http://bugs.python.org/. "
+                "Please, report at https://github.com/python/cpython/issues/. "
                 "Data to report: Size tried: %d, actual size written: %d.",
                 size, n);
         return -1;

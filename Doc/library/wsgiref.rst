@@ -1,5 +1,5 @@
-:mod:`wsgiref` --- WSGI Utilities and Reference Implementation
-==============================================================
+:mod:`!wsgiref` --- WSGI Utilities and Reference Implementation
+===============================================================
 
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.

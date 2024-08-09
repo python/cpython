@@ -195,6 +195,7 @@ class Telnet:
         No other action is done afterwards by telnetlib.
 
     """
+    sock = None  # for __del__()
 
     def __init__(self, host=None, port=0,
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT):

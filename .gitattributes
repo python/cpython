@@ -80,6 +80,7 @@ Lib/keyword.py                                      generated
 Lib/test/levenshtein_examples.json                  generated
 Lib/test/test_stable_abi_ctypes.py                  generated
 Lib/token.py                                        generated
+Misc/sbom.spdx.json                                 generated
 Objects/typeslots.inc                               generated
 PC/python3dll.c                                     generated
 Parser/parser.c                                     generated

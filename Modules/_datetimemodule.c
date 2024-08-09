@@ -392,6 +392,10 @@ iso_week1_monday(int year)
 static int
 iso_to_ymd(const int iso_year, const int iso_week, const int iso_day,
            int *year, int *month, int *day) {
+    // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
+    if (iso_year < MINYEAR || iso_year > MAXYEAR) {
+        return -4;
+    }
     if (iso_week <= 0 || iso_week >= 53) {
         int out_of_range = 1;
         if (iso_week == 53) {
@@ -738,7 +742,7 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
      *      -2:  Inconsistent date separator usage
      *      -3:  Failed to parse ISO week.
      *      -4:  Failed to parse ISO day.
-     *      -5, -6: Failure in iso_to_ymd
+     *      -5, -6, -7: Failure in iso_to_ymd
      */
     const char *p = dtstr;
     p = parse_digits(p, year, 4);
@@ -3097,15 +3101,13 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
-    if (year < MINYEAR || year > MAXYEAR) {
-        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
-        return NULL;
-    }
-
     int month;
     int rv = iso_to_ymd(year, week, day, &year, &month, &day);
 
+    if (rv == -4) {
+        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        return NULL;
+    }
 
     if (rv == -2) {
         PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
@@ -5207,19 +5209,19 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    static PyObject *module = NULL;
-    PyObject *string, *format;
+    PyObject *string, *format, *result;
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
+    PyObject *module = PyImport_ImportModule("_strptime");
     if (module == NULL) {
-        module = PyImport_ImportModule("_strptime");
-        if (module == NULL)
-            return NULL;
+        return NULL;
     }
-    return PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
-                                         cls, string, format, NULL);
+    result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
+                                        cls, string, format, NULL);
+    Py_DECREF(module);
+    return result;
 }
 
 /* Return new datetime from date/datetime and time arguments. */

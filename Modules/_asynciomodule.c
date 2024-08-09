@@ -1590,11 +1590,25 @@ static void
 FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)it);
+
+    // FutureIter is a heap type so any subclass must also be a heap type.
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+
+    PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
+    asyncio_state *state = NULL;
+
     PyObject_GC_UnTrack(it);
     tp->tp_clear((PyObject *)it);
 
-    if (state->fi_freelist_len < FI_FREELIST_MAXLEN) {
+    // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
+    // already been cleared, which is also why we must check if ht_module != NULL.
+    // Due to this restriction, subclasses that belong to a different module
+    // will not be able to use the free list.
+    if (module && _PyModule_GetDef(module) == &_asynciomodule) {
+        state = get_asyncio_state(module);
+    }
+
+    if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
         state->fi_freelist = it;
@@ -2495,7 +2509,11 @@ static PyObject *
 _asyncio_Task_get_coro_impl(TaskObj *self)
 /*[clinic end generated code: output=bcac27c8cc6c8073 input=d2e8606c42a7b403]*/
 {
-    return Py_NewRef(self->task_coro);
+    if (self->task_coro) {
+        return Py_NewRef(self->task_coro);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]

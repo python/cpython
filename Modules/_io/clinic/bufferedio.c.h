@@ -100,7 +100,7 @@ _io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 static PyObject *
 _io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
         return NULL;
     }
@@ -1098,4 +1098,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7ddf84a5bc2bf34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e51a6ca8bc8ed33d input=a9049054013a1b77]*/

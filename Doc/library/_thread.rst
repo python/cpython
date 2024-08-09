@@ -1,5 +1,5 @@
-:mod:`_thread` --- Low-level threading API
-==========================================
+:mod:`!_thread` --- Low-level threading API
+===========================================
 
 .. module:: _thread
    :synopsis: Low-level threading API.
@@ -166,14 +166,14 @@ Lock objects have the following methods:
    time can acquire a lock --- that's their reason for existence).
 
    If the *blocking* argument is present, the action depends on its
-   value: if it is False, the lock is only acquired if it can be acquired
-   immediately without waiting, while if it is True, the lock is acquired
+   value: if it is false, the lock is only acquired if it can be acquired
+   immediately without waiting, while if it is true, the lock is acquired
    unconditionally as above.
 
    If the floating-point *timeout* argument is present and positive, it
    specifies the maximum wait time in seconds before returning.  A negative
    *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if *blocking* is False.
+   a *timeout* if *blocking* is false.
 
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not.

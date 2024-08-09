@@ -1,5 +1,5 @@
-:mod:`sys` --- System-specific parameters and functions
-=======================================================
+:mod:`!sys` --- System-specific parameters and functions
+========================================================
 
 .. module:: sys
    :synopsis: Access system-specific parameters and functions.
@@ -16,11 +16,13 @@ always available.
    On POSIX systems where Python was built with the standard ``configure``
    script, this contains the ABI flags as specified by :pep:`3149`.
 
+   .. versionadded:: 3.2
+
    .. versionchanged:: 3.8
       Default flags became an empty string (``m`` flag for pymalloc has been
       removed).
 
-   .. versionadded:: 3.2
+   .. availability:: Unix.
 
 
 .. function:: addaudithook(hook)
@@ -862,7 +864,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504-compute-memory-footprint-of-an-object-and-its-cont/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1644,6 +1646,12 @@ always available.
       ``'opcode'`` event type added; :attr:`~frame.f_trace_lines` and
       :attr:`~frame.f_trace_opcodes` attributes added to frames
 
+   .. versionchanged:: 3.12
+      ``'opcode'`` event will only be emitted if :attr:`~frame.f_trace_opcodes`
+      of at least one frame has been set to :const:`True` before :func:`settrace`
+      is called. This behavior will be changed back in 3.13 to be consistent with
+      previous versions.
+
 .. function:: set_asyncgen_hooks([firstiter] [, finalizer])
 
    Accepts two optional keyword arguments which are callables that accept an
@@ -1676,7 +1684,7 @@ always available.
    contain a tuple of (filename, line number, function name) tuples
    describing the traceback where the coroutine object was created,
    with the most recent call first. When disabled, ``cr_origin`` will
-   be None.
+   be ``None``.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,

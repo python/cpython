@@ -135,6 +135,10 @@ class GenericTest:
         self.assertIs(self.pathmodule.exists(filename), False)
         self.assertIs(self.pathmodule.exists(bfilename), False)
 
+        if self.pathmodule is not genericpath:
+            self.assertIs(self.pathmodule.lexists(filename), False)
+            self.assertIs(self.pathmodule.lexists(bfilename), False)
+
         create_file(filename)
 
         self.assertIs(self.pathmodule.exists(filename), True)

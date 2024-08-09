@@ -3,6 +3,7 @@ import builtins
 import collections
 import datetime
 import functools
+import gc
 import importlib
 import inspect
 import io
@@ -16,10 +17,12 @@ import shutil
 import sys
 import types
 import textwrap
+from typing import Unpack
 import unicodedata
 import unittest
 import unittest.mock
 import warnings
+import weakref
 
 try:
     from concurrent.futures import ThreadPoolExecutor
@@ -33,11 +36,12 @@ from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
 
-from . import inspect_fodder as mod
-from . import inspect_fodder2 as mod2
-from . import inspect_stock_annotations
-from . import inspect_stringized_annotations
-from . import inspect_stringized_annotations_2
+from test.test_inspect import inspect_fodder as mod
+from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_stock_annotations
+from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_stringized_annotations_2
+from test.test_inspect import inspect_stringized_annotations_pep695
 
 
 # Functions tested in this suite:
@@ -197,6 +201,7 @@ class TestPredicates(IsTestBase):
             inspect.iscoroutinefunction(
                 functools.partial(functools.partial(
                     gen_coroutine_function_example))))
+        self.assertFalse(inspect.iscoroutinefunction(inspect))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
@@ -1502,6 +1507,117 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
 
+    def test_pep695_generic_class_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        A_annotations = inspect.get_annotations(ann_module695.A, eval_str=True)
+        A_type_params = ann_module695.A.__type_params__
+        self.assertIs(A_annotations["x"], A_type_params[0])
+        self.assertEqual(A_annotations["y"].__args__[0], Unpack[A_type_params[1]])
+        self.assertIs(A_annotations["z"].__args__[0], A_type_params[2])
+
+    def test_pep695_generic_class_with_future_annotations_and_local_shadowing(self):
+        B_annotations = inspect.get_annotations(
+            inspect_stringized_annotations_pep695.B, eval_str=True
+        )
+        self.assertEqual(B_annotations, {"x": int, "y": str, "z": bytes})
+
+    def test_pep695_generic_class_with_future_annotations_name_clash_with_global_vars(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        C_annotations = inspect.get_annotations(ann_module695.C, eval_str=True)
+        self.assertEqual(
+            set(C_annotations.values()),
+            set(ann_module695.C.__type_params__)
+        )
+
+    def test_pep_695_generic_function_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        generic_func_annotations = inspect.get_annotations(
+            ann_module695.generic_function, eval_str=True
+        )
+        func_t_params = ann_module695.generic_function.__type_params__
+        self.assertEqual(
+            generic_func_annotations.keys(), {"x", "y", "z", "zz", "return"}
+        )
+        self.assertIs(generic_func_annotations["x"], func_t_params[0])
+        self.assertEqual(generic_func_annotations["y"], Unpack[func_t_params[1]])
+        self.assertIs(generic_func_annotations["z"].__origin__, func_t_params[2])
+        self.assertIs(generic_func_annotations["zz"].__origin__, func_t_params[2])
+
+    def test_pep_695_generic_function_with_future_annotations_name_clash_with_global_vars(self):
+        self.assertEqual(
+            set(
+                inspect.get_annotations(
+                    inspect_stringized_annotations_pep695.generic_function_2,
+                    eval_str=True
+                ).values()
+            ),
+            set(
+                inspect_stringized_annotations_pep695.generic_function_2.__type_params__
+            )
+        )
+
+    def test_pep_695_generic_method_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        generic_method_annotations = inspect.get_annotations(
+            ann_module695.D.generic_method, eval_str=True
+        )
+        params = {
+            param.__name__: param
+            for param in ann_module695.D.generic_method.__type_params__
+        }
+        self.assertEqual(
+            generic_method_annotations,
+            {"x": params["Foo"], "y": params["Bar"], "return": None}
+        )
+
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_vars(self):
+        self.assertEqual(
+            set(
+                inspect.get_annotations(
+                    inspect_stringized_annotations_pep695.D.generic_method_2,
+                    eval_str=True
+                ).values()
+            ),
+            set(
+                inspect_stringized_annotations_pep695.D.generic_method_2.__type_params__
+            )
+        )
+
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_and_local_vars(self):
+        self.assertEqual(
+            inspect.get_annotations(
+                inspect_stringized_annotations_pep695.E, eval_str=True
+            ),
+            {"x": str},
+        )
+
+    def test_pep_695_generics_with_future_annotations_nested_in_function(self):
+        results = inspect_stringized_annotations_pep695.nested()
+
+        self.assertEqual(
+            set(results.F_annotations.values()),
+            set(results.F.__type_params__)
+        )
+        self.assertEqual(
+            set(results.F_meth_annotations.values()),
+            set(results.F.generic_method.__type_params__)
+        )
+        self.assertNotEqual(
+            set(results.F_meth_annotations.values()),
+            set(results.F.__type_params__)
+        )
+        self.assertEqual(
+            set(results.F_meth_annotations.values()).intersection(results.F.__type_params__),
+            set()
+        )
+
+        self.assertEqual(results.G_annotations, {"x": str})
+
+        self.assertEqual(
+            set(results.generic_func_annotations.values()),
+            set(results.generic_func.__type_params__)
+        )
+
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
@@ -2131,6 +2247,13 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+        class Bar(Foo): pass
+
+        bar = Bar()
+        bar.a = 5
+        self.assertEqual(inspect.getattr_static(bar, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_mutated_mro(self):
         test = self
         test.called = False
@@ -2234,6 +2357,21 @@ class TestGetattrStatic(unittest.TestCase):
             inspect.getattr_static(Foo(), 'really_could_be_anything')
 
         self.assertFalse(test.called)
+
+    def test_cache_does_not_cause_classes_to_persist(self):
+        # regression test for gh-118013:
+        # check that the internal _shadowed_dict cache does not cause
+        # dynamically created classes to have extended lifetimes even
+        # when no other strong references to those classes remain.
+        # Since these classes can themselves hold strong references to
+        # other objects, this can cause unexpected memory consumption.
+        class Foo: pass
+        Foo.instance = Foo()
+        weakref_to_class = weakref.ref(Foo)
+        inspect.getattr_static(Foo.instance, 'whatever', 'irrelevant')
+        del Foo
+        gc.collect()
+        self.assertIsNone(weakref_to_class())
 
 
 class TestGetGeneratorState(unittest.TestCase):
@@ -2779,9 +2917,12 @@ class TestSignatureObject(unittest.TestCase):
 
         # This doesn't work now.
         # (We don't have a valid signature for "type" in 3.4)
+        class ThisWorksNow:
+            __call__ = type
+        # TODO: Support type.
+        self.assertEqual(ThisWorksNow()(1), int)
+        self.assertEqual(ThisWorksNow()('A', (), {}).__name__, 'A')
         with self.assertRaisesRegex(ValueError, "no signature found"):
-            class ThisWorksNow:
-                __call__ = type
             test_callable(ThisWorksNow())
 
         # Regression test for issue #20786
@@ -3323,6 +3464,98 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
 
+        with self.subTest('classmethod'):
+            class CM(type):
+                @classmethod
+                def __call__(cls, a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class CM(type):
+                @staticmethod
+                def __call__(a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                def call(self, a):
+                    return a
+            class CM(type):
+                __call__ = A().call
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class CM(type):
+                __call__ = functools.partial(lambda x, a: (x, a), 2)
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class CM(type):
+                __call__ = functools.partialmethod(lambda self, x, a: (x, a), 2)
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('BuiltinMethodType'):
+            class CM(type):
+                __call__ = ':'.join
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(['a', 'bc']), 'a:bc')
+            # BUG: Returns '<Signature (b)>'
+            with self.assertRaises(AssertionError):
+                self.assertEqual(self.signature(C), self.signature(''.join))
+
+        with self.subTest('MethodWrapperType'):
+            class CM(type):
+                __call__ = (2).__pow__
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(3), 8)
+            self.assertEqual(C(3, 7), 1)
+            # BUG: Returns '<Signature (b)>'
+            with self.assertRaises(AssertionError):
+                self.assertEqual(self.signature(C), self.signature((0).__pow__))
+
         class CM(type):
             def __new__(mcls, name, bases, dct, *, foo=1):
                 return super().__new__(mcls, name, bases, dct)
@@ -3384,6 +3617,169 @@ class TestSignatureObject(unittest.TestCase):
                            ('bar', 2, ..., "keyword_only")),
                           ...))
 
+    def test_signature_on_class_with_init(self):
+        class C:
+            def __init__(self, b):
+                pass
+
+        C(1)  # does not raise
+        self.assertEqual(self.signature(C),
+                        ((('b', ..., ..., "positional_or_keyword"),),
+                        ...))
+
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                def __init__(cls, b):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class C:
+                @staticmethod
+                def __init__(b):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                def call(self, a):
+                    pass
+            class C:
+                __init__ = A().call
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class C:
+                __init__ = functools.partial(lambda x, a: None, 2)
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class C:
+                def _init(self, x, a):
+                    self.a = (x, a)
+                __init__ = functools.partialmethod(_init, 2)
+
+            self.assertEqual(C(1).a, (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+    def test_signature_on_class_with_new(self):
+        with self.subTest('FunctionType'):
+            class C:
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                def __new__(cls, cls2, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class C:
+                @staticmethod
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                def call(self, cls, a):
+                    return a
+            class C:
+                __new__ = A().call
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class C:
+                __new__ = functools.partial(lambda x, cls, a: (x, a), 2)
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class C:
+                __new__ = functools.partialmethod(lambda cls, x, a: (x, a), 2)
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('BuiltinMethodType'):
+            class C:
+                __new__ = str.__subclasscheck__
+
+            self.assertEqual(C(), False)
+            # TODO: Support BuiltinMethodType
+            # self.assertEqual(self.signature(C), ((), ...))
+            self.assertRaises(ValueError, self.signature, C)
+
+        with self.subTest('MethodWrapperType'):
+            class C:
+                __new__ = type.__or__.__get__(int, type)
+
+            self.assertEqual(C(), C | int)
+            # TODO: Support MethodWrapperType
+            # self.assertEqual(self.signature(C), ((), ...))
+            self.assertRaises(ValueError, self.signature, C)
+
+        # TODO: Test ClassMethodDescriptorType
+
+        with self.subTest('MethodDescriptorType'):
+            class C:
+                __new__ = type.__dict__['__subclasscheck__']
+
+            self.assertEqual(C(C), True)
+            self.assertEqual(self.signature(C), self.signature(C.__subclasscheck__))
+
+        with self.subTest('WrapperDescriptorType'):
+            class C:
+                __new__ = type.__or__
+
+            self.assertEqual(C(int), C | int)
+            # TODO: Support WrapperDescriptorType
+            # self.assertEqual(self.signature(C), self.signature(C.__or__))
+            self.assertRaises(ValueError, self.signature, C)
+
     def test_signature_on_subclass(self):
         class A:
             def __new__(cls, a=1, *args, **kwargs):
@@ -3437,8 +3833,11 @@ class TestSignatureObject(unittest.TestCase):
         # Test meta-classes without user-defined __init__ or __new__
         class C(type): pass
         class D(C): pass
+        self.assertEqual(C('A', (), {}).__name__, 'A')
+        # TODO: Support type.
         with self.assertRaisesRegex(ValueError, "callable.*is not supported"):
             self.assertEqual(inspect.signature(C), None)
+        self.assertEqual(D('A', (), {}).__name__, 'A')
         with self.assertRaisesRegex(ValueError, "callable.*is not supported"):
             self.assertEqual(inspect.signature(D), None)
 
@@ -3488,16 +3887,117 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
 
-        class Wrapped:
-            pass
-        Wrapped.__wrapped__ = lambda a: None
-        self.assertEqual(self.signature(Wrapped),
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                def __call__(cls, a):
+                    pass
+
+            self.assertEqual(self.signature(C()),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class C:
+                @staticmethod
+                def __call__(a):
+                    pass
+
+            self.assertEqual(self.signature(C()),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                def call(self, a):
+                    return a
+            class C:
+                __call__ = A().call
+
+            self.assertEqual(C()(1), 1)
+            self.assertEqual(self.signature(C()),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class C:
+                __call__ = functools.partial(lambda x, a: (x, a), 2)
+
+            self.assertEqual(C()(1), (2, 1))
+            self.assertEqual(self.signature(C()),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class C:
+                __call__ = functools.partialmethod(lambda self, x, a: (x, a), 2)
+
+            self.assertEqual(C()(1), (2, 1))
+            self.assertEqual(self.signature(C()),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('BuiltinMethodType'):
+            class C:
+                __call__ = ':'.join
+
+            self.assertEqual(C()(['a', 'bc']), 'a:bc')
+            self.assertEqual(self.signature(C()), self.signature(''.join))
+
+        with self.subTest('MethodWrapperType'):
+            class C:
+                __call__ = (2).__pow__
+
+            self.assertEqual(C()(3), 8)
+            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+
+        with self.subTest('ClassMethodDescriptorType'):
+            class C(dict):
+                __call__ = dict.__dict__['fromkeys']
+
+            res = C()([1, 2], 3)
+            self.assertEqual(res, {1: 3, 2: 3})
+            self.assertEqual(type(res), C)
+            self.assertEqual(self.signature(C()), self.signature(dict.fromkeys))
+
+        with self.subTest('MethodDescriptorType'):
+            class C(str):
+                __call__ = str.join
+
+            self.assertEqual(C(':')(['a', 'bc']), 'a:bc')
+            self.assertEqual(self.signature(C()), self.signature(''.join))
+
+        with self.subTest('WrapperDescriptorType'):
+            class C(int):
+                __call__ = int.__pow__
+
+            self.assertEqual(C(2)(3), 8)
+            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+
+        with self.subTest('MemberDescriptorType'):
+            class C:
+                __slots__ = '__call__'
+            c = C()
+            c.__call__ = lambda a: a
+            self.assertEqual(c(1), 1)
+            self.assertEqual(self.signature(c),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+    def test_signature_on_wrapper(self):
+        class Wrapper:
+            def __call__(self, b):
+                pass
+        wrapper = Wrapper()
+        wrapper.__wrapped__ = lambda a: None
+        self.assertEqual(self.signature(wrapper),
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
         # wrapper loop:
-        Wrapped.__wrapped__ = Wrapped
+        wrapper = Wrapper()
+        wrapper.__wrapped__ = wrapper
         with self.assertRaisesRegex(ValueError, 'wrapper loop'):
-            self.signature(Wrapped)
+            self.signature(wrapper)
 
     def test_signature_on_lambdas(self):
         self.assertEqual(self.signature((lambda a=10: a)),
@@ -3955,6 +4455,16 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(inspect.signature(D2), inspect.signature(D1))
 
+    def test_signature_on_non_comparable(self):
+        class NoncomparableCallable:
+            def __call__(self, a):
+                pass
+            def __eq__(self, other):
+                1/0
+        self.assertEqual(self.signature(NoncomparableCallable()),
+                         ((('a', ..., ..., 'positional_or_keyword'),),
+                          ...))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -4295,14 +4805,29 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, foo=4, bar=5),
                          (1, 2, 3, 4, 5, {}))
 
-        with self.assertRaisesRegex(TypeError, "but was passed as a keyword"):
-            self.call(test, 1, 2, foo=4, bar=5, c_po=10)
+        self.assertEqual(self.call(test, 1, 2, foo=4, bar=5, c_po=10),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
-            self.call(test, 1, 2, c_po=4)
+        self.assertEqual(self.call(test, 1, 2, 30, c_po=31, foo=4, bar=5),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
+        self.assertEqual(self.call(test, 1, 2, 30, foo=4, bar=5, c_po=31),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
+
+        self.assertEqual(self.call(test, 1, 2, c_po=4),
+                         (1, 2, 3, 42, 50, {'c_po': 4}))
+
+        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
             self.call(test, a_po=1, b_po=2)
+
+        def without_var_kwargs(c_po=3, d_po=4, /):
+            return c_po, d_po
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "positional-only arguments passed as keyword arguments: 'c_po, d_po'",
+        ):
+            self.call(without_var_kwargs, c_po=33, d_po=44)
 
     def test_signature_bind_with_self_arg(self):
         # Issue #17071: one of the parameters is named "self
@@ -4587,6 +5112,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         with self.assertRaises(ValueError):
             inspect.signature(func)
 
+    @support.requires_docstrings
     def test_base_class_have_text_signature(self):
         # see issue 43118
         from test.typinganndata.ann_module7 import BufferedReader
@@ -4671,6 +5197,14 @@ class TestUnwrap(unittest.TestCase):
         obj = NTimesUnwrappable(sys.getrecursionlimit() + 1)
         with self.assertRaisesRegex(ValueError, 'wrapper loop'):
             inspect.unwrap(obj)
+
+    def test_wrapped_descriptor(self):
+        self.assertIs(inspect.unwrap(NTimesUnwrappable), NTimesUnwrappable)
+        self.assertIs(inspect.unwrap(staticmethod), staticmethod)
+        self.assertIs(inspect.unwrap(classmethod), classmethod)
+        self.assertIs(inspect.unwrap(staticmethod(classmethod)), classmethod)
+        self.assertIs(inspect.unwrap(classmethod(staticmethod)), staticmethod)
+
 
 class TestMain(unittest.TestCase):
     def test_only_source(self):

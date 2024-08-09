@@ -294,7 +294,7 @@ class Message:
                 try:
                     bpayload = payload.encode('ascii', 'surrogateescape')
                     try:
-                        payload = bpayload.decode(self.get_param('charset', 'ascii'), 'replace')
+                        payload = bpayload.decode(self.get_content_charset('ascii'), 'replace')
                     except LookupError:
                         payload = bpayload.decode('ascii', 'replace')
                 except UnicodeEncodeError:
@@ -340,7 +340,7 @@ class Message:
                 return
             if not isinstance(charset, Charset):
                 charset = Charset(charset)
-            payload = payload.encode(charset.output_charset)
+            payload = payload.encode(charset.output_charset, 'surrogateescape')
         if hasattr(payload, 'decode'):
             self._payload = payload.decode('ascii', 'surrogateescape')
         else:

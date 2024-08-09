@@ -1124,7 +1124,14 @@ class DocTestFinder:
             obj = obj.fget
         if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
-            obj = obj.__code__
+            obj = inspect.unwrap(obj)
+            try:
+                obj = obj.__code__
+            except AttributeError:
+                # Functions implemented in C don't necessarily
+                # have a __code__ attribute.
+                # If there's no code, there's no lineno
+                return None
         if inspect.istraceback(obj): obj = obj.tb_frame
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
@@ -2203,13 +2210,13 @@ class DocTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
         self._dt_checker = checker
-        self._dt_globs = test.globs.copy()
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
 
     def setUp(self):
         test = self._dt_test
+        self._dt_globs = test.globs.copy()
 
         if self._dt_setUp is not None:
             self._dt_setUp(test)

@@ -259,6 +259,10 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
+    if (parts == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     memset(parts, 0, n * sizeof(wchar_t *));
     Py_ssize_t cchFinal = 0;
     Py_ssize_t first = 0;

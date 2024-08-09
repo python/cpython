@@ -97,9 +97,12 @@ PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
 "\n"
-"Create a complex number from a real part and an optional imaginary part.\n"
+"Create a complex number from a string or numbers.\n"
 "\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.");
+"If a string is given, parse it as a complex number.\n"
+"If a single number is given, convert it to a complex number.\n"
+"If the \'real\' or \'imag\' arguments are given, create a complex number\n"
+"with the specified real and imaginary components.");
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i);
@@ -160,4 +163,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=52e85a1e258425d6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9558b8449db17dc1 input=a9049054013a1b77]*/

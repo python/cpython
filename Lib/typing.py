@@ -314,19 +314,33 @@ def _unpack_args(args):
             newargs.append(arg)
     return newargs
 
-def _deduplicate(params):
+def _deduplicate(params, *, unhashable_fallback=False):
     # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
-    return params
+    try:
+        return dict.fromkeys(params)
+    except TypeError:
+        if not unhashable_fallback:
+            raise
+        # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
+        return _deduplicate_unhashable(params)
 
+def _deduplicate_unhashable(unhashable_params):
+    new_unhashable = []
+    for t in unhashable_params:
+        if t not in new_unhashable:
+            new_unhashable.append(t)
+    return new_unhashable
+
+def _compare_args_orderless(first_args, second_args):
+    first_unhashable = _deduplicate_unhashable(first_args)
+    second_unhashable = _deduplicate_unhashable(second_args)
+    t = list(second_unhashable)
+    try:
+        for elem in first_unhashable:
+            t.remove(elem)
+    except ValueError:
+        return False
+    return not t
 
 def _remove_dups_flatten(parameters):
     """Internal helper for Union creation and substitution.
@@ -341,7 +355,7 @@ def _remove_dups_flatten(parameters):
         else:
             params.append(p)
 
-    return tuple(_deduplicate(params))
+    return tuple(_deduplicate(params, unhashable_fallback=True))
 
 
 def _flatten_literal_params(parameters):
@@ -389,7 +403,8 @@ def _tp_cache(func=None, /, *, typed=False):
 
     return decorator
 
-def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
+
+def _eval_type(t, globalns, localns, type_params=None, *, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
@@ -397,7 +412,7 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     ForwardRef.
     """
     if isinstance(t, ForwardRef):
-        return t._evaluate(globalns, localns, recursive_guard)
+        return t._evaluate(globalns, localns, type_params, recursive_guard=recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
         if isinstance(t, GenericAlias):
             args = tuple(
@@ -411,7 +426,13 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
                 t = t.__origin__[args]
             if is_unpacked:
                 t = Unpack[t]
-        ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
+
+        ev_args = tuple(
+            _eval_type(
+                a, globalns, localns, type_params, recursive_guard=recursive_guard
+            )
+            for a in t.__args__
+        )
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
@@ -530,7 +551,7 @@ class Any(metaclass=_AnyMeta):
     def __new__(cls, *args, **kwargs):
         if cls is Any:
             raise TypeError("Any cannot be instantiated")
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
 
 @_SpecialForm
@@ -832,22 +853,25 @@ def TypeGuard(self, parameters):
     2. If the return value is ``True``, the type of its argument
        is the type inside ``TypeGuard``.
 
-       For example::
+    For example::
 
-           def is_str(val: Union[str, float]):
-               # "isinstance" type guard
-               if isinstance(val, str):
-                   # Type of ``val`` is narrowed to ``str``
-                   ...
-               else:
-                   # Else, type of ``val`` is narrowed to ``float``.
-                   ...
+         def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
+             '''Determines whether all objects in the list are strings'''
+             return all(isinstance(x, str) for x in val)
+
+         def func1(val: list[object]):
+             if is_str_list(val):
+                 # Type of ``val`` is narrowed to ``list[str]``.
+                 print(" ".join(val))
+             else:
+                 # Type of ``val`` remains as ``list[object]``.
+                 print("Not a list of strings!")
 
     Strict type narrowing is not enforced -- ``TypeB`` need not be a narrower
     form of ``TypeA`` (it can even be a wider form) and this may lead to
     type-unsafe results.  The main reason is to allow for things like
-    narrowing ``List[object]`` to ``List[str]`` even though the latter is not
-    a subtype of the former, since ``List`` is invariant.  The responsibility of
+    narrowing ``list[object]`` to ``list[str]`` even though the latter is not
+    a subtype of the former, since ``list`` is invariant.  The responsibility of
     writing type-safe type guards is left to the user.
 
     ``TypeGuard`` also works with type variables.  For more information, see
@@ -872,7 +896,7 @@ class ForwardRef(_Final, _root=True):
         # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
-        if arg[0] == '*':
+        if arg.startswith('*'):
             arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
@@ -889,7 +913,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
 
-    def _evaluate(self, globalns, localns, recursive_guard):
+    def _evaluate(self, globalns, localns, type_params=None, *, recursive_guard):
         if self.__forward_arg__ in recursive_guard:
             return self
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -903,6 +927,22 @@ class ForwardRef(_Final, _root=True):
                 globalns = getattr(
                     sys.modules.get(self.__forward_module__, None), '__dict__', globalns
                 )
+
+            # type parameters require some special handling,
+            # as they exist in their own scope
+            # but `eval()` does not have a dedicated parameter for that scope.
+            # For classes, names in type parameter scopes should override
+            # names in the global scope (which here are called `localns`!),
+            # but should in turn be overridden by names in the class scope
+            # (which here are called `globalns`!)
+            if type_params:
+                globalns, localns = dict(globalns), dict(localns)
+                for param in type_params:
+                    param_name = param.__name__
+                    if not self.__forward_is_class__ or param_name not in globalns:
+                        globalns[param_name] = param
+                        localns.pop(param_name, None)
+
             type_ = _type_check(
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
@@ -910,7 +950,11 @@ class ForwardRef(_Final, _root=True):
                 allow_special_forms=self.__forward_is_class__,
             )
             self.__forward_value__ = _eval_type(
-                type_, globalns, localns, recursive_guard | {self.__forward_arg__}
+                type_,
+                globalns,
+                localns,
+                type_params,
+                recursive_guard=(recursive_guard | {self.__forward_arg__}),
             )
             self.__forward_evaluated__ = True
         return self.__forward_value__
@@ -1140,7 +1184,9 @@ class _BaseGenericAlias(_Final, _root=True):
         result = self.__origin__(*args, **kwargs)
         try:
             result.__orig_class__ = self
-        except AttributeError:
+        # Some objects raise TypeError (or something even more exotic)
+        # if you try to set attributes on them; we guard against that here
+        except Exception:
             pass
         return result
 
@@ -1546,7 +1592,10 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __eq__(self, other):
         if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
             return NotImplemented
-        return set(self.__args__) == set(other.__args__)
+        try:  # fast path
+            return set(self.__args__) == set(other.__args__)
+        except TypeError:  # not hashable, slow path
+            return _compare_args_orderless(self.__args__, other.__args__)
 
     def __hash__(self):
         return hash(frozenset(self.__args__))
@@ -1664,8 +1713,9 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         assert self.__origin__ is Unpack
         assert len(self.__args__) == 1
         arg, = self.__args__
-        if isinstance(arg, _GenericAlias):
-            assert arg.__origin__ is tuple
+        if isinstance(arg, (_GenericAlias, types.GenericAlias)):
+            if arg.__origin__ is not tuple:
+                raise TypeError("Unpack[...] must be used with a tuple type")
             return arg.__args__
         return None
 
@@ -2219,7 +2269,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False, is_class=True)
-                value = _eval_type(value, base_globals, base_locals)
+                value = _eval_type(value, base_globals, base_locals, base.__type_params__)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
@@ -2245,6 +2295,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             raise TypeError('{!r} is not a module, class, method, '
                             'or function.'.format(obj))
     hints = dict(hints)
+    type_params = getattr(obj, "__type_params__", ())
     for name, value in hints.items():
         if value is None:
             value = type(None)
@@ -2256,7 +2307,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        hints[name] = _eval_type(value, globalns, localns)
+        hints[name] = _eval_type(value, globalns, localns, type_params)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 
@@ -3254,11 +3305,11 @@ class TextIO(IO[str]):
 
 class _DeprecatedType(type):
     def __getattribute__(cls, name):
-        if name not in ("__dict__", "__module__") and name in cls.__dict__:
+        if name not in {"__dict__", "__module__", "__doc__"} and name in cls.__dict__:
             warnings.warn(
                 f"{cls.__name__} is deprecated, import directly "
                 f"from typing instead. {cls.__name__} will be removed "
-                "in Python 3.12.",
+                "in Python 3.13.",
                 DeprecationWarning,
                 stacklevel=2,
             )

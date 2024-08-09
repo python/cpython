@@ -265,7 +265,7 @@ ABC hierarchy::
       when invalidating the caches of all finders on :data:`sys.meta_path`.
 
       .. versionchanged:: 3.4
-         Returns ``None`` when called instead of ``NotImplemented``.
+         Returns ``None`` when called instead of :data:`NotImplemented`.
 
 
 .. class:: PathEntryFinder
@@ -657,7 +657,7 @@ ABC hierarchy::
     something like a data file that lives next to the ``__init__.py``
     file of the package. The purpose of this class is to help abstract
     out the accessing of such data files so that it does not matter if
-    the package and its data file(s) are stored in a e.g. zip file
+    the package and its data file(s) are stored e.g. in a zip file
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is

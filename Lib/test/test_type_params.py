@@ -499,6 +499,11 @@ class TypeParamsAccessTest(unittest.TestCase):
                                             r"Cannot use [a-z]+ in annotation scope within class scope"):
                     run_code(code.format(case))
 
+    def test_type_special_case(self):
+        # https://github.com/python/cpython/issues/119011
+        self.assertEqual(type.__type_params__, ())
+        self.assertEqual(object.__type_params__, ())
+
 
 def make_base(arg):
     class Base:
@@ -708,6 +713,31 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         self.assertIn(int, C.D.__bases__)
         self.assertIs(C.D.x, str)
 
+
+class DynamicClassTest(unittest.TestCase):
+    def _set_type_params(self, ns, params):
+        ns['__type_params__'] = params
+
+    def test_types_new_class_with_callback(self):
+        T = TypeVar('T', infer_variance=True)
+        Klass = types.new_class('Klass', (Generic[T],), {},
+                                lambda ns: self._set_type_params(ns, (T,)))
+
+        self.assertEqual(Klass.__bases__, (Generic,))
+        self.assertEqual(Klass.__orig_bases__, (Generic[T],))
+        self.assertEqual(Klass.__type_params__, (T,))
+        self.assertEqual(Klass.__parameters__, (T,))
+
+    def test_types_new_class_no_callback(self):
+        T = TypeVar('T', infer_variance=True)
+        Klass = types.new_class('Klass', (Generic[T],), {})
+
+        self.assertEqual(Klass.__bases__, (Generic,))
+        self.assertEqual(Klass.__orig_bases__, (Generic[T],))
+        self.assertEqual(Klass.__type_params__, ())  # must be explicitly set
+        self.assertEqual(Klass.__parameters__, (T,))
+
+
 class TypeParamsManglingTest(unittest.TestCase):
     def test_mangling(self):
         class Foo[__T]:
@@ -729,6 +759,100 @@ class TypeParamsManglingTest(unittest.TestCase):
         self.assertEqual(Foo().meth(1, 2), (T, U))
 
         self.assertEqual(Foo.Alias.__value__, (T, V))
+
+    def test_no_leaky_mangling_in_module(self):
+        ns = run_code("""
+            __before = "before"
+            class X[T]: pass
+            __after = "after"
+        """)
+        self.assertEqual(ns["__before"], "before")
+        self.assertEqual(ns["__after"], "after")
+
+    def test_no_leaky_mangling_in_function(self):
+        ns = run_code("""
+            def f():
+                class X[T]: pass
+                _X_foo = 2
+                __foo = 1
+                assert locals()['__foo'] == 1
+                return __foo
+        """)
+        self.assertEqual(ns["f"](), 1)
+
+    def test_no_leaky_mangling_in_class(self):
+        ns = run_code("""
+            class Outer:
+                __before = "before"
+                class Inner[T]:
+                    __x = "inner"
+                __after = "after"
+        """)
+        Outer = ns["Outer"]
+        self.assertEqual(Outer._Outer__before, "before")
+        self.assertEqual(Outer.Inner._Inner__x, "inner")
+        self.assertEqual(Outer._Outer__after, "after")
+
+    def test_no_mangling_in_bases(self):
+        ns = run_code("""
+            class __Base:
+                def __init_subclass__(self, **kwargs):
+                    self.kwargs = kwargs
+
+            class Derived[T](__Base, __kwarg=1):
+                pass
+        """)
+        Derived = ns["Derived"]
+        self.assertEqual(Derived.__bases__, (ns["__Base"], Generic))
+        self.assertEqual(Derived.kwargs, {"__kwarg": 1})
+
+    def test_no_mangling_in_nested_scopes(self):
+        ns = run_code("""
+            from test.test_type_params import make_base
+
+            class __X:
+                pass
+
+            class Y[T: __X](
+                make_base(lambda: __X),
+                # doubly nested scope
+                make_base(lambda: (lambda: __X)),
+                # list comprehension
+                make_base([__X for _ in (1,)]),
+                # genexp
+                make_base(__X for _ in (1,)),
+            ):
+                pass
+        """)
+        Y = ns["Y"]
+        T, = Y.__type_params__
+        self.assertIs(T.__bound__, ns["__X"])
+        base0 = Y.__bases__[0]
+        self.assertIs(base0.__arg__(), ns["__X"])
+        base1 = Y.__bases__[1]
+        self.assertIs(base1.__arg__()(), ns["__X"])
+        base2 = Y.__bases__[2]
+        self.assertEqual(base2.__arg__, [ns["__X"]])
+        base3 = Y.__bases__[3]
+        self.assertEqual(list(base3.__arg__), [ns["__X"]])
+
+    def test_type_params_are_mangled(self):
+        ns = run_code("""
+            from test.test_type_params import make_base
+
+            class Foo[__T, __U: __T](make_base(__T), make_base(lambda: __T)):
+                param = __T
+        """)
+        Foo = ns["Foo"]
+        T, U = Foo.__type_params__
+        self.assertEqual(T.__name__, "__T")
+        self.assertEqual(U.__name__, "__U")
+        self.assertIs(U.__bound__, T)
+        self.assertIs(Foo.param, T)
+
+        base1, base2, *_ = Foo.__bases__
+        self.assertIs(base1.__arg__, T)
+        self.assertIs(base2.__arg__(), T)
 
 
 class TypeParamsComplexCallsTest(unittest.TestCase):

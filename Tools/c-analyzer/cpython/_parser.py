@@ -97,6 +97,7 @@ EXCLUDED += clean_lines('''
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
+Modules/expat/internal.h
 Modules/expat/xmlparse.c
 ''')
 

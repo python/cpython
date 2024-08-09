@@ -45,10 +45,10 @@ _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls);
 static PyObject *
 _lsprof_Profiler_getstats(ProfilerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getstats() takes no arguments");
         return NULL;
     }
     return _lsprof_Profiler_getstats_impl(self, cls);
 }
-/*[clinic end generated code: output=7425d3481349629a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cc3b236bc414a372 input=a9049054013a1b77]*/

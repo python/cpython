@@ -16,7 +16,15 @@ Object Protocol
 
    Properly handle returning :c:data:`Py_NotImplemented` from within a C
    function (that is, create a new :term:`strong reference`
-   to NotImplemented and return it).
+   to :const:`NotImplemented` and return it).
+
+
+.. c:macro:: Py_PRINT_RAW
+
+   Flag to be used with multiple functions that print the object (like
+   :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
+   If passed, these function would use the :func:`str` of the object
+   instead of the :func:`repr`.
 
 
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)

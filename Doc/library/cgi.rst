@@ -22,7 +22,7 @@
    The :class:`FieldStorage` class can typically be replaced with
    :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests,
    and the :mod:`email.message` module or
-   `multipart <https://pypi.org/project/multipart/>`_ for ``POST`` and ``PUT``.
+   :pypi:`multipart` for ``POST`` and ``PUT``.
    Most :ref:`utility functions <functions-in-cgi-module>` have replacements.
 
 --------------
@@ -334,7 +334,7 @@ algorithms implemented in this module in other circumstances.
       It can be replaced with the functionality in the :mod:`email` package
       (e.g. :class:`email.message.EmailMessage`/:class:`email.message.Message`)
       which implements the same MIME RFCs, or with the
-      `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
+      :pypi:`multipart` PyPI project.
 
 
 .. function:: parse_header(string)

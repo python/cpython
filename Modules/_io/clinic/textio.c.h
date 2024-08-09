@@ -25,7 +25,7 @@ _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 static PyObject *
 _io__TextIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
         return NULL;
     }
@@ -982,4 +982,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=a3614e1c64747ff5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=408adcf5b8c5d8a6 input=a9049054013a1b77]*/

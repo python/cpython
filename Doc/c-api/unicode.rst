@@ -861,7 +861,12 @@ wchar_t Support
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *wstr*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
    null termination character).  Return the number of :c:type:`wchar_t` characters
-   copied or ``-1`` in case of an error.  Note that the resulting :c:expr:`wchar_t*`
+   copied or ``-1`` in case of an error.
+
+   When *wstr* is ``NULL``, instead return the *size* that would be required
+   to store all of *unicode* including a terminating null.
+
+   Note that the resulting :c:expr:`wchar_t*`
    string may or may not be null-terminated.  It is the responsibility of the caller
    to make sure that the :c:expr:`wchar_t*` string is null-terminated in case this is
    required by the application. Also, note that the :c:expr:`wchar_t*` string

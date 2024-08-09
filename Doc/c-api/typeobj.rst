@@ -1052,7 +1052,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       the type, and the type object is INCREF'ed when a new instance is created, and
       DECREF'ed when an instance is destroyed (this does not apply to instances of
       subtypes; only the type referenced by the instance's ob_type gets INCREF'ed or
-      DECREF'ed).
+      DECREF'ed). Heap types should also :ref:`support garbage collection <supporting-cycle-detection>`
+      as they can form a reference cycle with their own module object.
 
       **Inheritance:**
 
@@ -1583,7 +1584,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    weak references to the type object itself.
 
    It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
-   :c:member:`~PyTypeObject.tp_weaklist`.
+   :c:member:`~PyTypeObject.tp_weaklistoffset`.
 
    **Inheritance:**
 
@@ -1595,7 +1596,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Default:**
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit is set in the
-   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_flags` field, then
    :c:member:`~PyTypeObject.tp_weaklistoffset` will be set to a negative value,
    to indicate that it is unsafe to use this field.
 

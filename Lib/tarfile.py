@@ -2222,7 +2222,7 @@ class TarFile(object):
                     'Python 3.14 will, by default, filter extracted tar '
                     + 'archives and reject files or modify their metadata. '
                     + 'Use the filter argument to control this behavior.',
-                    DeprecationWarning)
+                    DeprecationWarning, stacklevel=3)
                 return fully_trusted_filter
             if isinstance(filter, str):
                 raise TypeError(
@@ -2449,7 +2449,8 @@ class TarFile(object):
                 # later in _extract_member().
                 os.mkdir(targetpath, 0o700)
         except FileExistsError:
-            pass
+            if not os.path.isdir(targetpath):
+                raise
 
     def makefile(self, tarinfo, targetpath):
         """Make a file called targetpath.

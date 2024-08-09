@@ -1,2 +1,0 @@
-Improve the lists of features, editor key bindings, and shell key bingings
-in the IDLE doc.

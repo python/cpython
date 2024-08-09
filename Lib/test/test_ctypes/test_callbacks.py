@@ -151,9 +151,10 @@ class Callbacks(unittest.TestCase):
             print(f"a={a}, b={b}, c={c}")
             return c
         dll = cdll[_ctypes_test.__file__]
-        # With no fix for i38748, the next line will raise OSError and cause the test to fail.
-        self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
-
+        with support.captured_stdout() as out:
+            # With no fix for i38748, the next line will raise OSError and cause the test to fail.
+            self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
+            self.assertEqual(out.getvalue(), "a=5, b=10, c=15\n")
 
 @need_symbol('WINFUNCTYPE')
 class StdcallCallbacks(Callbacks):

@@ -2819,70 +2819,91 @@ static struct PyModuleDef _testbuffermodule = {
     NULL
 };
 
+static int
+_testbuffer_exec(PyObject *mod)
+{
+    Py_SET_TYPE(&NDArray_Type, &PyType_Type);
+    if (PyModule_AddType(mod, &NDArray_Type) < 0) {
+        return -1;
+    }
+
+    Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
+    if (PyModule_AddType(mod, &StaticArray_Type) < 0) {
+        return -1;
+    }
+
+    structmodule = PyImport_ImportModule("struct");
+    if (structmodule == NULL) {
+        return -1;
+    }
+
+    Struct = PyObject_GetAttrString(structmodule, "Struct");
+    if (Struct == NULL) {
+        return -1;
+    }
+    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    if (calcsize == NULL) {
+        return -1;
+    }
+
+    simple_format = PyUnicode_FromString(simple_fmt);
+    if (simple_format == NULL) {
+        return -1;
+    }
+
+#define ADD_INT_MACRO(mod, macro)                                             \
+    do {                                                                    \
+        if (PyModule_AddIntConstant(mod, #macro, macro) < 0) {                \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
+
+    ADD_INT_MACRO(mod, ND_MAX_NDIM);
+    ADD_INT_MACRO(mod, ND_VAREXPORT);
+    ADD_INT_MACRO(mod, ND_WRITABLE);
+    ADD_INT_MACRO(mod, ND_FORTRAN);
+    ADD_INT_MACRO(mod, ND_SCALAR);
+    ADD_INT_MACRO(mod, ND_PIL);
+    ADD_INT_MACRO(mod, ND_GETBUF_FAIL);
+    ADD_INT_MACRO(mod, ND_GETBUF_UNDEFINED);
+    ADD_INT_MACRO(mod, ND_REDIRECT);
+
+    ADD_INT_MACRO(mod, PyBUF_SIMPLE);
+    ADD_INT_MACRO(mod, PyBUF_WRITABLE);
+    ADD_INT_MACRO(mod, PyBUF_FORMAT);
+    ADD_INT_MACRO(mod, PyBUF_ND);
+    ADD_INT_MACRO(mod, PyBUF_STRIDES);
+    ADD_INT_MACRO(mod, PyBUF_INDIRECT);
+    ADD_INT_MACRO(mod, PyBUF_C_CONTIGUOUS);
+    ADD_INT_MACRO(mod, PyBUF_F_CONTIGUOUS);
+    ADD_INT_MACRO(mod, PyBUF_ANY_CONTIGUOUS);
+    ADD_INT_MACRO(mod, PyBUF_FULL);
+    ADD_INT_MACRO(mod, PyBUF_FULL_RO);
+    ADD_INT_MACRO(mod, PyBUF_RECORDS);
+    ADD_INT_MACRO(mod, PyBUF_RECORDS_RO);
+    ADD_INT_MACRO(mod, PyBUF_STRIDED);
+    ADD_INT_MACRO(mod, PyBUF_STRIDED_RO);
+    ADD_INT_MACRO(mod, PyBUF_CONTIG);
+    ADD_INT_MACRO(mod, PyBUF_CONTIG_RO);
+
+    ADD_INT_MACRO(mod, PyBUF_READ);
+    ADD_INT_MACRO(mod, PyBUF_WRITE);
+
+#undef ADD_INT_MACRO
+
+    return 0;
+}
 
 PyMODINIT_FUNC
 PyInit__testbuffer(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_testbuffermodule);
-    if (m == NULL)
+    PyObject *mod = PyModule_Create(&_testbuffermodule);
+    if (mod == NULL) {
         return NULL;
-
-    Py_SET_TYPE(&NDArray_Type, &PyType_Type);
-    Py_INCREF(&NDArray_Type);
-    PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
-
-    Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
-    Py_INCREF(&StaticArray_Type);
-    PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
-
-    structmodule = PyImport_ImportModule("struct");
-    if (structmodule == NULL)
+    }
+    if (_testbuffer_exec(mod) < 0) {
+        Py_DECREF(mod);
         return NULL;
-
-    Struct = PyObject_GetAttrString(structmodule, "Struct");
-    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
-    if (Struct == NULL || calcsize == NULL)
-        return NULL;
-
-    simple_format = PyUnicode_FromString(simple_fmt);
-    if (simple_format == NULL)
-        return NULL;
-
-    PyModule_AddIntMacro(m, ND_MAX_NDIM);
-    PyModule_AddIntMacro(m, ND_VAREXPORT);
-    PyModule_AddIntMacro(m, ND_WRITABLE);
-    PyModule_AddIntMacro(m, ND_FORTRAN);
-    PyModule_AddIntMacro(m, ND_SCALAR);
-    PyModule_AddIntMacro(m, ND_PIL);
-    PyModule_AddIntMacro(m, ND_GETBUF_FAIL);
-    PyModule_AddIntMacro(m, ND_GETBUF_UNDEFINED);
-    PyModule_AddIntMacro(m, ND_REDIRECT);
-
-    PyModule_AddIntMacro(m, PyBUF_SIMPLE);
-    PyModule_AddIntMacro(m, PyBUF_WRITABLE);
-    PyModule_AddIntMacro(m, PyBUF_FORMAT);
-    PyModule_AddIntMacro(m, PyBUF_ND);
-    PyModule_AddIntMacro(m, PyBUF_STRIDES);
-    PyModule_AddIntMacro(m, PyBUF_INDIRECT);
-    PyModule_AddIntMacro(m, PyBUF_C_CONTIGUOUS);
-    PyModule_AddIntMacro(m, PyBUF_F_CONTIGUOUS);
-    PyModule_AddIntMacro(m, PyBUF_ANY_CONTIGUOUS);
-    PyModule_AddIntMacro(m, PyBUF_FULL);
-    PyModule_AddIntMacro(m, PyBUF_FULL_RO);
-    PyModule_AddIntMacro(m, PyBUF_RECORDS);
-    PyModule_AddIntMacro(m, PyBUF_RECORDS_RO);
-    PyModule_AddIntMacro(m, PyBUF_STRIDED);
-    PyModule_AddIntMacro(m, PyBUF_STRIDED_RO);
-    PyModule_AddIntMacro(m, PyBUF_CONTIG);
-    PyModule_AddIntMacro(m, PyBUF_CONTIG_RO);
-
-    PyModule_AddIntMacro(m, PyBUF_READ);
-    PyModule_AddIntMacro(m, PyBUF_WRITE);
-
-    return m;
+    }
+    return mod;
 }
-
-
-

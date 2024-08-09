@@ -675,6 +675,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(sound)
         STRUCT_FOR_ID(source)
         STRUCT_FOR_ID(source_traceback)
+        STRUCT_FOR_ID(spam)
         STRUCT_FOR_ID(src)
         STRUCT_FOR_ID(src_dir_fd)
         STRUCT_FOR_ID(stacklevel)

@@ -183,6 +183,24 @@ class PropertyTests(unittest.TestCase):
             fake_prop.__init__('fget', 'fset', 'fdel', 'doc')
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
+    @support.refcount_test
+    def test_gh_115618(self):
+        # Py_XDECREF() was improperly called for None argument
+        # in property methods.
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        prop = property()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            prop = prop.getter(None)
+        self.assertIsNone(prop.fget)
+        for i in range(100):
+            prop = prop.setter(None)
+        self.assertIsNone(prop.fset)
+        for i in range(100):
+            prop = prop.deleter(None)
+        self.assertIsNone(prop.fdel)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_class_property(self):
@@ -245,6 +263,7 @@ class PropertySubSlots(property):
 
 class PropertySubclassTests(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_slots_docstring_copy_exception(self):
         # A special case error that we preserve despite the GH-98963 behavior
         # that would otherwise silently ignore this error.
@@ -411,6 +430,40 @@ class PropertySubclassTests(unittest.TestCase):
         p2 = p.getter(getter2)
         self.assertEqual(p.__doc__, "user")
         self.assertEqual(p2.__doc__, "user")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_prefer_explicit_doc(self):
+        # Issue 25757: subclasses of property lose docstring
+        self.assertEqual(property(doc="explicit doc").__doc__, "explicit doc")
+        self.assertEqual(PropertySub(doc="explicit doc").__doc__, "explicit doc")
+
+        class Foo:
+            spam = PropertySub(doc="spam explicit doc")
+
+            @spam.getter
+            def spam(self):
+                """ignored as doc already set"""
+                return 1
+
+            def _stuff_getter(self):
+                """ignored as doc set directly"""
+            stuff = PropertySub(doc="stuff doc argument", fget=_stuff_getter)
+
+        #self.assertEqual(Foo.spam.__doc__, "spam explicit doc")
+        self.assertEqual(Foo.stuff.__doc__, "stuff doc argument")
+
+    def test_property_no_doc_on_getter(self):
+        # If a property's getter has no __doc__ then the property's doc should
+        # be None; test that this is consistent with subclasses as well; see
+        # GH-2487
+        class NoDoc:
+            @property
+            def __doc__(self):
+                raise AttributeError
+
+        self.assertEqual(property(NoDoc()).__doc__, None)
+        self.assertEqual(PropertySub(NoDoc()).__doc__, None)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")

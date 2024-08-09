@@ -1773,6 +1773,7 @@ class SubinterpreterTest(unittest.TestCase):
         # double checked at the time this test was written.
         config = _testinternalcapi.get_config()
         config['int_max_str_digits'] = 55555
+        config['parse_argv'] = 0
         _testinternalcapi.set_config(config)
         sub_value = _testinternalcapi.get_config()['int_max_str_digits']
         assert sub_value == 55555, sub_value
@@ -2092,6 +2093,22 @@ class TestThreadState(unittest.TestCase):
         t = threading.Thread(target=target)
         t.start()
         t.join()
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_thread_gilstate_in_clear(self):
+        # See https://github.com/python/cpython/issues/119585
+        class C:
+            def __del__(self):
+                _testcapi.gilstate_ensure_release()
+
+        # Thread-local variables are destroyed in `PyThreadState_Clear()`.
+        local_var = threading.local()
+
+        def callback():
+            local_var.x = C()
+
+        _testcapi._test_thread_state(callback)
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()

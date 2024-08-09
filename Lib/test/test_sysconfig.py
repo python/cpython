@@ -149,17 +149,21 @@ class TestSysConfig(unittest.TestCase):
                                'python%d.%d' % sys.version_info[:2],
                                'site-packages')
 
-        # Resolve the paths in prefix
-        binpath = os.path.join(sys.prefix, binpath)
-        incpath = os.path.join(sys.prefix, incpath)
-        libpath = os.path.join(sys.prefix, libpath)
+        # Resolve the paths in an imaginary venv/ directory
+        binpath = os.path.join('venv', binpath)
+        incpath = os.path.join('venv', incpath)
+        libpath = os.path.join('venv', libpath)
 
-        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv'))
-        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv'))
+        # Mimic the venv module, set all bases to the venv directory
+        bases = ('base', 'platbase', 'installed_base', 'installed_platbase')
+        vars = {base: 'venv' for base in bases}
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv', vars=vars))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv', vars=vars))
 
         # The include directory on POSIX isn't exactly the same as before,
         # but it is "within"
-        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv')
+        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv', vars=vars)
         self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
 
     def test_nt_venv_scheme(self):
@@ -169,14 +173,19 @@ class TestSysConfig(unittest.TestCase):
         incpath = 'Include'
         libpath = os.path.join('Lib', 'site-packages')
 
-        # Resolve the paths in prefix
-        binpath = os.path.join(sys.prefix, binpath)
-        incpath = os.path.join(sys.prefix, incpath)
-        libpath = os.path.join(sys.prefix, libpath)
+        # Resolve the paths in an imaginary venv\ directory
+        venv = 'venv'
+        binpath = os.path.join(venv, binpath)
+        incpath = os.path.join(venv, incpath)
+        libpath = os.path.join(venv, libpath)
 
-        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv'))
-        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv'))
-        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv'))
+        # Mimic the venv module, set all bases to the venv directory
+        bases = ('base', 'platbase', 'installed_base', 'installed_platbase')
+        vars = {base: 'venv' for base in bases}
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv', vars=vars))
+        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv', vars=vars))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv', vars=vars))
 
     def test_venv_scheme(self):
         if sys.platform == 'win32':

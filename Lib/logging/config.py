@@ -500,6 +500,33 @@ class BaseConfigurator(object):
             value = tuple(value)
         return value
 
+def _is_queue_like_object(obj):
+    """Check that *obj* implements the Queue API."""
+    if isinstance(obj, queue.Queue):
+        return True
+    # defer importing multiprocessing as much as possible
+    from multiprocessing.queues import Queue as MPQueue
+    if isinstance(obj, MPQueue):
+        return True
+    # Depending on the multiprocessing start context, we cannot create
+    # a multiprocessing.managers.BaseManager instance 'mm' to get the
+    # runtime type of mm.Queue() or mm.JoinableQueue() (see gh-119819).
+    #
+    # Since we only need an object implementing the Queue API, we only
+    # do a protocol check, but we do not use typing.runtime_checkable()
+    # and typing.Protocol to reduce import time (see gh-121723).
+    #
+    # Ideally, we would have wanted to simply use strict type checking
+    # instead of a protocol-based type checking since the latter does
+    # not check the method signatures.
+    queue_interface = [
+        'empty', 'full', 'get', 'get_nowait',
+        'put', 'put_nowait', 'join', 'qsize',
+        'task_done',
+    ]
+    return all(callable(getattr(obj, method, None))
+               for method in queue_interface)
+
 class DictConfigurator(BaseConfigurator):
     """
     Configure logging using a dictionary-like object to describe the
@@ -732,16 +759,16 @@ class DictConfigurator(BaseConfigurator):
 
     def _configure_queue_handler(self, klass, **kwargs):
         if 'queue' in kwargs:
-            q = kwargs['queue']
+            q = kwargs.pop('queue')
         else:
             q = queue.Queue()  # unbounded
-        rhl = kwargs.get('respect_handler_level', False)
-        if 'listener' in kwargs:
-            lklass = kwargs['listener']
-        else:
-            lklass = logging.handlers.QueueListener
-        listener = lklass(q, *kwargs.get('handlers', []), respect_handler_level=rhl)
-        handler = klass(q)
+
+        rhl = kwargs.pop('respect_handler_level', False)
+        lklass = kwargs.pop('listener', logging.handlers.QueueListener)
+        handlers = kwargs.pop('handlers', [])
+
+        listener = lklass(q, *handlers, respect_handler_level=rhl)
+        handler = klass(q, **kwargs)
         handler.listener = listener
         return handler
 
@@ -768,38 +795,39 @@ class DictConfigurator(BaseConfigurator):
                 klass = cname
             else:
                 klass = self.resolve(cname)
-            if issubclass(klass, logging.handlers.MemoryHandler) and\
-                'target' in config:
-                # Special case for handler which refers to another handler
-                try:
-                    tn = config['target']
-                    th = self.config['handlers'][tn]
-                    if not isinstance(th, logging.Handler):
-                        config.update(config_copy)  # restore for deferred cfg
-                        raise TypeError('target not configured yet')
-                    config['target'] = th
-                except Exception as e:
-                    raise ValueError('Unable to set target handler %r' % tn) from e
+            if issubclass(klass, logging.handlers.MemoryHandler):
+                if 'flushLevel' in config:
+                    config['flushLevel'] = logging._checkLevel(config['flushLevel'])
+                if 'target' in config:
+                    # Special case for handler which refers to another handler
+                    try:
+                        tn = config['target']
+                        th = self.config['handlers'][tn]
+                        if not isinstance(th, logging.Handler):
+                            config.update(config_copy)  # restore for deferred cfg
+                            raise TypeError('target not configured yet')
+                        config['target'] = th
+                    except Exception as e:
+                        raise ValueError('Unable to set target handler %r' % tn) from e
             elif issubclass(klass, logging.handlers.QueueHandler):
                 # Another special case for handler which refers to other handlers
                 # if 'handlers' not in config:
                     # raise ValueError('No handlers specified for a QueueHandler')
                 if 'queue' in config:
-                    from multiprocessing.queues import Queue as MPQueue
                     qspec = config['queue']
-                    if not isinstance(qspec, (queue.Queue, MPQueue)):
-                        if isinstance(qspec, str):
-                            q = self.resolve(qspec)
-                            if not callable(q):
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = q()
-                        elif isinstance(qspec, dict):
-                            if '()' not in qspec:
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = self.configure_custom(dict(qspec))
-                        else:
+
+                    if isinstance(qspec, str):
+                        q = self.resolve(qspec)
+                        if not callable(q):
                             raise TypeError('Invalid queue specifier %r' % qspec)
-                        config['queue'] = q
+                        config['queue'] = q()
+                    elif isinstance(qspec, dict):
+                        if '()' not in qspec:
+                            raise TypeError('Invalid queue specifier %r' % qspec)
+                        config['queue'] = self.configure_custom(dict(qspec))
+                    elif not _is_queue_like_object(qspec):
+                        raise TypeError('Invalid queue specifier %r' % qspec)
+
                 if 'listener' in config:
                     lspec = config['listener']
                     if isinstance(lspec, type):

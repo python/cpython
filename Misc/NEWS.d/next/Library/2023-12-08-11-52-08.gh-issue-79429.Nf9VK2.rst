@@ -1,2 +1,0 @@
-Ignore FileNotFoundError when remove a temporary directory in the
-multiprocessing finalizer.

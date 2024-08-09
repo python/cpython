@@ -2277,12 +2277,18 @@ PyGILState_Release(PyGILState_STATE oldstate)
         /* can't have been locked when we created it */
         assert(oldstate == PyGILState_UNLOCKED);
         // XXX Unbind tstate here.
+        // gh-119585: `PyThreadState_Clear()` may call destructors that
+        // themselves use PyGILState_Ensure and PyGILState_Release, so make
+        // sure that gilstate_counter is not zero when calling it.
+        ++tstate->gilstate_counter;
         PyThreadState_Clear(tstate);
+        --tstate->gilstate_counter;
         /* Delete the thread-state.  Note this releases the GIL too!
          * It's vital that the GIL be held here, to avoid shutdown
          * races; see bugs 225673 and 1061968 (that nasty bug has a
          * habit of coming back).
          */
+        assert(tstate->gilstate_counter == 0);
         assert(current_fast_get(runtime) == tstate);
         _PyThreadState_DeleteCurrent(tstate);
     }

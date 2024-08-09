@@ -822,6 +822,14 @@ test_thread_state(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+gilstate_ensure_release(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyGILState_Release(state);
+    Py_RETURN_NONE;
+}
+
 #ifndef MS_WINDOWS
 static PyThread_type_lock wait_done = NULL;
 
@@ -2826,106 +2834,59 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
 
     PyObject **c_kwargs = NULL;
 
-    if (!PyArg_UnpackTuple(pos_args,
-                           "eval_code_ex",
-                           2,
-                           8,
-                           &code,
-                           &globals,
-                           &locals,
-                           &args,
-                           &kwargs,
-                           &defaults,
-                           &kw_defaults,
-                           &closure))
+    if (!PyArg_ParseTuple(pos_args,
+                          "OO|OO!O!O!OO:eval_code_ex",
+                          &code,
+                          &globals,
+                          &locals,
+                          &PyTuple_Type, &args,
+                          &PyDict_Type, &kwargs,
+                          &PyTuple_Type, &defaults,
+                          &kw_defaults,
+                          &closure))
     {
         goto exit;
     }
 
-    if (!PyCode_Check(code)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "code must be a Python code object");
-        goto exit;
-    }
-
-    if (!PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
-        goto exit;
-    }
-
-    if (locals && !PyMapping_Check(locals)) {
-        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-        goto exit;
-    }
-    if (locals == Py_None) {
-        locals = NULL;
-    }
+    NULLABLE(code);
+    NULLABLE(globals);
+    NULLABLE(locals);
+    NULLABLE(kw_defaults);
+    NULLABLE(closure);
 
     PyObject **c_args = NULL;
     Py_ssize_t c_args_len = 0;
-
-    if (args)
-    {
-        if (!PyTuple_Check(args)) {
-            PyErr_SetString(PyExc_TypeError, "args must be a tuple");
-            goto exit;
-        } else {
-            c_args = &PyTuple_GET_ITEM(args, 0);
-            c_args_len = PyTuple_Size(args);
-        }
+    if (args) {
+        c_args = &PyTuple_GET_ITEM(args, 0);
+        c_args_len = PyTuple_Size(args);
     }
 
     Py_ssize_t c_kwargs_len = 0;
-
-    if (kwargs)
-    {
-        if (!PyDict_Check(kwargs)) {
-            PyErr_SetString(PyExc_TypeError, "keywords must be a dict");
-            goto exit;
-        } else {
-            c_kwargs_len = PyDict_Size(kwargs);
-            if (c_kwargs_len > 0) {
-                c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
-                if (!c_kwargs) {
-                    PyErr_NoMemory();
-                    goto exit;
-                }
-
-                Py_ssize_t i = 0;
-                Py_ssize_t pos = 0;
-
-                while (PyDict_Next(kwargs,
-                                   &pos,
-                                   &c_kwargs[i],
-                                   &c_kwargs[i + 1]))
-                {
-                    i += 2;
-                }
-                c_kwargs_len = i / 2;
-                /* XXX This is broken if the caller deletes dict items! */
+    if (kwargs) {
+        c_kwargs_len = PyDict_Size(kwargs);
+        if (c_kwargs_len > 0) {
+            c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
+            if (!c_kwargs) {
+                PyErr_NoMemory();
+                goto exit;
             }
+
+            Py_ssize_t i = 0;
+            Py_ssize_t pos = 0;
+            while (PyDict_Next(kwargs, &pos, &c_kwargs[i], &c_kwargs[i + 1])) {
+                i += 2;
+            }
+            c_kwargs_len = i / 2;
+            /* XXX This is broken if the caller deletes dict items! */
         }
     }
 
-
     PyObject **c_defaults = NULL;
     Py_ssize_t c_defaults_len = 0;
-
-    if (defaults && PyTuple_Check(defaults)) {
+    if (defaults) {
         c_defaults = &PyTuple_GET_ITEM(defaults, 0);
         c_defaults_len = PyTuple_Size(defaults);
     }
-
-    if (kw_defaults && !PyDict_Check(kw_defaults)) {
-        PyErr_SetString(PyExc_TypeError, "kw_defaults must be a dict");
-        goto exit;
-    }
-
-    if (closure && !PyTuple_Check(closure)) {
-        PyErr_SetString(PyExc_TypeError, "closure must be a tuple of cells");
-        goto exit;
-    }
-
 
     result = PyEval_EvalCodeEx(
         code,
@@ -3314,6 +3275,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
+    {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
 #ifndef MS_WINDOWS
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
     {"_end_spawned_pthread",    end_spawned_pthread,             METH_NOARGS},
@@ -3986,11 +3948,22 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    PyModule_AddObject(m, "SIZEOF_PID_T", PyLong_FromSsize_t(sizeof(pid_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+
+    if (PyModule_AddIntMacro(m, Py_single_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_file_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_eval_input)) {
+        return NULL;
+    }
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
@@ -4078,6 +4051,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Run(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_File(m) < 0) {

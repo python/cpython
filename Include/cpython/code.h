@@ -75,7 +75,7 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-/* Ancilliary data structure used for instrumentation.
+/* Ancillary data structure used for instrumentation.
    Line instrumentation creates an array of
    these. One entry per code unit.*/
 typedef struct {
@@ -207,7 +207,7 @@ struct PyCodeObject _PyCode_DEF(1);
 */
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
 
-#define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
+#define CO_MAXBLOCKS 21 /* Max static block nesting within a function */
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 

@@ -1,5 +1,5 @@
-:mod:`ssl` --- TLS/SSL wrapper for socket objects
-=================================================
+:mod:`!ssl` --- TLS/SSL wrapper for socket objects
+==================================================
 
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
@@ -735,11 +735,11 @@ Constants
    When Python has been compiled against an older version of OpenSSL, the
    flag defaults to *0*.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.6.3
 
    .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
-      3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
+      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15 and
+      3.6.3 for backwards compatibility with OpenSSL 1.0.2.
 
 .. data:: OP_NO_RENEGOTIATION
 
@@ -759,7 +759,7 @@ Constants
 
 .. data:: OP_SINGLE_DH_USE
 
-   Prevents re-use of the same DH key for distinct SSL sessions.  This
+   Prevents reuse of the same DH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -767,7 +767,7 @@ Constants
 
 .. data:: OP_SINGLE_ECDH_USE
 
-   Prevents re-use of the same ECDH key for distinct SSL sessions.  This
+   Prevents reuse of the same ECDH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -1428,6 +1428,19 @@ to speed up repeated connections from the same clients.
       :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
       :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
+   .. note::
+
+      :class:`SSLContext` only supports limited mutation once it has been used
+      by a connection. Adding new certificates to the internal trust store is
+      allowed, but changing ciphers, verification settings, or mTLS
+      certificates may result in surprising behavior.
+
+   .. note::
+
+      :class:`SSLContext` is designed to be shared and used by multiple
+      connections.
+      Thus, it is thread-safe as long as it is not reconfigured after being
+      used by a connection.
 
 :class:`SSLContext` objects have the following methods and attributes:
 
@@ -1684,7 +1697,7 @@ to speed up repeated connections from the same clients.
    IDN-encoded internationalized domain name, the *server_name_callback*
    receives a decoded U-label (``"pythön.org"``).
 
-   If there is an decoding error on the server name, the TLS connection will
+   If there is a decoding error on the server name, the TLS connection will
    terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
    alert message to the client.
 
@@ -1765,6 +1778,9 @@ to speed up repeated connections from the same clients.
 
    *session*, see :attr:`~SSLSocket.session`.
 
+   To wrap an :class:`SSLSocket` in another :class:`SSLSocket`, use
+   :meth:`SSLContext.wrap_bio`.
+
    .. versionchanged:: 3.5
       Always allow a server_hostname to be passed, even if OpenSSL does not
       have SNI.
@@ -1772,7 +1788,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       *session* argument was added.
 
-    .. versionchanged:: 3.7
+   .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
@@ -1950,7 +1966,7 @@ to speed up repeated connections from the same clients.
 
    .. versionchanged:: 3.10
 
-      The flag had no effect with OpenSSL before version 1.1.1k. Python 3.8.9,
+      The flag had no effect with OpenSSL before version 1.1.1l. Python 3.8.9,
       3.9.3, and 3.10 include workarounds for previous versions.
 
 .. attribute:: SSLContext.security_level
@@ -2553,7 +2569,7 @@ Verifying certificates
 
 When calling the :class:`SSLContext` constructor directly,
 :const:`CERT_NONE` is the default.  Since it does not authenticate the other
-peer, it can be insecure, especially in client mode where most of time you
+peer, it can be insecure, especially in client mode where most of the time you
 would like to ensure the authenticity of the server you're talking to.
 Therefore, when in client mode, it is highly recommended to use
 :const:`CERT_REQUIRED`.  However, it is in itself not sufficient; you also

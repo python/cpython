@@ -55,7 +55,6 @@ if command -v ccache >/dev/null 2>&1; then
     CXX="ccache ${CXX}"
 fi
 
-LDSHARED="${WASI_SDK_PATH}/bin/wasm-ld"
 AR="${WASI_SDK_PATH}/bin/llvm-ar"
 RANLIB="${WASI_SDK_PATH}/bin/ranlib"
 

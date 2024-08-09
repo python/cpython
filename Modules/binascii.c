@@ -424,6 +424,13 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         if (this_ch == BASE64_PAD) {
             padding_started = 1;
 
+            if (strict_mode && quad_pos == 0) {
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error, "Excess padding not allowed");
+                }
+                goto error_end;
+            }
             if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
                 /* A pad sequence means we should not parse more input.
                 ** We've already interpreted the data from the quad at this point.

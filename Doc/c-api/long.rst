@@ -117,7 +117,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: long PyLong_AsLong(PyObject *obj)
 
    .. index::
-      single: LONG_MAX
+      single: LONG_MAX (C macro)
       single: OverflowError (built-in exception)
 
    Return a C :c:expr:`long` representation of *obj*.  If *obj* is not an
@@ -202,7 +202,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
 
    .. index::
-      single: PY_SSIZE_T_MAX
+      single: PY_SSIZE_T_MAX (C macro)
       single: OverflowError (built-in exception)
 
    Return a C :c:type:`Py_ssize_t` representation of *pylong*.  *pylong* must
@@ -217,7 +217,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)
 
    .. index::
-      single: ULONG_MAX
+      single: ULONG_MAX (C macro)
       single: OverflowError (built-in exception)
 
    Return a C :c:expr:`unsigned long` representation of *pylong*.  *pylong*
@@ -233,7 +233,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: size_t PyLong_AsSize_t(PyObject *pylong)
 
    .. index::
-      single: SIZE_MAX
+      single: SIZE_MAX (C macro)
       single: OverflowError (built-in exception)
 
    Return a C :c:type:`size_t` representation of *pylong*.  *pylong* must be
@@ -322,6 +322,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    with :c:func:`PyLong_FromVoidPtr`.
 
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
+
+.. c:function:: PyObject* PyLong_GetInfo(void)
+
+   On success, return a read only :term:`named tuple`, that holds
+   information about Python's internal representation of integers.
+   See :data:`sys.int_info` for description of individual fields.
+
+   On failure, return ``NULL`` with an exception set.
+
+   .. versionadded:: 3.1
 
 
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)

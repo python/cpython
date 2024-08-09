@@ -499,7 +499,7 @@ PyConfig
       The :c:func:`PyConfig_Read` function only parses
       :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv`
       is set to ``2`` after arguments are parsed. Since Python arguments are
-      strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+      stripped from :c:member:`PyConfig.argv`, parsing arguments twice would
       parse the application options as Python options.
 
       :ref:`Preinitialize Python <c-preinit>` if needed.
@@ -1000,7 +1000,7 @@ PyConfig
       The :c:func:`PyConfig_Read` function only parses
       :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv`
       is set to ``2`` after arguments are parsed. Since Python arguments are
-      strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+      stripped from :c:member:`PyConfig.argv`, parsing arguments twice would
       parse the application options as Python options.
 
       Default: ``1`` in Python mode, ``0`` in isolated mode.

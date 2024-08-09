@@ -20,7 +20,7 @@ from functools import cached_property
 from test.support import MISSING_C_DOCSTRINGS
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
-from test.support.import_helper import import_module
+from test.support.import_helper import import_module, CleanImport
 
 lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()
@@ -1719,12 +1719,25 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                 with self.subTest("warning", path_var=path_var):
                     # Note: Per PEP 615 the warning is implementation-defined
                     # behavior, other implementations need not warn.
-                    with self.assertWarns(self.module.InvalidTZPathWarning):
+                    with self.assertWarns(self.module.InvalidTZPathWarning) as w:
                         self.module.reset_tzpath()
+                    self.assertEqual(w.warnings[0].filename, __file__)
 
                 tzpath = self.module.TZPATH
                 with self.subTest("filtered", path_var=path_var):
                     self.assertSequenceEqual(tzpath, expected_paths)
+
+    def test_env_variable_relative_paths_warning_location(self):
+        path_var = "path/to/somewhere"
+
+        with self.python_tzpath_context(path_var):
+            with CleanImport("zoneinfo", "zoneinfo._tzpath"):
+                with self.assertWarns(RuntimeWarning) as w:
+                    import zoneinfo
+                InvalidTZPathWarning = zoneinfo.InvalidTZPathWarning
+            self.assertIsInstance(w.warnings[0].message, InvalidTZPathWarning)
+            # It should represent the current file:
+            self.assertEqual(w.warnings[0].filename, __file__)
 
     def test_reset_tzpath_kwarg(self):
         self.module.reset_tzpath(to=["/a/b/c"])

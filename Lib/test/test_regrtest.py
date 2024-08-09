@@ -21,13 +21,15 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+from xml.etree import ElementTree
+
 from test import support
 from test.support import os_helper
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
-from test.libregrtest.filter import set_match_tests, match_test
+from test.libregrtest.filter import get_match_tests, set_match_tests, match_test
 from test.libregrtest.result import TestStats
 from test.libregrtest.utils import normalize_test_name
 
@@ -389,7 +391,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
 
-    def check_ci_mode(self, args, use_resources, rerun=True):
+    def create_regrtest(self, args):
         ns = cmdline._parse_args(args)
 
         # Check Regrtest attributes which are more reliable than Namespace
@@ -401,6 +403,10 @@ class ParseArgsTestCase(unittest.TestCase):
 
             regrtest = main.Regrtest(ns)
 
+        return regrtest
+
+    def check_ci_mode(self, args, use_resources, rerun=True):
+        regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
@@ -445,6 +451,20 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--dont-add-python-opts']
         ns = cmdline._parse_args(args)
         self.assertFalse(ns._add_python_opts)
+
+    def test_bisect(self):
+        args = ['--bisect']
+        regrtest = self.create_regrtest(args)
+        self.assertTrue(regrtest.want_bisect)
+
+    def test_verbose3_huntrleaks(self):
+        args = ['-R', '3:10', '--verbose3']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.hunt_refleak)
+        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
+        self.assertEqual(regrtest.hunt_refleak.runs, 10)
+        self.assertFalse(regrtest.output_on_failure)
 
 
 @dataclasses.dataclass(slots=True)
@@ -1148,8 +1168,8 @@ class ArgsTestCase(BaseTestCase):
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
 
-        line = 'beginning 6 repetitions\n123456\n......\n'
-        self.check_line(output, re.escape(line))
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        self.check_line(output, line)
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
         self.assertIn(line2, output)
@@ -1177,6 +1197,47 @@ class ArgsTestCase(BaseTestCase):
 
     def test_huntrleaks_mp(self):
         self.check_huntrleaks(run_workers=True)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    def test_huntrleaks_bisect(self):
+        # test --huntrleaks --bisect
+        code = textwrap.dedent("""
+            import unittest
+
+            GLOBAL_LIST = []
+
+            class RefLeakTest(unittest.TestCase):
+                def test1(self):
+                    pass
+
+                def test2(self):
+                    pass
+
+                def test3(self):
+                    GLOBAL_LIST.append(object())
+
+                def test4(self):
+                    pass
+        """)
+
+        test = self.create_test('huntrleaks', code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(os_helper.unlink, filename)
+        cmd = ['--huntrleaks', '3:3:', '--bisect', test]
+        output = self.run_tests(*cmd,
+                                exitcode=EXITCODE_BAD_TEST,
+                                stderr=subprocess.STDOUT)
+
+        self.assertIn(f"Bisect {test}", output)
+        self.assertIn(f"Bisect {test}: exit code 0", output)
+
+        # test3 is the one which leaks
+        self.assertIn("Bisection completed in", output)
+        self.assertIn(
+            "Tests (1):\n"
+            f"* {test}.RefLeakTest.test3\n",
+            output)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
@@ -2162,6 +2223,44 @@ class ArgsTestCase(BaseTestCase):
             self.check_executed_tests(output, testname, stats=1, parallel=True)
             self.assertNotIn('SPAM SPAM SPAM', output)
 
+    def test_xml(self):
+        code = textwrap.dedent(r"""
+            import unittest
+            from test import support
+
+            class VerboseTests(unittest.TestCase):
+                def test_failed(self):
+                    print("abc \x1b def")
+                    self.fail()
+        """)
+        testname = self.create_test(code=code)
+
+        # Run sequentially
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        output = self.run_tests(testname, "--junit-xml", filename,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=testname,
+                                  stats=TestStats(1, 1, 0))
+
+        # Test generated XML
+        with open(filename, encoding="utf8") as fp:
+            content = fp.read()
+
+        testsuite = ElementTree.fromstring(content)
+        self.assertEqual(int(testsuite.get('tests')), 1)
+        self.assertEqual(int(testsuite.get('errors')), 0)
+        self.assertEqual(int(testsuite.get('failures')), 1)
+
+        testcase = testsuite[0][0]
+        self.assertEqual(testcase.get('status'), 'run')
+        self.assertEqual(testcase.get('result'), 'completed')
+        self.assertGreater(float(testcase.get('time')), 0)
+        for out in testcase.iter('system-out'):
+            self.assertEqual(out.text, r"abc \x1b def")
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):
@@ -2233,6 +2332,10 @@ class TestUtils(unittest.TestCase):
 
             def id(self):
                 return self.test_id
+
+        # Restore patterns once the test completes
+        patterns = get_match_tests()
+        self.addCleanup(set_match_tests, patterns)
 
         test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
@@ -2339,6 +2442,25 @@ class TestUtils(unittest.TestCase):
             self.assertFalse(match_test(test_access))
             self.assertTrue(match_test(test_chdir))
             self.assertFalse(match_test(test_copy))
+
+    def test_sanitize_xml(self):
+        sanitize_xml = utils.sanitize_xml
+
+        # escape invalid XML characters
+        self.assertEqual(sanitize_xml('abc \x1b\x1f def'),
+                         r'abc \x1b\x1f def')
+        self.assertEqual(sanitize_xml('nul:\x00, bell:\x07'),
+                         r'nul:\x00, bell:\x07')
+        self.assertEqual(sanitize_xml('surrogate:\uDC80'),
+                         r'surrogate:\udc80')
+        self.assertEqual(sanitize_xml('illegal \uFFFE and \uFFFF'),
+                         r'illegal \ufffe and \uffff')
+
+        # no escape for valid XML characters
+        self.assertEqual(sanitize_xml('a\n\tb'),
+                         'a\n\tb')
+        self.assertEqual(sanitize_xml('valid t\xe9xt \u20ac'),
+                         'valid t\xe9xt \u20ac')
 
 
 if __name__ == '__main__':

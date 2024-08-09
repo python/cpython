@@ -1109,6 +1109,8 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
         if (c == dialect->delimiter ||
             c == dialect->escapechar ||
             c == dialect->quotechar  ||
+            c == '\n'  ||
+            c == '\r'  ||
             PyUnicode_FindChar(
                 dialect->lineterminator, c, 0,
                 PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
@@ -1180,6 +1182,7 @@ join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
 static int
 join_append(WriterObj *self, PyObject *field, int quoted)
 {
+    DialectObj *dialect = self->dialect;
     int field_kind = -1;
     const void *field_data = NULL;
     Py_ssize_t field_len = 0;
@@ -1191,6 +1194,19 @@ join_append(WriterObj *self, PyObject *field, int quoted)
         field_kind = PyUnicode_KIND(field);
         field_data = PyUnicode_DATA(field);
         field_len = PyUnicode_GET_LENGTH(field);
+    }
+    if (!field_len && dialect->delimiter == ' ' && dialect->skipinitialspace) {
+        if (dialect->quoting == QUOTE_NONE ||
+            (field == NULL &&
+             (dialect->quoting == QUOTE_STRINGS ||
+              dialect->quoting == QUOTE_NOTNULL)))
+        {
+            PyErr_Format(self->error_obj,
+                         "empty field must be quoted if delimiter is a space "
+                         "and skipinitialspace is true");
+            return 0;
+        }
+        quoted = 1;
     }
     rec_len = join_append_data(self, field_kind, field_data, field_len,
                                &quoted, 0);
@@ -1243,6 +1259,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
 {
     DialectObj *dialect = self->dialect;
     PyObject *iter, *field, *line, *result;
+    bool null_field = false;
 
     iter = PyObject_GetIter(seq);
     if (iter == NULL) {
@@ -1279,11 +1296,12 @@ csv_writerow(WriterObj *self, PyObject *seq)
             break;
         }
 
+        null_field = (field == Py_None);
         if (PyUnicode_Check(field)) {
             append_ok = join_append(self, field, quoted);
             Py_DECREF(field);
         }
-        else if (field == Py_None) {
+        else if (null_field) {
             append_ok = join_append(self, NULL, quoted);
             Py_DECREF(field);
         }
@@ -1309,7 +1327,11 @@ csv_writerow(WriterObj *self, PyObject *seq)
         return NULL;
 
     if (self->num_fields > 0 && self->rec_len == 0) {
-        if (dialect->quoting == QUOTE_NONE) {
+        if (dialect->quoting == QUOTE_NONE ||
+            (null_field &&
+             (dialect->quoting == QUOTE_STRINGS ||
+              dialect->quoting == QUOTE_NOTNULL)))
+        {
             PyErr_Format(self->error_obj,
                 "single empty field record must be quoted");
             return NULL;

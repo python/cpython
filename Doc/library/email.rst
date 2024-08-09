@@ -1,5 +1,5 @@
-:mod:`email` --- An email and MIME handling package
-===================================================
+:mod:`!email` --- An email and MIME handling package
+====================================================
 
 .. module:: email
    :synopsis: Package supporting the parsing, manipulating, and generating

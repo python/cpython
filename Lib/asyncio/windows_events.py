@@ -8,6 +8,7 @@ if sys.platform != 'win32':  # pragma: no cover
 import _overlapped
 import _winapi
 import errno
+from functools import partial
 import math
 import msvcrt
 import socket
@@ -323,13 +324,13 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             if self._self_reading_future is not None:
                 ov = self._self_reading_future._ov
                 self._self_reading_future.cancel()
-                # self_reading_future was just cancelled so if it hasn't been
-                # finished yet, it never will be (it's possible that it has
-                # already finished and its callback is waiting in the queue,
-                # where it could still happen if the event loop is restarted).
-                # Unregister it otherwise IocpProactor.close will wait for it
-                # forever
-                if ov is not None:
+                # self_reading_future always uses IOCP, so even though it's
+                # been cancelled, we need to make sure that the IOCP message
+                # is received so that the kernel is not holding on to the
+                # memory, possibly causing memory corruption later. Only
+                # unregister it if IO is complete in all respects. Otherwise
+                # we need another _poll() later to complete the IO.
+                if ov is not None and not ov.pending:
                     self._proactor._unregister(ov)
                 self._self_reading_future = None
 
@@ -466,6 +467,18 @@ class IocpProactor:
             else:
                 raise
 
+    @classmethod
+    def _finish_recvfrom(cls, trans, key, ov, *, empty_result):
+        try:
+            return cls.finish_socket_func(trans, key, ov)
+        except OSError as exc:
+            # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the same
+            # socket is used to send to an address that is not listening.
+            if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
+                return empty_result, None
+            else:
+                raise
+
     def recv(self, conn, nbytes, flags=0):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)
@@ -500,7 +513,8 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((b'', None))
 
-        return self._register(ov, conn, self.finish_socket_func)
+        return self._register(ov, conn, partial(self._finish_recvfrom,
+                                                empty_result=b''))
 
     def recvfrom_into(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -510,17 +524,8 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((0, None))
 
-        def finish_recv(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
-
-        return self._register(ov, conn, finish_recv)
+        return self._register(ov, conn, partial(self._finish_recvfrom,
+                                                empty_result=0))
 
     def sendto(self, conn, buf, flags=0, addr=None):
         self._register_with_iocp(conn)

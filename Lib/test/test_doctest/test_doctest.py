@@ -686,6 +686,7 @@ It used to be broken for quite some time until `bpo-28249`.
      None  test.test_doctest.doctest_lineno.MethodWrapper.method_without_docstring
        61  test.test_doctest.doctest_lineno.MethodWrapper.property_with_doctest
         4  test.test_doctest.doctest_lineno.func_with_docstring
+       77  test.test_doctest.doctest_lineno.func_with_docstring_wrapped
        12  test.test_doctest.doctest_lineno.func_with_doctest
      None  test.test_doctest.doctest_lineno.func_without_docstring
 
@@ -2487,13 +2488,42 @@ class Wrapper:
         self.func(*args, **kwargs)
 
 @Wrapper
-def test_look_in_unwrapped():
+def wrapped():
     """
     Docstrings in wrapped functions must be detected as well.
 
     >>> 'one other test'
     'one other test'
     """
+
+def test_look_in_unwrapped():
+    """
+    Ensure that wrapped doctests work correctly.
+
+    >>> import doctest
+    >>> doctest.run_docstring_examples(
+    ...     wrapped, {}, name=wrapped.__name__, verbose=True)
+    Finding tests in wrapped
+    Trying:
+        'one other test'
+    Expecting:
+        'one other test'
+    ok
+    """
+
+if support.check_impl_detail(cpython=True):
+    def test_wrapped_c_func():
+        """
+        # https://github.com/python/cpython/issues/117692
+        >>> import binascii
+        >>> from test.test_doctest.decorator_mod import decorator
+
+        >>> c_func_wrapped = decorator(binascii.b2a_hex)
+        >>> tests = doctest.DocTestFinder(exclude_empty=False).find(c_func_wrapped)
+        >>> for test in tests:
+        ...    print(test.lineno, test.name)
+        None b2a_hex
+        """
 
 def test_unittest_reportflags():
     """Default unittest reporting flags can be set to control reporting

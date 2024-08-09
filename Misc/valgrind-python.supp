@@ -104,6 +104,49 @@
 }
 
 #
+# Leaks: dlopen() called without dlclose()
+#
+
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_load_cache_lookup
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_map_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_check_map_versions
+}
+
+
+#
 # Non-python specific leaks
 #
 

@@ -4,7 +4,7 @@
 .. release date: 2023-07-11
 .. section: Security
 
-CVE-2023-27043: Prevent :func:`email.utils.parseaddr` and
+:cve:`2023-27043`: Prevent :func:`email.utils.parseaddr` and
 :func:`email.utils.getaddresses` from returning the realname portion of an
 invalid RFC2822 email header in the email address portion of the 2-tuple
 returned after being parsed by :class:`email._parseaddr.AddressList`.

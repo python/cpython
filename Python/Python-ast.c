@@ -13152,15 +13152,14 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
-    int COMPILER_STACK_FRAME_SCALE = 2;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
         return NULL;
     }
     struct validator vstate;
-    vstate.recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    vstate.recursion_limit = C_RECURSION_LIMIT;
     int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
+    starting_recursion_depth = recursion_depth;
     vstate.recursion_depth = starting_recursion_depth;
 
     PyObject *result = ast2obj_mod(state, &vstate, t);

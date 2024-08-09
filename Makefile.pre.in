@@ -578,7 +578,9 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/utf8tab.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
-		Modules/expat/xmltok_impl.h
+		Modules/expat/xmltok_impl.h \
+		Modules/expat/xmltok_impl.c \
+		Modules/expat/xmltok_ns.c
 
 ##########################################################################
 # hashlib's HACL* library
@@ -1322,7 +1324,7 @@ regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make-regen-sbom, and make regen-configure should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -2118,6 +2120,7 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
+		test/test_ast \
 		test/audiodata \
 		test/certdata \
 		test/certdata/capath \
@@ -2157,6 +2160,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/circular_imports/subpkg2/parent \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		test/test_import/data/package3 \
+		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
 		test/test_importlib \
 		test/test_importlib/builtin \
@@ -2208,6 +2213,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lib2to3/data/fixers/myfixes \
 		test/test_module \
 		test/test_peg_generator \
+		test/test_pydoc \
 		test/test_sqlite3 \
 		test/test_tkinter \
 		test/test_tomllib \
@@ -2244,7 +2250,11 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/wheeldata \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20 \
-		test/ziptestdata
+		test/ziptestdata \
+		test/test_concurrent_futures \
+		test/test_multiprocessing_fork \
+		test/test_multiprocessing_forkserver \
+		test/test_multiprocessing_spawn
 
 COMPILEALL_OPTS=-j0
 
@@ -2604,6 +2614,10 @@ autoconf:
 .PHONY: regen-configure
 regen-configure:
 	$(srcdir)/Tools/build/regen-configure.sh
+
+.PHONY: regen-sbom
+regen-sbom:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sbom.py
 
 # Create a tags file for vi
 tags::

@@ -23,7 +23,7 @@ _curses_panel_panel_bottom_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_bottom(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "bottom() takes no arguments");
         return NULL;
     }
@@ -47,7 +47,7 @@ _curses_panel_panel_hide_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_hide(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "hide() takes no arguments");
         return NULL;
     }
@@ -69,7 +69,7 @@ _curses_panel_panel_show_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_show(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "show() takes no arguments");
         return NULL;
     }
@@ -91,7 +91,7 @@ _curses_panel_panel_top_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_top(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "top() takes no arguments");
         return NULL;
     }
@@ -331,7 +331,7 @@ _curses_panel_panel_userptr_impl(PyCursesPanelObject *self,
 static PyObject *
 _curses_panel_panel_userptr(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "userptr() takes no arguments");
         return NULL;
     }
@@ -422,4 +422,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=8d0533681891523c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=550ee3ad1ce9ec07 input=a9049054013a1b77]*/

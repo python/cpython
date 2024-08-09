@@ -7,12 +7,12 @@ import sys
 import unittest
 import zipfile
 
+from test.support.os_helper import temp_dir, FakePath
+
 from ._functools import compose
 from ._itertools import Counter
 
 from ._test_params import parameterize, Invoked
-
-from test.support.os_helper import temp_dir
 
 
 class jaraco:
@@ -271,13 +271,13 @@ class TestPath(unittest.TestCase):
         zipfile.Path should be constructable from a path-like object
         """
         zipfile_ondisk = self.zipfile_ondisk(alpharep)
-        pathlike = pathlib.Path(str(zipfile_ondisk))
+        pathlike = FakePath(str(zipfile_ondisk))
         zipfile.Path(pathlike)
 
     @pass_alpharep
     def test_traverse_pathlike(self, alpharep):
         root = zipfile.Path(alpharep)
-        root / pathlib.Path("a")
+        root / FakePath("a")
 
     @pass_alpharep
     def test_parent(self, alpharep):
@@ -546,12 +546,12 @@ class TestPath(unittest.TestCase):
         ['alpharep', 'path_type', 'subpath'],
         itertools.product(
             alpharep_generators,
-            [str, pathlib.Path],
+            [str, FakePath],
             ['', 'b/'],
         ),
     )
     def test_pickle(self, alpharep, path_type, subpath):
-        zipfile_ondisk = path_type(self.zipfile_ondisk(alpharep))
+        zipfile_ondisk = path_type(str(self.zipfile_ondisk(alpharep)))
 
         saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
         restored_1 = pickle.loads(saved_1)
@@ -577,15 +577,3 @@ class TestPath(unittest.TestCase):
         zipfile.Path(alpharep)
         with self.assertRaises(KeyError):
             alpharep.getinfo('does-not-exist')
-
-    def test_root_folder_in_zipfile(self):
-        """
-        gh-112795: Some tools or self constructed codes will add '/' folder to
-        the zip file, this is a strange behavior, but we should support it.
-        """
-        in_memory_file = io.BytesIO()
-        zf = zipfile.ZipFile(in_memory_file, "w")
-        zf.mkdir('/')
-        zf.writestr('./a.txt', 'aaa')
-        tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
-        zf.extractall(tmpdir)

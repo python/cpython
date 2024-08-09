@@ -3,7 +3,6 @@ import sys
 import os
 from typing import Any, NoReturn
 
-from test import support
 from test.support import os_helper
 
 from .setup import setup_process, setup_test_dir
@@ -19,21 +18,10 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 def create_worker_process(runtests: WorkerRunTests, output_fd: int,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen:
-    python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
-    python_opts = support.args_from_interpreter_flags()
-    if python_cmd is not None:
-        executable = python_cmd
-        # Remove -E option, since --python=COMMAND can set PYTHON environment
-        # variables, such as PYTHONPATH, in the worker process.
-        python_opts = [opt for opt in python_opts if opt != "-E"]
-    else:
-        executable = (sys.executable,)
-    cmd = [*executable, *python_opts,
-           '-u',    # Unbuffered stdout and stderr
-           '-m', 'test.libregrtest.worker',
-           worker_json]
+    cmd = runtests.create_python_cmd()
+    cmd.extend(['-m', 'test.libregrtest.worker', worker_json])
 
     env = dict(os.environ)
     if tmp_dir is not None:

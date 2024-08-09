@@ -23,26 +23,25 @@
 
 --------------
 
-This module provides runtime support for type hints. For the original
-specification of the typing system, see :pep:`484`. For a simplified
-introduction to type hints, see :pep:`483`.
+This module provides runtime support for type hints.
 
+Consider the function below::
 
-The function below takes and returns a string and is annotated as follows::
+   def surface_area_of_cube(edge_length: float) -> str:
+       return f"The surface area of the cube is {6 * edge_length ** 2}."
 
-   def greeting(name: str) -> str:
-       return 'Hello ' + name
+The function ``surface_area_of_cube`` takes an argument expected to
+be an instance of :class:`float`, as indicated by the :term:`type hint`
+``edge_length: float``. The function is expected to return an instance
+of :class:`str`, as indicated by the ``-> str`` hint.
 
-In the function ``greeting``, the argument ``name`` is expected to be of type
-:class:`str` and the return type :class:`str`. Subtypes are accepted as
-arguments.
+While type hints can be simple classes like :class:`float` or :class:`str`,
+they can also be more complex. The :mod:`typing` module provides a vocabulary of
+more advanced type hints.
 
 New features are frequently added to the ``typing`` module.
-The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
+The :pypi:`typing_extensions` package
 provides backports of these new features to older versions of Python.
-
-For a summary of deprecated features and a deprecation timeline, please see
-`Deprecation Timeline of Major Features`_.
 
 .. seealso::
 
@@ -61,67 +60,11 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. _relevant-peps:
 
-Relevant PEPs
-=============
+Specification for the Python Type System
+========================================
 
-Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
-number of PEPs have modified and enhanced Python's framework for type
-annotations:
-
-.. raw:: html
-
-   <details>
-   <summary><a style="cursor:pointer;">The full list of PEPs</a></summary>
-
-* :pep:`526`: Syntax for Variable Annotations
-     *Introducing* syntax for annotating variables outside of function
-     definitions, and :data:`ClassVar`
-* :pep:`544`: Protocols: Structural subtyping (static duck typing)
-     *Introducing* :class:`Protocol` and the
-     :func:`@runtime_checkable<runtime_checkable>` decorator
-* :pep:`585`: Type Hinting Generics In Standard Collections
-     *Introducing* :class:`types.GenericAlias` and the ability to use standard
-     library classes as :ref:`generic types<types-genericalias>`
-* :pep:`586`: Literal Types
-     *Introducing* :data:`Literal`
-* :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
-     *Introducing* :class:`TypedDict`
-* :pep:`591`: Adding a final qualifier to typing
-     *Introducing* :data:`Final` and the :func:`@final<final>` decorator
-* :pep:`593`: Flexible function and variable annotations
-     *Introducing* :data:`Annotated`
-* :pep:`604`: Allow writing union types as ``X | Y``
-     *Introducing* :data:`types.UnionType` and the ability to use
-     the binary-or operator ``|`` to signify a
-     :ref:`union of types<types-union>`
-* :pep:`612`: Parameter Specification Variables
-     *Introducing* :class:`ParamSpec` and :data:`Concatenate`
-* :pep:`613`: Explicit Type Aliases
-     *Introducing* :data:`TypeAlias`
-* :pep:`646`: Variadic Generics
-     *Introducing* :data:`TypeVarTuple`
-* :pep:`647`: User-Defined Type Guards
-     *Introducing* :data:`TypeGuard`
-* :pep:`655`: Marking individual TypedDict items as required or potentially missing
-     *Introducing* :data:`Required` and :data:`NotRequired`
-* :pep:`673`: Self type
-    *Introducing* :data:`Self`
-* :pep:`675`: Arbitrary Literal String Type
-    *Introducing* :data:`LiteralString`
-* :pep:`681`: Data Class Transforms
-    *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
-* :pep:`692`: Using ``TypedDict`` for more precise ``**kwargs`` typing
-    *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
-    :data:`TypedDict`
-* :pep:`695`: Type Parameter Syntax
-    *Introducing* builtin syntax for creating generic functions, classes, and type aliases.
-* :pep:`698`: Adding an override decorator to typing
-    *Introducing* the :func:`@override<override>` decorator
-
-.. raw:: html
-
-   </details>
-   <br>
+The canonical, up-to-date specification of the Python type system can be
+found at `"Specification for the Python type system" <https://typing.readthedocs.io/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -155,8 +98,9 @@ Type aliases are useful for simplifying complex type signatures. For example::
    # The static type checker will treat the previous type signature as
    # being exactly equivalent to this one.
    def broadcast_message(
-           message: str,
-           servers: Sequence[tuple[tuple[str, int], dict[str, str]]]) -> None:
+       message: str,
+       servers: Sequence[tuple[tuple[str, int], dict[str, str]]]
+   ) -> None:
        ...
 
 The :keyword:`type` statement is new in Python 3.12. For backwards
@@ -900,14 +844,25 @@ using ``[]``.
    .. versionadded:: 3.11
 
 .. data:: Never
+          NoReturn
 
-   The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   :data:`!Never` and :data:`!NoReturn` represent the
+   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
    a type that has no members.
 
-   This can be used to define a function that should never be
-   called, or a function that never returns::
+   They can be used to indicate that a function never returns,
+   such as :func:`sys.exit`::
 
-      from typing import Never
+      from typing import Never  # or NoReturn
+
+      def stop() -> Never:
+          raise RuntimeError('no way')
+
+   Or to define a function that should never be
+   called, as there are no valid arguments, such as
+   :func:`assert_never`::
+
+      from typing import Never  # or NoReturn
 
       def never_call_me(arg: Never) -> None:
           pass
@@ -920,32 +875,18 @@ using ``[]``.
               case str():
                   print("It's a str")
               case _:
-                  never_call_me(arg)  # OK, arg is of type Never
+                  never_call_me(arg)  # OK, arg is of type Never (or NoReturn)
+
+   :data:`!Never` and :data:`!NoReturn` have the same meaning in the type system
+   and static type checkers treat both equivalently.
+
+   .. versionadded:: 3.6.2
+
+      Added :data:`NoReturn`.
 
    .. versionadded:: 3.11
 
-      On older Python versions, :data:`NoReturn` may be used to express the
-      same concept. ``Never`` was added to make the intended meaning more explicit.
-
-.. data:: NoReturn
-
-   Special type indicating that a function never returns.
-
-   For example::
-
-      from typing import NoReturn
-
-      def stop() -> NoReturn:
-          raise RuntimeError('no way')
-
-   ``NoReturn`` can also be used as a
-   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
-   has no values. Starting in Python 3.11, the :data:`Never` type should
-   be used for this concept instead. Type checkers should treat the two
-   equivalently.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.2
+      Added :data:`Never`.
 
 .. data:: Self
 
@@ -1455,8 +1396,8 @@ These can be used as types in annotations. They all support subscription using
                  print("Not a list of strings!")
 
    If ``is_str_list`` is a class or instance method, then the type in
-   ``TypeGuard`` maps to the type of the second parameter after ``cls`` or
-   ``self``.
+   ``TypeGuard`` maps to the type of the second parameter (after ``cls`` or
+   ``self``).
 
    In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
    means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
@@ -1810,8 +1751,8 @@ without the dedicated syntax, as documented below.
    of ``*args``::
 
       def call_soon[*Ts](
-               callback: Callable[[*Ts], None],
-               *args: *Ts
+          callback: Callable[[*Ts], None],
+          *args: *Ts
       ) -> None:
           ...
           callback(*args)
@@ -1929,7 +1870,7 @@ without the dedicated syntax, as documented below.
       * :ref:`annotating-callables`
 
 .. data:: ParamSpecArgs
-.. data:: ParamSpecKwargs
+          ParamSpecKwargs
 
    Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
    ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
@@ -2264,9 +2205,9 @@ types.
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
 
-   .. deprecated-removed:: 3.11 3.13
-      The keyword-argument syntax is deprecated in 3.11 and will be removed
-      in 3.13. It may also be unsupported by static type checkers.
+     .. deprecated-removed:: 3.11 3.13
+        The keyword-argument syntax is deprecated in 3.11 and will be removed
+        in 3.13. It may also be unsupported by static type checkers.
 
    The functional syntax should also be used when any of the keys are not valid
    :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
@@ -2395,7 +2336,7 @@ types.
 
       This attribute reflects *only* the value of the ``total`` argument
       to the current ``TypedDict`` class, not whether the class is semantically
-      total. For example, a ``TypedDict`` with ``__total__`` set to True may
+      total. For example, a ``TypedDict`` with ``__total__`` set to ``True`` may
       have keys marked with :data:`NotRequired`, or it may inherit from another
       ``TypedDict`` with ``total=False``. Therefore, it is generally better to use
       :attr:`__required_keys__` and :attr:`__optional_keys__` for introspection.
@@ -2944,33 +2885,37 @@ Introspection helpers
    Return a dictionary containing type hints for a function, method, module
    or class object.
 
-   This is often the same as ``obj.__annotations__``. In addition,
-   forward references encoded as string literals are handled by evaluating
-   them in ``globals`` and ``locals`` namespaces. For a class ``C``, return
-   a dictionary constructed by merging all the ``__annotations__`` along
-   ``C.__mro__`` in reverse order.
+   This is often the same as ``obj.__annotations__``, but this function makes
+   the following changes to the annotations dictionary:
 
-   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
-   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example:
+   * Forward references encoded as string literals or :class:`ForwardRef`
+     objects are handled by evaluating them in *globalns*, *localns*, and
+     (where applicable) *obj*'s :ref:`type parameter <type-params>` namespace.
+     If *globalns* or *localns* is not given, appropriate namespace
+     dictionaries are inferred from *obj*.
+   * ``None`` is replaced with :class:`types.NoneType`.
+   * If :func:`@no_type_check <no_type_check>` has been applied to *obj*, an
+     empty dictionary is returned.
+   * If *obj* is a class ``C``, the function returns a dictionary that merges
+     annotations from ``C``'s base classes with those on ``C`` directly. This
+     is done by traversing ``C.__mro__`` and iteratively combining
+     ``__annotations__`` dictionaries. Annotations on classes appearing
+     earlier in the :term:`method resolution order` always take precedence over
+     annotations on classes appearing later in the method resolution order.
+   * The function recursively replaces all occurrences of ``Annotated[T, ...]``
+     with ``T``, unless *include_extras* is set to ``True`` (see
+     :class:`Annotated` for more information).
 
-   .. testcode::
-
-       class Student(NamedTuple):
-           name: Annotated[str, 'some marker']
-
-       assert get_type_hints(Student) == {'name': str}
-       assert get_type_hints(Student, include_extras=False) == {'name': str}
-       assert get_type_hints(Student, include_extras=True) == {
-           'name': Annotated[str, 'some marker']
-       }
+   See also :func:`inspect.get_annotations`, a lower-level function that
+   returns annotations more directly.
 
    .. note::
 
-      :func:`get_type_hints` does not work with imported
-      :ref:`type aliases <type-aliases>` that include forward references.
-      Enabling postponed evaluation of annotations (:pep:`563`) may remove
-      the need for most forward references.
+      If any forward references in the annotations of *obj* are not resolvable
+      or are not valid Python code, this function will raise an exception
+      such as :exc:`NameError`. For example, this can happen with imported
+      :ref:`type aliases <type-aliases>` that include forward references,
+      or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
@@ -3234,7 +3179,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.ChainMap`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3245,7 +3189,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.Counter`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3256,7 +3199,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.deque`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3339,7 +3281,7 @@ Aliases to container ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Collection`.
 
-   .. versionadded:: 3.6.0
+   .. versionadded:: 3.6
 
    .. deprecated:: 3.9
       :class:`collections.abc.Collection` now supports subscripting (``[]``).
@@ -3631,7 +3573,6 @@ Aliases to :mod:`contextlib` ABCs
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
       :class:`contextlib.AbstractContextManager`
@@ -3642,7 +3583,6 @@ Aliases to :mod:`contextlib` ABCs
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9

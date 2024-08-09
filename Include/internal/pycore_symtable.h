@@ -87,6 +87,7 @@ typedef struct _symtable_entry {
     int ste_opt_lineno;      /* lineno of last exec or import * */
     int ste_opt_col_offset;  /* offset of last exec or import * */
     struct symtable *ste_table;
+    PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
 } PySTEntryObject;
 
 extern PyTypeObject PySTEntry_Type;
@@ -105,22 +106,23 @@ PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
 
+extern PyObject *_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name);
 extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */
 
-#define DEF_GLOBAL 1           /* global stmt */
-#define DEF_LOCAL 2            /* assignment in code block */
-#define DEF_PARAM 2<<1         /* formal parameter */
-#define DEF_NONLOCAL 2<<2      /* nonlocal stmt */
-#define USE 2<<3               /* name is used */
-#define DEF_FREE 2<<4          /* name used but not defined in nested block */
-#define DEF_FREE_CLASS 2<<5    /* free variable from class's method */
-#define DEF_IMPORT 2<<6        /* assignment occurred via import */
-#define DEF_ANNOT 2<<7         /* this name is annotated */
-#define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
-#define DEF_TYPE_PARAM 2<<9    /* this name is a type parameter */
-#define DEF_COMP_CELL 2<<10    /* this name is a cell in an inlined comprehension */
+#define DEF_GLOBAL 1             /* global stmt */
+#define DEF_LOCAL 2              /* assignment in code block */
+#define DEF_PARAM (2<<1)         /* formal parameter */
+#define DEF_NONLOCAL (2<<2)      /* nonlocal stmt */
+#define USE (2<<3)               /* name is used */
+#define DEF_FREE (2<<4)          /* name used but not defined in nested block */
+#define DEF_FREE_CLASS (2<<5)    /* free variable from class's method */
+#define DEF_IMPORT (2<<6)        /* assignment occurred via import */
+#define DEF_ANNOT (2<<7)         /* this name is annotated */
+#define DEF_COMP_ITER (2<<8)     /* this name is a comprehension iteration variable */
+#define DEF_TYPE_PARAM (2<<9)    /* this name is a type parameter */
+#define DEF_COMP_CELL (2<<10)    /* this name is a cell in an inlined comprehension */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 

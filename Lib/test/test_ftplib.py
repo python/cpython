@@ -542,8 +542,8 @@ class TestFTPClass(TestCase):
         self.assertFalse(self.client.passiveserver)
 
     def test_voidcmd(self):
-        self.client.voidcmd('echo 200')
-        self.client.voidcmd('echo 299')
+        self.assertEqual(self.client.voidcmd('echo 200'), '200')
+        self.assertEqual(self.client.voidcmd('echo 299'), '299')
         self.assertRaises(ftplib.error_reply, self.client.voidcmd, 'echo 199')
         self.assertRaises(ftplib.error_reply, self.client.voidcmd, 'echo 300')
 

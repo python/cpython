@@ -314,16 +314,17 @@ class _Unframer:
 # Tools used for pickling.
 
 def _getattribute(obj, name):
+    top = obj
     for subpath in name.split('.'):
         if subpath == '<locals>':
             raise AttributeError("Can't get local attribute {!r} on {!r}"
-                                 .format(name, obj))
+                                 .format(name, top))
         try:
             parent = obj
             obj = getattr(obj, subpath)
         except AttributeError:
             raise AttributeError("Can't get attribute {!r} on {!r}"
-                                 .format(name, obj)) from None
+                                 .format(name, top)) from None
     return obj, parent
 
 def whichmodule(obj, name):
@@ -780,14 +781,10 @@ class _Pickler:
             self.write(FLOAT + repr(obj).encode("ascii") + b'\n')
     dispatch[float] = save_float
 
-    def save_bytes(self, obj):
-        if self.proto < 3:
-            if not obj: # bytes object is empty
-                self.save_reduce(bytes, (), obj=obj)
-            else:
-                self.save_reduce(codecs.encode,
-                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
-            return
+    def _save_bytes_no_memo(self, obj):
+        # helper for writing bytes objects for protocol >= 3
+        # without memoizing them
+        assert self.proto >= 3
         n = len(obj)
         if n <= 0xff:
             self.write(SHORT_BINBYTES + pack("<B", n) + obj)
@@ -797,8 +794,28 @@ class _Pickler:
             self._write_large_bytes(BINBYTES + pack("<I", n), obj)
         else:
             self.write(BINBYTES + pack("<I", n) + obj)
+
+    def save_bytes(self, obj):
+        if self.proto < 3:
+            if not obj: # bytes object is empty
+                self.save_reduce(bytes, (), obj=obj)
+            else:
+                self.save_reduce(codecs.encode,
+                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
+            return
+        self._save_bytes_no_memo(obj)
         self.memoize(obj)
     dispatch[bytes] = save_bytes
+
+    def _save_bytearray_no_memo(self, obj):
+        # helper for writing bytearray objects for protocol >= 5
+        # without memoizing them
+        assert self.proto >= 5
+        n = len(obj)
+        if n >= self.framer._FRAME_SIZE_TARGET:
+            self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
+        else:
+            self.write(BYTEARRAY8 + pack("<Q", n) + obj)
 
     def save_bytearray(self, obj):
         if self.proto < 5:
@@ -807,18 +824,14 @@ class _Pickler:
             else:
                 self.save_reduce(bytearray, (bytes(obj),), obj=obj)
             return
-        n = len(obj)
-        if n >= self.framer._FRAME_SIZE_TARGET:
-            self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
-        else:
-            self.write(BYTEARRAY8 + pack("<Q", n) + obj)
+        self._save_bytearray_no_memo(obj)
         self.memoize(obj)
     dispatch[bytearray] = save_bytearray
 
     if _HAVE_PICKLE_BUFFER:
         def save_picklebuffer(self, obj):
             if self.proto < 5:
-                raise PicklingError("PickleBuffer can only pickled with "
+                raise PicklingError("PickleBuffer can only be pickled with "
                                     "protocol >= 5")
             with obj.raw() as m:
                 if not m.contiguous:
@@ -830,10 +843,18 @@ class _Pickler:
                 if in_band:
                     # Write data in-band
                     # XXX The C implementation avoids a copy here
+                    buf = m.tobytes()
+                    in_memo = id(buf) in self.memo
                     if m.readonly:
-                        self.save_bytes(m.tobytes())
+                        if in_memo:
+                            self._save_bytes_no_memo(buf)
+                        else:
+                            self.save_bytes(buf)
                     else:
-                        self.save_bytearray(m.tobytes())
+                        if in_memo:
+                            self._save_bytearray_no_memo(buf)
+                        else:
+                            self.save_bytearray(buf)
                 else:
                     # Write data out-of-band
                     self.write(NEXT_BUFFER)
@@ -1088,11 +1109,35 @@ class _Pickler:
             self.save(module_name)
             self.save(name)
             write(STACK_GLOBAL)
-        elif parent is not module:
-            self.save_reduce(getattr, (parent, lastname))
-        elif self.proto >= 3:
-            write(GLOBAL + bytes(module_name, "utf-8") + b'\n' +
-                  bytes(name, "utf-8") + b'\n')
+        elif '.' in name:
+            # In protocol < 4, objects with multi-part __qualname__
+            # are represented as
+            # getattr(getattr(..., attrname1), attrname2).
+            dotted_path = name.split('.')
+            name = dotted_path.pop(0)
+            save = self.save
+            for attrname in dotted_path:
+                save(getattr)
+                if self.proto < 2:
+                    write(MARK)
+            self._save_toplevel_by_name(module_name, name)
+            for attrname in dotted_path:
+                save(attrname)
+                if self.proto < 2:
+                    write(TUPLE)
+                else:
+                    write(TUPLE2)
+                write(REDUCE)
+        else:
+            self._save_toplevel_by_name(module_name, name)
+
+        self.memoize(obj)
+
+    def _save_toplevel_by_name(self, module_name, name):
+        if self.proto >= 3:
+            # Non-ASCII identifiers are supported only with protocols >= 3.
+            self.write(GLOBAL + bytes(module_name, "utf-8") + b'\n' +
+                       bytes(name, "utf-8") + b'\n')
         else:
             if self.fix_imports:
                 r_name_mapping = _compat_pickle.REVERSE_NAME_MAPPING
@@ -1102,14 +1147,12 @@ class _Pickler:
                 elif module_name in r_import_mapping:
                     module_name = r_import_mapping[module_name]
             try:
-                write(GLOBAL + bytes(module_name, "ascii") + b'\n' +
-                      bytes(name, "ascii") + b'\n')
+                self.write(GLOBAL + bytes(module_name, "ascii") + b'\n' +
+                           bytes(name, "ascii") + b'\n')
             except UnicodeEncodeError:
                 raise PicklingError(
                     "can't pickle global identifier '%s.%s' using "
-                    "pickle protocol %i" % (module, name, self.proto)) from None
-
-        self.memoize(obj)
+                    "pickle protocol %i" % (module_name, name, self.proto)) from None
 
     def save_type(self, obj):
         if obj is type(None):
