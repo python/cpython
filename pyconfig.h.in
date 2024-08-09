@@ -1498,6 +1498,9 @@
 /* Define to 1 if you have the `ttyname' function. */
 #undef HAVE_TTYNAME
 
+/* Define if the C compiler supports __typeof__(expr) */
+#undef HAVE_TYPEOF
+
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
 #undef HAVE_TZNAME
