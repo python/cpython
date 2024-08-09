@@ -40,19 +40,19 @@ eval_getframe(PyObject *module, PyObject *Py_UNUSED(args))
 static PyObject *
 eval_getframe_builtins(PyObject *module, PyObject *Py_UNUSED(args))
 {
-    return Py_XNewRef(PyEval_GetFrameBuiltins());
+    return PyEval_GetFrameBuiltins();
 }
 
 static PyObject *
 eval_getframe_globals(PyObject *module, PyObject *Py_UNUSED(args))
 {
-    return Py_XNewRef(PyEval_GetFrameGlobals());
+    return PyEval_GetFrameGlobals();
 }
 
 static PyObject *
 eval_getframe_locals(PyObject *module, PyObject *Py_UNUSED(args))
 {
-    return Py_XNewRef(PyEval_GetFrameLocals());
+    return PyEval_GetFrameLocals();
 }
 
 static PyObject *
