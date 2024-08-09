@@ -471,6 +471,9 @@ New Features
   an interned string and deallocate it during module shutdown.
   (Contribued by Eddie Elizondo in :gh:`113601`.)
 
+* Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
+  (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
+
 Porting to Python 3.14
 ----------------------
 
