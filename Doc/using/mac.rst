@@ -145,7 +145,7 @@ There are several options for building GUI applications on the Mac with Python.
 
 *PyObjC* is a Python binding to Apple's Objective-C/Cocoa framework, which is
 the foundation of most modern Mac development. Information on PyObjC is
-available from https://pypi.org/project/pyobjc/.
+available from :pypi:`pyobjc`.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
 Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with
@@ -177,7 +177,7 @@ Distributing Python Applications
 A range of tools exist for converting your Python code into a standalone
 distributable application:
 
-* `py2app <https://pypi.org/project/py2app/>`__: Supports creating macOS ``.app``
+* :pypi:`py2app`: Supports creating macOS ``.app``
   bundles from a Python project.
 
 * `Briefcase <https://briefcase.readthedocs.io>`__: Part of the `BeeWare Project
@@ -187,6 +187,28 @@ distributable application:
 
 * `PyInstaller <https://pyinstaller.org/>`__: A cross-platform packaging tool that creates
   a single file or folder as a distributable artifact.
+
+App Store Compliance
+--------------------
+
+Apps submitted for distribution through the macOS App Store must pass Apple's
+app review process. This process includes a set of automated validation rules
+that inspect the submitted application bundle for problematic code.
+
+The Python standard library contains some code that is known to violate these
+automated rules. While these violations appear to be false positives, Apple's
+review rules cannot be challenged. Therefore, it is necessary to modify the
+Python standard library for an app to pass App Store review.
+
+The Python source tree contains
+:source:`a patch file <Mac/Resources/app-store-compliance.patch>` that will remove
+all code that is known to cause issues with the App Store review process. This
+patch is applied automatically when CPython is configured with the
+:option:`--with-app-store-compliance` option.
+
+This patch is not normally required to use CPython on a Mac; nor is it required
+if you are distributing an app *outside* the macOS App Store. It is *only*
+required if you are using the macOS App Store as a distribution channel.
 
 Other Resources
 ===============

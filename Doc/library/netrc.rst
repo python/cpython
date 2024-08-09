@@ -1,6 +1,5 @@
-
-:mod:`netrc` --- netrc file processing
-======================================
+:mod:`!netrc` --- netrc file processing
+=======================================
 
 .. module:: netrc
    :synopsis: Loading of .netrc files.

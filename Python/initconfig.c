@@ -24,6 +24,9 @@
 #  endif
 #endif
 
+#include "config_common.h"
+
+
 /* --- PyConfig spec ---------------------------------------------- */
 
 typedef enum {
@@ -57,7 +60,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(hash_seed, ULONG),
     SPEC(faulthandler, BOOL),
     SPEC(tracemalloc, UINT),
-    SPEC(perf_profiling, BOOL),
+    SPEC(perf_profiling, UINT),
     SPEC(import_time, BOOL),
     SPEC(code_debug_ranges, BOOL),
     SPEC(show_ref_count, BOOL),
@@ -246,6 +249,7 @@ static const char usage_envvars[] =
 "PYTHONMALLOC    : set the Python memory allocators and/or install debug hooks\n"
 "                  on Python memory allocators.  Use PYTHONMALLOC=debug to\n"
 "                  install debug hooks.\n"
+"PYTHONMALLOCSTATS: print memory allocator statistics\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "                  coercion behavior.  Use PYTHONCOERCECLOCALE=warn to request\n"
 "                  display of locale coercion and locale compatibility warnings\n"
@@ -257,6 +261,20 @@ static const char usage_envvars[] =
 "                  various kinds of output.  Setting it to 0 deactivates\n"
 "                  this behavior.\n"
 "PYTHON_HISTORY  : the location of a .python_history file.\n"
+"PYTHONASYNCIODEBUG: enable asyncio debug mode\n"
+#ifdef Py_TRACE_REFS
+"PYTHONDUMPREFS  : dump objects and reference counts still alive after shutdown\n"
+"PYTHONDUMPREFSFILE: dump objects and reference counts to the specified file\n"
+#endif
+#ifdef __APPLE__
+"PYTHONEXECUTABLE: set sys.argv[0] to this value (macOS only)\n"
+#endif
+#ifdef MS_WINDOWS
+"PYTHONLEGACYWINDOWSFSENCODING: use legacy \"mbcs\" encoding for file system\n"
+"PYTHONLEGACYWINDOWSSTDIO: use legacy Windows stdio\n"
+#endif
+"PYTHONUSERBASE  : defines the user base directory (site.USER_BASE)\n"
+"PYTHON_BASIC_REPL: use the traditional parser-based REPL\n"
 "\n"
 "These variables have equivalent command-line options (see --help for details):\n"
 "PYTHON_CPU_COUNT: override the return value of os.cpu_count() (-X cpu_count)\n"
@@ -278,6 +296,8 @@ static const char usage_envvars[] =
 "PYTHONNOUSERSITE: disable user site directory (-s)\n"
 "PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
 "PYTHONPERFSUPPORT: support the Linux \"perf\" profiler (-X perf)\n"
+"PYTHON_PERF_JIT_SUPPORT: enable Linux \"perf\" profiler support with JIT\n"
+"                  (-X perf_jit)\n"
 #ifdef Py_DEBUG
 "PYTHON_PRESITE: import this module before site (-X presite)\n"
 #endif
@@ -1098,32 +1118,10 @@ _PyConfig_AsDict(const PyConfig *config)
 }
 
 
-static PyObject*
-config_dict_get(PyObject *dict, const char *name)
-{
-    PyObject *item;
-    if (PyDict_GetItemStringRef(dict, name, &item) < 0) {
-        return NULL;
-    }
-    if (item == NULL) {
-        PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
-        return NULL;
-    }
-    return item;
-}
-
-
 static void
 config_dict_invalid_value(const char *name)
 {
     PyErr_Format(PyExc_ValueError, "invalid config value: %s", name);
-}
-
-
-static void
-config_dict_invalid_type(const char *name)
-{
-    PyErr_Format(PyExc_TypeError, "invalid config type: %s", name);
 }
 
 
@@ -1722,6 +1720,20 @@ config_init_perf_profiling(PyConfig *config)
     if (xoption) {
         config->perf_profiling = 1;
     }
+    env = config_get_env(config, "PYTHON_PERF_JIT_SUPPORT");
+    if (env) {
+        if (_Py_str_to_int(env, &active) != 0) {
+            active = 0;
+        }
+        if (active) {
+            config->perf_profiling = 2;
+        }
+    }
+    xoption = config_get_xoption(config, L"perf_jit");
+    if (xoption) {
+        config->perf_profiling = 2;
+    }
+
     return _PyStatus_OK();
 
 }

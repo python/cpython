@@ -310,7 +310,7 @@ def collapse_addresses(addresses):
                            [IPv4Network('192.0.2.0/24')]
 
     Args:
-        addresses: An iterator of IPv4Network or IPv6Network objects.
+        addresses: An iterable of IPv4Network or IPv6Network objects.
 
     Returns:
         An iterator of the collapsed IPv(4|6)Network objects.
@@ -2142,6 +2142,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             RFC 2373 2.5.3.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_loopback
         return self._ip == 1
 
     @property
@@ -2258,7 +2261,7 @@ class IPv6Interface(IPv6Address):
 
     @property
     def is_loopback(self):
-        return self._ip == 1 and self.network.is_loopback
+        return super().is_loopback and self.network.is_loopback
 
 
 class IPv6Network(_BaseV6, _BaseNetwork):

@@ -43,7 +43,6 @@ class Future:
     - This class is not compatible with the wait() and as_completed()
       methods in the concurrent.futures package.
 
-    (In Python 3.4 or later we may be able to unify the implementations.)
     """
 
     # Class variables serving as defaults for instance variables.
@@ -61,7 +60,7 @@ class Future:
     #   the Future protocol (i.e. is intended to be duck-type compatible).
     #   The value must also be not-None, to enable a subclass to declare
     #   that it is not compatible by setting this to None.
-    # - It is set by __iter__() below so that Task._step() can tell
+    # - It is set by __iter__() below so that Task.__step() can tell
     #   the difference between
     #   `await Future()` or`yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
@@ -319,11 +318,9 @@ def _set_result_unless_cancelled(fut, result):
 def _convert_future_exc(exc):
     exc_class = type(exc)
     if exc_class is concurrent.futures.CancelledError:
-        return exceptions.CancelledError(*exc.args)
-    elif exc_class is concurrent.futures.TimeoutError:
-        return exceptions.TimeoutError(*exc.args)
+        return exceptions.CancelledError(*exc.args).with_traceback(exc.__traceback__)
     elif exc_class is concurrent.futures.InvalidStateError:
-        return exceptions.InvalidStateError(*exc.args)
+        return exceptions.InvalidStateError(*exc.args).with_traceback(exc.__traceback__)
     else:
         return exc
 

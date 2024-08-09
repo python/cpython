@@ -1,5 +1,5 @@
 //  This implements the reference cycle garbage collector.
-//  The Python module inteface to the collector is in gcmodule.c.
+//  The Python module interface to the collector is in gcmodule.c.
 //  See https://devguide.python.org/internals/garbage-collector/
 
 #include "Python.h"
@@ -12,7 +12,6 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
@@ -455,10 +454,20 @@ validate_consistent_old_space(PyGC_Head *head)
     assert(prev == GC_PREV(head));
 }
 
+static void
+gc_list_validate_space(PyGC_Head *head, int space) {
+    PyGC_Head *gc = GC_NEXT(head);
+    while (gc != head) {
+        assert(gc_old_space(gc) == space);
+        gc = GC_NEXT(gc);
+    }
+}
+
 #else
 #define validate_list(x, y) do{}while(0)
 #define validate_old(g) do{}while(0)
 #define validate_consistent_old_space(l) do{}while(0)
+#define gc_list_validate_space(l, s) do{}while(0)
 #endif
 
 /*** end of list stuff ***/
@@ -949,6 +958,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
     /* Invoke the callbacks we decided to honor.  It's safe to invoke them
      * because they can't reference unreachable objects.
      */
+    int visited_space = get_gc_state()->visited_space;
     while (! gc_list_is_empty(&wrcb_to_call)) {
         PyObject *temp;
         PyObject *callback;
@@ -983,6 +993,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         Py_DECREF(op);
         if (wrcb_to_call._gc_next == (uintptr_t)gc) {
             /* object is still alive -- move it */
+            gc_set_old_space(gc, visited_space);
             gc_list_move(gc, old);
         }
         else {
@@ -1249,7 +1260,7 @@ gc_list_set_space(PyGC_Head *list, int space)
  * the incremental collector must progress through the old
  * space faster than objects are added to the old space.
  *
- * Each young or incremental collection adds a numebr of
+ * Each young or incremental collection adds a number of
  * objects, S (for survivors) to the old space, and
  * incremental collectors scan I objects from the old space.
  * I > S must be true. We also want I > S * N to be where
@@ -1285,7 +1296,6 @@ gc_collect_young(PyThreadState *tstate,
         for (gc = GC_NEXT(young); gc != young; gc = GC_NEXT(gc)) {
             count++;
         }
-        GC_STAT_ADD(0, objects_queued, count);
     }
 #endif
 
@@ -1306,6 +1316,7 @@ gc_collect_young(PyThreadState *tstate,
             survivor_count++;
         }
     }
+    (void)survivor_count;  // Silence compiler warning
     gc_list_merge(&survivors, visited);
     validate_old(gcstate);
     gcstate->young.count = 0;
@@ -1318,12 +1329,14 @@ gc_collect_young(PyThreadState *tstate,
     add_stats(gcstate, 0, stats);
 }
 
+#ifndef NDEBUG
 static inline int
 IS_IN_VISITED(PyGC_Head *gc, int visited_space)
 {
     assert(visited_space == 0 || flip_old_space(visited_space) == 0);
     return gc_old_space(gc) == visited_space;
 }
+#endif
 
 struct container_and_flag {
     PyGC_Head *container;
@@ -1390,6 +1403,14 @@ completed_cycle(GCState *gcstate)
     assert(gc_list_is_empty(not_visited));
 #endif
     gcstate->visited_space = flip_old_space(gcstate->visited_space);
+    /* Make sure all young objects have old space bit set correctly */
+    PyGC_Head *young = &gcstate->young.head;
+    PyGC_Head *gc = GC_NEXT(young);
+    while (gc != young) {
+        PyGC_Head *next = GC_NEXT(gc);
+        gc_set_old_space(gc, gcstate->visited_space);
+        gc = next;
+    }
     gcstate->work_to_do = 0;
 }
 
@@ -1407,10 +1428,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     }
     gc_list_merge(&gcstate->young.head, &increment);
     gcstate->young.count = 0;
-    if (gcstate->visited_space) {
-        /* objects in visited space have bit set, so we set it here */
-        gc_list_set_space(&increment, 1);
-    }
+    gc_list_validate_space(&increment, gcstate->visited_space);
     Py_ssize_t increment_size = 0;
     while (increment_size < gcstate->work_to_do) {
         if (gc_list_is_empty(not_visited)) {
@@ -1422,10 +1440,11 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         gc_set_old_space(gc, gcstate->visited_space);
         increment_size += expand_region_transitively_reachable(&increment, gc, gcstate);
     }
-    GC_STAT_ADD(1, objects_queued, region_size);
+    gc_list_validate_space(&increment, gcstate->visited_space);
     PyGC_Head survivors;
     gc_list_init(&survivors);
     gc_collect_region(tstate, &increment, &survivors, UNTRACK_TUPLES, stats);
+    gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
     gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
@@ -1446,23 +1465,18 @@ gc_collect_full(PyThreadState *tstate,
     GCState *gcstate = &tstate->interp->gc;
     validate_old(gcstate);
     PyGC_Head *young = &gcstate->young.head;
-    PyGC_Head *old0 = &gcstate->old[0].head;
-    PyGC_Head *old1 = &gcstate->old[1].head;
-    /* merge all generations into old0 */
-    gc_list_merge(young, old0);
+    PyGC_Head *pending = &gcstate->old[gcstate->visited_space^1].head;
+    PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    /* merge all generations into visited */
+    gc_list_validate_space(young, gcstate->visited_space);
+    gc_list_set_space(pending, gcstate->visited_space);
+    gc_list_merge(young, pending);
     gcstate->young.count = 0;
-    PyGC_Head *gc = GC_NEXT(old1);
-    while (gc != old1) {
-        PyGC_Head *next = GC_NEXT(gc);
-        gc_set_old_space(gc, 0);
-        gc = next;
-    }
-    gc_list_merge(old1, old0);
+    gc_list_merge(pending, visited);
 
-    gc_collect_region(tstate, old0, old0,
+    gc_collect_region(tstate, visited, visited,
                       UNTRACK_TUPLES | UNTRACK_DICTS,
                       stats);
-    gcstate->visited_space = 1;
     gcstate->young.count = 0;
     gcstate->old[0].count = 0;
     gcstate->old[1].count = 0;
@@ -1529,6 +1543,7 @@ gc_collect_region(PyThreadState *tstate,
 
     /* Clear weakrefs and invoke callbacks as necessary. */
     stats->collected += handle_weakrefs(&unreachable, to);
+    gc_list_validate_space(to, gcstate->visited_space);
     validate_list(to, collecting_clear_unreachable_clear);
     validate_list(&unreachable, collecting_set_unreachable_clear);
 
@@ -1562,6 +1577,7 @@ gc_collect_region(PyThreadState *tstate,
      * this if they insist on creating this type of structure.
      */
     handle_legacy_finalizers(tstate, gcstate, &finalizers, to);
+    gc_list_validate_space(to, gcstate->visited_space);
     validate_list(to, collecting_clear_unreachable_clear);
 }
 
@@ -1710,6 +1726,10 @@ void
 _PyGC_Freeze(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
+    /* The permanent_generation has its old space bit set to zero */
+    if (gcstate->visited_space) {
+        gc_list_set_space(&gcstate->young.head, 0);
+    }
     gc_list_merge(&gcstate->young.head, &gcstate->permanent_generation.head);
     gcstate->young.count = 0;
     PyGC_Head*old0 = &gcstate->old[0].head;
@@ -1805,10 +1825,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
 #ifdef Py_STATS
-    if (_py_stats) {
+    if (_Py_stats) {
         GC_STAT_ADD(generation, object_visits,
-            _py_stats->object_stats.object_visits);
-        _py_stats->object_stats.object_visits = 0;
+            _Py_stats->object_stats.object_visits);
+        _Py_stats->object_stats.object_visits = 0;
     }
 #endif
     validate_old(gcstate);
@@ -2010,11 +2030,16 @@ gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
     return op;
 }
 
+
 PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp), presize);
+    size_t size = _PyObject_SIZE(tp);
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
+        size += _PyInlineValuesSize(tp);
+    }
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
@@ -2058,7 +2083,7 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
-    const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
+    const size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
     if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return (PyVarObject *)PyErr_NoMemory();
@@ -2076,7 +2101,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 void
 PyObject_GC_Del(void *op)
 {
-    size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
+    size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
@@ -2084,7 +2109,7 @@ PyObject_GC_Del(void *op)
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
                                      "gc", NULL, "Object of type %s is not untracked before destruction",
-                                     ((PyObject*)op)->ob_type->tp_name)) {
+                                     Py_TYPE(op)->tp_name)) {
             PyErr_WriteUnraisable(NULL);
         }
         PyErr_SetRaisedException(exc);

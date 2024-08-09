@@ -982,23 +982,6 @@ posonly_vararg_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
-vararg_and_posonly
-
-    a: object
-    *args: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
-{
-    return pack_arguments_newref(2, a, args);
-}
-
-
-/*[clinic input]
 vararg
 
     a: object
@@ -1034,6 +1017,25 @@ vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
 
 
 /*[clinic input]
+vararg_with_default2
+
+    a: object
+    *args: object
+    b: object = None
+    c: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_default2_impl(PyObject *module, PyObject *a, PyObject *args,
+                          PyObject *b, PyObject *c)
+/*[clinic end generated code: output=a0fb7c37796e2129 input=59fb22f5f0a8925f]*/
+{
+    return pack_arguments_newref(4, a, args, b, c);
+}
+
+
+/*[clinic input]
 vararg_with_only_defaults
 
     *args: object
@@ -1046,6 +1048,25 @@ vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
 /*[clinic end generated code: output=c06b1826d91f2f7b input=678c069bc67550e1]*/
 {
     return pack_arguments_newref(2, args, b);
+}
+
+
+/*[clinic input]
+vararg_kwonly_req_opt
+
+    *args: object
+    a: object
+    b: object = None
+    c: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_kwonly_req_opt_impl(PyObject *module, PyObject *args, PyObject *a,
+                           PyObject *b, PyObject *c)
+/*[clinic end generated code: output=54694a99c3da370a input=b0d8bf09e540d400]*/
+{
+    return pack_arguments_newref(4, args, a, b, c);
 }
 
 
@@ -1096,7 +1117,6 @@ gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
 gh_99233_refcount
 
     *args: object
-    /
 
 Proof-of-concept of GH-99233 refcount error bug.
 
@@ -1104,7 +1124,7 @@ Proof-of-concept of GH-99233 refcount error bug.
 
 static PyObject *
 gh_99233_refcount_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=585855abfbca9a7f input=85f5fb47ac91a626]*/
+/*[clinic end generated code: output=585855abfbca9a7f input=eecfdc2092d90dc3]*/
 {
     Py_RETURN_NONE;
 }
@@ -1219,21 +1239,36 @@ class _testclinic.TestClass "PyObject *" "PyObject"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
 
 /*[clinic input]
-_testclinic.TestClass.meth_method_no_params
+_testclinic.TestClass.get_defining_class
     cls: defining_class
-    /
 [clinic start generated code]*/
 
 static PyObject *
-_testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
-                                                 PyTypeObject *cls)
-/*[clinic end generated code: output=c140f100080c2fc8 input=6bd34503d11c63c1]*/
+_testclinic_TestClass_get_defining_class_impl(PyObject *self,
+                                              PyTypeObject *cls)
+/*[clinic end generated code: output=94f9b0b5f7add930 input=537c59417471dee3]*/
 {
-    Py_RETURN_NONE;
+    return Py_NewRef(cls);
+}
+
+/*[clinic input]
+_testclinic.TestClass.get_defining_class_arg
+    cls: defining_class
+    arg: object
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
+                                                  PyTypeObject *cls,
+                                                  PyObject *arg)
+/*[clinic end generated code: output=fe7e49d96cbb7718 input=d1b83d3b853af6d9]*/
+{
+    return PyTuple_Pack(2, cls, arg);
 }
 
 static struct PyMethodDef test_class_methods[] = {
-    _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF
     {NULL, NULL}
 };
 
@@ -1889,10 +1924,11 @@ static PyMethodDef tester_methods[] = {
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
     POSONLY_VARARG_METHODDEF
-    VARARG_AND_POSONLY_METHODDEF
     VARARG_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
+    VARARG_WITH_DEFAULT2_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
+    VARARG_KWONLY_REQ_OPT_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
@@ -1940,6 +1976,9 @@ PyInit__testclinic(void)
     if (m == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
     if (PyModule_AddType(m, &TestClass) < 0) {
         goto error;
     }

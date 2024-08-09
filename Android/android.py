@@ -1,30 +1,37 @@
 #!/usr/bin/env python3
 
 import argparse
+from glob import glob
 import os
 import re
 import shutil
 import subprocess
 import sys
 import sysconfig
-from os.path import relpath
+from os.path import basename, relpath
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 SCRIPT_NAME = Path(__file__).name
 CHECKOUT = Path(__file__).resolve().parent.parent
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
 
-def delete_if_exists(path):
-    if path.exists():
+def delete_glob(pattern):
+    # Path.glob doesn't accept non-relative patterns.
+    for path in glob(str(pattern)):
+        path = Path(path)
         print(f"Deleting {path} ...")
-        shutil.rmtree(path)
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
 
 
 def subdir(name, *, clean=None):
     path = CROSS_BUILD_DIR / name
     if clean:
-        delete_if_exists(path)
+        delete_glob(path)
     if not path.exists():
         if clean is None:
             sys.exit(
@@ -102,9 +109,15 @@ def unpack_deps(host):
     for name_ver in ["bzip2-1.0.8-1", "libffi-3.4.4-2", "openssl-3.0.13-1",
                      "sqlite-3.45.1-0", "xz-5.4.6-0"]:
         filename = f"{name_ver}-{host}.tar.gz"
-        run(["wget", f"{deps_url}/{name_ver}/{filename}"])
+        download(f"{deps_url}/{name_ver}/{filename}")
         run(["tar", "-xf", filename])
         os.remove(filename)
+
+
+def download(url, target_dir="."):
+    out_path = f"{target_dir}/{basename(url)}"
+    run(["curl", "-Lf", "-o", out_path, url])
+    return out_path
 
 
 def configure_host_python(context):
@@ -143,10 +156,17 @@ def configure_host_python(context):
 
 
 def make_host_python(context):
+    # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
+    # delete any previously-installed Python libs and include files to prevent
+    # them being used during the build.
     host_dir = subdir(context.host)
+    prefix_dir = host_dir / "prefix"
+    delete_glob(f"{prefix_dir}/include/python*")
+    delete_glob(f"{prefix_dir}/lib/libpython*")
+
     os.chdir(host_dir / "build")
     run(["make", "-j", str(os.cpu_count())], host=context.host)
-    run(["make", "install", f"prefix={host_dir}/prefix"], host=context.host)
+    run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
 
 
 def build_all(context):
@@ -157,7 +177,31 @@ def build_all(context):
 
 
 def clean_all(context):
-    delete_if_exists(CROSS_BUILD_DIR)
+    delete_glob(CROSS_BUILD_DIR)
+
+
+# To avoid distributing compiled artifacts without corresponding source code,
+# the Gradle wrapper is not included in the CPython repository. Instead, we
+# extract it from the Gradle release.
+def setup_testbed(context):
+    ver_long = "8.7.0"
+    ver_short = ver_long.removesuffix(".0")
+    testbed_dir = CHECKOUT / "Android/testbed"
+
+    for filename in ["gradlew", "gradlew.bat"]:
+        out_path = download(
+            f"https://raw.githubusercontent.com/gradle/gradle/v{ver_long}/{filename}",
+            testbed_dir)
+        os.chmod(out_path, 0o755)
+
+    with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+        os.chdir(temp_dir)
+        bin_zip = download(
+            f"https://services.gradle.org/distributions/gradle-{ver_short}-bin.zip")
+        outer_jar = f"gradle-{ver_short}/lib/plugins/gradle-wrapper-{ver_short}.jar"
+        run(["unzip", bin_zip, outer_jar])
+        run(["unzip", "-o", "-d", f"{testbed_dir}/gradle/wrapper", outer_jar,
+             "gradle-wrapper.jar"])
 
 
 def main():
@@ -173,8 +217,11 @@ def main():
                                             help="Run `configure` for Android")
     make_host = subcommands.add_parser("make-host",
                                        help="Run `make` for Android")
-    clean = subcommands.add_parser("clean", help="Delete files and directories "
-                                                 "created by this script")
+    subcommands.add_parser(
+        "clean", help="Delete the cross-build directory")
+    subcommands.add_parser(
+        "setup-testbed", help="Download the testbed Gradle wrapper")
+
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
@@ -194,7 +241,8 @@ def main():
                 "configure-host": configure_host_python,
                 "make-host": make_host_python,
                 "build": build_all,
-                "clean": clean_all}
+                "clean": clean_all,
+                "setup-testbed": setup_testbed}
     dispatch[context.subcommand](context)
 
 

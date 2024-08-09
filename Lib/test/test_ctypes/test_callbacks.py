@@ -1,4 +1,3 @@
-import _ctypes_test
 import ctypes
 import functools
 import gc
@@ -14,6 +13,8 @@ from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     c_float, c_double, c_longdouble, py_object)
 from ctypes.util import find_library
 from test import support
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 class Callbacks(unittest.TestCase):

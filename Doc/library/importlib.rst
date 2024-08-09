@@ -657,7 +657,7 @@ ABC hierarchy::
     something like a data file that lives next to the ``__init__.py``
     file of the package. The purpose of this class is to help abstract
     out the accessing of such data files so that it does not matter if
-    the package and its data file(s) are stored in a e.g. zip file
+    the package and its data file(s) are stored e.g. in a zip file
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is
@@ -1252,7 +1252,7 @@ find and load modules.
    be only a single binary per framework, and there can be no executable binary
    material outside the Frameworks folder.
 
-   To accomodate this requirement, when running on iOS, extension module
+   To accommodate this requirement, when running on iOS, extension module
    binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
    individual standalone frameworks. To discover those frameworks, this loader
    is be registered against the ``.fwork`` file extension, with a ``.fwork``
@@ -1279,7 +1279,7 @@ find and load modules.
 
    When a module is loaded with this loader, the ``__file__`` for the module
    will report as the location of the ``.fwork`` file. This allows code to use
-   the ``__file__`` of a  module as an anchor for file system traveral.
+   the ``__file__`` of a  module as an anchor for file system traversal.
    However, the spec origin will reference the location of the *actual* binary
    in the ``.framework`` folder.
 

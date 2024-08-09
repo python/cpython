@@ -1,3 +1,0 @@
-Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions to
-get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
-:term:`strong reference` to the constant zero. Patch by Victor Stinner.

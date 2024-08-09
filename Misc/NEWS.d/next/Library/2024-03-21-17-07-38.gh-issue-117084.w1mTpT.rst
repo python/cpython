@@ -1,2 +1,0 @@
-Fix :mod:`zipfile` extraction for directory entries with the name containing
-backslashes on Windows.

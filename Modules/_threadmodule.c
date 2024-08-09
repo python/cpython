@@ -501,7 +501,8 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
 
     // Wait until the deadline for the thread to exit.
     PyTime_t deadline = timeout_ns != -1 ? _PyDeadline_Init(timeout_ns) : 0;
-    while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns)) {
+    int detach = 1;
+    while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns, detach)) {
         if (deadline) {
             // _PyDeadline_Get will return a negative value if the deadline has
             // been exceeded.
@@ -800,8 +801,8 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(acquire_doc,
-"acquire(blocking=True, timeout=-1) -> bool\n\
-(acquire_lock() is an obsolete synonym)\n\
+"acquire($self, /, blocking=True, timeout=-1)\n\
+--\n\
 \n\
 Lock the lock.  Without argument, this blocks if the lock is already\n\
 locked (even by the same thread), waiting for another thread to release\n\
@@ -809,6 +810,18 @@ the lock, and return True once the lock is acquired.\n\
 With an argument, this will only block if the argument is true,\n\
 and the return value reflects whether the lock is acquired.\n\
 The blocking operation is interruptible.");
+
+PyDoc_STRVAR(acquire_lock_doc,
+"acquire_lock($self, /, blocking=True, timeout=-1)\n\
+--\n\
+\n\
+An obsolete synonym of acquire().");
+
+PyDoc_STRVAR(enter_doc,
+"__enter__($self, /)\n\
+--\n\
+\n\
+Lock the lock.");
 
 static PyObject *
 lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
@@ -825,12 +838,24 @@ lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(release_doc,
-"release()\n\
-(release_lock() is an obsolete synonym)\n\
+"release($self, /)\n\
+--\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
 but it needn't be locked by the same thread that unlocks it.");
+
+PyDoc_STRVAR(release_lock_doc,
+"release_lock($self, /)\n\
+--\n\
+\n\
+An obsolete synonym of release().");
+
+PyDoc_STRVAR(lock_exit_doc,
+"__exit__($self, /, *exc_info)\n\
+--\n\
+\n\
+Release the lock.");
 
 static PyObject *
 lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
@@ -839,10 +864,16 @@ lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(locked_doc,
-"locked() -> bool\n\
-(locked_lock() is an obsolete synonym)\n\
+"locked($self, /)\n\
+--\n\
 \n\
 Return whether the lock is in the locked state.");
+
+PyDoc_STRVAR(locked_lock_doc,
+"locked_lock($self, /)\n\
+--\n\
+\n\
+An obsolete synonym of locked().");
 
 static PyObject *
 lock_repr(lockobject *self)
@@ -890,21 +921,21 @@ error:
 
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, acquire_lock_doc},
     {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"release_lock", (PyCFunction)lock_PyThread_release_lock,
-     METH_NOARGS, release_doc},
+     METH_NOARGS, release_lock_doc},
     {"release",      (PyCFunction)lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
     {"locked_lock",  (PyCFunction)lock_locked_lock,
-     METH_NOARGS, locked_doc},
+     METH_NOARGS, locked_lock_doc},
     {"locked",       (PyCFunction)lock_locked_lock,
      METH_NOARGS, locked_doc},
     {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, enter_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
-     METH_VARARGS, release_doc},
+     METH_VARARGS, lock_exit_doc},
 #ifdef HAVE_FORK
     {"_at_fork_reinit",    (PyCFunction)lock__at_fork_reinit,
      METH_NOARGS, NULL},
@@ -913,7 +944,10 @@ static PyMethodDef lock_methods[] = {
 };
 
 PyDoc_STRVAR(lock_doc,
-"A lock object is a synchronization primitive.  To create a lock,\n\
+"lock()\n\
+--\n\
+\n\
+A lock object is a synchronization primitive.  To create a lock,\n\
 call threading.Lock().  Methods are:\n\
 \n\
 acquire() -- lock the lock, possibly blocking until it can be obtained\n\
@@ -1029,7 +1063,8 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(rlock_acquire_doc,
-"acquire(blocking=True) -> bool\n\
+"acquire($self, /, blocking=True, timeout=-1)\n\
+--\n\
 \n\
 Lock the lock.  `blocking` indicates whether we should wait\n\
 for the lock to be available or not.  If `blocking` is False\n\
@@ -1043,6 +1078,12 @@ In all other cases, the method will return True immediately.\n\
 Precisely, if the current thread already holds the lock, its\n\
 internal counter is simply incremented. If nobody holds the lock,\n\
 the lock is taken and its internal counter initialized to 1.");
+
+PyDoc_STRVAR(rlock_enter_doc,
+"__enter__($self, /)\n\
+--\n\
+\n\
+Lock the lock.");
 
 static PyObject *
 rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
@@ -1062,7 +1103,8 @@ rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_release_doc,
-"release()\n\
+"release($self, /)\n\
+--\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
@@ -1072,6 +1114,12 @@ and must be locked by the same thread that unlocks it; otherwise a\n\
 Do note that if the lock was acquire()d several times in a row by the\n\
 current thread, release() needs to be called as many times for the lock\n\
 to be available for other threads.");
+
+PyDoc_STRVAR(rlock_exit_doc,
+"__exit__($self, /, *exc_info)\n\
+--\n\
+\n\
+Release the lock.");
 
 static PyObject *
 rlock_acquire_restore(rlockobject *self, PyObject *args)
@@ -1100,7 +1148,8 @@ rlock_acquire_restore(rlockobject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(rlock_acquire_restore_doc,
-"_acquire_restore(state) -> None\n\
+"_acquire_restore($self, state, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -1125,7 +1174,8 @@ rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_release_save_doc,
-"_release_save() -> tuple\n\
+"_release_save($self, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -1139,7 +1189,8 @@ rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_recursion_count_doc,
-"_recursion_count() -> int\n\
+"_recursion_count($self, /)\n\
+--\n\
 \n\
 For internal use by reentrancy checks.");
 
@@ -1155,7 +1206,8 @@ rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_is_owned_doc,
-"_is_owned() -> bool\n\
+"_is_owned($self, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -1223,9 +1275,9 @@ static PyMethodDef rlock_methods[] = {
     {"_recursion_count", (PyCFunction)rlock_recursion_count,
      METH_NOARGS, rlock_recursion_count_doc},
     {"__enter__",    _PyCFunction_CAST(rlock_acquire),
-     METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, rlock_enter_doc},
     {"__exit__",    (PyCFunction)rlock_release,
-     METH_VARARGS, rlock_release_doc},
+     METH_VARARGS, rlock_exit_doc},
 #ifdef HAVE_FORK
     {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
      METH_NOARGS, NULL},
@@ -1298,33 +1350,44 @@ newlockobject(PyObject *module)
    Our implementation uses small "localdummy" objects in order to break
    the reference chain. These trivial objects are hashable (using the
    default scheme of identity hashing) and weakrefable.
-   Each thread-state holds a separate localdummy for each local object
-   (as a /strong reference/),
-   and each thread-local object holds a dict mapping /weak references/
-   of localdummies to local dicts.
+
+   Each thread-state holds two separate localdummy objects:
+
+   - `threading_local_key` is used as a key to retrieve the locals dictionary
+     for the thread in any `threading.local` object.
+   - `threading_local_sentinel` is used to signal when a thread is being
+     destroyed. Consequently, the associated thread-state must hold the only
+     reference.
+
+   Each `threading.local` object contains a dict mapping localdummy keys to
+   locals dicts and a set containing weak references to localdummy
+   sentinels. Each sentinel weak reference has a callback that removes itself
+   and the locals dict for the key from the `threading.local` object when
+   called.
 
    Therefore:
-   - only the thread-state dict holds a strong reference to the dummies
-   - only the thread-local object holds a strong reference to the local dicts
-   - only outside objects (application- or library-level) hold strong
-     references to the thread-local objects
-   - as soon as a thread-state dict is destroyed, the weakref callbacks of all
-     dummies attached to that thread are called, and destroy the corresponding
-     local dicts from thread-local objects
-   - as soon as a thread-local object is destroyed, its local dicts are
-     destroyed and its dummies are manually removed from all thread states
-   - the GC can do its work correctly when a thread-local object is dangling,
-     without any interference from the thread-state dicts
+   - The thread-state only holds strong references to localdummy objects, which
+     cannot participate in cycles.
+   - Only outside objects (application- or library-level) hold strong
+     references to the thread-local objects.
+   - As soon as thread-state's sentinel dummy is destroyed the callbacks for
+     all weakrefs attached to the sentinel are called, and destroy the
+     corresponding local dicts from thread-local objects.
+   - As soon as a thread-local object is destroyed, its local dicts are
+     destroyed.
+   - The GC can do its work correctly when a thread-local object is dangling,
+     without any interference from the thread-state dicts.
 
-   As an additional optimization, each localdummy holds a borrowed reference
-   to the corresponding localdict.  This borrowed reference is only used
-   by the thread-local object which has created the localdummy, which should
-   guarantee that the localdict still exists when accessed.
+   This dual key arrangement is necessary to ensure that `threading.local`
+   values can be retrieved from finalizers. If we were to only keep a mapping
+   of localdummy weakrefs to locals dicts it's possible that the weakrefs would
+   be cleared before finalizers were called (GC currently clears weakrefs that
+   are garbage before invoking finalizers), causing lookups in finalizers to
+   fail.
 */
 
 typedef struct {
     PyObject_HEAD
-    PyObject *localdict;        /* Borrowed reference! */
     PyObject *weakreflist;      /* List of weak references to self */
 } localdummyobject;
 
@@ -1361,80 +1424,60 @@ static PyType_Spec local_dummy_type_spec = {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *key;
     PyObject *args;
     PyObject *kw;
     PyObject *weakreflist;      /* List of weak references to self */
-    /* A {localdummy weakref -> localdict} dict */
-    PyObject *dummies;
-    /* The callback for weakrefs to localdummies */
-    PyObject *wr_callback;
+    /* A {localdummy -> localdict} dict */
+    PyObject *localdicts;
+    /* A set of weakrefs to thread sentinels localdummies*/
+    PyObject *thread_watchdogs;
 } localobject;
 
 /* Forward declaration */
-static PyObject *_ldict(localobject *self, thread_module_state *state);
-static PyObject *_localdummy_destroyed(PyObject *meth_self, PyObject *dummyweakref);
+static int create_localsdict(localobject *self, thread_module_state *state,
+                             PyObject **localsdict, PyObject **sentinel_wr);
+static PyObject *clear_locals(PyObject *meth_self, PyObject *dummyweakref);
 
-/* Create and register the dummy for the current thread.
-   Returns a borrowed reference of the corresponding local dict */
+/* Create a weakref to the sentinel localdummy for the current thread */
 static PyObject *
-_local_create_dummy(localobject *self, thread_module_state *state)
+create_sentinel_wr(localobject *self)
 {
-    PyObject *ldict = NULL, *wr = NULL;
-    localdummyobject *dummy = NULL;
-    PyTypeObject *type = state->local_dummy_type;
+    static PyMethodDef wr_callback_def = {
+        "clear_locals", (PyCFunction) clear_locals, METH_O
+    };
 
-    PyObject *tdict = PyThreadState_GetDict();
-    if (tdict == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Couldn't get thread-state dictionary");
-        goto err;
-    }
+    PyThreadState *tstate = PyThreadState_Get();
 
-    ldict = PyDict_New();
-    if (ldict == NULL) {
-        goto err;
-    }
-    dummy = (localdummyobject *) type->tp_alloc(type, 0);
-    if (dummy == NULL) {
-        goto err;
-    }
-    dummy->localdict = ldict;
-    wr = PyWeakref_NewRef((PyObject *) dummy, self->wr_callback);
-    if (wr == NULL) {
-        goto err;
+    /* We use a weak reference to self in the callback closure
+       in order to avoid spurious reference cycles */
+    PyObject *self_wr = PyWeakref_NewRef((PyObject *) self, NULL);
+    if (self_wr == NULL) {
+        return NULL;
     }
 
-    /* As a side-effect, this will cache the weakref's hash before the
-       dummy gets deleted */
-    int r = PyDict_SetItem(self->dummies, wr, ldict);
-    if (r < 0) {
-        goto err;
+    PyObject *args = PyTuple_New(2);
+    if (args == NULL) {
+        Py_DECREF(self_wr);
+        return NULL;
     }
-    Py_CLEAR(wr);
-    r = PyDict_SetItem(tdict, self->key, (PyObject *) dummy);
-    if (r < 0) {
-        goto err;
+    PyTuple_SET_ITEM(args, 0, self_wr);
+    PyTuple_SET_ITEM(args, 1, Py_NewRef(tstate->threading_local_key));
+
+    PyObject *cb = PyCFunction_New(&wr_callback_def, args);
+    Py_DECREF(args);
+    if (cb == NULL) {
+        return NULL;
     }
-    Py_CLEAR(dummy);
 
-    Py_DECREF(ldict);
-    return ldict;
+    PyObject *wr = PyWeakref_NewRef(tstate->threading_local_sentinel, cb);
+    Py_DECREF(cb);
 
-err:
-    Py_XDECREF(ldict);
-    Py_XDECREF(wr);
-    Py_XDECREF(dummy);
-    return NULL;
+    return wr;
 }
 
 static PyObject *
 local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    static PyMethodDef wr_callback_def = {
-        "_localdummy_destroyed", (PyCFunction) _localdummy_destroyed, METH_O
-    };
-
     if (type->tp_init == PyBaseObject_Type.tp_init) {
         int rc = 0;
         if (args != NULL)
@@ -1461,30 +1504,25 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     self->args = Py_XNewRef(args);
     self->kw = Py_XNewRef(kw);
-    self->key = PyUnicode_FromFormat("thread.local.%p", self);
-    if (self->key == NULL) {
+
+    self->localdicts = PyDict_New();
+    if (self->localdicts == NULL) {
         goto err;
     }
 
-    self->dummies = PyDict_New();
-    if (self->dummies == NULL) {
+    self->thread_watchdogs = PySet_New(NULL);
+    if (self->thread_watchdogs == NULL) {
         goto err;
     }
 
-    /* We use a weak reference to self in the callback closure
-       in order to avoid spurious reference cycles */
-    PyObject *wr = PyWeakref_NewRef((PyObject *) self, NULL);
-    if (wr == NULL) {
+    PyObject *localsdict = NULL;
+    PyObject *sentinel_wr = NULL;
+    if (create_localsdict(self, state, &localsdict, &sentinel_wr) < 0) {
         goto err;
     }
-    self->wr_callback = PyCFunction_NewEx(&wr_callback_def, wr, NULL);
-    Py_DECREF(wr);
-    if (self->wr_callback == NULL) {
-        goto err;
-    }
-    if (_local_create_dummy(self, state) == NULL) {
-        goto err;
-    }
+    Py_DECREF(localsdict);
+    Py_DECREF(sentinel_wr);
+
     return (PyObject *)self;
 
   err:
@@ -1498,7 +1536,8 @@ local_traverse(localobject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->args);
     Py_VISIT(self->kw);
-    Py_VISIT(self->dummies);
+    Py_VISIT(self->localdicts);
+    Py_VISIT(self->thread_watchdogs);
     return 0;
 }
 
@@ -1507,27 +1546,8 @@ local_clear(localobject *self)
 {
     Py_CLEAR(self->args);
     Py_CLEAR(self->kw);
-    Py_CLEAR(self->dummies);
-    Py_CLEAR(self->wr_callback);
-    /* Remove all strong references to dummies from the thread states */
-    if (self->key) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        _PyRuntimeState *runtime = &_PyRuntime;
-        HEAD_LOCK(runtime);
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        HEAD_UNLOCK(runtime);
-        while (tstate) {
-            if (tstate->dict) {
-                if (PyDict_Pop(tstate->dict, self->key, NULL) < 0) {
-                    // Silently ignore error
-                    PyErr_Clear();
-                }
-            }
-            HEAD_LOCK(runtime);
-            tstate = PyThreadState_Next(tstate);
-            HEAD_UNLOCK(runtime);
-        }
-    }
+    Py_CLEAR(self->localdicts);
+    Py_CLEAR(self->thread_watchdogs);
     return 0;
 }
 
@@ -1543,48 +1563,142 @@ local_dealloc(localobject *self)
     PyObject_GC_UnTrack(self);
 
     local_clear(self);
-    Py_XDECREF(self->key);
 
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject*)self);
     Py_DECREF(tp);
 }
 
-/* Returns a borrowed reference to the local dict, creating it if necessary */
+/* Create the TLS key and sentinel if they don't exist */
+static int
+create_localdummies(thread_module_state *state)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    if (tstate->threading_local_key != NULL) {
+        return 0;
+    }
+
+    PyTypeObject *ld_type = state->local_dummy_type;
+    tstate->threading_local_key = ld_type->tp_alloc(ld_type, 0);
+    if (tstate->threading_local_key == NULL) {
+        return -1;
+    }
+
+    tstate->threading_local_sentinel = ld_type->tp_alloc(ld_type, 0);
+    if (tstate->threading_local_sentinel == NULL) {
+        Py_CLEAR(tstate->threading_local_key);
+        return -1;
+    }
+
+    return 0;
+}
+
+/* Insert a localsdict and sentinel weakref for the current thread, placing
+   strong references in localsdict and sentinel_wr, respectively.
+*/
+static int
+create_localsdict(localobject *self, thread_module_state *state,
+                  PyObject **localsdict, PyObject **sentinel_wr)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *ldict = NULL;
+    PyObject *wr = NULL;
+
+    if (create_localdummies(state) < 0) {
+        goto err;
+    }
+
+    /* Create and insert the locals dict and sentinel weakref */
+    ldict = PyDict_New();
+    if (ldict == NULL) {
+        goto err;
+    }
+
+    if (PyDict_SetItem(self->localdicts, tstate->threading_local_key, ldict) <
+        0) {
+        goto err;
+    }
+
+    wr = create_sentinel_wr(self);
+    if (wr == NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
+            0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+        PyErr_SetRaisedException(exc);
+        goto err;
+    }
+
+    if (PySet_Add(self->thread_watchdogs, wr) < 0) {
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
+            0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+        PyErr_SetRaisedException(exc);
+        goto err;
+    }
+
+    *localsdict = ldict;
+    *sentinel_wr = wr;
+    return 0;
+
+err:
+    Py_XDECREF(ldict);
+    Py_XDECREF(wr);
+    return -1;
+}
+
+/* Return a strong reference to the locals dict for the current thread,
+   creating it if necessary.
+*/
 static PyObject *
 _ldict(localobject *self, thread_module_state *state)
 {
-    PyObject *tdict = PyThreadState_GetDict();
-    if (tdict == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Couldn't get thread-state dictionary");
+    if (create_localdummies(state) < 0) {
         return NULL;
     }
 
+    /* Check if a localsdict already exists */
     PyObject *ldict;
-    PyObject *dummy = PyDict_GetItemWithError(tdict, self->key);
-    if (dummy == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        ldict = _local_create_dummy(self, state);
-        if (ldict == NULL)
-            return NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (PyDict_GetItemRef(self->localdicts, tstate->threading_local_key,
+                          &ldict) < 0) {
+        return NULL;
+    }
+    if (ldict != NULL) {
+        return ldict;
+    }
 
-        if (Py_TYPE(self)->tp_init != PyBaseObject_Type.tp_init &&
-            Py_TYPE(self)->tp_init((PyObject*)self,
-                                   self->args, self->kw) < 0) {
-            /* we need to get rid of ldict from thread so
-               we create a new one the next time we do an attr
-               access */
-            PyDict_DelItem(tdict, self->key);
-            return NULL;
+    /* threading.local hasn't been instantiated for this thread */
+    PyObject *wr;
+    if (create_localsdict(self, state, &ldict, &wr) < 0) {
+        return NULL;
+    }
+
+    /* run __init__ if we're a subtype of `threading.local` */
+    if (Py_TYPE(self)->tp_init != PyBaseObject_Type.tp_init &&
+        Py_TYPE(self)->tp_init((PyObject *)self, self->args, self->kw) < 0) {
+        /* we need to get rid of ldict from thread so
+           we create a new one the next time we do an attr
+           access */
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
+            0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_Clear();
         }
+        if (PySet_Discard(self->thread_watchdogs, wr) < 0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+        PyErr_SetRaisedException(exc);
+        Py_DECREF(ldict);
+        Py_DECREF(wr);
+        return NULL;
     }
-    else {
-        assert(Py_IS_TYPE(dummy, state->local_dummy_type));
-        ldict = ((localdummyobject *) dummy)->localdict;
-    }
+    Py_DECREF(wr);
 
     return ldict;
 }
@@ -1598,21 +1712,28 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
 
     PyObject *ldict = _ldict(self, state);
     if (ldict == NULL) {
-        return -1;
+        goto err;
     }
 
     int r = PyObject_RichCompareBool(name, &_Py_ID(__dict__), Py_EQ);
     if (r == -1) {
-        return -1;
+        goto err;
     }
     if (r == 1) {
         PyErr_Format(PyExc_AttributeError,
                      "'%.100s' object attribute '%U' is read-only",
                      Py_TYPE(self)->tp_name, name);
-        return -1;
+        goto err;
     }
 
-    return _PyObject_GenericSetAttrWithDict((PyObject *)self, name, v, ldict);
+    int st =
+        _PyObject_GenericSetAttrWithDict((PyObject *)self, name, v, ldict);
+    Py_DECREF(ldict);
+    return st;
+
+err:
+    Py_XDECREF(ldict);
+    return -1;
 }
 
 static PyObject *local_getattro(localobject *, PyObject *);
@@ -1626,7 +1747,7 @@ static PyType_Slot local_type_slots[] = {
     {Py_tp_dealloc, (destructor)local_dealloc},
     {Py_tp_getattro, (getattrofunc)local_getattro},
     {Py_tp_setattro, (setattrofunc)local_setattro},
-    {Py_tp_doc, "Thread-local data"},
+    {Py_tp_doc, "_local()\n--\n\nThread-local data"},
     {Py_tp_traverse, (traverseproc)local_traverse},
     {Py_tp_clear, (inquiry)local_clear},
     {Py_tp_new, local_new},
@@ -1655,34 +1776,42 @@ local_getattro(localobject *self, PyObject *name)
 
     int r = PyObject_RichCompareBool(name, &_Py_ID(__dict__), Py_EQ);
     if (r == 1) {
-        return Py_NewRef(ldict);
+        return ldict;
     }
     if (r == -1) {
+        Py_DECREF(ldict);
         return NULL;
     }
 
     if (!Py_IS_TYPE(self, state->local_type)) {
         /* use generic lookup for subtypes */
-        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name,
-                                                ldict, 0);
+        PyObject *res =
+            _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict, 0);
+        Py_DECREF(ldict);
+        return res;
     }
 
     /* Optimization: just look in dict ourselves */
     PyObject *value;
     if (PyDict_GetItemRef(ldict, name, &value) != 0) {
         // found or error
+        Py_DECREF(ldict);
         return value;
     }
 
     /* Fall back on generic to get __class__ and __dict__ */
-    return _PyObject_GenericGetAttrWithDict(
-        (PyObject *)self, name, ldict, 0);
+    PyObject *res =
+        _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict, 0);
+    Py_DECREF(ldict);
+    return res;
 }
 
-/* Called when a dummy is destroyed. */
+/* Called when a dummy is destroyed, indicating that the owning thread is being
+ * cleared. */
 static PyObject *
-_localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
+clear_locals(PyObject *locals_and_key, PyObject *dummyweakref)
 {
+    PyObject *localweakref = PyTuple_GetItem(locals_and_key, 0);
     localobject *self = (localobject *)_PyWeakref_GET_REF(localweakref);
     if (self == NULL) {
         Py_RETURN_NONE;
@@ -1690,11 +1819,18 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
-    if (self->dummies != NULL) {
-        if (PyDict_Pop(self->dummies, dummyweakref, NULL) < 0) {
+    if (self->localdicts != NULL) {
+        PyObject *key = PyTuple_GetItem(locals_and_key, 1);
+        if (PyDict_Pop(self->localdicts, key, NULL) < 0) {
             PyErr_WriteUnraisable((PyObject*)self);
         }
     }
+    if (self->thread_watchdogs != NULL) {
+        if (PySet_Discard(self->thread_watchdogs, dummyweakref) < 0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+    }
+
     Py_DECREF(self);
     Py_RETURN_NONE;
 }
@@ -1714,7 +1850,8 @@ thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(daemon_threads_allowed_doc,
-"daemon_threads_allowed()\n\
+"daemon_threads_allowed($module, /)\n\
+--\n\
 \n\
 Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
@@ -1798,9 +1935,9 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
     return PyLong_FromUnsignedLongLong(ident);
 }
 
-PyDoc_STRVAR(start_new_doc,
-"start_new_thread(function, args[, kwargs])\n\
-(start_new() is an obsolete synonym)\n\
+PyDoc_STRVAR(start_new_thread_doc,
+"start_new_thread($module, function, args, kwargs={}, /)\n\
+--\n\
 \n\
 Start a new thread and return its identifier.\n\
 \n\
@@ -1809,7 +1946,13 @@ tuple args and keyword arguments taken from the optional dictionary\n\
 kwargs.  The thread exits when the function returns; the return value\n\
 is ignored.  The thread will also exit when the function raises an\n\
 unhandled exception; a stack trace will be printed unless the exception\n\
-is SystemExit.\n");
+is SystemExit.");
+
+PyDoc_STRVAR(start_new_doc,
+"start_new($module, function, args, kwargs={}, /)\n\
+--\n\
+\n\
+An obsolete synonym of start_new_thread().");
 
 static PyObject *
 thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
@@ -1870,7 +2013,8 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
 }
 
 PyDoc_STRVAR(start_joinable_doc,
-"start_joinable_thread(function[, daemon=True[, handle=None]])\n\
+"start_joinable_thread($module, /, function, handle=None, daemon=True)\n\
+--\n\
 \n\
 *For internal use only*: start a new thread.\n\
 \n\
@@ -1890,11 +2034,17 @@ thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(exit_doc,
-"exit()\n\
-(exit_thread() is an obsolete synonym)\n\
+"exit($module, /)\n\
+--\n\
 \n\
 This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
+
+PyDoc_STRVAR(exit_thread_doc,
+"exit_thread($module, /)\n\
+--\n\
+\n\
+An obsolete synonym of exit().");
 
 static PyObject *
 thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
@@ -1912,7 +2062,8 @@ thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(interrupt_doc,
-"interrupt_main(signum=signal.SIGINT, /)\n\
+"interrupt_main($module, signum=signal.SIGINT, /)\n\
+--\n\
 \n\
 Simulate the arrival of the given signal in the main thread,\n\
 where the corresponding signal handler will be executed.\n\
@@ -1928,12 +2079,18 @@ thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
     return (PyObject *) newlockobject(module);
 }
 
-PyDoc_STRVAR(allocate_doc,
-"allocate_lock() -> lock object\n\
-(allocate() is an obsolete synonym)\n\
+PyDoc_STRVAR(allocate_lock_doc,
+"allocate_lock($module, /)\n\
+--\n\
 \n\
 Create a new lock object. See help(type(threading.Lock())) for\n\
 information about locks.");
+
+PyDoc_STRVAR(allocate_doc,
+"allocate($module, /)\n\
+--\n\
+\n\
+An obsolete synonym of allocate_lock().");
 
 static PyObject *
 thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1947,7 +2104,8 @@ thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_ident_doc,
-"get_ident() -> integer\n\
+"get_ident($module, /)\n\
+--\n\
 \n\
 Return a non-zero integer that uniquely identifies the current thread\n\
 amongst other threads that exist simultaneously.\n\
@@ -1966,7 +2124,8 @@ thread_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_native_id_doc,
-"get_native_id() -> integer\n\
+"get_native_id($module, /)\n\
+--\n\
 \n\
 Return a non-negative integer identifying the thread as reported\n\
 by the OS (kernel). This may be used to uniquely identify a\n\
@@ -1981,9 +2140,9 @@ thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_count_doc,
-"_count() -> integer\n\
+"_count($module, /)\n\
+--\n\
 \n\
-\
 Return the number of currently running Python threads, excluding\n\
 the main thread. The returned number comprises all threads created\n\
 through `start_new_thread()` as well as `threading.Thread`, and not\n\
@@ -2027,7 +2186,8 @@ thread_stack_size(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(stack_size_doc,
-"stack_size([size]) -> size\n\
+"stack_size($module, size=0, /)\n\
+--\n\
 \n\
 Return the thread stack size used when creating new threads.  The\n\
 optional size argument specifies the stack size (in bytes) to be used\n\
@@ -2182,7 +2342,8 @@ thread_excepthook(PyObject *module, PyObject *args)
 }
 
 PyDoc_STRVAR(excepthook_doc,
-"excepthook(exc_type, exc_value, exc_traceback, thread)\n\
+"_excepthook($module, (exc_type, exc_value, exc_traceback, thread), /)\n\
+--\n\
 \n\
 Handle uncaught Thread.run() exception.");
 
@@ -2194,7 +2355,8 @@ thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(thread__is_main_interpreter_doc,
-"_is_main_interpreter()\n\
+"_is_main_interpreter($module, /)\n\
+--\n\
 \n\
 Return True if the current interpreter is the main Python interpreter.");
 
@@ -2240,7 +2402,8 @@ thread_shutdown(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(shutdown_doc,
-"_shutdown()\n\
+"_shutdown($module, /)\n\
+--\n\
 \n\
 Wait for all non-daemon threads (other than the calling thread) to stop.");
 
@@ -2269,7 +2432,8 @@ thread__make_thread_handle(PyObject *module, PyObject *identobj)
 }
 
 PyDoc_STRVAR(thread__make_thread_handle_doc,
-"_make_thread_handle(ident)\n\
+"_make_thread_handle($module, ident, /)\n\
+--\n\
 \n\
 Internal only. Make a thread handle for threads not spawned\n\
 by the _thread or threading module.");
@@ -2281,14 +2445,15 @@ thread__get_main_thread_ident(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(thread__get_main_thread_ident_doc,
-"_get_main_thread_ident()\n\
+"_get_main_thread_ident($module, /)\n\
+--\n\
 \n\
 Internal only. Return a non-zero integer that uniquely identifies the main thread\n\
 of the main interpreter.");
 
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS, start_new_doc},
+     METH_VARARGS, start_new_thread_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
     {"start_joinable_thread",   _PyCFunction_CAST(thread_PyThread_start_joinable_thread),
@@ -2296,11 +2461,11 @@ static PyMethodDef thread_methods[] = {
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
-     METH_NOARGS, allocate_doc},
+     METH_NOARGS, allocate_lock_doc},
     {"allocate",                thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
     {"exit_thread",             thread_PyThread_exit_thread,
-     METH_NOARGS, exit_doc},
+     METH_NOARGS, exit_thread_doc},
     {"exit",                    thread_PyThread_exit_thread,
      METH_NOARGS, exit_doc},
     {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
@@ -2463,6 +2628,7 @@ The 'threading' module provides a more convenient interface.");
 static PyModuleDef_Slot thread_module_slots[] = {
     {Py_mod_exec, thread_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

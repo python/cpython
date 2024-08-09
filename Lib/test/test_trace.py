@@ -1,11 +1,12 @@
 import os
 from pickle import dump
 import sys
-from test.support import captured_stdout, requires_resource
+from test.support import captured_stdout, requires_resource, requires_gil_enabled
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
 import unittest
+from types import FunctionType
 
 import trace
 from trace import Trace
@@ -300,6 +301,7 @@ class TestFuncs(unittest.TestCase):
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'pre-existing trace function throws off measurements')
+    @requires_gil_enabled("gh-117783: immortalization of types affects traced method names")
     def test_inst_method_calling(self):
         obj = TracedClass(20)
         self.tracer.runfunc(obj.inst_method_calling, 1)
@@ -333,6 +335,7 @@ class TestCallers(unittest.TestCase):
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'pre-existing trace function throws off measurements')
+    @requires_gil_enabled("gh-117783: immortalization of types affects traced method names")
     def test_loop_caller_importing(self):
         self.tracer.runfunc(traced_func_importing_caller, 1)
 
@@ -557,6 +560,30 @@ class TestCommandLine(unittest.TestCase):
     def test_run_as_module(self):
         assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')
         assert_python_failure('-m', 'trace', '-l', '--module', 'not_a_module_zzz')
+
+
+class TestTrace(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        self.tracer = Trace(count=0, trace=1)
+        self.filemod = my_file_and_modname()
+
+    def test_no_source_file(self):
+        filename = "<unknown>"
+        co = traced_func_linear.__code__
+        co = co.replace(co_filename=filename)
+        f = FunctionType(co, globals())
+
+        with captured_stdout() as out:
+            self.tracer.runfunc(f, 2, 3)
+
+        out = out.getvalue().splitlines()
+        firstlineno = get_firstlineno(f)
+        self.assertIn(f" --- modulename: {self.filemod[1]}, funcname: {f.__code__.co_name}", out[0])
+        self.assertIn(f"{filename}({firstlineno + 1})", out[1])
+        self.assertIn(f"{filename}({firstlineno + 2})", out[2])
+        self.assertIn(f"{filename}({firstlineno + 3})", out[3])
+        self.assertIn(f"{filename}({firstlineno + 4})", out[4])
 
 
 if __name__ == '__main__':
