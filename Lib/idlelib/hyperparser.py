@@ -22,54 +22,59 @@ _IS_ASCII_ID_FIRST_CHAR = \
     [(chr(x) in _ASCII_ID_FIRST_CHARS) for x in range(128)]
 
 
+def parser(editwin, index="insert", lineend=""):
+    "Create a PyParse instance and find the last statement."
+    text = editwin.text
+
+    p = pyparse.Parser(editwin.indentwidth, editwin.tabwidth)
+    lineno = editwin.getlineno(index)
+    stopatindex = index if not lineend else f"{lineno}.end"
+
+    if editwin.prompt_last_line:
+        r = text.tag_prevrange("console", index)
+        startatindex = r[1] if r else "1.0"
+        p.set_code(text.get(startatindex, stopatindex) + lineend)
+        return p
+
+    # When searching backwards for a reliable place to begin parsing,
+    # first start num_context_lines[0] lines back, then
+    # num_context_lines[1] lines back if that didn't work, and so on.
+    # The last value should be huge (larger than the # of lines in a
+    # conceivable file).
+    # Making the initial values larger slows things down more often.
+    num_context_lines = 50, 500, 5000000
+    for context in num_context_lines:
+        startat = max(lineno - context, 1)
+        startatindex = f"{startat}.0"
+        p.set_code(text.get(startatindex, stopatindex) + lineend)
+        bod = p.find_good_parse_start(
+                    editwin._build_char_in_string_func(startatindex))
+        if bod is not None or startat == 1:
+            break
+    p.set_lo(bod or 0)
+    return p
+
+
 class HyperParser:
     def __init__(self, editwin, index):
         "To initialize, analyze the surroundings of the given index."
 
         self.editwin = editwin
-        self.text = text = editwin.text
+        self.text = editwin.text
 
-        parser = pyparse.Parser(editwin.indentwidth, editwin.tabwidth)
-
-        def index2line(index):
-            return int(float(index))
-        lno = index2line(text.index(index))
-
-        if not editwin.prompt_last_line:
-            for context in editwin.num_context_lines:
-                startat = max(lno - context, 1)
-                startatindex = repr(startat) + ".0"
-                stopatindex = "%d.end" % lno
-                # We add the newline because PyParse requires a newline
-                # at end. We add a space so that index won't be at end
-                # of line, so that its status will be the same as the
-                # char before it, if should.
-                parser.set_code(text.get(startatindex, stopatindex)+' \n')
-                bod = parser.find_good_parse_start(
-                          editwin._build_char_in_string_func(startatindex))
-                if bod is not None or startat == 1:
-                    break
-            parser.set_lo(bod or 0)
-        else:
-            r = text.tag_prevrange("console", index)
-            if r:
-                startatindex = r[1]
-            else:
-                startatindex = "1.0"
-            stopatindex = "%d.end" % lno
-            # We add the newline because PyParse requires it. We add a
-            # space so that index won't be at end of line, so that its
-            # status will be the same as the char before it, if should.
-            parser.set_code(text.get(startatindex, stopatindex)+' \n')
-            parser.set_lo(0)
+        # We add the newline because PyParse requires a newline
+        # at end. We add a space so that index won't be at end
+        # of line, so that its status will be the same as the
+        # char before it.
+        p = parser(editwin, index=index, lineend=" \n")
 
         # We want what the parser has, minus the last newline and space.
-        self.rawtext = parser.code[:-2]
+        self.rawtext = p.code[:-2]
         # Parser.code apparently preserves the statement we are in, so
         # that stopatindex can be used to synchronize the string with
         # the text box indices.
-        self.stopatindex = stopatindex
-        self.bracketing = parser.get_last_stmt_bracketing()
+        self.stopatindex = f"{editwin.getlineno(index)}.end"
+        self.bracketing = p.get_last_stmt_bracketing()
         # find which pairs of bracketing are openers. These always
         # correspond to a character of rawtext.
         self.isopener = [i>0 and self.bracketing[i][1] >
