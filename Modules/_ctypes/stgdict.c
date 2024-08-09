@@ -305,42 +305,14 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         pack = 0;
     }
 
-    #ifdef MS_WIN32
-    LayoutMode layout_mode = LAYOUT_MODE_MS;
-    #else
-    LayoutMode layout_mode = (pack > 0) ? LAYOUT_MODE_MS : LAYOUT_MODE_GCC_SYSV;
-    #endif
-
     PyObject *layout_class;
     if (PyObject_GetOptionalAttr(type, &_Py_ID(_layout_), &tmp) < 0) {
         goto error;
     }
-    if (!tmp) {
+    if (!tmp || PyUnicode_Check(tmp)) {
         layout_class = _PyImport_GetModuleAttrString("ctypes._layout",
-                                                     "NativeLayout");
-    }
-    else if (PyUnicode_Check(tmp)) {
-        if (PyUnicode_CompareWithASCIIString(tmp, "ms") == 0) {
-            layout_mode = LAYOUT_MODE_MS;
-            layout_class = _PyImport_GetModuleAttrString("ctypes._layout",
-                                                         "WindowsLayout");
-        }
-        else if (PyUnicode_CompareWithASCIIString(tmp, "gcc-sysv") == 0) {
-            layout_mode = LAYOUT_MODE_GCC_SYSV;
-            if (pack > 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "_pack_ is not compatible with _layout_=\"gcc-sysv\"");
-                goto error;
-            }
-            layout_class = _PyImport_GetModuleAttrString("ctypes._layout",
-                                                         "GCCSysVLayout");
-        }
-        else {
-            PyErr_Format(PyExc_ValueError,
-                            "unknown _layout_ %R", tmp);
-            goto error;
-        }
-        Py_DECREF(tmp);
+                                                     "default_layout");
+        Py_XDECREF(tmp);
     }
     else {
         layout_class = tmp;
@@ -513,7 +485,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, layout_mode);
+                                   pack);
             if (res < 0) {
                 goto error;
             }
@@ -562,7 +534,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, layout_mode);
+                                   pack);
             if (res < 0) {
                 goto error;
             }

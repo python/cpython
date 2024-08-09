@@ -48,17 +48,39 @@ class _BaseLayout:
                 offset=offset,
                 bit_size=bit_size,
                 swapped_bytes=self.swapped_bytes,
+                **self._field_args(),
             )
             self.offset += self.size
 
+    def _field_args(self):
+        return {}
+
 
 class WindowsLayout(_BaseLayout):
-    pass
+    def _field_args(self):
+        return {'_ms': True}
 
 class GCCSysVLayout(_BaseLayout):
-    pass
+    def __init__(self, cls, *args, **kwargs):
+        if getattr(cls, '_pack_', None):
+            raise ValueError('_pack_ is not compatible with gcc-sysv layout')
+        return super().__init__(cls, *args, **kwargs)
 
 if sys.platform == 'win32':
     NativeLayout = WindowsLayout
+    DefaultLayout = WindowsLayout
 else:
     NativeLayout = GCCSysVLayout
+
+def default_layout(cls, *args, **kwargs):
+    layout = getattr(cls, '_layout_', None)
+    if layout is None:
+        if sys.platform == 'win32' or getattr(cls, '_pack_', None):
+            return WindowsLayout(cls, *args, **kwargs)
+        return GCCSysVLayout(cls, *args, **kwargs)
+    elif layout == 'ms':
+        return WindowsLayout(cls, *args, **kwargs)
+    elif layout == 'gcc-sysv':
+        return GCCSysVLayout(cls, *args, **kwargs)
+    else:
+        raise ValueError(f'unknown _layout_: {layout!r}')
