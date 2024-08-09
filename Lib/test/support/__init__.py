@@ -2709,22 +2709,38 @@ def find_name_in_mro(cls, name, default=inspect._sentinel):
 
 
 # XXX The return value should always be exactly the same...
-def identify_type_slots(*, reverse=False):
+def identify_type_slots():
     if _testinternalcapi is not None:
-        pairs = _testinternalcapi.identify_type_slots()
-        if reverse:
-            pairs = ((a, s) for s, a in pairs)
         slots = {}
         duplicates = {}
-        for key, value in pairs:
-            if key in slots:
-                assert key not in duplicates, (key, value)
-                duplicates[key] = value
+        for slot, attr in _testinternalcapi.identify_type_slots():
+            if slot in slots:
+                try:
+                    dupes = duplicates[slot]
+                except KeyError:
+                    dupes = duplicates[slot] = []
+                dupes.append(attr)
             else:
-                slots[key] = value
+                slots[slot] = attr
         return slots, duplicates
     else:
         raise NotImplementedError
+
+
+def identify_type_slot_wrappers():
+    slots, slot_duplicates = identify_type_slots()
+    attrs = {}
+    duplicates = {}
+    for attrs_by_slot in ({s: [a] for s, a in slots.items()}, slot_duplicates):
+        for slot, slot_attrs in attrs_by_slot.items():
+            for attr in slot_attrs:
+                if attr in attrs:
+                    assert attr not in duplicates, \
+                            (slot, attr, attrs[attr], duplicates[attr])
+                    duplicates[attr] = slot
+                else:
+                    attrs[attr] = slot
+    return attrs, duplicates
 
 
 def iter_slot_wrappers(cls):
@@ -2738,14 +2754,14 @@ def iter_slot_wrappers(cls):
         return True
 
     try:
-        slots, duplicates = identify_type_slots(reverse=True)
+        attrs, duplicates = identify_type_slot_wrappers()
     except NotImplementedError:
-        slots = None
-    if slots is not None:
-        for attr in sorted(slots):
+        attrs = None
+    if attrs is not None:
+        for attr in sorted(attrs):
             obj, base = find_name_in_mro(cls, attr, None)
             if obj is not None and is_slot_wrapper(attr, obj):
-                slot = slots[attr]
+                slot = attrs[attr]
                 yield attr, base is cls
         return
 
