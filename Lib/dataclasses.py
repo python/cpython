@@ -784,7 +784,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         f = field(default=default)
 
     # Only at this point do we know the name and the type.  Set them.
-    f.name = a_name
+    f.name = sys.intern(a_name)
     f.type = a_type
 
     # Assume it's a normal field until proven otherwise.  We're next
