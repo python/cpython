@@ -641,6 +641,14 @@ class CFutureTests(BaseFutureTests, test_utils.TestCase):
         with self.assertRaises(AttributeError):
             del fut._log_traceback
 
+    def test_future_iter_get_referents_segfault(self):
+        # See https://github.com/python/cpython/issues/122695
+        import _asyncio
+        it = iter(self._new_future(loop=self.loop))
+        del it
+        evil = gc.get_referents(_asyncio)
+        gc.collect()
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
