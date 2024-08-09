@@ -3073,18 +3073,18 @@ class ASTOptimiziationTests(unittest.TestCase):
         return ast.UnaryOp(op=self.unaryop[operand], operand=ast.Constant(1))
 
     def assert_ast(self, code, non_optimized_target, optimized_target):
-        # Searching for not optimized node in not optimized AST
+        # Searching for a non-optimized node in an unoptimized AST
         self.assertTrue(self.find_node(code, optimize=-1, target=non_optimized_target))
 
-        # Searching for not optimized node in optimized AST
+        # Searching for a non-optimized node in an optimized AST
         self.assertFalse(self.find_node(code, optimize=1, target=non_optimized_target))
 
-        # Searching for constant node in optimized AST
+        # Searching for a constant node in an optimized AST
         self.assertTrue(self.find_node(code, optimize=1, target=optimized_target))
 
     def test_folding_binop(self):
         code = "1 %s 1"
-        operators = ["+", "-", "*", "/", "%", "<<", ">>", "|", "^", "&", "//", "**"]
+        operators = self.binop.keys()
 
         for op in operators:
             result_code = code % op
@@ -3100,7 +3100,7 @@ class ASTOptimiziationTests(unittest.TestCase):
 
     def test_folding_unaryop(self):
         code = "%s1"
-        operators = ["~", "+", "-"]
+        operators = self.unaryop.keys()
 
         for op in operators:
             result_code = code % op
@@ -3123,26 +3123,44 @@ class ASTOptimiziationTests(unittest.TestCase):
         self.assert_ast(code, non_optimized_target, optimized_target)
 
     def test_folding_comparator(self):
-        code = "1 %s []"
+        code = "1 %s %s1%s"
         operators = [("in", ast.In()), ("not in", ast.NotIn())]
-        for op, node in operators:
-            non_optimized_target = ast.Compare(left=ast.Constant(1), ops=[node], comparators=[ast.List()])
-            optimized_target = ast.Compare(left=ast.Constant(1), ops=[node], comparators=[ast.Constant(value=())])
-            self.assert_ast(code % op, non_optimized_target, optimized_target)
+        braces = [("[", "]", ast.List, (1,)), ("{", "}", ast.Set, frozenset({1}))]
+        for left, right, non_optimized_comparator, optimized_comparator in braces:
+            for op, node in operators: 
+                non_optimized_target = ast.Compare(
+                    left=ast.Constant(1), ops=[node],
+                    comparators=[non_optimized_comparator(elts=[ast.Constant(1)])]
+                )
+                optimized_target = ast.Compare(
+                    left=ast.Constant(1), ops=[node],
+                    comparators=[ast.Constant(value=optimized_comparator)]
+                )
+                self.assert_ast(code % (op, left, right), non_optimized_target, optimized_target)
+
+    def test_folding_iter(self):
+        code = "for _ in %s1%s: pass"
+        braces = [("[", "]", ast.List, (1,)), ("{", "}", ast.Set, frozenset({1}))]
+
+        for left, right, non_optimized_iter, optimized_iter in braces:
+            non_optimized_target = ast.For(
+                target=ast.Name(id="_", ctx=ast.Store()),
+                iter=non_optimized_iter(elts=[ast.Constant(1)]),
+                body=[ast.Pass()]
+            )
+            optimized_target = ast.For(
+                target=ast.Name(id="_", ctx=ast.Store()),
+                iter=ast.Constant(value=optimized_iter),
+                body=[ast.Pass()]
+            )
+
+            self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
 
     def test_folding_subscript(self):
         code = "(1,)[0]"
 
         non_optimized_target = ast.Subscript(value=ast.Tuple(elts=[ast.Constant(value=1)]), slice=ast.Constant(value=0))
         optimized_target = ast.Constant(value=1)
-
-        self.assert_ast(code, non_optimized_target, optimized_target)
-
-    def test_folding_iter(self):
-        code = "for _ in []: pass"
-
-        non_optimized_target = ast.For(target=ast.Name(id="_", ctx=ast.Store()), iter=ast.List(), body=[ast.Pass()])
-        optimized_target = ast.For(target=ast.Name(id="_", ctx=ast.Store()), iter=ast.Constant(value=()), body=[ast.Pass()])
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
