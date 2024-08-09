@@ -1,14 +1,14 @@
 #! /bin/sh
 # Attempt to guess a canonical system name.
-#   Copyright 1992-2021 Free Software Foundation, Inc.
+#   Copyright 1992-2022 Free Software Foundation, Inc.
 
 # shellcheck disable=SC2006,SC2268 # see below for rationale
 
-timestamp='2021-06-03'
+timestamp='2022-01-09'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful, but
@@ -60,7 +60,7 @@ version="\
 GNU config.guess ($timestamp)
 
 Originally written by Per Bothner.
-Copyright 1992-2021 Free Software Foundation, Inc.
+Copyright 1992-2022 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -437,7 +437,7 @@ case $UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION in
 	# This test works for both compilers.
 	if test "$CC_FOR_BUILD" != no_compiler_found; then
 	    if (echo '#ifdef __amd64'; echo IS_64BIT_ARCH; echo '#endif') | \
-		(CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		(CCOPTS="" $CC_FOR_BUILD -m64 -E - 2>/dev/null) | \
 		grep IS_64BIT_ARCH >/dev/null
 	    then
 		SUN_ARCH=x86_64
@@ -929,6 +929,9 @@ EOF
     i*:PW*:*)
 	GUESS=$UNAME_MACHINE-pc-pw32
 	;;
+    *:SerenityOS:*:*)
+        GUESS=$UNAME_MACHINE-pc-serenity
+        ;;
     *:Interix*:*)
 	case $UNAME_MACHINE in
 	    x86)
@@ -1521,6 +1524,9 @@ EOF
 	;;
     i*86:rdos:*:*)
 	GUESS=$UNAME_MACHINE-pc-rdos
+	;;
+    i*86:Fiwix:*:*)
+	GUESS=$UNAME_MACHINE-pc-fiwix
 	;;
     *:AROS:*:*)
 	GUESS=$UNAME_MACHINE-unknown-aros
