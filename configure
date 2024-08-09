@@ -20206,14 +20206,13 @@ done
 test -n "$TRUE" || TRUE="/bin/true"
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inet_aton in -lc" >&5
-printf %s "checking for inet_aton in -lc... " >&6; }
-if test ${ac_cv_lib_c_inet_aton+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing inet_aton" >&5
+printf %s "checking for library containing inet_aton... " >&6; }
+if test ${ac_cv_search_inet_aton+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lc  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -20229,68 +20228,109 @@ return inet_aton ();
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"
+for ac_lib in '' resolv
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_c_inet_aton=yes
-else $as_nop
-  ac_cv_lib_c_inet_aton=no
+  ac_cv_search_inet_aton=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_inet_aton" >&5
-printf "%s\n" "$ac_cv_lib_c_inet_aton" >&6; }
-if test "x$ac_cv_lib_c_inet_aton" = xyes
+    conftest$ac_exeext
+  if test ${ac_cv_search_inet_aton+y}
 then :
-  $ac_cv_prog_TRUE
+  break
+fi
+done
+if test ${ac_cv_search_inet_aton+y}
+then :
+
 else $as_nop
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inet_aton in -lresolv" >&5
-printf %s "checking for inet_aton in -lresolv... " >&6; }
-if test ${ac_cv_lib_resolv_inet_aton+y}
+  ac_cv_search_inet_aton=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_inet_aton" >&5
+printf "%s\n" "$ac_cv_search_inet_aton" >&6; }
+ac_res=$ac_cv_search_inet_aton
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+if test "x$ac_cv_search_inet_aton" = x"-lresolv"
+then :
+
+else $as_nop
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing hstrerror" >&5
+printf %s "checking for library containing hstrerror... " >&6; }
+if test ${ac_cv_search_hstrerror+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lresolv  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
    builtin and then its argument prototype would still apply.  */
-char inet_aton ();
+char hstrerror ();
 int
 main (void)
 {
-return inet_aton ();
+return hstrerror ();
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"
+for ac_lib in '' resolv
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_resolv_inet_aton=yes
-else $as_nop
-  ac_cv_lib_resolv_inet_aton=no
+  ac_cv_search_hstrerror=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_resolv_inet_aton" >&5
-printf "%s\n" "$ac_cv_lib_resolv_inet_aton" >&6; }
-if test "x$ac_cv_lib_resolv_inet_aton" = xyes
+    conftest$ac_exeext
+  if test ${ac_cv_search_hstrerror+y}
 then :
-  printf "%s\n" "#define HAVE_LIBRESOLV 1" >>confdefs.h
+  break
+fi
+done
+if test ${ac_cv_search_hstrerror+y}
+then :
 
-  LIBS="-lresolv $LIBS"
+else $as_nop
+  ac_cv_search_hstrerror=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_hstrerror" >&5
+printf "%s\n" "$ac_cv_search_hstrerror" >&6; }
+ac_res=$ac_cv_search_hstrerror
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 fi
 
 
 fi
-
 
 # On Tru64, chflags seems to be present, but calling it will
 # exit Python
