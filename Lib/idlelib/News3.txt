@@ -4,6 +4,10 @@ Released after 2023-10-02
 =========================
 
 
+gh-120083: Add explicit black IDLE Hovertip foreground color needed for
+recent macOS. Fixes Sonoma showing unreadable white on pale yellow.
+Patch by John Riggles.
+
 gh-122482: Change About IDLE to direct users to discuss.python.org
 instead of the now unused idle-dev email and mailing list.
 
