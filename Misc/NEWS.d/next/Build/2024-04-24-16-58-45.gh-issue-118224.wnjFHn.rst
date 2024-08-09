@@ -1,0 +1,1 @@
+Hashlib now supports using default OpenSSL provider instead of builtin fallback for nonsecurity hashes on hosts otherwise only using base and fips providers. This makes build configuration ``--with-builtin-hashlib-hashes=blake2`` fully supported on OpenSSL FIPS hosts.
