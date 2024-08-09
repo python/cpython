@@ -258,10 +258,21 @@ class HistoricalReader(Reader):
     def select_item(self, i: int) -> None:
         self.transient_history[self.historyi] = self.get_unicode()
         buf = self.transient_history.get(i)
+        self.historyi = i
+
+        if self.buffer:
+            filtered_history = [
+                (index, item)
+                for index, item in enumerate(self.history)
+                if item.startswith(self.get_unicode())
+                and item.strip() not in self.transient_history.values()
+            ]
+            if filtered_history:
+                self.historyi, buf = filtered_history[min(i, len(filtered_history) - 1)]
+
         if buf is None:
             buf = self.history[i].rstrip()
         self.buffer = list(buf)
-        self.historyi = i
         self.pos = len(self.buffer)
         self.dirty = True
         self.last_refresh_cache.invalidated = True
