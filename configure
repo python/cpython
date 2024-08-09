@@ -840,7 +840,7 @@ LIBPL
 PY_ENABLE_SHARED
 PLATLIBDIR
 BINLIBDEST
-MODULE_LDFLAGS
+LIBPYTHON
 MODULE_DEPS_SHARED
 EXT_SUFFIX
 ALT_SOABI
@@ -24578,16 +24578,19 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 printf "%s\n" "$LDVERSION" >&6; }
 
-# Configure the flags and dependencies used when compiling shared modules
+# Configure the flags and dependencies used when compiling shared modules.
+# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
+# systems (e.g. Meson) to decide whether to link extension modules against
+# libpython.
 
 
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
-MODULE_LDFLAGS=''
+LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  MODULE_LDFLAGS="\$(BLDLIBRARY)"
+  LIBPYTHON="\$(BLDLIBRARY)"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
