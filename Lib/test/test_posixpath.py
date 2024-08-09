@@ -695,6 +695,32 @@ class PosixPathTest(unittest.TestCase):
             os.chmod(ABSTFN, 0o755, follow_symlinks=False)
             os.unlink(ABSTFN)
 
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_too_many_symlinks(self):
+        maxlinks = 40  # TODO: use limit set by OS
+        try:
+            os.mkdir(ABSTFN)
+            os.symlink('.', f'{ABSTFN}/link')
+            self.assertEqual(realpath(ABSTFN + '/link' * maxlinks), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/link' * maxlinks,
+                                      strict=True), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/link' * (maxlinks+1)), ABSTFN)
+            with self.assertRaises(OSError):
+                realpath(ABSTFN + '/link' * (maxlinks+1), strict=True)
+
+            # Test using relative path as well.
+            with os_helper.change_cwd(ABSTFN):
+                self.assertEqual(realpath('link/' * maxlinks), ABSTFN)
+                self.assertEqual(realpath('link/' * maxlinks, strict=True),
+                                 ABSTFN)
+                self.assertEqual(realpath('link/' * (maxlinks+1)), ABSTFN)
+                with self.assertRaises(OSError):
+                    realpath('link/' * (maxlinks+1), strict=True)
+        finally:
+            os_helper.unlink(f'{ABSTFN}/link')
+            safe_rmdir(ABSTFN)
+
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
         try:
