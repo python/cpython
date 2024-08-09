@@ -1220,7 +1220,7 @@ A function definition defines a user-defined function object (see section
    parameter_list_starargs: "*" `parameter` ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
                           : "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
                           : | `parameter_star_kwargs`
-   parameter_star_kwargs: "**" parameter [","]
+   parameter_star_kwargs: "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
