@@ -54,6 +54,12 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
+/* HACL* library can compile SIMD128 implementations */
+#undef HACL_CAN_COMPILE_SIMD128
+
+/* HACL* library can compile SIMD256 implementations */
+#undef HACL_CAN_COMPILE_SIMD256
+
 /* Define if you have the 'accept' function. */
 #undef HAVE_ACCEPT
 
@@ -669,9 +675,6 @@
 
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
-
-/* Define to 1 if you want to build _blake2 module with libb2 */
-#undef HAVE_LIBB2
 
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB

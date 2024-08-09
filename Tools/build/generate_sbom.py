@@ -69,9 +69,6 @@ PACKAGE_TO_FILES = {
             "Lib/ctypes/macholib/fetch_macholib.bat",
         ],
     ),
-    "libb2": PackageFiles(
-        include=["Modules/_blake2/impl/**"]
-    ),
     "hacl-star": PackageFiles(
         include=["Modules/_hacl/**"],
         exclude=[
