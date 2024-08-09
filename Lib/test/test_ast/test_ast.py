@@ -3125,7 +3125,10 @@ class ASTOptimiziationTests(unittest.TestCase):
     def test_folding_comparator(self):
         code = "1 %s %s1%s"
         operators = [("in", ast.In()), ("not in", ast.NotIn())]
-        braces = [("[", "]", ast.List, (1,)), ("{", "}", ast.Set, frozenset({1}))]
+        braces = [
+            ("[", "]", ast.List, (1,)),
+            ("{", "}", ast.Set, frozenset({1})),
+        ]
         for left, right, non_optimized_comparator, optimized_comparator in braces:
             for op, node in operators:
                 non_optimized_target = ast.Compare(
@@ -3140,7 +3143,10 @@ class ASTOptimiziationTests(unittest.TestCase):
 
     def test_folding_iter(self):
         code = "for _ in %s1%s: pass"
-        braces = [("[", "]", ast.List, (1,)), ("{", "}", ast.Set, frozenset({1}))]
+        braces = [
+            ("[", "]", ast.List, (1,)),
+            ("{", "}", ast.Set, frozenset({1})),
+        ]
 
         for left, right, non_optimized_iter, optimized_iter in braces:
             non_optimized_target = ast.For(
