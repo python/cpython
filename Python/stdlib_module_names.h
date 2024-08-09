@@ -24,6 +24,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_compat_pickle",
 "_compression",
 "_contextvars",
+"_copy",
 "_csv",
 "_ctypes",
 "_curses",

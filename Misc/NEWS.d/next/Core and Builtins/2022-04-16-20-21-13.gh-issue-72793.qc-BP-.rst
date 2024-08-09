@@ -1,0 +1,2 @@
+Improve the performance of :func:`copy.deepcopy` by implementing part of the
+function in C. Patch by Rasmus Villemoes and Pieter Eendebak.
