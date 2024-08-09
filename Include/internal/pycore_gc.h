@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"   // _PyFreeListState
-
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
     // Pointer to next object in the list.
@@ -383,10 +381,6 @@ extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
-#ifdef Py_GIL_DISABLED
-// gh-117783: Immortalize objects that use deferred reference counting
-extern void _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp);
-#endif
 
 #ifdef __cplusplus
 }

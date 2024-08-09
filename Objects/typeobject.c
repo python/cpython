@@ -1026,6 +1026,8 @@ type_modified_unlocked(PyTypeObject *type)
     if (type->tp_version_tag == 0) {
         return;
     }
+    // Cannot modify static builtin types.
+    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) == 0);
 
     PyObject *subclasses = lookup_tp_subclasses(type);
     if (subclasses != NULL) {
@@ -2450,7 +2452,7 @@ subtype_dealloc(PyObject *self)
            reference counting. Only decref if the base type is not already a heap
            allocated type. Otherwise, basedealloc should have decref'd it already */
         if (type_needs_decref) {
-            Py_DECREF(type);
+            _Py_DECREF_TYPE(type);
         }
 
         /* Done */
@@ -2560,7 +2562,7 @@ subtype_dealloc(PyObject *self)
        reference counting. Only decref if the base type is not already a heap
        allocated type. Otherwise, basedealloc should have decref'd it already */
     if (type_needs_decref) {
-        Py_DECREF(type);
+        _Py_DECREF_TYPE(type);
     }
 
   endlabel:
@@ -3911,7 +3913,9 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
 
-    _PyObject_SetDeferredRefcount((PyObject *)et);
+#ifdef Py_GIL_DISABLED
+    _PyType_AssignId(et);
+#endif
 
     return type;
 }
@@ -4963,6 +4967,11 @@ _PyType_FromMetaclass_impl(
     type->tp_weaklistoffset = weaklistoffset;
     type->tp_dictoffset = dictoffset;
 
+#ifdef Py_GIL_DISABLED
+    // Assign a type id to enable thread-local refcounting
+    _PyType_AssignId(res);
+#endif
+
     /* Ready the type (which includes inheritance).
      *
      * After this call we should generally only touch up what's
@@ -5912,6 +5921,9 @@ type_dealloc(PyObject *self)
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
+#ifdef Py_GIL_DISABLED
+    _PyType_ReleaseId(et);
+#endif
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
@@ -7454,7 +7466,7 @@ PyTypeObject PyBaseObject_Type = {
     object_init,                                /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     object_new,                                 /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 
@@ -8178,7 +8190,7 @@ type_ready_inherit(PyTypeObject *type)
 
     /* Sanity check for tp_free. */
     if (_PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
-        (type->tp_free == NULL || type->tp_free == PyObject_Del))
+        (type->tp_free == NULL || type->tp_free == PyObject_Free))
     {
         /* This base class needs to call tp_free, but doesn't have
          * one, or its tp_free is for non-gc'ed objects.

@@ -81,7 +81,7 @@ the :mod:`glob` module.)
 
    Return the longest common sub-path of each pathname in the iterable
    *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
-   and relative pathnames, the *paths* are on the different drives or
+   and relative pathnames, if *paths* are on different drives, or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
    valid path.
 
@@ -201,14 +201,14 @@ the :mod:`glob` module.)
 
 .. function:: getatime(path)
 
-   Return the time of last access of *path*.  The return value is a floating point number giving
+   Return the time of last access of *path*.  The return value is a floating-point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
 
 
 .. function:: getmtime(path)
 
-   Return the time of last modification of *path*.  The return value is a floating point number
+   Return the time of last modification of *path*.  The return value is a floating-point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
 

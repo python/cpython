@@ -596,6 +596,14 @@ dummy_func(void) {
         }
     }
 
+    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- func, maybe_self, args[oparg])) {
+        (void)callable;
+        (void)self_or_null;
+        (void)args;
+        func = sym_new_not_null(ctx);
+        maybe_self = sym_new_not_null(ctx);
+    }
+
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
         (void)callable;
@@ -655,6 +663,11 @@ dummy_func(void) {
 
     op(_FOR_ITER_GEN_FRAME, ( -- )) {
         /* We are about to hit the end of the trace */
+        ctx->done = true;
+    }
+
+    op(_SEND_GEN_FRAME, ( -- )) {
+        // We are about to hit the end of the trace:
         ctx->done = true;
     }
 
@@ -783,7 +796,8 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_EXIT_TRACE, (--)) {
+    op(_EXIT_TRACE, (exit_p/4 --)) {
+        (void)exit_p;
         ctx->done = true;
     }
 
