@@ -1,6 +1,9 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
+from test.support import (
+    run_with_locale, cpython_only, iter_builtin_types, iter_slot_wrappers,
+    MISSING_C_DOCSTRINGS,
+)
 from test.test_import import no_rerun
 import collections.abc
 from collections import namedtuple
@@ -27,26 +30,6 @@ class Forward: ...
 def clear_typing_caches():
     for f in typing._cleanups:
         f()
-
-
-def iter_builtin_types():
-    for obj in __builtins__.values():
-        if not isinstance(obj, type):
-            continue
-        cls = obj
-        if cls.__module__ != 'builtins':
-            continue
-        yield cls
-
-
-@cpython_only
-def iter_own_slot_wrappers(cls):
-    for name, value in vars(cls).items():
-        if not name.startswith('__') or not name.endswith('__'):
-            continue
-        if 'slot wrapper' not in str(value):
-            continue
-        yield name
 
 
 class TypesTests(unittest.TestCase):
@@ -2286,14 +2269,14 @@ class SubinterpreterTests(unittest.TestCase):
 
     @cpython_only
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')
-    def test_slot_wrappers(self):
+    def test_static_types_inherited_slots(self):
         rch, sch = interpreters.create_channel()
 
         slots = []
         script = ''
         for cls in iter_builtin_types():
-            for slot in iter_own_slot_wrappers(cls):
-                slots.append((cls, slot))
+            for slot, own in iter_slot_wrappers(cls):
+                slots.append((cls, slot, own))
                 attr = f'{cls.__name__}.{slot}'
                 script += textwrap.dedent(f"""
                     sch.send_nowait('{attr}: ' + repr({attr}))
@@ -2301,7 +2284,7 @@ class SubinterpreterTests(unittest.TestCase):
 
         exec(script)
         all_expected = []
-        for cls, slot in slots:
+        for cls, slot, _ in slots:
             result = rch.recv()
             assert result.startswith(f'{cls.__name__}.{slot}: '), (cls, slot, result)
             all_expected.append(result)
@@ -2313,7 +2296,7 @@ class SubinterpreterTests(unittest.TestCase):
             """))
         interp.run(script)
 
-        for i, _ in enumerate(slots):
+        for i, (cls, slot, _) in enumerate(slots):
             with self.subTest(cls=cls, slot=slot):
                 expected = all_expected[i]
                 result = rch.recv()

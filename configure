@@ -25687,58 +25687,6 @@ printf "%s\n" "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether year with century should be normalized for strftime" >&5
-printf %s "checking whether year with century should be normalized for strftime... " >&6; }
-if test ${ac_cv_normalize_century+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-if test "$cross_compiling" = yes
-then :
-  ac_cv_normalize_century=yes
-else $as_nop
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char year[5];
-  struct tm date = {
-    .tm_year = -1801,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
-    return 1;
-  }
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  ac_cv_normalize_century=yes
-else $as_nop
-  ac_cv_normalize_century=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_normalize_century" >&5
-printf "%s\n" "$ac_cv_normalize_century" >&6; }
-if test "$ac_cv_normalize_century" = yes
-then
-
-printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
-
-fi
-
 have_curses=no
 have_panel=no
 

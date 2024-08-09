@@ -106,12 +106,16 @@ that mutable object is changed.
 Types affect almost all aspects of object behavior.  Even the importance of
 object identity is affected in some sense: for immutable types, operations that
 compute new values may actually return a reference to any existing object with
-the same type and value, while for mutable objects this is not allowed.  E.g.,
-after ``a = 1; b = 1``, ``a`` and ``b`` may or may not refer to the same object
-with the value one, depending on the implementation, but after ``c = []; d =
-[]``, ``c`` and ``d`` are guaranteed to refer to two different, unique, newly
-created empty lists. (Note that ``c = d = []`` assigns the same object to both
-``c`` and ``d``.)
+the same type and value, while for mutable objects this is not allowed.
+For example, after ``a = 1; b = 1``, *a* and *b* may or may not refer to
+the same object with the value one, depending on the implementation.
+This is because :class:`int` is an immutable type, so the reference to ``1``
+can be reused. This behaviour depends on the implementation used, so should
+not be relied upon, but is something to be aware of when making use of object
+identity tests.
+However, after ``c = []; d = []``, *c* and *d* are guaranteed to refer to two
+different, unique, newly created empty lists. (Note that ``e = f = []`` assigns
+the *same* object to both *e* and *f*.)
 
 
 .. _types:
@@ -727,14 +731,7 @@ When an instance method object is derived from a :class:`classmethod` object, th
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from :ref:`function object <user-defined-funcs>`
-to instance method
-object happens each time the attribute is retrieved from the instance.  In
-some cases, a fruitful optimization is to assign the attribute to a local
-variable and call that local variable. Also notice that this
-transformation only happens for user-defined functions; other callable
-objects (and all non-callable objects) are retrieved without
-transformation.  It is also important to note that user-defined functions
+It is important to note that user-defined functions
 which are attributes of a class instance are not converted to bound
 methods; this *only* happens when the function is an attribute of the
 class.

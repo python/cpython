@@ -1054,9 +1054,10 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  Testing the
-   truth value of an Element is deprecated and will raise an exception in
-   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
+   Caution: Elements with no subelements will test as ``False``.  In a future
+   release of Python, all elements will test as ``True`` regardless of whether
+   subelements exist.  Instead, prefer explicit ``len(elem)`` or
+   ``elem is not None`` tests.::
 
      element = root.find('foo')
 

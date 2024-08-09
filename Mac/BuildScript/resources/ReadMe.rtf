@@ -1,8 +1,9 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2709
+{\rtf1\ansi\ansicpg1252\cocoartf2761
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fswiss\fcharset0 Helvetica-Oblique;
-\f3\fmodern\fcharset0 CourierNewPSMT;\f4\fmodern\fcharset0 Courier;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+\f3\fmodern\fcharset0 CourierNewPSMT;\f4\fnil\fcharset0 .AppleSystemUIFontMonospaced-Regular;\f5\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red24\green26\blue30;\red244\green246\blue249;}
+{\*\expandedcolortbl;;\cssrgb\c12157\c13725\c15686;\cssrgb\c96471\c97255\c98039;}
 \margl1440\margr1440\vieww13380\viewh14580\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
@@ -31,14 +32,33 @@ The bundled
 \f3 pip
 \f0  has its own default certificate store for verifying download connections.\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1\b \ul Install Options\
+\f1\b \cf0 \ul (Updated for 3.12.5):
+\f0\b0 \ulnone  If you are using this installer on older, legacy versions of macOS, specifically 
+\f1\b macOS 10.9 through 10.12
+\f0\b0 , the bundled version of 
+\f1\b pip
+\f0\b0  (pip 24.2) included with this installer does not work correctly on these old versions of macOS.  
+\f3 pip install
+\f0  commands may fail with a message similar to 
+\f4\fs23\fsmilli11900 \cf2 \cb3 \expnd0\expndtw0\kerning0
+SecTrustEvaluateWithError: symbol not found. 
+\f0\fs24 \cf0 \cb1 \kerning1\expnd0\expndtw0 (see {\field{\*\fldinst{HYPERLINK "https://github.com/pypa/pip/issues/12901"}}{\fldrslt https://github.com/pypa/pip/issues/12901}} for more information). To work around this issue, the 
+\f3 Install Certificates
+\f0  command (described above) has been modified when running on these older macOS releases to attempt to first install an older version of pip that does not have this problem. You should avoid upgrading pip on these older systems until this problem has been resolved in a newer release of pip. If necessary, you can rerun 
+\f3 Install Certificates
+\f0  at any time to attempt to revert to a working version of pip.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b \cf0 \ul Install Options\
 
 \f0\b0 \ulnone \
 You can control some aspects of what is installed by this package. To see the options, click on the 
-\f4 Customize
+\f5 Customize
 \f0  button in the 
-\f4 Installation Type
+\f5 Installation Type
 \f0  step of the macOS installer app.  Click on a package name in the list shown to see more information about that option,\
   \
 
@@ -64,13 +84,25 @@ Due to new security checks on macOS 10.15 Catalina, when launching IDLE macOS ma
 
 \f0\b0 \ulnone \
 On Apple Silicon Macs, it is possible to run Python either with native ARM64 code or under Intel 64 emulation using Rosetta2. This option might be useful for testing or if binary wheels are not yet available with native ARM64 binaries.  To  easily force Python to run in emulation mode, invoke it from a command line shell with the 
-\f4 python3-intel64
+\f5 python3-intel64
 \f0  command instead of just 
-\f4 python3
+\f5 python3
 \f0 .\
 
 \f1\b \ul \
-Other changes\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Installer support for macOS 10.9 through 10.12 to be discontinued\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b0 \cf0 \ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b \cf0 \ul (Updated for 3.12.5):
+\f0\b0 \ulnone  Up to now, python.org macOS installers have supported installation and running of Python 3.12.x on macOS releases as old as 10.9 Mavericks (which was first released in 2013). However, over time, it has become more difficult to continue supporting these older macOS releases. These operating system releases have long stopped receiving security updates and the most recent versions of Apple's Xcode developer tools no longer support building for these older systems, making it difficult for third-party developers to build and test their packages for them. We believe that only a very small and dwindling number of users are using these installers on these older macOS systems and thus believe that we can better serve the entire community by dropping support of these older macOS versions in future releases of Python 3.12.x installers. We have already announced that macOS installers for the next feature release of Python, 3.13, will initially support macOS 10.13 and newer releases. If you have a continued need for running Python 3.12 on these older systems, pre-built versions for these systems may be available from third-party distributors (such as MacPorts) or Python can be built from source ({\field{\*\fldinst{HYPERLINK "https://www.python.org/downloads/source/"}}{\fldrslt https://www.python.org/downloads/source/}}).\
+
+\f1\b \ul \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Other changes\
 
 \f0\b0 \ulnone \
 For other changes in this release, see the 

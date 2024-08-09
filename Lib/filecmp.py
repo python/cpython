@@ -160,12 +160,14 @@ class dircmp:
             ok = True
             try:
                 a_stat = os.stat(a_path)
-            except OSError:
+            except (OSError, ValueError):
+                # See https://github.com/python/cpython/issues/122400
+                # for the rationale for protecting against ValueError.
                 # print('Can\'t stat', a_path, ':', why.args[1])
                 ok = False
             try:
                 b_stat = os.stat(b_path)
-            except OSError:
+            except (OSError, ValueError):
                 # print('Can\'t stat', b_path, ':', why.args[1])
                 ok = False
 
@@ -280,12 +282,12 @@ def cmpfiles(a, b, common, shallow=True):
 # Return:
 #       0 for equal
 #       1 for different
-#       2 for funny cases (can't stat, etc.)
+#       2 for funny cases (can't stat, NUL bytes, etc.)
 #
 def _cmp(a, b, sh, abs=abs, cmp=cmp):
     try:
         return not abs(cmp(a, b, sh))
-    except OSError:
+    except (OSError, ValueError):
         return 2
 
 

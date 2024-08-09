@@ -8,13 +8,14 @@ on:
         required: false
         type: boolean
         default: false
-      os-matrix:
-        required: false
+      os:
+        description: OS to run the job
+        required: true
         type: string
 
 jobs:
   build_macos:
-    name: build and test (${{ matrix.os }})
+    name: build and test (${{ inputs.os }})
     timeout-minutes: 60
     env:
       HOMEBREW_NO_ANALYTICS: 1
@@ -22,18 +23,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ${{fromJson(inputs.os-matrix)}}
-        is-fork:
-          - ${{ github.repository_owner != 'python' }}
-        exclude:
-          - os: "ghcr.io/cirruslabs/macos-runner:sonoma"
-            is-fork: true
-          - os: "macos-14"
-            is-fork: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ inputs.os }}
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
@@ -42,7 +32,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ matrix.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+        key: ${{ github.job }}-${{ inputs.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
       run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython

@@ -10094,7 +10094,25 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
             && typeobj != PyExc_StopIteration
             && typeobj != PyExc_SyntaxError
             && typeobj != PyExc_UnicodeDecodeError
-            && typeobj != PyExc_UnicodeEncodeError)
+            && typeobj != PyExc_UnicodeEncodeError
+
+            && type != &PyBool_Type
+            && type != &PyBytes_Type
+            && type != &PyMemoryView_Type
+            && type != &PyComplex_Type
+            && type != &PyEnum_Type
+            && type != &PyFilter_Type
+            && type != &PyFloat_Type
+            && type != &PyFrozenSet_Type
+            && type != &PyLong_Type
+            && type != &PyMap_Type
+            && type != &PyRange_Type
+            && type != &PyReversed_Type
+            && type != &PySlice_Type
+            && type != &PyTuple_Type
+            && type != &PyUnicode_Type
+            && type != &PyZip_Type)
+
         {
             return 1;
         }
@@ -10112,10 +10130,8 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
         /* This is a best-effort list of builtin types
            that have their own tp_getattr function. */
         if (typeobj == PyExc_BaseException
-            || type == &PyBool_Type
             || type == &PyByteArray_Type
             || type == &PyBytes_Type
-            || type == &PyClassMethod_Type
             || type == &PyComplex_Type
             || type == &PyDict_Type
             || type == &PyEnum_Type
@@ -10129,7 +10145,6 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
             || type == &PyReversed_Type
             || type == &PySet_Type
             || type == &PySlice_Type
-            || type == &PyStaticMethod_Type
             || type == &PySuper_Type
             || type == &PyTuple_Type
             || type == &PyZip_Type)

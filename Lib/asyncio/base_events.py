@@ -994,8 +994,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as exc:
                         msg = (
                             f'error while attempting to bind on '
-                            f'address {laddr!r}: '
-                            f'{exc.strerror.lower()}'
+                            f'address {laddr!r}: {str(exc).lower()}'
                         )
                         exc = OSError(exc.errno, msg)
                         my_exceptions.append(exc)
@@ -1561,7 +1560,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as err:
                         msg = ('error while attempting '
                                'to bind on address %r: %s'
-                               % (sa, err.strerror.lower()))
+                               % (sa, str(err).lower()))
                         if err.errno == errno.EADDRNOTAVAIL:
                             # Assume the family is not enabled (bpo-30945)
                             sockets.pop()

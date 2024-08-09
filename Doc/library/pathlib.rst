@@ -1527,51 +1527,54 @@ Correspondence to tools in the :mod:`os` module
 Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
-.. note::
-
-   Not all pairs of functions/methods below are equivalent. Some of them,
-   despite having some overlapping use-cases, have different semantics. They
-   include :func:`os.path.abspath` and :meth:`Path.absolute`,
-   :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
-
-====================================   ==============================
-:mod:`os` and :mod:`os.path`           :mod:`pathlib`
-====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.absolute` [#]_
-:func:`os.path.realpath`               :meth:`Path.resolve`
-:func:`os.chmod`                       :meth:`Path.chmod`
-:func:`os.mkdir`                       :meth:`Path.mkdir`
-:func:`os.makedirs`                    :meth:`Path.mkdir`
-:func:`os.rename`                      :meth:`Path.rename`
-:func:`os.replace`                     :meth:`Path.replace`
-:func:`os.rmdir`                       :meth:`Path.rmdir`
-:func:`os.remove`, :func:`os.unlink`   :meth:`Path.unlink`
-:func:`os.getcwd`                      :func:`Path.cwd`
-:func:`os.path.exists`                 :meth:`Path.exists`
-:func:`os.path.expanduser`             :meth:`Path.expanduser` and
-                                       :meth:`Path.home`
-:func:`os.listdir`                     :meth:`Path.iterdir`
-:func:`os.walk`                        :meth:`Path.walk`
-:func:`os.path.isdir`                  :meth:`Path.is_dir`
-:func:`os.path.isfile`                 :meth:`Path.is_file`
-:func:`os.path.islink`                 :meth:`Path.is_symlink`
-:func:`os.link`                        :meth:`Path.hardlink_to`
-:func:`os.symlink`                     :meth:`Path.symlink_to`
-:func:`os.readlink`                    :meth:`Path.readlink`
-:func:`os.path.relpath`                :meth:`PurePath.relative_to` [#]_
-:func:`os.stat`                        :meth:`Path.stat`,
-                                       :meth:`Path.owner`,
-                                       :meth:`Path.group`
-:func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
-:func:`os.path.join`                   :func:`PurePath.joinpath`
-:func:`os.path.basename`               :attr:`PurePath.name`
-:func:`os.path.dirname`                :attr:`PurePath.parent`
-:func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.path.splitext`               :attr:`PurePath.stem` and
-                                       :attr:`PurePath.suffix`
-====================================   ==============================
+=====================================   ==============================================
+:mod:`os` and :mod:`os.path`            :mod:`pathlib`
+=====================================   ==============================================
+:func:`os.path.dirname`                 :attr:`PurePath.parent`
+:func:`os.path.basename`                :attr:`PurePath.name`
+:func:`os.path.splitext`                :attr:`PurePath.stem`, :attr:`PurePath.suffix`
+:func:`os.path.join`                    :meth:`PurePath.joinpath`
+:func:`os.path.isabs`                   :meth:`PurePath.is_absolute`
+:func:`os.path.relpath`                 :meth:`PurePath.relative_to` [1]_
+:func:`os.path.expanduser`              :meth:`Path.expanduser` [2]_
+:func:`os.path.realpath`                :meth:`Path.resolve`
+:func:`os.path.abspath`                 :meth:`Path.absolute` [3]_
+:func:`os.path.exists`                  :meth:`Path.exists`
+:func:`os.path.isfile`                  :meth:`Path.is_file`
+:func:`os.path.isdir`                   :meth:`Path.is_dir`
+:func:`os.path.islink`                  :meth:`Path.is_symlink`
+:func:`os.path.isjunction`              :meth:`Path.is_junction`
+:func:`os.path.ismount`                 :meth:`Path.is_mount`
+:func:`os.path.samefile`                :meth:`Path.samefile`
+:func:`os.getcwd`                       :meth:`Path.cwd`
+:func:`os.stat`                         :meth:`Path.stat`
+:func:`os.lstat`                        :meth:`Path.lstat`
+:func:`os.listdir`                      :meth:`Path.iterdir`
+:func:`os.walk`                         :meth:`Path.walk` [4]_
+:func:`os.mkdir`, :func:`os.makedirs`   :meth:`Path.mkdir`
+:func:`os.link`                         :meth:`Path.hardlink_to`
+:func:`os.symlink`                      :meth:`Path.symlink_to`
+:func:`os.readlink`                     :meth:`Path.readlink`
+:func:`os.rename`                       :meth:`Path.rename`
+:func:`os.replace`                      :meth:`Path.replace`
+:func:`os.remove`, :func:`os.unlink`    :meth:`Path.unlink`
+:func:`os.rmdir`                        :meth:`Path.rmdir`
+:func:`os.chmod`                        :meth:`Path.chmod`
+:func:`os.lchmod`                       :meth:`Path.lchmod`
+=====================================   ==============================================
 
 .. rubric:: Footnotes
 
-.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
-.. [#] :meth:`PurePath.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
+.. [1] :func:`os.path.relpath` calls :func:`~os.path.abspath` to make paths
+   absolute and remove "``..``" parts, whereas :meth:`PurePath.relative_to`
+   is a lexical operation that raises :exc:`ValueError` when its inputs'
+   anchors differ (e.g. if one path is absolute and the other relative.)
+.. [2] :func:`os.path.expanduser` returns the path unchanged if the home
+   directory can't be resolved, whereas :meth:`Path.expanduser` raises
+   :exc:`RuntimeError`.
+.. [3] :func:`os.path.abspath` removes "``..``" components without resolving
+   symlinks, which may change the meaning of the path, whereas
+   :meth:`Path.absolute` leaves any "``..``" components in the path.
+.. [4] :func:`os.walk` always follows symlinks when categorizing paths into
+   *dirnames* and *filenames*, whereas :meth:`Path.walk` categorizes all
+   symlinks into *filenames* when *follow_symlinks* is false (the default.)

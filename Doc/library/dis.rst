@@ -995,11 +995,15 @@ iterations of the loop.
 .. opcode:: BUILD_TUPLE (count)
 
    Creates a tuple consuming *count* items from the stack, and pushes the
-   resulting tuple onto the stack.::
+   resulting tuple onto the stack::
 
-      assert count > 0
-      STACK, values = STACK[:-count], STACK[-count:]
-      STACK.append(tuple(values))
+      if count == 0:
+          value = ()
+      else:
+          STACK = STACK[:-count]
+          value = tuple(STACK[-count:])
+
+      STACK.append(value)
 
 
 .. opcode:: BUILD_LIST (count)
@@ -1128,7 +1132,10 @@ iterations of the loop.
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
-   ``cmp_op[opname]``.
+   ``cmp_op[opname >> 4]``.
+
+   .. versionchanged:: 3.12
+     The cmp_op index is now stored in the four-highest bits of oparg instead of the four-lowest bits of oparg.
 
 
 .. opcode:: IS_OP (invert)
