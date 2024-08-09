@@ -407,4 +407,44 @@ def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
             stack.push(local)
     return stack
 
-UNREACHABLE = Stack()
+@dataclass
+class Storage:
+
+    stack: Stack
+    outputs: list[Local]
+
+    def _push_defined_locals(self) -> None:
+        while self.outputs:
+            out = self.outputs[0]
+            if out.defined:
+                self.stack.push(out)
+                self.outputs.pop(0)
+            else:
+                break
+        undefined = ""
+        for out in self.outputs:
+            if out.defined:
+                raise StackError(
+                    f"Locals not defined in stack order. "
+                    f"Expected  '{out.name}' is defined before '{undefined}'"
+                )
+            else:
+                undefined = out.name
+
+    def flush(self, out: CWriter) -> None:
+        self._push_defined_locals()
+        self.stack.flush(out)
+
+    @staticmethod
+    def for_uop(stack: Stack, uop: Uop, locals: dict[str, Local]) -> "Storage":
+        outputs: list[Local] = []
+        for var in uop.stack.outputs:
+            if not var.peek:
+                if var.name in locals:
+                    local = locals[var.name]
+                elif var.name == "unused":
+                    local = Local.unused(var)
+                else:
+                    local = Local.undefined(var)
+                outputs.append(local)
+        return Storage(stack, outputs)

@@ -26,7 +26,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Local, Stack, StackError, get_stack_effect
+from stack import Local, Stack, StackError, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
@@ -54,7 +54,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
     for var in reversed(uop.stack.inputs):
         stack.pop(var)
     for var in uop.stack.outputs:
-        stack.push(Local.unused(var))
+        stack.push(Local.undefined(var))
     required = set(stack.defined)
     required.discard("unused")
     for var in reversed(uop.stack.inputs):
@@ -73,8 +73,7 @@ class Tier2Emitter(Emitter):
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -96,8 +95,7 @@ class Tier2Emitter(Emitter):
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
@@ -111,8 +109,7 @@ class Tier2Emitter(Emitter):
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        unused: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -133,8 +130,7 @@ class Tier2Emitter(Emitter):
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        unused: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -154,8 +150,7 @@ class Tier2Emitter(Emitter):
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        unused: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
@@ -182,19 +177,20 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
         elif uop.properties.const_oparg >= 0:
             emitter.emit(f"oparg = {uop.properties.const_oparg};\n")
             emitter.emit(f"assert(oparg == CURRENT_OPARG());\n")
+        peeks: list[Local] = []
         for var in reversed(uop.stack.inputs):
             code, local = stack.pop(var)
             emitter.emit(code)
+            if var.peek:
+                peeks.append(local)
             if local.defined:
                 locals[local.name] = local
+        # Push back the peeks, so that they remain on the logical
+        # stack, but their values are cached.
+        while peeks:
+            stack.push(peeks.pop())
         emitter.emit(stack.define_output_arrays(uop.stack.outputs))
-        outputs: list[Local] = []
-        for var in uop.stack.outputs:
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.undefined(var)
-            outputs.append(local)
+        storage = Storage.for_uop(stack, uop, locals)
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -203,8 +199,8 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        emitter.emit_tokens(uop, stack, outputs, None)
-        for output in outputs:
+        emitter.emit_tokens(uop, storage, None)
+        for output in storage.outputs:
             if output.name in uop.deferred_refs.values():
                 # We've already spilled this when emitting tokens
                 output.cached = False

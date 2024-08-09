@@ -26,7 +26,7 @@ from generators_common import (
 )
 from cwriter import CWriter
 from typing import TextIO
-from stack import Local, Stack, StackError, get_stack_effect
+from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -100,17 +100,8 @@ def write_uop(
             stack.push(peeks.pop())
         if braces:
             emitter.emit("{\n")
-        emitter.out.emit(stack.define_output_arrays(uop.stack.outputs))
-        outputs: list[Local] = []
-        for var in uop.stack.outputs:
-            if not var.peek:
-                if var.name in locals:
-                    local = locals[var.name]
-                elif var.name == "unused":
-                    local = Local.unused(var)
-                else:
-                    local = Local.undefined(var)
-                outputs.append(local)
+        emitter.emit(stack.define_output_arrays(uop.stack.outputs))
+        storage = Storage.for_uop(stack, uop, locals)
 
         for cache in uop.caches:
             if cache.name != "unused":
@@ -126,8 +117,9 @@ def write_uop(
                 if inst.family is None:
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
-        emitter.emit_tokens(uop, stack, outputs, inst)
-        for output in outputs:
+
+        emitter.emit_tokens(uop, storage, inst)
+        for output in storage.outputs:
             if output.name in uop.deferred_refs.values():
                 # We've already spilled this when emitting tokens
                 output.cached = False

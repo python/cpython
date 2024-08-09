@@ -11,7 +11,7 @@ from analyzer import (
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Stack, Local
+from stack import Stack, Local, Storage
 
 
 class TokenIterator:
@@ -89,7 +89,7 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
 
 
 ReplacementFunctionType = Callable[
-    [Token, TokenIterator, Uop, Stack, list[Local], Instruction | None], bool
+    [Token, TokenIterator, Uop, Storage, Instruction | None], bool
 ]
 
 def always_true(tkn: Token | None) -> bool:
@@ -117,7 +117,6 @@ def push_defined_locals(outputs: list[Local], stack:Stack, tkn: Token) -> None:
             undefined = out.name
 
 
-
 class Emitter:
     out: CWriter
     _replacers: dict[str, ReplacementFunctionType]
@@ -140,8 +139,7 @@ class Emitter:
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        unused: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("DEOPT_IF", tkn)
@@ -165,8 +163,7 @@ class Emitter:
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
@@ -179,7 +176,7 @@ class Emitter:
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.out.emit(") ")
-        c_offset = stack.peek_offset()
+        c_offset = storage.stack.peek_offset()
         try:
             offset = -int(c_offset)
         except ValueError:
@@ -194,7 +191,7 @@ class Emitter:
             self.out.emit(";\n")
         else:
             self.out.emit("{\n")
-            stack.copy().flush(self.out)
+            storage.stack.copy().flush(self.out)
             self.out.emit("goto ")
             self.out.emit(label)
             self.out.emit(";\n")
@@ -206,8 +203,7 @@ class Emitter:
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
@@ -221,8 +217,7 @@ class Emitter:
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
@@ -250,14 +245,13 @@ class Emitter:
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        stack.flush(self.out)
+        storage.stack.flush(self.out)
         return True
 
     def check_eval_breaker(
@@ -265,15 +259,13 @@ class Emitter:
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        push_defined_locals(outputs, stack, tkn)
-        stack.flush(self.out)
+        storage.flush(self.out)
         self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
         return True
 
@@ -282,8 +274,7 @@ class Emitter:
         tkn: Token,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> bool:
         self.out.emit(tkn)
@@ -298,15 +289,14 @@ class Emitter:
         # Flush the assignment to the stack.  Note that we don't flush the
         # stack pointer here, and instead are currently relying on initializing
         # unused portions of the stack to NULL.
-        stack.flush_single_var(self.out, target, uop.stack.outputs)
+        storage.stack.flush_single_var(self.out, target, uop.stack.outputs)
         return True
 
     def _emit_if(
         self,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> tuple[bool, Token, Stack]:
         """ Returns (reachable?, closing '}', stack)."""
@@ -315,8 +305,10 @@ class Emitter:
         self.out.emit(tkn)
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
+        stack = storage.stack
         if_stack = stack.copy()
-        reachable, rbrace, if_stack = self._emit_block(tkn_iter, uop, if_stack, outputs, inst, True)
+        if_storage = Storage(if_stack, storage.outputs)
+        reachable, rbrace, if_stack = self._emit_block(tkn_iter, uop, if_storage, inst, True)
         maybe_else = tkn_iter.peek()
         if maybe_else and maybe_else.kind == "ELSE":
             self.emit(rbrace)
@@ -324,9 +316,9 @@ class Emitter:
             maybe_if = tkn_iter.peek()
             if maybe_if and maybe_if.kind == "IF":
                 self.emit(next(tkn_iter))
-                else_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, outputs, inst)
+                else_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, storage, inst)
             else:
-                else_reachable, rbrace, stack = self._emit_block(tkn_iter, uop, stack, outputs, inst, True)
+                else_reachable, rbrace, stack = self._emit_block(tkn_iter, uop, storage, inst, True)
             if not reachable:
                 # Discard the if stack
                 reachable = else_reachable
@@ -347,8 +339,7 @@ class Emitter:
         self,
         tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
         emit_first_brace: bool
     ) -> tuple[bool, Token, Stack]:
@@ -356,6 +347,7 @@ class Emitter:
         braces = 1
         out_stores = set(uop.output_stores)
         tkn = next(tkn_iter)
+        stack = storage.stack
         reachable = True
         if tkn.kind != "LBRACE":
             raise analysis_error(f"Expected '{{' found {tkn.text}", tkn)
@@ -375,11 +367,11 @@ class Emitter:
                 self.out.emit(tkn)
             elif tkn.kind == "IDENTIFIER":
                 if tkn.text in self._replacers:
-                    if not self._replacers[tkn.text](tkn, tkn_iter, uop, stack, outputs, inst):
+                    if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
                         reachable = False
                 else:
                     if tkn in out_stores:
-                        for out in outputs:
+                        for out in storage.outputs:
                             if out.name == tkn.text:
                                 out.defined = True
                                 out.in_memory = False
@@ -387,7 +379,7 @@ class Emitter:
                     self.out.emit(tkn)
             elif tkn.kind == "IF":
                 self.out.emit(tkn)
-                if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, stack, outputs, inst)
+                if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, storage, inst)
                 if reachable:
                     reachable = if_reachable
                 self.out.emit(rbrace)
@@ -399,13 +391,12 @@ class Emitter:
     def emit_tokens(
         self,
         uop: Uop,
-        stack: Stack,
-        outputs: list[Local],
+        storage: Storage,
         inst: Instruction | None,
     ) -> None:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
-        self._emit_block(tkn_iter, uop, stack, outputs, inst, False)
+        self._emit_block(tkn_iter, uop, storage, inst, False)
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)

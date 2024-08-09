@@ -23,7 +23,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Local, Stack, StackError
+from stack import Local, Stack, StackError, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
@@ -114,6 +114,7 @@ def write_uop(
             if local.defined:
                 locals[local.name] = local
         out.emit(stack.define_output_arrays(prototype.stack.outputs))
+        storage = Storage.for_uop(stack, prototype, locals)
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -131,16 +132,15 @@ def write_uop(
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
             emitter = OptimizerEmitter(out)
-            emitter.emit_tokens(override, stack, [], None)
+            emitter.emit_tokens(override, storage, None)
         else:
             emit_default(out, uop)
 
-        for var in prototype.stack.outputs:
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.undefined(var)
-            stack.push(local)
+        for output in storage.outputs:
+            if output.name in uop.deferred_refs.values():
+                # We've already spilled this when emitting tokens
+                output.cached = False
+            stack.push(output)
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:
