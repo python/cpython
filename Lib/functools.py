@@ -17,6 +17,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
+from operator import itemgetter
 from reprlib import recursive_repr
 from types import MethodType
 from _thread import RLock
@@ -274,43 +275,129 @@ except ImportError:
 ### partial() argument application
 ################################################################################
 
+
+class _PlaceholderType:
+    """The type of the Placeholder singleton.
+
+    Used as a placeholder for partial arguments.
+    """
+    __instance = None
+    __slots__ = ()
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
+
+    def __new__(cls):
+        if cls.__instance is None:
+            cls.__instance = object.__new__(cls)
+        return cls.__instance
+
+    def __repr__(self):
+        return 'Placeholder'
+
+    def __reduce__(self):
+        return 'Placeholder'
+
+Placeholder = _PlaceholderType()
+
+def _partial_prepare_merger(args):
+    nargs = len(args)
+    if not nargs:
+        return 0, None
+    order = list()
+    i, j = 0, nargs
+    for a in args:
+        if a is Placeholder:
+            order.append(j)
+            j += 1
+        else:
+            order.append(i)
+        i += 1
+    phcount = j - nargs
+    merger = itemgetter(*order) if phcount else None
+    return phcount, merger
+
+def _partial_new(cls, func, /, *args, **keywords):
+    if issubclass(cls, partial):
+        if not callable(func):
+            raise TypeError("the first argument must be callable")
+    else:
+        # assert issubclass(cls, partialmethod)
+        if not callable(func) and not hasattr(func, "__get__"):
+            raise TypeError(f"{func!r} is not callable or a descriptor")
+            # func could be a descriptor like classmethod which isn't callable,
+            # so we can't inherit from partial (it verifies func is callable)
+            # flattening is mandatory in order to place cls/self before all
+            # other arguments
+            # it's also more efficient since only one function will be called
+    if args and args[-1] is Placeholder:
+        raise TypeError("trailing Placeholders are not allowed")
+    if isinstance(func, cls):
+        pto_phcount = func._phcount
+        tot_args = func.args
+        if args:
+            tot_args += args
+            if pto_phcount:
+                # merge args with args of `func` which is `partial`
+                nargs = len(args)
+                if nargs < pto_phcount:
+                    tot_args += (Placeholder,) * (pto_phcount - nargs)
+                tot_args = func._merger(tot_args)
+                if nargs > pto_phcount:
+                    tot_args += args[pto_phcount:]
+            phcount, merger = _partial_prepare_merger(tot_args)
+        elif pto_phcount:   # not args
+            phcount, merger = pto_phcount, func._merger
+        else:               # not args and not pto_phcount
+            phcount, merger = 0, None
+        keywords = {**func.keywords, **keywords}
+        func = func.func
+    else:
+        tot_args = args
+        phcount, merger = _partial_prepare_merger(tot_args)
+
+    self = object.__new__(cls)
+    self.func = func
+    self.args = tot_args
+    self.keywords = keywords
+    self._phcount = phcount
+    self._merger = merger
+    return self
+
+def _partial_repr(self):
+    cls = type(self)
+    module = cls.__module__
+    qualname = cls.__qualname__
+    args = [repr(self.func)]
+    args.extend(map(repr, self.args))
+    args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+    return f"{module}.{qualname}({', '.join(args)})"
+
 # Purely functional, no descriptor behaviour
 class partial:
     """New function with partial application of the given arguments
     and keywords.
     """
 
-    __slots__ = "func", "args", "keywords", "__dict__", "__weakref__"
+    __slots__ = ("func", "args", "keywords", "_phcount", "_merger",
+                 "__dict__", "__weakref__")
 
-    def __new__(cls, func, /, *args, **keywords):
-        if not callable(func):
-            raise TypeError("the first argument must be callable")
-
-        if isinstance(func, partial):
-            args = func.args + args
-            keywords = {**func.keywords, **keywords}
-            func = func.func
-
-        self = super(partial, cls).__new__(cls)
-
-        self.func = func
-        self.args = args
-        self.keywords = keywords
-        return self
+    __new__ = _partial_new
+    __repr__ = recursive_repr()(_partial_repr)
 
     def __call__(self, /, *args, **keywords):
+        if phcount := self._phcount:
+            try:
+                pto_args = self._merger(self.args + args)
+                args = args[phcount:]
+            except IndexError:
+                raise TypeError("missing positional arguments "
+                                "in 'partial' call; expected "
+                                f"at least {phcount}, got {len(args)}")
+        else:
+            pto_args = self.args
         keywords = {**self.keywords, **keywords}
-        return self.func(*self.args, *args, **keywords)
-
-    @recursive_repr()
-    def __repr__(self):
-        cls = type(self)
-        qualname = cls.__qualname__
-        module = cls.__module__
-        args = [repr(self.func)]
-        args.extend(repr(x) for x in self.args)
-        args.extend(f"{k}={v!r}" for (k, v) in self.keywords.items())
-        return f"{module}.{qualname}({', '.join(args)})"
+        return self.func(*pto_args, *args, **keywords)
 
     def __get__(self, obj, objtype=None):
         if obj is None:
@@ -332,6 +419,10 @@ class partial:
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
+        phcount, merger = _partial_prepare_merger(args)
+
         args = tuple(args) # just in case it's a subclass
         if kwds is None:
             kwds = {}
@@ -344,53 +435,39 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = kwds
+        self._phcount = phcount
+        self._merger = merger
 
 try:
-    from _functools import partial
+    from _functools import partial, Placeholder, _PlaceholderType
 except ImportError:
     pass
 
 # Descriptor version
-class partialmethod(object):
+class partialmethod:
     """Method descriptor with partial application of the given arguments
     and keywords.
 
     Supports wrapping existing descriptors and handles non-descriptor
     callables as instance methods.
     """
-
-    def __init__(self, func, /, *args, **keywords):
-        if not callable(func) and not hasattr(func, "__get__"):
-            raise TypeError("{!r} is not callable or a descriptor"
-                                 .format(func))
-
-        # func could be a descriptor like classmethod which isn't callable,
-        # so we can't inherit from partial (it verifies func is callable)
-        if isinstance(func, partialmethod):
-            # flattening is mandatory in order to place cls/self before all
-            # other arguments
-            # it's also more efficient since only one function will be called
-            self.func = func.func
-            self.args = func.args + args
-            self.keywords = {**func.keywords, **keywords}
-        else:
-            self.func = func
-            self.args = args
-            self.keywords = keywords
-
-    def __repr__(self):
-        cls = type(self)
-        module = cls.__module__
-        qualname = cls.__qualname__
-        args = [repr(self.func)]
-        args.extend(map(repr, self.args))
-        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
-        return f"{module}.{qualname}({', '.join(args)})"
+    __new__ = _partial_new
+    __repr__ = _partial_repr
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
+            if phcount := self._phcount:
+                try:
+                    pto_args = self._merger(self.args + args)
+                    args = args[phcount:]
+                except IndexError:
+                    raise TypeError("missing positional arguments "
+                                    "in 'partial' call; expected "
+                                    f"at least {phcount}, got {len(args)}")
+            else:
+                pto_args = self.args
             keywords = {**self.keywords, **keywords}
-            return self.func(cls_or_self, *self.args, *args, **keywords)
+            return self.func(cls_or_self, *pto_args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.__partialmethod__ = self
         return _method

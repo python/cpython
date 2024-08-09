@@ -3273,7 +3273,7 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_partial(self):
-        from functools import partial
+        from functools import partial, Placeholder
 
         def test():
             pass
@@ -3328,6 +3328,25 @@ class TestSignatureObject(unittest.TestCase):
                            ('d', ..., ..., "keyword_only")),
                           ...))
 
+        # With Placeholder
+        self.assertEqual(self.signature(partial(test, Placeholder, 1)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', ..., ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        self.assertEqual(self.signature(partial(test, Placeholder, 1, c=2)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        # Ensure unittest.mock.ANY & similar do not get picked up as a Placeholder
+        self.assertEqual(self.signature(partial(test, unittest.mock.ANY, 1, c=2)),
+                         ((('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
         def test(a, *args, b, **kwargs):
             pass
 
@@ -3370,6 +3389,15 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(self.signature(partial(test, b=0, test=1)),
                          ((('a', ..., ..., "positional_or_keyword"),
+                           ('args', ..., ..., "var_positional"),
+                           ('b', 0, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # With Placeholder
+        p = partial(test, Placeholder, Placeholder, 1, b=0, test=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
                            ('args', ..., ..., "var_positional"),
                            ('b', 0, ..., "keyword_only"),
                            ('kwargs', ..., ..., "var_keyword")),
@@ -3491,18 +3519,32 @@ class TestSignatureObject(unittest.TestCase):
             inspect.signature(Spam.ham)
 
         class Spam:
-            def test(it, a, *, c) -> 'spam':
+            def test(it, a, b, *, c) -> 'spam':
                 pass
             ham = partialmethod(test, c=1)
+            bar = partialmethod(test, functools.Placeholder, 1, c=1)
 
         self.assertEqual(self.signature(Spam.ham, eval_str=False),
                          ((('it', ..., ..., 'positional_or_keyword'),
                            ('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
         self.assertEqual(self.signature(Spam().ham, eval_str=False),
                          ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+
+        # With Placeholder
+        self.assertEqual(self.signature(Spam.bar, eval_str=False),
+                         ((('it', ..., ..., 'positional_only'),
+                           ('a', ..., ..., 'positional_only'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+        self.assertEqual(self.signature(Spam().bar, eval_str=False),
+                         ((('a', ..., ..., 'positional_only'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
