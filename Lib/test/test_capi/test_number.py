@@ -55,13 +55,6 @@ class IntLike(WithDunder):
 class FloatLike(WithDunder):
     methname = '__float__'
 
-class HasTrunc(WithDunder):
-    methname = '__trunc__'
-
-
-class HasBadTrunc:
-    __trunc__ = BadDescr()
-
 
 def subclassof(base):
     return type(base.__name__ + 'Subclass', (base,), {})
@@ -254,21 +247,6 @@ class CAPITest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(long(IntLike.with_val(True)), 1)
         self.assertRaises(RuntimeError, long, IntLike.with_exc(RuntimeError))
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, long, HasTrunc.with_val(42))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(HasTrunc.with_val(42)), 42)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(HasTrunc.with_val(subclassof(int)(42))), 42)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(HasTrunc.with_val(IndexLike.with_val(42))), 42)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, long, HasTrunc.with_val(1.25))
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(RuntimeError, long, HasTrunc.with_exc(RuntimeError))
-        self.assertRaises(RuntimeError, long, HasBadTrunc())
 
         self.assertRaises(TypeError, long, 1j)
         self.assertRaises(TypeError, long, object())
