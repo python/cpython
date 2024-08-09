@@ -557,7 +557,7 @@ def _parse(source, state, verbose, nested, first=False):
                 import warnings
                 warnings.warn(
                     'Possible nested set at position %d' % source.tell(),
-                    FutureWarning, stacklevel=nested + 6
+                    FutureWarning, stacklevel=nested + 5
                 )
             negate = sourcematch("^")
             # check remaining characters
@@ -580,7 +580,7 @@ def _parse(source, state, verbose, nested, first=False):
                                 'symmetric difference' if this == '~' else
                                 'union',
                                 source.tell() - 1),
-                            FutureWarning, stacklevel=nested + 6
+                            FutureWarning, stacklevel=nested + 5
                         )
                     code1 = LITERAL, _ord(this)
                 if sourcematch("-"):
@@ -603,7 +603,7 @@ def _parse(source, state, verbose, nested, first=False):
                             warnings.warn(
                                 'Possible set difference at position %d' % (
                                     source.tell() - 2),
-                                FutureWarning, stacklevel=nested + 6
+                                FutureWarning, stacklevel=nested + 5
                             )
                         code2 = LITERAL, _ord(that)
                     if code1[0] != LITERAL or code2[0] != LITERAL:
