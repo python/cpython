@@ -31,7 +31,7 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(value);
     if (PyTuple_CheckExact(obj)) {
-        Py_ssize_t size = PyTuple_Size(obj);
+        Py_ssize_t size = PyTuple_GET_SIZE(obj);
         newtuple = PyTuple_New(size);
         if (!newtuple) {
             return NULL;
