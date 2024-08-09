@@ -535,6 +535,7 @@ int
 PyObject_Print(PyObject *op, FILE *fp, int flags)
 {
     int ret = 0;
+    int write_error = 0;
     if (PyErr_CheckSignals())
         return -1;
 #ifdef USE_STACKCHECK
@@ -573,14 +574,20 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                     ret = -1;
                 }
                 else {
-                    fwrite(t, 1, len, fp);
+                    /* Versions of Android and OpenBSD from before 2023 fail to
+                       set the `ferror` indicator when writing to a read-only
+                       stream, so we need to check the return value.
+                       (https://github.com/openbsd/src/commit/fc99cf9338942ecd9adc94ea08bf6188f0428c15) */
+                    if (fwrite(t, 1, len, fp) != (size_t)len) {
+                        write_error = 1;
+                    }
                 }
                 Py_DECREF(s);
             }
         }
     }
     if (ret == 0) {
-        if (ferror(fp)) {
+        if (write_error || ferror(fp)) {
             PyErr_SetFromErrno(PyExc_OSError);
             clearerr(fp);
             ret = -1;

@@ -314,8 +314,6 @@ def SetPointerType(pointer, cls):
     del _pointer_type_cache[id(pointer)]
 
 def ARRAY(typ, len):
-    import warnings
-    warnings._deprecated("ctypes.ARRAY", remove=(3, 15))
     return typ * len
 
 ################################################################

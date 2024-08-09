@@ -405,6 +405,8 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.isroutine(type))
         self.assertFalse(inspect.isroutine(int))
         self.assertFalse(inspect.isroutine(type('some_class', (), {})))
+        # partial
+        self.assertFalse(inspect.isroutine(functools.partial(mod.spam)))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
@@ -1906,6 +1908,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertFalse(inspect.ismethoddescriptor(Owner.static_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
         self.assertFalse(inspect.ismethoddescriptor(a_lambda))
+        self.assertFalse(inspect.ismethoddescriptor(functools.partial(function)))
 
     def test_descriptor_being_a_class(self):
         class MethodDescriptorMeta(type):

@@ -16,6 +16,7 @@ except ImportError:
 from test import support
 from test.support import import_helper, threading_helper, Py_GIL_DISABLED
 from test.support.script_helper import assert_python_ok
+from test import mapping_tests
 
 
 class ClearTest(unittest.TestCase):
@@ -419,6 +420,132 @@ class TestFrameLocals(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             copy.deepcopy(d)
+
+
+    def _x_stringlikes(self):
+        class StringSubclass(str):
+            pass
+
+        class ImpostorX:
+            def __hash__(self):
+                return hash('x')
+
+            def __eq__(self, other):
+                return other == 'x'
+
+        return StringSubclass('x'), ImpostorX(), 'x'
+
+    def test_proxy_key_stringlikes_overwrite(self):
+        def f(obj):
+            x = 1
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            return (
+                list(proxy.keys()),
+                dict(proxy),
+                proxy
+            )
+
+        for obj in self._x_stringlikes():
+            with self.subTest(cls=type(obj).__name__):
+
+                keys_snapshot, proxy_snapshot, proxy = f(obj)
+                expected_keys = ['obj', 'x', 'proxy']
+                expected_dict = {'obj': 'x', 'x': 2, 'proxy': proxy}
+                self.assertEqual(proxy.keys(),  expected_keys)
+                self.assertEqual(proxy, expected_dict)
+                self.assertEqual(keys_snapshot,  expected_keys)
+                self.assertEqual(proxy_snapshot, expected_dict)
+
+    def test_proxy_key_stringlikes_ftrst_write(self):
+        def f(obj):
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            self.assertEqual(x, 2)
+            x = 1
+
+        for obj in self._x_stringlikes():
+            with self.subTest(cls=type(obj).__name__):
+                f(obj)
+
+    def test_proxy_key_unhashables(self):
+        class StringSubclass(str):
+            __hash__ = None
+
+        class ObjectSubclass:
+            __hash__ = None
+
+        proxy = sys._getframe().f_locals
+
+        for obj in StringSubclass('x'), ObjectSubclass():
+            with self.subTest(cls=type(obj).__name__):
+                with self.assertRaises(TypeError):
+                    proxy[obj]
+                with self.assertRaises(TypeError):
+                    proxy[obj] = 0
+
+
+class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
+    """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
+
+    def _f(*args, **kwargs):
+        def _f():
+            return sys._getframe().f_locals
+        return _f()
+    type2test = _f
+
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
+    def test_constructor(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: del proxy[key] fails')
+    def test_write(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.popitem')
+    def test_popitem(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.pop')
+    def test_pop(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.clear')
+    def test_clear(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.fromkeys')
+    def test_fromkeys(self):
+        pass
+
+    # no del
+    def test_getitem(self):
+        mapping_tests.BasicTestMappingProtocol.test_getitem(self)
+        d = self._full_mapping({'a': 1, 'b': 2})
+        self.assertEqual(d['a'], 1)
+        self.assertEqual(d['b'], 2)
+        d['c'] = 3
+        d['a'] = 4
+        self.assertEqual(d['c'], 3)
+        self.assertEqual(d['a'], 4)
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.update')
+    def test_update(self):
+        pass
+
+    # proxy.copy returns a regular dict
+    def test_copy(self):
+        d = self._full_mapping({1:1, 2:2, 3:3})
+        self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
+        d = self._empty_mapping()
+        self.assertEqual(d.copy(), d)
+        self.assertRaises(TypeError, d.copy, None)
+
+        self.assertIsInstance(d.copy(), dict)
+
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
+    def test_eq(self):
+        pass
 
 
 class TestFrameCApi(unittest.TestCase):

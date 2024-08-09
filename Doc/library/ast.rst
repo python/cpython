@@ -316,7 +316,9 @@ Literals
                             args=[
                                 Name(id='a', ctx=Load())]),
                         conversion=-1,
-                        format_spec=Constant(value='.3'))]))
+                        format_spec=JoinedStr(
+                            values=[
+                                Constant(value='.3')]))]))
 
 
 .. class:: List(elts, ctx)
@@ -887,7 +889,7 @@ Statements
 .. class:: AnnAssign(target, annotation, value, simple)
 
    An assignment with a type annotation. ``target`` is a single node and can
-   be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
+   be a :class:`Name`, an :class:`Attribute` or a :class:`Subscript`.
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
    node. ``value`` is a single optional node.
 
@@ -1979,7 +1981,7 @@ Function and class definitions
            YieldFrom(value)
 
    A ``yield`` or ``yield from`` expression. Because these are expressions, they
-   must be wrapped in a :class:`Expr` node if the value sent back is not used.
+   must be wrapped in an :class:`Expr` node if the value sent back is not used.
 
    .. doctest::
 

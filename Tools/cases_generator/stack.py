@@ -47,6 +47,9 @@ class StackOffset:
     def empty() -> "StackOffset":
         return StackOffset([], [])
 
+    def copy(self) -> "StackOffset":
+        return StackOffset(self.popped[:], self.pushed[:])
+
     def pop(self, item: StackItem) -> None:
         self.popped.append(var_size(item))
 
@@ -120,14 +123,11 @@ class Stack:
     def __init__(self) -> None:
         self.top_offset = StackOffset.empty()
         self.base_offset = StackOffset.empty()
-        self.peek_offset = StackOffset.empty()
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
     def pop(self, var: StackItem) -> str:
         self.top_offset.pop(var)
-        if not var.peek:
-            self.peek_offset.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
             popped = self.variables.pop()
@@ -201,8 +201,15 @@ class Stack:
         self.variables = []
         self.base_offset.clear()
         self.top_offset.clear()
-        self.peek_offset.clear()
         out.start_line()
+
+    def peek_offset(self) -> str:
+        peek = self.base_offset.copy()
+        for var in self.variables:
+            if not var.peek:
+                break
+            peek.push(var)
+        return peek.to_c()
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
