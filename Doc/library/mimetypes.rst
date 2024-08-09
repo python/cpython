@@ -241,6 +241,12 @@ than one MIME-type database; it provides an interface similar to the one of the
       :data:`common_types` and :data:`types_map`.
 
 
+   .. method:: MimeTypes.add_type(type, ext, strict=True)
+
+      Similar to the :func:`add_type` function, using the tables stored as part of
+      the object.
+
+
    .. method:: MimeTypes.guess_extension(type, strict=True)
 
       Similar to the :func:`guess_extension` function, using the tables stored as part
