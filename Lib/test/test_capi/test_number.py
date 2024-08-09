@@ -6,10 +6,13 @@ import warnings
 
 from test.support import cpython_only, import_helper
 
-_testbuffer = import_helper.import_module('_testbuffer')
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
-from _testbuffer import ndarray
+
+try:
+    from _testbuffer import ndarray
+except ImportError:
+    ndarray = None
 
 NULL = None
 
@@ -158,6 +161,7 @@ class CAPITest(unittest.TestCase):
             # CRASHES func(NULL, object())
             # CRASHES func(object(), NULL)
 
+    @unittest.skipIf(ndarray is None, "needs _testbuffer")
     def test_misc_add(self):
         # PyNumber_Add(), PyNumber_InPlaceAdd()
         add = _testcapi.number_add
@@ -173,6 +177,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(a, r)
         self.assertRaises(TypeError, inplaceadd, ndarray([1], (1,)), 2)
 
+    @unittest.skipIf(ndarray is None, "needs _testbuffer")
     def test_misc_multiply(self):
         # PyNumber_Multiply(), PyNumber_InPlaceMultiply()
         multiply = _testcapi.number_multiply
