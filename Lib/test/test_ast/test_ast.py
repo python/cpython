@@ -3059,36 +3059,44 @@ class ASTOptimiziationTests(unittest.TestCase):
         "-": ast.USub(),
     }
 
-    def find_node(self, code, optimize, target):
-        tree = ast.parse(code, optimize=optimize)
+    def find_node(self, tree, target):
         for node in ast.walk(tree):
             if ast.compare(node, target):
                 return True
         return False
 
-    def create_binop(self, operand):
-        return ast.BinOp(left=ast.Constant(1), op=self.binop[operand], right=ast.Constant(1))
-
-    def create_unaryop(self, operand):
-        return ast.UnaryOp(op=self.unaryop[operand], operand=ast.Constant(1))
-
     def assert_ast(self, code, non_optimized_target, optimized_target):
+        non_optimized_tree = ast.parse(code, optimize=-1)
+        optimized_tree = ast.parse(code, optimize=1)
+
         # Searching for a non-optimized node in an unoptimized AST
-        self.assertTrue(self.find_node(code, optimize=-1, target=non_optimized_target))
+        self.assertTrue(
+            self.find_node(non_optimized_tree, target=non_optimized_target),
+            f"Cannot find {ast.dump(non_optimized_target)} in {ast.dump(non_optimized_tree)}",
+        )
 
         # Searching for a non-optimized node in an optimized AST
-        self.assertFalse(self.find_node(code, optimize=1, target=non_optimized_target))
+        self.assertFalse(
+            self.find_node(optimized_tree, target=non_optimized_target),
+            f"Unexpectedly found {ast.dump(non_optimized_target)} in {ast.dump(non_optimized_tree)}"
+        )
 
         # Searching for a constant node in an optimized AST
-        self.assertTrue(self.find_node(code, optimize=1, target=optimized_target))
+        self.assertTrue(
+            self.find_node(optimized_tree,  target=optimized_target),
+            f"Cannot find {ast.dump(optimized_target)} in {ast.dump(optimized_tree)}",
+        )
 
     def test_folding_binop(self):
         code = "1 %s 1"
         operators = self.binop.keys()
 
+        def create_binop(operand):
+            return ast.BinOp(left=ast.Constant(1), op=self.binop[operand], right=ast.Constant(1))
+
         for op in operators:
             result_code = code % op
-            non_optimized_target = self.create_binop(op)
+            non_optimized_target = create_binop(op)
             optimized_target = ast.Constant(value=eval(result_code))
 
             with self.subTest(
@@ -3102,9 +3110,12 @@ class ASTOptimiziationTests(unittest.TestCase):
         code = "%s1"
         operators = self.unaryop.keys()
 
+        def create_unaryop(operand):
+            return ast.UnaryOp(op=self.unaryop[operand], operand=ast.Constant(1))
+
         for op in operators:
             result_code = code % op
-            non_optimized_target = self.create_unaryop(op)
+            non_optimized_target = create_unaryop(op)
             optimized_target = ast.Constant(eval(result_code))
 
             with self.subTest(
