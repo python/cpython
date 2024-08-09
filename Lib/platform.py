@@ -31,6 +31,7 @@
 #
 #    <see CVS and SVN checkin messages for history>
 #
+#    1.0.9 - added invalidate_caches() function to invalidate cached values
 #    1.0.8 - changed Windows support to read version from kernel32.dll
 #    1.0.7 - added DEV_NULL
 #    1.0.6 - added linux_distribution()
@@ -109,7 +110,7 @@ __copyright__ = """
 
 """
 
-__version__ = '1.0.8'
+__version__ = '1.0.9'
 
 import collections
 import os
@@ -1439,6 +1440,18 @@ def freedesktop_os_release():
             )
 
     return _os_release_cache.copy()
+
+
+def invalidate_caches():
+    """Invalidate the cached results."""
+    global _uname_cache
+    _uname_cache = None
+
+    global _os_release_cache
+    _os_release_cache = None
+
+    _sys_version_cache.clear()
+    _platform_cache.clear()
 
 
 ### Command line interface
