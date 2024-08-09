@@ -2034,6 +2034,24 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     return Py_NewRef(spam);
 }
 
+/*[clinic input]
+is_version_overflowed
+
+    dict: object(type="PyDictObject *", subclass_of="&PyDict_Type")
+
+[clinic start generated code]*/
+
+static PyObject *
+is_version_overflowed_impl(PyObject *module, PyDictObject *dict)
+/*[clinic end generated code: output=e7d20960c423d073 input=a68a26cde1cc7a9e]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(interp, dict->ma_keys);
+    if (keys_version != (uint16_t)keys_version){
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2129,6 +2147,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    IS_VERSION_OVERFLOWED_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
