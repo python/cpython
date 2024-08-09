@@ -363,7 +363,8 @@ class _ExecutorManagerThread(threading.Thread):
                         with self.shutdown_lock:
                             executor._adjust_process_count()
                     else:
-                        executor._idle_worker_semaphore.release()
+                        with executor._idle_worker_lock:
+                            executor._idle_worker_number += 1
                     del executor
 
             if self.is_shutting_down():
@@ -708,7 +709,8 @@ class ProcessPoolExecutor(_base.Executor):
         # Shutdown is a two-step process.
         self._shutdown_thread = False
         self._shutdown_lock = threading.Lock()
-        self._idle_worker_semaphore = threading.Semaphore(0)
+        self._idle_worker_lock = threading.Lock()
+        self._idle_worker_number = 0
         self._broken = False
         self._queue_count = 0
         self._pending_work_items = {}
@@ -755,19 +757,21 @@ class ProcessPoolExecutor(_base.Executor):
                 self._executor_manager_thread_wakeup
 
     def _adjust_process_count(self):
-        # if there's an idle process, we don't need to spawn a new one.
-        if self._idle_worker_semaphore.acquire(blocking=False):
-            return
+        with self._idle_worker_lock:
+            # if there's an idle process, we don't need to spawn a new one.
+            if self._idle_worker_number > 0:
+                return
 
-        process_count = len(self._processes)
-        if process_count < self._max_workers:
-            # Assertion disabled as this codepath is also used to replace a
-            # worker that unexpectedly dies, even when using the 'fork' start
-            # method. That means there is still a potential deadlock bug. If a
-            # 'fork' mp_context worker dies, we'll be forking a new one when
-            # we know a thread is running (self._executor_manager_thread).
-            #assert self._safe_to_dynamically_spawn_children or not self._executor_manager_thread, 'https://github.com/python/cpython/issues/90622'
-            self._spawn_process()
+            process_count = len(self._processes)
+            if process_count < self._max_workers:
+                # Assertion disabled as this codepath is also used to replace a
+                # worker that unexpectedly dies, even when using the 'fork' start
+                # method. That means there is still a potential deadlock bug. If a
+                # 'fork' mp_context worker dies, we'll be forking a new one when
+                # we know a thread is running (self._executor_manager_thread).
+                #assert self._safe_to_dynamically_spawn_children or not self._executor_manager_thread, 'https://github.com/python/cpython/issues/90622'
+                self._spawn_process()
+                self._idle_worker_number += 1
 
     def _launch_processes(self):
         # https://github.com/python/cpython/issues/90622
@@ -809,6 +813,8 @@ class ProcessPoolExecutor(_base.Executor):
 
             if self._safe_to_dynamically_spawn_children:
                 self._adjust_process_count()
+                with self._idle_worker_lock:
+                    self._idle_worker_number -= 1
             self._start_executor_manager_thread()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
