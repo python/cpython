@@ -58,6 +58,13 @@ The following exception classes are defined in the :mod:`email.errors` module:
    :class:`~email.mime.nonmultipart.MIMENonMultipart` (e.g.
    :class:`~email.mime.image.MIMEImage`).
 
+
+.. exception:: HeaderWriteError()
+
+   Raised when an error occurs when the :mod:`~email.generator` outputs
+   headers.
+
+
 .. exception:: MessageDefect()
 
    This is the base class for all defects found when parsing email messages.
