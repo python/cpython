@@ -39,15 +39,20 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
         for (Py_ssize_t n = 0; n < size; n++) {
             PyTuple_SET_ITEM(newtuple, n, Py_XNewRef(PyTuple_GET_ITEM(obj, n)));
         }
+
+        PyObject *val = PyTuple_GET_ITEM(newtuple, i);
+        PyTuple_SET_ITEM(newtuple, i, Py_XNewRef(value));
+        Py_DECREF(val);
+        return newtuple;
     }
     else {
         NULLABLE(obj);
-        newtuple = obj;
+
+        PyObject *val = PyTuple_GET_ITEM(obj, i);
+        PyTuple_SET_ITEM(obj, i, Py_XNewRef(value));
+        Py_DECREF(val);
+        return Py_XNewRef(obj);
     }
-    PyObject *val = PyTuple_GET_ITEM(newtuple, i);
-    PyTuple_SET_ITEM(newtuple, i, Py_XNewRef(value));
-    Py_DECREF(val);
-    return newtuple;
 }
 
 static PyObject *
@@ -62,12 +67,16 @@ _tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
     if (new) {
         Py_ssize_t size = PyTuple_Size(tup);
         PyObject *newtup = PyTuple_New(size);
+        if (!newtup) {
+            return NULL;
+        }
         for (Py_ssize_t n = 0; n < size; n++) {
             PyTuple_SET_ITEM(newtup, n, Py_XNewRef(PyTuple_GET_ITEM(tup, n)));
         }
         tup = newtup;
     }
     else {
+        NULLABLE(tup);
         Py_XINCREF(tup);
     }
     int r = _PyTuple_Resize(&tup, newsize);

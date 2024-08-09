@@ -91,22 +91,25 @@ tuple_setitem(PyObject *Py_UNUSED(module), PyObject *args)
         for (Py_ssize_t n = 0; n < size; n++) {
             if (PyTuple_SetItem(newtuple, n,
                                 Py_XNewRef(PyTuple_GetItem(obj, n))) == -1) {
-                Py_XDECREF(newtuple);
+                Py_DECREF(newtuple);
                 return NULL;
             }
         }
+
+        if (PyTuple_SetItem(newtuple, i, Py_XNewRef(value)) == -1) {
+            Py_DECREF(newtuple);
+            return NULL;
+        }
+        return newtuple;
     }
     else {
         NULLABLE(obj);
-        newtuple = obj;
-    }
-    if (PyTuple_SetItem(newtuple, i, Py_XNewRef(value)) == -1) {
-        if (PyTuple_CheckExact(obj)) {
-            Py_XDECREF(newtuple);
+
+        if (PyTuple_SetItem(obj, i, Py_XNewRef(value)) == -1) {
+            return NULL;
         }
-        return NULL;
+        return Py_XNewRef(obj);
     }
-    return newtuple;
 }
 
 
