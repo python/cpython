@@ -1991,6 +1991,8 @@ dummy_func(
                 attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                 DECREF_INPUTS();
                 ERROR_IF(attr_o == NULL, error);
+                /* We need to define self_or_null on all paths */
+                self_or_null = PyStackRef_NULL;
             }
             attr = PyStackRef_FromPyObjectSteal(attr_o);
         }

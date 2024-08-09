@@ -108,7 +108,8 @@
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int opt = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!opt) {
                 res = sym_new_type(ctx, &PyBool_Type);
             }
             stack_pointer[-1] = res;
@@ -119,7 +120,8 @@
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int opt = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!opt) {
                 sym_set_type(value, &PyBool_Type);
                 res = value;
             }
@@ -131,7 +133,8 @@
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int opt = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!opt) {
                 sym_set_type(value, &PyLong_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
             }
@@ -143,7 +146,8 @@
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int opt = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!opt) {
                 sym_set_type(value, &PyList_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
             }
@@ -155,7 +159,8 @@
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int opt = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!opt) {
                 sym_set_const(value, Py_None);
                 res = sym_new_const(ctx, Py_False);
             }
@@ -167,7 +172,8 @@
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int opt = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!opt) {
                 res = sym_new_type(ctx, &PyBool_Type);
                 sym_set_type(value, &PyUnicode_Type);
             }
@@ -1014,6 +1020,9 @@
             attr = sym_new_not_null(ctx);
             if (oparg & 1) {
                 self_or_null = sym_new_unknown(ctx);
+            }
+            else {
+                self_or_null = NULL;
             }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
@@ -2085,7 +2094,9 @@
                     res = sym_new_type(ctx, &PyFloat_Type);
                 }
             }
-            res = sym_new_unknown(ctx);
+            else {
+                res = sym_new_unknown(ctx);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());

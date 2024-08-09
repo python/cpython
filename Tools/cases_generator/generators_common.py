@@ -131,8 +131,20 @@ class Emitter:
             "CHECK_EVAL_BREAKER": self.check_eval_breaker,
             "SYNC_SP": self.sync_sp,
             "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
+            "DISPATCH": self.dispatch
         }
         self.out = out
+
+    def dispatch(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.emit(tkn)
+        return False
 
     def deopt_if(
         self,
@@ -298,16 +310,14 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
-    ) -> tuple[bool, Token, Stack]:
+    ) -> tuple[bool, Token, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
         tkn = next(tkn_iter)
         assert (tkn.kind == "LPAREN")
         self.out.emit(tkn)
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
-        stack = storage.stack
-        if_stack = stack.copy()
-        if_storage = Storage(if_stack, storage.outputs)
+        if_storage = storage.copy()
         reachable, rbrace, if_stack = self._emit_block(tkn_iter, uop, if_storage, inst, True)
         maybe_else = tkn_iter.peek()
         if maybe_else and maybe_else.kind == "ELSE":
@@ -320,20 +330,20 @@ class Emitter:
             else:
                 else_reachable, rbrace, stack = self._emit_block(tkn_iter, uop, storage, inst, True)
             if not reachable:
-                # Discard the if stack
+                # Discard the if storage
                 reachable = else_reachable
             elif not else_reachable:
-                # Discard the else stack
-                stack = if_stack
+                # Discard the else storage
+                storage = if_storage
             else:
-                stack = stack.merge(if_stack)
+                storage = storage.merge(if_storage, self.out)
         else:
             if reachable:
-                stack = stack.merge(if_stack)
+                storage = storage.merge(if_storage, self.out)
             else:
                 # Discard the if stack
                 reachable = True
-        return reachable, rbrace, stack
+        return reachable, rbrace, storage
 
     def _emit_block(
         self,
@@ -342,12 +352,11 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
         emit_first_brace: bool
-    ) -> tuple[bool, Token, Stack]:
+    ) -> tuple[bool, Token, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
         braces = 1
         out_stores = set(uop.output_stores)
         tkn = next(tkn_iter)
-        stack = storage.stack
         reachable = True
         if tkn.kind != "LBRACE":
             raise analysis_error(f"Expected '{{' found {tkn.text}", tkn)
@@ -360,7 +369,7 @@ class Emitter:
             elif tkn.kind == "RBRACE":
                 braces -= 1
                 if braces == 0:
-                    return reachable, tkn, stack
+                    return reachable, tkn, storage
                 self.out.emit(tkn)
             elif tkn.kind == "GOTO":
                 reachable = False;

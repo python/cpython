@@ -374,10 +374,16 @@ def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
     res: list[lexer.Token] = []
     outnames = [ out.name for out in node.outputs ]
     for idx, tkn in enumerate(node.block.tokens):
+        if tkn.kind == "AND":
+            name = node.block.tokens[idx+1]
+            if name.text in outnames:
+                res.append(name)
         if tkn.kind != "EQUALS":
             continue
         lhs = find_assignment_target(node, idx)
         assert lhs
+        while lhs and lhs[0].kind == "COMMENT":
+            lhs = lhs[1:]
         if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
             continue
         name = lhs[0]

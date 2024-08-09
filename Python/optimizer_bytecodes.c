@@ -182,7 +182,9 @@ dummy_func(void) {
                 res = sym_new_type(ctx, &PyFloat_Type);
             }
         }
-        res = sym_new_unknown(ctx);
+        else {
+            res = sym_new_unknown(ctx);
+        }
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
@@ -330,41 +332,47 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int opt = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!opt) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int opt = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!opt) {
             sym_set_type(value, &PyBool_Type);
             res = value;
         }
     }
 
     op(_TO_BOOL_INT, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int opt = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!opt) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_LIST, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int opt = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!opt) {
             sym_set_type(value, &PyList_Type);
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int opt = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!opt) {
             sym_set_const(value, Py_None);
             res = sym_new_const(ctx, Py_False);
         }
     }
 
     op(_TO_BOOL_STR, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int opt = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!opt) {
             res = sym_new_type(ctx, &PyBool_Type);
             sym_set_type(value, &PyUnicode_Type);
         }
@@ -474,6 +482,9 @@ dummy_func(void) {
         attr = sym_new_not_null(ctx);
         if (oparg & 1) {
             self_or_null = sym_new_unknown(ctx);
+        }
+        else {
+            self_or_null = NULL;
         }
     }
 

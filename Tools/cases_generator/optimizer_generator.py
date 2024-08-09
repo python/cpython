@@ -103,9 +103,9 @@ def write_uop(
     skip_inputs: bool,
 ) -> None:
     locals: dict[str, Local] = {}
+    prototype = override if override else uop
+    is_override = override is not None
     try:
-        prototype = override if override else uop
-        is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
             code, local = stack.pop(var, extract_bits=True)
@@ -144,7 +144,7 @@ def write_uop(
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+        raise analysis_error(ex.args[0], prototype.body[0])
 
 
 SKIPS = ("_EXTENDED_ARG",)

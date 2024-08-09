@@ -448,3 +448,17 @@ class Storage:
                     local = Local.undefined(var)
                 outputs.append(local)
         return Storage(stack, outputs)
+
+    def copy(self) -> "Storage":
+        return Storage(self.stack.copy(), [ l.copy() for l in self.outputs])
+
+    def merge(self, other: "Storage", out: CWriter) -> "Storage":
+        self.stack.merge(other.stack)
+        if self.outputs != other.outputs:
+            raise StackError("unequal locals")
+        return self
+
+    def as_comment(self) -> str:
+        stack_comment = self.stack.as_comment()
+        return stack_comment[:-2] + str(self.outputs) + " */"
+

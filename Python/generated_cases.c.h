@@ -4428,6 +4428,8 @@
                     attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                     PyStackRef_CLOSE(owner);
                     if (attr_o == NULL) goto pop_1_error;
+                    /* We need to define self_or_null on all paths */
+                    self_or_null = PyStackRef_NULL;
                 }
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
             }

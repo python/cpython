@@ -2221,6 +2221,8 @@
                 attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
                 if (attr_o == NULL) JUMP_TO_ERROR();
+                /* We need to define self_or_null on all paths */
+                self_or_null = PyStackRef_NULL;
             }
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             stack_pointer[-1] = attr;
