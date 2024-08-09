@@ -1,4 +1,6 @@
+import os
 import runpy
+import shlex
 import signal
 import sys
 
@@ -8,10 +10,7 @@ import sys
 # profile save"), so disabling it should not weaken the tests.
 signal.pthread_sigmask(signal.SIG_UNBLOCK, [signal.SIGUSR1])
 
-# To run specific tests, or pass any other arguments to the test suite, edit
-# this command line.
-sys.argv[1:] = [
-    "--use", "all,-cpu",
-    "--verbose3",
-]
+sys.argv[1:] = shlex.split(os.environ["PYTHON_ARGS"])
+
+# The test module will call sys.exit to indicate whether the tests passed.
 runpy.run_module("test")

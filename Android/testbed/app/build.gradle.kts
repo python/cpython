@@ -1,4 +1,5 @@
 import com.android.build.api.variant.*
+import kotlin.math.max
 
 plugins {
     id("com.android.application")
@@ -45,6 +46,8 @@ android {
         externalNativeBuild.cmake.arguments(
             "-DPYTHON_CROSS_DIR=$PYTHON_CROSS_DIR",
             "-DPYTHON_VERSION=$PYTHON_VERSION")
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     externalNativeBuild.cmake {
@@ -62,12 +65,34 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("minVersion") {
+                    device = "Small Phone"
+                    systemImageSource = "aosp-atd"
+
+                    // Managed devices have a minimum API level of 27.
+                    apiLevel = max(27, defaultConfig.minSdk!!)
+                }
+
+                create("maxVersion") {
+                    device = "Small Phone"
+                    systemImageSource = "aosp-atd"
+                    apiLevel = defaultConfig.targetSdk!!
+                }
+            }
+        }
+    }
 }
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:rules:1.5.0")
 }
 
 
