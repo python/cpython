@@ -2737,6 +2737,20 @@ def iter_slot_wrappers(cls):
         assert name.startswith('__') and name.endswith('__'), (cls, name, value)
         return True
 
+    try:
+        slots, duplicates = identify_type_slots(reverse=True)
+    except NotImplementedError:
+        slots = None
+    if slots is not None:
+        for attr in sorted(slots):
+            obj, base = find_name_in_mro(cls, attr, None)
+            if obj is not None and is_slot_wrapper(attr, obj):
+                slot = slots[attr]
+                yield attr, base is cls
+        return
+
+    # Fall back to a naive best-effort approach.
+
     ns = vars(cls)
     unused = set(ns)
     for name in dir(cls):
