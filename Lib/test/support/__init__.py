@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
+import inspect
 import _opcode
 import os
 import re
@@ -2613,6 +2614,7 @@ def copy_python_src_ignore(path, names):
     return ignored
 
 
+# XXX Move this to the inspect module?
 def walk_class_hierarchy(top, *, topdown=True):
     # This is based on the logic in os.walk().
     assert isinstance(top, type), repr(top)
@@ -2674,6 +2676,39 @@ def iter_builtin_types():
             yield cls
 
 
+# XXX Move this to the inspect module?
+def iter_name_in_mro(cls, name):
+    """Yield matching items found in base.__dict__ across the MRO.
+
+    The descriptor protocol is not invoked.
+
+    list(iter_name_in_mro(cls, name))[0] is roughly equivalent to
+    find_name_in_mro() in Objects/typeobject.c (AKA PyType_Lookup()).
+
+    inspect.getattr_static() is similar.
+    """
+    # This can fail if "cls" is weird.
+    for base in inspect._static_getmro(cls):
+        # This can fail if "base" is weird.
+        ns = inspect._get_dunder_dict_of_class(base)
+        try:
+            obj = ns[name]
+        except KeyError:
+            continue
+        yield obj, base
+
+
+# XXX Move this to the inspect module?
+def find_name_in_mro(cls, name, default=inspect._sentinel):
+    for res in iter_name_in_mro(cls, name):
+        # Return the first one.
+        return res
+    if default is not inspect._sentinel:
+        return default, None
+    raise AttributeError(name)
+
+
+# XXX The return value should always be exactly the same...
 def identify_type_slots(*, reverse=False):
     if _testinternalcapi is not None:
         pairs = _testinternalcapi.identify_type_slots()
