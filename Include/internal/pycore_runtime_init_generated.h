@@ -537,6 +537,8 @@ extern "C" {
 }
 
 #define _Py_str_literals_INIT { \
+    INIT_STR(_unpack_expected_argcnt, "_unpack_expected_argcnt"), \
+    INIT_STR(_unpacked_value, "_unpacked_value"), \
     INIT_STR(anon_dictcomp, "<dictcomp>"), \
     INIT_STR(anon_genexpr, "<genexpr>"), \
     INIT_STR(anon_lambda, "<lambda>"), \

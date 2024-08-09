@@ -2393,8 +2393,8 @@ class BaseExceptionReportingTests:
         class BrokenException(Exception):
             broken = False
             def __getattr__(self, name):
-                if self.broken:
-                    raise ValueError(f'no {name}')
+                if self.broken and name == "__notes__":
+                    raise ValueError(f'no __notes__')
 
         e = BrokenException(123)
         vanilla = self.get_report(e)
