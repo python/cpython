@@ -3127,7 +3127,7 @@ class ASTOptimiziationTests(unittest.TestCase):
         operators = [("in", ast.In()), ("not in", ast.NotIn())]
         braces = [("[", "]", ast.List, (1,)), ("{", "}", ast.Set, frozenset({1}))]
         for left, right, non_optimized_comparator, optimized_comparator in braces:
-            for op, node in operators: 
+            for op, node in operators:
                 non_optimized_target = ast.Compare(
                     left=ast.Constant(1), ops=[node],
                     comparators=[non_optimized_comparator(elts=[ast.Constant(1)])]
