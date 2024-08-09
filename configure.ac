@@ -6164,16 +6164,19 @@ AC_MSG_CHECKING([LDVERSION])
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
-# Configure the flags and dependencies used when compiling shared modules
+# Configure the flags and dependencies used when compiling shared modules.
+# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
+# systems (e.g. Meson) to decide whether to link extension modules against
+# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
-AC_SUBST([MODULE_LDFLAGS])
+AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
-MODULE_LDFLAGS=''
+LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  MODULE_LDFLAGS="\$(BLDLIBRARY)"
+  LIBPYTHON="\$(BLDLIBRARY)"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
