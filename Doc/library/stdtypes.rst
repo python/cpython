@@ -5313,7 +5313,8 @@ instantiated from the type::
 Other Built-in Types
 ====================
 
-The interpreter supports several other kinds of objects. Most of these support
+The interpreter supports several other kinds of objects, as well as direct
+instances of :class:`object`, the top type. Most of these support
 only one or two operations.
 
 
