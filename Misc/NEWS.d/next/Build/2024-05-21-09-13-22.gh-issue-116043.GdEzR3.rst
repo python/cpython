@@ -1,0 +1,2 @@
+Eliminate a static archive from the build of HACL*/hashlib in order to
+simplify legacy build scenarios that rely on freeze.
