@@ -16,31 +16,31 @@ from stack import Stack
 
 class TokenIterator:
 
-    ahead: Token | None
+    look_ahead: Token | None
     iterator: Iterator[Token]
 
     def __init__(self, tkns: Iterable[Token]):
         self.iterator = iter(tkns)
-        self.ahead = None
+        self.look_ahead = None
 
     def __iter__(self) -> "TokenIterator":
         return self
 
     def __next__(self) -> Token:
-        if self.ahead is None:
+        if self.look_ahead is None:
             return next(self.iterator)
         else:
-            res = self.ahead
-            self.ahead = None
+            res = self.look_ahead
+            self.look_ahead = None
             return res
 
     def peek(self) -> Token | None:
-        if self.ahead is None:
+        if self.look_ahead is None:
             try:
-                self.ahead = next(self.iterator)
+                self.look_ahead = next(self.iterator)
             except StopIteration:
                 pass
-        return self.ahead
+        return self.look_ahead
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_INPUT = (ROOT / "Python/bytecodes.c").absolute().as_posix()
@@ -176,7 +176,7 @@ class Emitter:
             self.out.emit(label)
             self.out.emit(";\n")
             self.out.emit("}\n")
-        return first_tkn.text != "true" and first_tkn.text != "1"
+        return not always_true(first_tkn)
 
     def error_no_pop(
         self,

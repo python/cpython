@@ -21,6 +21,7 @@ from generators_common import (
     type_and_null,
     Emitter,
     TokenIterator,
+    always_true,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -122,7 +123,7 @@ class Tier2Emitter(Emitter):
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
-        return first_tkn.text != "true" and first_tkn.text != "1"
+        return not always_true(first_tkn)
 
     def exit_if(  # type: ignore[override]
         self,
@@ -142,7 +143,7 @@ class Tier2Emitter(Emitter):
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
-        return first_tkn.text != "true" and first_tkn.text != "1"
+        return not always_true(first_tkn)
 
     def oparg(
         self,
