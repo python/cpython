@@ -556,6 +556,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dbl_percent));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(defaults));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dot_locals));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dot_zero));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(format));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(generic_base));

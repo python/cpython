@@ -2650,9 +2650,20 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
 static int
 symtable_implicit_arg(struct symtable *st, int pos)
 {
-    PyObject *id = PyUnicode_FromFormat(".%d", pos);
-    if (id == NULL)
-        return 0;
+    PyObject *id;
+    if (pos == 0) {
+        // In most cases there is only one implicit arg, `.0`
+        _Py_DECLARE_STR(dot_zero, ".0");
+        id = &_Py_STR(dot_zero);
+    }
+    else {
+        PyObject *id = PyUnicode_FromFormat(".%d", pos);
+        if (id == NULL) {
+            return 0;
+        }
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternImmortal(interp, &id);
+    }
     if (!symtable_add_def(st, id, DEF_PARAM, st->st_cur->ste_loc)) {
         Py_DECREF(id);
         return 0;

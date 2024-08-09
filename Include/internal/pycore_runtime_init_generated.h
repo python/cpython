@@ -551,6 +551,7 @@ extern "C" {
     INIT_STR(dbl_percent, "%%"), \
     INIT_STR(defaults, ".defaults"), \
     INIT_STR(dot_locals, ".<locals>"), \
+    INIT_STR(dot_zero, ".0"), \
     INIT_STR(empty, ""), \
     INIT_STR(format, ".format"), \
     INIT_STR(generic_base, ".generic_base"), \
