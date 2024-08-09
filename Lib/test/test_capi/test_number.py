@@ -164,7 +164,7 @@ class CAPITest(unittest.TestCase):
             # CRASHES func(NULL, object())
             # CRASHES func(object(), NULL)
 
-    def test_misc(self):
+    def test_misc_add(self):
         # PyNumber_Add(), PyNumber_InPlaceAdd()
         add = _testcapi.number_add
         inplaceadd = _testcapi.number_inplaceadd
@@ -179,6 +179,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(a, r)
         self.assertRaises(TypeError, inplaceadd, ndarray([1], (1,)), 2)
 
+    def test_misc_multiply(self)
         # PyNumber_Multiply(), PyNumber_InPlaceMultiply()
         multiply = _testcapi.number_multiply
         inplacemultiply = _testcapi.number_inplacemultiply
@@ -204,6 +205,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(OverflowError, inplacemultiply, [1], PY_SSIZE_T_MAX + 1)
         self.assertRaises(MemoryError, inplacemultiply, [1, 2], PY_SSIZE_T_MAX//2 + 1)
 
+    def test_misc_power(self):
         # PyNumber_Power()
         power = _testcapi.number_power
 
