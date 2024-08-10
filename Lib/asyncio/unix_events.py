@@ -93,9 +93,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise ValueError if the signal number is invalid or uncatchable.
         Raise RuntimeError if there is a problem setting up the handler.
         """
-        import inspect
-        if (inspect.iscoroutine(callback) or
-                inspect.iscoroutinefunction(callback)):
+        if (coroutines.iscoroutine(callback) or
+                coroutines._iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)
