@@ -1,0 +1,1 @@
+Reduced ``asyncio`` ``heapq`` scheduling overhead
