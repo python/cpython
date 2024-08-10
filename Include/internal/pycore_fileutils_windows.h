@@ -9,9 +9,7 @@ extern "C" {
 #endif
 
 #ifdef MS_WINDOWS
-// #include <ntdef.h>
 #include <winternl.h>
-// #include <ntstatus.h>
 
 #pragma region NTSTATUS
 /* Unfortunately, we cannot include <ntstatus.h> due to many includes of <Windows.h> (macro redefinition conflicts). */
