@@ -2837,7 +2837,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
             skipfirst = _must_skip(spec, entry, is_type)
             child_kwargs['_eat_self'] = skipfirst
-            if iscoroutinefunction(original):
+            if inspect.iscoroutinefunction(original):
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock
