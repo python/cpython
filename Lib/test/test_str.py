@@ -1747,6 +1747,16 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(str(b'foo', errors='strict'), 'foo')  # not "b'foo'"
         self.assertEqual(str(object=b'foo', errors='strict'), 'foo')
 
+    def test_constructor_errors(self):
+        with self.assertRaises(TypeError):
+            str(b"x", b"ascii")
+        with self.assertRaises(TypeError):
+            str(b"x", encoding=b"ascii")
+        with self.assertRaises(TypeError):
+            str(b"x", "ascii", b"strict")
+        with self.assertRaises(TypeError):
+            str(b"x", "ascii", errors=b"strict")
+
     def test_constructor_defaults(self):
         """Check the constructor argument defaults."""
         # The object argument defaults to '' or b''.
