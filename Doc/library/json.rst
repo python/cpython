@@ -680,7 +680,7 @@ when serializing instances of "exotic" numerical types such as
 .. _json-commandline:
 .. program:: json
 
-Command-Line Interface
+Command-line interface
 ----------------------
 
 **Source code:** :source:`Lib/json/tool.py`
