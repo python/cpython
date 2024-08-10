@@ -62,7 +62,7 @@ def _is_async_obj(obj):
 
 def _is_async_func(func):
     if getattr(func, '__code__', None):
-        return inspect.iscoroutinefunction(func)
+        return iscoroutinefunction(func)
     else:
         return False
 
