@@ -16,7 +16,7 @@ import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from ._os import copyfileobj
+from pathlib._os import copyfileobj
 
 
 __all__ = ["UnsupportedOperation"]

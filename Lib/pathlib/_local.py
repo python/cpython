@@ -18,9 +18,9 @@ try:
 except ImportError:
     grp = None
 
-from ._os import (copyfile, file_metadata_keys, read_file_metadata,
-                  write_file_metadata)
-from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
+                         write_file_metadata)
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 
 
 __all__ = [
