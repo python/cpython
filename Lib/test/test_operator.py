@@ -347,6 +347,26 @@ class OperatorTestCase:
         self.assertFalse(operator.is_not(a, b))
         self.assertTrue(operator.is_not(a,c))
 
+    def test_is_none(self):
+        operator = self.module
+        a = 'xyzpdq'
+        b = ''
+        c = None
+        self.assertRaises(TypeError, operator.is_none)
+        self.assertFalse(operator.is_none(a))
+        self.assertFalse(operator.is_none(b))
+        self.assertTrue(operator.is_none(c))
+
+    def test_is_not_none(self):
+        operator = self.module
+        a = 'xyzpdq'
+        b = ''
+        c = None
+        self.assertRaises(TypeError, operator.is_not_none)
+        self.assertTrue(operator.is_not_none(a))
+        self.assertTrue(operator.is_not_none(b))
+        self.assertFalse(operator.is_not_none(c))
+
     def test_attrgetter(self):
         operator = self.module
         class A:
