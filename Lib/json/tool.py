@@ -4,7 +4,7 @@ import sys
 
 
 def main():
-    prog = 'python -m json.tool'
+    prog = 'python -m json'
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
     parser = argparse.ArgumentParser(prog=prog, description=description)
