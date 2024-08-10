@@ -1061,7 +1061,7 @@ FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, time_t *time_out, int* nsec_out)
     *time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, time_t);
 }
 
-static void
+void
 LARGE_INTEGER_to_time_t_nsec(LARGE_INTEGER *in_ptr, time_t *time_out, int* nsec_out)
 {
     *nsec_out = (int)(in_ptr->QuadPart % 10000000) * 100; /* FILETIME is in units of 100 nsec. */
@@ -1082,7 +1082,7 @@ _Py_time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr)
 #if _S_IREAD != 0400
 #error Unsupported C library
 #endif
-static int
+int
 attributes_to_mode(DWORD attr)
 {
     int m = 0;
