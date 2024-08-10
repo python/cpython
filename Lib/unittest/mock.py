@@ -32,6 +32,7 @@ import pprint
 import sys
 import builtins
 import pkgutil
+from inspect import iscoroutinefunction
 import threading
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
@@ -56,7 +57,7 @@ def _is_async_obj(obj):
         return False
     if hasattr(obj, '__func__'):
         obj = getattr(obj, '__func__')
-    return inspect.iscoroutinefunction(obj) or inspect.isawaitable(obj)
+    return iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
@@ -555,7 +556,7 @@ class NonCallableMock(Base):
                     unwrapped_attr = inspect.unwrap(unwrapped_attr)
                 except ValueError:
                     pass
-                if inspect.iscoroutinefunction(unwrapped_attr):
+                if iscoroutinefunction(unwrapped_attr):
                     _spec_asyncs.append(attr)
 
             spec = spec_list
@@ -2306,7 +2307,7 @@ class AsyncMockMixin(Base):
                     raise StopAsyncIteration
                 if _is_exception(result):
                     raise result
-            elif inspect.iscoroutinefunction(effect):
+            elif iscoroutinefunction(effect):
                 result = await effect(*args, **kwargs)
             else:
                 result = effect(*args, **kwargs)
@@ -2318,7 +2319,7 @@ class AsyncMockMixin(Base):
             return self.return_value
 
         if self._mock_wraps is not None:
-            if inspect.iscoroutinefunction(self._mock_wraps):
+            if iscoroutinefunction(self._mock_wraps):
                 return await self._mock_wraps(*args, **kwargs)
             return self._mock_wraps(*args, **kwargs)
 
@@ -2837,7 +2838,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
             skipfirst = _must_skip(spec, entry, is_type)
             child_kwargs['_eat_self'] = skipfirst
-            if inspect.iscoroutinefunction(original):
+            if iscoroutinefunction(original):
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock
