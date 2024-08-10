@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_freelist.h"      // _Py_FREELIST_POP()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
@@ -78,7 +79,7 @@ typedef struct {
 
 #ifdef Py_GIL_DISABLED
 #   define ASYNCIO_STATE_LOCK(state) Py_BEGIN_CRITICAL_SECTION_MUT(&state->mutex)
-#   define ASYNCIO_STATE_UNLOCK(state) Py_END_CRITICAL_SECTION(&state->mutex)
+#   define ASYNCIO_STATE_UNLOCK(state) Py_END_CRITICAL_SECTION()
 #else
 #   define ASYNCIO_STATE_LOCK(state) ((void)state)
 #   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
@@ -3628,6 +3629,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(item);
     }
     Py_DECREF(eager_iter);
+    int err = 0;
     ASYNCIO_STATE_LOCK(state);
     TaskObj *head = state->asyncio_tasks.head;
     Py_INCREF(head);
@@ -3640,12 +3642,16 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
             Py_DECREF(tasks);
             Py_DECREF(loop);
             Py_DECREF(head);
-            goto error;
+            err = 1;
+            break;
         }
         Py_INCREF(head->next);
         Py_SETREF(head, head->next);
     }
     ASYNCIO_STATE_UNLOCK(state);
+    if (err) {
+        return NULL;
+    }
     PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
     if (scheduled_iter == NULL) {
         Py_DECREF(tasks);
@@ -3665,9 +3671,6 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     Py_DECREF(scheduled_iter);
     Py_DECREF(loop);
     return tasks;
-error:
-    ASYNCIO_STATE_UNLOCK(state);
-    return NULL;
 }
 
 static int
