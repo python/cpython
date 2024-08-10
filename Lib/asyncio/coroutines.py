@@ -1,4 +1,4 @@
-__all__ = ['iscoroutinefunction', 'iscoroutine']
+__all__ = 'iscoroutinefunction', 'iscoroutine'
 
 import collections.abc
 import inspect

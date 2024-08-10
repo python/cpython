@@ -1,2 +1,2 @@
-Deprecate :func:`asyncio.iscoroutinefunction` in favor of
+Deprecate :func:`asyncio.coroutines.iscoroutinefunction` in favor of
 :func:`inspect.iscoroutinefunction`.
