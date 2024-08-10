@@ -189,7 +189,8 @@ def copyfileobj(source_f, target_f):
         try:
             # Use OS copy where available.
             for copy_func in _copy_funcs:
-                if copy_func(source_fd, target_fd):
+                success = copy_func(source_fd, target_fd)
+                if success:
                     return
         except OSError as err:
             # Produce more useful error messages.
