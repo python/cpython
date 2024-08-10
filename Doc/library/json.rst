@@ -116,15 +116,15 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-Using :mod:`json.tool` from the shell to validate and pretty-print:
+Using :mod:`json` from the shell to validate and pretty-print:
 
 .. code-block:: shell-session
 
-    $ echo '{"json":"obj"}' | python -m json.tool
+    $ echo '{"json":"obj"}' | python -m json
     {
         "json": "obj"
     }
-    $ echo '{1.2:3.4}' | python -m json.tool
+    $ echo '{1.2:3.4}' | python -m json
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
 See :ref:`json-commandline` for detailed documentation.
@@ -678,31 +678,32 @@ when serializing instances of "exotic" numerical types such as
 
 
 .. _json-commandline:
-.. program:: json.tool
+.. program:: json
 
-Command Line Interface
+Command-Line Interface
 ----------------------
 
-.. module:: json.tool
+.. module:: json
     :synopsis: A command line to validate and pretty-print JSON.
 
 **Source code:** :source:`Lib/json/tool.py`
 
 --------------
 
-The :mod:`json.tool` module provides a simple command line interface to validate
-and pretty-print JSON objects.
+The :mod:`json` module can be invoked as a script,
+using the interpreter's :option:`-m` switch,
+to validate and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
 specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
 
 .. code-block:: shell-session
 
-    $ echo '{"json": "obj"}' | python -m json.tool
+    $ echo '{"json": "obj"}' | python -m json
     {
         "json": "obj"
     }
-    $ echo '{1.2:3.4}' | python -m json.tool
+    $ echo '{1.2:3.4}' | python -m json
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
 .. versionchanged:: 3.5
@@ -710,8 +711,14 @@ specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
    :option:`--sort-keys` option to sort the output of dictionaries
    alphabetically by key.
 
+.. versionchanged:: 3.14
+   The :mod:`json` module may now be executed as a script.
 
-Command line options
+   Previously :mod:`json.tool` provided the :mod:`json` module's
+   command-line interface.
+
+
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. option:: infile
@@ -720,7 +727,7 @@ Command line options
 
    .. code-block:: shell-session
 
-      $ python -m json.tool mp_films.json
+      $ python -m json mp_films.json
       [
           {
               "title": "And Now for Something Completely Different",
