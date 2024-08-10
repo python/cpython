@@ -683,9 +683,6 @@ when serializing instances of "exotic" numerical types such as
 Command-Line Interface
 ----------------------
 
-.. module:: json
-    :synopsis: A command line to validate and pretty-print JSON.
-
 **Source code:** :source:`Lib/json/tool.py`
 
 --------------
