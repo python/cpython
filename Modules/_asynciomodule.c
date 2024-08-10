@@ -77,8 +77,8 @@ typedef struct {
 #define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
 
 #ifdef Py_GIL_DISABLED
-#   define ASYNCIO_STATE_LOCK(state) PyMutex_Lock(&state->mutex)
-#   define ASYNCIO_STATE_UNLOCK(state) PyMutex_Unlock(&state->mutex)
+#   define ASYNCIO_STATE_LOCK(state) Py_BEGIN_CRITICAL_SECTION_MUT(&state->mutex)
+#   define ASYNCIO_STATE_UNLOCK(state) Py_END_CRITICAL_SECTION(&state->mutex)
 #else
 #   define ASYNCIO_STATE_LOCK(state) ((void)state)
 #   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
@@ -1923,8 +1923,7 @@ register_task(asyncio_state *state, TaskObj *task)
     assert(task != &state->asyncio_tasks.tail);
     if (task->next != NULL) {
         // already registered
-        ASYNCIO_STATE_UNLOCK(state);
-        return;
+        goto exit;
     }
     assert(task->prev == NULL);
     assert(state->asyncio_tasks.head != NULL);
@@ -1932,6 +1931,7 @@ register_task(asyncio_state *state, TaskObj *task)
     task->next = state->asyncio_tasks.head;
     state->asyncio_tasks.head->prev = task;
     state->asyncio_tasks.head = task;
+exit:
     ASYNCIO_STATE_UNLOCK(state);
 }
 
@@ -1951,8 +1951,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
         // not registered
         assert(task->prev == NULL);
         assert(state->asyncio_tasks.head != task);
-        ASYNCIO_STATE_UNLOCK(state);
-        return;
+        goto exit;
     }
     task->next->prev = task->prev;
     if (task->prev == NULL) {
@@ -1964,6 +1963,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
     task->next = NULL;
     task->prev = NULL;
     assert(state->asyncio_tasks.head != task);
+exit:
     ASYNCIO_STATE_UNLOCK(state);
 }
 
@@ -3637,11 +3637,10 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     while (head != tail)
     {
         if (add_one_task(state, tasks, (PyObject *)head, loop) < 0) {
-            ASYNCIO_STATE_UNLOCK(state);
             Py_DECREF(tasks);
             Py_DECREF(loop);
             Py_DECREF(head);
-            return NULL;
+            goto error;
         }
         Py_INCREF(head->next);
         Py_SETREF(head, head->next);
@@ -3666,6 +3665,9 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     Py_DECREF(scheduled_iter);
     Py_DECREF(loop);
     return tasks;
+error:
+    ASYNCIO_STATE_UNLOCK(state);
+    return NULL;
 }
 
 static int
