@@ -710,7 +710,7 @@ specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
 
 .. versionchanged:: 3.14
    The :mod:`json` module may now be executed as a script.
-   Previously :mod:`json.tool` provided the :mod:`json` module's
+   Previously ``json.tool`` provided the :mod:`json` module's
    command-line interface.
 
 
