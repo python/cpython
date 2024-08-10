@@ -687,8 +687,7 @@ Command-line interface
 
 --------------
 
-The :mod:`json` module can be invoked as a script,
-using the interpreter's ``-m`` switch,
+The :mod:`json` module can be invoked as a script via ``python -m json``
 to validate and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
