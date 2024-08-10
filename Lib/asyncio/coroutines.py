@@ -5,7 +5,6 @@ import inspect
 import os
 import sys
 import types
-import warnings
 
 
 def _is_debug_mode():
@@ -19,11 +18,12 @@ _is_coroutine = object()
 
 
 def iscoroutinefunction(func):
+    import warnings
     """Return True if func is a decorated coroutine function."""
     warnings._deprecated("asyncio.iscoroutinefunction",
-                         f"{warnings._DEPRECATED_MSG};"
+                         f"{warnings._DEPRECATED_MSG}; "
                          "use inspect.iscoroutinefunction() instead",
-                         remove=(3, 16))
+                         remove=(3,16))
     return _iscoroutinefunction(func)
 
 
