@@ -188,8 +188,8 @@ we also call *flavours*:
    A subclass of :class:`PurePath`, this path flavour represents Windows
    filesystem paths, including `UNC paths`_::
 
-      >>> PureWindowsPath('c:/', 'Users', 'Me')
-      PureWindowsPath('c:/Users/Me')
+      >>> PureWindowsPath('c:/', 'Users', 'Ximénez')
+      PureWindowsPath('c:/Users/Ximénez')
       >>> PureWindowsPath('//server/share/file')
       PureWindowsPath('//server/share/file')
 
@@ -798,8 +798,8 @@ calls on path objects.  There are three ways to instantiate concrete paths:
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
    represents concrete Windows filesystem paths::
 
-      >>> WindowsPath('c:/', 'Users', 'Me')
-      WindowsPath('c:/Users/Me')
+      >>> WindowsPath('c:/', 'Users', 'Ximénez')
+      WindowsPath('c:/Users/Ximénez')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
