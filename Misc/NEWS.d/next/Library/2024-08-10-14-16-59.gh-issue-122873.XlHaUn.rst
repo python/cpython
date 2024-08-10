@@ -1,0 +1,1 @@
+Enable :mod:`json` module to work as a script using the :option:`-m` switch.
