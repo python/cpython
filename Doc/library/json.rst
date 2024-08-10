@@ -688,7 +688,7 @@ Command-Line Interface
 --------------
 
 The :mod:`json` module can be invoked as a script,
-using the interpreter's :option:`-m` switch,
+using the interpreter's ``-m`` switch,
 to validate and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
