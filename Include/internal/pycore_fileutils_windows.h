@@ -151,6 +151,17 @@ typedef void (*PRtlInitUnicodeString)(
     PCWSTR          SourceString
 );
 
+typedef void (*PRtlFreeUnicodeString)(
+    PUNICODE_STRING UnicodeString
+);
+
+typedef NTSTATUS (*PRtlDosPathNameToNtPathName_U_WithStatus)(
+    PCWSTR DosFileName,
+    PUNICODE_STRING NtFileName,
+    PWSTR *FilePart,
+    PVOID Reserved
+);
+
 static inline BOOL _Py_GetFileInformationByName(
     PCWSTR FileName,
     FILE_INFO_BY_NAME_CLASS FileInformationClass,
@@ -350,7 +361,6 @@ static inline ULONG _Py_RtlNtStatusToDosError(
     return RtlNtStatusToDosError(Status);
 }
 
-
 static inline NTSTATUS _Py_RtlInitUnicodeString(
     PUNICODE_STRING DestinationString,
     PCWSTR          SourceString
@@ -382,6 +392,71 @@ static inline NTSTATUS _Py_RtlInitUnicodeString(
         SourceString
     );
     return STATUS_SUCCESS;
+}
+
+static inline NTSTATUS _Py_RtlFreeUnicodeString(
+    PUNICODE_STRING UnicodeString
+) {
+    static PRtlFreeUnicodeString RtlFreeUnicodeString = NULL;
+    static int RtlFreeUnicodeString_init = -1;
+
+    if (RtlFreeUnicodeString_init < 0) {
+        HMODULE hMod = LoadLibraryW(L"ntdll.dll");
+        RtlFreeUnicodeString_init = 0;
+        if (hMod) {
+            RtlFreeUnicodeString = (PRtlFreeUnicodeString)GetProcAddress(
+                hMod, "RtlFreeUnicodeString");
+            if (RtlFreeUnicodeString) {
+                RtlFreeUnicodeString_init = 1;
+            } else {
+                FreeLibrary(hMod);
+            }
+        }
+    }
+
+    if (RtlFreeUnicodeString_init <= 0) {
+        SetLastError(ERROR_NOT_SUPPORTED);
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    RtlFreeUnicodeString(
+        UnicodeString
+    );
+    return STATUS_SUCCESS;
+}
+
+static inline ULONG _Py_RtlDosPathNameToNtPathName_U_WithStatus(
+    PCWSTR DosFileName,
+    PUNICODE_STRING NtFileName,
+    PWSTR *FilePart,
+    PVOID Reserved
+) {
+    static PRtlDosPathNameToNtPathName_U_WithStatus RtlDosPathNameToNtPathName_U_WithStatus = NULL;
+    static int RtlDosPathNameToNtPathName_U_WithStatus_init = -1;
+
+    if (RtlDosPathNameToNtPathName_U_WithStatus_init < 0) {
+        HMODULE hMod = LoadLibraryW(L"ntdll.dll");
+        RtlDosPathNameToNtPathName_U_WithStatus_init = 0;
+        if (hMod) {
+            RtlDosPathNameToNtPathName_U_WithStatus = (PRtlDosPathNameToNtPathName_U_WithStatus)GetProcAddress(
+                hMod, "RtlDosPathNameToNtPathName_U_WithStatus");
+            if (RtlDosPathNameToNtPathName_U_WithStatus) {
+                RtlDosPathNameToNtPathName_U_WithStatus_init = 1;
+            } else {
+                FreeLibrary(hMod);
+            }
+        }
+    }
+
+    if (RtlDosPathNameToNtPathName_U_WithStatus_init <= 0) {
+        return ERROR_NOT_SUPPORTED;
+    }
+    return RtlDosPathNameToNtPathName_U_WithStatus(
+        DosFileName,
+        NtFileName,
+        FilePart,
+Reserved
+    );
 }
 
 #endif

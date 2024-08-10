@@ -15938,6 +15938,8 @@ join_path_filenameW_n(const wchar_t *path_wide, const wchar_t *filename, size_t 
         wcsncpy(result + path_len, filename, filename_length);
 
     }
+    /* Forcefully null terminate the string. */
+    result[size - 1] = (wchar_t)'\x0';
     return result;
 }
 
@@ -16023,7 +16025,7 @@ DirEntry_from_file_directory_information(PyObject *module, path_t *path, FILE_DI
     entry->lstat = NULL;
     entry->got_file_index = 0;
 
-    entry->name = PyUnicode_FromWideChar(fileDirectoryInformation->FileName, fileDirectoryInformation->FileNameLength);
+    entry->name = PyUnicode_FromWideChar(fileDirectoryInformation->FileName, fileDirectoryInformation->FileNameLength / sizeof(wchar_t));
     if (!entry->name)
     {
         goto error;
@@ -16039,7 +16041,7 @@ DirEntry_from_file_directory_information(PyObject *module, path_t *path, FILE_DI
         }
     }
 
-    joined_path = join_path_filenameW_n(path->wide, fileDirectoryInformation->FileName, fileDirectoryInformation->FileNameLength);
+    joined_path = join_path_filenameW_n(path->wide, fileDirectoryInformation->FileName, fileDirectoryInformation->FileNameLength / sizeof(wchar_t));
     if (!joined_path)
     {
         goto error;
@@ -16234,8 +16236,9 @@ static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
     HANDLE directoryHandle = iterator->directoryHandle;
+    iterator->directoryHandle = NULL;
 
-    if (NULL == _Py_atomic_exchange_ptr(&directoryHandle, NULL))
+    if (NULL == directoryHandle)
     {
         return;
     }
@@ -16247,8 +16250,8 @@ ScandirIterator_closedir(ScandirIterator *iterator)
     if (iterator->fullyQualifiedDirectoryName.Buffer)
     {
         /* The buffer will never again be used, it must be freed */
-        PyMem_Free(iterator->fullyQualifiedDirectoryName.Buffer);
-        iterator->fullyQualifiedDirectoryName.Buffer = NULL;
+        /* Notice that it was allocated by RtlDosPathNameToNtPathName_U_WithStatus from ntdll, so it must be freed accordingly. */
+        _Py_RtlFreeUnicodeString(&iterator->fullyQualifiedDirectoryName);
     }
     /* De-init the UNICODE_STRING struct (notice that this is not the Buffer we just freed) */
     memset(&iterator->fullyQualifiedDirectoryName, 0, sizeof(iterator->fullyQualifiedDirectoryName));
@@ -16271,7 +16274,7 @@ ScandirIterator_iternext(ScandirIterator *iterator)
     ULONG dosErrorCode;
 
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (NULL == iterator->directoryHandle)
+    if (NULL == iterator->directoryHandle || 0 == iterator->fileDirectoryInformationSize)
     {
         return NULL;
     }
@@ -16297,11 +16300,17 @@ ScandirIterator_iternext(ScandirIterator *iterator)
             FALSE /* RestartScan */
         );
         Py_END_ALLOW_THREADS
-        
+
         /* TODO: Debug assert ioStatusBlock.Information LEQ iterator->fileDirectoryInformationSize */
         /* TODO: Should ioStatusBlock.Status be equal to ntstatus since this is a synchronous call? */
 
         /* Check for specific ntstatus-es which do not merit an actual error. */
+        if (STATUS_NO_MORE_FILES == ntstatus)
+        {
+            /* We have successfully finished the iteration. */   
+            break;
+        }
+
         if (STATUS_BUFFER_OVERFLOW == ntstatus || 0 == ioStatusBlock.Information)
         {
             /* Contrary to the name, this means that fileDirectoryInformationSize was not sufficient to hold the entry(ies) we requested. */
@@ -16318,11 +16327,6 @@ ScandirIterator_iternext(ScandirIterator *iterator)
             }
             /* Try the query again with this resized buffer. */
             continue;
-        }
-        else if (STATUS_NO_MORE_FILES == ntstatus)
-        {
-            /* We have successfully finished the iteration. */   
-            break;
         }
 
         _STATIC_ASSERT(!NT_SUCCESS(STATUS_NO_MORE_FILES));
@@ -16347,7 +16351,7 @@ ScandirIterator_iternext(ScandirIterator *iterator)
             path_error(&iterator->path);
             dosErrorCode = _Py_RtlNtStatusToDosError(ntstatus);
             SetLastError(dosErrorCode);
-            break;;
+            break;
         }
 
         /* Skip over . and .. */
@@ -16356,9 +16360,9 @@ ScandirIterator_iternext(ScandirIterator *iterator)
         /* TODO: Debug assert iterator->fileDirectoryInformation->FileName is not NULL. */
         /* TODO: Debug assert iterator->fileDirectoryInformation->FileNameLength is not 0. */
         if (
-            /* TODO: Are these checks still relevant? */
-            0 != wcsncmp(iterator->fileDirectoryInformation->FileName, L".", iterator->fileDirectoryInformation->FileNameLength) &&
-            0 != wcsncmp(iterator->fileDirectoryInformation->FileName, L"..", iterator->fileDirectoryInformation->FileNameLength)
+            /* These checks still relevant, even with NtQueryDirectoryFile */
+            0 != wcsncmp(iterator->fileDirectoryInformation->FileName, L".", iterator->fileDirectoryInformation->FileNameLength / sizeof(wchar_t)) &&
+            0 != wcsncmp(iterator->fileDirectoryInformation->FileName, L"..", iterator->fileDirectoryInformation->FileNameLength / sizeof(wchar_t))
         ) {
             PyObject *module = PyType_GetModule(Py_TYPE(iterator));
             entry = DirEntry_from_file_directory_information(module, &iterator->path, iterator->fileDirectoryInformation);
@@ -16564,8 +16568,6 @@ os_scandir_impl(PyObject *module, path_t *path)
     HANDLE directoryHandle;
     OBJECT_ATTRIBUTES directoryObjectAttributes;
     NTSTATUS ntstatus;
-    wchar_t *fullyQuallifiedDirectoryNameWstr;
-    DWORD fullyQuallifiedDirectoryNameLength;
     IO_STATUS_BLOCK ioStatusBlock;
     ULONG dosErrorCode;
 #else
@@ -16589,8 +16591,6 @@ os_scandir_impl(PyObject *module, path_t *path)
     iterator->directoryHandle = NULL;
     iterator->fileDirectoryInformation = NULL;
     iterator->fileDirectoryInformationSize = 0;
-    fullyQuallifiedDirectoryNameWstr = NULL;
-    fullyQuallifiedDirectoryNameLength = 0;
     ntstatus = STATUS_SUCCESS;
     memset(&iterator->fullyQualifiedDirectoryName, 0, sizeof(iterator->fullyQualifiedDirectoryName));
     memset(&ioStatusBlock, 0, sizeof(ioStatusBlock));
@@ -16603,29 +16603,14 @@ os_scandir_impl(PyObject *module, path_t *path)
     memset(path, 0, sizeof(path_t));
 
 #ifdef MS_WINDOWS
-    /* Get the required length of the fully qualified path */
-    fullyQuallifiedDirectoryNameLength = GetFullPathNameW(iterator->path.wide, 0, NULL, NULL);
-    if (0 == fullyQuallifiedDirectoryNameLength)
-    {
-        path_error(&iterator->path);
-        goto error;
-    }
 
-    fullyQuallifiedDirectoryNameWstr = PyMem_New(wchar_t, fullyQuallifiedDirectoryNameLength);
-    if (!fullyQuallifiedDirectoryNameWstr) {
-        PyErr_NoMemory();
-        goto error;
-    }
-    (void)GetFullPathNameW(iterator->path.wide, fullyQuallifiedDirectoryNameLength, fullyQuallifiedDirectoryNameWstr, NULL);
-
-    ntstatus = _Py_RtlInitUnicodeString(&iterator->fullyQualifiedDirectoryName, fullyQuallifiedDirectoryNameWstr);
+    ntstatus = _Py_RtlDosPathNameToNtPathName_U_WithStatus(iterator->path.wide, &iterator->fullyQualifiedDirectoryName, NULL, NULL);
     if (!NT_SUCCESS(ntstatus))
     {
-        dosErrorCode = _Py_RtlNtStatusToDosError(ntstatus);
-        SetLastError(dosErrorCode);
+        path_error(&iterator->path);
+        SetLastError(ERROR_PATH_NOT_FOUND);
         goto error;
     }
-    fullyQuallifiedDirectoryNameWstr = NULL; /* Ownership is now held by the iterator itself */
 
     InitializeObjectAttributes(
         &directoryObjectAttributes, /* Out parameter */
