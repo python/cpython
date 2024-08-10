@@ -1354,7 +1354,7 @@ def buildPython():
     if getVersionMajorMinor() >= (3, 6):
         # XXX this is extra-fragile
         path = os.path.join(path_to_lib,
-            '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
+            '_sysconfigdata_%s_darwin.py' % (ABIFLAGS,))
     else:
         path = os.path.join(path_to_lib, '_sysconfigdata.py')
     fp = open(path, 'r')
