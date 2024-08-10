@@ -1748,14 +1748,16 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(str(object=b'foo', errors='strict'), 'foo')
 
     def test_constructor_errors(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
             str(b"x", b"ascii")
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
             str(b"x", encoding=b"ascii")
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
             str(b"x", "ascii", b"strict")
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
             str(b"x", "ascii", errors=b"strict")
+        with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
+            str("too", "many", "argu", "ments")
 
     def test_constructor_defaults(self):
         """Check the constructor argument defaults."""
