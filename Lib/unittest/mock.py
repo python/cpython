@@ -2456,7 +2456,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
 
     >>> mock = AsyncMock()
     >>> inspect.iscoroutinefunction(mock)
-    Trues
+    True
     >>> inspect.isawaitable(mock())
     True
 
