@@ -100,7 +100,7 @@ if hasattr(os, 'copy_file_range'):
                 sent = os.copy_file_range(source_fd, target_fd, blocksize,
                                           offset_dst=offset)
             except OSError as err:
-                if err.errno != EXDEV:
+                if err.errno not in (ETXTBSY, EXDEV):
                     raise
                 return False
             if sent == 0:
