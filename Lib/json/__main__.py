@@ -11,11 +11,10 @@ Usage::
 
 """
 import json.tool
-import sys
 
 
 if __name__ == '__main__':
     try:
         json.tool.main()
     except BrokenPipeError as exc:
-        sys.exit(exc.errno)
+        raise SystemExit(exc.errno)
