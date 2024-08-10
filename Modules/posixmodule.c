@@ -16307,7 +16307,7 @@ ScandirIterator_iternext(ScandirIterator *iterator)
         /* Check for specific ntstatus-es which do not merit an actual error. */
         if (STATUS_NO_MORE_FILES == ntstatus)
         {
-            /* We have successfully finished the iteration. */   
+            /* We have successfully finished the iteration. */
             break;
         }
 
@@ -16336,7 +16336,7 @@ ScandirIterator_iternext(ScandirIterator *iterator)
         _STATIC_ASSERT(!NT_SUCCESS(STATUS_INVALID_PARAMETER));
         _STATIC_ASSERT(!NT_SUCCESS(STATUS_INFO_LENGTH_MISMATCH));
         if (!NT_SUCCESS(ntstatus))
-        { 
+        {
             /* TODO: Debug assert (STATUS_BUFFER_TOO_SMALL != ntstatus). */
             /* This error happens if-and-only-if the buffer is LT the minimal information structure size. */
 
