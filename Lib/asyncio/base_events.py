@@ -836,8 +836,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         return handle
 
     def _check_callback(self, callback, method):
-        if (coroutines.iscoroutine(callback) or
-                coroutines.iscoroutinefunction(callback)):
+        if (coroutines._iscoroutine(callback) or
+                coroutines._iscoroutinefunction(callback)):
             raise TypeError(
                 f"coroutines cannot be used with {method}()")
         if not callable(callback):

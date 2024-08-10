@@ -32,7 +32,6 @@ import pprint
 import sys
 import builtins
 import pkgutil
-from asyncio import iscoroutinefunction
 import threading
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
@@ -57,12 +56,12 @@ def _is_async_obj(obj):
         return False
     if hasattr(obj, '__func__'):
         obj = getattr(obj, '__func__')
-    return iscoroutinefunction(obj) or inspect.isawaitable(obj)
+    return inspect.iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
     if getattr(func, '__code__', None):
-        return iscoroutinefunction(func)
+        return inspect.iscoroutinefunction(func)
     else:
         return False
 
@@ -556,7 +555,7 @@ class NonCallableMock(Base):
                     unwrapped_attr = inspect.unwrap(unwrapped_attr)
                 except ValueError:
                     pass
-                if iscoroutinefunction(unwrapped_attr):
+                if inspect.iscoroutinefunction(unwrapped_attr):
                     _spec_asyncs.append(attr)
 
             spec = spec_list
@@ -2456,8 +2455,8 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
-    >>> iscoroutinefunction(mock)
-    True
+    >>> inspect.iscoroutinefunction(mock)
+    Trues
     >>> inspect.isawaitable(mock())
     True
 
