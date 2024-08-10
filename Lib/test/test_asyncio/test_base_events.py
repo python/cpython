@@ -268,7 +268,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         h = self.loop.call_later(10.0, cb)
         self.assertIsInstance(h, asyncio.TimerHandle)
-        self.assertIn(h, self.loop._scheduled)
+        self.assertIn((h.when(), h), self.loop._scheduled)
         self.assertNotIn(h, self.loop._ready)
         with self.assertRaises(TypeError, msg="delay must not be None"):
             self.loop.call_later(None, cb)
@@ -378,13 +378,13 @@ class BaseEventLoopTests(test_utils.TestCase):
         h1.cancel()
 
         self.loop._process_events = mock.Mock()
-        self.loop._scheduled.append(h1)
-        self.loop._scheduled.append(h2)
+        self.loop._scheduled.append((h1.when(), h1))
+        self.loop._scheduled.append((h2.when(), h2))
         self.loop._run_once()
 
         t = self.loop._selector.select.call_args[0][0]
         self.assertTrue(9.5 < t < 10.5, t)
-        self.assertEqual([h2], self.loop._scheduled)
+        self.assertEqual([(h2.when(), h2)], self.loop._scheduled)
         self.assertTrue(self.loop._process_events.called)
 
     def test_set_debug(self):
@@ -406,7 +406,7 @@ class BaseEventLoopTests(test_utils.TestCase):
                                 self.loop, None)
 
         self.loop._process_events = mock.Mock()
-        self.loop._scheduled.append(h)
+        self.loop._scheduled.append((h.when(), h))
         self.loop._run_once()
 
         self.assertTrue(processed)
@@ -486,7 +486,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertEqual(len(self.loop._scheduled), not_cancelled_count)
 
         # Ensure only uncancelled events remain scheduled
-        self.assertTrue(all([not x._cancelled for x in self.loop._scheduled]))
+        self.assertTrue(all([not x._cancelled for _, x in self.loop._scheduled]))
 
     def test_run_until_complete_type_error(self):
         self.assertRaises(TypeError,
