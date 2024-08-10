@@ -30420,15 +30420,15 @@ fi
 printf "%s\n" "$py_cv_module__blake2" >&6; }
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
-printf %s "checking whether C compiler accepts -mavx... " >&6; }
-if test ${ax_cv_check_cflags__Werror__mavx+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
+printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
+if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -mavx"
+  CFLAGS="$CFLAGS -Werror -msse -msse2 -msse3 -msse4.1 -msse4.2"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -30442,19 +30442,19 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags__Werror__mavx=yes
+  ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2=yes
 else $as_nop
-  ax_cv_check_cflags__Werror__mavx=no
+  ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx" >&5
-printf "%s\n" "$ax_cv_check_cflags__Werror__mavx" >&6; }
-if test "x$ax_cv_check_cflags__Werror__mavx" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" = xyes
 then :
 
-  LIBHACL_SIMD128_FLAGS="-mavx"
+  LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
   LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
