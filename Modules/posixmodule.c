@@ -16083,7 +16083,7 @@ DirEntry_from_file_directory_information(PyObject *module, path_t *path, FILE_DI
         result->st_ino = fileDirectoryInformation->FileIndex;
     }
 
-#if 0 /* Fix this */
+#if 0 /* TODO: Fix this */
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
     open other name surrogate reparse points without traversing them. To
     detect/handle these, check st_file_attributes and st_reparse_tag. */
@@ -16654,31 +16654,6 @@ os_scandir_impl(PyObject *module, path_t *path)
         goto error;
     }
     iterator->fileDirectoryInformationSize = INITIAL_FILE_DIRECTORY_INFORMATION_ENTRY_SIE;
-
-#if 0 /* Does not seem to be neccessary according to MS-Docs */
-    Py_BEGIN_ALLOW_THREADS
-    ntstatus = _Py_NtQueryDirectoryFile(
-        iterator->directoryHandle, /* FileHandle */
-        NULL, /* Event */
-        NULL, /* ApcRoutine (callback) */
-        NULL, /* ApcContext (for callback routine) */
-        &ioStatusBlock, /* IoStatusBlock */
-        NULL, /* FileInformation (output) */
-        0, /* Length (maximum length of output buffer) */
-        FileDirectoryInformation, /* FileInformationClass */
-        TRUE, /* ReturnSingleEntry */
-        NULL, /* FileName */
-        TRUE /* RestartScan */
-    );
-    Py_END_ALLOW_THREADS
-    if (!NT_SUCCESS(ntstatus))
-    {
-        path_error(&iterator->path);
-        dosErrorCode = _Py_RtlNtStatusToDosError(ntstatus);
-        SetLastError(dosErrorCode);
-        goto error;
-    }
-#endif
 
 #else /* POSIX */
     errno = 0;
