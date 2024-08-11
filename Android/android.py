@@ -324,36 +324,42 @@ async def list_devices():
     return serials
 
 
-# Before boot is completed, `pm list` will fail with the error "Can't find
-# service: package".
-async def boot_completed(serial):
-    return (await async_check_output(
-        adb, "-s", serial, "shell", "getprop", "sys.boot_completed"
-    )).strip() == "1"
-
-
 async def find_device(context, initial_devices):
     if context.managed:
-        serial = None
-        while serial is None:
+        print("Waiting for managed device - this may take several minutes")
+        while True:
             new_devices = set(await list_devices()).difference(initial_devices)
             if len(new_devices) == 0:
                 await asyncio.sleep(1)
             elif len(new_devices) == 1:
                 serial = new_devices.pop()
+                print(f"Serial: {serial}")
+                return serial
             else:
                 exit(f"Found more than one new device: {new_devices}")
     else:
-        serial = context.connected
+        return context.connected
 
-    print(f"Serial: {serial}")
-    while not await boot_completed(serial):
-        await asyncio.sleep(1)
-    print("Boot completed")
-    return serial
+
+# Before boot is completed, `pm list` will fail with the error "Can't find
+# service: package".
+async def boot_completed(serial):
+    # No need to show a message if the device is already booted.
+    shown_message = False
+    while True:
+        if (await async_check_output(
+            adb, "-s", serial, "shell", "getprop", "sys.boot_completed"
+        )).strip() == "1":
+            return
+        else:
+            if not shown_message:
+                print("Waiting for boot")
+                shown_message = True
+            await asyncio.sleep(1)
 
 
 async def find_uid(serial):
+    print("Waiting for app to start - this may take several minutes")
     testbed_package = "org.python.testbed"
     while True:
         lines = (await async_check_output(
@@ -375,12 +381,17 @@ async def find_uid(serial):
 
 
 async def logcat_task(context, initial_devices):
-    serial = await find_device(context, initial_devices)
+    # Gradle may need to do some large downloads of libraries and emulator
+    # images. This will happen during find_device in --managed mode, or find_uid
+    # in --connected mode.
+    startup_timeout = 600
+    serial = await wait_for(find_device(context, initial_devices), startup_timeout)
+    await wait_for(boot_completed(serial), startup_timeout)
 
     # Because Gradle uninstalls the app after running the tests, its UID should
     # be different every time. There's therefore no need to filter the logs by
     # timestamp or PID.
-    uid = await find_uid(serial)
+    uid = await wait_for(find_uid(serial), startup_timeout)
 
     args = [adb, "-s", serial, "logcat", "--uid", uid,  "--format", "tag"]
     hidden_output = []
