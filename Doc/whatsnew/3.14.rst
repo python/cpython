@@ -124,6 +124,15 @@ Add notes for JSON serialization errors that allow to identify the source
 of the error.
 (Contributed by Serhiy Storchaka in :gh:`122163`.)
 
+operator
+--------
+
+* Two new functions ``operator.is_none`` and ``operator.is_not_none``
+  have been added, such that ``operator.is_none(obj)`` is equivalent
+  to ``obj is None`` and ``operator.is_not_none(obj)`` is equivalent
+  to ``obj is not None``.
+  (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
+
 os
 --
 
@@ -137,10 +146,8 @@ pathlib
 
 * Add methods to :class:`pathlib.Path` to recursively copy or remove files:
 
-  * :meth:`~pathlib.Path.copy` copies the content of one file to another, like
-    :func:`shutil.copyfile`.
-  * :meth:`~pathlib.Path.copytree` copies one directory tree to another, like
-    :func:`shutil.copytree`.
+  * :meth:`~pathlib.Path.copy` copies a file or directory tree to a given
+    destination.
   * :meth:`~pathlib.Path.delete` removes a file or directory tree.
 
   (Contributed by Barney Gale in :gh:`73991`.)
@@ -424,6 +431,11 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* :func:`!asyncio.iscoroutinefunction` is deprecated
+  and will be removed in Python 3.16,
+  use :func:`inspect.iscoroutinefunction` instead.
+  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
