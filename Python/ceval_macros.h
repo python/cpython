@@ -375,13 +375,6 @@ do { \
 } while (0);
 
 
-// GH-89279: Force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
-
 static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
     return (tstate->py_recursion_remaining-- <= 0) &&
         _Py_CheckRecursiveCallPy(tstate);
