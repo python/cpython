@@ -11,6 +11,7 @@ Two base classes are defined here -- PurePathBase and PathBase -- that
 resemble pathlib's PurePath and Path respectively.
 """
 
+import errno
 import functools
 import operator
 import posixpath
@@ -564,14 +565,33 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
-    def _samefile_safe(self, other_path):
+    def _check_files_differ(self, other_path):
         """
-        Like samefile(), but returns False rather than raising OSError.
+        Raise OSError(EINVAL) if both paths refer to the same file.
         """
         try:
-            return self.samefile(other_path)
+            if not self.samefile(other_path):
+                return
         except (OSError, ValueError):
-            return False
+            return
+        err = OSError(errno.EINVAL, "Source and target are the same file")
+        err.filename = str(self)
+        err.filename2 = str(other_path)
+        raise err
+
+    def _check_paths_disjoint(self, other_path):
+        """
+        Raise OSError(EINVAL) if the other path is within this path.
+        """
+        if self == other_path:
+            err = OSError(errno.EINVAL, "Source and target are the same path")
+        elif self in other_path.parents:
+            err = OSError(errno.EINVAL, "Source path is a parent of target path")
+        else:
+            return
+        err.filename = str(self)
+        err.filename2 = str(other_path)
+        raise err
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -826,8 +846,7 @@ class PathBase(PurePathBase):
         """
         Copy the contents of this file to the given target.
         """
-        if self._samefile_safe(target):
-            raise OSError(f"{self!r} and {target!r} are the same file")
+        self._check_files_differ(target)
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -847,14 +866,13 @@ class PathBase(PurePathBase):
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
-        if target.is_relative_to(self):
-            try:
-                raise OSError(f"Cannot copy {self!r} inside itself: {target!r}")
-            except OSError as err:
-                if on_error is None:
-                    raise
-                on_error(err)
-                return
+        try:
+            self._check_paths_disjoint(target)
+        except OSError as err:
+            if on_error is None:
+                raise
+            on_error(err)
+            return
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
