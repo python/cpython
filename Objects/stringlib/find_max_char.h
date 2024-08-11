@@ -63,18 +63,18 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 
     if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
 #if STRINGLIB_SIZEOF_CHAR <= 1
-        if (!_Py_IS_ALIGNED(p, 1)) {
+        if (!_Py_IS_ALIGNED(p, 1) && p + 1 <= _end) {
             value |= *p++;
         }
 #endif
 #if STRINGLIB_SIZEOF_CHAR <= 2
-        if (!_Py_IS_ALIGNED(p, sizeof(uint16_t))) {
+        if (!_Py_IS_ALIGNED(p, sizeof(uint16_t)) && p + sizeof(uint16_t) <= _end) {
             value |= *(const uint16_t*)p;
             p += sizeof(uint16_t);
         }
 #endif
 #if SIZEOF_SIZE_T == 8
-        if (!_Py_IS_ALIGNED(p, sizeof(uint32_t))) {
+        if (!_Py_IS_ALIGNED(p, sizeof(uint32_t)) && p + sizeof(uint32_t) <= _end) {
             value |= *(const uint32_t*)p;
             p += sizeof(uint32_t);
         }
@@ -113,6 +113,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
         value |= *p++;
     }
 #endif
+
 #ifdef MASK_UCS2
     if (value & MASK_UCS2)
         return MAX_CHAR_UCS4;
