@@ -30,6 +30,11 @@ try:
 except KeyError:
     sys.exit("The ANDROID_HOME environment variable is required.")
 
+sdkmanager = Path(
+    f"{android_home}/cmdline-tools/latest/bin/sdkmanager"
+    + (".bat" if os.name == "nt" else "")
+)
+
 adb = Path(
     f"{android_home}/platform-tools/adb"
     + (".exe" if os.name == "nt" else "")
@@ -478,10 +483,9 @@ async def gradle_task(context):
 
 async def run_testbed(context):
     if not adb.exists():
-        sys.exit(
-            f"{adb} does not exist. Install the Platform Tools package using "
-            f"the Android SDK manager."
-        )
+        print("Installing Platform-Tools")
+        # Input "y" to accept licenses.
+        run([sdkmanager, "platform-tools"], text=True, input="y\n" * 100)
 
     setup_testbed_if_needed(context)
 
