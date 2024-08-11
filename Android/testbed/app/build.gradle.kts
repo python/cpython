@@ -6,13 +6,13 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val PYTHON_DIR = File(projectDir, "../../..").canonicalPath
+val PYTHON_DIR = file("../../..").canonicalPath
 val PYTHON_CROSS_DIR = "$PYTHON_DIR/cross-build"
 
 val ABIS = mapOf(
     "arm64-v8a" to "aarch64-linux-android",
     "x86_64" to "x86_64-linux-android",
-).filter { File("$PYTHON_CROSS_DIR/${it.value}").exists() }
+).filter { file("$PYTHON_CROSS_DIR/${it.value}").exists() }
 if (ABIS.isEmpty()) {
     throw GradleException(
         "No Android ABIs found in $PYTHON_CROSS_DIR: see Android/README.md " +
@@ -20,7 +20,7 @@ if (ABIS.isEmpty()) {
     )
 }
 
-val PYTHON_VERSION = File("$PYTHON_DIR/Include/patchlevel.h").useLines {
+val PYTHON_VERSION = file("$PYTHON_DIR/Include/patchlevel.h").useLines {
     for (line in it) {
         val match = """#define PY_VERSION\s+"(\d+\.\d+)""".toRegex().find(line)
         if (match != null) {
@@ -28,6 +28,16 @@ val PYTHON_VERSION = File("$PYTHON_DIR/Include/patchlevel.h").useLines {
         }
     }
     throw GradleException("Failed to find Python version")
+}
+
+android.ndkVersion = file("../../android-env.sh").useLines {
+    for (line in it) {
+        val match = """ndk_version=(\S+)""".toRegex().find(line)
+        if (match != null) {
+            return@useLines match.groupValues[1]
+        }
+    }
+    throw GradleException("Failed to find NDK version")
 }
 
 
