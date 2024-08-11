@@ -1792,7 +1792,7 @@ Basic customization
    The return value must be a string object.
 
    The default implementation by the :class:`object` class should be given
-   an empty *format_spec* string. It delegates to :meth:`__str__`
+   an empty *format_spec* string. It delegates to :meth:`__str__`.
 
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
@@ -1837,9 +1837,10 @@ Basic customization
    operations from a single root operation, see :func:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
-   with :ref:`comparisons`: equality compares according to object identity,
-   and order comparisons raise :exc:`TypeError`. Each default method may generate
-   these results directly, but may also return :data:`NotImplemented`.
+   with :ref:`expressions-value-comparisons`: equality compares according to
+   object identity, and order comparisons raise :exc:`TypeError`. Each default
+   method may generate these results directly, but may also return
+   :data:`NotImplemented`.
 
    See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
@@ -2041,8 +2042,8 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 .. method:: object.__dir__(self)
 
    Called when :func:`dir` is called on the object. An iterable must be
-   returned. The :func:`dir` converts the returned iterable to a list and
-   sorts it. The :class:`object` class itself provides an implementation
+   returned. The :func:`dir` function converts the returned iterable to a list
+   and sorts it. The :class:`object` class itself provides an implementation
    consistent with the :func:`dir` behaviour for arbitrary objects.
 
 
@@ -2112,7 +2113,7 @@ method (a so-called *descriptor* class) appears in an *owner* class (the
 descriptor must be in either the owner's class dictionary or in the class
 dictionary for one of its parents).  In the examples below, "the attribute"
 refers to the attribute whose name is the key of the property in the owner
-class' :attr:`__dict__`.  The :class:`object` class itself does not
+class' :attr:`~object.__dict__`.  The :class:`object` class itself does not
 implement any of these protocols.
 
 .. method:: object.__get__(self, instance, owner=None)
