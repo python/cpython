@@ -503,11 +503,10 @@ must be expressed with escapes.
    single: r"; raw string literal
 
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
-or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
-literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
-escapes in raw strings are not treated specially. Given that Python 2.x's raw
-unicode literals behave differently than Python 3.x's the ``'ur'`` syntax
-is not supported.
+or ``'R'``; such constructs are called :dfn:`raw string literals`
+and :dfn:`raw bytes literals` respectively and treat backslashes as
+literal characters.  As a result, in raw string literals, ``'\U'`` and ``'\u'``
+escapes are not treated specially.
 
 .. versionadded:: 3.3
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
