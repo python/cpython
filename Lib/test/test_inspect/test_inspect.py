@@ -45,10 +45,7 @@ from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
-from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
-from test.test_inspect import inspect_stringized_annotations_2
-from test.test_inspect import inspect_stringized_annotations_pep695
 
 
 # Functions tested in this suite:
@@ -126,7 +123,7 @@ class IsTestBase(unittest.TestCase):
             self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
-        support.check__all__(self, inspect, not_exported=("modulesbyfile",))
+        support.check__all__(self, inspect, not_exported=("modulesbyfile",), extra=("get_annotations",))
 
 def generator_function_example(self):
     for i in range(2):
@@ -405,6 +402,8 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.isroutine(type))
         self.assertFalse(inspect.isroutine(int))
         self.assertFalse(inspect.isroutine(type('some_class', (), {})))
+        # partial
+        self.assertTrue(inspect.isroutine(functools.partial(mod.spam)))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
@@ -1595,216 +1594,6 @@ class TestClassesAndFunctions(unittest.TestCase):
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
 
-    def test_get_annotations_with_stock_annotations(self):
-        def foo(a:int, b:str): pass
-        self.assertEqual(inspect.get_annotations(foo), {'a': int, 'b': str})
-
-        foo.__annotations__ = {'a': 'foo', 'b':'str'}
-        self.assertEqual(inspect.get_annotations(foo), {'a': 'foo', 'b': 'str'})
-
-        self.assertEqual(inspect.get_annotations(foo, eval_str=True, locals=locals()), {'a': foo, 'b': str})
-        self.assertEqual(inspect.get_annotations(foo, eval_str=True, globals=locals()), {'a': foo, 'b': str})
-
-        isa = inspect_stock_annotations
-        self.assertEqual(inspect.get_annotations(isa), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.MyClass), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.function), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function2), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function3), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(inspect), {}) # inspect module has no annotations
-        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass), {})
-        self.assertEqual(inspect.get_annotations(isa.unannotated_function), {})
-
-        self.assertEqual(inspect.get_annotations(isa, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.function, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=True), {'a': int, 'b': str, 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=True), {'a': int, 'b': str, 'c': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(inspect, eval_str=True), {})
-        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=True), {})
-        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=True), {})
-
-        self.assertEqual(inspect.get_annotations(isa, eval_str=False), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=False), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.function, eval_str=False), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=False), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=False), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(inspect, eval_str=False), {})
-        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=False), {})
-        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=False), {})
-
-        def times_three(fn):
-            @functools.wraps(fn)
-            def wrapper(a, b):
-                return fn(a*3, b*3)
-            return wrapper
-
-        wrapped = times_three(isa.function)
-        self.assertEqual(wrapped(1, 'x'), isa.MyClass(3, 'xxx'))
-        self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
-        self.assertEqual(inspect.get_annotations(wrapped), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(wrapped, eval_str=False), {'a': int, 'b': str, 'return': isa.MyClass})
-
-    def test_get_annotations_with_stringized_annotations(self):
-        isa = inspect_stringized_annotations
-        self.assertEqual(inspect.get_annotations(isa), {'a': 'int', 'b': 'str'})
-        self.assertEqual(inspect.get_annotations(isa.MyClass), {'a': 'int', 'b': 'str'})
-        self.assertEqual(inspect.get_annotations(isa.function), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(isa.function2), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(isa.function3), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
-        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass), {})
-        self.assertEqual(inspect.get_annotations(isa.unannotated_function), {})
-
-        self.assertEqual(inspect.get_annotations(isa, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.function, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=True), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=True), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=True), {})
-        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=True), {})
-
-        self.assertEqual(inspect.get_annotations(isa, eval_str=False), {'a': 'int', 'b': 'str'})
-        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=False), {'a': 'int', 'b': 'str'})
-        self.assertEqual(inspect.get_annotations(isa.function, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=False), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=False), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
-        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=False), {})
-        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=False), {})
-
-        isa2 = inspect_stringized_annotations_2
-        self.assertEqual(inspect.get_annotations(isa2), {})
-        self.assertEqual(inspect.get_annotations(isa2, eval_str=True), {})
-        self.assertEqual(inspect.get_annotations(isa2, eval_str=False), {})
-
-        def times_three(fn):
-            @functools.wraps(fn)
-            def wrapper(a, b):
-                return fn(a*3, b*3)
-            return wrapper
-
-        wrapped = times_three(isa.function)
-        self.assertEqual(wrapped(1, 'x'), isa.MyClass(3, 'xxx'))
-        self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
-        self.assertEqual(inspect.get_annotations(wrapped), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
-        self.assertEqual(inspect.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(wrapped, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
-
-        # test that local namespace lookups work
-        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
-        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
-
-    def test_pep695_generic_class_with_future_annotations(self):
-        ann_module695 = inspect_stringized_annotations_pep695
-        A_annotations = inspect.get_annotations(ann_module695.A, eval_str=True)
-        A_type_params = ann_module695.A.__type_params__
-        self.assertIs(A_annotations["x"], A_type_params[0])
-        self.assertEqual(A_annotations["y"].__args__[0], Unpack[A_type_params[1]])
-        self.assertIs(A_annotations["z"].__args__[0], A_type_params[2])
-
-    def test_pep695_generic_class_with_future_annotations_and_local_shadowing(self):
-        B_annotations = inspect.get_annotations(
-            inspect_stringized_annotations_pep695.B, eval_str=True
-        )
-        self.assertEqual(B_annotations, {"x": int, "y": str, "z": bytes})
-
-    def test_pep695_generic_class_with_future_annotations_name_clash_with_global_vars(self):
-        ann_module695 = inspect_stringized_annotations_pep695
-        C_annotations = inspect.get_annotations(ann_module695.C, eval_str=True)
-        self.assertEqual(
-            set(C_annotations.values()),
-            set(ann_module695.C.__type_params__)
-        )
-
-    def test_pep_695_generic_function_with_future_annotations(self):
-        ann_module695 = inspect_stringized_annotations_pep695
-        generic_func_annotations = inspect.get_annotations(
-            ann_module695.generic_function, eval_str=True
-        )
-        func_t_params = ann_module695.generic_function.__type_params__
-        self.assertEqual(
-            generic_func_annotations.keys(), {"x", "y", "z", "zz", "return"}
-        )
-        self.assertIs(generic_func_annotations["x"], func_t_params[0])
-        self.assertEqual(generic_func_annotations["y"], Unpack[func_t_params[1]])
-        self.assertIs(generic_func_annotations["z"].__origin__, func_t_params[2])
-        self.assertIs(generic_func_annotations["zz"].__origin__, func_t_params[2])
-
-    def test_pep_695_generic_function_with_future_annotations_name_clash_with_global_vars(self):
-        self.assertEqual(
-            set(
-                inspect.get_annotations(
-                    inspect_stringized_annotations_pep695.generic_function_2,
-                    eval_str=True
-                ).values()
-            ),
-            set(
-                inspect_stringized_annotations_pep695.generic_function_2.__type_params__
-            )
-        )
-
-    def test_pep_695_generic_method_with_future_annotations(self):
-        ann_module695 = inspect_stringized_annotations_pep695
-        generic_method_annotations = inspect.get_annotations(
-            ann_module695.D.generic_method, eval_str=True
-        )
-        params = {
-            param.__name__: param
-            for param in ann_module695.D.generic_method.__type_params__
-        }
-        self.assertEqual(
-            generic_method_annotations,
-            {"x": params["Foo"], "y": params["Bar"], "return": None}
-        )
-
-    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_vars(self):
-        self.assertEqual(
-            set(
-                inspect.get_annotations(
-                    inspect_stringized_annotations_pep695.D.generic_method_2,
-                    eval_str=True
-                ).values()
-            ),
-            set(
-                inspect_stringized_annotations_pep695.D.generic_method_2.__type_params__
-            )
-        )
-
-    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_and_local_vars(self):
-        self.assertEqual(
-            inspect.get_annotations(
-                inspect_stringized_annotations_pep695.E, eval_str=True
-            ),
-            {"x": str},
-        )
-
-    def test_pep_695_generics_with_future_annotations_nested_in_function(self):
-        results = inspect_stringized_annotations_pep695.nested()
-
-        self.assertEqual(
-            set(results.F_annotations.values()),
-            set(results.F.__type_params__)
-        )
-        self.assertEqual(
-            set(results.F_meth_annotations.values()),
-            set(results.F.generic_method.__type_params__)
-        )
-        self.assertNotEqual(
-            set(results.F_meth_annotations.values()),
-            set(results.F.__type_params__)
-        )
-        self.assertEqual(
-            set(results.F_meth_annotations.values()).intersection(results.F.__type_params__),
-            set()
-        )
-
-        self.assertEqual(results.G_annotations, {"x": str})
-
-        self.assertEqual(
-            set(results.generic_func_annotations.values()),
-            set(results.generic_func.__type_params__)
-        )
-
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
@@ -1906,6 +1695,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertFalse(inspect.ismethoddescriptor(Owner.static_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
         self.assertFalse(inspect.ismethoddescriptor(a_lambda))
+        self.assertTrue(inspect.ismethoddescriptor(functools.partial(function)))
 
     def test_descriptor_being_a_class(self):
         class MethodDescriptorMeta(type):

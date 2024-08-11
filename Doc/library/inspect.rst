@@ -153,6 +153,19 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
+|                 | f_trace_lines     | indicate whether a        |
+|                 |                   | tracing event is          |
+|                 |                   | triggered for each source |
+|                 |                   | source line               |
++-----------------+-------------------+---------------------------+
+|                 | f_trace_opcodes   | indicate whether          |
+|                 |                   | per-opcode events are     |
+|                 |                   | requested                 |
++-----------------+-------------------+---------------------------+
+|                 | clear()           | used to clear all         |
+|                 |                   | references to local       |
+|                 |                   | variables                 |
++-----------------+-------------------+---------------------------+
 | code            | co_argcount       | number of arguments (not  |
 |                 |                   | including keyword only    |
 |                 |                   | arguments, \* or \*\*     |
@@ -213,6 +226,18 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | co_varnames       | tuple of names of         |
 |                 |                   | arguments and local       |
 |                 |                   | variables                 |
++-----------------+-------------------+---------------------------+
+|                 | co_lines()        | returns an iterator that  |
+|                 |                   | yields successive         |
+|                 |                   | bytecode ranges           |
++-----------------+-------------------+---------------------------+
+|                 | co_positions()    | returns an iterator of    |
+|                 |                   | source code positions for |
+|                 |                   | each bytecode instruction |
++-----------------+-------------------+---------------------------+
+|                 | replace()         | returns a copy of the     |
+|                 |                   | code object with new      |
+|                 |                   | values                    |
 +-----------------+-------------------+---------------------------+
 | generator       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -457,7 +482,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
-      wrapped function is a :term:`asynchronous generator` function.
+      wrapped function is an :term:`asynchronous generator` function.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
@@ -938,7 +963,7 @@ function.
 
    .. attribute:: Parameter.kind.description
 
-      Describes a enum value of :attr:`Parameter.kind`.
+      Describes an enum value of :attr:`Parameter.kind`.
 
       .. versionadded:: 3.8
 

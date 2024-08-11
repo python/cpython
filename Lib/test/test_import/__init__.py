@@ -3034,13 +3034,6 @@ class SinglephaseInitTests(unittest.TestCase):
     def test_basic_multiple_interpreters_reset_each(self):
         # resetting between each interpreter
 
-        if Py_TRACE_REFS:
-            # It's a Py_TRACE_REFS build.
-            # This test breaks interpreter isolation a little,
-            # which causes problems on Py_TRACE_REF builds.
-            # See gh-121110.
-            raise unittest.SkipTest('crashes on Py_TRACE_REFS builds')
-
         # At this point:
         #  * alive in 0 interpreters
         #  * module def may or may not be loaded already
@@ -3118,6 +3111,17 @@ class CAPITests(unittest.TestCase):
 
         mod = _testcapi.check_pyimport_addmodule(name)
         self.assertIs(mod, sys.modules[name])
+
+
+@cpython_only
+class TestMagicNumber(unittest.TestCase):
+    def test_magic_number_endianness(self):
+        magic_number_bytes = _imp.pyc_magic_number_token.to_bytes(4, 'little')
+        self.assertEqual(magic_number_bytes[2:], b'\r\n')
+        # Starting with Python 3.11, Python 3.n starts with magic number 2900+50n.
+        magic_number = int.from_bytes(magic_number_bytes[:2], 'little')
+        start = 2900 + sys.version_info.minor * 50
+        self.assertIn(magic_number, range(start, start + 50))
 
 
 if __name__ == '__main__':
