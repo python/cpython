@@ -812,6 +812,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         timer = events.TimerHandle(when, callback, args, self, context)
         if timer._source_traceback:
             del timer._source_traceback[-1]
+        # The `TimerHandle` is wrapped in a tuple to avoid calling the
+        # `TimerHandle.__lt__` method since the `heapq` operations
+        # will need to compare against many other `TimerHandler` objects.
         heapq.heappush(self._scheduled, (when, timer))
         timer._scheduled = True
         return timer
