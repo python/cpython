@@ -22,6 +22,7 @@ CHECKOUT = Path(__file__).resolve().parent.parent
 ANDROID_DIR = CHECKOUT / "Android"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
+DECODE_ARGS = ("UTF-8", "backslashreplace")
 
 
 try:
@@ -38,6 +39,8 @@ gradlew = Path(
     f"{TESTBED_DIR}/gradlew"
     + (".bat" if os.name == "nt" else "")
 )
+
+logcat_started = False
 
 
 def delete_glob(pattern):
@@ -271,21 +274,28 @@ async def async_process(*args, **kwargs):
             await wait_for(process.wait(), timeout=1)
 
 
+def exit_status_error(args, status, *, prefix=""):
+    if prefix and not prefix.endswith("\n"):
+        prefix += "\n"
+
+    # Format the command so it can be copied into a shell.
+    args_joined = " ".join(shlex.quote(str(arg)) for arg in args)
+    exit(
+        f"{prefix}Command '{args_joined}' returned exit status {status}"
+    )
+
+
 async def async_check_output(*args, **kwargs):
     async with async_process(
         *args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs
     ) as process:
         stdout, stderr = await process.communicate()
         if process.returncode == 0:
-            return stdout.decode("UTF-8", "backslashreplace")
+            return stdout.decode(*DECODE_ARGS)
         else:
-            sys.stdout.buffer.write(stdout)
-            sys.stdout.flush()
-            sys.stderr.buffer.write(stderr)
-            sys.stderr.flush()
-            exit(
-                f"Command {args} returned non-zero exit status "
-                f"{process.returncode}"
+            exit_status_error(
+                args, process.returncode,
+                prefix=(stdout + stderr).decode(*DECODE_ARGS)
             )
 
 
@@ -371,14 +381,15 @@ async def logcat_task(context, initial_devices):
     # be different every time. There's therefore no need to filter the logs by
     # timestamp or PID.
     uid = await find_uid(serial)
+
+    args = [adb, "-s", serial, "logcat", "--uid", uid,  "--format", "tag"]
     async with async_process(
-        adb, "-s", serial, "logcat", "--uid", uid,  "--format", "tag",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     ) as process:
-        while line := (await process.stdout.readline()).decode(
-            "UTF-8", "backslashreplace"
-        ):
+        while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
+            global logcat_started
+            logcat_started = True
+
             if match := re.fullmatch(r"([A-Z])/(.*)", line, re.DOTALL):
                 level, message = match.groups()
             else:
@@ -411,7 +422,7 @@ async def logcat_task(context, initial_devices):
         # If the device disconnects while logcat is running, the status will be 0.
         status = await wait_for(process.wait(), timeout=1)
         if status != 0:
-            exit(f"Logcat exit status {status}")
+            exit_status_error(args, status)
 
 
 async def gradle_task(context):
@@ -422,26 +433,35 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
-    async with async_process(
-        gradlew, "--console", "plain",
-        f"{task_prefix}DebugAndroidTest",
+    args = [
+        gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
         "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
         + shlex.join(context.args),
-        cwd=TESTBED_DIR,
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    ) as process:
-        while line := await process.stdout.readline():
-            if context.verbose:
-                sys.stdout.buffer.write(line)
-                sys.stdout.flush()
+    ]
+    gradle_output = []
+    try:
+        async with async_process(
+            *args, cwd=TESTBED_DIR, env=env,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        ) as process:
+            while line := await process.stdout.readline():
+                if context.verbose:
+                    sys.stdout.buffer.write(line)
+                    sys.stdout.flush()
+                else:
+                    gradle_output.append(line)
 
-        status = await wait_for(process.wait(), timeout=1)
-        if status == 0:
-            exit(0)
-        else:
-            exit(f"Gradle exit status {status}")
+            status = await wait_for(process.wait(), timeout=1)
+            if status == 0:
+                exit(0)
+            else:
+                exit_status_error(args, status)
+    finally:
+        # If we failed before logcat started, then the user probably wants to
+        # see the Gradle output even in non-verbose mode.
+        if gradle_output and not logcat_started:
+            sys.stdout.buffer.write(b"".join(gradle_output))
+            sys.stdout.flush()
 
 
 async def run_testbed(context):
