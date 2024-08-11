@@ -2641,6 +2641,78 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
+    def test_delete_file(self):
+        p = self.cls(self.base) / 'fileA'
+        p.delete()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
+
+    def test_delete_dir(self):
+        base = self.cls(self.base)
+        base.joinpath('dirA').delete()
+        self.assertRaises(FileNotFoundError, base.joinpath('dirA').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').lstat)
+        base.joinpath('dirB').delete()
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'fileB').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').lstat)
+        base.joinpath('dirC').delete()
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD', 'fileD').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'fileC').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'novel.txt').stat)
+
+    @needs_symlinks
+    def test_delete_symlink(self):
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        dir_ = tmp / 'dir'
+        dir_.mkdir()
+        link = tmp / 'link'
+        link.symlink_to(dir_)
+        link.delete()
+        self.assertTrue(dir_.exists())
+        self.assertFalse(link.exists(follow_symlinks=False))
+
+    @needs_symlinks
+    def test_delete_inner_symlink(self):
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        dir1 = tmp / 'dir1'
+        dir2 = dir1 / 'dir2'
+        dir3 = tmp / 'dir3'
+        for d in dir1, dir2, dir3:
+            d.mkdir()
+        file1 = tmp / 'file1'
+        file1.write_text('foo')
+        link1 = dir1 / 'link1'
+        link1.symlink_to(dir2)
+        link2 = dir1 / 'link2'
+        link2.symlink_to(dir3)
+        link3 = dir1 / 'link3'
+        link3.symlink_to(file1)
+        # make sure symlinks are removed but not followed
+        dir1.delete()
+        self.assertFalse(dir1.exists())
+        self.assertTrue(dir3.exists())
+        self.assertTrue(file1.exists())
+
+    def test_delete_missing(self):
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        # filename is guaranteed not to exist
+        filename = tmp / 'foo'
+        self.assertRaises(FileNotFoundError, filename.delete)
+        # test that ignore_errors option is honored
+        filename.delete(ignore_errors=True)
+        # test on_error
+        errors = []
+        filename.delete(on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], FileNotFoundError)
+        self.assertEqual(errors[0].filename, str(filename))
+
     def setUpWalk(self):
         # Build:
         #     TESTFN/

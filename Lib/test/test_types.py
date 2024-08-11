@@ -1,6 +1,10 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
+from test.support import (
+    run_with_locale, is_apple_mobile, cpython_only, no_rerun,
+    iter_builtin_types, iter_slot_wrappers,
+    MISSING_C_DOCSTRINGS,
+)
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -2348,6 +2352,36 @@ class FunctionTests(unittest.TestCase):
 
 class SubinterpreterTests(unittest.TestCase):
 
+    NUMERIC_METHODS = {
+        '__abs__',
+        '__add__',
+        '__bool__',
+        '__divmod__',
+        '__float__',
+        '__floordiv__',
+        '__index__',
+        '__int__',
+        '__lshift__',
+        '__mod__',
+        '__mul__',
+        '__neg__',
+        '__pos__',
+        '__pow__',
+        '__radd__',
+        '__rdivmod__',
+        '__rfloordiv__',
+        '__rlshift__',
+        '__rmod__',
+        '__rmul__',
+        '__rpow__',
+        '__rrshift__',
+        '__rshift__',
+        '__rsub__',
+        '__rtruediv__',
+        '__sub__',
+        '__truediv__',
+    }
+
     @classmethod
     def setUpClass(cls):
         global interpreters
@@ -2358,27 +2392,39 @@ class SubinterpreterTests(unittest.TestCase):
         import test.support.interpreters.channels
 
     @cpython_only
-    def test_slot_wrappers(self):
+    @no_rerun('channels (and queues) might have a refleak; see gh-122199')
+    def test_static_types_inherited_slots(self):
         rch, sch = interpreters.channels.create()
 
-        # For now it's sufficient to check int.__str__.
-        # See https://github.com/python/cpython/issues/117482
-        # and https://github.com/python/cpython/pull/117660.
-        script = textwrap.dedent('''
-            text = repr(int.__str__)
-            sch.send_nowait(text)
-            ''')
+        slots = []
+        script = ''
+        for cls in iter_builtin_types():
+            for slot, own in iter_slot_wrappers(cls):
+                if cls is bool and slot in self.NUMERIC_METHODS:
+                    continue
+                slots.append((cls, slot, own))
+                script += textwrap.dedent(f"""
+                    text = repr({cls.__name__}.{slot})
+                    sch.send_nowait(({cls.__name__!r}, {slot!r}, text))
+                    """)
 
         exec(script)
-        expected = rch.recv()
+        all_expected = []
+        for cls, slot, _ in slots:
+            result = rch.recv()
+            assert result == (cls.__name__, slot, result[-1]), (cls, slot, result)
+            all_expected.append(result)
 
         interp = interpreters.create()
         interp.exec('from test.support import interpreters')
         interp.prepare_main(sch=sch)
         interp.exec(script)
-        results = rch.recv()
 
-        self.assertEqual(results, expected)
+        for i, (cls, slot, _) in enumerate(slots):
+            with self.subTest(cls=cls, slot=slot):
+                expected = all_expected[i]
+                result = rch.recv()
+                self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':

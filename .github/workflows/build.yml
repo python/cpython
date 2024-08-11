@@ -1,8 +1,5 @@
 name: Tests
 
-# gh-84728: "paths-ignore" is not used to skip documentation-only PRs, because
-# it prevents to mark a job as mandatory. A PR cannot be merged if a job is
-# mandatory but not scheduled because of "paths-ignore".
 on:
   workflow_dispatch:
   push:
@@ -23,106 +20,19 @@ concurrency:
 
 jobs:
   check_source:
-    name: 'Check for source changes'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      # Some of the referenced steps set outputs conditionally and there may be
-      # cases when referencing them evaluates to empty strings. It is nice to
-      # work with proper booleans so they have to be evaluated through JSON
-      # conversion in the expressions. However, empty strings used like that
-      # may trigger all sorts of undefined and hard-to-debug behaviors in
-      # GitHub Actions CI/CD. To help with this, all of the outputs set here
-      # that are meant to be used as boolean flags (and not arbitrary strings),
-      # MUST have fallbacks with default values set. A common pattern would be
-      # to add ` || false` to all such expressions here, in the output
-      # definitions. They can then later be safely used through the following
-      # idiom in job conditionals and other expressions. Here's some examples:
-      #
-      #   if: fromJSON(needs.check_source.outputs.run-docs)
-      #
-      #   ${{
-      #        fromJSON(needs.check_source.outputs.run_tests)
-      #        && 'truthy-branch'
-      #        || 'falsy-branch'
-      #   }}
-      #
-      run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
-      run_tests: ${{ steps.check.outputs.run_tests || false }}
-      run_hypothesis: ${{ steps.check.outputs.run_hypothesis || false }}
-      run_cifuzz: ${{ steps.check.outputs.run_cifuzz || false }}
-      config_hash: ${{ steps.config_hash.outputs.hash }}  # str
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check for source changes
-        id: check
-        run: |
-          if [ -z "$GITHUB_BASE_REF" ]; then
-            echo "run_tests=true" >> $GITHUB_OUTPUT
-          else
-            git fetch origin $GITHUB_BASE_REF --depth=1
-            # git diff "origin/$GITHUB_BASE_REF..." (3 dots) may be more
-            # reliable than git diff "origin/$GITHUB_BASE_REF.." (2 dots),
-            # but it requires to download more commits (this job uses
-            # "git fetch --depth=1").
-            #
-            # git diff "origin/$GITHUB_BASE_REF..." (3 dots) works with Git
-            # 2.26, but Git 2.28 is stricter and fails with "no merge base".
-            #
-            # git diff "origin/$GITHUB_BASE_REF.." (2 dots) should be enough on
-            # GitHub, since GitHub starts by merging origin/$GITHUB_BASE_REF
-            # into the PR branch anyway.
-            #
-            # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|mypy\.ini$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
-          fi
-
-          # Check if we should run hypothesis tests
-          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
-          echo $GIT_BRANCH
-          if $(echo "$GIT_BRANCH" | grep -q -w '3\.\(8\|9\|10\|11\)'); then
-            echo "Branch too old for hypothesis tests"
-            echo "run_hypothesis=false" >> $GITHUB_OUTPUT
-          else
-            echo "Run hypothesis tests"
-            echo "run_hypothesis=true" >> $GITHUB_OUTPUT
-          fi
-
-          # oss-fuzz maintains a configuration for fuzzing the main branch of
-          # CPython, so CIFuzz should be run only for code that is likely to be
-          # merged into the main branch; compatibility with older branches may
-          # be broken.
-          FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
-          if [ "$GITHUB_BASE_REF" = "main" ] && [ "$(git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE $FUZZ_RELEVANT_FILES; echo $?)" -eq 0 ]; then
-            # The tests are pretty slow so they are executed only for PRs
-            # changing relevant files.
-            echo "Run CIFuzz tests"
-            echo "run_cifuzz=true" >> $GITHUB_OUTPUT
-          else
-            echo "Branch too old for CIFuzz tests; or no C files were changed"
-            echo "run_cifuzz=false" >> $GITHUB_OUTPUT
-          fi
-      - name: Compute hash for config cache key
-        id: config_hash
-        run: |
-          echo "hash=${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}" >> $GITHUB_OUTPUT
-      - name: Get a list of the changed documentation-related files
-        if: github.event_name == 'pull_request'
-        id: changed-docs-files
-        uses: Ana06/get-changed-files@v2.3.0
-        with:
-          filter: |
-            Doc/**
-            Misc/**
-            .github/workflows/reusable-docs.yml
-          format: csv  # works for paths with spaces
-      - name: Check for docs changes
-        if: >-
-          github.event_name == 'pull_request'
-          && steps.changed-docs-files.outputs.added_modified_renamed != ''
-        id: docs-changes
-        run: |
-          echo "run-docs=true" >> "${GITHUB_OUTPUT}"
+    name: Change detection
+    # To use boolean outputs from this job, parse them as JSON.
+    # Here's some examples:
+    #
+    #   if: fromJSON(needs.check_source.outputs.run-docs)
+    #
+    #   ${{
+    #        fromJSON(needs.check_source.outputs.run_tests)
+    #        && 'truthy-branch'
+    #        || 'falsy-branch'
+    #   }}
+    #
+    uses: ./.github/workflows/reusable-change-detection.yml
 
   check-docs:
     name: Docs
@@ -218,55 +128,70 @@ jobs:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
-  build_macos:
-    name: 'macOS'
+  build_windows_msi:
+    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
+      Windows MSI${{ '' }}
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-macos.yml
+    if: fromJSON(needs.check_source.outputs.run-win-msi)
+    strategy:
+      matrix:
+        arch:
+        - x86
+        - x64
+        - arm64
+    uses: ./.github/workflows/reusable-windows-msi.yml
     with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
+      arch: ${{ matrix.arch }}
 
-  build_macos_free_threading:
-    name: 'macOS (free-threading)'
+  build_macos:
+    name: >-
+      macOS
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+        # macOS 13 only runs tests against the GIL-enabled CPython.
+        # Cirrus used for upstream, macos-14 for forks.
+        os:
+        - ghcr.io/cirruslabs/macos-runner:sonoma
+        - macos-14
+        - macos-13
+        is-fork:  # only used for the exclusion trick
+        - ${{ github.repository_owner != 'python' }}
+        free-threading:
+        - false
+        - true
+        exclude:
+        - os: ghcr.io/cirruslabs/macos-runner:sonoma
+          is-fork: true
+        - os: macos-14
+          is-fork: false
+        - os: macos-13
+          free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      free-threading: true
-      # Cirrus and macos-14 are M1.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14"]'
+      free-threading: ${{ matrix.free-threading }}
+      os: ${{ matrix.os }}
 
   build_ubuntu:
-    name: 'Ubuntu'
+    name: >-
+      Ubuntu
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        free-threading:
+        - false
+        - true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --with-openssl=$OPENSSL_DIR
-
-  build_ubuntu_free_threading:
-    name: 'Ubuntu (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-ubuntu.yml
-    with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --with-openssl=$OPENSSL_DIR \
-          --disable-gil
+      free-threading: ${{ matrix.free-threading }}
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -318,7 +243,7 @@ jobs:
       with:
         save: false
     - name: Configure CPython
-      run: ./configure --config-cache --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -391,6 +316,7 @@ jobs:
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
+          --enable-slower-safety \
           --with-openssl=$OPENSSL_DIR
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
@@ -576,12 +502,11 @@ jobs:
     - check-docs
     - check_generated_files
     - build_macos
-    - build_macos_free_threading
     - build_ubuntu
-    - build_ubuntu_free_threading
     - build_ubuntu_ssltests
     - build_wasi
     - build_windows
+    - build_windows_msi
     - test_hypothesis
     - build_asan
     - build_tsan
@@ -596,6 +521,7 @@ jobs:
       with:
         allowed-failures: >-
           build_ubuntu_ssltests,
+          build_windows_msi,
           cifuzz,
           test_hypothesis,
         allowed-skips: >-
@@ -611,9 +537,7 @@ jobs:
             && '
             check_generated_files,
             build_macos,
-            build_macos_free_threading,
             build_ubuntu,
-            build_ubuntu_free_threading,
             build_ubuntu_ssltests,
             build_wasi,
             build_windows,
