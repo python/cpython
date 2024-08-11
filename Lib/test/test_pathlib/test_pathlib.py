@@ -709,19 +709,19 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
     @unittest.skipIf(root_in_posix, "test fails with root privilege")
-    def test_copytree_no_read_permission(self):
+    def test_copy_dir_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'
         target = base / 'copyE'
-        self.assertRaises(PermissionError, source.copytree, target)
+        self.assertRaises(PermissionError, source.copy, target)
         self.assertFalse(target.exists())
         errors = []
-        source.copytree(target, on_error=errors.append)
+        source.copy(target, on_error=errors.append)
         self.assertEqual(len(errors), 1)
         self.assertIsInstance(errors[0], PermissionError)
         self.assertFalse(target.exists())
 
-    def test_copytree_preserve_metadata(self):
+    def test_copy_dir_preserve_metadata(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         if hasattr(os, 'chmod'):
@@ -729,7 +729,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
             os.chflags(source / 'fileC', stat.UF_NODUMP)
         target = base / 'copyA'
-        source.copytree(target, preserve_metadata=True)
+        source.copy(target, preserve_metadata=True)
 
         for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
             source_st = source.joinpath(subpath).stat()
@@ -741,13 +741,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                 self.assertEqual(source_st.st_flags, target_st.st_flags)
 
     @os_helper.skip_unless_xattr
-    def test_copytree_preserve_metadata_xattrs(self):
+    def test_copy_dir_preserve_metadata_xattrs(self):
         base = self.cls(self.base)
         source = base / 'dirC'
         source_file = source.joinpath('dirD', 'fileD')
         os.setxattr(source_file, b'user.foo', b'42')
         target = base / 'copyA'
-        source.copytree(target, preserve_metadata=True)
+        source.copy(target, preserve_metadata=True)
         target_file = target.joinpath('dirD', 'fileD')
         self.assertEqual(os.getxattr(target_file, b'user.foo'), b'42')
 

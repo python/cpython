@@ -16,7 +16,16 @@ import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from ._os import UnsupportedOperation, copyfileobj
+from pathlib._os import copyfileobj
+
+
+__all__ = ["UnsupportedOperation"]
+
+
+class UnsupportedOperation(NotImplementedError):
+    """An exception that is raised when an unsupported operation is attempted.
+    """
+    pass
 
 
 @functools.cache
@@ -761,6 +770,13 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('symlink_to()'))
 
+    def _symlink_to_target_of(self, link):
+        """
+        Make this path a symlink with the same target as the given link. This
+        is used by copy().
+        """
+        self.symlink_to(link.readlink())
+
     def hardlink_to(self, target):
         """
         Make this path a hard link pointing to the same file as *target*.
@@ -806,21 +822,12 @@ class PathBase(PurePathBase):
             metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
             target._write_metadata(metadata, follow_symlinks=follow_symlinks)
 
-    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+    def _copy_file(self, target):
         """
-        Copy the contents of this file to the given target. If this file is a
-        symlink and follow_symlinks is false, a symlink will be created at the
-        target.
+        Copy the contents of this file to the given target.
         """
-        if not isinstance(target, PathBase):
-            target = self.with_segments(target)
         if self._samefile_safe(target):
             raise OSError(f"{self!r} and {target!r} are the same file")
-        if not follow_symlinks and self.is_symlink():
-            target.symlink_to(self.readlink())
-            if preserve_metadata:
-                self._copy_metadata(target, follow_symlinks=False)
-            return
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -832,42 +839,39 @@ class PathBase(PurePathBase):
                         f'Directory does not exist: {target}') from e
                 else:
                     raise
-        if preserve_metadata:
-            self._copy_metadata(target)
 
-    def copytree(self, target, *, follow_symlinks=True,
-                 preserve_metadata=False, dirs_exist_ok=False,
-                 ignore=None, on_error=None):
+    def copy(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
+             preserve_metadata=False, ignore=None, on_error=None):
         """
-        Recursively copy this directory tree to the given destination.
+        Recursively copy this file or directory tree to the given destination.
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
-        if on_error is None:
-            def on_error(err):
-                raise err
         stack = [(self, target)]
         while stack:
-            source_dir, target_dir = stack.pop()
+            src, dst = stack.pop()
             try:
-                sources = source_dir.iterdir()
-                target_dir.mkdir(exist_ok=dirs_exist_ok)
-                if preserve_metadata:
-                    source_dir._copy_metadata(target_dir)
-                for source in sources:
-                    if ignore and ignore(source):
-                        continue
-                    try:
-                        if source.is_dir(follow_symlinks=follow_symlinks):
-                            stack.append((source, target_dir.joinpath(source.name)))
-                        else:
-                            source.copy(target_dir.joinpath(source.name),
-                                        follow_symlinks=follow_symlinks,
-                                        preserve_metadata=preserve_metadata)
-                    except OSError as err:
-                        on_error(err)
+                if not follow_symlinks and src.is_symlink():
+                    dst._symlink_to_target_of(src)
+                    if preserve_metadata:
+                        src._copy_metadata(dst, follow_symlinks=False)
+                elif src.is_dir():
+                    children = src.iterdir()
+                    dst.mkdir(exist_ok=dirs_exist_ok)
+                    for child in children:
+                        if not (ignore and ignore(child)):
+                            stack.append((child, dst.joinpath(child.name)))
+                    if preserve_metadata:
+                        src._copy_metadata(dst)
+                else:
+                    src._copy_file(dst)
+                    if preserve_metadata:
+                        src._copy_metadata(dst)
             except OSError as err:
+                if on_error is None:
+                    raise
                 on_error(err)
+        return target
 
     def rename(self, target):
         """
