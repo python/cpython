@@ -927,6 +927,17 @@ class PathBase(PurePathBase):
         """
         Recursively move this file or directory tree to the given destination.
         """
+        self._check_files_differ(target)
+        try:
+            return self.replace(target)
+        except UnsupportedOperation:
+            pass
+        except TypeError:
+            if not isinstance(target, PathBase):
+                raise
+        except OSError as err:
+            if err.errno != errno.EXDEV:
+                raise
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self.delete()
         return target

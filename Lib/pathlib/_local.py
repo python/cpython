@@ -1,4 +1,3 @@
-import errno
 import io
 import ntpath
 import operator
@@ -853,21 +852,6 @@ class Path(PathBase, PurePath):
                         raise
 
     delete.avoids_symlink_attacks = shutil.rmtree.avoids_symlink_attacks
-
-    def move(self, target):
-        """
-        Recursively move this file or directory tree to the given destination.
-        """
-        self._check_files_differ(target)
-        try:
-            return self.replace(target)
-        except TypeError:
-            if not isinstance(target, PathBase):
-                raise
-        except OSError as err:
-            if err.errno != errno.EXDEV:
-                raise
-        return PathBase.move(self, target)
 
     def rename(self, target):
         """
