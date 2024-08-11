@@ -417,8 +417,7 @@ New Features
   which has an ambiguous return value.
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
 
-* Modified the ``_PyUnicode_ClearInterned`` function to always delete all
-  interned strings during a call to :c:func:`Py_Finalize`. This
+* :c:func:`Py_Finalize` now deletes all interned strings. This
   is backwards incompatible to any C-Extension that holds onto an interned
   string after a call to :c:func:`Py_Finalize` and is then reused after a
   call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
