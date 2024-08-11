@@ -1,1 +1,1 @@
-Reduced :mod:`asyncio` :mod:`heapq` scheduling overhead
+Reduced :mod:`asyncio` :mod:`heapq` scheduling overhead.
