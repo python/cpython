@@ -146,10 +146,8 @@ pathlib
 
 * Add methods to :class:`pathlib.Path` to recursively copy or remove files:
 
-  * :meth:`~pathlib.Path.copy` copies the content of one file to another, like
-    :func:`shutil.copyfile`.
-  * :meth:`~pathlib.Path.copytree` copies one directory tree to another, like
-    :func:`shutil.copytree`.
+  * :meth:`~pathlib.Path.copy` copies a file or directory tree to a given
+    destination.
   * :meth:`~pathlib.Path.delete` removes a file or directory tree.
 
   (Contributed by Barney Gale in :gh:`73991`.)
