@@ -48,9 +48,6 @@ def _get_copy_blocksize(infd):
     return blocksize
 
 
-_copy_funcs = []
-
-
 if fcntl and hasattr(fcntl, 'FICLONE'):
     def _ficlone(source_fd, target_fd):
         """
@@ -65,7 +62,8 @@ if fcntl and hasattr(fcntl, 'FICLONE'):
                 raise err
             return False
         return True
-    _copy_funcs.append(_ficlone)
+else:
+    _ficlone = None
 
 
 if posix and hasattr(posix, '_fcopyfile'):
@@ -81,7 +79,8 @@ if posix and hasattr(posix, '_fcopyfile'):
                 raise err
             return False
         return True
-    _copy_funcs.append(_fcopyfile)
+else:
+    _fcopyfile = None
 
 
 if hasattr(os, 'copy_file_range'):
@@ -107,7 +106,8 @@ if hasattr(os, 'copy_file_range'):
                 break  # EOF
             offset += sent
         return True
-    _copy_funcs.append(_copy_file_range)
+else:
+    _copy_file_range = None
 
 
 if hasattr(os, 'sendfile'):
@@ -125,13 +125,14 @@ if hasattr(os, 'sendfile'):
                 if err.errno != ENOTSOCK:
                     raise
                 # sendfile() on Linux < 2.6.33 only supports sockets.
-                _copy_funcs.remove(_sendfile)
+                _sendfile = None
                 return False
             if sent == 0:
                 break  # EOF
             offset += sent
         return True
-    _copy_funcs.append(_sendfile)
+else:
+    _sendfile = None
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2') and hasattr(os.stat_result, 'st_file_attributes'):
@@ -188,10 +189,14 @@ def copyfileobj(source_f, target_f):
     else:
         try:
             # Use OS copy where available.
-            for copy_func in _copy_funcs:
-                success = copy_func(source_fd, target_fd)
-                if success:
-                    return
+            if _ficlone and _ficlone(source_fd, target_fd):
+                return
+            if _fcopyfile and _fcopyfile(source_fd, target_fd):
+                return
+            if _copy_file_range and _copy_file_range(source_fd, target_fd):
+                return
+            if _sendfile and _sendfile(source_fd, target_fd):
+                return
         except OSError as err:
             # Produce more useful error messages.
             err.filename = source_f.name
