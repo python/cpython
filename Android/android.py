@@ -383,6 +383,7 @@ async def logcat_task(context, initial_devices):
     uid = await find_uid(serial)
 
     args = [adb, "-s", serial, "logcat", "--uid", uid,  "--format", "tag"]
+    hidden_output = []
     async with async_process(
         *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     ) as process:
@@ -418,11 +419,13 @@ async def logcat_task(context, initial_devices):
                     # Non-Python messages add a lot of noise, but they may
                     # sometimes help explain a failure.
                     stream.write(line)
+                else:
+                    hidden_output.append(line)
 
         # If the device disconnects while logcat is running, the status will be 0.
         status = await wait_for(process.wait(), timeout=1)
         if status != 0:
-            exit_status_error(args, status)
+            exit_status_error(args, status, prefix="".join(hidden_output))
 
 
 async def gradle_task(context):
@@ -438,18 +441,17 @@ async def gradle_task(context):
         "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
         + shlex.join(context.args),
     ]
-    gradle_output = []
+    hidden_output = []
     try:
         async with async_process(
             *args, cwd=TESTBED_DIR, env=env,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         ) as process:
-            while line := await process.stdout.readline():
+            while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
                 if context.verbose:
-                    sys.stdout.buffer.write(line)
-                    sys.stdout.flush()
+                    sys.stdout.write(line)
                 else:
-                    gradle_output.append(line)
+                    hidden_output.append(line)
 
             status = await wait_for(process.wait(), timeout=1)
             if status == 0:
@@ -459,9 +461,8 @@ async def gradle_task(context):
     finally:
         # If we failed before logcat started, then the user probably wants to
         # see the Gradle output even in non-verbose mode.
-        if gradle_output and not logcat_started:
-            sys.stdout.buffer.write(b"".join(gradle_output))
-            sys.stdout.flush()
+        if hidden_output and not logcat_started:
+            sys.stdout.write("".join(hidden_output))
 
 
 async def run_testbed(context):
