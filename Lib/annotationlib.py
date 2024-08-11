@@ -74,7 +74,7 @@ class ForwardRef:
     def evaluate(self, *, globals=None, locals=None, type_params=None, owner=None):
         """Evaluate the forward reference and return the value.
 
-        If the forward reference is not evaluatable, raise an exception.
+        If the forward reference cannot be evaluated, raise an exception.
         """
         if self.__forward_evaluated__:
             return self.__forward_value__
@@ -89,12 +89,10 @@ class ForwardRef:
                 return value
         if owner is None:
             owner = self.__owner__
-        if type_params is None and owner is None:
-            raise TypeError("Either 'type_params' or 'owner' must be provided")
 
-        if self.__forward_module__ is not None:
+        if globals is None and self.__forward_module__ is not None:
             globals = getattr(
-                sys.modules.get(self.__forward_module__, None), "__dict__", globals
+                sys.modules.get(self.__forward_module__, None), "__dict__", None
             )
         if globals is None:
             globals = self.__globals__
@@ -112,14 +110,14 @@ class ForwardRef:
 
         if locals is None:
             locals = {}
-            if isinstance(self.__owner__, type):
-                locals.update(vars(self.__owner__))
+            if isinstance(owner, type):
+                locals.update(vars(owner))
 
-        if type_params is None and self.__owner__ is not None:
+        if type_params is None and owner is not None:
             # "Inject" type parameters into the local namespace
             # (unless they are shadowed by assignments *in* the local namespace),
             # as a way of emulating annotation scopes when calling `eval()`
-            type_params = getattr(self.__owner__, "__type_params__", None)
+            type_params = getattr(owner, "__type_params__", None)
 
         # type parameters require some special handling,
         # as they exist in their own scope
@@ -129,7 +127,14 @@ class ForwardRef:
         # but should in turn be overridden by names in the class scope
         # (which here are called `globalns`!)
         if type_params is not None:
-            globals, locals = dict(globals), dict(locals)
+            if globals is None:
+                globals = {}
+            else:
+                globals = dict(globals)
+            if locals is None:
+                locals = {}
+            else:
+                locals = dict(locals)
             for param in type_params:
                 param_name = param.__name__
                 if not self.__forward_is_class__ or param_name not in globals:
