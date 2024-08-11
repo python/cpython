@@ -61,7 +61,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 
     size_t value = 0;
 
-    if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T) {
+    if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
 #if STRINGLIB_SIZEOF_CHAR <= 1
         if (!_Py_IS_ALIGNED(p, 1)) {
             value |= *p++;
