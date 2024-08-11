@@ -505,7 +505,7 @@ must be expressed with escapes.
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such constructs are called :dfn:`raw string literals`
 and :dfn:`raw bytes literals` respectively and treat backslashes as
-literal characters.  As a result, in raw string literals ``'\U'`` and ``'\u'``
+literal characters.  As a result, in raw string literals, ``'\U'`` and ``'\u'``
 escapes are not treated specially.
 
 .. versionadded:: 3.3
