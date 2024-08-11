@@ -23,8 +23,8 @@ repos:
     rev: 24.4.2
     hooks:
       - id: black
-        name: Run Black on Tools/jit/ and annotationlib
-        files: ^(Tools/jit/|Lib/annotationlib\.py|Lib/test/test_annotationlib\.py)
+        name: Run Black on Tools/jit/
+        files: ^Tools/jit/
         language_version: python3.12
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
