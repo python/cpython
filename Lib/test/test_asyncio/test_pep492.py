@@ -8,6 +8,7 @@ from unittest import mock
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
@@ -124,7 +125,7 @@ class CoroutineTests(BaseTest):
 
         self.assertFalse(asyncio.iscoroutine(foo()))
 
-
+    @ignore_warnings(category=DeprecationWarning)
     def test_iscoroutinefunction(self):
         async def foo(): pass
         self.assertTrue(asyncio.iscoroutinefunction(foo))
