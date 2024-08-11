@@ -4838,12 +4838,10 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         VISIT_SEQ(c, keyword, kwds);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, kwds, kwdsl));
-        loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL_KW, argsl + kwdsl);
+        ADDOP_I(c, LOC(e), CALL_KW, argsl + kwdsl);
     }
     else {
-        loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL, argsl);
+        ADDOP_I(c, LOC(e), CALL, argsl);
     }
     return 1;
 }
