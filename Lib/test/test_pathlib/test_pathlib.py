@@ -731,7 +731,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             if fcntl and hasattr(fcntl, 'FICLONE'):
                 ctx.enter_context(mock.patch('fcntl.ioctl', make_raiser(errno.EXDEV)))
             if posix and hasattr(posix, '_fcopyfile'):
-                ctx.enter_context(mock.patch('posix._copyfile', make_raiser(errno.ENOTSUP)))
+                ctx.enter_context(mock.patch('posix._fcopyfile', make_raiser(errno.ENOTSUP)))
             if hasattr(os, 'copy_file_range'):
                 ctx.enter_context(mock.patch('os.copy_file_range', make_raiser(errno.EXDEV)))
             if hasattr(os, 'sendfile'):
