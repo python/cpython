@@ -55,13 +55,7 @@ if fcntl and hasattr(fcntl, 'FICLONE'):
         copied only when modified. This is known as Copy on Write (CoW),
         instantaneous copy or reflink.
         """
-        try:
-            fcntl.ioctl(target_fd, fcntl.FICLONE, source_fd)
-        except OSError as err:
-            if err.errno not in (EBADF, EOPNOTSUPP, ETXTBSY, EXDEV):
-                raise err
-            return False
-        return True
+        fcntl.ioctl(target_fd, fcntl.FICLONE, source_fd)
 else:
     _ficlone = None
 
@@ -72,13 +66,7 @@ if posix and hasattr(posix, '_fcopyfile'):
         Copy a regular file content using high-performance fcopyfile(3)
         syscall (macOS).
         """
-        try:
-            posix._fcopyfile(source_fd, target_fd, posix._COPYFILE_DATA)
-        except OSError as err:
-            if err.errno not in (EINVAL, ENOTSUP):
-                raise err
-            return False
-        return True
+        posix._fcopyfile(source_fd, target_fd, posix._COPYFILE_DATA)
 else:
     _fcopyfile = None
 
@@ -95,17 +83,11 @@ if hasattr(os, 'copy_file_range'):
         blocksize = _get_copy_blocksize(source_fd)
         offset = 0
         while True:
-            try:
-                sent = os.copy_file_range(source_fd, target_fd, blocksize,
-                                          offset_dst=offset)
-            except OSError as err:
-                if err.errno not in (ETXTBSY, EXDEV):
-                    raise
-                return False
+            sent = os.copy_file_range(source_fd, target_fd, blocksize,
+                                      offset_dst=offset)
             if sent == 0:
                 break  # EOF
             offset += sent
-        return True
 else:
     _copy_file_range = None
 
@@ -119,18 +101,10 @@ if hasattr(os, 'sendfile'):
         blocksize = _get_copy_blocksize(source_fd)
         offset = 0
         while True:
-            try:
-                sent = os.sendfile(target_fd, source_fd, offset, blocksize)
-            except OSError as err:
-                if err.errno != ENOTSOCK:
-                    raise
-                # sendfile() on Linux < 2.6.33 only supports sockets.
-                _sendfile = None
-                return False
+            sent = os.sendfile(target_fd, source_fd, offset, blocksize)
             if sent == 0:
                 break  # EOF
             offset += sent
-        return True
 else:
     _sendfile = None
 
@@ -188,15 +162,37 @@ def copyfileobj(source_f, target_f):
         pass  # Fall through to generic code.
     else:
         try:
+            # Use OS copy-on-write where available.
+            if _ficlone:
+                try:
+                    _ficlone(source_fd, target_fd)
+                    return
+                except OSError as err:
+                    if err.errno not in (EBADF, EOPNOTSUPP, ETXTBSY, EXDEV):
+                        raise err
+
             # Use OS copy where available.
-            if _ficlone and _ficlone(source_fd, target_fd):
-                return
-            if _fcopyfile and _fcopyfile(source_fd, target_fd):
-                return
-            if _copy_file_range and _copy_file_range(source_fd, target_fd):
-                return
-            if _sendfile and _sendfile(source_fd, target_fd):
-                return
+            if _fcopyfile:
+                try:
+                    _fcopyfile(source_fd, target_fd)
+                    return
+                except OSError as err:
+                    if err.errno not in (EINVAL, ENOTSUP):
+                        raise err
+            if _copy_file_range:
+                try:
+                    _copy_file_range(source_fd, target_fd)
+                    return
+                except OSError as err:
+                    if err.errno not in (ETXTBSY, EXDEV):
+                        raise err
+            if _sendfile:
+                try:
+                    _sendfile(source_fd, target_fd)
+                    return
+                except OSError as err:
+                    if err.errno != ENOTSOCK:
+                        raise err
         except OSError as err:
             # Produce more useful error messages.
             err.filename = source_f.name
