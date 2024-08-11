@@ -406,6 +406,15 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
+* Stable ABI extensions may now include a multiarch tuple in the
+  filename, e.g. ``foo.abi3-x86-64-linux-gnu.so``.
+  This permits stable ABI extensions for multiple architectures to be
+  co-installed into the same directory, without clashing with each
+  other, as regular dynamic extensions do. Build tools will not generate
+  these multiarch tagged filenames, by default, while still supporting
+  older Python versions that don't recognize these filenames.
+  (Contributed by Stefano Rivera in :gh:`122931`.)
+
 New modules
 ===========
 

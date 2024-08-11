@@ -1967,6 +1967,7 @@ Python/interpconfig.o: $(srcdir)/Python/interpconfig.c $(srcdir)/Python/config_c
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DSOABI='"$(SOABI)"' \
+		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/dynload_shlib.c
 
 Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
