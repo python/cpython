@@ -882,6 +882,7 @@ def assign_opcodes(
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
     instmap["INSTRUMENTED_LINE"] = 254
+    instmap["ENTER_EXECUTOR"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
