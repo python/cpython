@@ -29,13 +29,13 @@ typedef struct {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint8_t valid;
-    uint8_t linked;
+    uint16_t valid:1;
+    uint16_t linked:1;
+    uint16_t chain_depth:14;  // Must be big engough for MAX_CHAIN_DEPTH - 1.
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
-    int chain_depth;
 } _PyVMData;
 
 /* Depending on the format,
