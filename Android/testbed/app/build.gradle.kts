@@ -81,16 +81,19 @@ android {
             localDevices {
                 create("minVersion") {
                     device = "Small Phone"
-                    systemImageSource = "aosp-atd"
 
                     // Managed devices have a minimum API level of 27.
                     apiLevel = max(27, defaultConfig.minSdk!!)
+
+                    // ATD devices are smaller and faster, but have a minimum
+                    // API level of 30.
+                    systemImageSource = if (apiLevel >= 30) "aosp-atd" else "aosp"
                 }
 
                 create("maxVersion") {
                     device = "Small Phone"
-                    systemImageSource = "aosp-atd"
                     apiLevel = defaultConfig.targetSdk!!
+                    systemImageSource = "aosp-atd"
                 }
             }
         }

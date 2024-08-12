@@ -15,9 +15,21 @@ class PythonSuite {
     @Test
     @UiThreadTest
     fun testPython() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val args = InstrumentationRegistry.getArguments().getString("pythonArgs", "")
-        val status = PythonTestRunner(context).run(args)
-        assertEquals(0, status)
+        val start = System.currentTimeMillis()
+        try {
+            val context =
+                InstrumentationRegistry.getInstrumentation().targetContext
+            val args =
+                InstrumentationRegistry.getArguments().getString("pythonArgs", "")
+            val status = PythonTestRunner(context).run(args)
+            assertEquals(0, status)
+        } finally {
+            // Make sure the process lives long enough for the test script to
+            // detect it.
+            val delay = 2000 - (System.currentTimeMillis() - start)
+            if (delay > 0) {
+                Thread.sleep(delay)
+            }
+        }
     }
 }

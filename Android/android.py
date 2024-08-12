@@ -368,40 +368,39 @@ async def boot_completed(serial):
             await asyncio.sleep(1)
 
 
-async def find_uid(serial):
+# An older version of this script in #121595 filtered the logs by UID instead,
+# which is more reliable since the PID is shorter-lived. But logcat can't filter
+# by UID until API level 31.
+async def find_pid(serial):
     print("Waiting for app to start - this may take several minutes")
     while True:
-        lines = (await async_check_output(
-            adb, "-s", serial, "shell", "pm", "list", "packages", "-U", APP_ID
-        )).splitlines()
+        try:
+            pid = (await async_check_output(
+                adb, "-s", serial, "shell", "pidof", "-s", APP_ID
+            )).strip()
+        except MySystemExit:
+            pid = None
 
-        # The unit test package {APP_ID}.test will also be returned.
-        for line in lines:
-            match = re.fullmatch(r"package:(\S+) uid:(\d+)", lines[0])
-            if not match:
-                raise ValueError(f"failed to parse {lines[0]!r}")
-            package, uid = match.groups()
-            if package == APP_ID:
-                print(f"UID: {uid}")
-                return uid
+        # Exit status is unreliable: some devices (e.g. Nexus 4) return 0 even
+        # when no process was found.
+        if pid:
+            print(f"PID: {pid}")
+            return pid
 
-        await asyncio.sleep(1)
+        # Loop fairly rapidly to avoid missing a short-lived process.
+        await asyncio.sleep(0.2)
 
 
 async def logcat_task(context, initial_devices):
     # Gradle may need to do some large downloads of libraries and emulator
-    # images. This will happen during find_device in --managed mode, or find_uid
+    # images. This will happen during find_device in --managed mode, or find_pid
     # in --connected mode.
     startup_timeout = 600
     serial = await wait_for(find_device(context, initial_devices), startup_timeout)
     await wait_for(boot_completed(serial), startup_timeout)
+    pid = await wait_for(find_pid(serial), startup_timeout)
 
-    # Because Gradle uninstalls the app after running the tests, its UID should
-    # be different every time. There's therefore no need to filter the logs by
-    # timestamp or PID.
-    uid = await wait_for(find_uid(serial), startup_timeout)
-
-    args = [adb, "-s", serial, "logcat", "--uid", uid,  "--format", "tag"]
+    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
     hidden_output = []
     async with async_process(
         *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
