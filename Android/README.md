@@ -115,3 +115,8 @@ See the [Python Developer's
 Guide](https://devguide.python.org/testing/run-write-tests/) for common options
 – most of them will work on Android, except for those that involve subprocesses,
 such as `-j`.
+
+Every time you run `android.py test`, changes in pure-Python files in the
+repository's `Lib` directory will be picked up immediately. Changes in C files,
+and architecture-specific files such as sysconfigdata, will not take effect
+until you re-run `android.py make-host` or `build`.

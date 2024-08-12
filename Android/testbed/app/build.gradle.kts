@@ -112,29 +112,34 @@ dependencies {
 // Create some custom tasks to copy Python and its standard library from
 // elsewhere in the repository.
 androidComponents.onVariants { variant ->
+    val pyPlusVer = "python$PYTHON_VERSION"
     generateTask(variant, variant.sources.assets!!) {
         into("python") {
-            for (triplet in ABIS.values) {
-                for (subDir in listOf("include", "lib")) {
-                    into(subDir) {
-                        from("$PYTHON_CROSS_DIR/$triplet/prefix/$subDir")
-                        include("python$PYTHON_VERSION/**")
-                        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-                    }
+            into("include/$pyPlusVer") {
+                for (triplet in ABIS.values) {
+                    from("$PYTHON_CROSS_DIR/$triplet/prefix/include/$pyPlusVer")
                 }
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             }
-            into("lib/python$PYTHON_VERSION") {
-                // Uncomment this to pick up edits from the source directory
-                // without having to rerun `make install`.
-                // from("$PYTHON_DIR/Lib")
-                // duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+            into("lib/$pyPlusVer") {
+                // To aid debugging, the source directory takes priority.
+                from("$PYTHON_DIR/Lib")
+
+                // The cross-build directory provides ABI-specific files such as
+                // sysconfigdata.
+                for (triplet in ABIS.values) {
+                    from("$PYTHON_CROSS_DIR/$triplet/prefix/lib/$pyPlusVer")
+                }
 
                 into("site-packages") {
                     from("$projectDir/src/main/python")
                 }
+
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                exclude("**/__pycache__")
             }
         }
-        exclude("**/__pycache__")
     }
 
     generateTask(variant, variant.sources.jniLibs!!) {

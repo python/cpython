@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val status = PythonTestRunner(this).run()
+        val status = PythonTestRunner(this).run("-W -uall")
         findViewById<TextView>(R.id.tvHello).text = "Exit status $status"
     }
 }
