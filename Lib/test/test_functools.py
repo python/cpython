@@ -510,6 +510,19 @@ class TestPartialC(TestPartial, unittest.TestCase):
         self.assertIn('astr', r)
         self.assertIn("['sth']", r)
 
+    def test_placeholders_refcount_smoke(self):
+        PH = self.module.Placeholder
+        # sum supports vector call
+        lst1, start = [], []
+        sum_lists = self.partial(sum, PH, start)
+        for i in range(10):
+            sum_lists([lst1, lst1])
+        # collections.ChainMap initializer does not support vectorcall
+        map1, map2 = {}, {}
+        partial_cm = self.partial(collections.ChainMap, PH, map1)
+        for i in range(10):
+            partial_cm(map2, map2)
+
 
 class TestPartialPy(TestPartial, unittest.TestCase):
     module = py_functools
@@ -533,6 +546,13 @@ class TestPartialCSubclass(TestPartialC):
 
 class TestPartialPySubclass(TestPartialPy):
     partial = PyPartialSubclass
+
+    def test_subclass_optimization(self):
+        p = py_functools.partial(min, 2)
+        p2 = self.partial(p, 1)
+        assert p2.func == min
+        assert p2(0) == 0
+
 
 class TestPartialMethod(unittest.TestCase):
 
@@ -670,6 +690,14 @@ class TestPartialMethod(unittest.TestCase):
 
         p = functools.partial(f, 1)
         self.assertEqual(p(2), f(1, 2))
+
+    def test_subclass_optimization(self):
+        class PartialMethodSubclass(functools.partialmethod):
+            pass
+        p = functools.partialmethod(min, 2)
+        p2 = PartialMethodSubclass(p, 1)
+        assert p2.func == min
+        assert p2.__get__(0)() == 0
 
 
 class TestUpdateWrapper(unittest.TestCase):

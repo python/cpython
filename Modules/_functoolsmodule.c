@@ -194,7 +194,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     pto->fn = Py_NewRef(func);
 
     pto->placeholder = state->placeholder;
-    if (new_nargs && Py_Is(PyTuple_GET_ITEM(args, new_nargs), pto->placeholder)) {
+    if (new_nargs && PyTuple_GET_ITEM(args, new_nargs) == pto->placeholder) {
         PyErr_SetString(PyExc_TypeError,
                         "trailing Placeholders are not allowed");
         return NULL;
@@ -214,7 +214,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
     }
     /* merge args with args of `func` which is `partial` */
-    if ((pto_phcount > 0) && (new_nargs > 0)) {
+    if (pto_phcount > 0 && new_nargs > 0) {
         Py_ssize_t npargs = PyTuple_GET_SIZE(pto_args);
         Py_ssize_t tot_nargs = npargs;
         if (new_nargs > pto_phcount) {
@@ -409,7 +409,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         tot_nargs = pto_nargs + nargs - pto_phcount;
         Py_ssize_t j = 0;       // New args index
         for (Py_ssize_t i = 0; i < pto_nargs; i++) {
-            if (Py_Is(pto_args[i], pto->placeholder)){
+            if (pto_args[i] == pto->placeholder){
                 stack[i] = args[j];
                 j += 1;
             }
@@ -508,19 +508,19 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
         Py_ssize_t j = 0;   // New args index
         for (Py_ssize_t i = 0; i < pto_nargs; i++) {
             item = PyTuple_GET_ITEM(pto_args, i);
-            if (Py_Is(item, pto->placeholder)) {
+            if (item == pto->placeholder) {
                 item = PyTuple_GET_ITEM(args, j);
                 j += 1;
             }
+            Py_INCREF(item);
             PyTuple_SET_ITEM(tot_args, i, item);
         }
         assert(j == pto_phcount);
-        if (nargs > pto_phcount) {
-            for (Py_ssize_t i = pto_nargs; i < tot_nargs; i++) {
-                item = PyTuple_GET_ITEM(args, j);
-                PyTuple_SET_ITEM(tot_args, i, item);
-                j += 1;
-            }
+        for (Py_ssize_t i = pto_nargs; i < tot_nargs; i++) {
+            item = PyTuple_GET_ITEM(args, j);
+            Py_INCREF(item);
+            PyTuple_SET_ITEM(tot_args, i, item);
+            j += 1;
         }
     }
     else {
@@ -670,7 +670,7 @@ partial_setstate(partialobject *pto, PyObject *state)
     }
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
-    if (nargs && Py_Is(PyTuple_GET_ITEM(fnargs, nargs - 1), pto->placeholder)) {
+    if (nargs && PyTuple_GET_ITEM(fnargs, nargs - 1) == pto->placeholder) {
         PyErr_SetString(PyExc_TypeError,
                         "trailing Placeholders are not allowed");
         return NULL;
@@ -678,7 +678,7 @@ partial_setstate(partialobject *pto, PyObject *state)
     /* Count placeholders */
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < nargs - 1; i++) {
-        if (Py_Is(PyTuple_GET_ITEM(fnargs, i), pto->placeholder)) {
+        if (PyTuple_GET_ITEM(fnargs, i), pto->placeholder) {
             phcount++;
         }
     }

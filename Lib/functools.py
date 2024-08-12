@@ -304,7 +304,7 @@ def _partial_prepare_merger(args):
     nargs = len(args)
     if not nargs:
         return 0, None
-    order = list()
+    order = []
     i, j = 0, nargs
     for a in args:
         if a is Placeholder:
@@ -319,20 +319,18 @@ def _partial_prepare_merger(args):
 
 def _partial_new(cls, func, /, *args, **keywords):
     if issubclass(cls, partial):
+        base_cls = partial
         if not callable(func):
             raise TypeError("the first argument must be callable")
     else:
+        base_cls = partialmethod
+        # func could be a descriptor like classmethod which isn't callable
         # assert issubclass(cls, partialmethod)
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
-            # func could be a descriptor like classmethod which isn't callable,
-            # so we can't inherit from partial (it verifies func is callable)
-            # flattening is mandatory in order to place cls/self before all
-            # other arguments
-            # it's also more efficient since only one function will be called
     if args and args[-1] is Placeholder:
         raise TypeError("trailing Placeholders are not allowed")
-    if isinstance(func, cls):
+    if isinstance(func, base_cls):
         pto_phcount = func._phcount
         tot_args = func.args
         if args:
@@ -346,7 +344,7 @@ def _partial_new(cls, func, /, *args, **keywords):
                 if nargs > pto_phcount:
                     tot_args += args[pto_phcount:]
             phcount, merger = _partial_prepare_merger(tot_args)
-        elif pto_phcount:   # not args
+        elif pto_phcount:   # not args and pto_phcount
             phcount, merger = pto_phcount, func._merger
         else:               # not args and not pto_phcount
             phcount, merger = 0, None
@@ -386,7 +384,8 @@ class partial:
     __repr__ = recursive_repr()(_partial_repr)
 
     def __call__(self, /, *args, **keywords):
-        if phcount := self._phcount:
+        phcount = self._phcount
+        if phcount:
             try:
                 pto_args = self._merger(self.args + args)
                 args = args[phcount:]
@@ -456,7 +455,8 @@ class partialmethod:
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
-            if phcount := self._phcount:
+            phcount = self._phcount
+            if phcount:
                 try:
                     pto_args = self._merger(self.args + args)
                     args = args[phcount:]
