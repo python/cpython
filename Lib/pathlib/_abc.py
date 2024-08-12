@@ -11,10 +11,10 @@ Two base classes are defined here -- PurePathBase and PathBase -- that
 resemble pathlib's PurePath and Path respectively.
 """
 
-import errno
 import functools
 import operator
 import posixpath
+from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from pathlib._os import copyfileobj
@@ -574,7 +574,7 @@ class PathBase(PurePathBase):
                 return
         except (OSError, ValueError):
             return
-        err = OSError(errno.EINVAL, "Source and target are the same file")
+        err = OSError(EINVAL, "Source and target are the same file")
         err.filename = str(self)
         err.filename2 = str(other_path)
         raise err
@@ -584,9 +584,9 @@ class PathBase(PurePathBase):
         Raise OSError(EINVAL) if the other path is within this path.
         """
         if self == other_path:
-            err = OSError(errno.EINVAL, "Source and target are the same path")
+            err = OSError(EINVAL, "Source and target are the same path")
         elif self in other_path.parents:
-            err = OSError(errno.EINVAL, "Source path is a parent of target path")
+            err = OSError(EINVAL, "Source path is a parent of target path")
         else:
             return
         err.filename = str(self)
