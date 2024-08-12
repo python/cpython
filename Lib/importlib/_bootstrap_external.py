@@ -1259,18 +1259,25 @@ class SourceFileLoader(FileLoader, SourceLoader):
             except FileExistsError:
                 # Probably another Python process already created the dir.
                 continue
-            except PermissionError as exc:
-                # Could be a permission error, read-only filesystem:
+            except OSError as exc:
+                # Could be a permission error or read-only filesystem (EROFS):
                 # just forget about writing the data.
-                _bootstrap._verbose_message('could not create {!r}: {!r}',
-                                            parent, exc)
-                return
+                from errno import EROFS
+                if isinstance(exc, PermissionError) or exc.errno == EROFS:
+                    _bootstrap._verbose_message('could not create {!r}: {!r}',
+                                                parent, exc)
+                    return
+                raise
         try:
             _write_atomic(path, data, _mode)
-        except PermissionError as exc:
+        except OSError as exc:
             # Same as above: just don't write the bytecode.
-            _bootstrap._verbose_message('could not create {!r}: {!r}', path,
-                                        exc)
+            from errno import EROFS
+            if isinstance(exc, PermissionError) or exc.errno == EROFS:
+                _bootstrap._verbose_message('could not create {!r}: {!r}',
+                                            path, exc)
+                return
+            raise
         else:
             _bootstrap._verbose_message('created {!r}', path)
 
