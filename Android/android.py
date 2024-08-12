@@ -14,6 +14,7 @@ from asyncio import wait_for
 from contextlib import asynccontextmanager
 from os.path import basename, relpath
 from pathlib import Path
+from subprocess import DEVNULL
 from tempfile import TemporaryDirectory
 
 
@@ -22,6 +23,8 @@ CHECKOUT = Path(__file__).resolve().parent.parent
 ANDROID_DIR = CHECKOUT / "Android"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
+
+APP_ID = "org.python.testbed"
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
 
@@ -73,7 +76,8 @@ def subdir(name, *, clean=None):
     return path
 
 
-def run(command, *, host=None, env=None, **kwargs):
+def run(command, *, host=None, env=None, log=True, **kwargs):
+    kwargs.setdefault("check", True)
     if env is None:
         env = os.environ.copy()
     original_env = env.copy()
@@ -104,9 +108,10 @@ def run(command, *, host=None, env=None, **kwargs):
             raise ValueError(f"Found no variables in {env_script.name} output:\n"
                              + env_output)
 
-    print(">", " ".join(map(str, command)))
+    if log:
+        print(">", " ".join(map(str, command)))
     try:
-        subprocess.run(command, check=True, env=env, **kwargs)
+        subprocess.run(command, env=env, **kwargs)
     except subprocess.CalledProcessError as e:
         sys.exit(e)
 
@@ -286,7 +291,7 @@ def exit_status_error(args, status, *, prefix=""):
     # Format the command so it can be copied into a shell.
     args_joined = " ".join(shlex.quote(str(arg)) for arg in args)
     exit(
-        f"{prefix}Command '{args_joined}' returned exit status {status}"
+        f"{prefix}Command '{args_joined}' returned non-zero exit status {status}"
     )
 
 
@@ -365,20 +370,18 @@ async def boot_completed(serial):
 
 async def find_uid(serial):
     print("Waiting for app to start - this may take several minutes")
-    testbed_package = "org.python.testbed"
     while True:
         lines = (await async_check_output(
-            adb, "-s", serial, "shell",
-            "pm", "list", "packages", "-U", testbed_package
+            adb, "-s", serial, "shell", "pm", "list", "packages", "-U", APP_ID
         )).splitlines()
 
-        # The unit test package org.python.testbed.test will also be returned.
+        # The unit test package {APP_ID}.test will also be returned.
         for line in lines:
             match = re.fullmatch(r"package:(\S+) uid:(\d+)", lines[0])
             if not match:
                 raise ValueError(f"failed to parse {lines[0]!r}")
             package, uid = match.groups()
-            if package == testbed_package:
+            if package == APP_ID:
                 print(f"UID: {uid}")
                 return uid
 
@@ -489,10 +492,21 @@ async def run_testbed(context):
 
     setup_testbed_if_needed(context)
 
-    # In --managed mode, Gradle will create a device with an unpredictable name.
-    # So we save a list of the running devices before starting Gradle, and
-    # find_device then waits for a new device to appear.
-    initial_devices = (await list_devices()) if context.managed else None
+    if context.managed:
+        # In this mode, Gradle will create a device with an unpredictable name.
+        # So we save a list of the running devices before starting Gradle, and
+        # find_device then waits for a new device to appear.
+        initial_devices = await list_devices()
+    else:
+        # Gradle normally uninstalls the app after the tests finish, but let's
+        # make certain, otherwise we might show logs from a previous run. This
+        # is unnecessary in --managed mode, because Gradle creates a new
+        # emulator every time.
+        run(
+            [adb, "-s", context.connected, "uninstall", APP_ID],
+            log=False, stdout=DEVNULL, stderr=DEVNULL, check=False
+        )
+        initial_devices = None
 
     try:
         async with asyncio.TaskGroup() as tg:
