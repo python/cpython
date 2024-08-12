@@ -3016,8 +3016,6 @@ _PyThreadState_MustExit(PyThreadState *tstate)
     unsigned long finalizing_id = _PyRuntimeState_GetFinalizingID(&_PyRuntime);
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
     if (finalizing == NULL) {
-        // XXX This isn't completely safe from daemon thraeds,
-        // since tstate might be a dangling pointer.
         finalizing = _PyInterpreterState_GetFinalizing(tstate->interp);
         finalizing_id = _PyInterpreterState_GetFinalizingID(tstate->interp);
     }
