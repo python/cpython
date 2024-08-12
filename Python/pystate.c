@@ -3002,11 +3002,13 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
 //
 // tstate can be a dangling pointer (point to freed memory): only tstate value
 // is used, the pointer is not deferenced.
-//
-// tstate must be non-NULL.
 int
 _PyThreadState_MustExit(PyThreadState *tstate)
 {
+    // tstate must be non-NULL.
+    if (tstate == NULL) {
+        return 1;
+    }
     /* bpo-39877: Access _PyRuntime directly rather than using
        tstate->interp->runtime to support calls from Python daemon threads.
        After Py_Finalize() has been called, tstate can be a dangling pointer:
