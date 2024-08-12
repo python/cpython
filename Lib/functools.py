@@ -305,14 +305,13 @@ def _partial_prepare_merger(args):
     if not nargs:
         return 0, None
     order = []
-    i, j = 0, nargs
-    for a in args:
+    j = nargs
+    for i, a in enumerate(args):
         if a is Placeholder:
             order.append(j)
             j += 1
         else:
             order.append(i)
-        i += 1
     phcount = j - nargs
     merger = itemgetter(*order) if phcount else None
     return phcount, merger

@@ -47,11 +47,12 @@ get_functools_state(PyObject *module)
 // The 'Placeholder' singleton indicates which formal positional
 // parameters are to be bound first when using a 'partial' object.
 
-static PyObject* placeholder_instance;
-
 typedef struct {
     PyObject_HEAD
 } placeholderobject;
+
+static inline _functools_state *
+get_functools_state_by_type(PyTypeObject *type);
 
 PyDoc_STRVAR(placeholder_doc,
 "The type of the Placeholder singleton.\n\n"
@@ -91,10 +92,11 @@ placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "PlaceholderType takes no arguments");
         return NULL;
     }
-    if (placeholder_instance == NULL) {
-        placeholder_instance = PyType_GenericNew(type, NULL, NULL);
+    _functools_state *state = get_functools_state_by_type(type);
+    if (state->placeholder == NULL) {
+        state->placeholder = PyType_GenericNew(type, NULL, NULL);
     }
-    return placeholder_instance;
+    return state->placeholder;
 }
 
 static PyType_Slot placeholder_type_slots[] = {
@@ -209,7 +211,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     /* Count placeholders */
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
-        if (Py_Is(PyTuple_GET_ITEM(new_args, i), pto->placeholder)) {
+        if (PyTuple_GET_ITEM(new_args, i) == pto->placeholder) {
             phcount++;
         }
     }
@@ -225,7 +227,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
             if (i < npargs) {
                 item = PyTuple_GET_ITEM(pto_args, i);
-                if ((j < new_nargs) && Py_Is(item, pto->placeholder)) {
+                if (j < new_nargs && item == pto->placeholder) {
                     item = PyTuple_GET_ITEM(new_args, j);
                     j++;
                     pto_phcount--;
@@ -678,7 +680,7 @@ partial_setstate(partialobject *pto, PyObject *state)
     /* Count placeholders */
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < nargs - 1; i++) {
-        if (PyTuple_GET_ITEM(fnargs, i), pto->placeholder) {
+        if (PyTuple_GET_ITEM(fnargs, i) == pto->placeholder) {
             phcount++;
         }
     }
