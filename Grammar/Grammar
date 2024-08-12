@@ -93,7 +93,7 @@ del_stmt: 'del' exprlist
 pass_stmt: 'pass'
 flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt | yield_stmt
 break_stmt: 'break'
-continue_stmt: 'continue'
+continue_stmt: 'cnt' # 'continue'
 return_stmt: 'return' [testlist_star_expr]
 yield_stmt: yield_expr
 raise_stmt: 'raise' [test ['from' test]]

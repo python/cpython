@@ -2527,7 +2527,7 @@ static const label labels[183] = {
     {1, "assert"},
     {1, "break"},
     {1, "class"},
-    {1, "continue"},
+    {1, "cnt"},
     {1, "def"},
     {1, "del"},
     {1, "for"},
