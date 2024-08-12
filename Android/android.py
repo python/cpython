@@ -450,6 +450,10 @@ async def logcat_task(context, initial_devices):
             raise CalledProcessError(status, args, "".join(hidden_output))
 
 
+def stop_app(serial):
+    run([adb, "-s", serial, "shell", "am", "force-stop", APP_ID], log=False)
+
+
 async def gradle_task(context):
     env = os.environ.copy()
     if context.managed:
@@ -486,6 +490,10 @@ async def gradle_task(context):
         if hidden_output and not logcat_started:
             sys.stdout.write("".join(hidden_output))
 
+        # Gradle does not stop the tests when interrupted.
+        if context.connected:
+            stop_app(context.connected)
+
 
 async def run_testbed(context):
     if not adb.exists():
@@ -501,25 +509,11 @@ async def run_testbed(context):
         # find_device then waits for a new device to appear.
         initial_devices = await list_devices()
     else:
-        # Gradle normally uninstalls the app after the tests finish, but let's
-        # make certain, otherwise we might show logs from a previous run. This
-        # is unnecessary in --managed mode, because Gradle creates a new
-        # emulator every time.
-        removed = False
-        for package in [f"{APP_ID}.test", APP_ID]:
-            status = run(
-                [adb, "-s", context.connected, "uninstall", package],
-                log=False, stdout=DEVNULL, stderr=DEVNULL, check=False
-            ).returncode
-            if status == 0:
-                removed = True
-
-        # There appears to be a race condition where if you uninstall and then
-        # immediately reinstall, the next run may fail with no output.
-        if removed:
-            print("Waiting for uninstall of old version")
-            sleep(10)  # 5 seconds is not enough.
-
+        # In case the previous shutdown was unclean, make sure the app isn't
+        # running, otherwise we might show logs from a previous run. This is
+        # unnecessary in --managed mode, because Gradle creates a new emulator
+        # every time.
+        stop_app(context.connected)
         initial_devices = None
 
     try:
