@@ -1928,14 +1928,11 @@ static int
 enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *item;
-    Py_hash_t hash;
-    hash = PyObject_Hash(loop);
-    if (hash == -1) {
+    int res = PyDict_SetDefaultRef(state->current_tasks, loop, task, &item);
+    if (res < 0) {
         return -1;
     }
-    item = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
-    if (item != NULL) {
-        Py_INCREF(item);
+    else if (res == 1) {
         PyErr_Format(
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
@@ -1944,36 +1941,58 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
         Py_DECREF(item);
         return -1;
     }
-    if (PyErr_Occurred()) {
-        return -1;
-    }
-    return _PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash);
+    Py_DECREF(item);
+    return 0;
 }
 
+static int
+err_leave_task(PyObject *item, PyObject *task)
+{
+    PyErr_Format(
+        PyExc_RuntimeError,
+        "Leaving task %R does not match the current task %R.",
+        task, item);
+    return -1;
+}
+
+static int
+leave_task_predicate(PyObject *item, void *task)
+{
+    if (item != task) {
+        return err_leave_task(item, (PyObject *)task);
+    }
+    return 1;
+}
 
 static int
 leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
-    PyObject *item;
-    Py_hash_t hash;
-    hash = PyObject_Hash(loop);
-    if (hash == -1) {
-        return -1;
+    int res = _PyDict_DelItemIf(state->current_tasks, loop,
+                                leave_task_predicate, task);
+    if (res == 0) {
+        // task was not found
+        return err_leave_task(Py_None, task);
     }
-    item = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
-    if (item != task) {
-        if (item == NULL) {
-            /* Not entered, replace with None */
-            item = Py_None;
-        }
-        PyErr_Format(
-            PyExc_RuntimeError,
-            "Leaving task %R does not match the current task %R.",
-            task, item, NULL);
-        return -1;
+    return res;
+}
+
+static PyObject *
+swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
+                            Py_hash_t hash, PyObject *task)
+{
+    PyObject *prev_task;
+    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
+        return NULL;
     }
-    return _PyDict_DelItem_KnownHash(state->current_tasks, loop, hash);
+    if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
+        Py_XDECREF(prev_task);
+        return NULL;
+    }
+    if (prev_task == NULL) {
+        Py_RETURN_NONE;
+    }
+    return prev_task;
 }
 
 static PyObject *
@@ -1991,24 +2010,15 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         return prev_task;
     }
 
-    Py_hash_t hash;
-    hash = PyObject_Hash(loop);
+    Py_hash_t hash = PyObject_Hash(loop);
     if (hash == -1) {
         return NULL;
     }
-    prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
-    if (prev_task == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        prev_task = Py_None;
-    }
-    Py_INCREF(prev_task);
-    if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-        Py_DECREF(prev_task);
-        return NULL;
-    }
 
+    PyDictObject *current_tasks = (PyDictObject *)state->current_tasks;
+    Py_BEGIN_CRITICAL_SECTION(current_tasks);
+    prev_task = swap_current_task_lock_held(current_tasks, loop, hash, task);
+    Py_END_CRITICAL_SECTION();
     return prev_task;
 }
 
@@ -2449,7 +2459,11 @@ static PyObject *
 _asyncio_Task_get_coro_impl(TaskObj *self)
 /*[clinic end generated code: output=bcac27c8cc6c8073 input=d2e8606c42a7b403]*/
 {
-    return Py_NewRef(self->task_coro);
+    if (self->task_coro) {
+        return Py_NewRef(self->task_coro);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -3515,17 +3529,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
-
-#ifndef Py_GIL_DISABLED
-    // Visit freelist.
-    PyObject *next = (PyObject*) state->fi_freelist;
-    while (next != NULL) {
-        PyObject *current = next;
-        Py_VISIT(current);
-        next = (PyObject*) ((futureiterobject*) current)->future;
-    }
-#endif
-
     return 0;
 }
 

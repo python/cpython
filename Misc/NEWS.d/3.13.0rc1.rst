@@ -1,0 +1,273 @@
+.. date: 2024-07-13-11-48-20
+.. gh-issue: 59022
+.. nonce: fYNbQ8
+.. release date: 2024-07-31
+.. section: Tests
+
+Add tests for :func:`pkgutil.extend_path`. Patch by Andreas Stocker.
+
+..
+
+.. date: 2024-07-13-11-04-44
+.. gh-issue: 99242
+.. nonce: aGxnwz
+.. section: Tests
+
+:func:`os.getloadavg` may throw :exc:`OSError` when running regression tests
+under certain conditions (e.g. chroot). This error is now caught and
+ignored, since reporting load average is optional.
+
+..
+
+.. date: 2024-07-22-13-11-28
+.. gh-issue: 122133
+.. nonce: 0mPeta
+.. section: Security
+
+Authenticate the socket connection for the ``socket.socketpair()`` fallback
+on platforms where ``AF_UNIX`` is not available like Windows.
+
+Patch by Gregory P. Smith <greg@krypto.org> and Seth Larson
+<seth@python.org>. Reported by Ellie <el@horse64.org>
+
+..
+
+.. date: 2024-07-18-13-17-47
+.. gh-issue: 121957
+.. nonce: QemKLU
+.. section: Security
+
+Fixed missing audit events around interactive use of Python, now also
+properly firing for ``python -i``, as well as for ``python -m asyncio``. The
+events in question are ``cpython.run_stdin`` and ``cpython.run_startup``.
+
+..
+
+.. date: 2024-07-29-16-47-08
+.. gh-issue: 122400
+.. nonce: fM0YSv
+.. section: Library
+
+Handle :exc:`ValueError`\s raised by :func:`os.stat` in
+:class:`filecmp.dircmp` and :func:`filecmp.cmpfiles`. Patch by Bénédikt
+Tran.
+
+..
+
+.. date: 2024-07-29-10-24-48
+.. gh-issue: 122311
+.. nonce: xChV1b
+.. section: Library
+
+Fix some error messages in :mod:`pickle`.
+
+..
+
+.. date: 2024-07-26-21-21-13
+.. gh-issue: 122332
+.. nonce: fvw88r
+.. section: Library
+
+Fixed segfault with :meth:`asyncio.Task.get_coro` when using an eager task
+factory.
+
+..
+
+.. date: 2024-07-25-15-41-14
+.. gh-issue: 105733
+.. nonce: o3koJA
+.. section: Library
+
+:func:`ctypes.ARRAY` is now :term:`soft deprecated`: it no longer emits
+deprecation warnings and is not scheduled for removal.
+
+..
+
+.. date: 2024-07-24-09-29-55
+.. gh-issue: 122087
+.. nonce: FdBrWo
+.. section: Library
+
+Restore :func:`inspect.ismethoddescriptor` and :func:`inspect.isroutine`
+returning ``False`` for :class:`functools.partial` objects.
+
+..
+
+.. date: 2024-07-23-15-30-23
+.. gh-issue: 122170
+.. nonce: Z9gi3Y
+.. section: Library
+
+Handle :exc:`ValueError`\s raised by :func:`os.stat` in :mod:`linecache`.
+Patch by Bénédikt Tran.
+
+..
+
+.. date: 2024-07-23-09-14-44
+.. gh-issue: 82951
+.. nonce: -F5p5A
+.. section: Library
+
+Serializing objects with complex ``__qualname__`` (such as unbound methods
+and nested classes) by name no longer involves serializing parent objects by
+value in pickle protocols < 4.
+
+..
+
+.. date: 2024-07-22-08-14-04
+.. gh-issue: 113785
+.. nonce: 6B_KNB
+.. section: Library
+
+:mod:`csv` now correctly parses numeric fields (when used with
+:const:`csv.QUOTE_NONNUMERIC` or :const:`csv.QUOTE_STRINGS`) which start
+with an escape character.
+
+..
+
+.. date: 2024-07-21-18-03-30
+.. gh-issue: 122088
+.. nonce: vi2bP-
+.. section: Library
+
+:func:`@warnings.deprecated <warnings.deprecated>` now copies the coroutine
+status of functions and methods so that :func:`inspect.iscoroutinefunction`
+returns the correct result.
+
+..
+
+.. date: 2024-07-14-11-18-28
+.. gh-issue: 120930
+.. nonce: Kuo4L0
+.. section: Library
+
+Fixed a bug introduced by gh-92081 that added an incorrect extra blank to
+encoded words occurring in wrapped headers.
+
+..
+
+.. date: 2024-07-08-03-45-34
+.. gh-issue: 121474
+.. nonce: NsvrUN
+.. section: Library
+
+Fix missing sanity check for ``parties`` arg in :class:`threading.Barrier`
+constructor. Patch by Clinton Christian (pygeek).
+
+..
+
+.. date: 2024-06-09-19-53-11
+.. gh-issue: 120289
+.. nonce: s4HXR0
+.. section: Library
+
+Fixed the use-after-free issue in :mod:`cProfile` by disallowing
+``disable()`` and ``clear()`` in external timers.
+
+..
+
+.. date: 2024-07-30-18-02-55
+.. gh-issue: 122482
+.. nonce: TerE0g
+.. section: IDLE
+
+Change About IDLE to direct users to discuss.python.org instead of the now
+unused idle-dev email and mailing list.
+
+..
+
+.. date: 2024-07-29-10-55-46
+.. gh-issue: 116090
+.. nonce: p1MhU0
+.. section: Core and Builtins
+
+Fix an issue in JIT builds that prevented some :keyword:`for` loops from
+correctly firing :monitoring-event:`RAISE` monitoring events.
+
+..
+
+.. date: 2024-07-26-21-26-33
+.. gh-issue: 122208
+.. nonce: z8KHsY
+.. section: Core and Builtins
+
+Dictionary watchers now only deliver the PyDict_EVENT_ADDED event when the
+insertion is in a known good state to succeed.
+
+..
+
+.. date: 2024-07-26-14-05-51
+.. gh-issue: 122300
+.. nonce: SVIF-l
+.. section: Core and Builtins
+
+Preserve AST nodes for f-string with single-element format specifiers. Patch
+by Pablo Galindo
+
+..
+
+.. date: 2024-07-26-13-56-32
+.. gh-issue: 120906
+.. nonce: qBh2I9
+.. section: Core and Builtins
+
+:attr:`frame.f_locals` now supports arbitrary hashable objects as keys.
+
+..
+
+.. date: 2024-07-21-01-23-54
+.. gh-issue: 122029
+.. nonce: gKv-e2
+.. section: Core and Builtins
+
+Emit ``c_call`` events in :func:`sys.setprofile` when a ``PyMethodObject``
+pointing to a ``PyCFunction`` is called.
+
+..
+
+.. date: 2024-07-19-15-28-05
+.. gh-issue: 122026
+.. nonce: sta2Ca
+.. section: Core and Builtins
+
+Fix a bug that caused the tokenizer to not correctly identify mismatched
+parentheses inside f-strings in some situations. Patch by Pablo Galindo
+
+..
+
+.. date: 2024-05-30-04-11-36
+.. gh-issue: 118934
+.. nonce: fbDqve
+.. section: Core and Builtins
+
+Make ``PyEval_GetLocals`` return borrowed reference
+
+..
+
+.. date: 2024-07-30-23-48-26
+.. gh-issue: 116622
+.. nonce: yTTtil
+.. section: C API
+
+Make :any:`PyObject_Print` work around a bug in Android and OpenBSD which
+prevented it from throwing an exception when trying to write to a read-only
+stream.
+
+..
+
+.. date: 2024-07-21-17-40-07
+.. gh-issue: 121489
+.. nonce: SUMFCr
+.. section: C API
+
+Export private :c:func:`!_PyBytes_Join` again.
+
+..
+
+.. date: 2024-07-18-07-53-07
+.. gh-issue: 120522
+.. nonce: dg3o5A
+.. section: Build
+
+Added a :option:`--with-app-store-compliance` option to patch out known
+issues with macOS/iOS App Store review processes.

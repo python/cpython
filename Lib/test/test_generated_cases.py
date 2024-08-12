@@ -813,6 +813,56 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(Exception):
             self.run_cases_test(input, output)
 
+    def test_pop_on_error_peeks(self):
+
+        input = """
+        op(FIRST, (x, y -- a, b)) {
+            a = x;
+            b = y;
+        }
+
+        op(SECOND, (a, b -- a, b)) {
+        }
+
+        op(THIRD, (j, k --)) {
+            ERROR_IF(cond, error);
+        }
+
+        macro(TEST) = FIRST + SECOND + THIRD;
+        """
+        output = """
+        TARGET(TEST) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(TEST);
+            PyObject *y;
+            PyObject *x;
+            PyObject *a;
+            PyObject *b;
+            PyObject *k;
+            PyObject *j;
+            // FIRST
+            y = stack_pointer[-1];
+            x = stack_pointer[-2];
+            {
+                a = x;
+                b = y;
+            }
+            // SECOND
+            {
+            }
+            // THIRD
+            k = b;
+            j = a;
+            {
+                if (cond) goto pop_2_error;
+            }
+            stack_pointer += -2;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
