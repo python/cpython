@@ -473,6 +473,18 @@ class TestPath(unittest.TestCase):
         assert list(root.glob("**/*.txt")) == list(root.rglob("*.txt"))
 
     @pass_alpharep
+    def test_glob_dirs(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert list(root.glob('b')) == [zipfile.Path(alpharep, "b/")]
+        assert list(root.glob('b*')) == [zipfile.Path(alpharep, "b/")]
+
+    @pass_alpharep
+    def test_glob_subdir(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert list(root.glob('g/h')) == [zipfile.Path(alpharep, "g/h/")]
+        assert list(root.glob('g*/h*')) == [zipfile.Path(alpharep, "g/h/")]
+
+    @pass_alpharep
     def test_glob_subdirs(self, alpharep):
         root = zipfile.Path(alpharep)
 
@@ -594,3 +606,10 @@ class TestPath(unittest.TestCase):
             'two-slash.txt',
             'parent.txt',
         ]
+
+    @pass_alpharep
+    def test_interface(self, alpharep):
+        from importlib.resources.abc import Traversable
+
+        zf = zipfile.Path(alpharep)
+        assert isinstance(zf, Traversable)
