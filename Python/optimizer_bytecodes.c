@@ -329,6 +329,13 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+        (void)container;
+        (void)sub;
+        new_frame = NULL;
+        ctx->done = true;
+    }
+
     op(_TO_BOOL, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             res = sym_new_type(ctx, &PyBool_Type);
@@ -536,6 +543,13 @@ dummy_func(void) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
+    }
+
+    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _Py_UOpsAbstractFrame *)) {
+        (void)fget;
+        (void)owner;
+        new_frame = NULL;
+        ctx->done = true;
     }
 
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
