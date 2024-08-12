@@ -1,0 +1,2 @@
+Added the :func:`ctypes.util.dllist` function to list the loaded shared
+libraries for the current process.
