@@ -501,8 +501,8 @@ together.  For instance, we can write an initial sub-sequence of the
 as follows::
 
    >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
-   ... a, b = 0, 1
+   >>> # the sum of two elements defines the next
+   >>> a, b = 0, 1
    >>> while a < 10:
    ...     print(a)
    ...     a, b = b, a+b
