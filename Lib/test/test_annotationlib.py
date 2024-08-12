@@ -5,9 +5,10 @@ import functools
 import itertools
 import pickle
 import unittest
-from annotationlib import Format, get_annotations, get_annotate_function
+from annotationlib import Format, ForwardRef, get_annotations, get_annotate_function
 from typing import Unpack
 
+from test import support
 from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_stringized_annotations_2
@@ -250,6 +251,46 @@ class TestForwardRefClass(unittest.TestCase):
             with self.assertRaises(TypeError):
                 pickle.dumps(fr, proto)
 
+    def test_evaluate_with_type_params(self):
+        class Gen[T]:
+            alias = int
+
+        with self.assertRaises(NameError):
+            ForwardRef("T").evaluate()
+        with self.assertRaises(NameError):
+            ForwardRef("T").evaluate(type_params=())
+        with self.assertRaises(NameError):
+            ForwardRef("T").evaluate(owner=int)
+
+        T, = Gen.__type_params__
+        self.assertIs(ForwardRef("T").evaluate(type_params=Gen.__type_params__), T)
+        self.assertIs(ForwardRef("T").evaluate(owner=Gen), T)
+
+        with self.assertRaises(NameError):
+            ForwardRef("alias").evaluate(type_params=Gen.__type_params__)
+        self.assertIs(ForwardRef("alias").evaluate(owner=Gen), int)
+        # If you pass custom locals, we don't look at the owner's locals
+        with self.assertRaises(NameError):
+            ForwardRef("alias").evaluate(owner=Gen, locals={})
+        # But if the name exists in the locals, it works
+        self.assertIs(
+            ForwardRef("alias").evaluate(owner=Gen, locals={"alias": str}), str
+        )
+
+    def test_fwdref_with_module(self):
+        self.assertIs(ForwardRef("Format", module=annotationlib).evaluate(), Format)
+
+        with self.assertRaises(NameError):
+            # If globals are passed explicitly, we don't look at the module dict
+            ForwardRef("Format", module=annotationlib).evaluate(globals={})
+
+    def test_fwdref_value_is_cached(self):
+        fr = ForwardRef("hello")
+        with self.assertRaises(NameError):
+            fr.evaluate()
+        self.assertIs(fr.evaluate(globals={"hello": str}), str)
+        self.assertIs(fr.evaluate(), str)
+
 
 class TestGetAnnotations(unittest.TestCase):
     def test_builtin_type(self):
@@ -287,7 +328,9 @@ class TestGetAnnotations(unittest.TestCase):
         )
         self.assertEqual(annotationlib.get_annotations(NoDict), {"b": str})
         self.assertEqual(
-            annotationlib.get_annotations(NoDict, format=annotationlib.Format.FORWARDREF),
+            annotationlib.get_annotations(
+                NoDict, format=annotationlib.Format.FORWARDREF
+            ),
             {"b": str},
         )
         self.assertEqual(
@@ -675,12 +718,13 @@ class TestGetAnnotations(unittest.TestCase):
         )
         self.assertEqual(B_annotations, {"x": int, "y": str, "z": bytes})
 
-    def test_pep695_generic_class_with_future_annotations_name_clash_with_global_vars(self):
+    def test_pep695_generic_class_with_future_annotations_name_clash_with_global_vars(
+        self,
+    ):
         ann_module695 = inspect_stringized_annotations_pep695
         C_annotations = annotationlib.get_annotations(ann_module695.C, eval_str=True)
         self.assertEqual(
-            set(C_annotations.values()),
-            set(ann_module695.C.__type_params__)
+            set(C_annotations.values()), set(ann_module695.C.__type_params__)
         )
 
     def test_pep_695_generic_function_with_future_annotations(self):
@@ -697,17 +741,19 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertIs(generic_func_annotations["z"].__origin__, func_t_params[2])
         self.assertIs(generic_func_annotations["zz"].__origin__, func_t_params[2])
 
-    def test_pep_695_generic_function_with_future_annotations_name_clash_with_global_vars(self):
+    def test_pep_695_generic_function_with_future_annotations_name_clash_with_global_vars(
+        self,
+    ):
         self.assertEqual(
             set(
                 annotationlib.get_annotations(
                     inspect_stringized_annotations_pep695.generic_function_2,
-                    eval_str=True
+                    eval_str=True,
                 ).values()
             ),
             set(
                 inspect_stringized_annotations_pep695.generic_function_2.__type_params__
-            )
+            ),
         )
 
     def test_pep_695_generic_method_with_future_annotations(self):
@@ -721,23 +767,27 @@ class TestGetAnnotations(unittest.TestCase):
         }
         self.assertEqual(
             generic_method_annotations,
-            {"x": params["Foo"], "y": params["Bar"], "return": None}
+            {"x": params["Foo"], "y": params["Bar"], "return": None},
         )
 
-    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_vars(self):
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_vars(
+        self,
+    ):
         self.assertEqual(
             set(
                 annotationlib.get_annotations(
                     inspect_stringized_annotations_pep695.D.generic_method_2,
-                    eval_str=True
+                    eval_str=True,
                 ).values()
             ),
             set(
                 inspect_stringized_annotations_pep695.D.generic_method_2.__type_params__
-            )
+            ),
         )
 
-    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_and_local_vars(self):
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_and_local_vars(
+        self,
+    ):
         self.assertEqual(
             annotationlib.get_annotations(
                 inspect_stringized_annotations_pep695.E, eval_str=True
@@ -749,20 +799,20 @@ class TestGetAnnotations(unittest.TestCase):
         results = inspect_stringized_annotations_pep695.nested()
 
         self.assertEqual(
-            set(results.F_annotations.values()),
-            set(results.F.__type_params__)
+            set(results.F_annotations.values()), set(results.F.__type_params__)
         )
         self.assertEqual(
             set(results.F_meth_annotations.values()),
-            set(results.F.generic_method.__type_params__)
+            set(results.F.generic_method.__type_params__),
         )
         self.assertNotEqual(
-            set(results.F_meth_annotations.values()),
-            set(results.F.__type_params__)
+            set(results.F_meth_annotations.values()), set(results.F.__type_params__)
         )
         self.assertEqual(
-            set(results.F_meth_annotations.values()).intersection(results.F.__type_params__),
-            set()
+            set(results.F_meth_annotations.values()).intersection(
+                results.F.__type_params__
+            ),
+            set(),
         )
 
         self.assertEqual(results.G_annotations, {"x": str})
@@ -783,7 +833,9 @@ class TestCallEvaluateFunction(unittest.TestCase):
         with self.assertRaises(NameError):
             annotationlib.call_evaluate_function(evaluate, annotationlib.Format.VALUE)
         self.assertEqual(
-            annotationlib.call_evaluate_function(evaluate, annotationlib.Format.FORWARDREF),
+            annotationlib.call_evaluate_function(
+                evaluate, annotationlib.Format.FORWARDREF
+            ),
             annotationlib.ForwardRef("undefined"),
         )
         self.assertEqual(
@@ -813,12 +865,14 @@ class MetaclassTests(unittest.TestCase):
         self.assertEqual(get_annotate_function(Y)(Format.VALUE), {"b": float})
 
     def test_unannotated_meta(self):
-        class Meta(type): pass
+        class Meta(type):
+            pass
 
         class X(metaclass=Meta):
             a: str
 
-        class Y(X): pass
+        class Y(X):
+            pass
 
         self.assertEqual(get_annotations(Meta), {})
         self.assertIs(get_annotate_function(Meta), None)
@@ -867,6 +921,13 @@ class MetaclassTests(unittest.TestCase):
                         self.assertEqual(get_annotations(c), c.expected_annotations)
                         annotate_func = get_annotate_function(c)
                         if c.expected_annotations:
-                            self.assertEqual(annotate_func(Format.VALUE), c.expected_annotations)
+                            self.assertEqual(
+                                annotate_func(Format.VALUE), c.expected_annotations
+                            )
                         else:
                             self.assertIs(annotate_func, None)
+
+
+class TestAnnotationLib(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, annotationlib)
