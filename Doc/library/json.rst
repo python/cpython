@@ -711,9 +711,9 @@ specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
    alphabetically by key.
 
 .. versionchanged:: 3.14
-   The :mod:`json` module may now be executed as a script.
-   Previously ``json.tool`` provided the :mod:`json` module's
-   command-line interface.
+   The :mod:`json` module may now be directly executed as
+   ``python -m json``. For backwards compatibility, invoking
+   the CLI as ``python -m json.tool`` remains supported.
 
 
 Command-line options
