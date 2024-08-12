@@ -14,7 +14,7 @@ from asyncio import wait_for
 from contextlib import asynccontextmanager
 from os.path import basename, relpath
 from pathlib import Path
-from subprocess import DEVNULL
+from subprocess import CalledProcessError, DEVNULL
 from tempfile import TemporaryDirectory
 
 
@@ -110,10 +110,7 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
 
     if log:
         print(">", " ".join(map(str, command)))
-    try:
-        subprocess.run(command, env=env, **kwargs)
-    except subprocess.CalledProcessError as e:
-        sys.exit(e)
+    return subprocess.run(command, env=env, **kwargs)
 
 
 def build_python_path():
@@ -277,22 +274,22 @@ async def async_process(*args, **kwargs):
         yield process
     finally:
         if process.returncode is None:
-            process.kill()
+            # Allow a reasonably long time for Gradle to clean itself up,
+            # because we don't want stale emulators left behind.
+            timeout = 10
+            process.terminate()
+            try:
+                await wait_for(process.wait(), timeout)
+            except TimeoutError:
+                print(
+                    f"Command {args} did not terminate after {timeout} seconds "
+                    f" - sending SIGKILL"
+                )
+                process.kill()
 
-            # Even after killing the process we must still wait for it,
-            # otherwise we'll get "Exception ignored in __del__" messages.
-            await wait_for(process.wait(), timeout=1)
-
-
-def exit_status_error(args, status, *, prefix=""):
-    if prefix and not prefix.endswith("\n"):
-        prefix += "\n"
-
-    # Format the command so it can be copied into a shell.
-    args_joined = " ".join(shlex.quote(str(arg)) for arg in args)
-    exit(
-        f"{prefix}Command '{args_joined}' returned non-zero exit status {status}"
-    )
+                # Even after killing the process we must still wait for it,
+                # otherwise we'll get the warning "Exception ignored in __del__".
+                await wait_for(process.wait(), timeout=1)
 
 
 async def async_check_output(*args, **kwargs):
@@ -303,9 +300,9 @@ async def async_check_output(*args, **kwargs):
         if process.returncode == 0:
             return stdout.decode(*DECODE_ARGS)
         else:
-            exit_status_error(
-                args, process.returncode,
-                prefix=(stdout + stderr).decode(*DECODE_ARGS)
+            raise CalledProcessError(
+                process.returncode, args,
+                stdout.decode(*DECODE_ARGS), stderr.decode(*DECODE_ARGS)
             )
 
 
@@ -378,14 +375,17 @@ async def find_pid(serial):
             pid = (await async_check_output(
                 adb, "-s", serial, "shell", "pidof", "-s", APP_ID
             )).strip()
-        except MySystemExit:
-            pid = None
-
-        # Exit status is unreliable: some devices (e.g. Nexus 4) return 0 even
-        # when no process was found.
-        if pid:
-            print(f"PID: {pid}")
-            return pid
+        except CalledProcessError as e:
+            # If the app isn't running yet, pidof gives no output, so if there
+            # is output, there must have been some other error.
+            if e.stdout or e.stderr:
+                raise
+        else:
+            # Some older devices (e.g. Nexus 4) return zero even when no process
+            # was found, so check whether we actually got any output.
+            if pid:
+                print(f"PID: {pid}")
+                return pid
 
         # Loop fairly rapidly to avoid missing a short-lived process.
         await asyncio.sleep(0.2)
@@ -440,12 +440,12 @@ async def logcat_task(context, initial_devices):
                     hidden_output.append(line)
 
         # If the device disconnects while logcat is running, which always
-        # happens in --managed mode, some versions of adb return failure.
+        # happens in --managed mode, some versions of adb return non-zero.
         # Distinguish this from a logcat startup error by checking whether we've
         # received a message from Python yet.
         status = await wait_for(process.wait(), timeout=1)
         if status != 0 and not logcat_started:
-            exit_status_error(args, status, prefix="".join(hidden_output))
+            raise CalledProcessError(status, args, "".join(hidden_output))
 
 
 async def gradle_task(context):
@@ -477,10 +477,10 @@ async def gradle_task(context):
             if status == 0:
                 exit(0)
             else:
-                exit_status_error(args, status)
+                raise CalledProcessError(status, args)
     finally:
-        # If we failed before logcat started, then the user probably wants to
-        # see the Gradle output even in non-verbose mode.
+        # If logcat never started, then something has gone badly wrong, so the
+        # user probably wants to see the Gradle output even in non-verbose mode.
         if hidden_output and not logcat_started:
             sys.stdout.write("".join(hidden_output))
 
@@ -515,6 +515,9 @@ async def run_testbed(context):
             tg.create_task(gradle_task(context))
     except* MySystemExit as e:
         raise SystemExit(*e.exceptions[0].args) from None
+    except* CalledProcessError as e:
+        # Extract it from the ExceptionGroup so it can be handled by `main`.
+        raise e.exceptions[0]
 
 
 def main():
@@ -576,9 +579,24 @@ def main():
                 "build-testbed": build_testbed,
                 "test": run_testbed}
 
-    result = dispatch[context.subcommand](context)
-    if asyncio.iscoroutine(result):
-        asyncio.run(result)
+    try:
+        result = dispatch[context.subcommand](context)
+        if asyncio.iscoroutine(result):
+            asyncio.run(result)
+    except CalledProcessError as e:
+        for stream_name in ["stdout", "stderr"]:
+            content = getattr(e, stream_name)
+            stream = getattr(sys, stream_name)
+            if content:
+                stream.write(content)
+                if not content.endswith("\n"):
+                    stream.write("\n")
+
+        # Format the command so it can be copied into a shell.
+        args_joined = " ".join(shlex.quote(str(arg)) for arg in e.cmd)
+        sys.exit(
+            f"Command '{args_joined}' returned exit status {e.returncode}"
+        )
 
 
 if __name__ == "__main__":
