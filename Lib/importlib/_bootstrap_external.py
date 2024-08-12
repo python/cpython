@@ -989,18 +989,26 @@ class SourceFileLoader(FileLoader, SourceLoader):
             except OSError as exc:
                 # Could be a permission error or read-only filesystem (EROFS):
                 # just forget about writing the data.
-                from errno import EROFS
-                if isinstance(exc, PermissionError) or exc.errno == EROFS:
+                from errno import EACCES, EROFS
+
+                if (
+                    isinstance(exc, PermissionError)
+                    or exc.errno in {EACCES, EROFS}
+                ):
                     _bootstrap._verbose_message('could not create {!r}: {!r}',
-                                                parent, exc)
+                                                    parent, exc)
                     return
                 raise
         try:
             _write_atomic(path, data, _mode)
         except OSError as exc:
             # Same as above: just don't write the bytecode.
-            from errno import EROFS
-            if isinstance(exc, PermissionError) or exc.errno == EROFS:
+            from errno import EACCES, EROFS
+
+            if (
+                isinstance(exc, PermissionError)
+                or exc.errno in {EACCES, EROFS}
+            ):
                 _bootstrap._verbose_message('could not create {!r}: {!r}',
                                             path, exc)
                 return
