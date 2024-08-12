@@ -1,0 +1,3 @@
+Make sure that branches in while statements have consistent offsets for
+sys.monitoring. ``while`` statements are now compiled with a simple jump at
+the end of the body, instead of duplicating the test.
