@@ -214,14 +214,14 @@ _sre_SRE_Pattern_match(PatternObject *self, PyTypeObject *cls, PyObject *const *
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     string = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[1]);
@@ -307,14 +307,14 @@ _sre_SRE_Pattern_fullmatch(PatternObject *self, PyTypeObject *cls, PyObject *con
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     string = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[1]);
@@ -402,14 +402,14 @@ _sre_SRE_Pattern_search(PatternObject *self, PyTypeObject *cls, PyObject *const 
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     string = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[1]);
@@ -494,14 +494,14 @@ _sre_SRE_Pattern_findall(PatternObject *self, PyObject *const *args, Py_ssize_t 
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     string = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[1]);
@@ -589,14 +589,14 @@ _sre_SRE_Pattern_finditer(PatternObject *self, PyTypeObject *cls, PyObject *cons
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     string = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[1]);
@@ -681,14 +681,14 @@ _sre_SRE_Pattern_scanner(PatternObject *self, PyTypeObject *cls, PyObject *const
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     string = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[1]);
@@ -772,7 +772,7 @@ _sre_SRE_Pattern_split(PatternObject *self, PyObject *const *args, Py_ssize_t na
     Py_ssize_t maxsplit = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     string = args[0];
@@ -847,7 +847,7 @@ _sre_SRE_Pattern_sub(PatternObject *self, PyTypeObject *cls, PyObject *const *ar
     Py_ssize_t count = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     repl = args[0];
@@ -924,7 +924,7 @@ _sre_SRE_Pattern_subn(PatternObject *self, PyTypeObject *cls, PyObject *const *a
     Py_ssize_t count = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     repl = args[0];
@@ -1028,7 +1028,7 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *indexgroup;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     pattern = args[0];
@@ -1153,7 +1153,7 @@ _sre_SRE_Match_expand(MatchObject *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *template;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     template = args[0];
@@ -1212,7 +1212,7 @@ _sre_SRE_Match_groups(MatchObject *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *default_value = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -1275,7 +1275,7 @@ _sre_SRE_Match_groupdict(MatchObject *self, PyObject *const *args, Py_ssize_t na
     PyObject *default_value = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -1461,4 +1461,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=1870cead82705de0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3592512bd214efd input=a9049054013a1b77]*/

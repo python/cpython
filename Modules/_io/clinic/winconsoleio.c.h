@@ -94,14 +94,14 @@ _io__WindowsConsoleIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *opener = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     nameobj = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[1] != NULL) {
+    if (fastargs[1]) {
         if (!PyUnicode_Check(fastargs[1])) {
             _PyArg_BadArgument("_WindowsConsoleIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
@@ -119,7 +119,7 @@ _io__WindowsConsoleIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    if (fastargs[2] != NULL) {
+    if (fastargs[2]) {
         closefd = PyObject_IsTrue(fastargs[2]);
         if (closefd < 0) {
             goto exit;
@@ -240,7 +240,7 @@ _io__WindowsConsoleIO_readinto(winconsoleio *self, PyTypeObject *cls, PyObject *
     Py_buffer buffer = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
@@ -324,7 +324,7 @@ _io__WindowsConsoleIO_read(winconsoleio *self, PyTypeObject *cls, PyObject *cons
     Py_ssize_t size = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
@@ -381,7 +381,7 @@ _io__WindowsConsoleIO_write(winconsoleio *self, PyTypeObject *cls, PyObject *con
     Py_buffer b = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &b, PyBUF_SIMPLE) != 0) {
@@ -457,4 +457,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=7805bbadbfcbe566 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24f4d87b9b3ff97f input=a9049054013a1b77]*/

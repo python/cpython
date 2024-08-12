@@ -105,7 +105,7 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
     PyObject *dict = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -124,7 +124,7 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("make_exception_with_doc", "argument 'doc'", "str", args[1]);
             goto exit;
@@ -142,7 +142,7 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         base = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -456,4 +456,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=010e7122a0215175 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a5adf45325bdd9f input=a9049054013a1b77]*/

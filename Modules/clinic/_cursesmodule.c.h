@@ -2715,13 +2715,13 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     int fd = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         if (args[0] == Py_None) {
             term = NULL;
         }
@@ -4318,4 +4318,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=04f068f9d45c87bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=68fe1e92542d3ede input=a9049054013a1b77]*/

@@ -90,14 +90,14 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
     PyObject *timeout = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     item = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         block = PyObject_IsTrue(args[1]);
         if (block < 0) {
             goto exit;
@@ -164,7 +164,7 @@ _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py
     PyObject *item;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     item = args[0];
@@ -232,13 +232,13 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
     PyObject *timeout_obj = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         block = PyObject_IsTrue(args[0]);
         if (block < 0) {
             goto exit;
@@ -349,4 +349,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3bfac8c1394e6b5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5a7e8b51839eda4 input=a9049054013a1b77]*/

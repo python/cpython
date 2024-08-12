@@ -74,7 +74,7 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *kwdefaults = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 6, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!PyObject_TypeCheck(fastargs[0], &PyCode_Type)) {
@@ -90,19 +90,19 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[2] != NULL) {
+    if (fastargs[2]) {
         name = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (fastargs[3] != NULL) {
+    if (fastargs[3]) {
         defaults = fastargs[3];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (fastargs[4] != NULL) {
+    if (fastargs[4]) {
         closure = fastargs[4];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -115,4 +115,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f2e2db50dc8465ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90bf8ef1757569ca input=a9049054013a1b77]*/

@@ -176,14 +176,14 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *opener = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     file = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("open", "argument 'mode'", "str", args[1]);
             goto exit;
@@ -201,7 +201,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         buffering = PyLong_AsInt(args[2]);
         if (buffering == -1 && PyErr_Occurred()) {
             goto exit;
@@ -210,7 +210,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (args[3] == Py_None) {
             encoding = NULL;
         }
@@ -233,7 +233,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto skip_optional_pos;
         }
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         if (args[4] == Py_None) {
             errors = NULL;
         }
@@ -256,7 +256,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto skip_optional_pos;
         }
     }
-    if (args[5] != NULL) {
+    if (args[5]) {
         if (args[5] == Py_None) {
             newline = NULL;
         }
@@ -279,7 +279,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto skip_optional_pos;
         }
     }
-    if (args[6] != NULL) {
+    if (args[6]) {
         closefd = PyObject_IsTrue(args[6]);
         if (closefd < 0) {
             goto exit;
@@ -391,7 +391,7 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *path;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -404,4 +404,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=154cb6ba91c6eb81 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca839985e0d5219c input=a9049054013a1b77]*/

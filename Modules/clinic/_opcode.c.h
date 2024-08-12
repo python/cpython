@@ -58,7 +58,7 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -132,7 +132,7 @@ _opcode_is_valid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -195,7 +195,7 @@ _opcode_has_arg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -258,7 +258,7 @@ _opcode_has_const(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -321,7 +321,7 @@ _opcode_has_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -384,7 +384,7 @@ _opcode_has_jump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -452,7 +452,7 @@ _opcode_has_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -515,7 +515,7 @@ _opcode_has_local(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -578,7 +578,7 @@ _opcode_has_exc(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -733,7 +733,7 @@ _opcode_get_executor(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     int offset;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     code = args[0];
@@ -746,4 +746,4 @@ _opcode_get_executor(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=49d2e529e8bbdc90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f71f2499af48a0ec input=a9049054013a1b77]*/

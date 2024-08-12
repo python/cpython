@@ -49,7 +49,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *obase = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (nargs < 1) {
@@ -316,13 +316,13 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int is_signed = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[0]);
@@ -339,7 +339,7 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
             goto skip_optional_pos;
         }
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
@@ -427,14 +427,14 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     int is_signed = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     bytes_obj = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
@@ -476,4 +476,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=98e0bc2621f61521 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c25ba2c37f5ae49 input=a9049054013a1b77]*/

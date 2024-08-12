@@ -63,7 +63,7 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *start = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     iterable = fastargs[0];
@@ -107,4 +107,4 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b8b0f0f98511df6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c8c45aca15d6d540 input=a9049054013a1b77]*/

@@ -72,7 +72,7 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int strict = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     iterable = fastargs[0];
@@ -187,7 +187,7 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *keyfunc = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     it = fastargs[0];
@@ -532,7 +532,7 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t r;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     iterable = fastargs[0];
@@ -603,7 +603,7 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
     Py_ssize_t r;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     iterable = fastargs[0];
@@ -674,7 +674,7 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *robj = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     iterable = fastargs[0];
@@ -737,14 +737,14 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *initial = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     iterable = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[1] != NULL) {
+    if (fastargs[1]) {
         binop = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -810,7 +810,7 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *seq2;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     seq1 = fastargs[0];
@@ -909,13 +909,13 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *long_step = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[0] != NULL) {
+    if (fastargs[0]) {
         long_cnt = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -928,4 +928,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=90f49b09d0fccf3e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca02baa405489154 input=a9049054013a1b77]*/

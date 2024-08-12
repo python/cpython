@@ -56,7 +56,7 @@ module___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *doc = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
@@ -74,4 +74,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6a3543c10db7de58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b481af93ff176cb7 input=a9049054013a1b77]*/

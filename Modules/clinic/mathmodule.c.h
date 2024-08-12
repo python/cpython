@@ -673,7 +673,7 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -699,7 +699,7 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (PyFloat_CheckExact(args[2])) {
             rel_tol = PyFloat_AS_DOUBLE(args[2]);
         }
@@ -788,7 +788,7 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     PyObject *start = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     iterable = args[0];
@@ -939,7 +939,7 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *steps = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -1011,4 +1011,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ad13c0f0b3f0915 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=549053f6aaaf3d4a input=a9049054013a1b77]*/

@@ -42,7 +42,7 @@ _elementtree_Element_append(ElementObject *self, PyTypeObject *cls, PyObject *co
     PyObject *subelement;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], clinic_state()->Element_Type)) {
@@ -199,7 +199,7 @@ _elementtree_Element___setstate__(ElementObject *self, PyTypeObject *cls, PyObje
     PyObject *state;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     state = args[0];
@@ -242,7 +242,7 @@ _elementtree_Element_extend(ElementObject *self, PyTypeObject *cls, PyObject *co
     PyObject *elements;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     elements = args[0];
@@ -299,7 +299,7 @@ _elementtree_Element_find(ElementObject *self, PyTypeObject *cls, PyObject *cons
     PyObject *namespaces = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     path = args[0];
@@ -363,14 +363,14 @@ _elementtree_Element_findtext(ElementObject *self, PyTypeObject *cls, PyObject *
     PyObject *namespaces = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     path = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         default_value = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -431,7 +431,7 @@ _elementtree_Element_findall(ElementObject *self, PyTypeObject *cls, PyObject *c
     PyObject *namespaces = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     path = args[0];
@@ -493,7 +493,7 @@ _elementtree_Element_iterfind(ElementObject *self, PyTypeObject *cls, PyObject *
     PyObject *namespaces = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     path = args[0];
@@ -555,7 +555,7 @@ _elementtree_Element_get(ElementObject *self, PyObject *const *args, Py_ssize_t 
     PyObject *default_value = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     key = args[0];
@@ -616,7 +616,7 @@ _elementtree_Element_iter(ElementObject *self, PyTypeObject *cls, PyObject *cons
     PyObject *tag = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -764,7 +764,7 @@ _elementtree_Element_makeelement(ElementObject *self, PyTypeObject *cls, PyObjec
     PyObject *attrib;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     tag = args[0];
@@ -884,13 +884,13 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     int insert_pis = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[0] != NULL) {
+    if (fastargs[0]) {
         element_factory = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -900,19 +900,19 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1] != NULL) {
+    if (fastargs[1]) {
         comment_factory = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[2] != NULL) {
+    if (fastargs[2]) {
         pi_factory = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[3] != NULL) {
+    if (fastargs[3]) {
         insert_comments = PyObject_IsTrue(fastargs[3]);
         if (insert_comments < 0) {
             goto exit;
@@ -1115,13 +1115,13 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
     const char *encoding = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[0] != NULL) {
+    if (fastargs[0]) {
         target = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -1236,4 +1236,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5f9c6f6954f0003c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=386bfc0b02ea9531 input=a9049054013a1b77]*/

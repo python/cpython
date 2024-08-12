@@ -380,7 +380,7 @@ _ssl__SSLSocket_get_channel_binding(PySSLSocket *self, PyObject *const *args, Py
     const char *cb_type = "tls-unique";
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -584,14 +584,14 @@ _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *const *args, Py_s
     PyObject *password = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     certfile = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         keyfile = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -655,19 +655,19 @@ _ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *const *args
     PyObject *cadata = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         cafile = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         capath = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -741,7 +741,7 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
     PyObject *session = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->Sock_Type)) {
@@ -756,7 +756,7 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         hostname_obj = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -766,7 +766,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         owner = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -834,7 +834,7 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
     PyObject *session = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->PySSLMemoryBIO_Type)) {
@@ -854,7 +854,7 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         hostname_obj = args[3];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -864,7 +864,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         owner = args[4];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -996,7 +996,7 @@ _ssl__SSLContext_get_ca_certs(PySSLContext *self, PyObject *const *args, Py_ssiz
     int binary_form = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -1058,7 +1058,7 @@ _ssl__SSLContext_set_psk_client_callback(PySSLContext *self, PyObject *const *ar
     PyObject *callback;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     callback = args[0];
@@ -1116,7 +1116,7 @@ _ssl__SSLContext_set_psk_server_callback(PySSLContext *self, PyObject *const *ar
     const char *identity_hint = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     callback = args[0];
@@ -1445,7 +1445,7 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int name = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1556,7 +1556,7 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     const char *store_name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1632,7 +1632,7 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     const char *store_name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1663,4 +1663,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=673f847e520d1592 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5411cac645a849f input=a9049054013a1b77]*/

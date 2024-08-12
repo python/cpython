@@ -247,13 +247,13 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     const char *errors = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         if (!PyUnicode_Check(args[0])) {
             _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[0]);
             goto exit;
@@ -339,7 +339,7 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     int tabsize = 8;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -959,7 +959,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     Py_ssize_t count = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1283,13 +1283,13 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     Py_ssize_t maxsplit = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         sep = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -1405,13 +1405,13 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     Py_ssize_t maxsplit = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         sep = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -1485,7 +1485,7 @@ unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     int keepends = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -1839,19 +1839,19 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     const char *errors = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[0] != NULL) {
+    if (fastargs[0]) {
         x = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (fastargs[1] != NULL) {
+    if (fastargs[1]) {
         if (!PyUnicode_Check(fastargs[1])) {
             _PyArg_BadArgument("str", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
@@ -1888,4 +1888,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cd8361f9ab0b544f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8abe66fb123b96da input=a9049054013a1b77]*/

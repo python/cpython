@@ -66,7 +66,7 @@ CDataType_from_address(PyObject *type, PyTypeObject *cls, PyObject *const *args,
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -113,7 +113,7 @@ CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, 
     Py_ssize_t offset = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     obj = args[0];
@@ -176,7 +176,7 @@ CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *a
     Py_ssize_t offset = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
@@ -246,7 +246,7 @@ CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ss
     const char *name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     dll = args[0];
@@ -302,7 +302,7 @@ CDataType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, P
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -345,7 +345,7 @@ PyCPointerType_set_type(PyTypeObject *self, PyTypeObject *cls, PyObject *const *
     PyObject *type;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     type = args[0];
@@ -389,7 +389,7 @@ PyCPointerType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *ar
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -431,7 +431,7 @@ c_wchar_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, P
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -473,7 +473,7 @@ c_char_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -515,7 +515,7 @@ c_void_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -559,7 +559,7 @@ PyCSimpleType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *arg
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -610,4 +610,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=9adcf797fc056e1b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ae83e7090e0bbba input=a9049054013a1b77]*/

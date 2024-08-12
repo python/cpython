@@ -62,7 +62,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int infer_variance = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
@@ -73,19 +73,19 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1] != NULL) {
+    if (fastargs[1]) {
         bound = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[2] != NULL) {
+    if (fastargs[2]) {
         default_value = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[3] != NULL) {
+    if (fastargs[3]) {
         covariant = PyObject_IsTrue(fastargs[3]);
         if (covariant < 0) {
             goto exit;
@@ -94,7 +94,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[4] != NULL) {
+    if (fastargs[4]) {
         contravariant = PyObject_IsTrue(fastargs[4]);
         if (contravariant < 0) {
             goto exit;
@@ -109,7 +109,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
 skip_optional_kwonly:
     constraints = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
-    if (constraints == NULL) {
+    if (!constraints) {
         goto exit;
     }
     return_value = typevar_new_impl(type, name, constraints, bound, default_value, covariant, contravariant, infer_variance);
@@ -237,7 +237,7 @@ paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *origin;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     origin = fastargs[0];
@@ -291,7 +291,7 @@ paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *origin;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     origin = fastargs[0];
@@ -354,7 +354,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int infer_variance = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
@@ -365,19 +365,19 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1] != NULL) {
+    if (fastargs[1]) {
         bound = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[2] != NULL) {
+    if (fastargs[2]) {
         default_value = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[3] != NULL) {
+    if (fastargs[3]) {
         covariant = PyObject_IsTrue(fastargs[3]);
         if (covariant < 0) {
             goto exit;
@@ -386,7 +386,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[4] != NULL) {
+    if (fastargs[4]) {
         contravariant = PyObject_IsTrue(fastargs[4]);
         if (contravariant < 0) {
             goto exit;
@@ -525,7 +525,7 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *default_value = &_Py_NoDefaultStruct;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
@@ -681,7 +681,7 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *type_params = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
@@ -700,4 +700,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2bdc60a143b19655 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=682ae821936a44c1 input=a9049054013a1b77]*/

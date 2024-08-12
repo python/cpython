@@ -64,7 +64,7 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int wbits = MAX_WBITS;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -73,7 +73,7 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         level = PyLong_AsInt(args[1]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
@@ -154,7 +154,7 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     Py_ssize_t bufsize = DEF_BUF_SIZE;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -163,7 +163,7 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         wbits = PyLong_AsInt(args[1]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -272,13 +272,13 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_buffer zdict = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 6, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         level = PyLong_AsInt(args[0]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
@@ -287,7 +287,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         method = PyLong_AsInt(args[1]);
         if (method == -1 && PyErr_Occurred()) {
             goto exit;
@@ -296,7 +296,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         wbits = PyLong_AsInt(args[2]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -305,7 +305,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         memLevel = PyLong_AsInt(args[3]);
         if (memLevel == -1 && PyErr_Occurred()) {
             goto exit;
@@ -314,7 +314,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         strategy = PyLong_AsInt(args[4]);
         if (strategy == -1 && PyErr_Occurred()) {
             goto exit;
@@ -391,13 +391,13 @@ zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *zdict = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         wbits = PyLong_AsInt(args[0]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -455,7 +455,7 @@ zlib_Compress_compress(compobject *self, PyTypeObject *cls, PyObject *const *arg
     Py_buffer data = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -531,7 +531,7 @@ zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const 
     Py_ssize_t max_length = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -603,7 +603,7 @@ zlib_Compress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, 
     int mode = Z_FINISH;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
@@ -706,7 +706,7 @@ zlib_Compress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const 
     PyObject *memo;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     memo = args[0];
@@ -804,7 +804,7 @@ zlib_Decompress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *cons
     PyObject *memo;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     memo = args[0];
@@ -853,7 +853,7 @@ zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args
     Py_ssize_t length = DEF_BUF_SIZE;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
@@ -939,7 +939,7 @@ zlib_ZlibDecompressor_decompress(ZlibDecompressor *self, PyObject *const *args, 
     Py_ssize_t max_length = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1098,4 +1098,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=33dca082eca14248 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a532d89f6515797 input=a9049054013a1b77]*/

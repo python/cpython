@@ -77,7 +77,7 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -86,7 +86,7 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!FSTATAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
             goto exit;
         }
@@ -158,7 +158,7 @@ os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -258,7 +258,7 @@ os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -271,7 +271,7 @@ os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (!FACCESSAT_DIR_FD_CONVERTER(args[2], &dir_fd)) {
             goto exit;
         }
@@ -279,7 +279,7 @@ os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
             goto skip_optional_kwonly;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         effective_ids = PyObject_IsTrue(args[3]);
         if (effective_ids < 0) {
             goto exit;
@@ -412,7 +412,7 @@ os_chdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     path_t path = PATH_T_INITIALIZE_P("chdir", "path", 0, 0, 0, PATH_HAVE_FCHDIR);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -477,7 +477,7 @@ os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int fd;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -566,7 +566,7 @@ os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int follow_symlinks = CHMOD_DEFAULT_FOLLOW_SYMLINKS;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -579,7 +579,7 @@ os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (!FCHMODAT_DIR_FD_CONVERTER(args[2], &dir_fd)) {
             goto exit;
         }
@@ -659,7 +659,7 @@ os_fchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int mode;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -729,7 +729,7 @@ os_lchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int mode;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -807,7 +807,7 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -888,7 +888,7 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     unsigned long flags;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -957,7 +957,7 @@ os_chroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     path_t path = PATH_T_INITIALIZE_P("chroot", "path", 0, 0, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -1021,7 +1021,7 @@ os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int fd;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -1105,7 +1105,7 @@ os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int fd;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -1197,7 +1197,7 @@ os_chown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -1212,7 +1212,7 @@ os_chown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!FCHOWNAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
             goto exit;
         }
@@ -1287,7 +1287,7 @@ os_fchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     gid_t gid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -1360,7 +1360,7 @@ os_lchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     gid_t gid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -1483,7 +1483,7 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &src)) {
@@ -1495,7 +1495,7 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (!dir_fd_converter(args[2], &src_dir_fd)) {
             goto exit;
         }
@@ -1503,7 +1503,7 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
             goto skip_optional_kwonly;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!dir_fd_converter(args[3], &dst_dir_fd)) {
             goto exit;
         }
@@ -1586,7 +1586,7 @@ os_listdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     path_t path = PATH_T_INITIALIZE_P("listdir", "path", 1, 0, 0, PATH_HAVE_FDOPENDIR);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -1702,7 +1702,7 @@ os_listmounts(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     path_t volume = PATH_T_INITIALIZE_P("listmounts", "volume", 0, 0, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &volume)) {
@@ -1766,7 +1766,7 @@ os__path_isdevdrive(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     path_t path = PATH_T_INITIALIZE_P("_path_isdevdrive", "path", 0, 0, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -1931,7 +1931,7 @@ os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     path_t path = PATH_T_INITIALIZE_P("_getvolumepathname", "path", 0, 0, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -1995,7 +1995,7 @@ os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     path_t path = PATH_T_INITIALIZE_P("_path_splitroot", "path", 0, 0, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2138,7 +2138,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2207,7 +2207,7 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2276,7 +2276,7 @@ os__path_islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2345,7 +2345,7 @@ os__path_isjunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2413,7 +2413,7 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "path", 0, 1, 1, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2473,7 +2473,7 @@ os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     path_t path = PATH_T_INITIALIZE("_path_normpath", "path", 0, 1, 1, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2544,7 +2544,7 @@ os_mkdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -2553,7 +2553,7 @@ os_mkdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         mode = PyLong_AsInt(args[1]);
         if (mode == -1 && PyErr_Occurred()) {
             goto exit;
@@ -2659,7 +2659,7 @@ os_getpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     int who;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     which = PyLong_AsInt(args[0]);
@@ -2727,7 +2727,7 @@ os_setpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     int priority;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     which = PyLong_AsInt(args[0]);
@@ -2806,7 +2806,7 @@ os_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int dst_dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &src)) {
@@ -2818,7 +2818,7 @@ os_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (!dir_fd_converter(args[2], &src_dir_fd)) {
             goto exit;
         }
@@ -2897,7 +2897,7 @@ os_replace(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int dst_dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &src)) {
@@ -2909,7 +2909,7 @@ os_replace(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (!dir_fd_converter(args[2], &src_dir_fd)) {
             goto exit;
         }
@@ -2984,7 +2984,7 @@ os_rmdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -3054,7 +3054,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     long _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -3128,7 +3128,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     long _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_FSConverter(args[0], &command)) {
@@ -3233,7 +3233,7 @@ os_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -3307,7 +3307,7 @@ os_remove(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -3428,7 +3428,7 @@ os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -3437,7 +3437,7 @@ os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         times = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -3447,13 +3447,13 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         ns = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!FUTIMENSAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
             goto exit;
         }
@@ -3520,7 +3520,7 @@ os__exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int status;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -3633,7 +3633,7 @@ os_execve(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     PyObject *env;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -3736,7 +3736,7 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *scheduler = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -3747,19 +3747,19 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         file_actions = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         setpgroup = args[4];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[5] != NULL) {
+    if (args[5]) {
         resetids = PyObject_IsTrue(args[5]);
         if (resetids < 0) {
             goto exit;
@@ -3768,7 +3768,7 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_kwonly;
         }
     }
-    if (args[6] != NULL) {
+    if (args[6]) {
         setsid = PyObject_IsTrue(args[6]);
         if (setsid < 0) {
             goto exit;
@@ -3777,13 +3777,13 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_kwonly;
         }
     }
-    if (args[7] != NULL) {
+    if (args[7]) {
         setsigmask = args[7];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[8] != NULL) {
+    if (args[8]) {
         setsigdef = args[8];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3886,7 +3886,7 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *scheduler = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -3897,19 +3897,19 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         file_actions = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         setpgroup = args[4];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[5] != NULL) {
+    if (args[5]) {
         resetids = PyObject_IsTrue(args[5]);
         if (resetids < 0) {
             goto exit;
@@ -3918,7 +3918,7 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_kwonly;
         }
     }
-    if (args[6] != NULL) {
+    if (args[6]) {
         setsid = PyObject_IsTrue(args[6]);
         if (setsid < 0) {
             goto exit;
@@ -3927,13 +3927,13 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_kwonly;
         }
     }
-    if (args[7] != NULL) {
+    if (args[7]) {
         setsigmask = args[7];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[8] != NULL) {
+    if (args[8]) {
         setsigdef = args[8];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -4122,19 +4122,19 @@ os_register_at_fork(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *after_in_parent = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         before = args[0];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         after_in_child = args[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -4245,7 +4245,7 @@ os_sched_get_priority_max(PyObject *module, PyObject *const *args, Py_ssize_t na
     int policy;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     policy = PyLong_AsInt(args[0]);
@@ -4307,7 +4307,7 @@ os_sched_get_priority_min(PyObject *module, PyObject *const *args, Py_ssize_t na
     int policy;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     policy = PyLong_AsInt(args[0]);
@@ -4404,7 +4404,7 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *sched_priority;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     sched_priority = fastargs[0];
@@ -5732,7 +5732,7 @@ os_wait3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int options;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     options = PyLong_AsInt(args[0]);
@@ -6069,7 +6069,7 @@ os_setns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int nstype = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -6142,7 +6142,7 @@ os_unshare(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int flags;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     flags = PyLong_AsInt(args[0]);
@@ -6212,7 +6212,7 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -6298,7 +6298,7 @@ os_symlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &src)) {
@@ -6310,7 +6310,7 @@ os_symlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         target_is_directory = PyObject_IsTrue(args[2]);
         if (target_is_directory < 0) {
             goto exit;
@@ -6427,7 +6427,7 @@ os_timerfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     clockid = PyLong_AsInt(args[0]);
@@ -6511,7 +6511,7 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     double interval_double = 0.0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -6521,7 +6521,7 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         flags = PyLong_AsInt(args[1]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
@@ -6530,7 +6530,7 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_kwonly;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (PyFloat_CheckExact(args[2])) {
             initial_double = PyFloat_AS_DOUBLE(args[2]);
         }
@@ -6625,7 +6625,7 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     long long interval = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -6635,7 +6635,7 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         flags = PyLong_AsInt(args[1]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
@@ -6644,7 +6644,7 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
             goto skip_optional_kwonly;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         initial = PyLong_AsLongLong(args[2]);
         if (initial == -1 && PyErr_Occurred()) {
             goto exit;
@@ -6942,7 +6942,7 @@ os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -6955,7 +6955,7 @@ os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         mode = PyLong_AsInt(args[2]);
         if (mode == -1 && PyErr_Occurred()) {
             goto exit;
@@ -7030,7 +7030,7 @@ os_close(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int fd;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -7163,7 +7163,7 @@ os_dup2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -7623,7 +7623,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 7, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     out_fd = PyLong_AsInt(args[0]);
@@ -7643,13 +7643,13 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         headers = args[4];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[5] != NULL) {
+    if (args[5]) {
         trailers = args[5];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -7725,7 +7725,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 7, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     out_fd = PyLong_AsInt(args[0]);
@@ -7754,13 +7754,13 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         headers = args[4];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[5] != NULL) {
+    if (args[5]) {
         trailers = args[5];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -7830,7 +7830,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     Py_ssize_t count;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     out_fd = PyLong_AsInt(args[0]);
@@ -7955,7 +7955,7 @@ os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int fd;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -8308,7 +8308,7 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *offset_dst = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 5, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     src = PyLong_AsInt(args[0]);
@@ -8334,7 +8334,7 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         offset_src = args[3];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -8423,7 +8423,7 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     unsigned int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 6, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     src = PyLong_AsInt(args[0]);
@@ -8449,13 +8449,13 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         offset_src = args[3];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         offset_dst = args[4];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -8528,7 +8528,7 @@ os_mkfifo(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -8537,7 +8537,7 @@ os_mkfifo(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         mode = PyLong_AsInt(args[1]);
         if (mode == -1 && PyErr_Occurred()) {
             goto exit;
@@ -8629,7 +8629,7 @@ os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -8638,7 +8638,7 @@ os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         mode = PyLong_AsInt(args[1]);
         if (mode == -1 && PyErr_Occurred()) {
             goto exit;
@@ -8647,7 +8647,7 @@ os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (!_Py_Dev_Converter(args[2], &device)) {
             goto exit;
         }
@@ -8869,7 +8869,7 @@ os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     Py_off_t length;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -9261,7 +9261,7 @@ os_WIFCONTINUED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -9328,7 +9328,7 @@ os_WIFSTOPPED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -9395,7 +9395,7 @@ os_WIFSIGNALED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -9462,7 +9462,7 @@ os_WIFEXITED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -9529,7 +9529,7 @@ os_WEXITSTATUS(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -9596,7 +9596,7 @@ os_WTERMSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -9663,7 +9663,7 @@ os_WSTOPSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status = PyLong_AsInt(args[0]);
@@ -9767,7 +9767,7 @@ os_statvfs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     path_t path = PATH_T_INITIALIZE_P("statvfs", "path", 0, 0, 0, PATH_HAVE_FSTATVFS);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -9831,7 +9831,7 @@ os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     path_t path = PATH_T_INITIALIZE_P("_getdiskusage", "path", 0, 0, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -9947,7 +9947,7 @@ os_pathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     long _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -10139,7 +10139,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int show_cmd = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 5, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &filepath)) {
@@ -10148,7 +10148,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("startfile", "argument 'operation'", "str", args[1]);
             goto exit;
@@ -10161,7 +10161,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         if (!PyUnicode_Check(args[2])) {
             _PyArg_BadArgument("startfile", "argument 'arguments'", "str", args[2]);
             goto exit;
@@ -10174,7 +10174,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!path_converter(args[3], &cwd)) {
             goto exit;
         }
@@ -10278,7 +10278,7 @@ os_device_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     int fd;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -10475,7 +10475,7 @@ os_getxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -10564,7 +10564,7 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -10579,7 +10579,7 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         flags = PyLong_AsInt(args[3]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
@@ -10670,7 +10670,7 @@ os_removexattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -10755,13 +10755,13 @@ os_listxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0] != NULL) {
+    if (args[0]) {
         if (!path_converter(args[0], &path)) {
             goto exit;
         }
@@ -10873,7 +10873,7 @@ os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     unsigned int flags = MFD_CLOEXEC;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_FSConverter(args[0], &name)) {
@@ -10947,7 +10947,7 @@ os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     int flags = EFD_CLOEXEC;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!_PyLong_UnsignedInt_Converter(args[0], &initval)) {
@@ -11016,7 +11016,7 @@ os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int fd;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -11079,7 +11079,7 @@ os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     unsigned long long value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     fd = PyObject_AsFileDescriptor(args[0]);
@@ -11488,7 +11488,7 @@ os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -11553,7 +11553,7 @@ os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -11622,7 +11622,7 @@ os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *cons
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -11731,7 +11731,7 @@ os_scandir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     path_t path = PATH_T_INITIALIZE_P("scandir", "path", 1, 0, 0, PATH_HAVE_FDOPENDIR);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -11799,7 +11799,7 @@ os_fspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     PyObject *path;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     path = args[0];
@@ -11858,7 +11858,7 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     {
@@ -11943,7 +11943,7 @@ os__add_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     path_t path = PATH_T_INITIALIZE_P("_add_dll_directory", "path", 0, 0, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!path_converter(args[0], &path)) {
@@ -12011,7 +12011,7 @@ os__remove_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *cookie;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     cookie = args[0];
@@ -12082,7 +12082,7 @@ os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *status_obj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     status_obj = args[0];
@@ -12837,4 +12837,4 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=742670acc69a2252 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8dd4d597e70e7108 input=a9049054013a1b77]*/

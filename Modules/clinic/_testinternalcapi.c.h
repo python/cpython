@@ -53,7 +53,7 @@ _testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_
     PyObject *doc;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -136,7 +136,7 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     int compile_mode = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     ast = args[0];
@@ -207,7 +207,7 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
     int nlocals;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     instructions = args[0];
@@ -272,7 +272,7 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
     PyObject *metadata;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     filename = args[0];
@@ -347,7 +347,7 @@ gh_119213_getargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *spam = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -360,4 +360,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cca8ba865128f563 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f120642a05d04b48 input=a9049054013a1b77]*/

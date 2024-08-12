@@ -75,26 +75,26 @@ builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     int level = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 5, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     name = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         globals = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         locals = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         fromlist = args[3];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -300,7 +300,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int feature_version = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 6, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     source = args[0];
@@ -323,7 +323,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         flags = PyLong_AsInt(args[3]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
@@ -332,7 +332,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         dont_inherit = PyObject_IsTrue(args[4]);
         if (dont_inherit < 0) {
             goto exit;
@@ -341,7 +341,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    if (args[5] != NULL) {
+    if (args[5]) {
         optimize = PyLong_AsInt(args[5]);
         if (optimize == -1 && PyErr_Occurred()) {
             goto exit;
@@ -450,14 +450,14 @@ builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *locals = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     source = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         globals = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -529,20 +529,20 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *closure = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     source = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         globals = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         locals = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -867,7 +867,7 @@ builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *mod = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     base = args[0];
@@ -944,25 +944,25 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int flush = 0;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 1, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[0] != NULL) {
+    if (fastargs[0]) {
         sep = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[1] != NULL) {
+    if (fastargs[1]) {
         end = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[2] != NULL) {
+    if (fastargs[2]) {
         file = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -1085,7 +1085,7 @@ builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *ndigits = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     number = args[0];
@@ -1151,7 +1151,7 @@ builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *start = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     iterable = args[0];
@@ -1235,4 +1235,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cc800da5daf97b53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a25d6dfbf3079304 input=a9049054013a1b77]*/

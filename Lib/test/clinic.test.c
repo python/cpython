@@ -2200,7 +2200,7 @@ test_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *b;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -2213,7 +2213,7 @@ exit:
 
 static PyObject *
 test_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=4e09d9574a3f8ae0 input=0d3484844749c05b]*/
+/*[clinic end generated code: output=8c0345bdc2d4279f input=0d3484844749c05b]*/
 
 
 /*[clinic input]
@@ -2270,7 +2270,7 @@ test_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *b;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -2283,7 +2283,7 @@ exit:
 
 static PyObject *
 test_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=405b5fee6815aca1 input=384adc78bfa0bff7]*/
+/*[clinic end generated code: output=66625282d27df5b4 input=384adc78bfa0bff7]*/
 
 
 /*[clinic input]
@@ -2343,14 +2343,14 @@ test_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *c = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2367,7 +2367,7 @@ exit:
 static PyObject *
 test_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                        PyObject *c)
-/*[clinic end generated code: output=c092bcffeaaa72e6 input=eda7964f784f4607]*/
+/*[clinic end generated code: output=b64f34a10ee58dfe input=eda7964f784f4607]*/
 
 
 /*[clinic input]
@@ -2430,14 +2430,14 @@ test_keywords_opt_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2447,7 +2447,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -2464,7 +2464,7 @@ exit:
 static PyObject *
 test_keywords_opt_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c, PyObject *d)
-/*[clinic end generated code: output=636f21b4e1246360 input=209387a4815e5082]*/
+/*[clinic end generated code: output=c9d506684af98d1f input=209387a4815e5082]*/
 
 
 /*[clinic input]
@@ -2525,14 +2525,14 @@ test_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *c = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -2549,7 +2549,7 @@ exit:
 static PyObject *
 test_keywords_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c)
-/*[clinic end generated code: output=7cdfa03e3f384237 input=18393cc64fa000f4]*/
+/*[clinic end generated code: output=68edbf1d2262f7aa input=18393cc64fa000f4]*/
 
 
 /*[clinic input]
@@ -2606,7 +2606,7 @@ test_posonly_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *b;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -2619,7 +2619,7 @@ exit:
 
 static PyObject *
 test_posonly_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=2432f57378c9ec50 input=1767b0ebdf06060e]*/
+/*[clinic end generated code: output=4292a4b34fc66678 input=1767b0ebdf06060e]*/
 
 
 /*[clinic input]
@@ -2677,7 +2677,7 @@ test_posonly_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *c;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -2690,7 +2690,7 @@ exit:
 
 static PyObject *
 test_posonly_kwonly_impl(PyObject *module, PyObject *a, PyObject *c)
-/*[clinic end generated code: output=721cdd929053f8c1 input=9042f2818f664839]*/
+/*[clinic end generated code: output=879bb3b449bc11b4 input=9042f2818f664839]*/
 
 
 /*[clinic input]
@@ -2751,7 +2751,7 @@ test_posonly_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t
     PyObject *c;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -2766,7 +2766,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c)
-/*[clinic end generated code: output=298efe935ebddfe2 input=29546ebdca492fea]*/
+/*[clinic end generated code: output=06380eb7891a8853 input=29546ebdca492fea]*/
 
 
 /*[clinic input]
@@ -2829,7 +2829,7 @@ test_posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -2837,7 +2837,7 @@ test_posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2854,7 +2854,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                PyObject *c, PyObject *d)
-/*[clinic end generated code: output=fafa8f7cc2ea0e33 input=cdf5a9625e554e9b]*/
+/*[clinic end generated code: output=3131e879b31e9ddf input=cdf5a9625e554e9b]*/
 
 
 /*[clinic input]
@@ -2915,14 +2915,14 @@ test_posonly_keywords_opt2(PyObject *module, PyObject *const *args, Py_ssize_t n
     PyObject *c = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2939,7 +2939,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                                 PyObject *c)
-/*[clinic end generated code: output=a82c579013c4b193 input=1581299d21d16f14]*/
+/*[clinic end generated code: output=1f6ab441c0a23c0b input=1581299d21d16f14]*/
 
 
 /*[clinic input]
@@ -3002,7 +3002,7 @@ test_posonly_opt_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -3015,7 +3015,7 @@ skip_optional_posonly:
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -3032,7 +3032,7 @@ exit:
 static PyObject *
 test_posonly_opt_keywords_opt_impl(PyObject *module, PyObject *a,
                                    PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=05ee0e7485b9d2b8 input=408798ec3d42949f]*/
+/*[clinic end generated code: output=1e9adfbf0156f8e2 input=408798ec3d42949f]*/
 
 
 /*[clinic input]
@@ -3096,7 +3096,7 @@ test_posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -3104,7 +3104,7 @@ test_posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3121,7 +3121,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                              PyObject *c, PyObject *d)
-/*[clinic end generated code: output=54bd406e8da453f0 input=8d8e5643bbbc2309]*/
+/*[clinic end generated code: output=bf69c0352b83d03e input=8d8e5643bbbc2309]*/
 
 
 /*[clinic input]
@@ -3183,14 +3183,14 @@ test_posonly_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *c = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3207,7 +3207,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c)
-/*[clinic end generated code: output=d22114decc846282 input=f7e5eed94f75fff0]*/
+/*[clinic end generated code: output=e1818c157f03f3d1 input=f7e5eed94f75fff0]*/
 
 
 /*[clinic input]
@@ -3271,7 +3271,7 @@ test_posonly_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -3284,7 +3284,7 @@ skip_optional_posonly:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3301,7 +3301,7 @@ exit:
 static PyObject *
 test_posonly_opt_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                  PyObject *c, PyObject *d)
-/*[clinic end generated code: output=89d14d17f80a92b0 input=1e557dc979d120fd]*/
+/*[clinic end generated code: output=a83c8f2a857434f5 input=1e557dc979d120fd]*/
 
 
 /*[clinic input]
@@ -3368,7 +3368,7 @@ test_posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssi
     PyObject *e = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -3377,7 +3377,7 @@ test_posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssi
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         d = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3395,7 +3395,7 @@ static PyObject *
 test_posonly_keywords_kwonly_opt_impl(PyObject *module, PyObject *a,
                                       PyObject *b, PyObject *c, PyObject *d,
                                       PyObject *e)
-/*[clinic end generated code: output=7d492cf1acd2d86e input=c3884a4f956fdc89]*/
+/*[clinic end generated code: output=affd90c19f802f78 input=c3884a4f956fdc89]*/
 
 
 /*[clinic input]
@@ -3459,7 +3459,7 @@ test_posonly_keywords_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ss
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -3467,7 +3467,7 @@ test_posonly_keywords_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ss
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3484,7 +3484,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_opt2_impl(PyObject *module, PyObject *a,
                                        PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=ec33a92df16b0508 input=68d01d7c0f6dafb0]*/
+/*[clinic end generated code: output=437e74e675923bb9 input=68d01d7c0f6dafb0]*/
 
 
 /*[clinic input]
@@ -3552,7 +3552,7 @@ test_posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py
     PyObject *e = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -3560,7 +3560,7 @@ test_posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -3570,7 +3570,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         d = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3588,7 +3588,7 @@ static PyObject *
 test_posonly_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                           PyObject *b, PyObject *c,
                                           PyObject *d, PyObject *e)
-/*[clinic end generated code: output=860b2bb202b203ed input=d0883d45876f186c]*/
+/*[clinic end generated code: output=ad0869d8a7f2c677 input=d0883d45876f186c]*/
 
 
 /*[clinic input]
@@ -3656,20 +3656,20 @@ test_posonly_keywords_opt2_kwonly_opt(PyObject *module, PyObject *const *args, P
     PyObject *e = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -3679,7 +3679,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         d = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3697,7 +3697,7 @@ static PyObject *
 test_posonly_keywords_opt2_kwonly_opt_impl(PyObject *module, PyObject *a,
                                            PyObject *b, PyObject *c,
                                            PyObject *d, PyObject *e)
-/*[clinic end generated code: output=706f968ba915193f input=c95e2e1ec93035ad]*/
+/*[clinic end generated code: output=0c9b524795e3c177 input=c95e2e1ec93035ad]*/
 
 
 /*[clinic input]
@@ -3768,7 +3768,7 @@ test_posonly_opt_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args
     PyObject *f = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -3781,13 +3781,13 @@ skip_optional_posonly:
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         d = args[3];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -3797,7 +3797,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[4] != NULL) {
+    if (args[4]) {
         e = args[4];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3816,7 +3816,7 @@ test_posonly_opt_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                               PyObject *b, PyObject *c,
                                               PyObject *d, PyObject *e,
                                               PyObject *f)
-/*[clinic end generated code: output=6f5f2923372292e7 input=9914857713c5bbf8]*/
+/*[clinic end generated code: output=10507e1f8db1f7b0 input=9914857713c5bbf8]*/
 
 /*[clinic input]
 test_keyword_only_parameter
@@ -3872,7 +3872,7 @@ test_keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyBytesObject *co_lnotab = (PyBytesObject *)self->co_lnotab;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -3892,7 +3892,7 @@ exit:
 
 static PyObject *
 test_keyword_only_parameter_impl(PyObject *module, PyBytesObject *co_lnotab)
-/*[clinic end generated code: output=cb2e11ad7adab5b2 input=303df5046c7e37a3]*/
+/*[clinic end generated code: output=3a56ca73418929be input=303df5046c7e37a3]*/
 
 
 /*[clinic input]
@@ -4233,7 +4233,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *__clinic_args = NULL;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     a = fastargs[0];
@@ -4254,7 +4254,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=e0f7eafcb9fa5b90 input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=83da0088d61ef092 input=81d33815ad1bae6e]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -4315,7 +4315,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     int b = 0;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     a = fastargs[0];
@@ -4345,7 +4345,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=6262643aa7837e3b input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=6d5d4c7b8725a523 input=6e110b54acd9b22d]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4406,13 +4406,13 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     PyObject *c = " ";
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 1, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[0] != NULL) {
+    if (fastargs[0]) {
         b = PyObject_IsTrue(fastargs[0]);
         if (b < 0) {
             goto exit;
@@ -4439,7 +4439,7 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=43a01f79976a31ff input=fa56a709a035666e]*/
+/*[clinic end generated code: output=71967475eadae191 input=fa56a709a035666e]*/
 
 /*[clinic input]
 test_paramname_module
@@ -4491,7 +4491,7 @@ test_paramname_module(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *mod;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     mod = args[0];
@@ -4503,7 +4503,7 @@ exit:
 
 static PyObject *
 test_paramname_module_impl(PyObject *module, PyObject *mod)
-/*[clinic end generated code: output=d9801075d3007030 input=afefe259667f13ba]*/
+/*[clinic end generated code: output=20495fdbd57c9532 input=afefe259667f13ba]*/
 
 /*[clinic input]
 mangle1
@@ -4576,7 +4576,7 @@ mangle1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     PyObject *__clinic_noptargs;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 9, 9, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     __clinic_args = args[0];
@@ -4599,7 +4599,7 @@ mangle1_impl(PyObject *module, PyObject *args, PyObject *kwnames,
              PyObject *return_value, PyObject *_keywords, PyObject *_parser,
              PyObject *argsbuf, PyObject *fastargs, PyObject *nargs,
              PyObject *noptargs)
-/*[clinic end generated code: output=602d6c5d98514d01 input=a3ed51bdedf8a3c7]*/
+/*[clinic end generated code: output=11a67d5f9b51d1e5 input=a3ed51bdedf8a3c7]*/
 
 /*[clinic input]
 mangle2
@@ -4657,7 +4657,7 @@ mangle2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     PyObject *__clinic_return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     __clinic_args = args[0];
@@ -4672,7 +4672,7 @@ exit:
 static PyObject *
 mangle2_impl(PyObject *module, PyObject *args, PyObject *kwargs,
              PyObject *return_value)
-/*[clinic end generated code: output=377d11ceab98ce76 input=391766fee51bad7a]*/
+/*[clinic end generated code: output=228db961b4469d07 input=391766fee51bad7a]*/
 
 
 /*[clinic input]
@@ -4726,7 +4726,7 @@ Test_cls_with_param(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_
     int a;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = PyLong_AsInt(args[0]);
@@ -4741,7 +4741,7 @@ exit:
 
 static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
-/*[clinic end generated code: output=df4202508aa6cfa3 input=af158077bd237ef9]*/
+/*[clinic end generated code: output=c2e71608109772f2 input=af158077bd237ef9]*/
 
 
 /*[clinic input]
@@ -5074,7 +5074,7 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *a;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (fastargs == NULL) {
+    if (!fastargs) {
         goto exit;
     }
     a = fastargs[0];
@@ -5086,7 +5086,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=3eec6387c01b5c81 input=a8f9222a6ab35c59]*/
+/*[clinic end generated code: output=ca1607b9a98fb44a input=a8f9222a6ab35c59]*/
 
 
 /*[clinic input]
@@ -5340,7 +5340,7 @@ mangled_c_keyword_identifier(PyObject *module, PyObject *const *args, Py_ssize_t
     int int_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     int_value = PyLong_AsInt(args[0]);
@@ -5355,7 +5355,7 @@ exit:
 
 static PyObject *
 mangled_c_keyword_identifier_impl(PyObject *module, int int_value)
-/*[clinic end generated code: output=7b4182b13bdd0132 input=060876448ab567a2]*/
+/*[clinic end generated code: output=6e8a7c9097050537 input=060876448ab567a2]*/
 
 
 /*[clinic input]
@@ -5599,7 +5599,7 @@ fn_with_default_binop_expr(PyObject *module, PyObject *const *args, Py_ssize_t n
     PyObject *arg = CONST_A + CONST_B;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!noptargs) {
@@ -5615,7 +5615,7 @@ exit:
 
 static PyObject *
 fn_with_default_binop_expr_impl(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=c4e262bb744618b0 input=1b55c8ae68d89453]*/
+/*[clinic end generated code: output=fa4fe50d45ddcbb6 input=1b55c8ae68d89453]*/
 
 
 /*[python input]
@@ -5687,7 +5687,7 @@ docstr_fallback_to_converter_default(PyObject *module, PyObject *const *args, Py
     str a;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!c_converter_func(args[0], &a)) {
@@ -5701,7 +5701,7 @@ exit:
 
 static PyObject *
 docstr_fallback_to_converter_default_impl(PyObject *module, str a)
-/*[clinic end generated code: output=ed7f24967fd701ee input=0cbe6a4d24bc2274]*/
+/*[clinic end generated code: output=a3efbe6cf731ca9e input=0cbe6a4d24bc2274]*/
 
 
 /*[clinic input]

@@ -70,7 +70,7 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     Py_ssize_t _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -78,7 +78,7 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[2]);
@@ -95,7 +95,7 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!_Py_convert_optional_to_ssize_t(args[3], &hi)) {
             goto exit;
         }
@@ -177,7 +177,7 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *key = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -185,7 +185,7 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[2]);
@@ -202,7 +202,7 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!_Py_convert_optional_to_ssize_t(args[3], &hi)) {
             goto exit;
         }
@@ -283,7 +283,7 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     Py_ssize_t _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -291,7 +291,7 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[2]);
@@ -308,7 +308,7 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!_Py_convert_optional_to_ssize_t(args[3], &hi)) {
             goto exit;
         }
@@ -390,7 +390,7 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *key = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     a = args[0];
@@ -398,7 +398,7 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2] != NULL) {
+    if (args[2]) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[2]);
@@ -415,7 +415,7 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto skip_optional_pos;
         }
     }
-    if (args[3] != NULL) {
+    if (args[3]) {
         if (!_Py_convert_optional_to_ssize_t(args[3], &hi)) {
             goto exit;
         }
@@ -434,4 +434,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c8c191698442d883 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f30e300ff9c13401 input=a9049054013a1b77]*/

@@ -124,14 +124,14 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     const char *errors = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     obj = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[1]);
             goto exit;
@@ -224,14 +224,14 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     const char *errors = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     obj = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1] != NULL) {
+    if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[1]);
             goto exit;
@@ -2746,4 +2746,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=bd7067347259139a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1642a3b61c8d3de7 input=a9049054013a1b77]*/

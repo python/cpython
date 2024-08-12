@@ -186,7 +186,7 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
     int x;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     y = PyLong_AsInt(args[0]);
@@ -256,7 +256,7 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObje
     PyCursesWindowObject *win;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], &PyCursesWindow_Type)) {
@@ -304,7 +304,7 @@ _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyTypeObject *cls, Py
     PyObject *obj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     obj = args[0];
@@ -421,4 +421,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=7beb8c8bfc0b12f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=175a4c3caeedd3de input=a9049054013a1b77]*/
