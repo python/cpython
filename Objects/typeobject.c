@@ -11088,8 +11088,22 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
 }
 
 static int
-expect_manually_inherited(PyTypeObject *type, void **slot)
+slot_inherited(PyTypeObject *type, pytype_slotdef *slotdef, void **slot)
 {
+    void **slot_base = slotptr(type->tp_base, slotdef->offset);
+    if (slot_base == NULL || *slot != *slot_base) {
+        return 0;
+    }
+
+    /* Ideally we would always ignore any manually inherited
+       slots, Which would mean inheriting the slot wrapper
+       using normal attribute lookup rather than keeping
+       a distinct copy.  However, that would introduce
+       a slight change in behavior that could break
+       existing code.
+
+       In the meantime, look the other way when the definition
+       explicitly inherits the slot. */
     PyObject *typeobj = (PyObject *)type;
     if (slot == (void *)&type->tp_init) {
         /* This is a best-effort list of builtin exception types
@@ -11121,14 +11135,14 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
             && type != &PyTuple_Type
             && type != &PyZip_Type)
         {
-            return 1;
+            return 0;
         }
     }
     else if (slot == (void *)&type->tp_str) {
         /* This is a best-effort list of builtin exception types
            that have their own tp_str function. */
         if (typeobj == PyExc_AttributeError || typeobj == PyExc_NameError) {
-            return 1;
+            return 0;
         }
     }
     else if (slot == (void *)&type->tp_getattr
@@ -11156,12 +11170,12 @@ expect_manually_inherited(PyTypeObject *type, void **slot)
             || type == &PyTuple_Type
             || type == &PyZip_Type)
         {
-            return 1;
+            return 0;
         }
     }
 
     /* It must be inherited (see type_ready_inherit()).. */
-    return 0;
+    return 1;
 }
 
 /* This function is called by PyType_Ready() to populate the type's
@@ -11208,25 +11222,12 @@ add_operators(PyTypeObject *type)
         ptr = slotptr(type, p->offset);
         if (!ptr || !*ptr)
             continue;
+        /* Also ignore when the type slot has been inherited. */
         if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
-            && type->tp_base != NULL)
+            && type->tp_base != NULL
+            && slot_inherited(type, p, ptr))
         {
-            /* Also ignore when the type slot has been inherited. */
-            void **ptr_base = slotptr(type->tp_base, p->offset);
-            if (ptr_base && *ptr == *ptr_base) {
-                /* Ideally we would always ignore any manually inherited
-                   slots, Which would mean inheriting the slot wrapper
-                   using normal attribute lookup rather than keeping
-                   a distinct copy.  However, that would introduce
-                   a slight change in behavior that could break
-                   existing code.
-
-                   In the meantime, look the other way when the definition
-                   explicitly inherits the slot. */
-                if (!expect_manually_inherited(type, ptr)) {
-                    continue;
-                }
-            }
+            continue;
         }
         int r = PyDict_Contains(dict, p->name_strobj);
         if (r > 0)
