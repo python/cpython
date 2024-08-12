@@ -43,7 +43,7 @@ SOABI=		@SOABI@
 ABIFLAGS=	@ABIFLAGS@
 ABI_THREAD=	@ABI_THREAD@
 LDVERSION=	@LDVERSION@
-MODULE_LDFLAGS=@MODULE_LDFLAGS@
+LIBPYTHON=@LIBPYTHON@
 GITVERSION=	@GITVERSION@
 GITTAG=		@GITTAG@
 GITBRANCH=	@GITBRANCH@
@@ -483,6 +483,7 @@ PYTHON_OBJS=	\
 		Python/thread.o \
 		Python/traceback.o \
 		Python/tracemalloc.o \
+		Python/typeid.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
 		Python/pystrtod.o \
@@ -1257,6 +1258,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
 		$(srcdir)/Include/internal/pycore_tstate.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_typeid.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
@@ -1665,7 +1667,7 @@ regen-unicodedata:
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects regen-jit
+	regen-test-levenshtein regen-global-objects
 	@echo
 	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
 	@echo "make regen-configure, make regen-sbom, and make regen-unicodedata should be run manually"
