@@ -292,7 +292,7 @@ class ParseArgsCodeGen:
 
     def use_meth_varargs(self) -> bool:
         return (not self.parameters
-                and self.varpos
+                and self.varpos is not None
                 and not self.requires_defining_class
                 and not self.is_new_or_init())
 
@@ -471,6 +471,7 @@ class ParseArgsCodeGen:
         self.parser_body(parser_code)
 
     def _parse_vararg(self) -> str:
+        assert self.varpos is not None
         paramname = self.varpos.converter.parser_name
         if self.fastcall:
             if self.limited_capi:
