@@ -407,9 +407,6 @@ async def logcat_task(context, initial_devices):
         *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     ) as process:
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-            global logcat_started
-            logcat_started = True
-
             if match := re.fullmatch(r"([A-Z])/(.*)", line, re.DOTALL):
                 level, message = match.groups()
             else:
@@ -431,6 +428,8 @@ async def logcat_task(context, initial_devices):
             # tag indicators from Python's stdout and stderr.
             for prefix in ["python.stdout: ", "python.stderr: "]:
                 if message.startswith(prefix):
+                    global logcat_started
+                    logcat_started = True
                     stream.write(message.removeprefix(prefix))
                     break
             else:
@@ -441,9 +440,12 @@ async def logcat_task(context, initial_devices):
                 else:
                     hidden_output.append(line)
 
-        # If the device disconnects while logcat is running, the status will be 0.
+        # If the device disconnects while logcat is running, which always
+        # happens in --managed mode, some versions of adb return failure.
+        # Distinguish this from a logcat startup error by checking whether we've
+        # received a message from Python yet.
         status = await wait_for(process.wait(), timeout=1)
-        if status != 0:
+        if status != 0 and not logcat_started:
             exit_status_error(args, status, prefix="".join(hidden_output))
 
 
