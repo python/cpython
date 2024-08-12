@@ -1,0 +1,2 @@
+Fix crash on certain calls to ``str()`` with positional arguments of the
+wrong type. Patch by Jelle Zijlstra.
