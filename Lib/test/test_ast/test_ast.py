@@ -30,7 +30,7 @@ STDLIB = os.path.dirname(ast.__file__)
 STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]
 STDLIB_FILES.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
 
-AST_REPR_DATA_FILE = Path(__file__).parents[1] / "ast_repr_data" / "data.txt"
+AST_REPR_DATA_FILE = Path(__file__).parent / "data" / "ast_repr.txt"
 
 def ast_repr_get_test_cases() -> list[str]:
     return exec_tests + eval_tests
