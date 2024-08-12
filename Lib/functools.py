@@ -343,10 +343,8 @@ def _partial_new(cls, func, /, *args, **keywords):
                 if nargs > pto_phcount:
                     tot_args += args[pto_phcount:]
             phcount, merger = _partial_prepare_merger(tot_args)
-        elif pto_phcount:   # not args and pto_phcount
+        else:   # works for both pto_phcount == 0 and != 0
             phcount, merger = pto_phcount, func._merger
-        else:               # not args and not pto_phcount
-            phcount, merger = 0, None
         keywords = {**func.keywords, **keywords}
         func = func.func
     else:

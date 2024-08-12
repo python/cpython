@@ -656,12 +656,6 @@ partial_setstate(partialobject *pto, PyObject *state)
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
     }
-    Py_ssize_t state_len = PyTuple_GET_SIZE(state);
-    if (state_len != 4) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected 4 items in state, got %zd", state_len);
-        return NULL;
-    }
     if (!PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||

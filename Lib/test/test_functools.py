@@ -242,6 +242,12 @@ class TestPartial:
         got, empty = p3(5)
         expected = (-1, 0, 1, 2, 3, 4, 5)
         self.assertTrue(expected == got and empty == {})
+        # inner partial has placeholders and outer partial has no args case
+        p = self.partial(capture, PH, 0)
+        p2 = self.partial(p)
+        expected = (PH, 0)
+        self.assertTrue(expected == p2.args)
+        self.assertTrue(((1, 0), {}) == p2(1))
 
     def test_construct_placeholder_singleton(self):
         PH = self.module.Placeholder
@@ -550,7 +556,7 @@ class TestPartialPySubclass(TestPartialPy):
     def test_subclass_optimization(self):
         p = py_functools.partial(min, 2)
         p2 = self.partial(p, 1)
-        assert p2.func == min
+        assert p2.func is min
         assert p2(0) == 0
 
 
@@ -696,7 +702,7 @@ class TestPartialMethod(unittest.TestCase):
             pass
         p = functools.partialmethod(min, 2)
         p2 = PartialMethodSubclass(p, 1)
-        assert p2.func == min
+        assert p2.func is min
         assert p2.__get__(0)() == 0
 
 
