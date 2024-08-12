@@ -709,17 +709,19 @@ _shuffle_bits(Py_uhash_t h)
    large primes with "interesting bit patterns" and that passed tests
    for good collision statistics on a variety of problematic datasets
    including powersets and graph structures (such as David Eppstein's
-   graph recipes in Lib/test/test_set.py) */
+   graph recipes in Lib/test/test_set.py).
+
+   This hash algorithm can be used on either a frozenset or a set.
+   When it is used on a set, it computes the hash value of the equivalent
+   frozenset without creating a new frozenset object. */
 
 static Py_hash_t
-frozenset_hash(PyObject *self)
+frozenset_hash_impl(PyObject *self)
 {
+    assert(PyAnySet_Check(self));
     PySetObject *so = (PySetObject *)self;
     Py_uhash_t hash = 0;
     setentry *entry;
-
-    if (so->hash != -1)
-        return so->hash;
 
     /* Xor-in shuffled bits from every entry's hash field because xor is
        commutative and a frozenset hash should be independent of order.
@@ -753,6 +755,20 @@ frozenset_hash(PyObject *self)
     if (hash == (Py_uhash_t)-1)
         hash = 590923713UL;
 
+    return (Py_hash_t)hash;
+}
+
+static Py_hash_t
+frozenset_hash(PyObject *self)
+{
+    PySetObject *so = (PySetObject *)self;
+    Py_uhash_t hash;
+
+    if (so->hash != -1) {
+        return so->hash;
+    }
+
+    hash = frozenset_hash_impl(self);
     so->hash = hash;
     return hash;
 }
@@ -1033,14 +1049,13 @@ set_update_internal(PySetObject *so, PyObject *other)
 set.update
     so: setobject
     *others as args: object
-    /
 
 Update the set, adding elements from all others.
 [clinic start generated code]*/
 
 static PyObject *
 set_update_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=34f6371704974c8a input=eb47c4fbaeb3286e]*/
+/*[clinic end generated code: output=34f6371704974c8a input=df4fe486e38cd337]*/
 {
     Py_ssize_t i;
 
@@ -1263,14 +1278,13 @@ set_clear_impl(PySetObject *so)
 set.union
     so: setobject
     *others as args: object
-    /
 
 Return a new set with elements from the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
 set_union_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=2c83d05a446a1477 input=2e2024fa1e40ac84]*/
+/*[clinic end generated code: output=2c83d05a446a1477 input=ddf088706e9577b2]*/
 {
     PySetObject *result;
     PyObject *other;
@@ -1413,14 +1427,13 @@ set_intersection(PySetObject *so, PyObject *other)
 set.intersection as set_intersection_multi
     so: setobject
     *others as args: object
-    /
 
 Return a new set with elements common to the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
 set_intersection_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=2406ef3387adbe2f input=04108ea6d7f0532b]*/
+/*[clinic end generated code: output=2406ef3387adbe2f input=0d9f3805ccbba6a4]*/
 {
     Py_ssize_t i;
 
@@ -1461,14 +1474,13 @@ set_intersection_update(PySetObject *so, PyObject *other)
 set.intersection_update as set_intersection_update_multi
     so: setobject
     *others as args: object
-    /
 
 Update the set, keeping only elements found in it and all others.
 [clinic start generated code]*/
 
 static PyObject *
 set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=251c1f729063609d input=ff8f119f97458d16]*/
+/*[clinic end generated code: output=251c1f729063609d input=223c1e086aa669a9]*/
 {
     PyObject *tmp;
 
@@ -1649,14 +1661,13 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 set.difference_update
     so: setobject
     *others as args: object
-    /
 
 Update the set, removing elements found in others.
 [clinic start generated code]*/
 
 static PyObject *
 set_difference_update_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=28685b2fc63e41c4 input=e7abb43c9f2c5a73]*/
+/*[clinic end generated code: output=28685b2fc63e41c4 input=024e6baa6fbcbb3d]*/
 {
     Py_ssize_t i;
 
@@ -1767,14 +1778,13 @@ set_difference(PySetObject *so, PyObject *other)
 set.difference as set_difference_multi
     so: setobject
     *others as args: object
-    /
 
 Return a new set with elements in the set that are not in the others.
 [clinic start generated code]*/
 
 static PyObject *
 set_difference_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=3130c3bb3cac873d input=d8ae9bb6d518ab95]*/
+/*[clinic end generated code: output=3130c3bb3cac873d input=ba78ea5f099e58df]*/
 {
     Py_ssize_t i;
     PyObject *result, *other;
@@ -2137,7 +2147,6 @@ set_add_impl(PySetObject *so, PyObject *key)
 static int
 set_contains_lock_held(PySetObject *so, PyObject *key)
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_contains_key(so, key);
@@ -2145,11 +2154,11 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return -1;
-        rv = set_contains_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_contains_entry(so, key, hash);
     }
     return rv;
 }
@@ -2203,7 +2212,6 @@ static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=0b9134a2a2200363 input=893e1cb1df98227a]*/
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2211,11 +2219,11 @@ set_remove_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
@@ -2244,7 +2252,6 @@ static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=eec3b687bf32759e input=861cb7fb69b4def0]*/
 {
-    PyObject *tmpkey;
     int rv;
 
     rv = set_discard_key(so, key);
@@ -2252,11 +2259,11 @@ set_discard_impl(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, key);
-        if (tmpkey == NULL)
-            return NULL;
-        rv = set_discard_key(so, tmpkey);
-        Py_DECREF(tmpkey);
+        Py_hash_t hash;
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0)
             return NULL;
     }
