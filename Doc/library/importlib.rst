@@ -421,8 +421,12 @@ ABC hierarchy::
         :attr:`__file__` attribute or an item from a package's
         :attr:`__path__` attribute.
 
-        If the *path* cannot be handled, this raises an :exc:`OSError`
-        or a :exc:`ValueError` depending on the reason.
+        If the *path* cannot be handled, either :exc:`OSError` or :exc:`ValueError`
+        is to be raised. In most cases, these will be raised by the underlying
+        operating system interfaces rather than directly (e.g., :exc:`OSError`
+        would be raised when attempting to access a valid but nonexistent
+        filesystem path, while attempting to access a path containing a NULL
+        byte would raise :exc:`ValueError`).
 
         .. versionchanged:: 3.4
            Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
@@ -588,8 +592,10 @@ ABC hierarchy::
         - ``'size'`` (optional): the size in bytes of the source code.
 
         Any other keys in the dictionary are ignored, to allow for future
-        extensions. If the *path* cannot be handled, this raises an
-        :exc:`OSError` or a :exc:`ValueError` depending on the reason.
+        extensions.
+
+        As for :meth:`ResourecLoader.get_data`, either :exc:`OSError` or
+        :exc:`ValueError` is to be raised if the *path* cannot be handled.
 
         .. versionadded:: 3.3
 
@@ -604,8 +610,7 @@ ABC hierarchy::
         .. deprecated:: 3.3
            This method is deprecated in favour of :meth:`path_stats`.  You don't
            have to implement it, but it is still available for compatibility
-           purposes. If the *path* cannot be handled, this raises an
-           :exc:`OSError` or a :exc:`ValueError` depending on the reason.
+           purposes.
 
         .. versionchanged:: 3.4
            Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
