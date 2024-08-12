@@ -10959,7 +10959,7 @@ _PyType_GetSlotWrapperNames(void)
         return NULL;
     }
     assert(slotdefs[len].name == NULL);
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         pytype_slotdef *slotdef = &slotdefs[i];
         assert(slotdef->name != NULL);
         PyList_SET_ITEM(names, i, Py_NewRef(slotdef->name_strobj));
