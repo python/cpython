@@ -1194,7 +1194,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     executor->jit_code = NULL;
     executor->jit_side_entry = NULL;
     executor->jit_size = 0;
-    // executor->jit_compile_count=0;
+    executor->has_run = true;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1666,6 +1666,56 @@ void _Py_Executor_Invalidate(_PyExecutorObject *executor)
     unlink_executor(executor);
     executor_clear(executor);
    }
+}
+
+void
+_Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
+{
+    /* Walk the list of executors */
+    /* TO DO -- Use a tree to avoid traversing as many objects */
+    bool no_memory = false;
+    PyObject *invalidate = PyList_New(0);
+    if (invalidate == NULL) {
+        PyErr_Clear();
+        no_memory = true;
+    }
+    int total_executors = 0;
+    int invalidated_executors = 0;
+    /* Clearing an executor can deallocate others, so we need to make a list of
+     * executors to invalidate first */
+    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
+        assert(exec->vm_data.valid);
+        _PyExecutorObject *next = exec->vm_data.links.next;
+        total_executors++;
+        if (!exec->has_run) {
+            invalidated_executors++;
+            unlink_executor(exec);
+            if (no_memory) {
+                exec->vm_data.valid = 0;
+            } else {
+                if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
+                    PyErr_Clear();
+                    no_memory = true;
+                    exec->vm_data.valid = 0;
+                }
+            }
+            if (is_invalidation) {
+                OPT_STAT_INC(executors_invalidated);
+            }
+        } else {
+            exec->has_run = false;
+        }
+        exec = next;
+    }
+    if (invalidate != NULL) {
+        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
+            _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+            executor_clear(exec);
+        }
+        Py_DECREF(invalidate);
+    }
+    printf("Invalidated %d out of %d executors\n", invalidated_executors, total_executors);
+    return;
 }
 
 #endif /* _Py_TIER2 */

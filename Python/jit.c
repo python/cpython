@@ -144,6 +144,7 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 #define IS_AARCH64_BRANCH(I)     (((I) & 0x7C000000) == 0x14000000)
 #define IS_AARCH64_LDR_OR_STR(I) (((I) & 0x3B000000) == 0x39000000)
 #define IS_AARCH64_MOV(I)        (((I) & 0x9F800000) == 0x92800000)
+int total_compile_count=0;
 
 // LLD is a great reference for performing relocations... just keep in
 // mind that Tools/jit/build.py does filtering and preprocessing for us!
@@ -401,7 +402,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = 0;
     size_t data_size = 0;
-    int jit_compile_count = executor->jit_compile_count;
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
@@ -462,12 +462,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     executor->jit_code = memory;
     executor->jit_side_entry = memory + trampoline.code_size;
     executor->jit_size = total_size;
-    executor->jit_compile_count = jit_compile_count + 1;
 
-    // int compile_count = 0;
-    // if (++compile_count == 100) {
-    //     _Py_Executor_Invalidate(executor);
-    // }
     return 0;
 }
 
@@ -480,7 +475,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
         executor->jit_code = NULL;
         executor->jit_side_entry = NULL;
         executor->jit_size = 0;
-        // executor->jit_compile_count = 0;
         if (jit_free(memory, size)) {
             PyErr_WriteUnraisable(NULL);
         }

@@ -1510,6 +1510,7 @@ gc_collect_region(PyThreadState *tstate,
                   int untrack,
                   struct gc_collection_stats *stats)
 {
+    _Py_Executors_InvalidateOld(tstate->interp, 0);
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     PyGC_Head *gc; /* initialize to prevent a compiler warning */
