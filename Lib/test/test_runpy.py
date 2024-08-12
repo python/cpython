@@ -660,8 +660,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = 'script'
             script_name = FakePath(self._make_test_script(script_dir, mod_name))
-            self._check_script(script_name, "<run_path>", script_name,
-                               script_name, expect_spec=False)
+            self._check_script(script_name, "<run_path>",
+                               os.fsdecode(script_name),
+                               os.fsdecode(script_name),
+                               expect_spec=False)
 
     def test_basic_script_no_suffix(self):
         with temp_dir() as script_dir:

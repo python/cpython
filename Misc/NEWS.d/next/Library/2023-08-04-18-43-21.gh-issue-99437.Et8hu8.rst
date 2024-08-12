@@ -1,0 +1,2 @@
+:func:`runpy.run_path` now decodes path-like objects, making sure __file__
+and sys.argv[0] of the module being run are always strings.
