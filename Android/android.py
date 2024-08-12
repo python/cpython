@@ -17,6 +17,7 @@ from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError, DEVNULL
 from tempfile import TemporaryDirectory
+from time import sleep
 
 
 SCRIPT_NAME = Path(__file__).name
@@ -504,10 +505,21 @@ async def run_testbed(context):
         # make certain, otherwise we might show logs from a previous run. This
         # is unnecessary in --managed mode, because Gradle creates a new
         # emulator every time.
-        run(
-            [adb, "-s", context.connected, "uninstall", APP_ID],
-            log=False, stdout=DEVNULL, stderr=DEVNULL, check=False
-        )
+        removed = False
+        for package in [f"{APP_ID}.test", APP_ID]:
+            status = run(
+                [adb, "-s", context.connected, "uninstall", package],
+                log=False, stdout=DEVNULL, stderr=DEVNULL, check=False
+            ).returncode
+            if status == 0:
+                removed = True
+
+        # There appears to be a race condition where if you uninstall and then
+        # immediately reinstall, the next run may fail with no output.
+        if removed:
+            print("Waiting for uninstall of old version")
+            sleep(10)  # 5 seconds is not enough.
+
         initial_devices = None
 
     try:
