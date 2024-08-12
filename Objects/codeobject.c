@@ -1817,23 +1817,31 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     }
 
     ournames = intern_names(names);
-    if (ournames == NULL)
+    if (ournames == NULL) {
         goto cleanup;
+    }
     ourvarnames = intern_names(varnames);
-    if (ourvarnames == NULL)
+    if (ourvarnames == NULL) {
         goto cleanup;
-    if (freevars)
+    }
+    if (freevars) {
         ourfreevars = intern_names(freevars);
-    else
+    }
+    else {
         ourfreevars = PyTuple_New(0);
-    if (ourfreevars == NULL)
+    }
+    if (ourfreevars == NULL) {
         goto cleanup;
-    if (cellvars)
+    }
+    if (cellvars) {
         ourcellvars = intern_names(cellvars);
-    else
+    }
+    else {
         ourcellvars = PyTuple_New(0);
-    if (ourcellvars == NULL)
+    }
+    if (ourcellvars == NULL) {
         goto cleanup;
+    }
 
     co = (PyObject *)PyCode_NewWithPosOnlyArgs(argcount, posonlyargcount,
                                                kwonlyargcount,
