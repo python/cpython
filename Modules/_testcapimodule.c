@@ -3332,6 +3332,12 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+pyeval_getlocals(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    return Py_XNewRef(PyEval_GetLocals());
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3476,6 +3482,7 @@ static PyMethodDef TestMethods[] = {
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
+    {"pyeval_getlocals", pyeval_getlocals, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

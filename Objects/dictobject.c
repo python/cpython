@@ -2280,6 +2280,29 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
  * exception occurred.
 */
 int
+_PyDict_GetItemRef_KnownHash_LockHeld(PyDictObject *op, PyObject *key,
+                                      Py_hash_t hash, PyObject **result)
+{
+    PyObject *value;
+    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
+    assert(ix >= 0 || value == NULL);
+    if (ix == DKIX_ERROR) {
+        *result = NULL;
+        return -1;
+    }
+    if (value == NULL) {
+        *result = NULL;
+        return 0;  // missing key
+    }
+    *result = Py_NewRef(value);
+    return 1;  // key is present
+}
+
+/* Gets an item and provides a new reference if the value is present.
+ * Returns 1 if the key is present, 0 if the key is missing, and -1 if an
+ * exception occurred.
+*/
+int
 _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result)
 {
     PyObject *value;
@@ -2519,11 +2542,21 @@ setitem_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
 
 
 int
-_PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
-                         Py_hash_t hash)
+_PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *key, PyObject *value,
+                                   Py_hash_t hash)
 {
-    PyDictObject *mp;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (mp->ma_keys == Py_EMPTY_KEYS) {
+        return insert_to_emptydict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
+    }
+    /* insertdict() handles any resizing that might be necessary */
+    return insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
+}
 
+int
+_PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
+                          Py_hash_t hash)
+{
     if (!PyDict_Check(op)) {
         PyErr_BadInternalCall();
         return -1;
@@ -2531,21 +2564,10 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     assert(key);
     assert(value);
     assert(hash != -1);
-    mp = (PyDictObject *)op;
 
     int res;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    Py_BEGIN_CRITICAL_SECTION(mp);
-
-    if (mp->ma_keys == Py_EMPTY_KEYS) {
-        res = insert_to_emptydict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
-    }
-    else {
-        /* insertdict() handles any resizing that might be necessary */
-        res = insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
-    }
-
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = _PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)op, key, value, hash);
     Py_END_CRITICAL_SECTION();
     return res;
 }
