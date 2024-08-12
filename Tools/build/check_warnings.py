@@ -9,6 +9,11 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
+
+class FileWarnings(NamedTuple):
+    name: str
+    count: int
 
 
 def extract_warnings_from_compiler_output_clang(
@@ -49,9 +54,7 @@ def extract_warnings_from_compiler_output_json(
     """
     # Regex to find json arrays at the top level of the file
     # in the compiler output
-    json_arrays = re.findall(
-        r"\[(?:[^[\]]|\[[^\]]*\])*\]", compiler_output
-    )
+    json_arrays = re.findall(r"\[(?:[^[\]]|\[[^]]*])*]", compiler_output)
     compiler_warnings = []
     for array in json_arrays:
         try:
@@ -74,6 +77,7 @@ def extract_warnings_from_compiler_output_json(
                                     "line": location[key]["line"],
                                     "column": location[key]["column"],
                                     "message": warning["message"],
+                                    "option": warning["option"],
                                 }
                             )
                             # Found a caret, start, or end in location so
@@ -92,17 +96,25 @@ def extract_warnings_from_compiler_output_json(
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
     Returns a dictionary where the key is the file and the data is the warnings
-    in that file
+    in that file. Does not include duplicate warnings for a file from list of
+    provided warnings.
     """
     warnings_by_file = defaultdict(list)
+    warnings_added = set()
     for warning in warnings:
-        warnings_by_file[warning["file"]].append(warning)
+        warning_key = (
+            f"{warning['file']}-{warning['line']}-"
+            f"{warning['column']}-{warning['option']}"
+        )
+        if warning_key not in warnings_added:
+            warnings_added.add(warning_key)
+            warnings_by_file[warning["file"]].append(warning)
 
     return warnings_by_file
 
 
 def get_unexpected_warnings(
-    files_with_expected_warnings: set[str],
+    files_with_expected_warnings: set[tuple[str, int]],
     files_with_warnings: dict[str, list[dict]],
 ) -> int:
     """
@@ -112,7 +124,14 @@ def get_unexpected_warnings(
     """
     unexpected_warnings = []
     for file in files_with_warnings.keys():
-        if file not in files_with_expected_warnings:
+        found_file_in_ignore_list = False
+        for ignore_file in files_with_expected_warnings:
+            if file == ignore_file.name:
+                if len(files_with_warnings[file]) > ignore_file.count:
+                    unexpected_warnings.extend(files_with_warnings[file])
+                found_file_in_ignore_list = True
+                break
+        if not found_file_in_ignore_list:
             unexpected_warnings.extend(files_with_warnings[file])
 
     if unexpected_warnings:
@@ -125,7 +144,7 @@ def get_unexpected_warnings(
 
 
 def get_unexpected_improvements(
-    files_with_expected_warnings: set[str],
+    files_with_expected_warnings: set[tuple[str, int]],
     files_with_warnings: dict[str, list[dict]],
 ) -> int:
     """
@@ -134,8 +153,11 @@ def get_unexpected_improvements(
     """
     unexpected_improvements = []
     for file in files_with_expected_warnings:
-        if file not in files_with_warnings.keys():
+        if file.name not in files_with_warnings.keys():
             unexpected_improvements.append(file)
+        else:
+            if len(files_with_warnings[file.name]) < file.count:
+                unexpected_improvements.append(file)
 
     if unexpected_improvements:
         print("Unexpected improvements:")
@@ -214,11 +236,14 @@ def main(argv: list[str] | None = None) -> int:
         with Path(args.warning_ignore_file_path).open(
             encoding="UTF-8"
         ) as clean_files:
-            files_with_expected_warnings = {
-                file.strip()
+            # Files with expected warnings are stored as a set of tuples
+            # where the first element is the file name and the second element
+            # is the number of warnings expected in that file
+            files_with_expected_warnings = [
+                FileWarning(file.strip().split()[0], int(file.strip().split()[1]))
                 for file in clean_files
                 if file.strip() and not file.startswith("#")
-            }
+            ]
 
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
