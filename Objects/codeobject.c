@@ -702,12 +702,12 @@ _PyCode_New(struct _PyCodeConstructor *con)
     PyMutex_Lock(&state->mutex);
 #endif
     consts_interned = intern_constants(con->consts);
-    if (!consts_interned) {
-        goto finally;
-    }
 #ifdef Py_GIL_DISABLED
     PyMutex_Unlock(&state->mutex);
 #endif
+    if (!consts_interned) {
+        goto finally;
+    }
     localsplusnames_interned = intern_names(con->localsplusnames);
     if (!localsplusnames_interned) {
         goto finally;
