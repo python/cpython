@@ -231,7 +231,7 @@ class WindowsConsole(Console):
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
-        # sequene
+        # sequence
         while (
             x_coord < minlen
             and oldline[x_pos] == newline[x_pos]
