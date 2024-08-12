@@ -62,7 +62,7 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *cons
     const char *errors = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     input = args[0];
@@ -148,7 +148,7 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
     const char *errors = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &input, PyBUF_SIMPLE) != 0) {
@@ -235,7 +235,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     int final = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     input = args[0];
@@ -364,7 +364,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     int final = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &input, PyBUF_SIMPLE) != 0) {
@@ -599,7 +599,7 @@ _multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, P
     PyObject *strobj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     strobj = args[0];
@@ -643,7 +643,7 @@ _multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *se
     PyObject *lines;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     lines = args[0];
@@ -682,4 +682,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=d4b12769230c42bb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af367323cf185718 input=a9049054013a1b77]*/

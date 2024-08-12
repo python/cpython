@@ -83,7 +83,7 @@ InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const 
     int label;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     label = PyLong_AsInt(args[0]);
@@ -149,7 +149,7 @@ InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *arg
     int end_col_offset;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     opcode = PyLong_AsInt(args[0]);
@@ -256,7 +256,7 @@ InstructionSequenceType_add_nested(_PyInstructionSequence *self, PyObject *const
     PyObject *nested;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     nested = args[0];
@@ -301,4 +301,4 @@ InstructionSequenceType_get_instructions(_PyInstructionSequence *self, PyObject 
 {
     return InstructionSequenceType_get_instructions_impl(self);
 }
-/*[clinic end generated code: output=d27cfe58b6f3f332 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=572e5eb66f3b4f79 input=a9049054013a1b77]*/

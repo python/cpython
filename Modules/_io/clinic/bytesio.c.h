@@ -521,7 +521,7 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *initvalue = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -534,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c8d7b26174a8c180 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8b8ef5ff340cad6 input=a9049054013a1b77]*/

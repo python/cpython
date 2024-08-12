@@ -480,7 +480,7 @@ class ParseArgsCodeGen:
                     size = f'nargs - {self.max_pos}' if self.max_pos else 'nargs'
                 return f"""
                     {paramname} = PyTuple_New({size});
-                    if (!{paramname}) {{{{
+                    if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
                     for (Py_ssize_t i = {self.max_pos}; i < nargs; ++i) {{{{
@@ -512,7 +512,7 @@ class ParseArgsCodeGen:
             if self.max_pos:
                 return f"""
                     {paramname} = PyTuple_GetSlice(args, {self.max_pos}, PY_SSIZE_T_MAX);
-                    if (!{paramname}) {{{{
+                    if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
                     """
@@ -684,7 +684,7 @@ class ParseArgsCodeGen:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
                 parser_code = [libclinic.normalize_snippet("""
                     %s = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, %d, %d, %d, %d, argsbuf);
-                    if (!%s) {{
+                    if (%s == NULL) {{
                         goto exit;
                     }}
                     """ % (argsname,
@@ -707,7 +707,7 @@ class ParseArgsCodeGen:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
                 parser_code = [libclinic.normalize_snippet("""
                     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %d, %d, %d, %d, argsbuf);
-                    if (!fastargs) {{
+                    if (fastargs == NULL) {{
                         goto exit;
                     }}
                     """ % (self.min_pos,
@@ -775,7 +775,7 @@ class ParseArgsCodeGen:
                     else:
                         add_label = label
                         parser_code.append(libclinic.normalize_snippet("""
-                            if (%s) {{
+                            if (%s != NULL) {{
                             """ % (argname_fmt % i), indent=4))
                         parser_code.append(libclinic.normalize_snippet(parsearg, indent=8))
                         parser_code.append(libclinic.normalize_snippet("""

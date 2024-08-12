@@ -75,20 +75,20 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyTupleObject *skip_file_prefixes = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     message = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         category = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = _PyNumber_Index(args[2]);
@@ -105,7 +105,7 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_pos;
         }
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         source = args[3];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -185,7 +185,7 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *sourceobj = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 8, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     message = args[0];
@@ -202,19 +202,19 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[4]) {
+    if (args[4] != NULL) {
         mod = args[4];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[5]) {
+    if (args[5] != NULL) {
         registry = args[5];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (args[6]) {
+    if (args[6] != NULL) {
         module_globals = args[6];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -244,4 +244,4 @@ warnings_filters_mutated(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return warnings_filters_mutated_impl(module);
 }
-/*[clinic end generated code: output=4f2020f0ede0871e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a72e7f6b7a9c01f8 input=a9049054013a1b77]*/

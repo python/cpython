@@ -55,7 +55,7 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     PyObject *value = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     seq = args[0];
@@ -120,7 +120,7 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     PyObject *default_value = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     key = args[0];
@@ -186,7 +186,7 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *default_value = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     key = args[0];
@@ -249,7 +249,7 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
     int last = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -315,7 +315,7 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
     int last = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     key = args[0];
@@ -332,4 +332,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a132fa582835ff3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2befca6325e3a2f input=a9049054013a1b77]*/

@@ -51,19 +51,19 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *errors = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[0]) {
+    if (fastargs[0] != NULL) {
         arg = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         if (!PyUnicode_Check(fastargs[1])) {
             _PyArg_BadArgument("bytearray", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
@@ -618,7 +618,7 @@ bytearray_translate(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t n
     PyObject *deletechars = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     table = args[0];
@@ -805,13 +805,13 @@ bytearray_split(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs
     Py_ssize_t maxsplit = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         sep = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -927,13 +927,13 @@ bytearray_rsplit(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     Py_ssize_t maxsplit = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         sep = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -1304,13 +1304,13 @@ bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     const char *errors = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         if (!PyUnicode_Check(args[0])) {
             _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[0]);
             goto exit;
@@ -1410,7 +1410,7 @@ bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t 
     int keepends = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -1523,13 +1523,13 @@ bytearray_hex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, 
     int bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         sep = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -1616,4 +1616,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=d6770a8f30d5045f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22da0ddac4fa3167 input=a9049054013a1b77]*/

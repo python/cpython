@@ -1480,7 +1480,7 @@ keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *b;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -1536,7 +1536,7 @@ keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *b;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -1594,14 +1594,14 @@ keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *c = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -1664,14 +1664,14 @@ keywords_opt_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -1681,7 +1681,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -1743,14 +1743,14 @@ keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *c = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         b = args[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -1809,7 +1809,7 @@ posonly_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *b;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -1865,7 +1865,7 @@ posonly_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *b;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -1923,7 +1923,7 @@ posonly_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *c;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -1984,7 +1984,7 @@ posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -1992,7 +1992,7 @@ posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2055,7 +2055,7 @@ posonly_opt_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -2068,7 +2068,7 @@ skip_optional_posonly:
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2131,7 +2131,7 @@ posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -2139,7 +2139,7 @@ posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -2202,7 +2202,7 @@ posonly_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -2215,7 +2215,7 @@ skip_optional_posonly:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -2279,7 +2279,7 @@ posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *e = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -2288,7 +2288,7 @@ posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         d = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -2354,7 +2354,7 @@ posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *e = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -2362,7 +2362,7 @@ posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssiz
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2372,7 +2372,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         d = args[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -2437,7 +2437,7 @@ posonly_opt_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_
     PyObject *d = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -2450,7 +2450,7 @@ skip_optional_posonly:
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         c = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -2512,7 +2512,7 @@ keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *a;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 1, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = args[0];
@@ -2660,7 +2660,7 @@ posonly_poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *__clinic_args = NULL;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     a = fastargs[0];
@@ -2726,7 +2726,7 @@ poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *__clinic_args = NULL;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     a = fastargs[0];
@@ -2794,7 +2794,7 @@ poskw_varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
     int b = 0;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     a = fastargs[0];
@@ -2871,14 +2871,14 @@ poskw_varpos_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *c = Py_False;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     a = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         b = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -2948,7 +2948,7 @@ varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *b = Py_False;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -3019,14 +3019,14 @@ varpos_kwonly_req_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *c = Py_False;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 1, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     a = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         b = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3099,7 +3099,7 @@ gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *kw2 = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     pos1 = fastargs[0];
@@ -3107,7 +3107,7 @@ gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[2]) {
+    if (fastargs[2] != NULL) {
         kw1 = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -3180,7 +3180,7 @@ gh_32092_kw_pass(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *kw = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     pos = fastargs[0];
@@ -3297,7 +3297,7 @@ null_or_tuple_for_varargs(PyObject *module, PyObject *const *args, Py_ssize_t na
     int covariant = 0;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     name = fastargs[0];
@@ -3368,7 +3368,7 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     const char *path;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -3434,7 +3434,7 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     const char *path;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -3503,7 +3503,7 @@ clone_with_conv_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             };
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -3566,7 +3566,7 @@ clone_with_conv_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             };
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -3650,7 +3650,7 @@ _testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, 
     PyObject *arg;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     arg = args[0];
@@ -3694,7 +3694,7 @@ _testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObjec
     PyObject *__clinic_args = NULL;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     __clinic_args = _PyTuple_FromArray(args, nargs);
@@ -3748,7 +3748,7 @@ _testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls,
     PyObject *__clinic_args = NULL;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 1, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     a = fastargs[0];
@@ -3765,4 +3765,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e4dbf2d15659b41a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=037c1e9f0b9c7750 input=a9049054013a1b77]*/

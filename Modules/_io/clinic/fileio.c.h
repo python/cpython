@@ -95,14 +95,14 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *opener = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     nameobj = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         if (!PyUnicode_Check(fastargs[1])) {
             _PyArg_BadArgument("FileIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
@@ -120,7 +120,7 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    if (fastargs[2]) {
+    if (fastargs[2] != NULL) {
         closefd = PyObject_IsTrue(fastargs[2]);
         if (closefd < 0) {
             goto exit;
@@ -242,7 +242,7 @@ _io_FileIO_readinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
     Py_buffer buffer = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
@@ -318,7 +318,7 @@ _io_FileIO_read(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize
     Py_ssize_t size = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (nargs < 1) {
@@ -371,7 +371,7 @@ _io_FileIO_write(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssiz
     Py_buffer b = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &b, PyBUF_SIMPLE) != 0) {
@@ -491,7 +491,7 @@ _io_FileIO_truncate(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
     PyObject *posobj = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (nargs < 1) {
@@ -528,4 +528,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=7eb93019525a5a8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=092fe21364f68f31 input=a9049054013a1b77]*/

@@ -56,7 +56,7 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *query;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -69,4 +69,4 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=25bdc78997031840 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee15d75d2d34a917 input=a9049054013a1b77]*/

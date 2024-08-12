@@ -57,7 +57,7 @@ stringlib_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     int tabsize = 8;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -321,4 +321,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f983f50ff6b1e99 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=240c25da9d061513 input=a9049054013a1b77]*/

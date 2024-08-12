@@ -236,13 +236,13 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     int reverse = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         keyfunc = args[0];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -439,4 +439,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=1a94d259d06b8847 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a5033fd463948ca input=a9049054013a1b77]*/

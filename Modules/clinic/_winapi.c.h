@@ -794,7 +794,7 @@ _winapi_GetLongPathName(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPCWSTR path = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -898,7 +898,7 @@ _winapi_GetShortPathName(PyObject *module, PyObject *const *args, Py_ssize_t nar
     LPCWSTR path = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2005,7 +2005,7 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
     PyObject *on_type_read;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     on_type_read = args[0];
@@ -2124,4 +2124,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=99af750bb10b5e32 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=571f9de179c27f62 input=a9049054013a1b77]*/

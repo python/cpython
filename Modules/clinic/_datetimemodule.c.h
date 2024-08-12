@@ -61,7 +61,7 @@ iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int weekday;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 3, 3, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     year = PyLong_AsInt(fastargs[0]);
@@ -131,13 +131,13 @@ datetime_date_replace(PyDateTime_Date *self, PyObject *const *args, Py_ssize_t n
     int day = GET_DAY(self);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         year = PyLong_AsInt(args[0]);
         if (year == -1 && PyErr_Occurred()) {
             goto exit;
@@ -146,7 +146,7 @@ datetime_date_replace(PyDateTime_Date *self, PyObject *const *args, Py_ssize_t n
             goto skip_optional_pos;
         }
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         month = PyLong_AsInt(args[1]);
         if (month == -1 && PyErr_Occurred()) {
             goto exit;
@@ -220,13 +220,13 @@ datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t n
     int fold = TIME_GET_FOLD(self);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 5, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         hour = PyLong_AsInt(args[0]);
         if (hour == -1 && PyErr_Occurred()) {
             goto exit;
@@ -235,7 +235,7 @@ datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t n
             goto skip_optional_pos;
         }
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         minute = PyLong_AsInt(args[1]);
         if (minute == -1 && PyErr_Occurred()) {
             goto exit;
@@ -244,7 +244,7 @@ datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t n
             goto skip_optional_pos;
         }
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         second = PyLong_AsInt(args[2]);
         if (second == -1 && PyErr_Occurred()) {
             goto exit;
@@ -253,7 +253,7 @@ datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t n
             goto skip_optional_pos;
         }
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         microsecond = PyLong_AsInt(args[3]);
         if (microsecond == -1 && PyErr_Occurred()) {
             goto exit;
@@ -262,7 +262,7 @@ datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t n
             goto skip_optional_pos;
         }
     }
-    if (args[4]) {
+    if (args[4] != NULL) {
         tzinfo = args[4];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -334,7 +334,7 @@ datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t narg
     PyObject *tz = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -407,13 +407,13 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
     int fold = DATE_GET_FOLD(self);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 8, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         year = PyLong_AsInt(args[0]);
         if (year == -1 && PyErr_Occurred()) {
             goto exit;
@@ -422,7 +422,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
             goto skip_optional_pos;
         }
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         month = PyLong_AsInt(args[1]);
         if (month == -1 && PyErr_Occurred()) {
             goto exit;
@@ -431,7 +431,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
             goto skip_optional_pos;
         }
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         day = PyLong_AsInt(args[2]);
         if (day == -1 && PyErr_Occurred()) {
             goto exit;
@@ -440,7 +440,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
             goto skip_optional_pos;
         }
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         hour = PyLong_AsInt(args[3]);
         if (hour == -1 && PyErr_Occurred()) {
             goto exit;
@@ -449,7 +449,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
             goto skip_optional_pos;
         }
     }
-    if (args[4]) {
+    if (args[4] != NULL) {
         minute = PyLong_AsInt(args[4]);
         if (minute == -1 && PyErr_Occurred()) {
             goto exit;
@@ -458,7 +458,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
             goto skip_optional_pos;
         }
     }
-    if (args[5]) {
+    if (args[5] != NULL) {
         second = PyLong_AsInt(args[5]);
         if (second == -1 && PyErr_Occurred()) {
             goto exit;
@@ -467,7 +467,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
             goto skip_optional_pos;
         }
     }
-    if (args[6]) {
+    if (args[6] != NULL) {
         microsecond = PyLong_AsInt(args[6]);
         if (microsecond == -1 && PyErr_Occurred()) {
             goto exit;
@@ -476,7 +476,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
             goto skip_optional_pos;
         }
     }
-    if (args[7]) {
+    if (args[7] != NULL) {
         tzinfo = args[7];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -496,4 +496,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a62af1bb85589bc4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1819c1ea1b08445b input=a9049054013a1b77]*/

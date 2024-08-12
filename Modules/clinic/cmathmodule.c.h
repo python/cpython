@@ -933,7 +933,7 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     a = PyComplex_AsCComplex(args[0]);
@@ -947,7 +947,7 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         if (PyFloat_CheckExact(args[2])) {
             rel_tol = PyFloat_AS_DOUBLE(args[2]);
         }
@@ -982,4 +982,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6e8e7fe487b07692 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=56d038284cb333f7 input=a9049054013a1b77]*/

@@ -59,13 +59,13 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
     PyObject *timeout_obj = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         blocking = PyObject_IsTrue(args[0]);
         if (blocking < 0) {
             goto exit;
@@ -164,13 +164,13 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
     PyObject *timeout_obj = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         blocking = PyObject_IsTrue(args[0]);
         if (blocking < 0) {
             goto exit;
@@ -264,7 +264,7 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int unlink;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 5, 5, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     kind = PyLong_AsInt(fastargs[0]);
@@ -573,4 +573,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=785ab7ac492ce400 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3040f3da2ba99e39 input=a9049054013a1b77]*/

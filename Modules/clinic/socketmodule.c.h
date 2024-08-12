@@ -78,13 +78,13 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *fdobj = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[0]) {
+    if (fastargs[0] != NULL) {
         family = PyLong_AsInt(fastargs[0]);
         if (family == -1 && PyErr_Occurred()) {
             goto exit;
@@ -93,7 +93,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         type = PyLong_AsInt(fastargs[1]);
         if (type == -1 && PyErr_Occurred()) {
             goto exit;
@@ -102,7 +102,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    if (fastargs[2]) {
+    if (fastargs[2] != NULL) {
         proto = PyLong_AsInt(fastargs[2]);
         if (proto == -1 && PyErr_Occurred()) {
             goto exit;
@@ -286,4 +286,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=a888057b404f8d2d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c52d79afe7e3a794 input=a9049054013a1b77]*/

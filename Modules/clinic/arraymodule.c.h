@@ -195,7 +195,7 @@ array_array_extend(arrayobject *self, PyTypeObject *cls, PyObject *const *args, 
     PyObject *bb;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     bb = args[0];
@@ -350,7 +350,7 @@ array_array_fromfile(arrayobject *self, PyTypeObject *cls, PyObject *const *args
     Py_ssize_t n;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     f = args[0];
@@ -405,7 +405,7 @@ array_array_tofile(arrayobject *self, PyTypeObject *cls, PyObject *const *args, 
     PyObject *f;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     f = args[0];
@@ -651,7 +651,7 @@ array_array___reduce_ex__(arrayobject *self, PyTypeObject *cls, PyObject *const 
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     value = args[0];
@@ -691,4 +691,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=bb7b89c568a8d9ea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=473caa53b7bb1a4f input=a9049054013a1b77]*/

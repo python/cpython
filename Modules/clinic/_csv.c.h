@@ -75,7 +75,7 @@ _csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     name = args[0];
@@ -132,7 +132,7 @@ _csv_get_dialect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     name = args[0];
@@ -193,7 +193,7 @@ _csv_field_size_limit(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *new_limit = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -206,4 +206,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=520893573ec130ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a4d49e85185a770 input=a9049054013a1b77]*/

@@ -52,7 +52,7 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *mapping;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     mapping = fastargs[0];
@@ -142,25 +142,25 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *doc = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[0]) {
+    if (fastargs[0] != NULL) {
         fget = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         fset = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (fastargs[2]) {
+    if (fastargs[2] != NULL) {
         fdel = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -173,4 +173,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=74a4ad2f7bef2b0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4a777c31a75e4ae input=a9049054013a1b77]*/

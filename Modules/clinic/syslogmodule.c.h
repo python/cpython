@@ -59,13 +59,13 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     long facility = LOG_USER;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         if (!PyUnicode_Check(args[0])) {
             _PyArg_BadArgument("openlog", "argument 'ident'", "str", args[0]);
             goto exit;
@@ -75,7 +75,7 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_pos;
         }
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         logopt = PyLong_AsLong(args[1]);
         if (logopt == -1 && PyErr_Occurred()) {
             goto exit;
@@ -262,4 +262,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e26dcd1fe726a2f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2f59bf4a05a76261 input=a9049054013a1b77]*/

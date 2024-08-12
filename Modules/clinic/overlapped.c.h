@@ -485,7 +485,7 @@ _overlapped_Overlapped(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     HANDLE event = INVALID_HANDLE_VALUE;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -1239,4 +1239,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=3f6cd189f280532c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36289a87d2594634 input=a9049054013a1b77]*/

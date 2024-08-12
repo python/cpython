@@ -65,7 +65,7 @@ _pickle_Pickler_dump(PicklerObject *self, PyTypeObject *cls, PyObject *const *ar
     PyObject *obj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     obj = args[0];
@@ -182,20 +182,20 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *buffer_callback = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     file = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         protocol = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    if (fastargs[2]) {
+    if (fastargs[2] != NULL) {
         fix_imports = PyObject_IsTrue(fastargs[2]);
         if (fix_imports < 0) {
             goto exit;
@@ -299,7 +299,7 @@ _pickle_Unpickler_persistent_load(UnpicklerObject *self, PyTypeObject *cls, PyOb
     PyObject *pid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     pid = args[0];
@@ -378,7 +378,7 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyTypeObject *cls, PyObject 
     PyObject *global_name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     module_name = args[0];
@@ -488,14 +488,14 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *buffers = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     file = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         fix_imports = PyObject_IsTrue(fastargs[1]);
         if (fix_imports < 0) {
             goto exit;
@@ -504,7 +504,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[2]) {
+    if (fastargs[2] != NULL) {
         if (!PyUnicode_Check(fastargs[2])) {
             _PyArg_BadArgument("Unpickler", "argument 'encoding'", "str", fastargs[2]);
             goto exit;
@@ -522,7 +522,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[3]) {
+    if (fastargs[3] != NULL) {
         if (!PyUnicode_Check(fastargs[3])) {
             _PyArg_BadArgument("Unpickler", "argument 'errors'", "str", fastargs[3]);
             goto exit;
@@ -680,7 +680,7 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *buffer_callback = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     obj = args[0];
@@ -688,7 +688,7 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         protocol = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -698,7 +698,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         fix_imports = PyObject_IsTrue(args[3]);
         if (fix_imports < 0) {
             goto exit;
@@ -783,14 +783,14 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *buffer_callback = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     obj = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         protocol = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -800,7 +800,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         fix_imports = PyObject_IsTrue(args[2]);
         if (fix_imports < 0) {
             goto exit;
@@ -892,14 +892,14 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *buffers = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     file = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         fix_imports = PyObject_IsTrue(args[1]);
         if (fix_imports < 0) {
             goto exit;
@@ -908,7 +908,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_kwonly;
         }
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         if (!PyUnicode_Check(args[2])) {
             _PyArg_BadArgument("load", "argument 'encoding'", "str", args[2]);
             goto exit;
@@ -926,7 +926,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_kwonly;
         }
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         if (!PyUnicode_Check(args[3])) {
             _PyArg_BadArgument("load", "argument 'errors'", "str", args[3]);
             goto exit;
@@ -1018,14 +1018,14 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *buffers = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     data = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
+    if (args[1] != NULL) {
         fix_imports = PyObject_IsTrue(args[1]);
         if (fix_imports < 0) {
             goto exit;
@@ -1034,7 +1034,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_kwonly;
         }
     }
-    if (args[2]) {
+    if (args[2] != NULL) {
         if (!PyUnicode_Check(args[2])) {
             _PyArg_BadArgument("loads", "argument 'encoding'", "str", args[2]);
             goto exit;
@@ -1052,7 +1052,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_kwonly;
         }
     }
-    if (args[3]) {
+    if (args[3] != NULL) {
         if (!PyUnicode_Check(args[3])) {
             _PyArg_BadArgument("loads", "argument 'errors'", "str", args[3]);
             goto exit;
@@ -1077,4 +1077,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a506d99b5471c17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dffe1870ee080695 input=a9049054013a1b77]*/

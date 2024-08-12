@@ -64,7 +64,7 @@ _asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *loop = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -164,7 +164,7 @@ _asyncio_Future_set_result(FutureObj *self, PyTypeObject *cls, PyObject *const *
     PyObject *result;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     result = args[0];
@@ -211,7 +211,7 @@ _asyncio_Future_set_exception(FutureObj *self, PyTypeObject *cls, PyObject *cons
     PyObject *exception;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     exception = args[0];
@@ -273,7 +273,7 @@ _asyncio_Future_add_done_callback(FutureObj *self, PyTypeObject *cls, PyObject *
     PyObject *context = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     fn = args[0];
@@ -324,7 +324,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyTypeObject *cls, PyObjec
     PyObject *fn;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     fn = args[0];
@@ -385,7 +385,7 @@ _asyncio_Future_cancel(FutureObj *self, PyTypeObject *cls, PyObject *const *args
     PyObject *msg = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -532,26 +532,26 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int eager_start = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     coro = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1]) {
+    if (fastargs[1] != NULL) {
         loop = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[2]) {
+    if (fastargs[2] != NULL) {
         name = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[3]) {
+    if (fastargs[3] != NULL) {
         context = fastargs[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -654,7 +654,7 @@ _asyncio_Task_cancel(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *msg = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -777,7 +777,7 @@ _asyncio_Task_get_stack(TaskObj *self, PyTypeObject *cls, PyObject *const *args,
     PyObject *limit = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -845,13 +845,13 @@ _asyncio_Task_print_stack(TaskObj *self, PyTypeObject *cls, PyObject *const *arg
     PyObject *file = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         limit = args[0];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -1065,7 +1065,7 @@ _asyncio__register_task(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     task = args[0];
@@ -1122,7 +1122,7 @@ _asyncio__register_eager_task(PyObject *module, PyObject *const *args, Py_ssize_
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     task = args[0];
@@ -1179,7 +1179,7 @@ _asyncio__unregister_task(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     task = args[0];
@@ -1236,7 +1236,7 @@ _asyncio__unregister_eager_task(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     task = args[0];
@@ -1296,7 +1296,7 @@ _asyncio__enter_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     loop = args[0];
@@ -1357,7 +1357,7 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     loop = args[0];
@@ -1417,7 +1417,7 @@ _asyncio__swap_current_task(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     loop = args[0];
@@ -1474,7 +1474,7 @@ _asyncio_current_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *loop = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -1534,7 +1534,7 @@ _asyncio_all_tasks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *loop = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
@@ -1547,4 +1547,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2ec3af5a73914995 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c80426f91740f5a7 input=a9049054013a1b77]*/

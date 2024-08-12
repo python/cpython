@@ -122,13 +122,13 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int usedforsecurity = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (args[0]) {
+    if (args[0] != NULL) {
         string = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -148,4 +148,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=930c187ecc3e68d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7708f14b44e990ed input=a9049054013a1b77]*/

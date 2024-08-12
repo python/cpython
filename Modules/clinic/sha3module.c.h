@@ -55,7 +55,7 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int usedforsecurity = 1;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, 0, argsbuf);
-    if (!fastargs) {
+    if (fastargs == NULL) {
         goto exit;
     }
     if (nargs < 1) {
@@ -194,4 +194,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=01eca8c0fc4ef1b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9924224afa3fe5e7 input=a9049054013a1b77]*/
