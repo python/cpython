@@ -1,0 +1,1 @@
+In _io_TextIOWrapper_read_impl, raise BlockingIOError when read() from a non-blocking pipe does not return bytes.
