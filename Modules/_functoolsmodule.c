@@ -150,14 +150,13 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *func, *pto_args, *new_args, *pto_kw;
     partialobject *pto;
     Py_ssize_t pto_phcount = 0;
-    Py_ssize_t new_nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t new_nargs = PyTuple_GET_SIZE(args) - 1;
 
-    if (new_nargs < 1) {
+    if (new_nargs < 0) {
         PyErr_SetString(PyExc_TypeError,
                         "type 'partial' takes at least one argument");
         return NULL;
     }
-    new_nargs--;
     func = PyTuple_GET_ITEM(args, 0);
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
@@ -411,7 +410,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         tot_nargs = pto_nargs + nargs - pto_phcount;
         Py_ssize_t j = 0;       // New args index
         for (Py_ssize_t i = 0; i < pto_nargs; i++) {
-            if (pto_args[i] == pto->placeholder){
+            if (pto_args[i] == pto->placeholder) {
                 stack[i] = args[j];
                 j += 1;
             }
@@ -500,6 +499,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     if (pto_phcount) {
         Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
         Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
+        assert(tot_nargs >= 0);
         tot_args = PyTuple_New(tot_nargs);
         if (tot_args == NULL) {
             Py_XDECREF(tot_kw);

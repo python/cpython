@@ -556,8 +556,8 @@ class TestPartialPySubclass(TestPartialPy):
     def test_subclass_optimization(self):
         p = py_functools.partial(min, 2)
         p2 = self.partial(p, 1)
-        assert p2.func is min
-        assert p2(0) == 0
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2(0), 0)
 
 
 class TestPartialMethod(unittest.TestCase):
@@ -702,8 +702,8 @@ class TestPartialMethod(unittest.TestCase):
             pass
         p = functools.partialmethod(min, 2)
         p2 = PartialMethodSubclass(p, 1)
-        assert p2.func is min
-        assert p2.__get__(0)() == 0
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2.__get__(0)(), 0)
 
 
 class TestUpdateWrapper(unittest.TestCase):
