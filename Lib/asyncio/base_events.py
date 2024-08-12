@@ -1980,14 +1980,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 handle._scheduled = False
 
         timeout = None
-        ready = self._ready
-        scheduled = self._scheduled
 
-        if ready or self._stopping:
+        if self._ready or self._stopping:
             timeout = 0
-        elif scheduled:
+        elif self._scheduled:
             # Compute the desired timeout.
-            timeout = scheduled[0][0] - self.time()
+            timeout = self._scheduled[0][0] - self.time()
             if timeout > MAXIMUM_SELECT_TIMEOUT:
                 timeout = MAXIMUM_SELECT_TIMEOUT
             elif timeout < 0:
@@ -2000,10 +1998,10 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         # Handle 'later' callbacks that are ready.
         end_time = self.time() + self._clock_resolution
-        while scheduled and scheduled[0][0] < end_time:
-            _, handle = heapq.heappop(scheduled)
+        while self._scheduled and self._scheduled[0][0] < end_time:
+            _, handle = heapq.heappop(self._scheduled)
             handle._scheduled = False
-            ready.append(handle)
+            self._ready.append(handle)
 
         # This is the only place where callbacks are actually *called*.
         # All other places just add them to ready.
@@ -2011,10 +2009,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         # callbacks scheduled by callbacks run this time around --
         # they will be run the next time (after another I/O poll).
         # Use an idiom that is thread-safe without using locks.
-        ntodo = len(ready)
-        ready_popleft = ready.popleft
+        ntodo = len(self._ready)
         for i in range(ntodo):
-            handle = ready_popleft()
+            handle = self._ready.popleft()
             if handle._cancelled:
                 continue
             if self._debug:
