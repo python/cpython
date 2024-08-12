@@ -11050,7 +11050,40 @@ static int
 expect_manually_inherited(PyTypeObject *type, void **slot)
 {
     PyObject *typeobj = (PyObject *)type;
-    if (slot == (void *)&type->tp_str) {
+    if (slot == (void *)&type->tp_init) {
+        /* This is a best-effort list of builtin exception types
+           that have their own tp_init function. */
+        if (typeobj != PyExc_BaseException
+            && typeobj != PyExc_BaseExceptionGroup
+            && typeobj != PyExc_ImportError
+            && typeobj != PyExc_NameError
+            && typeobj != PyExc_OSError
+            && typeobj != PyExc_StopIteration
+            && typeobj != PyExc_SyntaxError
+            && typeobj != PyExc_UnicodeDecodeError
+            && typeobj != PyExc_UnicodeEncodeError
+
+            && type != &PyBool_Type
+            && type != &PyMemoryView_Type
+            && type != &PyBytes_Type
+            && type != &PyComplex_Type
+            && type != &PyEnum_Type
+            && type != &PyFilter_Type
+            && type != &PyFloat_Type
+            && type != &PyFrozenSet_Type
+            && type != &PyLong_Type
+            && type != &PyMap_Type
+            && type != &PyRange_Type
+            && type != &PyReversed_Type
+            && type != &PySlice_Type
+            && type != &PyUnicode_Type
+            && type != &PyTuple_Type
+            && type != &PyZip_Type)
+        {
+            return 1;
+        }
+    }
+    else if (slot == (void *)&type->tp_str) {
         /* This is a best-effort list of builtin exception types
            that have their own tp_str function. */
         if (typeobj == PyExc_AttributeError || typeobj == PyExc_NameError) {
