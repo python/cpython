@@ -11094,87 +11094,14 @@ slot_inherited(PyTypeObject *type, pytype_slotdef *slotdef, void **slot)
     if (slot_base == NULL || *slot != *slot_base) {
         return 0;
     }
-
-    /* Ideally we would always ignore any manually inherited
-       slots, Which would mean inheriting the slot wrapper
-       using normal attribute lookup rather than keeping
-       a distinct copy.  However, that would introduce
-       a slight change in behavior that could break
-       existing code.
-
-       In the meantime, look the other way when the definition
-       explicitly inherits the slot. */
-    PyObject *typeobj = (PyObject *)type;
-    if (slot == (void *)&type->tp_init) {
-        /* This is a best-effort list of builtin exception types
-           that have their own tp_init function. */
-        if (typeobj != PyExc_BaseException
-            && typeobj != PyExc_BaseExceptionGroup
-            && typeobj != PyExc_ImportError
-            && typeobj != PyExc_NameError
-            && typeobj != PyExc_OSError
-            && typeobj != PyExc_StopIteration
-            && typeobj != PyExc_SyntaxError
-            && typeobj != PyExc_UnicodeDecodeError
-            && typeobj != PyExc_UnicodeEncodeError
-
-            && type != &PyBool_Type
-            && type != &PyMemoryView_Type
-            && type != &PyBytes_Type
-            && type != &PyComplex_Type
-            && type != &PyEnum_Type
-            && type != &PyFilter_Type
-            && type != &PyFloat_Type
-            && type != &PyFrozenSet_Type
-            && type != &PyLong_Type
-            && type != &PyMap_Type
-            && type != &PyRange_Type
-            && type != &PyReversed_Type
-            && type != &PySlice_Type
-            && type != &PyUnicode_Type
-            && type != &PyTuple_Type
-            && type != &PyZip_Type)
-        {
-            return 0;
-        }
+    if (slot == (void *)&type->tp_hash) {
+        return (type->tp_richcompare == type->tp_base->tp_richcompare);
     }
-    else if (slot == (void *)&type->tp_str) {
-        /* This is a best-effort list of builtin exception types
-           that have their own tp_str function. */
-        if (typeobj == PyExc_AttributeError || typeobj == PyExc_NameError) {
-            return 0;
-        }
-    }
-    else if (slot == (void *)&type->tp_getattr
-             || slot == (void *)&type->tp_getattro)
-    {
-        /* This is a best-effort list of builtin types
-           that have their own tp_getattr function. */
-        if (typeobj == PyExc_BaseException
-            || type == &PyByteArray_Type
-            || type == &PyBytes_Type
-            || type == &PyComplex_Type
-            || type == &PyDict_Type
-            || type == &PyEnum_Type
-            || type == &PyFilter_Type
-            || type == &PyLong_Type
-            || type == &PyList_Type
-            || type == &PyMap_Type
-            || type == &PyMemoryView_Type
-            || type == &PyProperty_Type
-            || type == &PyRange_Type
-            || type == &PyReversed_Type
-            || type == &PySet_Type
-            || type == &PySlice_Type
-            || type == &PySuper_Type
-            || type == &PyTuple_Type
-            || type == &PyZip_Type)
-        {
-            return 0;
-        }
+    else if (slot == (void *)&type->tp_richcompare) {
+        return (type->tp_hash == type->tp_base->tp_hash);
     }
 
-    /* It must be inherited (see type_ready_inherit()).. */
+    /* It must be inherited (see type_ready_inherit()). */
     return 1;
 }
 
