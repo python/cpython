@@ -1736,8 +1736,6 @@ class StrTest(string_tests.StringLikeTest,
             'character buffers are decoded to unicode'
         )
 
-        self.assertRaises(TypeError, str, 42, 42, 42)
-
     def test_constructor_keyword_args(self):
         """Pass various keyword argument combinations to the constructor."""
         # The object argument can be passed as a keyword.
@@ -2652,8 +2650,6 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(proc.rc, 10, proc)
 
     def test_str_invalid_call(self):
-        check = lambda *a, **kw: self.assertRaises(TypeError, str, *a, **kw)
-
         # too many args
         with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
             str("too", "many", "argu", "ments")
