@@ -2000,11 +2000,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         # Handle 'later' callbacks that are ready.
         end_time = self.time() + self._clock_resolution
-        while scheduled:
-            when, handle = scheduled[0]
-            if when >= end_time:
-                break
-            heapq.heappop(scheduled)
+        while scheduled and scheduled[0][0] < end_time:
+            _, handle = heapq.heappop(scheduled)
             handle._scheduled = False
             ready.append(handle)
 
