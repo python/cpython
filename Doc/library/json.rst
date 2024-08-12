@@ -691,7 +691,8 @@ Command-line interface
 --------------
 
 The :mod:`json` module can be invoked as a script via ``python -m json``
-to validate and pretty-print JSON objects.
+to validate and pretty-print JSON objects. The :mod:`json.tool` submodule
+implements this interface.
 
 If the optional ``infile`` and ``outfile`` arguments are not
 specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
