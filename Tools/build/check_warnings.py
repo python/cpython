@@ -9,6 +9,11 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
+
+class FileWarnings(NamedTuple):
+    name: str
+    count: int
 
 
 def extract_warnings_from_compiler_output_clang(
@@ -49,7 +54,7 @@ def extract_warnings_from_compiler_output_json(
     """
     # Regex to find json arrays at the top level of the file
     # in the compiler output
-    json_arrays = re.findall(r"\[(?:[^[\]]|\[[^\]]*\])*\]", compiler_output)
+    json_arrays = re.findall(r"\[(?:[^[\]]|\[[^]]*])*]", compiler_output)
     compiler_warnings = []
     for array in json_arrays:
         try:
@@ -97,7 +102,10 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     warnings_by_file = defaultdict(list)
     warnings_added = set()
     for warning in warnings:
-        warning_key = f"{warning['file']}-{warning['line']}-{warning['column']}-{warning['option']}"
+        warning_key = (
+            f"{warning['file']}-{warning['line']}-"
+            f"{warning['column']}-{warning['option']}"
+        )
         if warning_key not in warnings_added:
             warnings_added.add(warning_key)
             warnings_by_file[warning["file"]].append(warning)
@@ -118,8 +126,8 @@ def get_unexpected_warnings(
     for file in files_with_warnings.keys():
         found_file_in_ignore_list = False
         for ignore_file in files_with_expected_warnings:
-            if file == ignore_file[0]:
-                if len(files_with_warnings[file]) > ignore_file[1]:
+            if file == ignore_file.name:
+                if len(files_with_warnings[file]) > ignore_file.count:
                     unexpected_warnings.extend(files_with_warnings[file])
                 found_file_in_ignore_list = True
                 break
@@ -145,10 +153,10 @@ def get_unexpected_improvements(
     """
     unexpected_improvements = []
     for file in files_with_expected_warnings:
-        if file[0] not in files_with_warnings.keys():
+        if file.name not in files_with_warnings.keys():
             unexpected_improvements.append(file)
         else:
-            if len(files_with_warnings[file[0]]) < file[1]:
+            if len(files_with_warnings[file.name]) < file.count:
                 unexpected_improvements.append(file)
 
     if unexpected_improvements:
@@ -232,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
             # where the first element is the file name and the second element
             # is the number of warnings expected in that file
             files_with_expected_warnings = [
-                (file.strip().split()[0], int(file.strip().split()[1]))
+                FileWarning(file.strip().split()[0], int(file.strip().split()[1]))
                 for file in clean_files
                 if file.strip() and not file.startswith("#")
             ]
