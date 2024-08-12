@@ -111,7 +111,8 @@ never_optimize(
     _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec,
-    int Py_UNUSED(stack_entries), bool Py_UNUSED(progress_needed))
+    int Py_UNUSED(stack_entries),
+    bool Py_UNUSED(progress_needed))
 {
     // This may be called if the optimizer is reset
     return 0;
@@ -178,8 +179,8 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     _PyStackRef *stack_pointer, _PyExecutorObject **executor_ptr, int chain_depth)
 {
-    // The first instruction in a chain and the MAX_CHAIN_DEPTH'th instruction
-    // *must* make progress in order to avoid infinite loops or excessively-long
+    // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
+    // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
     chain_depth %= MAX_CHAIN_DEPTH;
@@ -607,6 +608,16 @@ translate_bytecode_to_trace(
             }
         }
         if (opcode == ENTER_EXECUTOR) {
+            // We have a couple of options here. We *could* peek "underneath"
+            // this executor and continue tracing, which could give us a longer,
+            // more optimizeable trace (at the expense of lots of duplicated
+            // tier two code). Instead, we choose to just end here and stitch to
+            // the other trace, which allows a side-exit traces to rejoin the
+            // "main" trace periodically (and also helps protect us against
+            // pathological behavior where the amount of tier two code explodes
+            // for a medium-length, branchy code path). This seems to work
+            // better in practice, but in the future we could be smarter about
+            // what we do here:
             goto done;
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
@@ -1233,7 +1244,8 @@ uop_optimize(
     _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr,
-    int curr_stackentries, bool progress_needed)
+    int curr_stackentries,
+    bool progress_needed)
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
@@ -1336,7 +1348,8 @@ counter_optimize(
     _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr,
-    int Py_UNUSED(curr_stackentries), bool Py_UNUSED(progress_needed)
+    int Py_UNUSED(curr_stackentries),
+    bool Py_UNUSED(progress_needed)
 )
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
