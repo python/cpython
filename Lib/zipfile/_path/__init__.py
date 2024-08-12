@@ -250,7 +250,10 @@ def _extract_text_encoding(encoding=None, *args, **kwargs):
 
 class Path:
     """
-    A pathlib-compatible interface for zip files.
+    A :class:`importlib.resources.abc.Traversable` interface for zip files.
+
+    Implements many of the features users enjoy from
+    :class:`pathlib.Path`.
 
     Consider a zip file with this structure::
 
@@ -466,8 +469,7 @@ class Path:
         prefix = re.escape(self.at)
         tr = Translator(seps='/')
         matches = re.compile(prefix + tr.translate(pattern)).fullmatch
-        names = (data.filename for data in self.root.filelist)
-        return map(self._next, filter(matches, names))
+        return map(self._next, filter(matches, self.root.namelist()))
 
     def rglob(self, pattern):
         return self.glob(f'**/{pattern}')
