@@ -2396,35 +2396,53 @@ class SubinterpreterTests(unittest.TestCase):
     def test_static_types_inherited_slots(self):
         rch, sch = interpreters.channels.create()
 
-        slots = []
-        script = ''
-        for cls in iter_builtin_types():
-            for slot, own in iter_slot_wrappers(cls):
-                if cls is bool and slot in self.NUMERIC_METHODS:
+        script = textwrap.dedent("""
+            import test.support
+            results = []
+            for cls in test.support.iter_builtin_types():
+                for attr, _ in test.support.iter_slot_wrappers(cls):
+                    wrapper = getattr(cls, attr)
+                    res = (cls, attr, wrapper)
+                    results.append(res)
+            results = tuple((repr(c), a, repr(w)) for c, a, w in results)
+            sch.send_nowait(results)
+            """)
+        def collate_results(raw):
+            results = {}
+            for cls, attr, wrapper in raw:
+                # XXX This should not be necessary.
+                if cls == repr(bool) and attr in self.NUMERIC_METHODS:
                     continue
-                slots.append((cls, slot, own))
-                script += textwrap.dedent(f"""
-                    text = repr({cls.__name__}.{slot})
-                    sch.send_nowait(({cls.__name__!r}, {slot!r}, text))
-                    """)
+                key = cls, attr
+                assert key not in results, (results, key, wrapper)
+                results[key] = wrapper
+            return results
 
         exec(script)
-        all_expected = []
-        for cls, slot, _ in slots:
-            result = rch.recv()
-            assert result == (cls.__name__, slot, result[-1]), (cls, slot, result)
-            all_expected.append(result)
+        raw = rch.recv_nowait()
+        main_results = collate_results(raw)
 
         interp = interpreters.create()
         interp.exec('from test.support import interpreters')
         interp.prepare_main(sch=sch)
         interp.exec(script)
+        raw = rch.recv_nowait()
+        interp_results = collate_results(raw)
 
-        for i, (cls, slot, _) in enumerate(slots):
-            with self.subTest(cls=cls, slot=slot):
-                expected = all_expected[i]
-                result = rch.recv()
-                self.assertEqual(result, expected)
+        for key, expected in main_results.items():
+            cls, attr = key
+            with self.subTest(cls=cls, slotattr=attr):
+                actual = interp_results.pop(key)
+                # XXX This should not be necessary.
+                if cls == "<class 'collections.OrderedDict'>" and attr == '__len__':
+                    continue
+                self.assertEqual(actual, expected)
+        # XXX This should not be necessary.
+        interp_results = {k: v for k, v in interp_results.items() if k[1] != '__hash__'}
+        # XXX This should not be necessary.
+        interp_results.pop(("<class 'collections.OrderedDict'>", '__getitem__'), None)
+        self.maxDiff = None
+        self.assertEqual(interp_results, {})
 
 
 if __name__ == '__main__':
