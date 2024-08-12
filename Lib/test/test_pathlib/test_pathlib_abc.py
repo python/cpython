@@ -1759,6 +1759,12 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(source.readlink(), target.readlink())
 
     @needs_symlinks
+    def test_copy_symlink_to_itself(self):
+        base = self.cls(self.base)
+        source = base / 'linkA'
+        self.assertRaises(OSError, source.copy, source)
+
+    @needs_symlinks
     def test_copy_directory_symlink_follow_symlinks_false(self):
         base = self.cls(self.base)
         source = base / 'linkB'
@@ -1768,6 +1774,20 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertTrue(target.is_symlink())
         self.assertEqual(source.readlink(), target.readlink())
+
+    @needs_symlinks
+    def test_copy_directory_symlink_to_itself(self):
+        base = self.cls(self.base)
+        source = base / 'linkB'
+        self.assertRaises(OSError, source.copy, source)
+
+    @needs_symlinks
+    def test_copy_directory_symlink_into_itself(self):
+        base = self.cls(self.base)
+        source = base / 'linkB'
+        target = base / 'linkB' / 'copyB'
+        self.assertRaises(OSError, source.copy, target)
+        self.assertFalse(target.exists())
 
     def test_copy_file_to_existing_file(self):
         base = self.cls(self.base)
@@ -1933,6 +1953,7 @@ class DummyPathTest(DummyPurePathTest):
         source = base / 'dirC'
         target = base / 'dirC' / 'dirD' / 'copyC'
         self.assertRaises(OSError, source.copy, target)
+        self.assertFalse(target.exists())
 
     def test_copy_missing_on_error(self):
         base = self.cls(self.base)
