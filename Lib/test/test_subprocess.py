@@ -25,7 +25,6 @@ import threading
 import gc
 import textwrap
 import json
-import pathlib
 from test.support.os_helper import FakePath
 
 try:
@@ -1408,7 +1407,7 @@ class ProcessTestCase(BaseTestCase):
         t = threading.Thread(target=open_fds)
         t.start()
         try:
-            with self.assertRaises(EnvironmentError):
+            with self.assertRaises(OSError):
                 subprocess.Popen(NONEXISTING_CMD,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
@@ -1522,9 +1521,6 @@ class ProcessTestCase(BaseTestCase):
         p.communicate(b"x" * 2**20)
 
     def test_repr(self):
-        path_cmd = pathlib.Path("my-tool.py")
-        pathlib_cls = path_cmd.__class__.__name__
-
         cases = [
             ("ls", True, 123, "<Popen: returncode: 123 args: 'ls'>"),
             ('a' * 100, True, 0,
@@ -1532,7 +1528,8 @@ class ProcessTestCase(BaseTestCase):
             (["ls"], False, None, "<Popen: returncode: None args: ['ls']>"),
             (["ls", '--my-opts', 'a' * 100], False, None,
              "<Popen: returncode: None args: ['ls', '--my-opts', 'aaaaaaaaaaaaaaaaaaaaaaaa...>"),
-            (path_cmd, False, 7, f"<Popen: returncode: 7 args: {pathlib_cls}('my-tool.py')>")
+            (os_helper.FakePath("my-tool.py"), False, 7,
+             "<Popen: returncode: 7 args: <FakePath 'my-tool.py'>>")
         ]
         with unittest.mock.patch.object(subprocess.Popen, '_execute_child'):
             for cmd, shell, code, sx in cases:
@@ -1621,6 +1618,22 @@ class ProcessTestCase(BaseTestCase):
             with self.assertRaises(RuntimeError):
                 subprocess.run([sys.executable, "-c", "pass"])
             self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
+
+    @unittest.skipUnless(hasattr(subprocess, '_winapi'),
+                         'need subprocess._winapi')
+    def test_wait_negative_timeout(self):
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
+        with proc:
+            patch = mock.patch.object(
+                subprocess._winapi,
+                'WaitForSingleObject',
+                return_value=subprocess._winapi.WAIT_OBJECT_0)
+            with patch as mock_wait:
+                proc.wait(-1)  # negative timeout
+                mock_wait.assert_called_once_with(proc._handle, 0)
+                proc.returncode = None
+
+            self.assertEqual(proc.wait(), 0)
 
 
 class RunFuncTestCase(BaseTestCase):
@@ -3397,14 +3410,15 @@ class POSIXProcessTestCase(BaseTestCase):
         def dummy():
             pass
 
-        def exit_handler():
-            subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
-            print("shouldn't be printed")
-
-        atexit.register(exit_handler)
+        class AtFinalization:
+            def __del__(self):
+                print("OK")
+                subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
+                print("shouldn't be printed")
+        at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
 

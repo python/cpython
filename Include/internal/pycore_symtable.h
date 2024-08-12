@@ -87,6 +87,7 @@ typedef struct _symtable_entry {
     int ste_opt_lineno;      /* lineno of last exec or import * */
     int ste_opt_col_offset;  /* offset of last exec or import * */
     struct symtable *ste_table;
+    PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
 } PySTEntryObject;
 
 extern PyTypeObject PySTEntry_Type;
@@ -105,6 +106,7 @@ PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
 
+extern PyObject *_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name);
 extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */

@@ -1,5 +1,5 @@
-:mod:`dis` --- Disassembler for Python bytecode
-===============================================
+:mod:`!dis` --- Disassembler for Python bytecode
+================================================
 
 .. module:: dis
    :synopsis: Disassembler for Python bytecode.
@@ -995,11 +995,15 @@ iterations of the loop.
 .. opcode:: BUILD_TUPLE (count)
 
    Creates a tuple consuming *count* items from the stack, and pushes the
-   resulting tuple onto the stack.::
+   resulting tuple onto the stack::
 
-      assert count > 0
-      STACK, values = STACK[:-count], STACK[-count:]
-      STACK.append(tuple(values))
+      if count == 0:
+          value = ()
+      else:
+          STACK = STACK[:-count]
+          value = tuple(STACK[-count:])
+
+      STACK.append(value)
 
 
 .. opcode:: BUILD_LIST (count)
@@ -1116,7 +1120,7 @@ iterations of the loop.
    except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`, which results in pushing ``None`` and the loaded method.
+   :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
    When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
@@ -1128,7 +1132,10 @@ iterations of the loop.
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
-   ``cmp_op[opname]``.
+   ``cmp_op[opname >> 4]``.
+
+   .. versionchanged:: 3.12
+     The cmp_op index is now stored in the four-highest bits of oparg instead of the four-lowest bits of oparg.
 
 
 .. opcode:: IS_OP (invert)
@@ -1592,7 +1599,7 @@ iterations of the loop.
    | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
    |                                   | ``StopIteration`` exception.      |
    +-----------------------------------+-----------------------------------+
-   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async generator value    |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
    |                                   | operation                         |

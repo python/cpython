@@ -141,6 +141,7 @@ Lib/ast.py                    @isidentical
 **/*dataclasses*              @ericvsmith
 
 **/*idlelib*                  @terryjreedy
+/Doc/library/idle.rst         @terryjreedy
 
 **/*typing*                   @gvanrossum @JelleZijlstra @AlexWaygood
 
@@ -168,5 +169,6 @@ Lib/ast.py                    @isidentical
 **/*zipfile/_path/*           @jaraco
 
 # SBOM
+/Misc/externals.spdx.json     @sethmlarson
 /Misc/sbom.spdx.json          @sethmlarson
 /Tools/build/generate_sbom.py @sethmlarson

@@ -748,9 +748,17 @@ extern char * _getpty(int *, int, mode_t, int);
 #      define _Py_ADDRESS_SANITIZER
 #    endif
 #  endif
+#  if __has_feature(thread_sanitizer)
+#    if !defined(_Py_THREAD_SANITIZER)
+#      define _Py_THREAD_SANITIZER
+#    endif
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
+#  endif
+#  if defined(__SANITIZE_THREAD__)
+#    define _Py_THREAD_SANITIZER
 #  endif
 #endif
 

@@ -45,6 +45,7 @@ from . import protocols
 from . import sslproto
 from . import staggered
 from . import tasks
+from . import timeouts
 from . import transports
 from . import trsock
 from .log import logger
@@ -596,23 +597,24 @@ class BaseEventLoop(events.AbstractEventLoop):
         thread = threading.Thread(target=self._do_shutdown, args=(future,))
         thread.start()
         try:
-            await future
-        finally:
-            thread.join(timeout)
-
-        if thread.is_alive():
+            async with timeouts.timeout(timeout):
+                await future
+        except TimeoutError:
             warnings.warn("The executor did not finishing joining "
-                             f"its threads within {timeout} seconds.",
-                             RuntimeWarning, stacklevel=2)
+                          f"its threads within {timeout} seconds.",
+                          RuntimeWarning, stacklevel=2)
             self._default_executor.shutdown(wait=False)
+        else:
+            thread.join()
 
     def _do_shutdown(self, future):
         try:
             self._default_executor.shutdown(wait=True)
             if not self.is_closed():
-                self.call_soon_threadsafe(future.set_result, None)
+                self.call_soon_threadsafe(futures._set_result_unless_cancelled,
+                                          future, None)
         except Exception as ex:
-            if not self.is_closed():
+            if not self.is_closed() and not future.cancelled():
                 self.call_soon_threadsafe(future.set_exception, ex)
 
     def _check_running(self):
@@ -992,8 +994,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as exc:
                         msg = (
                             f'error while attempting to bind on '
-                            f'address {laddr!r}: '
-                            f'{exc.strerror.lower()}'
+                            f'address {laddr!r}: {str(exc).lower()}'
                         )
                         exc = OSError(exc.errno, msg)
                         my_exceptions.append(exc)
@@ -1559,7 +1560,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as err:
                         msg = ('error while attempting '
                                'to bind on address %r: %s'
-                               % (sa, err.strerror.lower()))
+                               % (sa, str(err).lower()))
                         if err.errno == errno.EADDRNOTAVAIL:
                             # Assume the family is not enabled (bpo-30945)
                             sockets.pop()

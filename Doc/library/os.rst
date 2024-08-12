@@ -1,5 +1,5 @@
-:mod:`os` --- Miscellaneous operating system interfaces
-=======================================================
+:mod:`!os` --- Miscellaneous operating system interfaces
+========================================================
 
 .. module:: os
    :synopsis: Miscellaneous operating system interfaces.
@@ -918,10 +918,10 @@ as internal buffering of data.
 
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
-   If *offset_src* is None, then *src* is read from the current position;
+   If *offset_src* is ``None``, then *src* is read from the current position;
    respectively for *offset_dst*.
 
-   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
+   In Linux kernel older than 5.3, the files pointed to by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1497,7 +1497,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0, /)
 
-   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   Write the *buffers* contents to file descriptor *fd* at an offset *offset*,
    leaving the file offset unchanged.  *buffers* must be a sequence of
    :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
    array order. Entire contents of the first buffer is written before
@@ -1664,9 +1664,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    At least one of the file descriptors must refer to a pipe. If *offset_src*
-   is None, then *src* is read from the current position; respectively for
+   is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
-   pipe must be ``None``. The files pointed by *src* and *dst* must reside in
+   pipe must be ``None``. The files pointed to by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with
    :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -2068,7 +2068,7 @@ features:
 
    .. audit-event:: os.chmod path,mode,dir_fd os.chmod
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2095,7 +2095,7 @@ features:
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2236,7 +2236,7 @@ features:
    .. versionchanged:: 3.2
       The *path* parameter became optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.6
@@ -2356,6 +2356,10 @@ features:
    platform-dependent.  On some platforms, they are ignored and you should call
    :func:`chmod` explicitly to set them.
 
+   On Windows, a *mode* of ``0o700`` is specifically handled to apply access
+   control to the new directory such that only the current user and
+   administrators have access. Other values of *mode* are ignored.
+
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
@@ -2369,6 +2373,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.12.4
+      Windows now handles a *mode* of ``0o700``.
 
 
 .. function:: makedirs(name, mode=0o777, exist_ok=False)
@@ -2544,7 +2551,6 @@ features:
    .. versionchanged:: 3.8
       Accepts a :term:`path-like object` and a bytes object on Windows.
 
-   .. versionchanged:: 3.8
       Added support for directory junctions, and changed to return the
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
@@ -3045,21 +3051,21 @@ features:
 
       Time of most recent access expressed in nanoseconds as an integer.
 
-      .. versionadded: 3.3
+      .. versionadded:: 3.3
 
    .. attribute:: st_mtime_ns
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
 
-      .. versionadded: 3.3
+      .. versionadded:: 3.3
 
    .. attribute:: st_ctime_ns
 
       Time of most recent metadata change expressed in nanoseconds as an
       integer.
 
-      .. versionadded: 3.3
+      .. versionadded:: 3.3
 
       .. versionchanged:: 3.12
          ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
@@ -3187,10 +3193,10 @@ features:
       Windows now returns the file index as :attr:`st_ino` when
       available.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       Added the :attr:`st_reparse_tag` member on Windows.
 
    .. versionchanged:: 3.8
@@ -3204,16 +3210,13 @@ features:
       platforms, but for now still contains creation time.
       Use :attr:`st_birthtime` for the creation time.
 
-   .. versionchanged:: 3.12
       On Windows, :attr:`st_ino` may now be up to 128 bits, depending
       on the file system. Previously it would not be above 64 bits, and
       larger file identifiers would be arbitrarily packed.
 
-   .. versionchanged:: 3.12
       On Windows, :attr:`st_rdev` no longer returns a value. Previously
       it would contain the same as :attr:`st_dev`, which was incorrect.
 
-   .. versionadded:: 3.12
       Added the :attr:`st_birthtime` member on Windows.
 
 
@@ -3698,7 +3701,7 @@ features:
    new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
    *initval* is the initial value of the event counter. The initial value
-   must be an 32 bit unsigned integer. Please note that the initial value is
+   must be a 32 bit unsigned integer. Please note that the initial value is
    limited to a 32 bit unsigned int although the event counter is an unsigned
    64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
 
@@ -3777,7 +3780,7 @@ features:
 
 .. data:: EFD_SEMAPHORE
 
-   Provide semaphore-like semantics for reads from a :func:`eventfd` file
+   Provide semaphore-like semantics for reads from an :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
    .. availability:: Linux >= 2.6.30
@@ -4215,14 +4218,14 @@ written in Python, such as a mail server's external command delivery program.
       On macOS the use of this function is unsafe when mixed with using
       higher-level system APIs, and that includes using :mod:`urllib.request`.
 
+   .. versionchanged:: 3.8
+      Calling ``forkpty()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
+
    .. versionchanged:: 3.12
       If Python is able to detect that your process has multiple
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
-
-   .. versionchanged:: 3.8
-      Calling ``forkpty()`` in a subinterpreter is no longer supported
-      (:exc:`RuntimeError` is raised).
 
    .. availability:: Unix, not Emscripten, not WASI.
 
@@ -5390,19 +5393,19 @@ Random numbers
       easy-to-use interface to the random number generator provided by your
       platform, please see :class:`random.SystemRandom`.
 
-   .. versionchanged:: 3.6.0
-      On Linux, ``getrandom()`` is now used in blocking mode to increase the
-      security.
-
-   .. versionchanged:: 3.5.2
-      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
-      is not initialized yet), fall back on reading ``/dev/urandom``.
-
    .. versionchanged:: 3.5
       On Linux 3.17 and newer, the ``getrandom()`` syscall is now used
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+   .. versionchanged:: 3.5.2
+      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
+      is not initialized yet), fall back on reading ``/dev/urandom``.
+
+   .. versionchanged:: 3.6
+      On Linux, ``getrandom()`` is now used in blocking mode to increase the
+      security.
 
    .. versionchanged:: 3.11
       On Windows, ``BCryptGenRandom()`` is used instead of ``CryptGenRandom()``

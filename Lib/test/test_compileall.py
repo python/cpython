@@ -4,7 +4,6 @@ import filecmp
 import importlib.util
 import io
 import os
-import pathlib
 import py_compile
 import shutil
 import struct
@@ -31,6 +30,7 @@ from test.support import os_helper
 from test.support import script_helper
 from test.test_py_compile import without_source_date_epoch
 from test.test_py_compile import SourceDateEpochTestMeta
+from test.support.os_helper import FakePath
 
 
 def get_pyc(script, opt):
@@ -156,28 +156,28 @@ class CompileallTestsBase:
         self.assertFalse(os.path.isfile(self.bc_path))
         # we should also test the output
         with support.captured_stdout() as stdout:
-            self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path)))
+            self.assertTrue(compileall.compile_file(FakePath(self.source_path)))
         self.assertRegex(stdout.getvalue(), r'Compiling ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_ddir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                ddir=pathlib.Path('ddir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                ddir=FakePath('ddir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                stripdir=FakePath('stripdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                prependdir=FakePath('prependdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
@@ -228,22 +228,22 @@ class CompileallTestsBase:
     def test_compile_dir_pathlike(self):
         self.assertFalse(os.path.isfile(self.bc_path))
         with support.captured_stdout() as stdout:
-            compileall.compile_dir(pathlib.Path(self.directory))
+            compileall.compile_dir(FakePath(self.directory))
         line = stdout.getvalue().splitlines()[0]
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               stripdir=FakePath('stripdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               prependdir=FakePath('prependdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
@@ -477,19 +477,25 @@ class EncodingTest(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         with open(self.source_path, 'w', encoding='utf-8') as file:
-            file.write('# -*- coding: utf-8 -*-\n')
-            file.write('print u"\u20ac"\n')
+            # Intentional syntax error: bytes can only contain
+            # ASCII literal characters.
+            file.write('b"\u20ac"')
 
     def tearDown(self):
         shutil.rmtree(self.directory)
 
     def test_error(self):
-        try:
-            orig_stdout = sys.stdout
-            sys.stdout = io.TextIOWrapper(io.BytesIO(),encoding='ascii')
-            compileall.compile_dir(self.directory)
-        finally:
-            sys.stdout = orig_stdout
+        buffer = io.TextIOWrapper(io.BytesIO(), encoding='ascii')
+        with contextlib.redirect_stdout(buffer):
+            compiled = compileall.compile_dir(self.directory)
+        self.assertFalse(compiled)  # should not be successful
+        buffer.seek(0)
+        res = buffer.read()
+        self.assertIn(
+            'SyntaxError: bytes can only contain ASCII literal characters',
+            res,
+        )
+        self.assertNotIn('UnicodeEncodeError', res)
 
 
 class CommandLineTestsBase:

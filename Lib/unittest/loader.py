@@ -254,6 +254,7 @@ class TestLoader(object):
         Paths are sorted before being imported to ensure reproducible execution
         order even on filesystems with non-alphabetical ordering like ext3/4.
         """
+        original_top_level_dir = self._top_level_dir
         set_implicit_top = False
         if top_level_dir is None and self._top_level_dir is not None:
             # make top_level_dir optional if called from load_tests in a package
@@ -307,6 +308,7 @@ class TestLoader(object):
             raise ImportError('Start directory is not importable: %r' % start_dir)
 
         tests = list(self._find_tests(start_dir, pattern))
+        self._top_level_dir = original_top_level_dir
         return self.suiteClass(tests)
 
     def _get_directory_containing_module(self, module_name):

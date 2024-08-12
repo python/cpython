@@ -34,9 +34,9 @@ PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
 "\n"
-"Return an accurate floating point sum of values in the iterable seq.\n"
+"Return an accurate floating-point sum of values in the iterable seq.\n"
 "\n"
-"Assumes IEEE-754 floating point arithmetic.");
+"Assumes IEEE-754 floating-point arithmetic.");
 
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
@@ -549,7 +549,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "isclose($module, /, a, b, *, rel_tol=1e-09, abs_tol=0.0)\n"
 "--\n"
 "\n"
-"Determine whether two floating point numbers are close in value.\n"
+"Determine whether two floating-point numbers are close in value.\n"
 "\n"
 "  rel_tol\n"
 "    maximum difference for being considered \"close\", relative to the\n"
@@ -950,4 +950,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=91a0357265a2a553 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd6c271030b9698b input=a9049054013a1b77]*/

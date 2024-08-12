@@ -509,6 +509,7 @@ def collect_sysconfig(info_add):
         'MACHDEP',
         'MULTIARCH',
         'OPT',
+        'PGO_PROF_USE_FLAG',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',

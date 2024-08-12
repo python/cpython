@@ -719,6 +719,24 @@ Overlapped_dealloc(OverlappedObject *self)
     if (!HasOverlappedIoCompleted(&self->overlapped) &&
         self->type != TYPE_NOT_STARTED)
     {
+        // NOTE: We should not get here, if we do then something is wrong in
+        // the IocpProactor or ProactorEventLoop. Since everything uses IOCP if
+        // the overlapped IO hasn't completed yet then we should not be
+        // deallocating!
+        //
+        // The problem is likely that this OverlappedObject was removed from
+        // the IocpProactor._cache before it was complete. The _cache holds a
+        // reference while IO is pending so that it does not get deallocated
+        // while the kernel has retained the OVERLAPPED structure.
+        //
+        // CancelIoEx (likely called from self.cancel()) may have successfully
+        // completed, but the OVERLAPPED is still in use until either
+        // HasOverlappedIoCompleted() is true or GetQueuedCompletionStatus has
+        // returned this OVERLAPPED object.
+        //
+        // NOTE: Waiting when IOCP is in use can hang indefinitely, but this
+        // CancelIoEx is superfluous in that self.cancel() was already called,
+        // so I've only ever seen this return FALSE with GLE=ERROR_NOT_FOUND
         Py_BEGIN_ALLOW_THREADS
         if (CancelIoEx(self->handle, &self->overlapped))
             wait = TRUE;
@@ -2039,6 +2057,7 @@ overlapped_exec(PyObject *module)
     WINAPI_CONSTANT(F_DWORD,  ERROR_OPERATION_ABORTED);
     WINAPI_CONSTANT(F_DWORD,  ERROR_SEM_TIMEOUT);
     WINAPI_CONSTANT(F_DWORD,  ERROR_PIPE_BUSY);
+    WINAPI_CONSTANT(F_DWORD,  ERROR_PORT_UNREACHABLE);
     WINAPI_CONSTANT(F_DWORD,  INFINITE);
     WINAPI_CONSTANT(F_HANDLE, INVALID_HANDLE_VALUE);
     WINAPI_CONSTANT(F_HANDLE, NULL);

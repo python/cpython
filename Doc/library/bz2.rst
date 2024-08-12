@@ -1,5 +1,5 @@
-:mod:`bz2` --- Support for :program:`bzip2` compression
-=======================================================
+:mod:`!bz2` --- Support for :program:`bzip2` compression
+========================================================
 
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.
@@ -156,7 +156,6 @@ The :mod:`bz2` module contains:
       Support was added for *filename* being a :term:`file object` instead of an
       actual filename.
 
-   .. versionchanged:: 3.3
       The ``'a'`` (append) mode was added, along with support for reading
       multi-stream files.
 

@@ -2126,7 +2126,9 @@ class TestAddSubparsers(TestCase):
         else:
             subparsers_kwargs['help'] = 'command help'
         subparsers = parser.add_subparsers(**subparsers_kwargs)
-        self.assertArgumentParserError(parser.add_subparsers)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'cannot have multiple subparser arguments',
+                               parser.add_subparsers)
 
         # add first sub-parser
         parser1_kwargs = dict(description='1 description')
@@ -2209,6 +2211,34 @@ class TestAddSubparsers(TestCase):
             self.parser.parse_known_args('0.5 -W 1 b -X Y -w 7 Z'.split()),
             (NS(foo=False, bar=0.5, w=7, x='b'), ['-W', '-X', 'Y', 'Z']),
         )
+
+    def test_parse_known_args_with_single_dash_option(self):
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('-k', '--known', action='count', default=0)
+        parser.add_argument('-n', '--new', action='count', default=0)
+        self.assertEqual(parser.parse_known_args(['-k', '-u']),
+                         (NS(known=1, new=0), ['-u']))
+        self.assertEqual(parser.parse_known_args(['-u', '-k']),
+                         (NS(known=1, new=0), ['-u']))
+        self.assertEqual(parser.parse_known_args(['-ku']),
+                         (NS(known=1, new=0), ['-u']))
+        self.assertArgumentParserError(parser.parse_known_args, ['-k=u'])
+        self.assertEqual(parser.parse_known_args(['-uk']),
+                         (NS(known=0, new=0), ['-uk']))
+        self.assertEqual(parser.parse_known_args(['-u=k']),
+                         (NS(known=0, new=0), ['-u=k']))
+        self.assertEqual(parser.parse_known_args(['-kunknown']),
+                         (NS(known=1, new=0), ['-unknown']))
+        self.assertArgumentParserError(parser.parse_known_args, ['-k=unknown'])
+        self.assertEqual(parser.parse_known_args(['-ku=nknown']),
+                         (NS(known=1, new=0), ['-u=nknown']))
+        self.assertEqual(parser.parse_known_args(['-knew']),
+                         (NS(known=1, new=1), ['-ew']))
+        self.assertArgumentParserError(parser.parse_known_args, ['-kn=ew'])
+        self.assertArgumentParserError(parser.parse_known_args, ['-k-new'])
+        self.assertArgumentParserError(parser.parse_known_args, ['-kn-ew'])
+        self.assertEqual(parser.parse_known_args(['-kne-w']),
+                         (NS(known=1, new=1), ['-e-w']))
 
     def test_dest(self):
         parser = ErrorRaisingArgumentParser()
@@ -2768,6 +2798,27 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               --nuts
               '''
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
+
+    def test_help_subparser_all_mutually_exclusive_group_members_suppressed(self):
+        self.maxDiff = None
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        commands = parser.add_subparsers(title="commands", dest="command")
+        cmd_foo = commands.add_parser("foo")
+        group = cmd_foo.add_mutually_exclusive_group()
+        group.add_argument('--verbose', action='store_true', help=argparse.SUPPRESS)
+        group.add_argument('--quiet', action='store_true', help=argparse.SUPPRESS)
+        longopt = '--' + 'long'*32
+        longmeta = 'LONG'*32
+        cmd_foo.add_argument(longopt)
+        expected = f'''\
+            usage: PROG foo [-h]
+                            [{longopt} {longmeta}]
+
+            options:
+              -h, --help            show this help message and exit
+              {longopt} {longmeta}
+              '''
+        self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
 
     def test_empty_group(self):
         # See issue 26952
@@ -5683,7 +5734,8 @@ class TestWrappingMetavar(TestCase):
 class TestExitOnError(TestCase):
 
     def setUp(self):
-        self.parser = argparse.ArgumentParser(exit_on_error=False)
+        self.parser = argparse.ArgumentParser(exit_on_error=False,
+                                              fromfile_prefix_chars='@')
         self.parser.add_argument('--integers', metavar='N', type=int)
 
     def test_exit_on_error_with_good_args(self):
@@ -5693,6 +5745,44 @@ class TestExitOnError(TestCase):
     def test_exit_on_error_with_bad_args(self):
         with self.assertRaises(argparse.ArgumentError):
             self.parser.parse_args('--integers a'.split())
+
+    def test_unrecognized_args(self):
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'unrecognized arguments: --foo bar',
+                               self.parser.parse_args, '--foo bar'.split())
+
+    def test_unrecognized_intermixed_args(self):
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'unrecognized arguments: --foo bar',
+                               self.parser.parse_intermixed_args, '--foo bar'.split())
+
+    def test_required_args(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar, baz',
+                               self.parser.parse_args, [])
+
+    def test_required_mutually_exclusive_args(self):
+        group = self.parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--bar')
+        group.add_argument('--baz')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'one of the arguments --bar --baz is required',
+                               self.parser.parse_args, [])
+
+    def test_ambiguous_option(self):
+        self.parser.add_argument('--foobaz')
+        self.parser.add_argument('--fooble', action='store_true')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "ambiguous option: --foob could match --foobaz, --fooble",
+                               self.parser.parse_args, ['--foob'])
+
+    def test_os_error(self):
+        self.parser.add_argument('file')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "No such file or directory: 'no-such-file'",
+                               self.parser.parse_args, ['@no-such-file'])
 
 
 def tearDownModule():

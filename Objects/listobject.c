@@ -2759,7 +2759,14 @@ list_richcompare(PyObject *v, PyObject *w, int op)
     }
 
     /* Compare the final item again using the proper operator */
-    return PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    PyObject *vitem = vl->ob_item[i];
+    PyObject *witem = wl->ob_item[i];
+    Py_INCREF(vitem);
+    Py_INCREF(witem);
+    PyObject *result = PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    Py_DECREF(vitem);
+    Py_DECREF(witem);
+    return result;
 }
 
 /*[clinic input]
@@ -2928,6 +2935,23 @@ list_subscript(PyListObject* self, PyObject* item)
     }
 }
 
+static Py_ssize_t
+adjust_slice_indexes(PyListObject *lst,
+                     Py_ssize_t *start, Py_ssize_t *stop,
+                     Py_ssize_t step)
+{
+    Py_ssize_t slicelength = PySlice_AdjustIndices(Py_SIZE(lst), start, stop,
+                                                   step);
+
+    /* Make sure s[5:2] = [..] inserts at the right place:
+        before 5, not before 2. */
+    if ((step < 0 && *start < *stop) ||
+        (step > 0 && *start > *stop))
+        *stop = *start;
+
+    return slicelength;
+}
+
 static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
@@ -2940,22 +2964,11 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
         return list_ass_item(self, i, value);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength;
+        Py_ssize_t start, stop, step;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
-                                            step);
-
-        if (step == 1)
-            return list_ass_slice(self, start, stop, value);
-
-        /* Make sure s[5:2] = [..] inserts at the right place:
-           before 5, not before 2. */
-        if ((step < 0 && start < stop) ||
-            (step > 0 && start > stop))
-            stop = start;
 
         if (value == NULL) {
             /* delete slice */
@@ -2963,6 +2976,12 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             size_t cur;
             Py_ssize_t i;
             int res;
+
+            Py_ssize_t slicelength = adjust_slice_indexes(self, &start, &stop,
+                                                          step);
+
+            if (step == 1)
+                return list_ass_slice(self, start, stop, value);
 
             if (slicelength <= 0)
                 return 0;
@@ -3038,6 +3057,15 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             }
             if (!seq)
                 return -1;
+
+            Py_ssize_t slicelength = adjust_slice_indexes(self, &start, &stop,
+                                                          step);
+
+            if (step == 1) {
+                int res = list_ass_slice(self, start, stop, seq);
+                Py_DECREF(seq);
+                return res;
+            }
 
             if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
                 PyErr_Format(PyExc_ValueError,
@@ -3441,6 +3469,7 @@ static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
     PyObject *list;
+    PyObject *iter;
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
@@ -3448,7 +3477,7 @@ listiter_reduce_general(void *_it, int forward)
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
-        PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+        iter = _PyEval_GetBuiltin(&_Py_ID(iter));
         if (!iter) {
             return NULL;
         }
@@ -3456,21 +3485,19 @@ listiter_reduce_general(void *_it, int forward)
         if (it->it_seq) {
             return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
         }
-        Py_DECREF(iter);
     } else {
-        PyObject *reversed = _PyEval_GetBuiltin(&_Py_ID(reversed));
-        if (!reversed) {
+        iter = _PyEval_GetBuiltin(&_Py_ID(reversed));
+        if (!iter) {
             return NULL;
         }
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
-            return Py_BuildValue("N(O)n", reversed, it->it_seq, it->it_index);
+            return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
         }
-        Py_DECREF(reversed);
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
+    return Py_BuildValue("N(N)", iter, list);
 }

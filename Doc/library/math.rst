@@ -1,5 +1,5 @@
-:mod:`math` --- Mathematical functions
-======================================
+:mod:`!math` --- Mathematical functions
+=======================================
 
 .. module:: math
    :synopsis: Mathematical functions (sin() etc.).
@@ -107,7 +107,7 @@ Number-theoretic and representation functions
 
 .. function:: fsum(iterable)
 
-   Return an accurate floating point sum of values in the iterable.  Avoids
+   Return an accurate floating-point sum of values in the iterable.  Avoids
    loss of precision by tracking multiple intermediate partial sums.
 
    The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
@@ -117,8 +117,8 @@ Number-theoretic and representation functions
    least significant bit.
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
-   recipes for accurate floating point summation
-   <https://code.activestate.com/recipes/393090/>`_\.
+   recipes for accurate floating-point summation
+   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>`_\.
 
 
 .. function:: gcd(*integers)
@@ -239,10 +239,10 @@ Number-theoretic and representation functions
 
    See also :func:`math.ulp`.
 
+   .. versionadded:: 3.9
+
    .. versionchanged:: 3.12
       Added the *steps* argument.
-
-   .. versionadded:: 3.9
 
 .. function:: perm(n, k=None)
 
@@ -252,7 +252,7 @@ Number-theoretic and representation functions
    Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
    to zero when ``k > n``.
 
-   If *k* is not specified or is None, then *k* defaults to *n*
+   If *k* is not specified or is ``None``, then *k* defaults to *n*
    and the function returns ``n!``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
@@ -288,7 +288,7 @@ Number-theoretic and representation functions
    If the result of the remainder operation is zero, that zero will have
    the same sign as *x*.
 
-   On platforms using IEEE 754 binary floating-point, the result of this
+   On platforms using IEEE 754 binary floating point, the result of this
    operation is always exactly representable: no rounding error is introduced.
 
    .. versionadded:: 3.7
@@ -592,7 +592,7 @@ Special functions
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_functions>`_::
+   <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -680,10 +680,10 @@ Constants
       >>> math.isnan(float('nan'))
       True
 
+   .. versionadded:: 3.5
+
    .. versionchanged:: 3.11
       It is now always available.
-
-   .. versionadded:: 3.5
 
 
 .. impl-detail::

@@ -2091,6 +2091,24 @@ class BuiltinTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertFalse(not NotImplemented)
 
+    def test_singleton_attribute_access(self):
+        for singleton in (NotImplemented, Ellipsis):
+            with self.subTest(singleton):
+                self.assertIs(type(singleton), singleton.__class__)
+                self.assertIs(type(singleton).__class__, type)
+
+                # Missing instance attributes:
+                with self.assertRaises(AttributeError):
+                    singleton.prop = 1
+                with self.assertRaises(AttributeError):
+                    singleton.prop
+
+                # Missing class attributes:
+                with self.assertRaises(TypeError):
+                    type(singleton).prop = 1
+                with self.assertRaises(AttributeError):
+                    type(singleton).prop
+
 
 class TestBreakpoint(unittest.TestCase):
     def setUp(self):

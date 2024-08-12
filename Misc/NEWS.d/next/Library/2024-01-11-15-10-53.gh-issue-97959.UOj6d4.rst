@@ -1,7 +1,0 @@
-Fix rendering class methods, bound methods, method and function aliases in
-:mod:`pydoc`. Class methods no longer have "method of builtins.type
-instance" note. Corresponding notes are now added for class and unbound
-methods. Method and function aliases now have references to the module or
-the class where the origin was defined if it differs from the current. Bound
-methods are now listed in the static methods section. Methods of builtin
-classes are now supported as well as methods of Python classes.

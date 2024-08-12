@@ -292,7 +292,7 @@ Importing Modules
 
       The module name, as an ASCII encoded string.
 
-   .. c: member:: PyObject* (*initfunc)(void)
+   .. c:member:: PyObject* (*initfunc)(void)
 
       Initialization function for a module built into the interpreter.
 

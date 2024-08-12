@@ -388,9 +388,16 @@ Initializing and finalizing the interpreter
    :c:func:`Py_NewInterpreter` below) that were created and not yet destroyed since
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
-   time (without calling :c:func:`Py_Initialize` again first).  Normally the
-   return value is ``0``.  If there were errors during finalization
-   (flushing buffered data), ``-1`` is returned.
+   time (without calling :c:func:`Py_Initialize` again first).
+
+   Since this is the reverse of :c:func:`Py_Initialize`, it should be called
+   in the same thread with the same interpreter active.  That means
+   the main thread and the main interpreter.
+   This should never be called while :c:func:`Py_RunMain` is running.
+
+   Normally the return value is ``0``.
+   If there were errors during finalization (flushing buffered data),
+   ``-1`` is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -760,7 +767,7 @@ Process-wide parameters
       It is recommended that applications embedding the Python interpreter
       for purposes other than executing a single script pass ``0`` as *updatepath*,
       and update :data:`sys.path` themselves if desired.
-      See `CVE-2008-5983 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
+      See :cve:`2008-5983`.
 
       On versions before 3.1.3, you can achieve the same effect by manually
       popping the first :data:`sys.path` element after having called
@@ -1822,13 +1829,13 @@ pointer and a void pointer argument.
       function is generally **not** suitable for calling Python code from
       arbitrary C threads.  Instead, use the :ref:`PyGILState API<gilstate>`.
 
+   .. versionadded:: 3.1
+
    .. versionchanged:: 3.9
       If this function is called in a subinterpreter, the function *func* is
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
-
-   .. versionadded:: 3.1
 
 .. _profiling:
 

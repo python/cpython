@@ -1,5 +1,5 @@
-:mod:`platform` ---  Access to underlying platform's identifying data
-=====================================================================
+:mod:`!platform` ---  Access to underlying platform's identifying data
+======================================================================
 
 .. module:: platform
    :synopsis: Retrieves as much platform identifying data as possible.
@@ -210,8 +210,8 @@ Windows Platform
    default to an empty string).
 
    As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
-   and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
-   to the OS version being free of debugging code. It could also state *'Checked'*
+   and ``'Multiprocessor Free'`` on multi processor machines. The ``'Free'`` refers
+   to the OS version being free of debugging code. It could also state ``'Checked'``
    which means the OS version uses debugging code, i.e. code that checks arguments,
    ranges, etc.
 

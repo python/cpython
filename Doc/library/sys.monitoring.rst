@@ -1,5 +1,5 @@
-:mod:`sys.monitoring` --- Execution event monitoring
-====================================================
+:mod:`!sys.monitoring` --- Execution event monitoring
+=====================================================
 
 .. module:: sys.monitoring
    :synopsis: Access and control event monitoring
@@ -163,7 +163,7 @@ events, use the expression ``PY_RETURN | PY_START``.
 
 .. monitoring-event:: NO_EVENTS
 
-    An alias for ``0`` so users can do explict comparisions like::
+    An alias for ``0`` so users can do explicit comparisons like::
 
       if get_events(DEBUGGER_ID) == NO_EVENTS:
           ...

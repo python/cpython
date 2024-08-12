@@ -40,7 +40,7 @@ extern "C" {
 #define PY_MONITORING_EVENT_RERAISE 14
 
 
-/* Ancilliary events */
+/* Ancillary events */
 
 #define PY_MONITORING_EVENT_C_RETURN 15
 #define PY_MONITORING_EVENT_C_RAISE 16

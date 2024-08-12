@@ -16,7 +16,7 @@ Object Protocol
 
    Properly handle returning :c:data:`Py_NotImplemented` from within a C
    function (that is, create a new :term:`strong reference`
-   to NotImplemented and return it).
+   to :const:`NotImplemented` and return it).
 
 
 .. c:macro:: Py_PRINT_RAW

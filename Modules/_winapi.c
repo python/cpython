@@ -186,7 +186,6 @@ create_converter('LPCVOID', '" F_POINTER "')
 
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
-create_converter('LPCTSTR', 's')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
 class LPCWSTR_converter(Py_UNICODE_converter):
@@ -221,7 +220,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ae30321c4cb150dd]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -459,7 +458,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateFile", "uIIII",
+    if (PySys_Audit("_winapi.CreateFile", "ukkkk",
                     file_name, desired_access, share_mode,
                     creation_disposition, flags_and_attributes) < 0) {
         return INVALID_HANDLE_VALUE;
@@ -675,7 +674,7 @@ cleanup:
 /*[clinic input]
 _winapi.CreateNamedPipe -> HANDLE
 
-    name: LPCTSTR
+    name: LPCWSTR
     open_mode: DWORD
     pipe_mode: DWORD
     max_instances: DWORD
@@ -687,25 +686,25 @@ _winapi.CreateNamedPipe -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD open_mode,
                              DWORD pipe_mode, DWORD max_instances,
                              DWORD out_buffer_size, DWORD in_buffer_size,
                              DWORD default_timeout,
                              LPSECURITY_ATTRIBUTES security_attributes)
-/*[clinic end generated code: output=80f8c07346a94fbc input=5a73530b84d8bc37]*/
+/*[clinic end generated code: output=7d6fde93227680ba input=5bd4e4a55639ee02]*/
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateNamedPipe", "uII",
+    if (PySys_Audit("_winapi.CreateNamedPipe", "ukk",
                     name, open_mode, pipe_mode) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateNamedPipe(name, open_mode, pipe_mode,
-                             max_instances, out_buffer_size,
-                             in_buffer_size, default_timeout,
-                             security_attributes);
+    handle = CreateNamedPipeW(name, open_mode, pipe_mode,
+                              max_instances, out_buffer_size,
+                              in_buffer_size, default_timeout,
+                              security_attributes);
     Py_END_ALLOW_THREADS
 
     if (handle == INVALID_HANDLE_VALUE)
@@ -1452,6 +1451,49 @@ _winapi_GetLastError_impl(PyObject *module)
     return GetLastError();
 }
 
+
+/*[clinic input]
+_winapi.GetLongPathName
+
+    path: LPCWSTR
+
+Return the long version of the provided path.
+
+If the path is already in its long form, returns the same value.
+
+The path must already be a 'str'. If the type is not known, use
+os.fsdecode before calling this function.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
+/*[clinic end generated code: output=c4774b080275a2d0 input=9872e211e3a4a88f]*/
+{
+    DWORD cchBuffer;
+    PyObject *result = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    cchBuffer = GetLongPathNameW(path, NULL, 0);
+    Py_END_ALLOW_THREADS
+    if (cchBuffer) {
+        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        if (buffer) {
+            Py_BEGIN_ALLOW_THREADS
+            cchBuffer = GetLongPathNameW(path, buffer, cchBuffer);
+            Py_END_ALLOW_THREADS
+            if (cchBuffer) {
+                result = PyUnicode_FromWideChar(buffer, cchBuffer);
+            } else {
+                PyErr_SetFromWindowsErr(0);
+            }
+            PyMem_Free((void *)buffer);
+        }
+    } else {
+        PyErr_SetFromWindowsErr(0);
+    }
+    return result;
+}
+
 /*[clinic input]
 _winapi.GetModuleFileName
 
@@ -1484,6 +1526,48 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
         return PyErr_SetFromWindowsErr(GetLastError());
 
     return PyUnicode_FromWideChar(filename, wcslen(filename));
+}
+
+/*[clinic input]
+_winapi.GetShortPathName
+
+    path: LPCWSTR
+
+Return the short version of the provided path.
+
+If the path is already in its short form, returns the same value.
+
+The path must already be a 'str'. If the type is not known, use
+os.fsdecode before calling this function.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
+/*[clinic end generated code: output=dab6ae494c621e81 input=43fa349aaf2ac718]*/
+{
+    DWORD cchBuffer;
+    PyObject *result = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    cchBuffer = GetShortPathNameW(path, NULL, 0);
+    Py_END_ALLOW_THREADS
+    if (cchBuffer) {
+        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        if (buffer) {
+            Py_BEGIN_ALLOW_THREADS
+            cchBuffer = GetShortPathNameW(path, buffer, cchBuffer);
+            Py_END_ALLOW_THREADS
+            if (cchBuffer) {
+                result = PyUnicode_FromWideChar(buffer, cchBuffer);
+            } else {
+                PyErr_SetFromWindowsErr(0);
+            }
+            PyMem_Free((void *)buffer);
+        }
+    } else {
+        PyErr_SetFromWindowsErr(0);
+    }
+    return result;
 }
 
 /*[clinic input]
@@ -1635,7 +1719,7 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenProcess", "II",
+    if (PySys_Audit("_winapi.OpenProcess", "kk",
                     process_id, desired_access) < 0) {
         return INVALID_HANDLE_VALUE;
     }
@@ -1920,19 +2004,19 @@ _winapi_VirtualQuerySize_impl(PyObject *module, LPCVOID address)
 /*[clinic input]
 _winapi.WaitNamedPipe
 
-    name: LPCTSTR
+    name: LPCWSTR
     timeout: DWORD
     /
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout)
-/*[clinic end generated code: output=c2866f4439b1fe38 input=36fc781291b1862c]*/
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD timeout)
+/*[clinic end generated code: output=e161e2e630b3e9c2 input=099a4746544488fa]*/
 {
     BOOL success;
 
     Py_BEGIN_ALLOW_THREADS
-    success = WaitNamedPipe(name, timeout);
+    success = WaitNamedPipeW(name, timeout);
     Py_END_ALLOW_THREADS
 
     if (!success)
@@ -2184,7 +2268,7 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
         }
 
         err = RegOpenKeyExW(hkcr, ext, 0, KEY_READ, &subkey);
-        if (err == ERROR_FILE_NOT_FOUND) {
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_ACCESS_DENIED) {
             err = ERROR_SUCCESS;
             continue;
         } else if (err != ERROR_SUCCESS) {
@@ -2297,7 +2381,7 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     HRESULT hr;
     COPYFILE2_EXTENDED_PARAMETERS params = { sizeof(COPYFILE2_EXTENDED_PARAMETERS) };
 
-    if (PySys_Audit("_winapi.CopyFile2", "uuI",
+    if (PySys_Audit("_winapi.CopyFile2", "uuk",
                     existing_file_name, new_file_name, flags) < 0) {
         return NULL;
     }
@@ -2345,7 +2429,9 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETCURRENTPROCESS_METHODDEF
     _WINAPI_GETEXITCODEPROCESS_METHODDEF
     _WINAPI_GETLASTERROR_METHODDEF
+    _WINAPI_GETLONGPATHNAME_METHODDEF
     _WINAPI_GETMODULEFILENAME_METHODDEF
+    _WINAPI_GETSHORTPATHNAME_METHODDEF
     _WINAPI_GETSTDHANDLE_METHODDEF
     _WINAPI_GETVERSION_METHODDEF
     _WINAPI_MAPVIEWOFFILE_METHODDEF

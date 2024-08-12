@@ -1005,7 +1005,7 @@ class Path(PurePath):
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
-        Open the file pointed by this path and return a file object, as
+        Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
         if "b" not in mode:

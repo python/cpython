@@ -1,5 +1,5 @@
-:mod:`curses` --- Terminal handling for character-cell displays
-===============================================================
+:mod:`!curses` --- Terminal handling for character-cell displays
+================================================================
 
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
@@ -922,7 +922,7 @@ the following methods and attributes:
 
 .. method:: window.getbegyx()
 
-   Return a tuple ``(y, x)`` of co-ordinates of upper-left corner.
+   Return a tuple ``(y, x)`` of coordinates of upper-left corner.
 
 
 .. method:: window.getbkgd()

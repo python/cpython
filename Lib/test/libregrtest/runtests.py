@@ -2,7 +2,9 @@ import contextlib
 import dataclasses
 import json
 import os
+import shlex
 import subprocess
+import sys
 from typing import Any
 
 from test import support
@@ -66,6 +68,11 @@ class HuntRefleak:
     warmups: int
     runs: int
     filename: StrPath
+
+    def bisect_cmd_args(self) -> list[str]:
+        # Ignore filename since it can contain colon (":"),
+        # and usually it's not used. Use the default filename.
+        return ["-R", f"{self.warmups}:{self.runs}:"]
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -135,6 +142,47 @@ class RunTests:
             or support.is_emscripten
             or support.is_wasi
         )
+
+    def create_python_cmd(self) -> list[str]:
+        python_opts = support.args_from_interpreter_flags()
+        if self.python_cmd is not None:
+            executable = self.python_cmd
+            # Remove -E option, since --python=COMMAND can set PYTHON
+            # environment variables, such as PYTHONPATH, in the worker
+            # process.
+            python_opts = [opt for opt in python_opts if opt != "-E"]
+        else:
+            executable = (sys.executable,)
+        cmd = [*executable, *python_opts]
+        if '-u' not in python_opts:
+            cmd.append('-u')  # Unbuffered stdout and stderr
+        return cmd
+
+    def bisect_cmd_args(self) -> list[str]:
+        args = []
+        if self.fail_fast:
+            args.append("--failfast")
+        if self.fail_env_changed:
+            args.append("--fail-env-changed")
+        if self.timeout:
+            args.append(f"--timeout={self.timeout}")
+        if self.hunt_refleak is not None:
+            args.extend(self.hunt_refleak.bisect_cmd_args())
+        if self.test_dir:
+            args.extend(("--testdir", self.test_dir))
+        if self.memory_limit:
+            args.extend(("--memlimit", self.memory_limit))
+        if self.gc_threshold:
+            args.append(f"--threshold={self.gc_threshold}")
+        if self.use_resources:
+            args.extend(("-u", ','.join(self.use_resources)))
+        if self.python_cmd:
+            cmd = shlex.join(self.python_cmd)
+            args.extend(("--python", cmd))
+        if self.randomize:
+            args.append(f"--randomize")
+        args.append(f"--randseed={self.random_seed}")
+        return args
 
 
 @dataclasses.dataclass(slots=True, frozen=True)

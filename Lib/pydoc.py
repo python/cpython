@@ -529,7 +529,7 @@ class Doc:
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
+            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
                 docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
             else:
@@ -1131,7 +1131,8 @@ class HTMLDoc(Doc):
                     # XXX lambda's won't usually have func_annotations['return']
                     # since the syntax doesn't support but it is possible.
                     # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+                    if not object.__annotations__:
+                        argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1583,7 +1584,8 @@ location listed above.
                     # XXX lambda's won't usually have func_annotations['return']
                     # since the syntax doesn't support but it is possible.
                     # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+                    if not object.__annotations__:
+                        argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
@@ -2146,7 +2148,7 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:', is_cli=is_cli)
+                doc(eval(request), 'Help on %s:', output=self._output, is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
@@ -2239,7 +2241,11 @@ module "pydoc_data.topics" could not be found.
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)
-        pager(doc)
+
+        if self._output is None:
+            pager(doc)
+        else:
+            self.output.write(doc)
 
     def _gettopic(self, topic, more_xrefs=''):
         """Return unbuffered tuple of (topic, xrefs).
@@ -2491,6 +2497,7 @@ def _start_server(urlhandler, hostname, port):
             threading.Thread.__init__(self)
             self.serving = False
             self.error = None
+            self.docserver = None
 
         def run(self):
             """Start the server."""
@@ -2523,9 +2530,9 @@ def _start_server(urlhandler, hostname, port):
 
     thread = ServerThread(urlhandler, hostname, port)
     thread.start()
-    # Wait until thread.serving is True to make sure we are
-    # really up before returning.
-    while not thread.error and not thread.serving:
+    # Wait until thread.serving is True and thread.docserver is set
+    # to make sure we are really up before returning.
+    while not thread.error and not (thread.serving and thread.docserver):
         time.sleep(.01)
     return thread
 

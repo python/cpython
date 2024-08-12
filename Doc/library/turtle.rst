@@ -111,7 +111,7 @@ off-screen)::
    home()
 
 The home position is at the center of the turtle's screen. If you ever need to
-know them, get the turtle's x-y co-ordinates with::
+know them, get the turtle's x-y coordinates with::
 
     pos()
 
@@ -598,7 +598,7 @@ Turtle motion
       >>> turtle.pos()
       (20.00,30.00)
 
-   .. versionadded: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: setx(x)

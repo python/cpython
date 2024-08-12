@@ -1,5 +1,5 @@
-:mod:`gzip` --- Support for :program:`gzip` files
-=================================================
+:mod:`!gzip` --- Support for :program:`gzip` files
+==================================================
 
 .. module:: gzip
    :synopsis: Interfaces for gzip compression and decompression using file objects.
@@ -194,7 +194,9 @@ The module defines the following items:
    .. versionchanged:: 3.11
       Speed is improved by compressing all data at once instead of in a
       streamed fashion. Calls with *mtime* set to ``0`` are delegated to
-      :func:`zlib.compress` for better speed.
+      :func:`zlib.compress` for better speed. In this situation the
+      output may contain a gzip header "OS" byte value other than 255
+      "unknown" as supplied by the underlying zlib implementation.
 
 .. function:: decompress(data)
 

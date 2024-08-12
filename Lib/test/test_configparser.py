@@ -2,7 +2,6 @@ import collections
 import configparser
 import io
 import os
-import pathlib
 import textwrap
 import unittest
 import warnings
@@ -647,6 +646,21 @@ boolean {0[0]} NO
                                      "'opt' in section 'Bar' already exists")
             self.assertEqual(e.args, ("Bar", "opt", "<dict>", None))
 
+    def test_get_after_duplicate_option_error(self):
+        cf = self.newconfig()
+        ini = textwrap.dedent("""\
+            [Foo]
+            x{equals}1
+            y{equals}2
+            y{equals}3
+        """.format(equals=self.delimiters[0]))
+        if self.strict:
+            with self.assertRaises(configparser.DuplicateOptionError):
+                cf.read_string(ini)
+        else:
+            cf.read_string(ini)
+        self.assertEqual(cf.get('Foo', 'x'), '1')
+
     def test_write(self):
         config_string = (
             "[Long Line]\n"
@@ -731,12 +745,12 @@ boolean {0[0]} NO
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read(pathlib.Path(file1), encoding="utf-8")
+        parsed_files = cf.read(os_helper.FakePath(file1), encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we passed both a filename and a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read([pathlib.Path(file1), file1], encoding="utf-8")
+        parsed_files = cf.read([os_helper.FakePath(file1), file1], encoding="utf-8")
         self.assertEqual(parsed_files, [file1, file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only missing files:

@@ -170,6 +170,7 @@ class Untokenizer:
         self.tokens = []
         self.prev_row = 1
         self.prev_col = 0
+        self.prev_type = None
         self.encoding = None
 
     def add_whitespace(self, start):
@@ -184,6 +185,29 @@ class Untokenizer:
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
+
+    def escape_brackets(self, token):
+        characters = []
+        consume_until_next_bracket = False
+        for character in token:
+            if character == "}":
+                if consume_until_next_bracket:
+                    consume_until_next_bracket = False
+                else:
+                    characters.append(character)
+            if character == "{":
+                n_backslashes = sum(
+                    1 for char in _itertools.takewhile(
+                        "\\".__eq__,
+                        characters[-2::-1]
+                    )
+                )
+                if n_backslashes % 2 == 0:
+                    characters.append(character)
+                else:
+                    consume_until_next_bracket = True
+            characters.append(character)
+        return "".join(characters)
 
     def untokenize(self, iterable):
         it = iter(iterable)
@@ -216,11 +240,13 @@ class Untokenizer:
                 startline = False
             elif tok_type == FSTRING_MIDDLE:
                 if '{' in token or '}' in token:
+                    token = self.escape_brackets(token)
+                    last_line = token.splitlines()[-1]
                     end_line, end_col = end
-                    end = (end_line, end_col + token.count('{') + token.count('}'))
-                    token = re.sub('{', '{{', token)
-                    token = re.sub('}', '}}', token)
-
+                    extra_chars = last_line.count("{{") + last_line.count("}}")
+                    end = (end_line, end_col + extra_chars)
+            elif tok_type in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
+                self.tokens.append(" ")
 
             self.add_whitespace(start)
             self.tokens.append(token)
@@ -228,6 +254,7 @@ class Untokenizer:
             if tok_type in (NEWLINE, NL):
                 self.prev_row += 1
                 self.prev_col = 0
+            self.prev_type = tok_type
         return "".join(self.tokens)
 
     def compat(self, token, iterable):
@@ -235,6 +262,7 @@ class Untokenizer:
         toks_append = self.tokens.append
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
+        in_fstring = 0
 
         for tok in _itertools.chain([token], iterable):
             toknum, tokval = tok[:2]
@@ -253,6 +281,10 @@ class Untokenizer:
             else:
                 prevstring = False
 
+            if toknum == FSTRING_START:
+                in_fstring += 1
+            elif toknum == FSTRING_END:
+                in_fstring -= 1
             if toknum == INDENT:
                 indents.append(tokval)
                 continue
@@ -265,11 +297,18 @@ class Untokenizer:
                 toks_append(indents[-1])
                 startline = False
             elif toknum == FSTRING_MIDDLE:
-                if '{' in tokval or '}' in tokval:
-                    tokval = re.sub('{', '{{', tokval)
-                    tokval = re.sub('}', '}}', tokval)
+                tokval = self.escape_brackets(tokval)
+
+            # Insert a space between two consecutive brackets if we are in an f-string
+            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring:
+                tokval = ' ' + tokval
+
+            # Insert a space between two consecutive f-strings
+            if toknum in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
+                self.tokens.append(" ")
 
             toks_append(tokval)
+            self.prev_type = toknum
 
 
 def untokenize(iterable):

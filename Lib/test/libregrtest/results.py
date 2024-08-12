@@ -17,7 +17,7 @@ EXITCODE_INTERRUPTED = 130   # 128 + signal.SIGINT=2
 
 
 class TestResults:
-    def __init__(self):
+    def __init__(self) -> None:
         self.bad: TestList = []
         self.good: TestList = []
         self.rerun_bad: TestList = []
@@ -35,22 +35,22 @@ class TestResults:
         # used by --junit-xml
         self.testsuite_xml: list = []
 
-    def is_all_good(self):
+    def is_all_good(self) -> bool:
         return (not self.bad
                 and not self.skipped
                 and not self.interrupted
                 and not self.worker_bug)
 
-    def get_executed(self):
+    def get_executed(self) -> set[TestName]:
         return (set(self.good) | set(self.bad) | set(self.skipped)
                 | set(self.resource_denied) | set(self.env_changed)
                 | set(self.run_no_tests))
 
-    def no_tests_run(self):
+    def no_tests_run(self) -> bool:
         return not any((self.good, self.bad, self.skipped, self.interrupted,
                         self.env_changed))
 
-    def get_state(self, fail_env_changed):
+    def get_state(self, fail_env_changed: bool) -> str:
         state = []
         if self.bad:
             state.append("FAILURE")
@@ -129,7 +129,7 @@ class TestResults:
     def need_rerun(self):
         return bool(self.rerun_results)
 
-    def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
+    def prepare_rerun(self, *, clear: bool = True) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
         for result in self.rerun_results:
@@ -140,11 +140,12 @@ class TestResults:
             if match_tests:
                 match_tests_dict[result.test_name] = match_tests
 
-        # Clear previously failed tests
-        self.rerun_bad.extend(self.bad)
-        self.bad.clear()
-        self.env_changed.clear()
-        self.rerun_results.clear()
+        if clear:
+            # Clear previously failed tests
+            self.rerun_bad.extend(self.bad)
+            self.bad.clear()
+            self.env_changed.clear()
+            self.rerun_results.clear()
 
         return (tuple(tests), match_tests_dict)
 
@@ -194,7 +195,7 @@ class TestResults:
         omitted = set(tests) - self.get_executed()
 
         # less important
-        all_tests.append((omitted, "test", "{} omitted:"))
+        all_tests.append((sorted(omitted), "test", "{} omitted:"))
         if not quiet:
             all_tests.append((self.skipped, "test", "{} skipped:"))
             all_tests.append((self.resource_denied, "test", "{} skipped (resource denied):"))

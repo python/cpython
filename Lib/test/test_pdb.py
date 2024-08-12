@@ -446,6 +446,38 @@ def test_pdb_pp_repr_exc():
     (Pdb) continue
     """
 
+def test_pdb_empty_line():
+    """Test that empty line repeats the last command.
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+    ...     y = 2
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'p x',
+    ...     '',  # Should repeat p x
+    ...     'n ;; p 0 ;; p x',  # Fill cmdqueue with multiple commands
+    ...     '',  # Should still repeat p x
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(4)test_function()
+    -> pass
+    (Pdb) p x
+    1
+    (Pdb)
+    1
+    (Pdb) n ;; p 0 ;; p x
+    0
+    1
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(5)test_function()
+    -> y = 2
+    (Pdb)
+    1
+    (Pdb) continue
+    """
 
 def do_nothing():
     pass
@@ -901,6 +933,58 @@ def test_post_mortem():
     [EOF]
     (Pdb) continue
     Correctly reraised.
+    """
+
+
+def test_pdb_return_to_different_file():
+    """When pdb returns to a different file, it should not skip if f_trace is
+       not already set
+
+    >>> import pprint
+
+    >>> class A:
+    ...    def __repr__(self):
+    ...        return 'A'
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pprint.pprint(A())
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'b A.__repr__',
+    ...     'continue',
+    ...     'return',
+    ...     'next',
+    ...     'return',
+    ...     'return',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[2]>(3)test_function()
+    -> pprint.pprint(A())
+    (Pdb) b A.__repr__
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_return_to_different_file[1]>:2
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[1]>(3)__repr__()
+    -> return 'A'
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[1]>(3)__repr__()->'A'
+    -> return 'A'
+    (Pdb) next
+    > ...pprint.py..._safe_repr()
+    -> return rep,...
+    (Pdb) return
+    --Return--
+    > ...pprint.py..._safe_repr()->('A'...)
+    -> return rep,...
+    (Pdb) return
+    --Return--
+    > ...pprint.py...format()->('A'...)
+    -> return...
+    (Pdb) continue
+    A
     """
 
 
@@ -1936,13 +2020,30 @@ class PdbTestCase(unittest.TestCase):
         )
         return stdout, stderr
 
-    def run_pdb_script(self, script, commands, expected_returncode=0):
+    def run_pdb_script(self, script, commands,
+                       expected_returncode=0,
+                       pdbrc=None,
+                       remove_home=False):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
+
+        if pdbrc is not None:
+            with open('.pdbrc', 'w') as f:
+                f.write(textwrap.dedent(pdbrc))
+            self.addCleanup(os_helper.unlink, '.pdbrc')
         self.addCleanup(os_helper.unlink, filename)
-        return self._run_pdb([filename], commands, expected_returncode)
+
+        homesave = None
+        if remove_home:
+            homesave = os.environ.pop('HOME', None)
+        try:
+            stdout, stderr = self._run_pdb([filename], commands, expected_returncode)
+        finally:
+            if homesave is not None:
+                os.environ['HOME'] = homesave
+        return stdout, stderr
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
@@ -2012,6 +2113,18 @@ def bœr():
             'bœr',
             ('bœr', 1),
         )
+
+    def test_spec(self):
+        # Test that __main__.__spec__ is set to None when running a script
+        script = """
+            import __main__
+            print(__main__.__spec__)
+        """
+
+        commands = "continue"
+
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn('None', stdout)
 
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
@@ -2170,37 +2283,99 @@ def bœr():
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
 
+    def test_pdbrc_basic(self):
+        script = textwrap.dedent("""
+            a = 1
+            b = 2
+        """)
+
+        pdbrc = textwrap.dedent("""
+            # Comments should be fine
+            n
+            p f"{a+8=}"
+        """)
+
+        stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
+        self.assertNotIn("SyntaxError", stdout)
+        self.assertIn("a+8=9", stdout)
+
+    def test_pdbrc_empty_line(self):
+        """Test that empty lines in .pdbrc are ignored."""
+
+        script = textwrap.dedent("""
+            a = 1
+            b = 2
+            c = 3
+        """)
+
+        pdbrc = textwrap.dedent("""
+            n
+
+        """)
+
+        stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
+        self.assertIn("b = 2", stdout)
+        self.assertNotIn("c = 3", stdout)
+
+    def test_pdbrc_alias(self):
+        script = textwrap.dedent("""
+            class A:
+                def __init__(self):
+                    self.attr = 1
+            a = A()
+            b = 2
+        """)
+
+        pdbrc = textwrap.dedent("""
+            alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
+            until 6
+            pi a
+        """)
+
+        stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
+        self.assertIn("a.attr = 1", stdout)
+
+    def test_pdbrc_semicolon(self):
+        script = textwrap.dedent("""
+            class A:
+                def __init__(self):
+                    self.attr = 1
+            a = A()
+            b = 2
+        """)
+
+        pdbrc = textwrap.dedent("""
+            b 5;;c;;n
+        """)
+
+        stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
+        self.assertIn("-> b = 2", stdout)
+
+    def test_pdbrc_commands(self):
+        script = textwrap.dedent("""
+            class A:
+                def __init__(self):
+                    self.attr = 1
+            a = A()
+            b = 2
+        """)
+
+        pdbrc = textwrap.dedent("""
+            b 6
+            commands 1 ;; p a;; end
+            c
+        """)
+
+        stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
+        self.assertIn("<__main__.A object at", stdout)
+
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""
-            import pdb; pdb.Pdb(readrc=False).set_trace()
-
             print('hello')
         """)
 
-        save_home = os.environ.pop('HOME', None)
-        try:
-            with os_helper.temp_cwd():
-                with open('.pdbrc', 'w') as f:
-                    f.write("invalid\n")
-
-                with open('main.py', 'w') as f:
-                    f.write(script)
-
-                cmd = [sys.executable, 'main.py']
-                proc = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stdin=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                with proc:
-                    stdout, stderr = proc.communicate(b'q\n')
-                    self.assertNotIn(b"NameError: name 'invalid' is not defined",
-                                  stdout)
-
-        finally:
-            if save_home is not None:
-                os.environ['HOME'] = save_home
+        stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc='invalid', remove_home=True)
+        self.assertIn("NameError: name 'invalid' is not defined", stdout)
 
     def test_readrc_homedir(self):
         save_home = os.environ.pop("HOME", None)
@@ -2214,40 +2389,6 @@ def bœr():
             finally:
                 if save_home is not None:
                     os.environ["HOME"] = save_home
-
-    def test_read_pdbrc_with_ascii_encoding(self):
-        script = textwrap.dedent("""
-            import pdb; pdb.Pdb().set_trace()
-            print('hello')
-        """)
-        save_home = os.environ.pop('HOME', None)
-        try:
-            with os_helper.temp_cwd():
-                with open('.pdbrc', 'w', encoding='utf-8') as f:
-                    f.write("Fran\u00E7ais")
-
-                with open('main.py', 'w', encoding='utf-8') as f:
-                    f.write(script)
-
-                cmd = [sys.executable, 'main.py']
-                env = {'PYTHONIOENCODING': 'ascii'}
-                if sys.platform == 'win32':
-                    env['PYTHONLEGACYWINDOWSSTDIO'] = 'non-empty-string'
-                proc = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stdin=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    env={**os.environ, **env}
-                )
-                with proc:
-                    stdout, stderr = proc.communicate(b'c\n')
-                    self.assertIn(b"UnicodeEncodeError: \'ascii\' codec can\'t encode character "
-                                  b"\'\\xe7\' in position 21: ordinal not in range(128)", stderr)
-
-        finally:
-            if save_home is not None:
-                os.environ['HOME'] = save_home
 
     def test_header(self):
         stdout = StringIO()

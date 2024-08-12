@@ -45,9 +45,15 @@
 #define MUNCH_SIZE INT_MAX
 
 #define PY_OPENSSL_HAS_SCRYPT 1
+#if defined(NID_sha3_224) && defined(NID_sha3_256) && defined(NID_sha3_384) && defined(NID_sha3_512)
 #define PY_OPENSSL_HAS_SHA3 1
+#endif
+#if defined(NID_shake128) || defined(NID_shake256)
 #define PY_OPENSSL_HAS_SHAKE 1
+#endif
+#if defined(NID_blake2s256) || defined(NID_blake2b512)
 #define PY_OPENSSL_HAS_BLAKE2 1
+#endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #define PY_EVP_MD EVP_MD
@@ -88,22 +94,45 @@ typedef struct {
     PY_EVP_MD *evp_nosecurity;
 } py_hashentry_t;
 
+// Fundamental to TLS, assumed always present in any libcrypto:
 #define Py_hash_md5 "md5"
 #define Py_hash_sha1 "sha1"
 #define Py_hash_sha224 "sha224"
 #define Py_hash_sha256 "sha256"
 #define Py_hash_sha384 "sha384"
 #define Py_hash_sha512 "sha512"
-#define Py_hash_sha512_224 "sha512_224"
-#define Py_hash_sha512_256 "sha512_256"
-#define Py_hash_sha3_224 "sha3_224"
-#define Py_hash_sha3_256 "sha3_256"
-#define Py_hash_sha3_384 "sha3_384"
-#define Py_hash_sha3_512 "sha3_512"
-#define Py_hash_shake_128 "shake_128"
-#define Py_hash_shake_256 "shake_256"
-#define Py_hash_blake2s "blake2s"
-#define Py_hash_blake2b "blake2b"
+
+// Not all OpenSSL-like libcrypto libraries provide these:
+#if defined(NID_sha512_224)
+# define Py_hash_sha512_224 "sha512_224"
+#endif
+#if defined(NID_sha512_256)
+# define Py_hash_sha512_256 "sha512_256"
+#endif
+#if defined(NID_sha3_224)
+# define Py_hash_sha3_224 "sha3_224"
+#endif
+#if defined(NID_sha3_256)
+# define Py_hash_sha3_256 "sha3_256"
+#endif
+#if defined(NID_sha3_384)
+# define Py_hash_sha3_384 "sha3_384"
+#endif
+#if defined(NID_sha3_512)
+# define Py_hash_sha3_512 "sha3_512"
+#endif
+#if defined(NID_shake128)
+# define Py_hash_shake_128 "shake_128"
+#endif
+#if defined(NID_shake256)
+# define Py_hash_shake_256 "shake_256"
+#endif
+#if defined(NID_blake2s256)
+# define Py_hash_blake2s "blake2s"
+#endif
+#if defined(NID_blake2b512)
+# define Py_hash_blake2b "blake2b"
+#endif
 
 #define PY_HASH_ENTRY(py_name, py_alias, ossl_name, ossl_nid) \
     {py_name, py_alias, ossl_name, ossl_nid, 0, NULL, NULL}
@@ -119,19 +148,39 @@ static const py_hashentry_t py_hashes[] = {
     PY_HASH_ENTRY(Py_hash_sha384, "SHA384", SN_sha384, NID_sha384),
     PY_HASH_ENTRY(Py_hash_sha512, "SHA512", SN_sha512, NID_sha512),
     /* truncated sha2 */
+#ifdef Py_hash_sha512_224
     PY_HASH_ENTRY(Py_hash_sha512_224, "SHA512_224", SN_sha512_224, NID_sha512_224),
+#endif
+#ifdef Py_hash_sha512_256
     PY_HASH_ENTRY(Py_hash_sha512_256, "SHA512_256", SN_sha512_256, NID_sha512_256),
+#endif
     /* sha3 */
+#ifdef Py_hash_sha3_224
     PY_HASH_ENTRY(Py_hash_sha3_224, NULL, SN_sha3_224, NID_sha3_224),
+#endif
+#ifdef Py_hash_sha3_256
     PY_HASH_ENTRY(Py_hash_sha3_256, NULL, SN_sha3_256, NID_sha3_256),
+#endif
+#ifdef Py_hash_sha3_384
     PY_HASH_ENTRY(Py_hash_sha3_384, NULL, SN_sha3_384, NID_sha3_384),
+#endif
+#ifdef Py_hash_sha3_512
     PY_HASH_ENTRY(Py_hash_sha3_512, NULL, SN_sha3_512, NID_sha3_512),
+#endif
     /* sha3 shake */
+#ifdef Py_hash_shake_128
     PY_HASH_ENTRY(Py_hash_shake_128, NULL, SN_shake128, NID_shake128),
+#endif
+#ifdef Py_hash_shake_256
     PY_HASH_ENTRY(Py_hash_shake_256, NULL, SN_shake256, NID_shake256),
+#endif
     /* blake2 digest */
+#ifdef Py_hash_blake2s
     PY_HASH_ENTRY(Py_hash_blake2s, "blake2s256", SN_blake2s256, NID_blake2s256),
+#endif
+#ifdef Py_hash_blake2b
     PY_HASH_ENTRY(Py_hash_blake2b, "blake2b512", SN_blake2b512, NID_blake2b512),
+#endif
     PY_HASH_ENTRY(NULL, NULL, NULL, 0),
 };
 

@@ -1,5 +1,5 @@
-:mod:`sqlite3` --- DB-API 2.0 interface for SQLite databases
-============================================================
+:mod:`!sqlite3` --- DB-API 2.0 interface for SQLite databases
+=============================================================
 
 .. module:: sqlite3
    :synopsis: A DB-API 2.0 implementation using SQLite 3.x.
@@ -16,6 +16,8 @@
    src = sqlite3.connect(":memory:", isolation_level=None)
    dst = sqlite3.connect("tutorial.db", isolation_level=None)
    src.backup(dst)
+   src.close()
+   dst.close()
    del src, dst
 
 .. _sqlite3-intro:
@@ -220,6 +222,7 @@ creating a new cursor, then querying the database:
    >>> title, year = res.fetchone()
    >>> print(f'The highest scoring Monty Python movie is {title!r}, released in {year}')
    The highest scoring Monty Python movie is 'Monty Python and the Holy Grail', released in 1975
+   >>> new_con.close()
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and retrieved values from it in multiple ways.
@@ -388,29 +391,11 @@ Module functions
    will get tracebacks from callbacks on :data:`sys.stderr`. Use ``False``
    to disable the feature again.
 
-   Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
-   improved debug experience:
+   .. note::
 
-   .. testsetup:: sqlite3.trace
-
-      import sqlite3
-
-   .. doctest:: sqlite3.trace
-
-      >>> sqlite3.enable_callback_tracebacks(True)
-      >>> con = sqlite3.connect(":memory:")
-      >>> def evil_trace(stmt):
-      ...     5/0
-      ...
-      >>> con.set_trace_callback(evil_trace)
-      >>> def debug(unraisable):
-      ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
-      ...     print(f"Error message: {unraisable.err_msg}")
-      >>> import sys
-      >>> sys.unraisablehook = debug
-      >>> cur = con.execute("SELECT 1")
-      ZeroDivisionError('division by zero') in callback evil_trace
-      Error message: None
+      Errors in user-defined function callbacks are logged as unraisable exceptions.
+      Use an :func:`unraisable hook handler <sys.unraisablehook>` for
+      introspection of the failed callback.
 
 .. function:: register_adapter(type, adapter, /)
 
@@ -753,6 +738,7 @@ Connection objects
          >>> for row in con.execute("SELECT md5(?)", (b"foo",)):
          ...     print(row)
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
+         >>> con.close()
 
 
    .. method:: create_aggregate(name, n_arg, aggregate_class)
@@ -889,6 +875,7 @@ Connection objects
              FROM test ORDER BY x
          """)
          print(cur.fetchall())
+         con.close()
 
       .. testoutput::
          :hide:
@@ -1037,13 +1024,10 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.enable_load_extension`` auditing event.
 
-      .. testsetup:: sqlite3.loadext
+      .. We cannot doctest the load extension API, since there is no convenient
+         way to skip it.
 
-         import sqlite3
-         con = sqlite3.connect(":memory:")
-
-      .. testcode:: sqlite3.loadext
-         :skipif: True  # not testable at the moment
+      .. code-block::
 
          con.enable_load_extension(True)
 
@@ -1066,14 +1050,6 @@ Connection objects
              """)
          for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
              print(row)
-
-         con.close()
-
-      .. testoutput:: sqlite3.loadext
-         :hide:
-
-         (2, 'broccoli pie', 'broccoli cheese onions flour')
-         (3, 'pumpkin pie', 'pumpkin sugar flour butter')
 
    .. method:: load_extension(path, /, *, entrypoint=None)
 
@@ -1104,7 +1080,7 @@ Connection objects
       .. versionchanged:: 3.12
          Added the *entrypoint* parameter.
 
-   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension_
+   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension
 
    .. method:: iterdump
 
@@ -1190,6 +1166,8 @@ Connection objects
          src = sqlite3.connect('example.db')
          dst = sqlite3.connect(':memory:')
          src.backup(dst)
+         dst.close()
+         src.close()
 
       .. versionadded:: 3.7
 
@@ -1255,6 +1233,10 @@ Connection objects
          10
          >>> con.getlimit(sqlite3.SQLITE_LIMIT_ATTACHED)
          1
+
+      .. testcleanup:: sqlite3.limits
+
+         con.close()
 
       .. versionadded:: 3.11
 
@@ -1537,6 +1519,10 @@ Cursor objects
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
 
+      .. testcleanup:: sqlite3.cursor
+
+         con.close()
+
       .. note::
 
          Any resulting rows are discarded,
@@ -1642,6 +1628,7 @@ Cursor objects
          >>> cur = con.cursor()
          >>> cur.connection == con
          True
+         >>> con.close()
 
    .. attribute:: description
 
@@ -1762,6 +1749,7 @@ Blob objects
           greeting = blob.read()
 
       print(greeting)  # outputs "b'Hello, world!'"
+      con.close()
 
    .. testoutput::
       :hide:
@@ -2074,6 +2062,7 @@ Here's an example of both styles:
    params = (1972,)
    cur.execute("SELECT * FROM lang WHERE first_appeared = ?", params)
    print(cur.fetchall())
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2132,6 +2121,7 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 
    cur.execute("SELECT ?", (Point(4.0, -3.2),))
    print(cur.fetchone()[0])
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2162,6 +2152,7 @@ This function can then be registered using :func:`register_adapter`.
 
    cur.execute("SELECT ?", (Point(1.0, 2.5),))
    print(cur.fetchone()[0])
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2246,6 +2237,8 @@ The following example illustrates the implicit and explicit approaches:
    cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
    cur.execute('SELECT p AS "p [point]" FROM test')
    print("with column names:", cur.fetchone()[0])
+   cur.close()
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2452,6 +2445,8 @@ Some useful URI tricks include:
    res = con2.execute("SELECT data FROM shared")
    assert res.fetchone() == (28,)
 
+   con1.close()
+   con2.close()
 
 More information about this feature, including a list of parameters,
 can be found in the `SQLite URI documentation`_.
@@ -2498,6 +2493,7 @@ Queries now return :class:`!Row` objects:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
+   >>> con.close()
 
 .. note::
 
@@ -2524,6 +2520,7 @@ Using it, queries now return a :class:`!dict` instead of a :class:`!tuple`:
    >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
    ...     print(row)
    {'a': 1, 'b': 2}
+   >>> con.close()
 
 The following row factory returns a :term:`named tuple`:
 
@@ -2550,6 +2547,7 @@ The following row factory returns a :term:`named tuple`:
    1
    >>> row.b   # Attribute access.
    2
+   >>> con.close()
 
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
@@ -2707,3 +2705,11 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. _SQLite transaction behaviour:
    https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
+
+.. testcleanup::
+
+   import os
+   os.remove("backup.db")
+   os.remove("dump.sql")
+   os.remove("example.db")
+   os.remove("tutorial.db")

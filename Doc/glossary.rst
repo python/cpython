@@ -433,11 +433,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`importsystem` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -726,18 +726,6 @@ Glossary
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
 
-   locale encoding
-      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
-
-      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
-
-      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
-
-      ``locale.getencoding()`` can be used to get the locale encoding.
-
-      See also the :term:`filesystem encoding and error handler`.
-
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
@@ -756,6 +744,18 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
+
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
+
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
+
+      :func:`locale.getencoding` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    magic method
       .. index:: pair: magic; method
@@ -799,8 +799,7 @@ Glossary
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
-      for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <https://www.python.org/download/releases/2.3/mro/>`_ for details of the
+      for a member during lookup. See :ref:`python_2.3_mro` for details of the
       algorithm used by the Python interpreter since the 2.3 release.
 
    module
@@ -840,10 +839,11 @@ Glossary
       Some named tuples are built-in types (such as the above examples).
       Alternatively, a named tuple can be created from a regular class
       definition that inherits from :class:`tuple` and that defines named
-      fields.  Such a class can be written by hand or it can be created with
-      the factory function :func:`collections.namedtuple`.  The latter
-      technique also adds some extra methods that may not be found in
-      hand-written or built-in named tuples.
+      fields.  Such a class can be written by hand, or it can be created by
+      inheriting :class:`typing.NamedTuple`, or with the factory function
+      :func:`collections.namedtuple`.  The latter techniques also add some
+      extra methods that may not be found in hand-written or built-in named
+      tuples.
 
    namespace
       The place where a variable is stored.  Namespaces are implemented as

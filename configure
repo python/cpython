@@ -1089,6 +1089,7 @@ with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
+with_thread_sanitizer
 with_hash_algorithm
 with_tzpath
 with_libs
@@ -1868,6 +1869,8 @@ Optional Packages:
   --with-undefined-behavior-sanitizer
                           enable UndefinedBehaviorSanitizer undefined
                           behaviour detector, 'ubsan' (default is no)
+  --with-thread-sanitizer enable ThreadSanitizer data race detector, 'tsan'
+                          (default is no)
   --with-hash-algorithm=[fnv|siphash13|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
@@ -7720,7 +7723,7 @@ then :
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -8199,13 +8202,13 @@ if test "$Py_OPT" = 'true' ; then
     *gcc*)
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
 printf %s "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
-if test ${ax_cv_check_cflags___fno_semantic_interposition+y}
+if test ${ax_cv_check_cflags__Werror__fno_semantic_interposition+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fno-semantic-interposition"
+  CFLAGS="$CFLAGS -Werror -fno-semantic-interposition"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -8219,16 +8222,16 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___fno_semantic_interposition=yes
+  ax_cv_check_cflags__Werror__fno_semantic_interposition=yes
 else $as_nop
-  ax_cv_check_cflags___fno_semantic_interposition=no
+  ax_cv_check_cflags__Werror__fno_semantic_interposition=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_semantic_interposition" >&5
-printf "%s\n" "$ax_cv_check_cflags___fno_semantic_interposition" >&6; }
-if test "x$ax_cv_check_cflags___fno_semantic_interposition" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__fno_semantic_interposition" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__fno_semantic_interposition" >&6; }
+if test "x$ax_cv_check_cflags__Werror__fno_semantic_interposition" = xyes
 then :
 
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
@@ -8781,9 +8784,9 @@ case $CC in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+    PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+    LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
+    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
@@ -8797,9 +8800,9 @@ case $CC in
     case $ac_sys_system in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+        LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
+        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
@@ -9506,7 +9509,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wextra -Werror"
+    as_fn_append CFLAGS " -Wextra -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9624,7 +9627,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-result -Werror"
+    as_fn_append CFLAGS " -Wunused-result -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9669,7 +9672,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-parameter -Werror"
+    as_fn_append CFLAGS " -Wunused-parameter -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9710,7 +9713,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    as_fn_append CFLAGS " -Wint-conversion -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9751,7 +9754,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
+    as_fn_append CFLAGS " -Wmissing-field-initializers -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9792,7 +9795,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wsign-compare -Werror"
+    as_fn_append CFLAGS " -Wsign-compare -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9833,7 +9836,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunreachable-code -Werror"
+    as_fn_append CFLAGS " -Wunreachable-code -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9885,7 +9888,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
+    as_fn_append CFLAGS " -Wstrict-prototypes -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -12661,6 +12664,28 @@ with_ubsan="no"
 fi
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
+printf %s "checking for --with-thread-sanitizer... " >&6; }
+
+# Check whether --with-thread_sanitizer was given.
+if test ${with_thread_sanitizer+y}
+then :
+  withval=$with_thread_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+
+else $as_nop
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+with_tsan="no"
+
+fi
+
+
 # Set info about shared libraries.
 
 
@@ -12764,7 +12789,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -28621,9 +28646,15 @@ case $ac_sys_system in #(
 
 
     py_cv_module__ctypes_test=n/a
+    py_cv_module__testexternalinspection=n/a
+    py_cv_module__testimportmultiple=n/a
+    py_cv_module__testmultiphase=n/a
+    py_cv_module__testsinglephase=n/a
     py_cv_module_fcntl=n/a
     py_cv_module_mmap=n/a
     py_cv_module_termios=n/a
+    py_cv_module_xxlimited=n/a
+    py_cv_module_xxlimited_35=n/a
     py_cv_module_=n/a
 
 

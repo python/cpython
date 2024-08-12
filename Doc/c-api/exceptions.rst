@@ -208,13 +208,14 @@ For convenience, some of these functions will always return a
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
 
-   This is a convenience function to raise :exc:`WindowsError`. If called with
+   This is a convenience function to raise :exc:`OSError`. If called with
    *ierr* of ``0``, the error code returned by a call to :c:func:`!GetLastError`
    is used instead.  It calls the Win32 function :c:func:`!FormatMessage` to retrieve
    the Windows description of error code given by *ierr* or :c:func:`!GetLastError`,
-   then it constructs a tuple object whose first item is the *ierr* value and whose
-   second item is the corresponding error message (gotten from
-   :c:func:`!FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
+   then it constructs a :exc:`OSError` object with the :attr:`~OSError.winerror`
+   attribute set to the error code, the :attr:`~OSError.strerror` attribute
+   set to the corresponding error message (gotten from
+   :c:func:`!FormatMessage`), and then calls ``PyErr_SetObject(PyExc_OSError,
    object)``. This function always returns ``NULL``.
 
    .. availability:: Windows.

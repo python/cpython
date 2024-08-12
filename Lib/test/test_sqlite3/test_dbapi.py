@@ -28,6 +28,7 @@ import sys
 import threading
 import unittest
 import urllib.parse
+import warnings
 
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
@@ -898,6 +899,19 @@ class CursorTests(unittest.TestCase):
                 with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
                     self.cu.execute(query, params)
                 self.assertEqual(cm.filename,  __file__)
+
+    def test_execute_indexed_nameless_params(self):
+        # See gh-117995: "'?1' is considered a named placeholder"
+        for query, params, expected in (
+            ("select ?1, ?2", (1, 2), (1, 2)),
+            ("select ?2, ?1", (1, 2), (2, 1)),
+        ):
+            with self.subTest(query=query, params=params):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", DeprecationWarning)
+                    cu = self.cu.execute(query, params)
+                    actual, = cu.fetchall()
+                    self.assertEqual(actual, expected)
 
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER

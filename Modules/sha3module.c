@@ -63,7 +63,7 @@ typedef struct {
     // Prevents undefined behavior via multiple threads entering the C API.
     // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock lock;
-    Hacl_Streaming_Keccak_state *hash_state;
+    Hacl_Hash_SHA3_state_t *hash_state;
 } SHA3object;
 
 #include "clinic/sha3module.c.h"
@@ -80,18 +80,18 @@ newSHA3object(PyTypeObject *type)
     return newobj;
 }
 
-static void sha3_update(Hacl_Streaming_Keccak_state *state, uint8_t *buf, Py_ssize_t len) {
+static void sha3_update(Hacl_Hash_SHA3_state_t *state, uint8_t *buf, Py_ssize_t len) {
   /* Note: we explicitly ignore the error code on the basis that it would take >
    * 1 billion years to hash more than 2^64 bytes. */
 #if PY_SSIZE_T_MAX > UINT32_MAX
   while (len > UINT32_MAX) {
-    Hacl_Streaming_Keccak_update(state, buf, UINT32_MAX);
+    Hacl_Hash_SHA3_update(state, buf, UINT32_MAX);
     len -= UINT32_MAX;
     buf += UINT32_MAX;
   }
 #endif
   /* Cast to uint32_t is safe: len <= UINT32_MAX at this point. */
-  Hacl_Streaming_Keccak_update(state, buf, (uint32_t) len);
+  Hacl_Hash_SHA3_update(state, buf, (uint32_t) len);
 }
 
 /*[clinic input]
@@ -119,17 +119,17 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
     assert(state != NULL);
 
     if (type == state->sha3_224_type) {
-        self->hash_state = Hacl_Streaming_Keccak_malloc(Spec_Hash_Definitions_SHA3_224);
+        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_224);
     } else if (type == state->sha3_256_type) {
-        self->hash_state = Hacl_Streaming_Keccak_malloc(Spec_Hash_Definitions_SHA3_256);
+        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_256);
     } else if (type == state->sha3_384_type) {
-        self->hash_state = Hacl_Streaming_Keccak_malloc(Spec_Hash_Definitions_SHA3_384);
+        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_384);
     } else if (type == state->sha3_512_type) {
-        self->hash_state = Hacl_Streaming_Keccak_malloc(Spec_Hash_Definitions_SHA3_512);
+        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_512);
     } else if (type == state->shake_128_type) {
-        self->hash_state = Hacl_Streaming_Keccak_malloc(Spec_Hash_Definitions_Shake128);
+        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_Shake128);
     } else if (type == state->shake_256_type) {
-        self->hash_state = Hacl_Streaming_Keccak_malloc(Spec_Hash_Definitions_Shake256);
+        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_Shake256);
     } else {
         PyErr_BadInternalCall();
         goto error;
@@ -168,7 +168,7 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
 static void
 SHA3_dealloc(SHA3object *self)
 {
-    Hacl_Streaming_Keccak_free(self->hash_state);
+    Hacl_Hash_SHA3_free(self->hash_state);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
@@ -197,7 +197,7 @@ _sha3_sha3_224_copy_impl(SHA3object *self)
         return NULL;
     }
     ENTER_HASHLIB(self);
-    newobj->hash_state = Hacl_Streaming_Keccak_copy(self->hash_state);
+    newobj->hash_state = Hacl_Hash_SHA3_copy(self->hash_state);
     LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
@@ -217,10 +217,10 @@ _sha3_sha3_224_digest_impl(SHA3object *self)
     // This function errors out if the algorithm is Shake. Here, we know this
     // not to be the case, and therefore do not perform error checking.
     ENTER_HASHLIB(self);
-    Hacl_Streaming_Keccak_finish(self->hash_state, digest);
+    Hacl_Hash_SHA3_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest,
-        Hacl_Streaming_Keccak_hash_len(self->hash_state));
+        Hacl_Hash_SHA3_hash_len(self->hash_state));
 }
 
 
@@ -236,10 +236,10 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self)
 {
     unsigned char digest[SHA3_MAX_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Streaming_Keccak_finish(self->hash_state, digest);
+    Hacl_Hash_SHA3_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest,
-        Hacl_Streaming_Keccak_hash_len(self->hash_state));
+        Hacl_Hash_SHA3_hash_len(self->hash_state));
 }
 
 
@@ -287,7 +287,7 @@ static PyMethodDef SHA3_methods[] = {
 static PyObject *
 SHA3_get_block_size(SHA3object *self, void *closure)
 {
-    uint32_t rate = Hacl_Streaming_Keccak_block_len(self->hash_state);
+    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state);
     return PyLong_FromLong(rate);
 }
 
@@ -323,17 +323,17 @@ static PyObject *
 SHA3_get_digest_size(SHA3object *self, void *closure)
 {
     // Preserving previous behavior: variable-length algorithms return 0
-    if (Hacl_Streaming_Keccak_is_shake(self->hash_state))
+    if (Hacl_Hash_SHA3_is_shake(self->hash_state))
       return PyLong_FromLong(0);
     else
-      return PyLong_FromLong(Hacl_Streaming_Keccak_hash_len(self->hash_state));
+      return PyLong_FromLong(Hacl_Hash_SHA3_hash_len(self->hash_state));
 }
 
 
 static PyObject *
 SHA3_get_capacity_bits(SHA3object *self, void *closure)
 {
-    uint32_t rate = Hacl_Streaming_Keccak_block_len(self->hash_state) * 8;
+    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
     int capacity = 1600 - rate;
     return PyLong_FromLong(capacity);
 }
@@ -342,7 +342,7 @@ SHA3_get_capacity_bits(SHA3object *self, void *closure)
 static PyObject *
 SHA3_get_rate_bits(SHA3object *self, void *closure)
 {
-    uint32_t rate = Hacl_Streaming_Keccak_block_len(self->hash_state) * 8;
+    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
     return PyLong_FromLong(rate);
 }
 
@@ -435,7 +435,7 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
     if (digestlen > 0) {
-        Hacl_Streaming_Keccak_squeeze(self->hash_state, digest, digestlen);
+        Hacl_Hash_SHA3_squeeze(self->hash_state, digest, digestlen);
     }
     if (hex) {
         result = _Py_strhex((const char *)digest, digestlen);

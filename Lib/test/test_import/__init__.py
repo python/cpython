@@ -1089,6 +1089,34 @@ class RelativeImportTests(unittest.TestCase):
             import package2.submodule1
             package2.submodule1.submodule2
 
+    def test_rebinding(self):
+        # The same data is also used for testing pkgutil.resolve_name()
+        # in test_pkgutil and mock.patch in test_unittest.
+        path = os.path.join(os.path.dirname(__file__), 'data')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            from package3 import submodule
+            self.assertEqual(submodule.attr, 'rebound')
+            import package3.submodule as submodule
+            self.assertEqual(submodule.attr, 'rebound')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            import package3.submodule as submodule
+            self.assertEqual(submodule.attr, 'rebound')
+            from package3 import submodule
+            self.assertEqual(submodule.attr, 'rebound')
+
+    def test_rebinding2(self):
+        path = os.path.join(os.path.dirname(__file__), 'data')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            import package4.submodule as submodule
+            self.assertEqual(submodule.attr, 'submodule')
+            from package4 import submodule
+            self.assertEqual(submodule.attr, 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            from package4 import submodule
+            self.assertEqual(submodule.attr, 'origin')
+            import package4.submodule as submodule
+            self.assertEqual(submodule.attr, 'submodule')
+
 
 class OverridingImportBuiltinTests(unittest.TestCase):
     def test_override_builtin(self):

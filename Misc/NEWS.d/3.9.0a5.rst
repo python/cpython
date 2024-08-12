@@ -5,7 +5,7 @@
 .. section: Security
 
 Disallow control characters in hostnames in http.client, addressing
-CVE-2019-18348. Such potentially malicious header injection URLs now cause a
+:cve:`2019-18348`. Such potentially malicious header injection URLs now cause a
 InvalidURL to be raised.
 
 ..

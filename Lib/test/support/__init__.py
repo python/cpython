@@ -386,15 +386,15 @@ def skip_if_buildbot(reason=None):
         reason = 'not suitable for buildbots'
     try:
         isbuildbot = getpass.getuser().lower() == 'buildbot'
-    except (KeyError, EnvironmentError) as err:
+    except (KeyError, OSError) as err:
         warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub):
-        raise ValueError('At least one of address, memory, or ub must be True')
+    if not (address or memory or ub or thread):
+        raise ValueError('At least one of address, memory, ub or thread must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -411,18 +411,23 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
         '-fsanitize=undefined' in cflags or
         '--with-undefined-behavior-sanitizer' in config_args
     )
+    thread_sanitizer = (
+        '-fsanitize=thread' in cflags or
+        '--with-thread-sanitizer' in config_args
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
-        (ub and ub_sanitizer)
+        (ub and ub_sanitizer) or
+        (thread and thread_sanitizer)
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
     return unittest.skipIf(skip, reason)
 
 # gh-89363: True if fork() can hang if Python is built with Address Sanitizer
@@ -431,7 +436,7 @@ HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
 
 
 def set_sanitizer_env_var(env, option):
-    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS', 'TSAN_OPTIONS'):
         if name in env:
             env[name] += f':{option}'
         else:
@@ -2112,13 +2117,13 @@ def set_recursion_limit(limit):
     finally:
         sys.setrecursionlimit(original_limit)
 
-def infinite_recursion(max_depth=100):
-    """Set a lower limit for tests that interact with infinite recursions
-    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
-    debug windows builds, due to not enough functions being inlined the
-    stack size might not handle the default recursion limit (1000). See
-    bpo-11105 for details."""
-    if max_depth < 3:
+def infinite_recursion(max_depth=None):
+    if max_depth is None:
+        # Pick a number large enough to cause problems
+        # but not take too long for code that can handle
+        # very deep recursion.
+        max_depth = 20_000
+    elif max_depth < 3:
         raise ValueError("max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
     depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
@@ -2362,7 +2367,22 @@ def adjust_int_max_str_digits(max_digits):
 EXCEEDS_RECURSION_LIMIT = 5000
 
 # The default C recursion limit (from Include/cpython/pystate.h).
-C_RECURSION_LIMIT = 1500
+if Py_DEBUG:
+    if is_wasi:
+        C_RECURSION_LIMIT = 150
+    else:
+        C_RECURSION_LIMIT = 500
+else:
+    if is_wasi:
+        C_RECURSION_LIMIT = 500
+    elif hasattr(os, 'uname') and os.uname().machine == 's390x':
+        C_RECURSION_LIMIT = 800
+    elif sys.platform.startswith('win'):
+        C_RECURSION_LIMIT = 3000
+    elif check_sanitizer(address=True):
+        C_RECURSION_LIMIT = 4000
+    else:
+        C_RECURSION_LIMIT = 10000
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
@@ -2393,3 +2413,58 @@ def copy_python_src_ignore(path, names):
             'build',
         }
     return ignored
+
+
+def iter_builtin_types():
+    for obj in __builtins__.values():
+        if not isinstance(obj, type):
+            continue
+        cls = obj
+        if cls.__module__ != 'builtins':
+            continue
+        yield cls
+
+
+def iter_slot_wrappers(cls):
+    assert cls.__module__ == 'builtins', cls
+
+    def is_slot_wrapper(name, value):
+        if not isinstance(value, types.WrapperDescriptorType):
+            assert not repr(value).startswith('<slot wrapper '), (cls, name, value)
+            return False
+        assert repr(value).startswith('<slot wrapper '), (cls, name, value)
+        assert callable(value), (cls, name, value)
+        assert name.startswith('__') and name.endswith('__'), (cls, name, value)
+        return True
+
+    ns = vars(cls)
+    unused = set(ns)
+    for name in dir(cls):
+        if name in ns:
+            unused.remove(name)
+
+        try:
+            value = getattr(cls, name)
+        except AttributeError:
+            # It's as though it weren't in __dir__.
+            assert name in ('__annotate__', '__annotations__', '__abstractmethods__'), (cls, name)
+            if name in ns and is_slot_wrapper(name, ns[name]):
+                unused.add(name)
+            continue
+
+        if not name.startswith('__') or not name.endswith('__'):
+            assert not is_slot_wrapper(name, value), (cls, name, value)
+        if not is_slot_wrapper(name, value):
+            if name in ns:
+                assert not is_slot_wrapper(name, ns[name]), (cls, name, value, ns[name])
+        else:
+            if name in ns:
+                assert ns[name] is value, (cls, name, value, ns[name])
+                yield name, True
+            else:
+                yield name, False
+
+    for name in unused:
+        value = ns[name]
+        if is_slot_wrapper(cls, name, value):
+            yield name, True
