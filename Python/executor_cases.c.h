@@ -5459,6 +5459,7 @@
             current_executor = (_PyExecutorObject*)executor;
             #endif
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
+            ((_PyExecutorObject *)executor)->has_run = true;
             break;
         }
 
