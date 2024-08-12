@@ -401,6 +401,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = 0;
     size_t data_size = 0;
+    int jit_compile_count = executor->jit_compile_count;
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
@@ -461,11 +462,12 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     executor->jit_code = memory;
     executor->jit_side_entry = memory + trampoline.code_size;
     executor->jit_size = total_size;
+    executor->jit_compile_count = jit_compile_count + 1;
 
-    static int compile_count = 0;
-    if (++compile_count == 100) {
-        _Py_Executor_Invalidate(executor);
-    }
+    // int compile_count = 0;
+    // if (++compile_count == 100) {
+    //     _Py_Executor_Invalidate(executor);
+    // }
     return 0;
 }
 
@@ -478,6 +480,7 @@ _PyJIT_Free(_PyExecutorObject *executor)
         executor->jit_code = NULL;
         executor->jit_side_entry = NULL;
         executor->jit_size = 0;
+        // executor->jit_compile_count = 0;
         if (jit_free(memory, size)) {
             PyErr_WriteUnraisable(NULL);
         }
