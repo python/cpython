@@ -18,11 +18,6 @@ import types
 import unittest
 import warnings
 
-try:
-    import _testinternalcapi
-except ImportError:
-    _testinternalcapi = None
-
 
 __all__ = [
     # globals
@@ -511,7 +506,9 @@ def requires_lzma(reason='requires lzma'):
     return unittest.skipUnless(lzma, reason)
 
 def has_no_debug_ranges():
-    if _testinternalcapi is None:
+    try:
+        import _testinternalcapi
+    except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
     config = _testinternalcapi.get_config()
     return not bool(config['code_debug_ranges'])
@@ -522,7 +519,9 @@ def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
 @contextlib.contextmanager
 def suppress_immortalization(suppress=True):
     """Suppress immortalization of deferred objects."""
-    if _testinternalcapi is None:
+    try:
+        import _testinternalcapi
+    except ImportError:
         yield
         return
 
@@ -537,7 +536,9 @@ def suppress_immortalization(suppress=True):
         _testinternalcapi.suppress_immortalization(False)
 
 def skip_if_suppress_immortalization():
-    if _testinternalcapi is None:
+    try:
+        import _testinternalcapi
+    except ImportError:
         return
     return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
                                 "requires immortalization of deferred objects")
@@ -904,7 +905,9 @@ _TPFLAGS_BASE_EXC_SUBCLASS = 1<<30
 _TPFLAGS_TYPE_SUBCLASS = 1<<31
 
 def check_sizeof(test, o, size):
-    if _testinternalcapi is None:
+    try:
+        import _testinternalcapi
+    except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
     result = sys.getsizeof(o)
     # add GC header size
@@ -1798,7 +1801,9 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     module is enabled.
     """
     _check_tracemalloc()
-    if _testinternalcapi is None:
+    try:
+        import _testinternalcapi
+    except ImportError:
         raise unittest.SkipTest("requires _testinternalcapi")
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
@@ -2218,13 +2223,10 @@ def get_recursion_depth():
 
     In the __main__ module, at the module level, it should be 1.
     """
-    depth = None
-    if _testinternalcapi is not None:
-        try:
-            depth = _testinternalcapi.get_recursion_depth()
-        except RecursionError:
-            pass
-    if depth is None:
+    try:
+        import _testinternalcapi
+        depth = _testinternalcapi.get_recursion_depth()
+    except (ImportError, RecursionError) as exc:
         # sys._getframe() + frame.f_back implementation.
         try:
             depth = 0
@@ -2573,9 +2575,10 @@ Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
 # Decorator to disable optimizer while a function run
 def without_optimizer(func):
-    if _testinternalcapi is None:
+    try:
+        from _testinternalcapi import get_optimizer, set_optimizer
+    except ImportError:
         return func
-    from _testinternalcapi import get_optimizer, set_optimizer
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         save_opt = get_optimizer()
@@ -2641,10 +2644,17 @@ def walk_class_hierarchy(top, *, topdown=True):
 
 
 def iter_builtin_types():
+    # First try the explicit route.
+    try:
+        import _testinternalcapi
+    except ImportError:
+        _testinternalcapi = None
     if _testinternalcapi is not None:
-        # Take the direct approach.
         yield from _testinternalcapi.get_static_builtin_types()
-    elif hasattr(object, '__flags__'):
+        return
+
+    # Fall back to making a best-effort guess.
+    if hasattr(object, '__flags__'):
         # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
         import datetime
         seen = set()
@@ -2710,6 +2720,10 @@ def find_name_in_mro(cls, name, default=inspect._sentinel):
 
 # XXX The return value should always be exactly the same...
 def identify_type_slot_wrappers():
+    try:
+        import _testinternalcapi
+    except ImportError:
+        _testinternalcapi = None
     if _testinternalcapi is not None:
         names = {n: None for n in _testinternalcapi.identify_type_slot_wrappers()}
         return list(names)
