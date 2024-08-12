@@ -73,6 +73,7 @@ typedef struct _PyExecutorObject {
     uint32_t exit_count;
     uint32_t code_size;
     size_t jit_size;
+    uint32_t jit_compile_count;
     void *jit_code;
     void *jit_side_entry;
     _PyExitData exits[1];
@@ -123,9 +124,11 @@ PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
 #ifdef _Py_TIER2
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executor_Invalidate(_PyExecutorObject *executor);
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)
+#  define _Py_Executor_Invalidate(A) ((void)0)
 #endif
 
 
