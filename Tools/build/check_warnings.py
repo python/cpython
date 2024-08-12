@@ -162,7 +162,7 @@ def get_unexpected_improvements(
     if unexpected_improvements:
         print("Unexpected improvements:")
         for file in unexpected_improvements:
-            print(file)
+            print(file.name)
         return 1
 
     return 0
@@ -240,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
             # where the first element is the file name and the second element
             # is the number of warnings expected in that file
             files_with_expected_warnings = [
-                FileWarning(file.strip().split()[0], int(file.strip().split()[1]))
+                FileWarnings(file.strip().split()[0], int(file.strip().split()[1]))
                 for file in clean_files
                 if file.strip() and not file.startswith("#")
             ]
