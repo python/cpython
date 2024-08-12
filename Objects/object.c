@@ -536,6 +536,7 @@ int
 PyObject_Print(PyObject *op, FILE *fp, int flags)
 {
     int ret = 0;
+    int write_error = 0;
     if (PyErr_CheckSignals())
         return -1;
 #ifdef USE_STACKCHECK
@@ -574,14 +575,20 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                     ret = -1;
                 }
                 else {
-                    fwrite(t, 1, len, fp);
+                    /* Versions of Android and OpenBSD from before 2023 fail to
+                       set the `ferror` indicator when writing to a read-only
+                       stream, so we need to check the return value.
+                       (https://github.com/openbsd/src/commit/fc99cf9338942ecd9adc94ea08bf6188f0428c15) */
+                    if (fwrite(t, 1, len, fp) != (size_t)len) {
+                        write_error = 1;
+                    }
                 }
                 Py_DECREF(s);
             }
         }
     }
     if (ret == 0) {
-        if (ferror(fp)) {
+        if (write_error || ferror(fp)) {
             PyErr_SetFromErrno(PyExc_OSError);
             clearerr(fp);
             ret = -1;
@@ -2470,15 +2477,7 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int_relaxed(&interp->gc.immortalize) == 1) {
-        // gh-117696: immortalize objects instead of using deferred reference
-        // counting for now.
-        _Py_SetImmortal(op);
-        return;
-    }
-    op->ob_ref_local += 1;
-    op->ob_ref_shared = _Py_REF_QUEUED;
+    op->ob_ref_shared = _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
 #endif
 }
 

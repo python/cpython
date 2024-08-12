@@ -1,0 +1,2 @@
+Fix an issue in JIT builds that prevented some :keyword:`for` loops from
+correctly firing :monitoring-event:`RAISE` monitoring events.

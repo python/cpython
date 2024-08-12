@@ -176,7 +176,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             self.assertTrue(exe.is_valid())
         # Assert that the correct executors are invalidated
         # and check that nothing crashes when we invalidate
-        # an executor mutliple times.
+        # an executor multiple times.
         for i in (4,3,2,1,0):
             _testinternalcapi.invalidate_executors(objects[i])
             for exe in executors[i:]:
