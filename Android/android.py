@@ -7,6 +7,7 @@ import os
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import sysconfig
@@ -520,7 +521,16 @@ async def run_testbed(context):
         raise e.exceptions[0]
 
 
-def main():
+# Handle SIGTERM the same way as SIGINT. This ensures that if we're terminated
+# by the buildbot worker, we'll make an attempt to clean up our subprocesses.
+def install_signal_handler():
+    def signal_handler(*args):
+        os.kill(os.getpid(), signal.SIGINT)
+
+    signal.signal(signal.SIGTERM, signal_handler)
+
+
+def parse_args():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
     build = subcommands.add_parser("build", help="Build everything")
@@ -568,7 +578,12 @@ def main():
     test.add_argument(
         "args", nargs="*", help="Extra arguments for `python -m test`")
 
-    context = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    install_signal_handler()
+    context = parse_args()
     dispatch = {"configure-build": configure_build_python,
                 "make-build": make_build_python,
                 "configure-host": configure_host_python,
