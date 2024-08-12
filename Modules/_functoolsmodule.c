@@ -147,7 +147,7 @@ get_functools_state_by_type(PyTypeObject *type)
 static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func, *pto_args, *new_args, *pto_kw;
+    PyObject *func, *pto_args, *new_args, *pto_kw, *phold;
     partialobject *pto;
     Py_ssize_t pto_phcount = 0;
     Py_ssize_t new_nargs = PyTuple_GET_SIZE(args) - 1;
@@ -168,7 +168,16 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (state == NULL) {
         return NULL;
     }
+    phold = state->placeholder;
 
+    /* Placeholder restrictions */
+    if (new_nargs && PyTuple_GET_ITEM(args, new_nargs) == phold) {
+        PyErr_SetString(PyExc_TypeError,
+                        "trailing Placeholders are not allowed");
+        return NULL;
+    }
+
+    /* check wrapped function / object */
     pto_args = pto_kw = NULL;
     int res = PyObject_TypeCheck(func, state->partial_type);
     if (res == -1) {
@@ -193,13 +202,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
 
     pto->fn = Py_NewRef(func);
-
-    pto->placeholder = state->placeholder;
-    if (new_nargs && PyTuple_GET_ITEM(args, new_nargs) == pto->placeholder) {
-        PyErr_SetString(PyExc_TypeError,
-                        "trailing Placeholders are not allowed");
-        return NULL;
-    }
+    pto->placeholder = phold;
 
     new_args = PyTuple_GetSlice(args, 1, new_nargs + 1);
     if (new_args == NULL) {
@@ -210,7 +213,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     /* Count placeholders */
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
-        if (PyTuple_GET_ITEM(new_args, i) == pto->placeholder) {
+        if (PyTuple_GET_ITEM(new_args, i) == phold) {
             phcount++;
         }
     }
@@ -226,7 +229,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
             if (i < npargs) {
                 item = PyTuple_GET_ITEM(pto_args, i);
-                if (j < new_nargs && item == pto->placeholder) {
+                if (j < new_nargs && item == phold) {
                     item = PyTuple_GET_ITEM(new_args, j);
                     j++;
                     pto_phcount--;
