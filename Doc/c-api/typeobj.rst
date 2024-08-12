@@ -650,7 +650,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    (doesn't have the :c:macro:`Py_TPFLAGS_BASETYPE` flag bit set), it is
    permissible to call the object deallocator directly instead of via
    :c:member:`~PyTypeObject.tp_free`.  The object deallocator should be the one used to allocate the
-   instance; this is normally :c:func:`PyObject_Del` if the instance was allocated
+   instance; this is normally :c:func:`PyObject_Free` if the instance was allocated
    using :c:macro:`PyObject_New` or :c:macro:`PyObject_NewVar`, or
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar`.
@@ -1954,7 +1954,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    match :c:func:`PyType_GenericAlloc` and the value of the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit.
 
-   For static subtypes, :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_Del`.
+   For static subtypes, :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_Free`.
 
 
 .. c:member:: inquiry PyTypeObject.tp_is_gc

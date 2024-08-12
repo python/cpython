@@ -221,7 +221,12 @@ class _Target(typing.Generic[_S, _R]):
                 file.write("\n")
                 for line in _writer.dump(stencil_groups):
                     file.write(f"{line}\n")
-            jit_stencils_new.replace(jit_stencils)
+            try:
+                jit_stencils_new.replace(jit_stencils)
+            except FileNotFoundError:
+                # another process probably already moved the file
+                if not jit_stencils.is_file():
+                    raise
         finally:
             jit_stencils_new.unlink(missing_ok=True)
 

@@ -247,7 +247,7 @@ Improved Error Messages
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
 * Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
-  with a tuple of names of attributes of this class which are accessed
+  with a tuple of names of attributes of this class which are assigned
   through ``self.X`` from any function in its body. (Contributed by Irit Katriel
   in :gh:`115775`.)
 
@@ -1396,16 +1396,6 @@ locale
 * Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
   use ``locale.setlocale(locale.LC_ALL, "")`` instead.
   (Contributed by Victor Stinner in :gh:`104783`.)
-
-logging
--------
-
-* :mod:`logging`: Remove undocumented and untested ``Logger.warn()`` and
-  ``LoggerAdapter.warn()`` methods and ``logging.warn()`` function. Deprecated
-  since Python 3.3, they were aliases to the :meth:`logging.Logger.warning`
-  method, :meth:`!logging.LoggerAdapter.warning` method and
-  :func:`logging.warning` function.
-  (Contributed by Victor Stinner in :gh:`105376`.)
 
 pathlib
 -------
