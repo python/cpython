@@ -1,1 +1,1 @@
-Reduced :mod:`asyncio` :mod:`heapq` scheduling overhead.
+Reduced :mod:`asyncio` :mod:`heapq` scheduling overhead. Scheduling and running an :class:`asyncio.TimerHandle` is now roughly 9.5% faster.
