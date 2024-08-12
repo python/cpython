@@ -666,7 +666,7 @@ doctest decides whether actual output matches an example's expected output:
 
    The SKIP flag can also be used for temporarily "commenting out" examples.
 
-   See also: :class:`~SkipTest`.
+   See also: :exc:`~SkipTest`.
 
 
 .. data:: COMPARISON_FLAGS
