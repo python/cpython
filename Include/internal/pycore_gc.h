@@ -381,10 +381,6 @@ extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
-#ifdef Py_GIL_DISABLED
-// gh-117783: Immortalize objects that use deferred reference counting
-extern void _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp);
-#endif
 
 #ifdef __cplusplus
 }
