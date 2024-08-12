@@ -236,7 +236,10 @@ def _extract_text_encoding(encoding=None, *args, **kwargs):
 
 class Path:
     """
-    A pathlib-compatible interface for zip files.
+    A :class:`importlib.resources.abc.Traversable` interface for zip files.
+
+    Implements many of the features users enjoy from
+    :class:`pathlib.Path`.
 
     Consider a zip file with this structure::
 
