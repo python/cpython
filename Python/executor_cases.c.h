@@ -1957,11 +1957,10 @@
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
                 if (err == 0) {
-                    err = PySet_Add(set_o, item);
+                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
                 }
-                Py_DECREF(item);
+                PyStackRef_CLOSE(values[i]);
             }
             if (err != 0) {
                 Py_DECREF(set_o);
