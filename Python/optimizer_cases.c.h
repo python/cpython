@@ -544,8 +544,15 @@
         }
 
         case _BINARY_SUBSCR_INIT_CALL: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsSymbol *sub;
+            _Py_UopsSymbol *container;
+            _Py_UOpsAbstractFrame *new_frame;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            (void)container;
+            (void)sub;
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1172,8 +1179,14 @@
         }
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsSymbol *owner;
+            _Py_UOpsAbstractFrame *new_frame;
+            owner = stack_pointer[-1];
+            PyObject *fget = (PyObject *)this_instr->operand;
+            (void)fget;
+            (void)owner;
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
             break;
         }
