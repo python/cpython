@@ -996,7 +996,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
                     or exc.errno in {EACCES, EROFS}
                 ):
                     _bootstrap._verbose_message('could not create {!r}: {!r}',
-                                                    parent, exc)
+                                                parent, exc)
                     return
                 raise
         try:
