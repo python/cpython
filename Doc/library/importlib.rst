@@ -621,8 +621,9 @@ ABC hierarchy::
         path. Any intermediate directories which do not exist are to be created
         automatically.
 
-        When writing to the path fails by raising an :class:`OSError`
-        or a :class:`ValueError`, the exception is not propagated.
+        When writing to the path fails because the path is read-only
+        (:const:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
+        exception. Other exceptions should still be propagated.
 
         .. versionchanged:: 3.4
            No longer raises :exc:`NotImplementedError` when called.
