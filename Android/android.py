@@ -15,9 +15,8 @@ from asyncio import wait_for
 from contextlib import asynccontextmanager
 from os.path import basename, relpath
 from pathlib import Path
-from subprocess import CalledProcessError, DEVNULL
+from subprocess import CalledProcessError
 from tempfile import TemporaryDirectory
-from time import sleep
 
 
 SCRIPT_NAME = Path(__file__).name
@@ -350,26 +349,13 @@ async def find_device(context, initial_devices):
         return context.connected
 
 
-# Before boot is completed, `pm list` will fail with the error "Can't find
-# service: package".
-async def boot_completed(serial):
-    # No need to show a message if the device is already booted.
-    shown_message = False
-    while True:
-        if (await async_check_output(
-            adb, "-s", serial, "shell", "getprop", "sys.boot_completed"
-        )).strip() == "1":
-            return
-        else:
-            if not shown_message:
-                print("Waiting for boot")
-                shown_message = True
-            await asyncio.sleep(1)
-
-
-# An older version of this script in #121595 filtered the logs by UID instead,
-# which is more reliable since the PID is shorter-lived. But logcat can't filter
-# by UID until API level 31.
+# An older version of this script in #121595 filtered the logs by UID instead.
+# But logcat can't filter by UID until API level 31. If we ever switch back to
+# filtering by UID, we'll also have to filter by time so we only show messages
+# produced after the initial call to `stop_app`.
+#
+# We're more likely to miss the PID because it's shorter-lived, so there's a
+# workaround in PythonSuite.kt to stop it being *too* short-lived.
 async def find_pid(serial):
     print("Waiting for app to start - this may take several minutes")
     while True:
@@ -378,7 +364,7 @@ async def find_pid(serial):
                 adb, "-s", serial, "shell", "pidof", "-s", APP_ID
             )).strip()
         except CalledProcessError as e:
-            # If the app isn't running yet, pidof gives no output, so if there
+            # If the app isn't running yet, pidof gives no output. So if there
             # is output, there must have been some other error.
             if e.stdout or e.stderr:
                 raise
@@ -399,7 +385,6 @@ async def logcat_task(context, initial_devices):
     # in --connected mode.
     startup_timeout = 600
     serial = await wait_for(find_device(context, initial_devices), startup_timeout)
-    await wait_for(boot_completed(serial), startup_timeout)
     pid = await wait_for(find_pid(serial), startup_timeout)
 
     args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
@@ -582,7 +567,8 @@ def parse_args():
         "--managed", metavar="NAME", help="Run on a Gradle-managed device. "
         "These are defined in `managedDevices` in testbed/app/build.gradle.kts.")
     test.add_argument(
-        "args", nargs="*", help="Extra arguments for `python -m test`")
+        "args", nargs="*", help=f"Arguments for `python -m test`. "
+        f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
 
     return parser.parse_args()
 

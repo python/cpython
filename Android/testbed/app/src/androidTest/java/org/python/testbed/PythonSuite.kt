@@ -25,7 +25,7 @@ class PythonSuite {
             assertEquals(0, status)
         } finally {
             // Make sure the process lives long enough for the test script to
-            // detect it.
+            // detect it (see `find_pid` in android.py).
             val delay = 2000 - (System.currentTimeMillis() - start)
             if (delay > 0) {
                 Thread.sleep(delay)
