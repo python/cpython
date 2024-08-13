@@ -2044,6 +2044,8 @@ Utility functions
 
    The exact functionality is system dependent.
 
+   .. versionadded:: 3.14
+
 
 .. function:: FormatError([code])
 

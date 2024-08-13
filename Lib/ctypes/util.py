@@ -93,30 +93,30 @@ if os.name == "nt":
         wintypes.LPDWORD,
     )
 
-    def _get_module_filename(hModule: wintypes.HMODULE):
+    def _get_module_filename(module: wintypes.HMODULE):
         name = (wintypes.WCHAR * 32767)() # UNICODE_STRING_MAX_CHARS
-        if _kernel32.GetModuleFileNameW(hModule, name, len(name)):
+        if _kernel32.GetModuleFileNameW(module, name, len(name)):
             return name.value
         error = ctypes.get_last_error()
         import warnings
-        warnings.warn(f"Failed to get module file name for module {hModule}: "
+        warnings.warn(f"Failed to get module file name for module {module}: "
                     f"GetModuleFileNameW failed with error code {error}",
                     stacklevel=2)
         return None
 
 
     def _get_module_handles():
-        hProcess = _kernel32.GetCurrentProcess()
-        cbNeeded = wintypes.DWORD()
+        process = _kernel32.GetCurrentProcess()
+        space_needed = wintypes.DWORD()
         n = 1024
         while True:
             modules = (wintypes.HMODULE * n)()
-            if not _psapi.EnumProcessModules(hProcess,
+            if not _psapi.EnumProcessModules(process,
                                             modules,
                                             ctypes.sizeof(modules),
-                                            ctypes.byref(cbNeeded)):
+                                            ctypes.byref(space_needed)):
                 break
-            n = cbNeeded.value // ctypes.sizeof(wintypes.HMODULE)
+            n = space_needed.value // ctypes.sizeof(wintypes.HMODULE)
             if n <= len(modules):
                 return modules[:n]
         error = ctypes.get_last_error()
@@ -455,10 +455,12 @@ elif os.name == "posix":
 # https://man.openbsd.org/dl_iterate_phdr
 # https://docs.oracle.com/cd/E88353_01/html/E37843/dl-iterate-phdr-3c.html
 # this relies on find_library, which is why it is defined at the end
-if os.name == "posix" and not sys.platform.startswith("aix") and sys.platform not in {"darwin", "ios", "tvos", "watchos"}:
+if (os.name == "posix" and
+    not sys.platform.startswith("aix") and
+    sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
     import ctypes
 
-    class dl_phdr_info(ctypes.Structure):
+    class _dl_phdr_info(ctypes.Structure):
         _fields_ = [
             ("dlpi_addr", ctypes.c_void_p),
             ("dlpi_name", ctypes.c_char_p),
@@ -469,11 +471,11 @@ if os.name == "posix" and not sys.platform.startswith("aix") and sys.platform no
 
     @ctypes.CFUNCTYPE(
         ctypes.c_int,
-        ctypes.POINTER(dl_phdr_info),
+        ctypes.POINTER(_dl_phdr_info),
         ctypes.c_size_t,
         ctypes.POINTER(ctypes.py_object),
     )
-    def info_callback(info, _size, data):
+    def _info_callback(info, _size, data):
         libraries = data.contents.value
         try:
             name = info.contents.dlpi_name.decode("utf-8")
@@ -489,7 +491,7 @@ if os.name == "posix" and not sys.platform.startswith("aix") and sys.platform no
         try:
             libraries = []
             libc = ctypes.CDLL(find_library("c"))
-            libc.dl_iterate_phdr(info_callback, ctypes.byref(ctypes.py_object(libraries)))
+            libc.dl_iterate_phdr(_info_callback, ctypes.byref(ctypes.py_object(libraries)))
 
             if libraries:
                 # remove the first entry, which is the executable itself
