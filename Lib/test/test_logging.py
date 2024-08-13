@@ -3999,7 +3999,7 @@ class ConfigDictTest(BaseTest):
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
-                                           "assertions in multiprocessing")
+                                           " assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
         if support.MS_WINDOWS:
