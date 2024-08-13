@@ -80,7 +80,14 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
     - name: Check compiler warnings
-      run: python Tools/build/check_warnings.py --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output.txt --warning-ignore-file-path ${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu --compiler-output-type=json
+      run: >-
+        python Tools/build/check_warnings.py
+        --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output.txt
+        --warning-ignore-file-path ${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu
+        --compiler-output-type=json
+        --fail-on-regression
+        --fail-on-improvement
+        --path-prefix="../cpython-ro-srcdir/"
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw

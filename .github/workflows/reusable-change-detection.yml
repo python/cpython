@@ -140,6 +140,7 @@ jobs:
           Tools/msi/**
           .github/workflows/reusable-windows-msi.yml
         format: csv  # works for paths with spaces
+      contineu-on-error: true
     - name: Check for changes in MSI installer-related files
       if: >-
         steps.changed-win-msi-files.outputs.added_modified_renamed != ''
