@@ -1007,6 +1007,46 @@ class CAPITest(unittest.TestCase):
         for obj in object(), 1, 'string', []:
             self.assertEqual(generichash(obj), object.__hash__(obj))
 
+    def run_iter_api_test(self, next_func):
+        for data in (), [], (1, 2, 3), [1 , 2, 3], "123":
+            with self.subTest(data=data):
+                items = []
+                it = iter(data)
+                while (item := next_func(it)) is not None:
+                    items.append(item)
+                self.assertEqual(items, list(data))
+
+        class Broken:
+            def __init__(self):
+                self.count = 0
+
+            def __next__(self):
+                if self.count < 3:
+                    self.count += 1
+                    return self.count
+                else:
+                    raise TypeError('bad type')
+
+        it = Broken()
+        self.assertEqual(next_func(it), 1)
+        self.assertEqual(next_func(it), 2)
+        self.assertEqual(next_func(it), 3)
+        with self.assertRaisesRegex(TypeError, 'bad type'):
+            next_func(it)
+
+    def test_iter_next(self):
+        from _testcapi import PyIter_Next
+        self.run_iter_api_test(PyIter_Next)
+        # CRASHES PyIter_Next(10)
+
+    def test_iter_nextitem(self):
+        from _testcapi import PyIter_NextItem
+        self.run_iter_api_test(PyIter_NextItem)
+
+        regex = "expected.*iterator.*got.*'int'"
+        with self.assertRaisesRegex(TypeError, regex):
+            PyIter_NextItem(10)
+
 
 if __name__ == "__main__":
     unittest.main()

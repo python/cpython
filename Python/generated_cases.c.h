@@ -631,19 +631,7 @@
             _PyStackRef *values;
             _PyStackRef list;
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                for (int _i = oparg; --_i >= 0;) {
-                    PyStackRef_CLOSE(values[_i]);
-                }
-                if (true) {
-                    stack_pointer += -oparg;
-                    assert(WITHIN_STACK_BOUNDS());
-                    goto error;
-                }
-            }
-            PyObject *list_o = _PyList_FromArraySteal(values_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
             if (list_o == NULL) {
                 stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
@@ -714,11 +702,10 @@
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
                 if (err == 0) {
-                    err = PySet_Add(set_o, item);
+                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
                 }
-                Py_DECREF(item);
+                PyStackRef_CLOSE(values[i]);
             }
             if (err != 0) {
                 Py_DECREF(set_o);
@@ -882,7 +869,6 @@
                 }
             }
             // _DO_CALL
-            args = &stack_pointer[-oparg];
             self_or_null = maybe_self;
             callable = func;
             {
@@ -918,9 +904,8 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    PyStackRef_CLOSE(self_or_null);
-                    for (int _i = oparg; --_i >= 0;) {
-                        PyStackRef_CLOSE(args[_i]);
+                    for (int i = 0; i < total_args; i++) {
+                        PyStackRef_CLOSE(args[i]);
                     }
                     if (true) {
                         stack_pointer += -2 - oparg;
@@ -3651,7 +3636,6 @@
                 }
             }
             // _MONITOR_CALL
-            args = &stack_pointer[-oparg];
             {
                 int is_meth = !PyStackRef_IsNull(maybe_self);
                 PyObject *function = PyStackRef_AsPyObjectBorrow(func);
@@ -3672,7 +3656,6 @@
                 if (err) goto error;
             }
             // _DO_CALL
-            args = &stack_pointer[-oparg];
             self_or_null = maybe_self;
             callable = func;
             {
@@ -3708,9 +3691,8 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    PyStackRef_CLOSE(self_or_null);
-                    for (int _i = oparg; --_i >= 0;) {
-                        PyStackRef_CLOSE(args[_i]);
+                    for (int i = 0; i < total_args; i++) {
+                        PyStackRef_CLOSE(args[i]);
                     }
                     if (true) {
                         stack_pointer += -2 - oparg;
@@ -4277,7 +4259,7 @@
                     start--;
                 }
                 _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
                 if (optimized < 0) goto error;
                 if (optimized) {
                     assert(tstate->previous_executor == NULL);
