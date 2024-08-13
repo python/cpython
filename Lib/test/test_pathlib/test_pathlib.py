@@ -1605,7 +1605,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     )
     @needs_posix
     def test_open_mode(self):
-        old_mask = os.umask(2)
+        # Unmask all permissions except world-write, which may
+        # not be supported on some filesystems (see GH-85633.)
+        old_mask = os.umask(0o002)
         self.addCleanup(os.umask, old_mask)
         p = self.cls(self.base)
         with (p / 'new_file').open('wb'):
@@ -1634,7 +1636,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     )
     @needs_posix
     def test_touch_mode(self):
-        old_mask = os.umask(2)
+        # Unmask all permissions except world-write, which may
+        # not be supported on some filesystems (see GH-85633.)
+        old_mask = os.umask(0o002)
         self.addCleanup(os.umask, old_mask)
         p = self.cls(self.base)
         (p / 'new_file').touch()
