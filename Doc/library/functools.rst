@@ -379,12 +379,15 @@ The :mod:`functools` module defines the following functions:
    :data:`!Placeholder` sentinel to the place held by previous :data:`!Placeholder`:
 
       >>> from functools import partial, Placeholder as _
-      >>> show5 = partial(print, _, _, _, 4)
-      >>> show5 = partial(show5, _, _, 3)
-      >>> show5 = partial(show5, _, 2)
-      >>> show5 = partial(show5, _, 5)   # 5 is appended after 4
-      >>> show5(1)
-      1 2 3 4 5
+      >>> remove = partial(str.replace, _, _, '')
+      >>> remove('Hello, world', 'l')
+      'Heo, word'
+      >>> remove_l = partial(remove, _, 'l')
+      >>> remove_l('Hello, world')
+      'Heo, word'
+      >>> remove_first_l = partial(remove_l, _, 1)
+      >>> remove_first_l('Hello, world')
+      'Helo, world'
 
    Note, :data:`!Placeholder` has no special treatment when used for keyword
    argument of :data:`!Placeholder`.

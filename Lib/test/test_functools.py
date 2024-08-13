@@ -222,22 +222,24 @@ class TestPartial:
         args = (PH, 0)
         p = self.partial(capture, *args)
         got, empty = p('x')
-        self.assertTrue(('x', 0) == got and empty == {})
+        self.assertEqual(('x', 0), got)
+        self.assertEqual(empty, {})
         # 2 Placeholders
         args = (PH, 0, PH, 1)
         p = self.partial(capture, *args)
         with self.assertRaises(TypeError):
-            got, empty = p('x')
+            p('x')
         got, empty = p('x', 'y')
         expected = ('x', 0, 'y', 1)
-        self.assertTrue(expected == got and empty == {})
+        self.assertEqual(expected, got)
+        self.assertEqual(empty, {})
 
     def test_placeholders_optimization(self):
         PH = self.module.Placeholder
         p = self.partial(capture, PH, 0)
         p2 = self.partial(p, PH, 1, 2, 3)
         expected = (PH, 0, 1, 2, 3)
-        self.assertTrue(expected == p2.args)
+        self.assertEqual(expected, p2.args)
         p3 = self.partial(p2, -1, 4)
         got, empty = p3(5)
         expected = (-1, 0, 1, 2, 3, 4, 5)
@@ -246,8 +248,8 @@ class TestPartial:
         p = self.partial(capture, PH, 0)
         p2 = self.partial(p)
         expected = (PH, 0)
-        self.assertTrue(expected == p2.args)
-        self.assertTrue(((1, 0), {}) == p2(1))
+        self.assertEqual(expected, p2.args)
+        self.assertEqual(((1, 0), {}), p2(1))
 
     def test_construct_placeholder_singleton(self):
         PH = self.module.Placeholder
