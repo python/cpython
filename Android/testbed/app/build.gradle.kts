@@ -96,6 +96,16 @@ android {
                     systemImageSource = "aosp-atd"
                 }
             }
+
+            // If the previous test run succeeded and nothing has changed,
+            // Gradle thinks there's no need to run it again. Override that.
+            afterEvaluate {
+                (localDevices.names + listOf("connected")).forEach {
+                    tasks.named("${it}DebugAndroidTest") {
+                        outputs.upToDateWhen { false }
+                    }
+                }
+            }
         }
     }
 }
