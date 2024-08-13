@@ -380,14 +380,15 @@ The :mod:`functools` module defines the following functions:
 
       >>> from functools import partial, Placeholder as _
       >>> remove = partial(str.replace, _, _, '')
-      >>> remove('Hello, world', 'l')
-      'Heo, word'
-      >>> remove_l = partial(remove, _, 'l')
-      >>> remove_l('Hello, world')
-      'Heo, word'
-      >>> remove_first_l = partial(remove_l, _, 1)
-      >>> remove_first_l('Hello, world')
-      'Helo, world'
+      >>> message = 'Hello, dear dear world!'
+      >>> remove(message, ' dear')
+      'Hello, world!'
+      >>> remove_dear = partial(remove, _, ' dear')
+      >>> remove_dear(message)
+      'Hello, world!'
+      >>> remove_first_dear = partial(remove_dear, _, 1)
+      >>> remove_first_dear(message)
+      'Hello, dear world!'
 
    Note, :data:`!Placeholder` has no special treatment when used for keyword
    argument of :data:`!Placeholder`.

@@ -221,35 +221,32 @@ class TestPartial:
         # 1 Placeholder
         args = (PH, 0)
         p = self.partial(capture, *args)
-        got, empty = p('x')
-        self.assertEqual(('x', 0), got)
-        self.assertEqual(empty, {})
+        actual_args, actual_kwds = p('x')
+        self.assertEqual(actual_args, ('x', 0))
+        self.assertEqual(actual_kwds, {})
         # 2 Placeholders
         args = (PH, 0, PH, 1)
         p = self.partial(capture, *args)
         with self.assertRaises(TypeError):
             p('x')
-        got, empty = p('x', 'y')
-        expected = ('x', 0, 'y', 1)
-        self.assertEqual(expected, got)
-        self.assertEqual(empty, {})
+        actual_args, actual_kwds = p('x', 'y')
+        self.assertEqual(actual_args, ('x', 0, 'y', 1))
+        self.assertEqual(actual_kwds, {})
 
     def test_placeholders_optimization(self):
         PH = self.module.Placeholder
         p = self.partial(capture, PH, 0)
         p2 = self.partial(p, PH, 1, 2, 3)
-        expected = (PH, 0, 1, 2, 3)
-        self.assertEqual(expected, p2.args)
+        self.assertEqual(p2.args, (PH, 0, 1, 2, 3))
         p3 = self.partial(p2, -1, 4)
-        got, empty = p3(5)
-        expected = (-1, 0, 1, 2, 3, 4, 5)
-        self.assertTrue(expected == got and empty == {})
+        actual_args, actual_kwds = p3(5)
+        self.assertEqual(actual_args, (-1, 0, 1, 2, 3, 4, 5))
+        self.assertEqual(actual_kwds, {})
         # inner partial has placeholders and outer partial has no args case
         p = self.partial(capture, PH, 0)
         p2 = self.partial(p)
-        expected = (PH, 0)
-        self.assertEqual(expected, p2.args)
-        self.assertEqual(((1, 0), {}), p2(1))
+        self.assertEqual(p2.args, (PH, 0))
+        self.assertEqual(p2(1), ((1, 0), {}))
 
     def test_construct_placeholder_singleton(self):
         PH = self.module.Placeholder
@@ -364,19 +361,17 @@ class TestPartial:
         f = self.partial(signature)
         f.__setstate__((capture, (PH, 1), dict(a=10), dict(attr=[])))
         self.assertEqual(signature(f), (capture, (PH, 1), dict(a=10), dict(attr=[])))
-        with self.assertRaises(TypeError) as cm:
-            self.assertEqual(f(), (PH, 1), dict(a=10))
-        expected = ("missing positional arguments in 'partial' call; "
-                    "expected at least 1, got 0")
-        self.assertEqual(cm.exception.args[0], expected)
+        msg_regex = ("^missing positional arguments in 'partial' call; "
+                     "expected at least 1, got 0$")
+        with self.assertRaisesRegex(TypeError, msg_regex) as cm:
+            f()
         self.assertEqual(f(2), ((2, 1), dict(a=10)))
 
         # Trailing Placeholder error
         f = self.partial(signature)
-        with self.assertRaises(TypeError) as cm:
+        msg_regex = "^trailing Placeholders are not allowed$"
+        with self.assertRaisesRegex(TypeError, msg_regex) as cm:
             f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
-        expected = "trailing Placeholders are not allowed"
-        self.assertEqual(cm.exception.args[0], expected)
 
     def test_setstate_errors(self):
         f = self.partial(signature)
