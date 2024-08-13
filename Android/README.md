@@ -80,10 +80,13 @@ call. For example, if you want a pydebug build that also caches the results from
 
 ## Testing
 
-Before running the test suite, follow the instructions in the previous section
-to build the architecture you want to test.
+The tests can be run on Linux, macOS, or Windows, although on Windows you'll
+have to build the `cross-build/HOST` subdirectory on one of the other platforms
+and copy it over.
 
-The test script can be run in two modes:
+Before running the test suite, follow the instructions in the previous section
+to build the architecture you want to test. Then run the test script in one of
+the following modes:
 
 * In `--connected` mode, it runs on a device or emulator you have already
   connected to the build machine. List the available devices with
