@@ -82,7 +82,7 @@
 @MODULE__SHA1_TRUE@_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 @MODULE__SHA2_TRUE@_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
 @MODULE__SHA3_TRUE@_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-@MODULE__BLAKE2_TRUE@_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
+@MODULE__BLAKE2_TRUE@_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a
 
 ############################################################################
 # XML and text
