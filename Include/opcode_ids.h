@@ -230,6 +230,7 @@ extern "C" {
 #define STORE_FAST_MAYBE_NULL                  263
 
 #define HAVE_ARGUMENT                           41
+#define MIN_SPECIALIZED_OPCODE                 150
 #define MIN_INSTRUMENTED_OPCODE                236
 
 #ifdef __cplusplus

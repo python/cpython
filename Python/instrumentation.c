@@ -614,7 +614,7 @@ _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
     else {
         inst.op.code = _PyOpcode_Deopt[opcode];
     }
-    assert(inst.op.code <= RESUME);
+    assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
     return inst;
 }
 

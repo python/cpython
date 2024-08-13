@@ -1631,7 +1631,7 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
     Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code, i);
-        assert(inst.op.code <= RESUME);
+        assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
         int caches = _PyOpcode_Caches[inst.op.code];
         instructions[i] = inst;
         for (int j = 1; j <= caches; j++) {
