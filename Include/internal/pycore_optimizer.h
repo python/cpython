@@ -73,7 +73,7 @@ typedef struct _PyExecutorObject {
     uint32_t exit_count;
     uint32_t code_size;
     size_t jit_size;
-    bool has_run;
+    uint32_t run_count;
     void *jit_code;
     void *jit_side_entry;
     _PyExitData exits[1];
