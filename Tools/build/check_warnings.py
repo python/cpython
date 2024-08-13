@@ -116,7 +116,7 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
 
 def get_unexpected_warnings(
     files_with_expected_warnings: set[tuple[str, int]],
-    files_with_warnings: dict[str, list[dict]],
+    files_with_warnings: set[FileWarnings],
 ) -> int:
     """
     Returns failure status if warnings discovered in list of warnings
@@ -146,7 +146,7 @@ def get_unexpected_warnings(
 
 def get_unexpected_improvements(
     files_with_expected_warnings: set[tuple[str, int]],
-    files_with_warnings: dict[str, list[dict]],
+    files_with_warnings: set[FileWarnings],
 ) -> int:
     """
     Returns failure status if there are no warnings in the list of warnings
@@ -156,8 +156,7 @@ def get_unexpected_improvements(
     for file in files_with_expected_warnings:
         if file.name not in files_with_warnings.keys():
             unexpected_improvements.append(file)
-        else:
-            if len(files_with_warnings[file.name]) < file.count:
+        elif len(files_with_warnings[file.name]) < file.count:
                 unexpected_improvements.append(file)
 
     if unexpected_improvements:
@@ -246,11 +245,11 @@ def main(argv: list[str] | None = None) -> int:
             # Files with expected warnings are stored as a set of tuples
             # where the first element is the file name and the second element
             # is the number of warnings expected in that file
-            files_with_expected_warnings = [
+            files_with_expected_warnings = {
                 FileWarnings(file.strip().split()[0], int(file.strip().split()[1]))
                 for file in clean_files
                 if file.strip() and not file.startswith("#")
-            ]
+            }
 
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
