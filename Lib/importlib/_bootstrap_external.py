@@ -1523,14 +1523,14 @@ def _get_supported_file_loaders():
 
     Each item is a tuple (loader, suffixes).
     """
-    if sys.platform in {"ios", "tvos", "watchos"}:
-        extension_loaders = [(AppleFrameworkLoader, [
-            suffix.replace(".so", ".fwork")
-            for suffix in _imp.extension_suffixes()
-        ])]
-    else:
-        extension_loaders = []
-    extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
+    extension_loaders = []
+    if hasattr(_imp, 'create_dynamic'):
+        if sys.platform in {"ios", "tvos", "watchos"}:
+            extension_loaders = [(AppleFrameworkLoader, [
+                suffix.replace(".so", ".fwork")
+                for suffix in _imp.extension_suffixes()
+            ])]
+        extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
     source = SourceFileLoader, SOURCE_SUFFIXES
     bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES
     return extension_loaders + [source, bytecode]
