@@ -1510,7 +1510,6 @@ gc_collect_region(PyThreadState *tstate,
                   int untrack,
                   struct gc_collection_stats *stats)
 {
-    _Py_Executors_InvalidateOld(tstate->interp, 0);
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     PyGC_Head *gc; /* initialize to prevent a compiler warning */
@@ -1863,6 +1862,8 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "stop", generation, &stats);
+        _Py_Executors_InvalidateOld(tstate->interp, 0);
+
     }
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
