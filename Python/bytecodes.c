@@ -10,6 +10,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_backoff.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_ceval.h"
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
@@ -146,35 +147,43 @@ dummy_func(
             RESUME_CHECK,
         };
 
-        tier1 inst(RESUME, (--)) {
-            assert(frame == tstate->current_frame);
-            if (tstate->tracing == 0) {
-                uintptr_t global_version =
-                    _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
-                    ~_PY_EVAL_EVENTS_MASK;
-                PyCodeObject* code = _PyFrame_GetCode(frame);
-                uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
-                assert((code_version & 255) == 0);
-                if (code_version != global_version) {
-                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                    ERROR_IF(err, error);
-                    next_instr = this_instr;
-                    DISPATCH();
-                }
-                assert(this_instr->op.code == RESUME ||
-                       this_instr->op.code == RESUME_CHECK ||
-                       this_instr->op.code == INSTRUMENTED_RESUME ||
-                       this_instr->op.code == ENTER_EXECUTOR);
-                if (this_instr->op.code == RESUME) {
-                    #if ENABLE_SPECIALIZATION
-                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
-                    #endif  /* ENABLE_SPECIALIZATION */
-                }
-            }
+        op(_CHECK_PERIODIC, (--)) {
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(_CHECK_PERIODIC_NOT_YIELD_FROM, (--)) {
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                 CHECK_EVAL_BREAKER();
             }
         }
+
+        op(_QUICKEN_RESUME, (--)) {
+            #if ENABLE_SPECIALIZATION
+            if (tstate->tracing == 0 && this_instr->op.code == RESUME) {
+                FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+            }
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        tier1 op(_MAYBE_INSTRUMENT, (--)) {
+            if (tstate->tracing == 0) {
+                uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+                uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+                if (code_version != global_version && tstate->tracing == 0) {
+                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                    if (err) {
+                        ERROR_NO_POP();
+                    }
+                    next_instr = this_instr;
+                    DISPATCH();
+                }
+            }
+        }
+
+        macro(RESUME) =
+            _MAYBE_INSTRUMENT +
+            _QUICKEN_RESUME +
+            _CHECK_PERIODIC_NOT_YIELD_FROM;
 
         inst(RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
@@ -187,32 +196,22 @@ dummy_func(
             DEOPT_IF(eval_breaker != version);
         }
 
-        inst(INSTRUMENTED_RESUME, (--)) {
-            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
-            if (code_version != global_version && tstate->tracing == 0) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                if (err) {
-                    ERROR_NO_POP();
-                }
-                next_instr = this_instr;
-            }
-            else {
-                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                    CHECK_EVAL_BREAKER();
-                }
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _Py_call_instrumentation(
-                        tstate, oparg > 0, frame, this_instr);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                ERROR_IF(err, error);
-                if (frame->instr_ptr != this_instr) {
-                    /* Instrumentation has jumped */
-                    next_instr = frame->instr_ptr;
-                    DISPATCH();
-                }
+        op(_MONITOR_RESUME, (--)) {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int err = _Py_call_instrumentation(
+                    tstate, oparg > 0, frame, this_instr);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            ERROR_IF(err, error);
+            if (frame->instr_ptr != this_instr) {
+                /* Instrumentation has jumped */
+                next_instr = frame->instr_ptr;
             }
         }
+
+        macro(INSTRUMENTED_RESUME) =
+            _MAYBE_INSTRUMENT +
+            _CHECK_PERIODIC_NOT_YIELD_FROM +
+            _MONITOR_RESUME;
 
         pseudo(LOAD_CLOSURE, (-- unused)) = {
             LOAD_FAST,
@@ -2486,8 +2485,7 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        tier1 inst(JUMP_BACKWARD, (unused/1 --)) {
-            CHECK_EVAL_BREAKER();
+        tier1 op(_JUMP_BACKWARD, (the_counter/1 --)) {
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             #ifdef _Py_TIER2
@@ -2518,6 +2516,10 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
             #endif /* _Py_TIER2 */
         }
+
+        macro(JUMP_BACKWARD) =
+            _CHECK_PERIODIC +
+            _JUMP_BACKWARD;
 
         pseudo(JUMP, (--)) = {
             JUMP_FORWARD,
@@ -3263,10 +3265,6 @@ dummy_func(
             }
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
-        }
-
-        op(_CHECK_PERIODIC, (--)) {
-            CHECK_EVAL_BREAKER();
         }
 
         op(_MONITOR_CALL, (func, maybe_self, args[oparg] -- func, maybe_self, args[oparg])) {
@@ -4381,10 +4379,14 @@ dummy_func(
             INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
         }
 
-        inst(INSTRUMENTED_JUMP_BACKWARD, (unused/1 -- )) {
-            CHECK_EVAL_BREAKER();
+        op(_MONITOR_JUMP_BACKWARD, (-- )) {
             INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
         }
+
+        macro(INSTRUMENTED_JUMP_BACKWARD) =
+            unused/1 +
+            _CHECK_PERIODIC +
+            _MONITOR_JUMP_BACKWARD;
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             _PyStackRef cond = POP();

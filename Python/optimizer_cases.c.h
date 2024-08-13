@@ -7,11 +7,21 @@
             break;
         }
 
+        case _CHECK_PERIODIC: {
+            break;
+        }
+
+        case _CHECK_PERIODIC_NOT_YIELD_FROM: {
+            break;
+        }
+
+        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
+
         case _RESUME_CHECK: {
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
+        /* _MONITOR_RESUME is not a viable micro-op for tier 2 */
 
         case _LOAD_FAST_CHECK: {
             _Py_UopsSymbol *value;
@@ -1644,10 +1654,6 @@
 
         /* _DO_CALL is not a viable micro-op for tier 2 */
 
-        case _CHECK_PERIODIC: {
-            break;
-        }
-
         /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
@@ -2100,7 +2106,7 @@
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+        /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 

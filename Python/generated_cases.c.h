@@ -3872,8 +3872,13 @@
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_BACKWARD);
             /* Skip 1 cache entry */
-            CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
+            // _CHECK_PERIODIC
+            {
+            }
+            // _MONITOR_JUMP_BACKWARD
+            {
+                INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
+            }
             DISPATCH();
         }
 
@@ -4018,19 +4023,29 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
-            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
-            if (code_version != global_version && tstate->tracing == 0) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                if (err) {
-                    goto error;
+            // _MAYBE_INSTRUMENT
+            {
+                if (tstate->tracing == 0) {
+                    uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+                    if (code_version != global_version && tstate->tracing == 0) {
+                        int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                        if (err) {
+                            goto error;
+                        }
+                        next_instr = this_instr;
+                        DISPATCH();
+                    }
                 }
-                next_instr = this_instr;
             }
-            else {
+            // _CHECK_PERIODIC_NOT_YIELD_FROM
+            {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
+            }
+            // _MONITOR_RESUME
+            {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
                     tstate, oparg > 0, frame, this_instr);
@@ -4039,7 +4054,6 @@
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
                     next_instr = frame->instr_ptr;
-                    DISPATCH();
                 }
             }
             DISPATCH();
@@ -4244,37 +4258,43 @@
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
-            /* Skip 1 cache entry */
-            CHECK_EVAL_BREAKER();
-            assert(oparg <= INSTR_OFFSET());
-            JUMPBY(-oparg);
-            #ifdef _Py_TIER2
-            #if ENABLE_SPECIALIZATION
-            _Py_BackoffCounter counter = this_instr[1].counter;
-            if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
-                _Py_CODEUNIT *start = this_instr;
-                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                while (oparg > 255) {
-                    oparg >>= 8;
-                    start--;
-                }
-                _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
-                if (optimized < 0) goto error;
-                if (optimized) {
-                    assert(tstate->previous_executor == NULL);
-                    tstate->previous_executor = Py_None;
-                    GOTO_TIER_TWO(executor);
+            // _CHECK_PERIODIC
+            {
+            }
+            // _JUMP_BACKWARD
+            {
+                uint16_t the_counter = read_u16(&this_instr[1].cache);
+                (void)the_counter;
+                assert(oparg <= INSTR_OFFSET());
+                JUMPBY(-oparg);
+                #ifdef _Py_TIER2
+                #if ENABLE_SPECIALIZATION
+                _Py_BackoffCounter counter = this_instr[1].counter;
+                if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
+                    _Py_CODEUNIT *start = this_instr;
+                    /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                    while (oparg > 255) {
+                        oparg >>= 8;
+                        start--;
+                    }
+                    _PyExecutorObject *executor;
+                    int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
+                    if (optimized < 0) goto error;
+                    if (optimized) {
+                        assert(tstate->previous_executor == NULL);
+                        tstate->previous_executor = Py_None;
+                        GOTO_TIER_TWO(executor);
+                    }
+                    else {
+                        this_instr[1].counter = restart_backoff_counter(counter);
+                    }
                 }
                 else {
-                    this_instr[1].counter = restart_backoff_counter(counter);
+                    ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
+                #endif  /* ENABLE_SPECIALIZATION */
+                #endif /* _Py_TIER2 */
             }
-            else {
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            }
-            #endif  /* ENABLE_SPECIALIZATION */
-            #endif /* _Py_TIER2 */
             DISPATCH();
         }
 
@@ -5889,32 +5909,34 @@
             PREDICTED(RESUME);
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
-            assert(frame == tstate->current_frame);
-            if (tstate->tracing == 0) {
-                uintptr_t global_version =
-                _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
-                ~_PY_EVAL_EVENTS_MASK;
-                PyCodeObject* code = _PyFrame_GetCode(frame);
-                uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
-                assert((code_version & 255) == 0);
-                if (code_version != global_version) {
-                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                    if (err) goto error;
-                    next_instr = this_instr;
-                    DISPATCH();
-                }
-                assert(this_instr->op.code == RESUME ||
-                       this_instr->op.code == RESUME_CHECK ||
-                       this_instr->op.code == INSTRUMENTED_RESUME ||
-                       this_instr->op.code == ENTER_EXECUTOR);
-                if (this_instr->op.code == RESUME) {
-                    #if ENABLE_SPECIALIZATION
-                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
-                    #endif  /* ENABLE_SPECIALIZATION */
+            // _MAYBE_INSTRUMENT
+            {
+                if (tstate->tracing == 0) {
+                    uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+                    if (code_version != global_version && tstate->tracing == 0) {
+                        int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                        if (err) {
+                            goto error;
+                        }
+                        next_instr = this_instr;
+                        DISPATCH();
+                    }
                 }
             }
-            if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                CHECK_EVAL_BREAKER();
+            // _QUICKEN_RESUME
+            {
+                #if ENABLE_SPECIALIZATION
+                if (tstate->tracing == 0 && this_instr->op.code == RESUME) {
+                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                }
+                #endif  /* ENABLE_SPECIALIZATION */
+            }
+            // _CHECK_PERIODIC_NOT_YIELD_FROM
+            {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                    CHECK_EVAL_BREAKER();
+                }
             }
             DISPATCH();
         }

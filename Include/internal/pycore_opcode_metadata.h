@@ -1155,7 +1155,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [RAISE_VARARGS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [RERAISE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
-    [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [RESUME_CHECK] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [RETURN_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1619,7 +1619,6 @@ const char *_PyOpcode_OpName[264] = {
 extern const uint8_t _PyOpcode_Caches[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
-    [JUMP_BACKWARD] = 1,
     [TO_BOOL] = 3,
     [BINARY_SUBSCR] = 1,
     [STORE_SUBSCR] = 1,
@@ -1631,6 +1630,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [LOAD_ATTR] = 9,
     [COMPARE_OP] = 1,
     [CONTAINS_OP] = 1,
+    [JUMP_BACKWARD] = 1,
     [POP_JUMP_IF_TRUE] = 1,
     [POP_JUMP_IF_FALSE] = 1,
     [POP_JUMP_IF_NONE] = 1,

@@ -12,6 +12,21 @@
             break;
         }
 
+        case _CHECK_PERIODIC: {
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case _CHECK_PERIODIC_NOT_YIELD_FROM: {
+            oparg = CURRENT_OPARG();
+            if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                CHECK_EVAL_BREAKER();
+            }
+            break;
+        }
+
+        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+
         case _RESUME_CHECK: {
             #if defined(__EMSCRIPTEN__)
             if (_Py_emscripten_signal_clock == 0) {
@@ -30,7 +45,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_RESUME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _LOAD_FAST_CHECK: {
             _PyStackRef value;
@@ -3555,11 +3570,6 @@
 
         /* _DO_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        case _CHECK_PERIODIC: {
-            CHECK_EVAL_BREAKER();
-            break;
-        }
-
         /* _MONITOR_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _PY_FRAME_GENERAL: {
@@ -4882,7 +4892,7 @@
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is instrumented */
 
