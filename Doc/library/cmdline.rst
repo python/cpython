@@ -23,7 +23,7 @@ The following modules have a command-line interface.
 * :ref:`http.server <http-server-cli>`
 * :mod:`!idlelib`
 * :ref:`inspect <inspect-module-cli>`
-* :ref:`json.tool <json-commandline>`
+* :ref:`json <json-commandline>`
 * :mod:`mimetypes`
 * :mod:`pdb`
 * :mod:`pickle`

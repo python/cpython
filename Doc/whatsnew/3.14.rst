@@ -124,6 +124,10 @@ Add notes for JSON serialization errors that allow to identify the source
 of the error.
 (Contributed by Serhiy Storchaka in :gh:`122163`.)
 
+Enable :mod:`json` module to work as a script using the :option:`-m` switch: ``python -m json``.
+See the :ref:`JSON command-line interface <json-commandline>` documentation.
+(Contributed by Trey Hunner in :gh:`122873`.)
+
 operator
 --------
 
