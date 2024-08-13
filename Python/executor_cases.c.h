@@ -4667,7 +4667,7 @@
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* _DO_CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it is instrumented */
 

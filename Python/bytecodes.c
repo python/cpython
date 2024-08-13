@@ -4010,7 +4010,7 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_KW);
         }
 
-        inst(CALL_KW, (callable, self_or_null, args[oparg], kwnames -- res)) {
+        op(_DO_CALL_KW, (callable, self_or_null, args[oparg], kwnames -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *self_or_null_o = PyStackRef_AsPyObjectBorrow(self_or_null);
             PyObject *kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
@@ -4092,8 +4092,11 @@ dummy_func(
             }
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_KW) =
+            _DO_CALL_KW +
+            _CHECK_PERIODIC;
 
         inst(INSTRUMENTED_CALL_FUNCTION_EX, ( -- )) {
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);

@@ -1972,7 +1972,7 @@
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 */
+        /* _DO_CALL_KW is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
