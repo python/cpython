@@ -1,0 +1,3 @@
+Fixed issue where creating a :class:`code <types.CodeType>` object would
+sometimes mutate argument tuples. This changes details of how code constants
+and names are interned, immortalized and de-duplicated.

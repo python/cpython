@@ -525,6 +525,53 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(code1, code2)
         sys.settrace(None)
 
+    @cpython_only
+    def test_names_strict_string(self):
+        class StrSubclass(str): pass
+
+        def f():
+            return name1 + name2
+
+        code1 = f.__code__
+        code2 = code1.replace(co_names=tuple(
+            StrSubclass(name) for name in code1.co_names
+        ))
+        self.assertEqual(code1.co_names, ('name1' ,'name2'))
+        self.assertEqual(code2.co_names, ('name1' ,'name2'))
+        for name in code2.co_names:
+            with self.subTest(name=name):
+                self.assertIs(type(name), str)
+
+    @cpython_only
+    def test_varnames_strict_string(self):
+        class StrSubclass(str): pass
+
+        def f():
+            name1 = name2 = call()
+            return name1 + name2
+
+        code1 = f.__code__
+        code2 = code1.replace(co_varnames=tuple(
+            StrSubclass(name) for name in code1.co_varnames
+        ))
+        self.assertEqual(code1.co_varnames, ('name1' ,'name2'))
+        self.assertEqual(code2.co_varnames, ('name1' ,'name2'))
+        for name in code2.co_varnames:
+            with self.subTest(name=name):
+                self.assertIs(type(name), str)
+
+    @cpython_only
+    def test_names_nonstring(self):
+        def f():
+            var1, var2 = name1, name2
+            return var1 + var2
+
+        code = f.__code__
+
+        with self.assertRaises(TypeError):
+            code.replace(co_names=(1, 2))
+        with self.assertRaises(TypeError):
+            code.replace(co_varnames=(1, 2))
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
@@ -569,13 +616,6 @@ class CodeConstsTest(unittest.TestCase):
         def f(a='str_value'):
             return a
         self.assertIsInterned(f())
-
-    @cpython_only
-    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
-    def test_interned_string_with_null(self):
-        co = compile(r'res = "str\0value!"', '?', 'exec')
-        v = self.find_const(co.co_consts, 'str\0value!')
-        self.assertIsNotInterned(v)
 
     @cpython_only
     @unittest.skipUnless(Py_GIL_DISABLED, "does not intern all constants")

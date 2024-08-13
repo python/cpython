@@ -1837,6 +1837,8 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyType_FinalizeIdPool(interp);
 #endif
 
+    // Call _PyCode_Fini after any code that uses tuples,
+    // since it sets contents of "interned" tuples to NULL.
     _PyCode_Fini(interp);
 
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
