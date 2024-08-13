@@ -2464,7 +2464,7 @@ def _signature_from_callable(obj, *,
                 assert (not sig_params or
                         first_wrapped_param is not sig_params[0])
                 # If there were placeholders set,
-                #   first param is transformaed to positional only
+                #   first param is transformed to positional only
                 if partialmethod.args.count(functools.Placeholder):
                     first_wrapped_param = first_wrapped_param.replace(
                         kind=Parameter.POSITIONAL_ONLY)

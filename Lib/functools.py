@@ -301,9 +301,9 @@ class _PlaceholderType:
 Placeholder = _PlaceholderType()
 
 def _partial_prepare_merger(args):
-    nargs = len(args)
-    if not nargs:
+    if not args:
         return 0, None
+    nargs = len(args)
     order = []
     j = nargs
     for i, a in enumerate(args):
@@ -324,9 +324,9 @@ def _partial_new(cls, func, /, *args, **keywords):
     else:
         base_cls = partialmethod
         # func could be a descriptor like classmethod which isn't callable
-        # assert issubclass(cls, partialmethod)
         if not callable(func) and not hasattr(func, "__get__"):
-            raise TypeError(f"{func!r} is not callable or a descriptor")
+            raise TypeError(f"the first argument {func!r} must be a callable "
+                            "or a descriptor")
     if args and args[-1] is Placeholder:
         raise TypeError("trailing Placeholders are not allowed")
     if isinstance(func, base_cls):
@@ -459,7 +459,7 @@ class partialmethod:
                     args = args[phcount:]
                 except IndexError:
                     raise TypeError("missing positional arguments "
-                                    "in 'partial' call; expected "
+                                    "in 'partialmethod' call; expected "
                                     f"at least {phcount}, got {len(args)}")
             else:
                 pto_args = self.args

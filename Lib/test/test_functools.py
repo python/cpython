@@ -364,14 +364,19 @@ class TestPartial:
         f = self.partial(signature)
         f.__setstate__((capture, (PH, 1), dict(a=10), dict(attr=[])))
         self.assertEqual(signature(f), (capture, (PH, 1), dict(a=10), dict(attr=[])))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as cm:
             self.assertEqual(f(), (PH, 1), dict(a=10))
+        expected = ("missing positional arguments in 'partial' call; "
+                    "expected at least 1, got 0")
+        self.assertEqual(cm.exception.args[0], expected)
         self.assertEqual(f(2), ((2, 1), dict(a=10)))
 
-        # Leading Placeholder error
+        # Trailing Placeholder error
         f = self.partial(signature)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as cm:
             f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
+        expected = "trailing Placeholders are not allowed"
+        self.assertEqual(cm.exception.args[0], expected)
 
     def test_setstate_errors(self):
         f = self.partial(signature)
@@ -556,7 +561,13 @@ class TestPartialPySubclass(TestPartialPy):
     partial = PyPartialSubclass
 
     def test_subclass_optimization(self):
+        # `partial` input to `partial` subclass
         p = py_functools.partial(min, 2)
+        p2 = self.partial(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2(0), 0)
+        # `partial` subclass input to `partial` subclass
+        p = self.partial(min, 2)
         p2 = self.partial(p, 1)
         self.assertIs(p2.func, min)
         self.assertEqual(p2(0), 0)
@@ -702,7 +713,13 @@ class TestPartialMethod(unittest.TestCase):
     def test_subclass_optimization(self):
         class PartialMethodSubclass(functools.partialmethod):
             pass
+        # `partialmethod` input to `partialmethod` subclass
         p = functools.partialmethod(min, 2)
+        p2 = PartialMethodSubclass(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2.__get__(0)(), 0)
+        # `partialmethod` subclass input to `partialmethod` subclass
+        p = PartialMethodSubclass(min, 2)
         p2 = PartialMethodSubclass(p, 1)
         self.assertIs(p2.func, min)
         self.assertEqual(p2.__get__(0)(), 0)
