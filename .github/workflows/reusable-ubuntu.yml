@@ -80,6 +80,7 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
     - name: Check compiler warnings
+      if: ${{ !fromJSON(inputs.free-threading) }}
       run: >-
         python Tools/build/check_warnings.py
         --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output.txt
