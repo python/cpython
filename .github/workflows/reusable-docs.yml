@@ -23,10 +23,14 @@ jobs:
       refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
     - name: 'Check out latest PR branch commit'
-      if: github.event_name == 'pull_request'
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: >-
+          ${{
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.sha
+            || ''
+          }}
     # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
     - name: 'Fetch commits to get branch diff'
       if: github.event_name == 'pull_request'
@@ -42,9 +46,6 @@ jobs:
         # Get all commits since that commit date from the base branch (eg: master or main):
         git fetch origin ${{ env.refspec_base }} --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
-    - name: 'Check out latest commit'
-      if: github.event_name != 'pull_request'
-      uses: actions/checkout@v4
     - name: 'Set up Python'
       uses: actions/setup-python@v5
       with:
