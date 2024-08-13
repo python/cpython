@@ -127,8 +127,9 @@ jobs:
         format: csv  # works for paths with spaces
     - name: Check for docs changes
       if: >-
-        github.event_name == 'pull_request'
-        && steps.changed-docs-files.outputs.added_modified_renamed != ''
+        (github.event_name == 'pull_request'
+           && steps.changed-docs-files.outputs.added_modified_renamed != '')
+        || github.event_name == 'workflow_dispatch'
       id: docs-changes
       run: |
         echo "run-docs=true" >> "${GITHUB_OUTPUT}"
@@ -143,8 +144,9 @@ jobs:
         format: csv  # works for paths with spaces
     - name: Check for changes in MSI installer-related files
       if: >-
-        github.event_name == 'pull_request'
-        && steps.changed-win-msi-files.outputs.added_modified_renamed != ''
+        (github.event_name == 'pull_request'
+           && steps.changed-win-msi-files.outputs.added_modified_renamed != ''
+        ) || github.event_name == 'workflow_dispatch'
       id: win-msi-changes
       run: |
         echo "run-win-msi=true" >> "${GITHUB_OUTPUT}"
