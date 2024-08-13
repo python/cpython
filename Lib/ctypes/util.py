@@ -191,11 +191,6 @@ elif sys.platform.startswith("aix"):
 
     from ctypes._aix import find_library
 
-    def dllist():
-        import warnings
-        warnings.warn("dllist() is not supported on AIX")
-        return None
-
 elif sys.platform == "android":
     def find_library(name):
         directory = "/system/lib"
@@ -456,54 +451,67 @@ elif os.name == "posix":
 # https://docs.oracle.com/cd/E88353_01/html/E37843/dl-iterate-phdr-3c.html
 # this relies on find_library, which is why it is defined at the end
 if (os.name == "posix" and
-    not sys.platform.startswith("aix") and
     sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
+
     import ctypes
 
-    class _dl_phdr_info(ctypes.Structure):
-        _fields_ = [
-            ("dlpi_addr", ctypes.c_void_p),
-            ("dlpi_name", ctypes.c_char_p),
-            ("dlpi_phdr", ctypes.c_void_p),
-            ("dlpi_phnum", ctypes.c_ushort),
-        ]
+    _libc_path = find_library("c")
 
+    if (_libc_path is None or
+        not hasattr((_libc := ctypes.CDLL(_libc_path)), "dl_iterate_phdr")):
 
-    @ctypes.CFUNCTYPE(
-        ctypes.c_int,
-        ctypes.POINTER(_dl_phdr_info),
-        ctypes.c_size_t,
-        ctypes.POINTER(ctypes.py_object),
-    )
-    def _info_callback(info, _size, data):
-        libraries = data.contents.value
-        try:
-            name = info.contents.dlpi_name.decode("utf-8")
-            libraries.append(name)
-        except:
+        def dllist():
             import warnings
-            warnings.warn(f"Could not decode library name {info.contents.dlpi_name}")
-
-        return 0
-
-
-    def dllist():
-        try:
-            libraries = []
-            libc = ctypes.CDLL(find_library("c"))
-            libc.dl_iterate_phdr(_info_callback, ctypes.byref(ctypes.py_object(libraries)))
-
-            if libraries:
-                # remove the first entry, which is the executable itself
-                libraries.pop(0)
-
-            return libraries
-        except Exception as e:
-            import warnings
-            warnings.warn(
-                f"Unable to list loaded libraries: {e}",
-            )
+            warnings.warn("dllist() is not supported on this platform")
             return None
+
+    else:
+
+        class _dl_phdr_info(ctypes.Structure):
+            _fields_ = [
+                ("dlpi_addr", ctypes.c_void_p),
+                ("dlpi_name", ctypes.c_char_p),
+                ("dlpi_phdr", ctypes.c_void_p),
+                ("dlpi_phnum", ctypes.c_ushort),
+            ]
+
+
+        @ctypes.CFUNCTYPE(
+            ctypes.c_int,
+            ctypes.POINTER(_dl_phdr_info),
+            ctypes.c_size_t,
+            ctypes.POINTER(ctypes.py_object),
+        )
+        def _info_callback(info, _size, data):
+            libraries = data.contents.value
+            try:
+                name = info.contents.dlpi_name.decode("utf-8")
+                libraries.append(name)
+            except:
+                import warnings
+                warnings.warn("Could not decode library name" +
+                              str(info.contents.dlpi_name))
+
+            return 0
+
+
+        def dllist():
+            try:
+                libraries = []
+                _libc.dl_iterate_phdr(_info_callback,
+                                      ctypes.byref(ctypes.py_object(libraries)))
+
+                if libraries:
+                    # remove the first entry, which is the executable itself
+                    libraries.pop(0)
+
+                return libraries
+            except Exception as e:
+                import warnings
+                warnings.warn(
+                    f"Unable to list loaded libraries: {e}",
+                )
+                return None
 
 ################################################################
 # test code
