@@ -202,6 +202,8 @@ Modules/_ctypes/callbacks.c 4
 Modules/_ctypes/_ctypes.c 55
 Modules/_ctypes/callproc.c 13
 Modules/_ctypes/stgdict.c 19
+Modules/_ctypes/_ctypes_test.c 7
+Modules/_ctypes/_ctypes_test_generated.c.h 363
 Modules/_ctypes/cfield.c 61
 Modules/_cursesmodule.c 28
 Modules/_sqlite/connection.c 5
