@@ -952,8 +952,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -1284,8 +1288,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -1359,8 +1367,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -1433,8 +1445,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -1493,8 +1509,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -1602,8 +1622,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-3 - (oparg & 1)] = result;
+                        stack_pointer += -2 - (oparg & 1);
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -1811,8 +1835,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-3 - oparg] = res;
+                        stack_pointer += -2 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -1969,8 +1997,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -2046,8 +2078,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -2110,8 +2146,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -2177,8 +2217,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -2256,8 +2300,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -2456,9 +2504,8 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
-                    }
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto pop_2_error;
                 }
             }
             stack_pointer[-3] = res;
@@ -2498,9 +2545,8 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
-                    }
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto pop_2_error;
                 }
             }
             stack_pointer[-3] = res;
@@ -3835,8 +3881,12 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
                     }
                 }
             }
@@ -3979,9 +4029,8 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
-                    }
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto error;
                 }
             }
             // _MONITOR_JUMP_BACKWARD
@@ -4153,9 +4202,8 @@
                     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                     QSBR_QUIESCENT_STATE(tstate); \
                     if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                        if (_Py_HandlePending(tstate) != 0) {
-                            GOTO_ERROR(error); \
-                        }
+                        int err = _Py_HandlePending(tstate);
+                        if (err != 0) goto error;
                     }
                 }
             }
@@ -4378,9 +4426,8 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
-                    }
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto error;
                 }
             }
             // _JUMP_BACKWARD
@@ -6060,9 +6107,8 @@
                     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                     QSBR_QUIESCENT_STATE(tstate); \
                     if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                        if (_Py_HandlePending(tstate) != 0) {
-                            GOTO_ERROR(error); \
-                        }
+                        int err = _Py_HandlePending(tstate);
+                        if (err != 0) goto error;
                     }
                 }
             }

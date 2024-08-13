@@ -151,9 +151,8 @@ dummy_func(
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate); \
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                if (_Py_HandlePending(tstate) != 0) {
-                    GOTO_ERROR(error); \
-                }
+                int err = _Py_HandlePending(tstate);
+                ERROR_IF(err != 0, error);
             }
         }
 
@@ -162,9 +161,8 @@ dummy_func(
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    if (_Py_HandlePending(tstate) != 0) {
-                        GOTO_ERROR(error); \
-                    }
+                    int err = _Py_HandlePending(tstate);
+                    ERROR_IF(err != 0, error);
                 }
             }
         }
