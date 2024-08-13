@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.13, compared to 3.12.
-
+Python 3.13 will be released on October 1, 2024.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -66,14 +66,38 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 beta is the pre-release of the next version of the Python
-programming language, with a mix of changes to the language, the
-implementation and the standard library. The biggest changes to the
-implementation include a new interactive interpreter, and experimental
-support for dropping the Global Interpreter Lock (:pep:`703`) and a
-Just-In-Time compiler (:pep:`744`). The library changes contain removal of
-deprecated APIs and modules, as well as the usual improvements in
-user-friendliness and correctness.
+Python 3.13 will be the latest stable release of the Python programming
+language, with a mix of changes to the language, the implementation
+and the standard library.
+The biggest changes include a new `interactive interpreter
+<whatsnew313-better-interactive-interpreter_>`_,
+experimental support for running in a `free-threaded mode
+<whatsnew313-free-threaded-cpython_>`_ (:pep:`703`),
+and a `Just-In-Time compiler <whatsnew313-jit-compiler_>`_ (:pep:`744`).
+
+Error messages continue to improve, with tracebacks now highlighted in color
+by default. The :func:`locals` builtin now has :ref:`defined semantics
+<whatsnew313-locals-semantics>` for changing the returned mapping,
+and type parameters now support default values.
+
+The library changes contain removal of deprecated APIs and modules,
+as well as the usual improvements in user-friendliness and correctness.
+Several legacy standard library modules have now `been removed
+<whatsnew313-pep594_>`_ following their deprecation in Python 3.11 (:pep:`594`).
+
+This article doesn't attempt to provide a complete specification
+of all new features, but instead gives a convenient overview.
+For full details refer to the documentation,
+such as the  :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+To understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+See `Porting to Python 3.13`_ for guidance on upgrading from
+earlier versions of Python.
+
+--------------
 
 .. PEP-sized items next.
 
@@ -82,69 +106,105 @@ Interpreter improvements:
 * A greatly improved :ref:`interactive interpreter
   <whatsnew313-better-interactive-interpreter>` and
   :ref:`improved error messages <whatsnew313-improved-error-messages>`.
-
-* Color support in the new :ref:`interactive interpreter
-  <whatsnew313-better-interactive-interpreter>`,
-  as well as in :ref:`tracebacks <whatsnew313-improved-error-messages>`
-  and :ref:`doctest <whatsnew313-doctest>` output. This can be disabled through the
-  :envvar:`PYTHON_COLORS` and |NO_COLOR|_ environment variables.
-
-* :pep:`744`: A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
-  It is currently disabled by default (though we may turn it on later).
-  Performance improvements are modest -- we expect to be improving this
-  over the next few releases.
-
 * :pep:`667`: The :func:`locals` builtin now has
   :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
   returned mapping. Python debuggers and similar tools may now more reliably
   update local variables in optimized scopes even during concurrent code
   execution.
+* :pep:`703`: CPython 3.13 has experimental support for running with the
+  :term:`global interpreter lock` disabled. See :ref:`Free-threaded CPython
+  <whatsnew313-free-threaded-cpython>` for more details.
+* :pep:`744`: A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
+  It is currently disabled by default (though we may turn it on later).
+  Performance improvements are modest -- we expect to improve this
+  over the next few releases.
+* Color support in the new :ref:`interactive interpreter
+  <whatsnew313-better-interactive-interpreter>`,
+  as well as in :ref:`tracebacks <whatsnew313-improved-error-messages>`
+  and :ref:`doctest <whatsnew313-doctest>` output.
+  This can be disabled through the :envvar:`PYTHON_COLORS` and |NO_COLOR|_
+  environment variables.
+
+Python data model improvements:
+
+* :attr:`~class.__static_attributes__` stores the names of attributes accessed
+  through ``self.X`` in any function in a class body.
+* :attr:`!__firstlineno__` records the first line number of a class definition.
+
+Significant improvements in the standard library:
+
+* Add a new :exc:`PythonFinalizationError` exception, raised when an operation
+  is blocked during :term:`finalization <interpreter shutdown>`.
+* The :mod:`argparse` module now supports deprecating command-line options,
+  positional arguments, and subcommands.
+* The new functions :func:`base64.z85encode` and :func:`base64.z85decode`
+  support encoding and decoding `Z85 data <https://rfc.zeromq.org/spec/32/>`_.
+* The :mod:`copy` module now has a :func:`copy.replace` function,
+  with support for many builtin types and any class defining
+  the :func:`~object.__replace__` method.
+* The :mod:`dbm.sqlite3` module is now the default :mod:`dbm` backend.
+* The :mod:`os` module has a suite of new functions for working with Linux's
+  timer notification file descriptors.
+* The :mod:`random` module now has a :ref:`command-line interface <random-cli>`.
+
+Security improvements:
+
+* :func:`ssl.create_default_context` sets :data:`ssl.VERIFY_X509_PARTIAL_CHAIN`
+  and :data:`ssl.VERIFY_X509_STRICT` as default flags.
+
+C API improvements:
+
+* The :c:data:`Py_mod_gil` slot is now used to indicate that
+  an extension module supports running with the :term:`GIL` disabled.
+* The :doc:`PyTime C API </c-api/time>` has been added,
+  providing access to system clocks.
+* :c:type:`PyMutex` is a new lightweight mutex that occupies a single byte.
 
 New typing features:
 
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
   and :data:`typing.TypeVarTuple`) now support defaults.
-
-* :pep:`702`: Support for marking deprecations in the type system using the
-  new :func:`warnings.deprecated` decorator.
-
-* :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
-  type narrowing behavior.
-
-* :pep:`705`: :data:`typing.ReadOnly` was added, to mark an item of a
+* :pep:`702`: The new :func:`warnings.deprecated` decorator adds support
+  for marking deprecations in the type system.
+* :pep:`705`: :data:`typing.ReadOnly` can be used to mark an item of a
   :class:`typing.TypedDict` as read-only for type checkers.
-
-Free-threading:
-
-* :pep:`703`: CPython 3.13 has experimental support for running with the
-  :term:`global interpreter lock` disabled when built with ``--disable-gil``.
-  See :ref:`Free-threaded CPython <free-threaded-cpython>` for more details.
+* :pep:`742`: :data:`typing.TypeIs` provides more intuitive
+  type narrowing behavior, as an alternative to :data:`typing.TypeGuard`.
 
 Platform support:
 
-* :pep:`730`: Apple's iOS is now an officially supported platform. Official
-  Android support (:pep:`738`) is in the works as well.
+* :pep:`730`: Apple's iOS is now an officially supported platform,
+  at :pep:`tier 3 <11#tier-3>`.
+  Official Android support (:pep:`738`) is in the works as well.
+* ``wasm32-wasi`` is now a supported as a :pep:`tier 2 <11#tier-2>` platform.
+* ``wasm32-emscripten`` is no longer an officially supported platform.
 
-Removed modules:
+Important removals:
 
 * :ref:`PEP 594 <whatsnew313-pep594>`: The remaining 19 "dead batteries"
   have been removed from the standard library:
   :mod:`!aifc`, :mod:`!audioop`, :mod:`!cgi`, :mod:`!cgitb`, :mod:`!chunk`,
   :mod:`!crypt`, :mod:`!imghdr`, :mod:`!mailcap`, :mod:`!msilib`, :mod:`!nis`,
-  :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`, :mod:`!spwd`,
-  :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
-
-* Also removed were the :mod:`!tkinter.tix` and :mod:`!lib2to3` modules, and the
-  ``2to3`` program.
+  :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`,
+  :mod:`!spwd`, :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
+* Remove the :program:`!2to3` tool and :mod:`!lib2to3` module
+  (deprecated in Python 3.11).
+* Remove the :mod:`!tkinter.tix` module (deprecated in Python 3.6).
+* Remove :func:`!locale.resetlocale()`.
+* Remove :mod:`!typing.io` and :mod:`!typing.re`.
+* Remove chained :class:`classmethod` descriptors.
 
 Release schedule changes:
 
-* :pep:`602` ("Annual Release Cycle for Python") has been updated:
+:pep:`602` ("Annual Release Cycle for Python") has been updated
+to extend the full support ('bugfix') period for new releases to two years.
+This updated policy means that:
 
-  * Python 3.9 - 3.12 have one and a half years of full support,
-    followed by three and a half years of security fixes.
-  * Python 3.13 and later have two years of full support,
-    followed by three years of security fixes.
+* Python 3.9--3.12 have one and a half years of full support,
+  followed by three and a half years of security fixes.
+* Python 3.13 and later have two years of full support,
+  followed by three years of security fixes.
+
 
 New Features
 ============
@@ -253,8 +313,8 @@ Improved Error Messages
 
 .. _whatsnew313-locals-semantics:
 
-Defined mutation semantics for ``locals()``
--------------------------------------------
+Defined mutation semantics for :py:func:`locals`
+------------------------------------------------
 
 Historically, the expected result of mutating the return value of :func:`locals`
 has been left to individual Python implementations to define.
@@ -322,7 +382,7 @@ Support For Mobile Platforms
 .. _whatsnew313-jit-compiler:
 
 Experimental JIT Compiler
-=========================
+-------------------------
 
 When CPython is configured using the ``--enable-experimental-jit`` option,
 a just-in-time compiler is added which may speed up some Python programs.
@@ -378,10 +438,10 @@ See :pep:`744` for more details.
 Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
 
-.. _free-threaded-cpython:
+.. _whatsnew313-free-threaded-cpython:
 
 Free-threaded CPython
-=====================
+---------------------
 
 CPython will run with the :term:`global interpreter lock` (GIL) disabled when
 configured using the ``--disable-gil`` option at build time. This is an
@@ -543,7 +603,8 @@ Other Language Changes
 New Modules
 ===========
 
-* None.
+* :mod:`dbm.sqlite3`: SQLite backend for :mod:`dbm`.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 
 Improved Modules
@@ -664,7 +725,7 @@ base64
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding Z85 data.
-  See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+  See the `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
   (Contributed by Matan Perelman in :gh:`75299`.)
 
 copy
