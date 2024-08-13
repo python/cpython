@@ -257,6 +257,7 @@ Known values:
     Python 3.14a1 3603 (Remove BUILD_CONST_KEY_MAP)
     Python 3.14a1 3604 (Do not duplicate test at end of while statements)
     Python 3.14a1 3605 (Move ENTER_EXECUTOR to opcode 255)
+    Python 3.14a1 3606 (Specialize CALL_KW)
 
     Python 3.15 will start with 3650
 
