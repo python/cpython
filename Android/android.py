@@ -609,10 +609,14 @@ def main():
                 if not content.endswith("\n"):
                     stream.write("\n")
 
-        # Format the command so it can be copied into a shell.
-        args_joined = " ".join(shlex.quote(str(arg)) for arg in e.cmd)
+        # Format the command so it can be copied into a shell. shlex uses single
+        # quotes, so we surround the whole command with double quotes.
+        args_joined = (
+            e.cmd if isinstance(e.cmd, str)
+            else " ".join(shlex.quote(str(arg)) for arg in e.cmd)
+        )
         sys.exit(
-            f"Command '{args_joined}' returned exit status {e.returncode}"
+            f'Command "{args_joined}" returned exit status {e.returncode}'
         )
 
 
