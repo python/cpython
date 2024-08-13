@@ -70,17 +70,8 @@ bool_vectorcall(PyObject *type, PyObject * const*args,
 static PyObject *
 bool_invert(PyObject *v)
 {
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Bitwise inversion '~' on bool is deprecated. This "
-                     "returns the bitwise inversion of the underlying int "
-                     "object and is usually not what you expect from negating "
-                     "a bool. Use the 'not' operator for boolean negation or "
-                     "~int(x) if you really want the bitwise inversion of the "
-                     "underlying int.",
-                     1) < 0) {
-        return NULL;
-    }
-    return PyLong_Type.tp_as_number->nb_invert(v);
+    PyErr_SetString(PyExc_TypeError, "bad operand for unary ~: 'bool'");
+    return NULL;
 }
 
 static PyObject *
