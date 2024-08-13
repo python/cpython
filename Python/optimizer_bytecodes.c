@@ -329,6 +329,13 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+        (void)container;
+        (void)sub;
+        new_frame = NULL;
+        ctx->done = true;
+    }
+
     op(_TO_BOOL, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             res = sym_new_type(ctx, &PyBool_Type);
@@ -538,6 +545,13 @@ dummy_func(void) {
         self = owner;
     }
 
+    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _Py_UOpsAbstractFrame *)) {
+        (void)fget;
+        (void)owner;
+        new_frame = NULL;
+        ctx->done = true;
+    }
+
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
         (void)callable;
         func = sym_new_not_null(ctx);
@@ -594,6 +608,14 @@ dummy_func(void) {
             new_frame = frame_new(ctx, co, 0, NULL, 0);
 
         }
+    }
+
+    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- func, maybe_self, args[oparg])) {
+        (void)callable;
+        (void)self_or_null;
+        (void)args;
+        func = sym_new_not_null(ctx);
+        maybe_self = sym_new_not_null(ctx);
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -788,7 +810,8 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_EXIT_TRACE, (--)) {
+    op(_EXIT_TRACE, (exit_p/4 --)) {
+        (void)exit_p;
         ctx->done = true;
     }
 

@@ -5,6 +5,7 @@ import unittest
 
 from collections import namedtuple
 import contextlib
+import io
 import json
 import os
 import os.path
@@ -414,6 +415,83 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         )
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
+
+    @unittest.skip('inheritance across re-init is currently broken; see gh-117482')
+    def test_static_types_inherited_slots(self):
+        script = textwrap.dedent("""
+            import test.support
+            results = []
+            for cls in test.support.iter_builtin_types():
+                for attr, _ in test.support.iter_slot_wrappers(cls):
+                    wrapper = getattr(cls, attr)
+                    res = (cls, attr, wrapper)
+                    results.append(res)
+            results = ((repr(c), a, repr(w)) for c, a, w in results)
+            """)
+        def collate_results(raw):
+            results = {}
+            for cls, attr, wrapper in raw:
+                key = cls, attr
+                assert key not in results, (results, key, wrapper)
+                results[key] = wrapper
+            return results
+
+        ns = {}
+        exec(script, ns, ns)
+        main_results = collate_results(ns['results'])
+        del ns
+
+        script += textwrap.dedent("""
+            import json
+            import sys
+            text = json.dumps(list(results))
+            print(text, file=sys.stderr)
+            """)
+        out, err = self.run_embedded_interpreter(
+                "test_repeated_init_exec", script, script)
+        _results = err.split('--- Loop #')[1:]
+        (_embedded, _reinit,
+         ) = [json.loads(res.rpartition(' ---\n')[-1]) for res in _results]
+        embedded_results = collate_results(_embedded)
+        reinit_results = collate_results(_reinit)
+
+        for key, expected in main_results.items():
+            cls, attr = key
+            for src, results in [
+                ('embedded', embedded_results),
+                ('reinit', reinit_results),
+            ]:
+                with self.subTest(src, cls=cls, slotattr=attr):
+                    actual = results.pop(key)
+                    self.assertEqual(actual, expected)
+        self.maxDiff = None
+        self.assertEqual(embedded_results, {})
+        self.assertEqual(reinit_results, {})
+
+        self.assertEqual(out, '')
+
+    def test_getargs_reset_static_parser(self):
+        # Test _PyArg_Parser initializations via _PyArg_UnpackKeywords()
+        # https://github.com/python/cpython/issues/122334
+        code = textwrap.dedent("""
+            try:
+                import _ssl
+            except ModuleNotFoundError:
+                _ssl = None
+            if _ssl is not None:
+                _ssl.txt2obj(txt='1.3')
+            print('1')
+
+            import _queue
+            _queue.SimpleQueue().put_nowait(item=None)
+            print('2')
+
+            import _zoneinfo
+            _zoneinfo.ZoneInfo.clear_cache(only_keys=['Foo/Bar'])
+            print('3')
+        """)
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
 
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")

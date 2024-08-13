@@ -191,6 +191,19 @@ Examining Symbol Tables
 
       For example:
 
+      .. testsetup:: symtable.Class.get_methods
+
+         import warnings
+         context = warnings.catch_warnings()
+         context.__enter__()
+         warnings.simplefilter("ignore", category=DeprecationWarning)
+
+      .. testcleanup:: symtable.Class.get_methods
+
+         context.__exit__()
+
+      .. doctest:: symtable.Class.get_methods
+
          >>> import symtable
          >>> st = symtable.symtable('''
          ... def outer(): pass
@@ -213,6 +226,9 @@ Examining Symbol Tables
 
       Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
       considered as a method-like function.
+
+      .. deprecated-removed:: 3.14 3.16
+
 
 .. class:: Symbol
 

@@ -428,9 +428,9 @@ _PyCode_Quicken(PyCodeObject *code)
     #if ENABLE_SPECIALIZATION
     int opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
-    for (int i = 0; i < Py_SIZE(code); i++) {
-        opcode = _Py_GetBaseOpcode(code, i);
-        assert(opcode < MIN_INSTRUMENTED_OPCODE);
+    /* The last code unit cannot have a cache, so we don't need to check it */
+    for (int i = 0; i < Py_SIZE(code)-1; i++) {
+        opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             // The initial value depends on the opcode
@@ -963,15 +963,10 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
                 goto fail;
             }
-            uint32_t version = function_get_version(fget, LOAD_ATTR);
-            if (version == 0) {
-                goto fail;
-            }
             if (_PyInterpreterState_GET()->eval_frame) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 goto fail;
             }
-            write_u32(lm_cache->keys_version, version);
             assert(type->tp_version_tag != 0);
             write_u32(lm_cache->type_version, type->tp_version_tag);
             /* borrowed */

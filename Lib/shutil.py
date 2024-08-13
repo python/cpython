@@ -149,7 +149,7 @@ def _fastcopy_sendfile(fsrc, fdst):
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
         except OSError as err:
-            # ...in oder to have a more informative exception.
+            # ...in order to have a more informative exception.
             err.filename = fsrc.name
             err.filename2 = fdst.name
 

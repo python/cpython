@@ -325,7 +325,8 @@ init_global_interned_strings(PyInterpreterState *interp)
         return _PyStatus_ERR("failed to create global interned dict");
     }
 
-    /* Intern statically allocated string identifiers and deepfreeze strings.
+    /* Intern statically allocated string identifiers, deepfreeze strings,
+        * and one-byte latin-1 strings.
         * This must be done before any module initialization so that statically
         * allocated string identifiers are used instead of heap allocated strings.
         * Deepfreeze uses the interned identifiers if present to save space
@@ -333,14 +334,11 @@ init_global_interned_strings(PyInterpreterState *interp)
     */
     _PyUnicode_InitStaticStrings(interp);
 
-#ifdef Py_GIL_DISABLED
-// In the free-threaded build, intern the 1-byte strings as well
     for (int i = 0; i < 256; i++) {
         PyObject *s = LATIN1(i);
         _PyUnicode_InternStatic(interp, &s);
         assert(s == LATIN1(i));
     }
-#endif
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
@@ -15123,7 +15121,16 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         return PyObject_Str(object);
     }
     const char *encoding = arg_as_utf8(args[1], "encoding");
-    const char *errors = (nargs == 3) ? arg_as_utf8(args[2], "errors") : NULL;
+    if (encoding == NULL) {
+        return NULL;
+    }
+    const char *errors = NULL;
+    if (nargs == 3) {
+        errors = arg_as_utf8(args[2], "errors");
+        if (errors == NULL) {
+            return NULL;
+        }
+    }
     return PyUnicode_FromEncodedObject(object, encoding, errors);
 }
 
@@ -15267,7 +15274,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_init */
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
-    PyObject_Del,                 /* tp_free */
+    PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
 };
 
@@ -15355,26 +15362,14 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
     assert(s != NULL);
     assert(_PyUnicode_CHECK(s));
     assert(_PyUnicode_STATE(s).statically_allocated);
-
-    switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_NOT_INTERNED:
-            break;
-        case SSTATE_INTERNED_IMMORTAL_STATIC:
-            return s;
-        default:
-            Py_FatalError("_PyUnicode_InternStatic called on wrong string");
-    }
+    assert(!PyUnicode_CHECK_INTERNED(s));
 
 #ifdef Py_DEBUG
     /* We must not add process-global interned string if there's already a
      * per-interpreter interned_dict, which might contain duplicates.
-     * Except "short string" singletons: those are special-cased. */
+     */
     PyObject *interned = get_interned_dict(interp);
-    assert(interned == NULL || unicode_is_singleton(s));
-#ifdef Py_GIL_DISABLED
-    // In the free-threaded build, don't allow even the short strings.
     assert(interned == NULL);
-#endif
 #endif
 
     /* Look in the global cache first. */
@@ -15446,11 +15441,6 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         return s;
     }
 
-    /* Handle statically allocated strings. */
-    if (_PyUnicode_STATE(s).statically_allocated) {
-        return intern_static(interp, s);
-    }
-
     /* Is it already interned? */
     switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
@@ -15467,6 +15457,9 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
             return s;
     }
 
+    /* Statically allocated strings must be already interned. */
+    assert(!_PyUnicode_STATE(s).statically_allocated);
+
 #if Py_GIL_DISABLED
     /* In the free-threaded build, all interned strings are immortal */
     immortalize = 1;
@@ -15477,13 +15470,11 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         immortalize = 1;
     }
 
-    /* if it's a short string, get the singleton -- and intern it */
+    /* if it's a short string, get the singleton */
     if (PyUnicode_GET_LENGTH(s) == 1 &&
                 PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
         PyObject *r = LATIN1(*(unsigned char*)PyUnicode_DATA(s));
-        if (!PyUnicode_CHECK_INTERNED(r)) {
-            r = intern_static(interp, r);
-        }
+        assert(PyUnicode_CHECK_INTERNED(r));
         Py_DECREF(s);
         return r;
     }

@@ -8,10 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_brc.h"           // struct _brc_thread_state
-#include "pycore_freelist.h"      // struct _Py_freelist_state
-#include "pycore_mimalloc.h"      // struct _mimalloc_thread_state
-#include "pycore_qsbr.h"          // struct qsbr
+#include "pycore_brc.h"             // struct _brc_thread_state
+#include "pycore_freelist_state.h"  // struct _Py_freelists
+#include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
+#include "pycore_qsbr.h"            // struct qsbr
 
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -29,8 +29,18 @@ typedef struct _PyThreadStateImpl {
 #ifdef Py_GIL_DISABLED
     struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
-    struct _Py_object_freelists freelists;
+    struct _Py_freelists freelists;
     struct _brc_thread_state brc;
+    struct {
+        // The thread-local refcounts for heap type objects
+        Py_ssize_t *refcounts;
+
+        // Size of the refcounts array.
+        Py_ssize_t size;
+
+        // If set, don't use thread-local refcounts
+        int is_finalized;
+    } types;
 #endif
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
