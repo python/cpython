@@ -236,3 +236,6 @@ Modules/_elementtree.c 43
 Modules/getpath.c 7
 Modules/_sre/sre.c 16
 Modules/_sre/sre_lib.h 62
+Modules/_testexternalinspection.c 6
+Modules/_ctypes/_ctypes_test_generated.c.h 363
+Modules/_ctypes/_ctypes_test.c 7
