@@ -34,6 +34,7 @@ concurrency:
 jobs:
   mypy:
     strategy:
+      fail-fast: false
       matrix:
         target: [
           "Lib/_pyrepl",

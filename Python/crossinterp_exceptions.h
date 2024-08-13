@@ -90,6 +90,6 @@ static void
 fini_exceptions(PyInterpreterState *interp)
 {
     // Likewise with _fini_not_shareable_error_type().
-    _PyStaticType_Dealloc(interp, &_PyExc_InterpreterNotFoundError);
-    _PyStaticType_Dealloc(interp, &_PyExc_InterpreterError);
+    _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterNotFoundError);
+    _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterError);
 }

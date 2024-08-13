@@ -241,7 +241,7 @@ are now always dumped, even if switched off.
 Improve ``BUILD_LIST`` opcode so that it works similarly to the
 ``BUILD_TUPLE`` opcode, by stealing references from the stack rather than
 repeatedly using stack operations to set list elements.  Implementation
-details are in a new private API :c:func:`_PyList_FromArraySteal`.
+details are in a new private API :c:func:`!_PyList_FromArraySteal`.
 
 ..
 
@@ -830,7 +830,7 @@ Reduced the memory usage of :func:`urllib.parse.unquote` and
 .. section: Library
 
 ``inspect.signature`` was raising ``TypeError`` on call with mock objects.
-Now it correctly returns ``(*args, **kwargs)`` as infered signature.
+Now it correctly returns ``(*args, **kwargs)`` as inferred signature.
 
 ..
 

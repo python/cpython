@@ -714,13 +714,23 @@ class TestGzip(BaseTest):
                         self.assertEqual(f.mtime, mtime)
 
     def test_compress_correct_level(self):
-        # gzip.compress calls with mtime == 0 take a different code path.
         for mtime in (0, 42):
             with self.subTest(mtime=mtime):
                 nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
                 yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
                 self.assertIn(data1, nocompress)
                 self.assertNotIn(data1, yescompress)
+
+    def test_issue112346(self):
+        # The OS byte should be 255, this should not change between Python versions.
+        for mtime in (0, 42):
+            with self.subTest(mtime=mtime):
+                compress = gzip.compress(data1, compresslevel=1, mtime=mtime)
+                self.assertEqual(
+                    struct.unpack("<IxB", compress[4:10]),
+                    (mtime, 255),
+                    "Gzip header does not properly set either mtime or OS byte."
+                )
 
     def test_decompress(self):
         for data in (data1, data2):
