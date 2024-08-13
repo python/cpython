@@ -30,14 +30,9 @@ DECODE_ARGS = ("UTF-8", "backslashreplace")
 
 
 try:
-    android_home = os.environ['ANDROID_HOME']
+    android_home = Path(os.environ['ANDROID_HOME'])
 except KeyError:
     sys.exit("The ANDROID_HOME environment variable is required.")
-
-sdkmanager = Path(
-    f"{android_home}/cmdline-tools/latest/bin/sdkmanager"
-    + (".bat" if os.name == "nt" else "")
-)
 
 adb = Path(
     f"{android_home}/platform-tools/adb"
@@ -217,10 +212,34 @@ def clean_all(context):
     delete_glob(CROSS_BUILD_DIR)
 
 
+def setup_sdk():
+    sdkmanager = android_home / (
+        "cmdline-tools/latest/bin/sdkmanager"
+        + (".bat" if os.name == "nt" else "")
+    )
+
+    # Gradle will fail if it needs to install an SDK package whose license
+    # hasn't been accepted, so pre-accept all licenses.
+    if not all((android_home / "licenses" / path).exists() for path in [
+        "android-sdk-arm-dbt-license", "android-sdk-license"
+    ]):
+        run([sdkmanager, "--licenses"], text=True, input="y\n" * 100)
+
+    # Gradle may install this automatically, but we can't rely on that because
+    # we need to run adb within the logcat task.
+    if not adb.exists():
+        run([sdkmanager, "platform-tools"])
+
+
 # To avoid distributing compiled artifacts without corresponding source code,
 # the Gradle wrapper is not included in the CPython repository. Instead, we
 # extract it from the Gradle release.
-def setup_testbed(context):
+def setup_testbed():
+    if all((TESTBED_DIR / path).exists() for path in [
+        "gradlew", "gradlew.bat", "gradle/wrapper/gradle-wrapper.jar",
+    ]):
+        return
+
     ver_long = "8.7.0"
     ver_short = ver_long.removesuffix(".0")
 
@@ -240,15 +259,11 @@ def setup_testbed(context):
              f"{temp_dir}/{outer_jar}", "gradle-wrapper.jar"])
 
 
-def setup_testbed_if_needed(context):
-    if not gradlew.exists():
-        setup_testbed(context)
-
-
 # run_testbed will build the app automatically, but it hides the Gradle output
 # by default, so it's useful to have this as a separate command for the buildbot.
 def build_testbed(context):
-    setup_testbed_if_needed(context)
+    setup_sdk()
+    setup_testbed()
     run(
         [gradlew, "--console", "plain", "packageDebug", "packageDebugAndroidTest"],
         cwd=TESTBED_DIR,
@@ -459,7 +474,9 @@ async def gradle_task(context):
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         ) as process:
             while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-                if context.verbose:
+                # Gradle may take several minutes to install SDK packages, so
+                # it's worth showing those messages even in non-verbose mode.
+                if context.verbose or line.startswith('Preparing "Install'):
                     sys.stdout.write(line)
                 else:
                     hidden_output.append(line)
@@ -481,12 +498,8 @@ async def gradle_task(context):
 
 
 async def run_testbed(context):
-    if not adb.exists():
-        print("Installing Platform-Tools")
-        # Input "y" to accept licenses.
-        run([sdkmanager, "platform-tools"], text=True, input="y\n" * 100)
-
-    setup_testbed_if_needed(context)
+    setup_sdk()
+    setup_testbed()
 
     if context.managed:
         # In this mode, Gradle will create a device with an unpredictable name.
@@ -551,8 +564,6 @@ def parse_args():
                                 help="Extra arguments to pass to `configure`")
 
     subcommands.add_parser(
-        "setup-testbed", help="Download the testbed Gradle wrapper")
-    subcommands.add_parser(
         "build-testbed", help="Build the testbed app")
     test = subcommands.add_parser(
         "test", help="Run the test suite")
@@ -582,7 +593,6 @@ def main():
                 "make-host": make_host_python,
                 "build": build_all,
                 "clean": clean_all,
-                "setup-testbed": setup_testbed,
                 "build-testbed": build_testbed,
                 "test": run_testbed}
 
