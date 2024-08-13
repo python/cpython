@@ -1,9 +1,8 @@
-import re
 from dataclasses import dataclass
-from typing import Optional
-
 import lexer
 import parser
+import re
+from typing import Optional
 
 
 @dataclass
