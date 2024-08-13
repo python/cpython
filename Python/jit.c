@@ -144,7 +144,6 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 #define IS_AARCH64_BRANCH(I)     (((I) & 0x7C000000) == 0x14000000)
 #define IS_AARCH64_LDR_OR_STR(I) (((I) & 0x3B000000) == 0x39000000)
 #define IS_AARCH64_MOV(I)        (((I) & 0x9F800000) == 0x92800000)
-int total_compile_count=0;
 
 // LLD is a great reference for performing relocations... just keep in
 // mind that Tools/jit/build.py does filtering and preprocessing for us!
@@ -462,7 +461,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     executor->jit_code = memory;
     executor->jit_side_entry = memory + trampoline.code_size;
     executor->jit_size = total_size;
-
     return 0;
 }
 

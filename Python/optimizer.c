@@ -1194,7 +1194,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     executor->jit_code = NULL;
     executor->jit_side_entry = NULL;
     executor->jit_size = 0;
-    executor->has_run = true;
+    executor->run_count++;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1687,7 +1687,7 @@ _Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
         total_executors++;
-        if (!exec->has_run) {
+        if (exec->run_count < 4) {
             invalidated_executors++;
             unlink_executor(exec);
             if (no_memory) {
@@ -1703,7 +1703,7 @@ _Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
                 OPT_STAT_INC(executors_invalidated);
             }
         } else {
-            exec->has_run = false;
+            exec->run_count = 0;
         }
         exec = next;
     }
@@ -1714,7 +1714,6 @@ _Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
         }
         Py_DECREF(invalidate);
     }
-    printf("Invalidated %d out of %d executors\n", invalidated_executors, total_executors);
     return;
 }
 
