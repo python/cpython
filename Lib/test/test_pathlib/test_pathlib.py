@@ -1296,18 +1296,20 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     )
     @needs_posix
     def test_open_mode(self):
-        old_mask = os.umask(0)
+        # Unmask all permissions except world-write, which may
+        # not be supported on some filesystems (see GH-85633.)
+        old_mask = os.umask(0o002)
         self.addCleanup(os.umask, old_mask)
         p = self.cls(self.base)
         with (p / 'new_file').open('wb'):
             pass
         st = os.stat(self.parser.join(self.base, 'new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o666)
-        os.umask(0o022)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o664)
+        os.umask(0o026)
         with (p / 'other_new_file').open('wb'):
             pass
         st = os.stat(self.parser.join(self.base, 'other_new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o640)
 
     @needs_posix
     def test_resolve_root(self):
@@ -1325,16 +1327,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     )
     @needs_posix
     def test_touch_mode(self):
-        old_mask = os.umask(0)
+        # Unmask all permissions except world-write, which may
+        # not be supported on some filesystems (see GH-85633.)
+        old_mask = os.umask(0o002)
         self.addCleanup(os.umask, old_mask)
         p = self.cls(self.base)
         (p / 'new_file').touch()
         st = os.stat(self.parser.join(self.base, 'new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o666)
-        os.umask(0o022)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o664)
+        os.umask(0o026)
         (p / 'other_new_file').touch()
         st = os.stat(self.parser.join(self.base, 'other_new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o640)
         (p / 'masked_new_file').touch(mode=0o750)
         st = os.stat(self.parser.join(self.base, 'masked_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o750)
