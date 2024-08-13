@@ -133,6 +133,7 @@ jobs:
       run: |
         echo "run-docs=true" >> "${GITHUB_OUTPUT}"
     - name: Get a list of the MSI installer-related files
+      if: github.event_name == 'pull_request'
       id: changed-win-msi-files
       uses: Ana06/get-changed-files@v2.3.0
       with:
@@ -142,9 +143,8 @@ jobs:
         format: csv  # works for paths with spaces
     - name: Check for changes in MSI installer-related files
       if: >-
-        steps.changed-win-msi-files.outputs.added_modified_renamed != ''
+        github.event_name == 'pull_request'
+        && steps.changed-win-msi-files.outputs.added_modified_renamed != ''
       id: win-msi-changes
       run: |
         echo "run-win-msi=true" >> "${GITHUB_OUTPUT}"
-
-...
