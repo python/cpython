@@ -1192,7 +1192,7 @@ post-handshake authentication.
 statistics
 ----------
 
-Added :func:`statistics.fmean` as a faster, floating point variant of
+Added :func:`statistics.fmean` as a faster, floating-point variant of
 :func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 

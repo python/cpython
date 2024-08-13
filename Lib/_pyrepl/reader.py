@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 import unicodedata
@@ -52,7 +54,10 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
     b: list[int] = []
     s: list[str] = []
     for c in buffer:
-        if ord(c) < 128:
+        if c == '\x1a':
+            s.append(c)
+            b.append(2)
+        elif ord(c) < 128:
             s.append(c)
             b.append(1)
         elif unicodedata.category(c).startswith("C"):
@@ -110,7 +115,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\C-w", "unix-word-rubout"),
         (r"\C-x\C-u", "upcase-region"),
         (r"\C-y", "yank"),
-        (r"\C-z", "suspend"),
+        *(() if sys.platform == "win32" else ((r"\C-z", "suspend"), )),
         (r"\M-b", "backward-word"),
         (r"\M-c", "capitalize-word"),
         (r"\M-d", "kill-word"),
@@ -130,7 +135,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\M-7", "digit-arg"),
         (r"\M-8", "digit-arg"),
         (r"\M-9", "digit-arg"),
-        # (r'\M-\n', 'insert-nl'),
+        (r"\M-\n", "accept"),
         ("\\\\", "self-insert"),
         (r"\x1b[200~", "enable_bracketed_paste"),
         (r"\x1b[201~", "disable_bracketed_paste"),
