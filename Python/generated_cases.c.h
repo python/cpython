@@ -1485,84 +1485,90 @@
             _PyStackRef callargs_st;
             _PyStackRef kwargs_st = PyStackRef_NULL;
             _PyStackRef result;
+            // __DO_CALL_FUNCTION_EX
             if (oparg & 1) { kwargs_st = stack_pointer[-(oparg & 1)]; }
             callargs_st = stack_pointer[-1 - (oparg & 1)];
             func_st = stack_pointer[-3 - (oparg & 1)];
-            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
-            PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
-            PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
-            // DICT_MERGE is called before this opcode if there are kwargs.
-            // It converts all dict subtypes in kwargs into regular dicts.
-            assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-            if (!PyTuple_CheckExact(callargs)) {
-                int err = check_args_iterable(tstate, func, callargs);
-                if (err < 0) {
-                    goto error;
-                }
-                PyObject *tuple = PySequence_Tuple(callargs);
-                if (tuple == NULL) {
-                    goto error;
-                }
-                PyStackRef_CLOSE(callargs_st);
-                callargs_st = PyStackRef_FromPyObjectSteal(tuple);
-                callargs = tuple;
-            }
-            assert(PyTuple_CheckExact(callargs));
-            EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
-            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
-                PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
-                PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
-                int err = _Py_call_instrumentation_2args(
-                    tstate, PY_MONITORING_EVENT_CALL,
-                    frame, this_instr, func, arg);
-                if (err) goto error;
-                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
-                if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
-                    if (PyStackRef_IsNull(result)) {
-                        _Py_call_instrumentation_exc2(
-                            tstate, PY_MONITORING_EVENT_C_RAISE,
-                            frame, this_instr, func, arg);
+            {
+                PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+                PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+                PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+                // DICT_MERGE is called before this opcode if there are kwargs.
+                // It converts all dict subtypes in kwargs into regular dicts.
+                assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+                if (!PyTuple_CheckExact(callargs)) {
+                    int err = check_args_iterable(tstate, func, callargs);
+                    if (err < 0) {
+                        goto error;
                     }
-                    else {
-                        int err = _Py_call_instrumentation_2args(
-                            tstate, PY_MONITORING_EVENT_C_RETURN,
-                            frame, this_instr, func, arg);
-                        if (err < 0) {
-                            PyStackRef_CLEAR(result);
+                    PyObject *tuple = PySequence_Tuple(callargs);
+                    if (tuple == NULL) {
+                        goto error;
+                    }
+                    PyStackRef_CLOSE(callargs_st);
+                    callargs_st = PyStackRef_FromPyObjectSteal(tuple);
+                    callargs = tuple;
+                }
+                assert(PyTuple_CheckExact(callargs));
+                EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
+                if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
+                    PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
+                    PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
+                    int err = _Py_call_instrumentation_2args(
+                        tstate, PY_MONITORING_EVENT_CALL,
+                        frame, this_instr, func, arg);
+                    if (err) goto error;
+                    result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                    if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                        if (PyStackRef_IsNull(result)) {
+                            _Py_call_instrumentation_exc2(
+                                tstate, PY_MONITORING_EVENT_C_RAISE,
+                                frame, this_instr, func, arg);
+                        }
+                        else {
+                            int err = _Py_call_instrumentation_2args(
+                                tstate, PY_MONITORING_EVENT_C_RETURN,
+                                frame, this_instr, func, arg);
+                            if (err < 0) {
+                                PyStackRef_CLEAR(result);
+                            }
                         }
                     }
                 }
-            }
-            else {
-                if (Py_TYPE(func) == &PyFunction_Type &&
-                    tstate->interp->eval_frame == NULL &&
-                    ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
-                    assert(PyTuple_CheckExact(callargs));
-                    Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-                    int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
-                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
-                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
-                        (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
-                        nargs, callargs, kwargs);
-                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
-                    STACK_SHRINK(oparg + 3);
-                    if (new_frame == NULL) {
-                        goto error;
+                else {
+                    if (Py_TYPE(func) == &PyFunction_Type &&
+                        tstate->interp->eval_frame == NULL &&
+                        ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                        assert(PyTuple_CheckExact(callargs));
+                        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                        int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                        PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+                        _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
+                            (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
+                            nargs, callargs, kwargs);
+                        // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
+                        STACK_SHRINK(oparg + 3);
+                        if (new_frame == NULL) {
+                            goto error;
+                        }
+                        assert(next_instr - this_instr == 1);
+                        frame->return_offset = 1;
+                        DISPATCH_INLINED(new_frame);
                     }
-                    assert(next_instr - this_instr == 1);
-                    frame->return_offset = 1;
-                    DISPATCH_INLINED(new_frame);
+                    result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
                 }
-                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                PyStackRef_CLOSE(func_st);
+                PyStackRef_CLOSE(callargs_st);
+                PyStackRef_XCLOSE(kwargs_st);
+                assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
+                if (PyStackRef_IsNull(result)) {
+                    stack_pointer += -3 - (oparg & 1);
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
             }
-            PyStackRef_CLOSE(func_st);
-            PyStackRef_CLOSE(callargs_st);
-            PyStackRef_XCLOSE(kwargs_st);
-            assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
-            if (PyStackRef_IsNull(result)) {
-                stack_pointer += -3 - (oparg & 1);
-                assert(WITHIN_STACK_BOUNDS());
-                goto error;
+            // _CHECK_PERIODIC
+            {
             }
             stack_pointer[-3 - (oparg & 1)] = result;
             stack_pointer += -2 - (oparg & 1);
@@ -7133,6 +7139,100 @@
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
             stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(_DO_CALL_FUNCTION_EX) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(_DO_CALL_FUNCTION_EX);
+            _PyStackRef func_st;
+            _PyStackRef callargs_st;
+            _PyStackRef kwargs_st = PyStackRef_NULL;
+            _PyStackRef result;
+            if (oparg & 1) { kwargs_st = stack_pointer[-(oparg & 1)]; }
+            callargs_st = stack_pointer[-1 - (oparg & 1)];
+            func_st = stack_pointer[-3 - (oparg & 1)];
+            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+            PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+            PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+            // DICT_MERGE is called before this opcode if there are kwargs.
+            // It converts all dict subtypes in kwargs into regular dicts.
+            assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+            if (!PyTuple_CheckExact(callargs)) {
+                int err = check_args_iterable(tstate, func, callargs);
+                if (err < 0) {
+                    goto error;
+                }
+                PyObject *tuple = PySequence_Tuple(callargs);
+                if (tuple == NULL) {
+                    goto error;
+                }
+                PyStackRef_CLOSE(callargs_st);
+                callargs_st = PyStackRef_FromPyObjectSteal(tuple);
+                callargs = tuple;
+            }
+            assert(PyTuple_CheckExact(callargs));
+            EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
+            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
+                PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
+                PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
+                int err = _Py_call_instrumentation_2args(
+                    tstate, PY_MONITORING_EVENT_CALL,
+                    frame, this_instr, func, arg);
+                if (err) goto error;
+                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                    if (PyStackRef_IsNull(result)) {
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, this_instr, func, arg);
+                    }
+                    else {
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, this_instr, func, arg);
+                        if (err < 0) {
+                            PyStackRef_CLEAR(result);
+                        }
+                    }
+                }
+            }
+            else {
+                if (Py_TYPE(func) == &PyFunction_Type &&
+                    tstate->interp->eval_frame == NULL &&
+                    ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                    assert(PyTuple_CheckExact(callargs));
+                    Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                    int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
+                        (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
+                        nargs, callargs, kwargs);
+                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
+                    STACK_SHRINK(oparg + 3);
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
+                    assert(next_instr - this_instr == 1);
+                    frame->return_offset = 1;
+                    DISPATCH_INLINED(new_frame);
+                }
+                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+            }
+            PyStackRef_CLOSE(func_st);
+            PyStackRef_CLOSE(callargs_st);
+            PyStackRef_XCLOSE(kwargs_st);
+            assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
+            if (PyStackRef_IsNull(result)) {
+                stack_pointer += -3 - (oparg & 1);
+                assert(WITHIN_STACK_BOUNDS());
+                goto error;
+            }
+            stack_pointer[-3 - (oparg & 1)] = result;
+            stack_pointer += -2 - (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }

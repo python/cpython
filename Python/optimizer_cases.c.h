@@ -1976,7 +1976,7 @@
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+        /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_FUNCTION: {
             _Py_UopsSymbol *func;

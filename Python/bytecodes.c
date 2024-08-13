@@ -4102,7 +4102,7 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
-        inst(CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st if (oparg & 1) -- result)) {
+        inst(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st if (oparg & 1) -- result)) {
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
             PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
@@ -4176,8 +4176,12 @@ dummy_func(
             DECREF_INPUTS();
             assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
             ERROR_IF(PyStackRef_IsNull(result), error);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_FUNCTION_EX) =
+            _DO_CALL_FUNCTION_EX +
+            _CHECK_PERIODIC;
+
 
         inst(MAKE_FUNCTION, (codeobj_st -- func)) {
             PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);
