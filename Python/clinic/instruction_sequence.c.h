@@ -82,7 +82,7 @@ InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const 
     PyObject *argsbuf[1];
     int label;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -148,7 +148,7 @@ InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *arg
     int end_lineno;
     int end_col_offset;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -255,7 +255,7 @@ InstructionSequenceType_add_nested(_PyInstructionSequence *self, PyObject *const
     PyObject *argsbuf[1];
     PyObject *nested;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -301,4 +301,4 @@ InstructionSequenceType_get_instructions(_PyInstructionSequence *self, PyObject 
 {
     return InstructionSequenceType_get_instructions_impl(self);
 }
-/*[clinic end generated code: output=d27cfe58b6f3f332 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8809d7aa11d9b2bb input=a9049054013a1b77]*/

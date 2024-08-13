@@ -662,11 +662,15 @@ class ParseArgsCodeGen:
             use_parser_code = False
             self.fastcall = False
         else:
-            self.codegen.add_include('pycore_modsupport.h',
-                                     '_PyArg_UnpackKeywords()')
             if not self.varpos:
+                self.codegen.add_include('pycore_modsupport.h',
+                                         '_PyArg_UnpackKeywords()')
+                unpack_func = '_PyArg_UnpackKeywords'
                 nargs = "nargs"
             else:
+                self.codegen.add_include('pycore_modsupport.h',
+                                         '_PyArg_UnpackKeywordsWithVararg()')
+                unpack_func = '_PyArg_UnpackKeywordsWithVararg'
                 nargs = f"Py_MIN(nargs, {self.max_pos})" if self.max_pos else "0"
 
             if self.fastcall:
@@ -698,10 +702,9 @@ class ParseArgsCodeGen:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
                 unpack_args = '_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL'
             unpack_args += (f', &_parser, {self.min_pos}, {self.max_pos}, '
-                            f'{self.min_kw_only}, '
-                            f'{int(self.varpos is not None)}, argsbuf')
+                            f'{self.min_kw_only}, argsbuf')
             parser_code = [libclinic.normalize_snippet(f"""
-                {argsname} = _PyArg_UnpackKeywords({unpack_args});
+                {argsname} = {unpack_func}({unpack_args});
                 if (!{argsname}) {{{{
                     goto exit;
                 }}}}
