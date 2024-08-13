@@ -11094,6 +11094,8 @@ slot_inherited(PyTypeObject *type, pytype_slotdef *slotdef, void **slot)
     if (slot_base == NULL || *slot != *slot_base) {
         return 0;
     }
+
+    /* Some slots are inherited in pairs. */
     if (slot == (void *)&type->tp_hash) {
         return (type->tp_richcompare == type->tp_base->tp_richcompare);
     }
