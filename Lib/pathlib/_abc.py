@@ -584,10 +584,10 @@ class PathBase(PurePathBase):
         Raise OSError(EINVAL) if the other path is within this path.
         """
         # Note: there is no straightforward, foolproof algorithm to determine
-        # if one directory is within another. A particularly perverse example:
-        # consider a single network share mounted in one location via NFS, and
-        # in another location via CIFS. This method simply checks whether the
-        # other_path is lexically equal to, or within, this path.
+        # if one directory is within another (a particularly perverse example
+        # would be a single network share mounted in one location via NFS, and
+        # in another location via CIFS), so we simply checks whether the
+        # other path is lexically equal to, or within, this path.
         if self == other_path:
             err = OSError(EINVAL, "Source and target are the same path")
         elif self in other_path.parents:
