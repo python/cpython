@@ -27,6 +27,7 @@ import re
 import sys
 import sysconfig
 import warnings
+import _imp
 
 from importlib._bootstrap import _load as bootstrap_load
 from importlib.machinery import BuiltinImporter, ExtensionFileLoader, ModuleSpec
@@ -153,6 +154,11 @@ class ModuleChecker:
         self.notavailable = []
 
     def check(self):
+        if not hasattr(_imp, 'create_dynamic'):
+            logger.warning(
+                ('Dynamic extensions not supported '
+                 '(HAVE_DYNAMIC_LOADING not defined)'),
+            )
         for modinfo in self.modules:
             logger.debug("Checking '%s' (%s)", modinfo.name, self.get_location(modinfo))
             if modinfo.state == ModuleState.DISABLED:
@@ -414,6 +420,9 @@ class ModuleChecker:
             logger.error("%s failed to import: %s", modinfo.name, e)
             raise
         except Exception as e:
+            if not hasattr(_imp, 'create_dynamic'):
+                logger.warning("Dynamic extension '%s' ignored", modinfo.name)
+                return
             logger.exception("Importing extension '%s' failed!", modinfo.name)
             raise
 
