@@ -949,11 +949,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1275,11 +1281,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1344,11 +1356,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1412,11 +1430,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1466,11 +1490,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1569,11 +1599,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-3 - (oparg & 1)] = result;
             stack_pointer += -2 - (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1772,11 +1808,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-3 - oparg] = res;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1924,11 +1966,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1995,11 +2043,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2053,11 +2107,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2114,11 +2174,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2187,11 +2253,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2381,11 +2453,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2417,11 +2495,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -3748,11 +3832,17 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -3886,6 +3976,13 @@
             /* Skip 1 cache entry */
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             // _MONITOR_JUMP_BACKWARD
             {
@@ -4053,7 +4150,13 @@
             // _CHECK_PERIODIC_NOT_YIELD_FROM
             {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                    CHECK_EVAL_BREAKER();
+                    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                    QSBR_QUIESCENT_STATE(tstate); \
+                    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                        if (_Py_HandlePending(tstate) != 0) {
+                            GOTO_ERROR(error); \
+                        }
+                    }
                 }
             }
             // _MONITOR_RESUME
@@ -4272,6 +4375,13 @@
             INSTRUCTION_STATS(JUMP_BACKWARD);
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
             // _JUMP_BACKWARD
             {
@@ -5947,7 +6057,13 @@
             // _CHECK_PERIODIC_NOT_YIELD_FROM
             {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                    CHECK_EVAL_BREAKER();
+                    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                    QSBR_QUIESCENT_STATE(tstate); \
+                    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                        if (_Py_HandlePending(tstate) != 0) {
+                            GOTO_ERROR(error); \
+                        }
+                    }
                 }
             }
             DISPATCH();

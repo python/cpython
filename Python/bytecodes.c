@@ -148,12 +148,24 @@ dummy_func(
         };
 
         op(_CHECK_PERIODIC, (--)) {
-            CHECK_EVAL_BREAKER();
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate); \
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                if (_Py_HandlePending(tstate) != 0) {
+                    GOTO_ERROR(error); \
+                }
+            }
         }
 
         op(_CHECK_PERIODIC_NOT_YIELD_FROM, (--)) {
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                CHECK_EVAL_BREAKER();
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    if (_Py_HandlePending(tstate) != 0) {
+                        GOTO_ERROR(error); \
+                    }
+                }
             }
         }
 
