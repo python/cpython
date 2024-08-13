@@ -1687,7 +1687,7 @@ _Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
         total_executors++;
-        if (exec->run_count < 4) {
+        if (exec->run_count < 1) {
             invalidated_executors++;
             unlink_executor(exec);
             if (no_memory) {
