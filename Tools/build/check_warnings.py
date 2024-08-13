@@ -43,6 +43,7 @@ def extract_warnings_from_compiler_output_clang(
 
 def extract_warnings_from_compiler_output_json(
     compiler_output: str,
+    path_prefix: str | None = None,
 ) -> list[dict]:
     """
     Extracts warnings from the compiler output when using
@@ -73,7 +74,7 @@ def extract_warnings_from_compiler_output_json(
                             compiler_warnings.append(
                                 {
                                     # Remove leading current directory if present
-                                    "file": location[key]["file"].lstrip("./"),
+                                    "file": location[key]["file"].lstrip(path_prefix),
                                     "line": location[key]["line"],
                                     "column": location[key]["column"],
                                     "message": warning["message"],
@@ -206,6 +207,12 @@ def main(argv: list[str] | None = None) -> int:
         choices=["json", "clang"],
         help="Type of compiler output file (json or clang)",
     )
+    parser.add_argument(
+        "-p",
+        "--path-prefix",
+        type=str,
+        help="Path prefix to remove from the start of file paths",
+    )
 
     args = parser.parse_args(argv)
 
@@ -250,11 +257,13 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.compiler_output_type == "json":
         warnings = extract_warnings_from_compiler_output_json(
-            compiler_output_file_contents
+            compiler_output_file_contents,
+            args.path_prefix
         )
     elif args.compiler_output_type == "clang":
         warnings = extract_warnings_from_compiler_output_clang(
-            compiler_output_file_contents
+            compiler_output_file_contents,
+            args.path_prefix
         )
 
     files_with_warnings = get_warnings_by_file(warnings)
