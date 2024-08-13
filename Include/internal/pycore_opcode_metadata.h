@@ -1859,6 +1859,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 116: \
     case 117: \
     case 118: \
     case 119: \
@@ -1904,7 +1905,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 233: \
     case 234: \
     case 235: \
-    case 255: \
         ;
 struct pseudo_targets {
     uint8_t targets[3];
