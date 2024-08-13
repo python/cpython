@@ -3051,7 +3051,6 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     NEW_JUMP_TARGET_LABEL(c, loop);
-    NEW_JUMP_TARGET_LABEL(c, body);
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, anchor);
 
@@ -3060,9 +3059,8 @@ compiler_while(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
     RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
-    USE_LABEL(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, body, 1));
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
