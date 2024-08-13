@@ -954,7 +954,7 @@ visit_decref_unreachable(PyObject *op, void *data)
 int
 _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
-    _PyStackRef *ref = frame->localsplus;
+    _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
     /* locals and stack */
     for (; ref < frame->stackpointer; ref++) {
         // This is a bit tricky! We want to ignore deferred references when
