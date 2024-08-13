@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(gc_enable__doc__,
 "enable($module, /)\n"
@@ -309,7 +310,29 @@ PyDoc_STRVAR(gc_get_referrers__doc__,
 "Return the list of objects that directly refer to any of \'objs\'.");
 
 #define GC_GET_REFERRERS_METHODDEF    \
-    {"get_referrers", (PyCFunction)gc_get_referrers, METH_VARARGS, gc_get_referrers__doc__},
+    {"get_referrers", _PyCFunction_CAST(gc_get_referrers), METH_FASTCALL, gc_get_referrers__doc__},
+
+static PyObject *
+gc_get_referrers_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = gc_get_referrers_impl(module, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(gc_get_referents__doc__,
 "get_referents($module, /, *objs)\n"
@@ -318,7 +341,29 @@ PyDoc_STRVAR(gc_get_referents__doc__,
 "Return the list of objects that are directly referred to by \'objs\'.");
 
 #define GC_GET_REFERENTS_METHODDEF    \
-    {"get_referents", (PyCFunction)gc_get_referents, METH_VARARGS, gc_get_referents__doc__},
+    {"get_referents", _PyCFunction_CAST(gc_get_referents), METH_FASTCALL, gc_get_referents__doc__},
+
+static PyObject *
+gc_get_referents_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = gc_get_referents_impl(module, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(gc_get_objects__doc__,
 "get_objects($module, /, generation=None)\n"
@@ -533,4 +578,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84873dc5565cc70e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29b60bfc31906600 input=a9049054013a1b77]*/

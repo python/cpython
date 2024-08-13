@@ -290,12 +290,6 @@ class ParseArgsCodeGen:
                 and not self.requires_defining_class
                 and not self.is_new_or_init())
 
-    def use_meth_varargs(self) -> bool:
-        return (not self.parameters
-                and self.varpos is not None
-                and not self.requires_defining_class
-                and not self.is_new_or_init())
-
     def use_simple_return(self) -> bool:
         return (self.func.return_converter.type == 'PyObject *'
                 and not self.func.critical_section)
@@ -445,20 +439,6 @@ class ParseArgsCodeGen:
 
             parser_code = libclinic.normalize_snippet(parsearg, indent=4)
             self.parser_body(parser_code)
-
-    def parse_varpos_only(self) -> None:
-        self.flags = "METH_VARARGS"
-        if self.use_simple_return():
-            # maps perfectly to METH_VARARGS, doesn't need a return converter.
-            # so we skip making a parse function
-            # and call directly into the impl function.
-            self.impl_prototype = ''
-            self.impl_definition = METH_O_PROTOTYPE
-        else:
-            # SLIGHT HACK
-            # use impl_parameters for the parser here!
-            self.parser_prototype = METH_O_PROTOTYPE
-            self.parser_body()
 
     def parse_option_groups(self) -> None:
         # positional parameters with option groups
@@ -978,8 +958,6 @@ class ParseArgsCodeGen:
             self.parse_no_args()
         elif self.use_meth_o():
             self.parse_one_arg()
-        elif self.use_meth_varargs():
-            self.parse_varpos_only()
         elif self.has_option_groups():
             self.parse_option_groups()
         elif (not self.requires_defining_class

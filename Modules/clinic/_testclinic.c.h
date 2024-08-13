@@ -2528,7 +2528,29 @@ PyDoc_STRVAR(varpos__doc__,
 "\n");
 
 #define VARPOS_METHODDEF    \
-    {"varpos", (PyCFunction)varpos, METH_VARARGS, varpos__doc__},
+    {"varpos", _PyCFunction_CAST(varpos), METH_FASTCALL, varpos__doc__},
+
+static PyObject *
+varpos_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = varpos_impl(module, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(posonly_varpos__doc__,
 "posonly_varpos($module, a, b, /, *args)\n"
@@ -3211,7 +3233,29 @@ PyDoc_STRVAR(gh_99233_refcount__doc__,
 "Proof-of-concept of GH-99233 refcount error bug.");
 
 #define GH_99233_REFCOUNT_METHODDEF    \
-    {"gh_99233_refcount", (PyCFunction)gh_99233_refcount, METH_VARARGS, gh_99233_refcount__doc__},
+    {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = gh_99233_refcount_impl(module, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(gh_99240_double_free__doc__,
 "gh_99240_double_free($module, a, b, /)\n"
@@ -3765,4 +3809,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9c2c00c640588af7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa10ab215bdd6259 input=a9049054013a1b77]*/

@@ -970,8 +970,8 @@ varpos
 [clinic start generated code]*/
 
 static PyObject *
-varpos(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=174bb88a5a80ed51 input=f87cd674145d394c]*/
+varpos_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=7b0b9545872bdca4 input=f87cd674145d394c]*/
 {
     return Py_NewRef(args);
 }
@@ -1176,8 +1176,8 @@ Proof-of-concept of GH-99233 refcount error bug.
 [clinic start generated code]*/
 
 static PyObject *
-gh_99233_refcount(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=4a8facb62b9a98bb input=eecfdc2092d90dc3]*/
+gh_99233_refcount_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=585855abfbca9a7f input=eecfdc2092d90dc3]*/
 {
     Py_RETURN_NONE;
 }
