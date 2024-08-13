@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-import lexer as lx
+import lexer
 import parser
 
 
@@ -185,7 +185,7 @@ class Uop:
             return None  # Adjusts next_instr, but only in tier 1 code
         if "INSTRUMENTED" in self.name:
             return "is instrumented"
-        if lx.ANN_REPLACED in self.annotations:
+        if lexer.ANN_REPLACED in self.annotations:
             return "is replaced"
         if self.name in ("INTERPRETER_EXIT", "JUMP_BACKWARD"):
             return "has tier 1 control flow"
@@ -209,7 +209,7 @@ class Uop:
 
     def is_super(self) -> bool:
         for tkn in self.body:
-            if tkn.kind == lx.IDENTIFIER and tkn.text == "oparg1":
+            if tkn.kind == lexer.IDENTIFIER and tkn.text == "oparg1":
                 return True
         return False
 
@@ -219,7 +219,7 @@ Part = Uop | Skip | Flush
 
 @dataclass
 class Instruction:
-    where: lx.Token
+    where: lexer.Token
     name: str
     parts: list[Part]
     _properties: Properties | None
@@ -291,17 +291,17 @@ class Analysis:
     min_instrumented: int
 
 
-def analysis_error(message: str, tkn: lx.Token) -> SyntaxError:
+def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
     # To do -- support file and line output
     # Construct a SyntaxError instance from message and token
-    return lx.make_syntax_error(message, tkn.filename, tkn.line, tkn.column, "")
+    return lexer.make_syntax_error(message, tkn.filename, tkn.line, tkn.column, "")
 
 
 def override_error(
     name: str,
     context: parser.Context | None,
     prev_context: parser.Context | None,
-    token: lx.Token,
+    token: lexer.Token,
 ) -> SyntaxError:
     return analysis_error(
         f"Duplicate definition of '{name}' @ {context} "
@@ -418,7 +418,7 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == lx.IDENTIFIER and token.text == name
+        token.kind == lexer.IDENTIFIER and token.text == name
         for token in node.block.tokens
     )
 
@@ -426,7 +426,7 @@ def variable_used(node: parser.InstDef, name: str) -> bool:
 def oparg_used(node: parser.InstDef) -> bool:
     """Determine whether `oparg` is used in a node."""
     return any(
-        token.kind == lx.IDENTIFIER and token.text == "oparg"
+        token.kind == lexer.IDENTIFIER and token.text == "oparg"
         for token in node.tokens
     )
 
@@ -434,8 +434,8 @@ def oparg_used(node: parser.InstDef) -> bool:
 def tier_variable(node: parser.InstDef) -> int | None:
     """Determine whether a tier variable is used in a node."""
     for token in node.tokens:
-        if token.kind == lx.ANNOTATION:
-            if token.text == lx.ANN_SPECIALIZING:
+        if token.kind == lexer.ANNOTATION:
+            if token.text == lexer.ANN_SPECIALIZING:
                 return 1
             if re.fullmatch(r"tier\d", token.text):
                 return int(token.text[-1])
@@ -555,13 +555,13 @@ def makes_escaping_api_call(instr: parser.InstDef) -> bool:
         return True
     tkns = iter(instr.tokens)
     for tkn in tkns:
-        if tkn.kind != lx.IDENTIFIER:
+        if tkn.kind != lexer.IDENTIFIER:
             continue
         try:
             next_tkn = next(tkns)
         except StopIteration:
             return False
-        if next_tkn.kind != lx.LPAREN:
+        if next_tkn.kind != lexer.LPAREN:
             continue
         if tkn.text in ESCAPING_FUNCTIONS:
             return True
@@ -598,20 +598,20 @@ def always_exits(op: parser.InstDef) -> bool:
     depth = 0
     tkn_iter = iter(op.tokens)
     for tkn in tkn_iter:
-        if tkn.kind == lx.LBRACE:
+        if tkn.kind == lexer.LBRACE:
             depth += 1
-        elif tkn.kind == lx.RBRACE:
+        elif tkn.kind == lexer.RBRACE:
             depth -= 1
         elif depth > 1:
             continue
-        elif tkn.kind == lx.GOTO or tkn.kind == lx.RETURN:
+        elif tkn.kind == lexer.GOTO or tkn.kind == lexer.RETURN:
             return True
         elif tkn.kind == "KEYWORD":
             # XXX: This appears to be unreachable since we never
             # set tkn.kind to "KEYWORD"
             if tkn.text in EXITS:
                 return True
-        elif tkn.kind == lx.IDENTIFIER:
+        elif tkn.kind == lexer.IDENTIFIER:
             if tkn.text in EXITS:
                 return True
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
@@ -666,7 +666,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
     exits_if = variable_used(op, "EXIT_IF")
     if deopts_if and exits_if:
         tkn = op.tokens[0]
-        raise lx.make_syntax_error(
+        raise lexer.make_syntax_error(
             "Op cannot contain both EXIT_IF and DEOPT_IF",
             tkn.filename,
             tkn.line,
@@ -693,12 +693,12 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
         and not has_free,
         has_free=has_free,
-        pure=lx.ANN_PURE in op.annotations,
+        pure=lexer.ANN_PURE in op.annotations,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
     )
 
-ANN_REPLICATED = re.compile(rf'^{re.escape(lx.ANN_REPLICATE)}\((\d+)\)$')
+ANN_REPLICATED = re.compile(rf'^{re.escape(lexer.ANN_REPLICATE)}\((\d+)\)$')
 
 def make_uop(
     name: str,
@@ -716,7 +716,7 @@ def make_uop(
         body=op.block.tokens,
         properties=compute_properties(op),
     )
-    if effect_depends_on_oparg_1(op) and lx.ANN_SPLIT in op.annotations:
+    if effect_depends_on_oparg_1(op) and lexer.ANN_SPLIT in op.annotations:
         result.properties.oparg_and_1 = True
         for bit in ("0", "1"):
             name_x = name + "_" + bit
@@ -768,7 +768,7 @@ def make_uop(
 def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
     assert op.kind == "op"
     if op.name in uops:
-        if lx.ANN_OVERRIDE not in op.annotations:
+        if lexer.ANN_OVERRIDE not in op.annotations:
             raise override_error(
                 op.name, op.context, uops[op.name].context, op.tokens[0]
             )
@@ -983,11 +983,11 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     for uop in uops.values():
         tkn_iter = iter(uop.body)
         for tkn in tkn_iter:
-            if tkn.kind == lx.IDENTIFIER and tkn.text == "GO_TO_INSTRUCTION":
-                if next(tkn_iter).kind != lx.LPAREN:
+            if tkn.kind == lexer.IDENTIFIER and tkn.text == "GO_TO_INSTRUCTION":
+                if next(tkn_iter).kind != lexer.LPAREN:
                     continue
                 target = next(tkn_iter)
-                if target.kind != lx.IDENTIFIER:
+                if target.kind != lexer.IDENTIFIER:
                     continue
                 if target.text in instructions:
                     instructions[target.text].is_target = True
