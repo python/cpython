@@ -155,9 +155,11 @@ def get_unexpected_improvements(
     unexpected_improvements = []
     for file in files_with_expected_warnings:
         if file.name not in files_with_warnings.keys():
+            import pdb; pdb.set_trace()
             unexpected_improvements.append(file)
         else:
             if len(files_with_warnings[file.name]) < file.count:
+                import pdb; pdb.set_trace()
                 unexpected_improvements.append(file)
 
     if unexpected_improvements:
@@ -263,7 +265,6 @@ def main(argv: list[str] | None = None) -> int:
     elif args.compiler_output_type == "clang":
         warnings = extract_warnings_from_compiler_output_clang(
             compiler_output_file_contents,
-            args.path_prefix
         )
 
     files_with_warnings = get_warnings_by_file(warnings)
