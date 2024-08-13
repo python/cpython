@@ -428,9 +428,9 @@ _PyCode_Quicken(PyCodeObject *code)
     #if ENABLE_SPECIALIZATION
     int opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
-    for (int i = 0; i < Py_SIZE(code); i++) {
-        opcode = _Py_GetBaseOpcode(code, i);
-        assert(opcode < MIN_INSTRUMENTED_OPCODE);
+    /* The last code unit cannot have a cache, so we don't need to check it */
+    for (int i = 0; i < Py_SIZE(code)-1; i++) {
+        opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             // The initial value depends on the opcode

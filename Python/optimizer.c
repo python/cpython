@@ -22,20 +22,6 @@
 
 #define MAX_EXECUTORS_SIZE 256
 
-#ifdef Py_DEBUG
-static int
-base_opcode(PyCodeObject *code, int offset)
-{
-    int opcode = _Py_GetBaseOpcode(code, offset);
-    if (opcode == ENTER_EXECUTOR) {
-        int oparg = _PyCode_CODE(code)[offset].op.arg;
-        _PyExecutorObject *ex = code->co_executors->executors[oparg];
-        return ex->vm_data.opcode;
-    }
-    return opcode;
-}
-#endif
-
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
@@ -771,9 +757,8 @@ translate_bytecode_to_trace(
                                 {
                                     uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
                                     uint32_t jump_target = next_inst + oparg;
-                                    assert(base_opcode(code, jump_target) == END_FOR ||
-                                        base_opcode(code, jump_target) == INSTRUMENTED_END_FOR);
-                                    assert(base_opcode(code, jump_target+1) == POP_TOP);
+                                    assert(_Py_GetBaseCodeUnit(code, jump_target).op.code == END_FOR);
+                                    assert(_Py_GetBaseCodeUnit(code, jump_target+1).op.code == POP_TOP);
                                 }
 #endif
                                 break;

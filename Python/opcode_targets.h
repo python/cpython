@@ -65,7 +65,6 @@ static void *opcode_targets[256] = {
     &&TARGET_DELETE_NAME,
     &&TARGET_DICT_MERGE,
     &&TARGET_DICT_UPDATE,
-    &&TARGET_ENTER_EXECUTOR,
     &&TARGET_EXTENDED_ARG,
     &&TARGET_FOR_ITER,
     &&TARGET_GET_AWAITABLE,
@@ -116,6 +115,7 @@ static void *opcode_targets[256] = {
     &&TARGET_UNPACK_EX,
     &&TARGET_UNPACK_SEQUENCE,
     &&TARGET_YIELD_VALUE,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -254,5 +254,5 @@ static void *opcode_targets[256] = {
     &&TARGET_INSTRUMENTED_YIELD_VALUE,
     &&TARGET_INSTRUMENTED_CALL,
     &&TARGET_INSTRUMENTED_LINE,
-    &&_unknown_opcode,
+    &&TARGET_ENTER_EXECUTOR,
 };
