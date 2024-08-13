@@ -795,8 +795,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
     @patch_replace
     @needs_symlinks
+    def test_move_file_symlink_to_itself_other_fs(self):
+        self.test_move_file_symlink_to_itself()
+
+    @patch_replace
+    @needs_symlinks
     def test_move_dir_symlink_other_fs(self):
         self.test_move_dir_symlink()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dir_symlink_to_itself_other_fs(self):
+        self.test_move_dir_symlink_to_itself()
 
     @patch_replace
     @needs_symlinks

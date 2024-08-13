@@ -11,10 +11,10 @@ Two base classes are defined here -- PurePathBase and PathBase -- that
 resemble pathlib's PurePath and Path respectively.
 """
 
-import errno
 import functools
 import operator
 import posixpath
+from errno import EXDEV
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from pathlib._os import copyfileobj
@@ -565,33 +565,14 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
-    def _check_files_differ(self, other_path):
+    def _samefile_safe(self, other_path):
         """
-        Raise OSError(EINVAL) if both paths refer to the same file.
+        Like samefile(), but returns False rather than raising OSError.
         """
         try:
-            if not self.samefile(other_path):
-                return
+            return self.samefile(other_path)
         except (OSError, ValueError):
-            return
-        err = OSError(errno.EINVAL, "Source and target are the same file")
-        err.filename = str(self)
-        err.filename2 = str(other_path)
-        raise err
-
-    def _check_paths_disjoint(self, other_path):
-        """
-        Raise OSError(EINVAL) if the other path is within this path.
-        """
-        if self == other_path:
-            err = OSError(errno.EINVAL, "Source and target are the same path")
-        elif self in other_path.parents:
-            err = OSError(errno.EINVAL, "Source path is a parent of target path")
-        else:
-            return
-        err.filename = str(self)
-        err.filename2 = str(other_path)
-        raise err
+            return False
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -846,7 +827,8 @@ class PathBase(PurePathBase):
         """
         Copy the contents of this file to the given target.
         """
-        self._check_files_differ(target)
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -866,13 +848,6 @@ class PathBase(PurePathBase):
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
-        try:
-            self._check_paths_disjoint(target)
-        except OSError as err:
-            if on_error is None:
-                raise
-            on_error(err)
-            return
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
@@ -927,7 +902,8 @@ class PathBase(PurePathBase):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        self._check_files_differ(target)
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
         try:
             return self.replace(target)
         except UnsupportedOperation:
@@ -936,7 +912,7 @@ class PathBase(PurePathBase):
             if not isinstance(target, PathBase):
                 raise
         except OSError as err:
-            if err.errno != errno.EXDEV:
+            if err.errno != EXDEV:
                 raise
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self.delete()
