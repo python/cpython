@@ -230,8 +230,6 @@ def generate_tier2(
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)
-            if uop.properties.ends_with_eval_breaker:
-                out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("break;\n")
         out.start_line()
         out.emit("}")

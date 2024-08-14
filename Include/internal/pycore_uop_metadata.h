@@ -20,6 +20,8 @@ extern int _PyUop_num_popped(int opcode, int oparg);
 #ifdef NEED_OPCODE_METADATA
 const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_NOP] = HAS_PURE_FLAG,
+    [_CHECK_PERIODIC] = HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_CHECK_PERIODIC_IF_NOT_YIELD_FROM] = HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_RESUME_CHECK] = HAS_DEOPT_FLAG,
     [_LOAD_FAST_CHECK] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_FAST_0] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
@@ -202,7 +204,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_ATTR_METHOD_LAZY_DICT] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_METHOD_LAZY_DICT] = HAS_ARG_FLAG,
     [_MAYBE_EXPAND_METHOD] = HAS_ARG_FLAG,
-    [_CHECK_PERIODIC] = HAS_EVAL_BREAK_FLAG,
     [_PY_FRAME_GENERAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_FUNCTION_VERSION] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CHECK_METHOD_VERSION] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
@@ -334,6 +335,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_METHOD_VERSION] = "_CHECK_METHOD_VERSION",
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_PERIODIC] = "_CHECK_PERIODIC",
+    [_CHECK_PERIODIC_IF_NOT_YIELD_FROM] = "_CHECK_PERIODIC_IF_NOT_YIELD_FROM",
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
@@ -535,6 +537,10 @@ int _PyUop_num_popped(int opcode, int oparg)
 {
     switch(opcode) {
         case _NOP:
+            return 0;
+        case _CHECK_PERIODIC:
+            return 0;
+        case _CHECK_PERIODIC_IF_NOT_YIELD_FROM:
             return 0;
         case _RESUME_CHECK:
             return 0;
@@ -900,8 +906,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _MAYBE_EXPAND_METHOD:
             return 2 + oparg;
-        case _CHECK_PERIODIC:
-            return 0;
         case _PY_FRAME_GENERAL:
             return 2 + oparg;
         case _CHECK_FUNCTION_VERSION:

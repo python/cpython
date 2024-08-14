@@ -133,16 +133,6 @@ do { \
 // Use this instead of 'goto error' so Tier 2 can go to a different label
 #define GOTO_ERROR(LABEL) goto LABEL
 
-#define CHECK_EVAL_BREAKER() \
-    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    QSBR_QUIESCENT_STATE(tstate); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
-        if (_Py_HandlePending(tstate) != 0) { \
-            GOTO_ERROR(error); \
-        } \
-    }
-
-
 /* Tuple access macros */
 
 #ifndef Py_DEBUG

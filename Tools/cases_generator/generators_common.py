@@ -75,7 +75,6 @@ class Emitter:
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
-            "CHECK_EVAL_BREAKER": self.check_eval_breaker,
             "SYNC_SP": self.sync_sp,
             "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
         }
@@ -189,20 +188,6 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         stack.flush(self.out)
-
-    def check_eval_breaker(
-        self,
-        tkn: Token,
-        tkn_iter: Iterator[Token],
-        uop: Uop,
-        stack: Stack,
-        inst: Instruction | None,
-    ) -> None:
-        next(tkn_iter)
-        next(tkn_iter)
-        next(tkn_iter)
-        if not uop.properties.ends_with_eval_breaker:
-            self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
 
     def py_stack_ref_from_py_object_new(
         self,
