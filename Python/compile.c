@@ -491,7 +491,7 @@ each key.
 static PyObject *
 dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 {
-    Py_ssize_t i = offset, scope, num_keys, key_i;
+    Py_ssize_t i = offset, num_keys, key_i;
     PyObject *k, *v, *dest = PyDict_New();
     PyObject *sorted_keys;
 
@@ -533,10 +533,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
             Py_DECREF(dest);
             return NULL;
         }
-        /* XXX this should probably be a macro in symtable.h */
-        scope = (vi >> SCOPE_OFFSET) & SCOPE_MASK;
-
-        if (scope == scope_type || vi & flag) {
+        if (SYMBOL_TO_SCOPE(vi) == scope_type || vi & flag) {
             PyObject *item = PyLong_FromSsize_t(i);
             if (item == NULL) {
                 Py_DECREF(sorted_keys);
@@ -3051,7 +3048,6 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     NEW_JUMP_TARGET_LABEL(c, loop);
-    NEW_JUMP_TARGET_LABEL(c, body);
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, anchor);
 
@@ -3060,9 +3056,8 @@ compiler_while(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
     RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
-    USE_LABEL(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, body, 1));
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
@@ -5395,7 +5390,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         if (symbol == -1 && PyErr_Occurred()) {
             return ERROR;
         }
-        long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+        long scope = SYMBOL_TO_SCOPE(symbol);
         PyObject *outv = PyDict_GetItemWithError(SYMTABLE_ENTRY(c)->ste_symbols, k);
         if (outv == NULL) {
             if (PyErr_Occurred()) {
@@ -5407,7 +5402,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         if (outsymbol == -1 && PyErr_Occurred()) {
             return ERROR;
         }
-        long outsc = (outsymbol >> SCOPE_OFFSET) & SCOPE_MASK;
+        long outsc = SYMBOL_TO_SCOPE(outsymbol);
         // If a name has different scope inside than outside the comprehension,
         // we need to temporarily handle it with the right scope while
         // compiling the comprehension. If it's free in the comprehension

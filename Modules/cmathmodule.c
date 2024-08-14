@@ -185,15 +185,8 @@ cmath_acos_impl(PyObject *module, Py_complex z)
     if (fabs(z.real) > CM_LARGE_DOUBLE || fabs(z.imag) > CM_LARGE_DOUBLE) {
         /* avoid unnecessary overflow for large arguments */
         r.real = atan2(fabs(z.imag), z.real);
-        /* split into cases to make sure that the branch cut has the
-           correct continuity on systems with unsigned zeros */
-        if (z.real < 0.) {
-            r.imag = -copysign(log(hypot(z.real/2., z.imag/2.)) +
-                               M_LN2*2., z.imag);
-        } else {
-            r.imag = copysign(log(hypot(z.real/2., z.imag/2.)) +
-                              M_LN2*2., -z.imag);
-        }
+        r.imag = -copysign(log(hypot(z.real/2., z.imag/2.)) +
+                           M_LN2*2., z.imag);
     } else {
         s1.real = 1.-z.real;
         s1.imag = -z.imag;
@@ -356,11 +349,7 @@ cmath_atanh_impl(PyObject *module, Py_complex z)
         */
         h = hypot(z.real/2., z.imag/2.);  /* safe from overflow */
         r.real = z.real/4./h/h;
-        /* the two negations in the next line cancel each other out
-           except when working with unsigned zeros: they're there to
-           ensure that the branch cut has the correct continuity on
-           systems that don't support signed zeros */
-        r.imag = -copysign(Py_MATH_PI/2., -z.imag);
+        r.imag = copysign(Py_MATH_PI/2., z.imag);
         errno = 0;
     } else if (z.real == 1. && ay < CM_SQRT_DBL_MIN) {
         /* C99 standard says:  atanh(1+/-0.) should be inf +/- 0i */
