@@ -265,6 +265,8 @@ def main(argv: list[str] | None = None) -> int:
             compiler_output_file_contents,
         )
 
+    files_with_warnings = get_warnings_by_file(warnings)
+
     status = get_unexpected_warnings(
         files_with_expected_warnings, files_with_warnings
     )
