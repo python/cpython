@@ -6,6 +6,7 @@ from io import StringIO
 import re
 import sys
 import textwrap
+import types
 import unittest
 from test import support
 from test.support import import_helper
