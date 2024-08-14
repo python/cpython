@@ -223,7 +223,7 @@ the following new features are now supported:
 * Direct support for REPL-specific commands like :kbd:`help`, :kbd:`exit`,
   and :kbd:`quit`, without the need to call them as functions.
 * Prompts and tracebacks with :ref:`color enabled by default
-  <using-on-controlling-color>`
+  <using-on-controlling-color>`.
 * Interactive help browsing using :kbd:`F1` with a separate command
   history.
 * History browsing using :kbd:`F2` that skips output as well as the
@@ -331,14 +331,14 @@ While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 **The free-threaded mode is experimental** and work is ongoing to improve it:
 expect some bugs and a substantial single-threaded performance hit.
-Free-threaded builds of CPython support optionally running with the :term:`GIL`
+Free-threaded builds of CPython support optionally running with the GIL
 enabled at runtime using the environment variable :envvar:`PYTHON_GIL` or
-the command line option :option:`-X gil`.
+the command-line option :option:`-X gil`.
 
-To check if the current interpreter supports free-threading, ``python -VV``
+To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
 and :attr:`sys.version` contain "experimental free-threading build".
 The new :func:`!sys._is_gil_enabled` function can be used to check whether
-the :term:`GIL` is actually disabled in the running process.
+the GIL is actually disabled in the running process.
 
 C-API extension modules need to be built specifically for the free-threaded
 build. Extensions that support running with the :term:`GIL` disabled should
@@ -463,7 +463,7 @@ Support for mobile platforms
 iOS is now a :pep:`11` supported platform, with the
 ``arm64-apple-ios`` and ``arm64-apple-ios-simulator`` targets at tier 3
 (iPhone and iPad devices released after 2013 and the Xcode iOS simulator
-running on Apple Silicon hardware, respectively).
+running on Apple silicon hardware, respectively).
 
 ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older ``x86_64``
 hardware) is not a tier 3 supported platform, but will be supported on a
