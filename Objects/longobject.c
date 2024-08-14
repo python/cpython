@@ -3614,8 +3614,9 @@ long_dealloc(PyObject *self)
 }
 
 static Py_hash_t
-long_hash(PyLongObject *v)
+long_hash(PyObject *obj)
 {
+    PyLongObject *v = (PyLongObject *)obj;
     Py_uhash_t x;
     Py_ssize_t i;
     int sign;
@@ -6607,7 +6608,7 @@ PyTypeObject PyLong_Type = {
     &long_as_number,                            /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)long_hash,                        /* tp_hash */
+    long_hash,                                  /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
