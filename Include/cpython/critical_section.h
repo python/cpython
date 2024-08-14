@@ -118,6 +118,10 @@ struct PyCriticalSection2 {
         PyCriticalSection _py_cs;                                       \
         PyCriticalSection_Begin(&_py_cs, _PyObject_CAST(op))
 
+# define Py_EXIT_CRITICAL_SECTION()                                     \
+        _PyCriticalSection_End(&_py_cs);
+
+
 # define Py_END_CRITICAL_SECTION()                                      \
         PyCriticalSection_End(&_py_cs);                                 \
     }

@@ -26,9 +26,6 @@ extern "C" {
         PyCriticalSection _py_cs;                                       \
         _PyCriticalSection_BeginMutex(&_py_cs, mutex)
 
-# define Py_EXIT_CRITICAL_SECTION()                                     \
-        _PyCriticalSection_End(&_cs);
-
 # define Py_BEGIN_CRITICAL_SECTION2_MUT(m1, m2)                         \
     {                                                                   \
         PyCriticalSection2 _py_cs2;                                     \
