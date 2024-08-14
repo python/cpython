@@ -64,11 +64,12 @@ class BoolTest(unittest.TestCase):
             ~True
         with self.assertRaises(TypeError):
             ~False
+
+        true = True
+        false = False
         with self.assertRaises(TypeError):
-            true = True
             ~true
         with self.assertRaises(TypeError):
-            false = False
             ~false
         with self.assertRaises(TypeError):
             eval("~True")
