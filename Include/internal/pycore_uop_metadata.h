@@ -274,6 +274,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = 0,
+    [_INCREMENT_RUN_COUNT] = 0,
     [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
@@ -413,6 +414,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_IMPORT_FROM] = "_IMPORT_FROM",
     [_IMPORT_NAME] = "_IMPORT_NAME",
+    [_INCREMENT_RUN_COUNT] = "_INCREMENT_RUN_COUNT",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
     [_INIT_CALL_PY_EXACT_ARGS] = "_INIT_CALL_PY_EXACT_ARGS",
     [_INIT_CALL_PY_EXACT_ARGS_0] = "_INIT_CALL_PY_EXACT_ARGS_0",
@@ -1061,6 +1063,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:
+            return 0;
+        case _INCREMENT_RUN_COUNT:
             return 0;
         case _FATAL_ERROR:
             return 0;

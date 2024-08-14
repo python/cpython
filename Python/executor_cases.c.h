@@ -5459,7 +5459,11 @@
             current_executor = (_PyExecutorObject*)executor;
             #endif
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
-            ((_PyExecutorObject *)executor)->run_count++;
+            break;
+        }
+
+        case _INCREMENT_RUN_COUNT: {
+            current_executor->run_count++;
             break;
         }
 
