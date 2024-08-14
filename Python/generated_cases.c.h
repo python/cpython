@@ -1725,8 +1725,8 @@
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    assert(next_instr - this_instr == 1);
-                    frame->return_offset = 1;
+                    assert(next_instr - this_instr == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                    frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL_KW;
                     DISPATCH_INLINED(new_frame);
                 }
                 /* Callable is not a normal Python function */
@@ -4028,8 +4028,12 @@
         TARGET(INSTRUMENTED_CALL_KW) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
-            next_instr += 1;
+            next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_KW);
+            uint16_t counter = read_u16(&this_instr[1].cache);
+            (void)counter;
+            uint32_t version = read_u32(&this_instr[2].cache);
+            (void)version;
             int is_meth = !PyStackRef_IsNull(PEEK(oparg + 2));
             int total_args = oparg + is_meth;
             PyObject *function = PyStackRef_AsPyObjectBorrow(PEEK(oparg + 3));

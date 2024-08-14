@@ -2032,8 +2032,8 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     PyObject *callable = PyStackRef_AsPyObjectBorrow(callable_st);
 
     assert(ENABLE_SPECIALIZATION);
-    assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
-    assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
+    assert(_PyOpcode_Caches[CALL_KW] == INLINE_CACHE_ENTRIES_CALL_KW);
+    assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL_KW);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     int fail = -1;
 //    if (PyFunction_Check(callable)) {
@@ -2056,7 +2056,7 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     if (fail) {
         STAT_INC(CALL, failure);
         assert(!PyErr_Occurred());
-        instr->op.code = CALL;
+        instr->op.code = CALL_KW;
         cache->counter = adaptive_counter_backoff(cache->counter);
     }
     else {

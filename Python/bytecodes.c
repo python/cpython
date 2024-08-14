@@ -4000,14 +4000,13 @@ dummy_func(
             _CHECK_PERIODIC;
 
         // Cache layout: counter/1, func_version/2
-        // CALL_INTRINSIC_1/2, CALL_KW, and CALL_FUNCTION_EX aren't members!
         family(CALL_KW, INLINE_CACHE_ENTRIES_CALL_KW) = {
             CALL_KW_BOUND_METHOD,
             CALL_KW_PY,
             CALL_KW_NON_PY,
         };
 
-        inst(INSTRUMENTED_CALL_KW, ( -- )) {
+        inst(INSTRUMENTED_CALL_KW, (counter/1, version/2 -- )) {
             int is_meth = !PyStackRef_IsNull(PEEK(oparg + 2));
             int total_args = oparg + is_meth;
             PyObject *function = PyStackRef_AsPyObjectBorrow(PEEK(oparg + 3));
@@ -4063,8 +4062,8 @@ dummy_func(
                 if (new_frame == NULL) {
                     ERROR_NO_POP();
                 }
-                assert(next_instr - this_instr == 1);
-                frame->return_offset = 1;
+                assert(next_instr - this_instr == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL_KW;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */

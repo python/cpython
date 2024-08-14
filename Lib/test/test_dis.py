@@ -257,6 +257,9 @@ dis_kw_names = """\
               LOAD_CONST               3 (5)
               LOAD_CONST               4 (('c',))
               CALL_KW                  3
+              CACHE
+              CACHE
+              CACHE
               POP_TOP
               RETURN_CONST             0 (None)
 """ % (wrap_func_w_kwargs.__code__.co_firstlineno,
