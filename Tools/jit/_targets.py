@@ -182,15 +182,27 @@ class _Target(typing.Generic[_S, _R]):
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
-        opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+        cases_and_opnames = sorted(
+            re.findall(
+                r"\n {8}(case (\w+): \{\n.*?\n {8}\})", generated_cases, flags=re.DOTALL
+            )
+        )
         tasks = []
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
                 coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
                 tasks.append(group.create_task(coro, name="trampoline"))
-                for opname in opnames:
-                    coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
+                template = TOOLS_JIT_TEMPLATE_C.read_text()
+                for case, opname in cases_and_opnames:
+                    # Write out a copy of the template with *only* this case
+                    # inserted. This is about twice as fast as #include'ing all
+                    # of executor_cases.c.h each time we compile (since the C
+                    # compiler wastes a bunch of time parsing the dead code for
+                    # all of the other cases):
+                    c = work / f"{opname}.c"
+                    c.write_text(template.replace("CASE", case))
+                    coro = self._compile(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
