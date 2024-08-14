@@ -97,11 +97,6 @@ if os.name == "nt":
         name = (wintypes.WCHAR * 32767)() # UNICODE_STRING_MAX_CHARS
         if _kernel32.GetModuleFileNameW(module, name, len(name)):
             return name.value
-        error = ctypes.get_last_error()
-        import warnings
-        warnings.warn(f"Failed to get module file name for module {module}: "
-                    f"GetModuleFileNameW failed with error code {error}",
-                    stacklevel=2)
         return None
 
 
@@ -129,11 +124,7 @@ if os.name == "nt":
             libraries = [name for h in modules
                             if (name := _get_module_filename(h)) is not None]
             return libraries
-        except Exception as e:
-            import warnings
-            warnings.warn(
-                f"Unable to list loaded libraries: {e}",
-            )
+        except Exception:
             return None
 
 elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}:
@@ -158,9 +149,7 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
         try:
             libraries = []
             libc = ctypes.CDLL(find_library("c"))
-
             num_images = libc._dyld_image_count()
-
             get_image_name = libc._dyld_get_image_name
             get_image_name.restype = ctypes.c_char_p
 
@@ -171,11 +160,7 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
                 libraries.append(name)
 
             return libraries
-        except Exception as e:
-            import warnings
-            warnings.warn(
-                f"Unable to list loaded libraries: {e}",
-            )
+        except Exception:
             return None
 
 elif sys.platform.startswith("aix"):
@@ -448,21 +433,13 @@ elif os.name == "posix":
 # this relies on find_library, which is why it is defined at the end
 if (os.name == "posix" and
     sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
-
     import ctypes
-
     _libc_path = find_library("c")
-
     if (_libc_path is None or
         not hasattr((_libc := ctypes.CDLL(_libc_path)), "dl_iterate_phdr")):
-
         def dllist():
-            import warnings
-            warnings.warn("dllist() is not supported on this platform")
             return None
-
     else:
-
         class _dl_phdr_info(ctypes.Structure):
             _fields_ = [
                 ("dlpi_addr", ctypes.c_void_p),
@@ -490,14 +467,9 @@ if (os.name == "posix" and
                 libraries = []
                 _libc.dl_iterate_phdr(_info_callback,
                                       ctypes.byref(ctypes.py_object(libraries)))
-
                 # remove the first entry, which is the executable itself
                 return libraries[1:]
-            except Exception as e:
-                import warnings
-                warnings.warn(
-                    f"Unable to list loaded libraries: {e}",
-                )
+            except Exception:
                 return None
 
 ################################################################
