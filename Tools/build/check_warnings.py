@@ -114,7 +114,7 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
 
 
 def get_unexpected_warnings(
-    files_with_expected_warnings: set[tuple[str, int]],
+    files_with_expected_warnings: set[FileWarnings],
     files_with_warnings: set[FileWarnings],
 ) -> int:
     """
