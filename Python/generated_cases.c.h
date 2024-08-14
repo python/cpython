@@ -1533,12 +1533,12 @@
             (void)this_instr;
             _PyStackRef func_st;
             _PyStackRef callargs_st;
-            _PyStackRef kwargs_st = PyStackRef_NULL;
+            _PyStackRef kwargs_st;
             _PyStackRef result;
             // __DO_CALL_FUNCTION_EX
-            if (oparg & 1) { kwargs_st = stack_pointer[-(oparg & 1)]; }
-            callargs_st = stack_pointer[-1 - (oparg & 1)];
-            func_st = stack_pointer[-3 - (oparg & 1)];
+            kwargs_st = stack_pointer[-1];
+            callargs_st = stack_pointer[-2];
+            func_st = stack_pointer[-4];
             {
                 PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
                 PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
@@ -1597,7 +1597,7 @@
                             (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
                             nargs, callargs, kwargs);
                         // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
-                        STACK_SHRINK(oparg + 3);
+                        STACK_SHRINK(4);
                         if (new_frame == NULL) {
                             goto error;
                         }
@@ -1607,15 +1607,11 @@
                     }
                     result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
                 }
-                PyStackRef_CLOSE(func_st);
-                PyStackRef_CLOSE(callargs_st);
                 PyStackRef_XCLOSE(kwargs_st);
-                assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
-                if (PyStackRef_IsNull(result)) {
-                    stack_pointer += -3 - (oparg & 1);
-                    assert(WITHIN_STACK_BOUNDS());
-                    goto error;
-                }
+                PyStackRef_CLOSE(callargs_st);
+                PyStackRef_CLOSE(func_st);
+                assert(PyStackRef_AsPyObjectBorrow(PEEK(3)) == NULL);
+                if (PyStackRef_IsNull(result)) goto pop_4_error;
             }
             // _CHECK_PERIODIC
             {
@@ -1623,16 +1619,11 @@
                 QSBR_QUIESCENT_STATE(tstate); \
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                     int err = _Py_HandlePending(tstate);
-                    if (err != 0) {
-                        stack_pointer[-3 - (oparg & 1)] = result;
-                        stack_pointer += -2 - (oparg & 1);
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    if (err != 0) goto pop_3_error;
                 }
             }
-            stack_pointer[-3 - (oparg & 1)] = result;
-            stack_pointer += -2 - (oparg & 1);
+            stack_pointer[-4] = result;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -7312,11 +7303,11 @@
             INSTRUCTION_STATS(_DO_CALL_FUNCTION_EX);
             _PyStackRef func_st;
             _PyStackRef callargs_st;
-            _PyStackRef kwargs_st = PyStackRef_NULL;
+            _PyStackRef kwargs_st;
             _PyStackRef result;
-            if (oparg & 1) { kwargs_st = stack_pointer[-(oparg & 1)]; }
-            callargs_st = stack_pointer[-1 - (oparg & 1)];
-            func_st = stack_pointer[-3 - (oparg & 1)];
+            kwargs_st = stack_pointer[-1];
+            callargs_st = stack_pointer[-2];
+            func_st = stack_pointer[-4];
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
             PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
@@ -7374,7 +7365,7 @@
                         (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
                         nargs, callargs, kwargs);
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
-                    STACK_SHRINK(oparg + 3);
+                    STACK_SHRINK(4);
                     if (new_frame == NULL) {
                         goto error;
                     }
@@ -7384,17 +7375,13 @@
                 }
                 result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
             }
-            PyStackRef_CLOSE(func_st);
-            PyStackRef_CLOSE(callargs_st);
             PyStackRef_XCLOSE(kwargs_st);
-            assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
-            if (PyStackRef_IsNull(result)) {
-                stack_pointer += -3 - (oparg & 1);
-                assert(WITHIN_STACK_BOUNDS());
-                goto error;
-            }
-            stack_pointer[-3 - (oparg & 1)] = result;
-            stack_pointer += -2 - (oparg & 1);
+            PyStackRef_CLOSE(callargs_st);
+            PyStackRef_CLOSE(func_st);
+            assert(PyStackRef_AsPyObjectBorrow(PEEK(3)) == NULL);
+            if (PyStackRef_IsNull(result)) goto pop_4_error;
+            stack_pointer[-4] = result;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }

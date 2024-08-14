@@ -4112,7 +4112,7 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
-        inst(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st if (oparg & 1) -- result)) {
+        inst(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st -- result)) {
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
             PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
@@ -4173,7 +4173,7 @@ dummy_func(
                                                                                 (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
                                                                                 nargs, callargs, kwargs);
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
-                    STACK_SHRINK(oparg + 3);
+                    STACK_SHRINK(4);
                     if (new_frame == NULL) {
                         ERROR_NO_POP();
                     }
@@ -4183,8 +4183,10 @@ dummy_func(
                 }
                 result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
             }
-            DECREF_INPUTS();
-            assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
+            PyStackRef_XCLOSE(kwargs_st);
+            PyStackRef_CLOSE(callargs_st);
+            PyStackRef_CLOSE(func_st);
+            assert(PyStackRef_AsPyObjectBorrow(PEEK(3)) == NULL);
             ERROR_IF(PyStackRef_IsNull(result), error);
         }
 
