@@ -47,11 +47,16 @@ jobs:
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
-    - name: Build CPython
+    - name: Build CPython for Compiler Warning Check
+      if : ${{ inputs.check-warnings }}
       run: set -o pipefail; make -j1 2>&1 | tee compiler_output_macos.txt
+    - name: Build CPython
+      if : ${{ !inputs.check-warnings }}
+      run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: Check compiler warnings
+      if: ${{ inputs.check-warnings }}
       run: >-
         python3 Tools/build/check_warnings.py
         --compiler-output-file-path=compiler_output_macos.txt

@@ -164,6 +164,9 @@ jobs:
         free-threading:
         - false
         - true
+        check-warnings:
+        - false
+        - true
         exclude:
         - os: ghcr.io/cirruslabs/macos-runner:sonoma
           is-fork: true
@@ -171,6 +174,12 @@ jobs:
           is-fork: false
         - os: macos-13
           free-threading: true
+        - os: macos-13
+          check-warnings: true
+        - free-threading: true
+          check-warnings: true
+        - os: ghcr.io/cirruslabs/macos-runner:sonoma
+          check-warnings: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
