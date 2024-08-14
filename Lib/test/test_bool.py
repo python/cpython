@@ -59,10 +59,21 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(abs(True), 1)
         self.assertIsNot(abs(True), True)
 
+        # Bitwise inversion is prohibited on bool type.
         with self.assertRaises(TypeError):
             ~True
         with self.assertRaises(TypeError):
             ~False
+        with self.assertRaises(TypeError):
+            true = True
+            ~true
+        with self.assertRaises(TypeError):
+            false = False
+            ~false
+        with self.assertRaises(TypeError):
+            eval("~True")
+        with self.assertRaises(TypeError):
+            eval("~False")
 
         self.assertEqual(False+2, 2)
         self.assertEqual(True+2, 3)
