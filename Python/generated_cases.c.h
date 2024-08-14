@@ -2193,7 +2193,7 @@
                 _PyStackRef arg_stackref = args[1];
                 _PyStackRef self_stackref = args[0];
                 DEOPT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
-                                 method->d_common.d_type), CALL);
+                                method->d_common.d_type), CALL);
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = meth->ml_meth;
                 _Py_EnterRecursiveCallTstateUnchecked(tstate);
