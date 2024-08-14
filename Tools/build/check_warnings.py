@@ -30,6 +30,10 @@ def extract_warnings_from_compiler_output_clang(
     compiler_warnings = []
     for line in compiler_output.splitlines():
         if match := clang_warning_regex.match(line):
+            if match.group('line') == '4051':
+                print("THIS IS A VERY IMPORTANT LINE")
+                print(line)
+                print("################################")
             compiler_warnings.append(
                 {
                     "file": match.group("file").lstrip(path_prefix),
@@ -268,6 +272,16 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     files_with_warnings = get_warnings_by_file(warnings)
+
+    print("######### Warnings by file #########")
+    for file in files_with_warnings.keys():
+        print(f"{file} {len(files_with_warnings[file])}")
+
+    print("######### Expected warnings by file #########")
+    for file in files_with_expected_warnings:
+        print(f"{file.name} {file.count}")
+
+    print("################")
 
     status = get_unexpected_warnings(
         files_with_expected_warnings, files_with_warnings
