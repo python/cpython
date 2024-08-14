@@ -11,7 +11,7 @@
             break;
         }
 
-        case _CHECK_PERIODIC_NOT_YIELD_FROM: {
+        case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
             break;
         }
 

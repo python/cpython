@@ -4186,7 +4186,7 @@
                 if (tstate->tracing == 0) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                     uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
-                    if (code_version != global_version && tstate->tracing == 0) {
+                    if (code_version != global_version) {
                         int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         if (err) {
                             goto error;
@@ -4196,7 +4196,7 @@
                     }
                 }
             }
-            // _CHECK_PERIODIC_NOT_YIELD_FROM
+            // _CHECK_PERIODIC_IF_NOT_YIELD_FROM
             {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
@@ -6083,7 +6083,7 @@
                 if (tstate->tracing == 0) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                     uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
-                    if (code_version != global_version && tstate->tracing == 0) {
+                    if (code_version != global_version) {
                         int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         if (err) {
                             goto error;
@@ -6101,7 +6101,7 @@
                 }
                 #endif  /* ENABLE_SPECIALIZATION */
             }
-            // _CHECK_PERIODIC_NOT_YIELD_FROM
+            // _CHECK_PERIODIC_IF_NOT_YIELD_FROM
             {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
