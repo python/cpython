@@ -24,7 +24,7 @@ def extract_warnings_from_compiler_output_clang(
     """
     # Regex to find warnings in the compiler output
     clang_warning_regex = re.compile(
-        r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: (?P<message>.*)"
+        r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: (?P<message>.*) (?P<option>\[-[^\]]+\])$"
     )
     compiler_warnings = []
     for line in compiler_output.splitlines():
@@ -35,6 +35,7 @@ def extract_warnings_from_compiler_output_clang(
                     "line": match.group("line"),
                     "column": match.group("column"),
                     "message": match.group("message"),
+                    "option": match.group("option").lstrip("[").rstrip("]"),
                 }
             )
 
