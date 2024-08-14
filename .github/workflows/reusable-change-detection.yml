@@ -126,13 +126,18 @@ jobs:
           .github/workflows/reusable-docs.yml
         format: csv  # works for paths with spaces
     - name: Check for docs changes
+      # We only want to run this on PRs when related files are changed,
+      # or when user triggers manual workflow run.
       if: >-
-        github.event_name == 'pull_request'
-        && steps.changed-docs-files.outputs.added_modified_renamed != ''
+        (
+          github.event_name == 'pull_request'
+          && steps.changed-docs-files.outputs.added_modified_renamed != ''
+        ) || github.event_name == 'workflow_dispatch'
       id: docs-changes
       run: |
         echo "run-docs=true" >> "${GITHUB_OUTPUT}"
     - name: Get a list of the MSI installer-related files
+      if: github.event_name == 'pull_request'
       id: changed-win-msi-files
       uses: Ana06/get-changed-files@v2.3.0
       with:
@@ -141,10 +146,13 @@ jobs:
           .github/workflows/reusable-windows-msi.yml
         format: csv  # works for paths with spaces
     - name: Check for changes in MSI installer-related files
+      # We only want to run this on PRs when related files are changed,
+      # or when user triggers manual workflow run.
       if: >-
-        steps.changed-win-msi-files.outputs.added_modified_renamed != ''
+        (
+          github.event_name == 'pull_request'
+          && steps.changed-win-msi-files.outputs.added_modified_renamed != ''
+        ) || github.event_name == 'workflow_dispatch'
       id: win-msi-changes
       run: |
         echo "run-win-msi=true" >> "${GITHUB_OUTPUT}"
-
-...
