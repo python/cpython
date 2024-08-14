@@ -16,6 +16,7 @@ import asyncio
 from asyncio import log
 from asyncio import protocols
 from asyncio import sslproto
+from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -108,6 +109,48 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         ssl_proto.connection_lost(ConnectionAbortedError)
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
+
+    def test_connection_lost_when_busy(self):
+        sock = mock.Mock()
+        sock.fileno = mock.Mock(return_value=12345)
+        sock.send = mock.Mock(side_effect=BrokenPipeError)
+
+        # construct StreamWriter chain that contains loop dependant logic this emulates that
+        # _make_ssl_transport() does in BaseSelectorEventLoop
+        reader = asyncio.StreamReader(limit=2 ** 16, loop=self.loop)
+        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
+        ssl_proto = self.ssl_protocol(proto=protocol)
+
+        # emulate reading decompressed data
+        sslobj = mock.Mock()
+        sslobj.read.side_effect = ssl.SSLWantReadError
+        sslobj.write.side_effect = ssl.SSLWantReadError
+        ssl_proto._sslobj = sslobj
+
+        # emulate outgoing data
+        data = b'An interesting message'
+
+        outgoing = mock.Mock()
+        outgoing.read = mock.Mock(return_value=data)
+        outgoing.pending = len(data)
+        ssl_proto._outgoing = outgoing
+
+        # use correct socket transport to initialize the SSLProtocol
+        selector_events._SelectorSocketTransport(self.loop, sock, ssl_proto)
+        transport = ssl_proto._app_transport
+        writer = asyncio.StreamWriter(transport, protocol, reader, self.loop)
+
+        # Write data to the transport n times in a task that blocks the
+        # asyncio event loop from a user perspective.
+        async def _write_loop(n):
+            for i in range(n):
+                writer.write(data)
+                await writer.drain()
+
+        # The test is successful if we raise the error the next time
+        # we try to write to the transport.
+        with self.assertRaises(ConnectionResetError):
+            self.loop.run_until_complete(_write_loop(2))
 
     def test_close_during_handshake(self):
         # bpo-29743 Closing transport during handshake process leaks socket
