@@ -3059,11 +3059,11 @@ class ASTOptimiziationTests(unittest.TestCase):
         "-": ast.USub(),
     }
 
-    def find_node(self, tree, target):
-        for node in ast.walk(tree):
-            if ast.compare(node, target):
-                return True
-        return False
+    def wrap_expr(self, expr):
+        return ast.Module(body=[ast.Expr(value=expr)])
+
+    def wrap_for(self, for_statement):
+        return ast.Module(body=[for_statement])
 
     def assert_ast(self, code, non_optimized_target, optimized_target):
         non_optimized_tree = ast.parse(code, optimize=-1)
@@ -3071,20 +3071,23 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         # Searching for a non-optimized node in an unoptimized AST
         self.assertTrue(
-            self.find_node(non_optimized_tree, target=non_optimized_target),
-            f"Cannot find {ast.dump(non_optimized_target)} in {ast.dump(non_optimized_tree)}",
+            ast.compare(non_optimized_tree, non_optimized_target),
+            f"{ast.dump(non_optimized_target)} is unexpectedly "
+            f"unequal to {ast.dump(non_optimized_tree)}",
         )
 
         # Searching for a non-optimized node in an optimized AST
         self.assertFalse(
-            self.find_node(optimized_tree, target=non_optimized_target),
-            f"Unexpectedly found {ast.dump(non_optimized_target)} in {ast.dump(non_optimized_tree)}"
+            ast.compare(optimized_tree, non_optimized_target),
+            f"{ast.dump(non_optimized_target)} is unexpectedly "
+            f"equal to {ast.dump(non_optimized_tree)}"
         )
 
         # Searching for a constant node in an optimized AST
         self.assertTrue(
-            self.find_node(optimized_tree,  target=optimized_target),
-            f"Cannot find {ast.dump(optimized_target)} in {ast.dump(optimized_tree)}",
+            ast.compare(optimized_tree,  optimized_target),
+            f"{ast.dump(optimized_target)} is unexpectedly "
+            f"unequal to {ast.dump(optimized_tree)}",
         )
 
     def test_folding_binop(self):
@@ -3096,8 +3099,8 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         for op in operators:
             result_code = code % op
-            non_optimized_target = create_binop(op)
-            optimized_target = ast.Constant(value=eval(result_code))
+            non_optimized_target = self.wrap_expr(create_binop(op))
+            optimized_target = self.wrap_expr(ast.Constant(value=eval(result_code)))
 
             with self.subTest(
                 result_code=result_code,
@@ -3115,8 +3118,8 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         for op in operators:
             result_code = code % op
-            non_optimized_target = create_unaryop(op)
-            optimized_target = ast.Constant(eval(result_code))
+            non_optimized_target = self.wrap_expr(create_unaryop(op))
+            optimized_target = self.wrap_expr(ast.Constant(eval(result_code)))
 
             with self.subTest(
                 result_code=result_code,
@@ -3128,8 +3131,8 @@ class ASTOptimiziationTests(unittest.TestCase):
     def test_folding_tuple(self):
         code = "(1,)"
 
-        non_optimized_target = ast.Tuple(elts=[ast.Constant(1)])
-        optimized_target = ast.Constant(value=(1,))
+        non_optimized_target = self.wrap_expr(ast.Tuple(elts=[ast.Constant(1)]))
+        optimized_target = self.wrap_expr(ast.Constant(value=(1,)))
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
@@ -3142,14 +3145,14 @@ class ASTOptimiziationTests(unittest.TestCase):
         ]
         for left, right, non_optimized_comparator, optimized_comparator in braces:
             for op, node in operators:
-                non_optimized_target = ast.Compare(
+                non_optimized_target = self.wrap_expr(ast.Compare(
                     left=ast.Constant(1), ops=[node],
                     comparators=[non_optimized_comparator(elts=[ast.Constant(1)])]
-                )
-                optimized_target = ast.Compare(
+                ))
+                optimized_target = self.wrap_expr(ast.Compare(
                     left=ast.Constant(1), ops=[node],
                     comparators=[ast.Constant(value=optimized_comparator)]
-                )
+                ))
                 self.assert_ast(code % (op, left, right), non_optimized_target, optimized_target)
 
     def test_folding_iter(self):
@@ -3160,24 +3163,26 @@ class ASTOptimiziationTests(unittest.TestCase):
         ]
 
         for left, right, non_optimized_iter, optimized_iter in braces:
-            non_optimized_target = ast.For(
+            non_optimized_target = self.wrap_for(ast.For(
                 target=ast.Name(id="_", ctx=ast.Store()),
                 iter=non_optimized_iter(elts=[ast.Constant(1)]),
                 body=[ast.Pass()]
-            )
-            optimized_target = ast.For(
+            ))
+            optimized_target = self.wrap_for(ast.For(
                 target=ast.Name(id="_", ctx=ast.Store()),
                 iter=ast.Constant(value=optimized_iter),
                 body=[ast.Pass()]
-            )
+            ))
 
             self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
 
     def test_folding_subscript(self):
         code = "(1,)[0]"
 
-        non_optimized_target = ast.Subscript(value=ast.Tuple(elts=[ast.Constant(value=1)]), slice=ast.Constant(value=0))
-        optimized_target = ast.Constant(value=1)
+        non_optimized_target = self.wrap_expr(
+            ast.Subscript(value=ast.Tuple(elts=[ast.Constant(value=1)]), slice=ast.Constant(value=0))
+        )
+        optimized_target = self.wrap_expr(ast.Constant(value=1))
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
