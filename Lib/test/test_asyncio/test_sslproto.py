@@ -16,7 +16,6 @@ import asyncio
 from asyncio import log
 from asyncio import protocols
 from asyncio import sslproto
-from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -111,12 +110,14 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
 
     def test_connection_lost_when_busy(self):
+        # gh-118950: SSLProtocol.connection_lost not being called when OSError
+        # is thrown on asyncio.write.
         sock = mock.Mock()
         sock.fileno = mock.Mock(return_value=12345)
         sock.send = mock.Mock(side_effect=BrokenPipeError)
 
-        # construct StreamWriter chain that contains loop dependant logic this emulates that
-        # _make_ssl_transport() does in BaseSelectorEventLoop
+        # construct StreamWriter chain that contains loop dependant logic this emulates
+        # what _make_ssl_transport() does in BaseSelectorEventLoop
         reader = asyncio.StreamReader(limit=2 ** 16, loop=self.loop)
         protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
         ssl_proto = self.ssl_protocol(proto=protocol)
@@ -136,7 +137,8 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         ssl_proto._outgoing = outgoing
 
         # use correct socket transport to initialize the SSLProtocol
-        selector_events._SelectorSocketTransport(self.loop, sock, ssl_proto)
+        self.loop._make_socket_transport(sock, ssl_proto)
+
         transport = ssl_proto._app_transport
         writer = asyncio.StreamWriter(transport, protocol, reader, self.loop)
 
