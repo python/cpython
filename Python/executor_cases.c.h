@@ -12,6 +12,31 @@
             break;
         }
 
+        case _CHECK_PERIODIC: {
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate); \
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                int err = _Py_HandlePending(tstate);
+                if (err != 0) JUMP_TO_ERROR();
+            }
+            break;
+        }
+
+        case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
+            oparg = CURRENT_OPARG();
+            if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) JUMP_TO_ERROR();
+                }
+            }
+            break;
+        }
+
+        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+
         case _RESUME_CHECK: {
             #if defined(__EMSCRIPTEN__)
             if (_Py_emscripten_signal_clock == 0) {
@@ -30,7 +55,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_RESUME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _LOAD_FAST_CHECK: {
             _PyStackRef value;
@@ -3555,11 +3580,6 @@
 
         /* _DO_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        case _CHECK_PERIODIC: {
-            CHECK_EVAL_BREAKER();
-            break;
-        }
-
         /* _MONITOR_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _PY_FRAME_GENERAL: {
@@ -4657,11 +4677,11 @@
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* _DO_CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _MAKE_FUNCTION: {
             _PyStackRef codeobj_st;
@@ -4882,7 +4902,7 @@
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is instrumented */
 
