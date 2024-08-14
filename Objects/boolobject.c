@@ -70,7 +70,7 @@ bool_vectorcall(PyObject *type, PyObject * const*args,
 static PyObject *
 bool_invert(PyObject *v)
 {
-    PyErr_SetString(PyExc_TypeError, "bad operand for unary ~: 'bool'");
+    PyErr_SetString(PyExc_TypeError, "bad operand type for unary ~: 'bool'");
     return NULL;
 }
 
