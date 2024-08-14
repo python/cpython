@@ -474,7 +474,7 @@ is not a tier 3 supported platform, but will have best-effort support.
 
 :pep:`738`: Android support is being actively worked on,
 but the platform is not yet officially supported.
-(PEP written and implementation contributed by Malcom Smith in
+(PEP written and implementation contributed by Malcolm Smith in
 :gh:`116622`.)
 
 .. seealso:: :pep:`730`, :pep:`738`
