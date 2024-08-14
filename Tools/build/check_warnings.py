@@ -130,22 +130,28 @@ def get_unexpected_warnings(
     are associated with a file that is not found in the list of files
     with expected warnings
     """
-    unexpected_warnings = []
+    unexpected_warnings = {}
     for file in files_with_warnings.keys():
         found_file_in_ignore_list = False
         for ignore_file in files_with_expected_warnings:
             if file == ignore_file.name:
                 if len(files_with_warnings[file]) > ignore_file.count:
-                    unexpected_warnings.extend(files_with_warnings[file])
+                    unexpected_warnings[file] = (files_with_warnings[file], ignore_file.count)
                 found_file_in_ignore_list = True
                 break
         if not found_file_in_ignore_list:
-            unexpected_warnings.extend(files_with_warnings[file])
+            unexpected_warnings[file] = (files_with_warnings[file], 0)
 
     if unexpected_warnings:
         print("Unexpected warnings:")
-        for warning in unexpected_warnings:
-            print(warning)
+        for file in unexpected_warnings:
+            print(
+                f"{file} expected {unexpected_warnings[file][1]} warnings,"
+                f" found {len(unexpected_warnings[file][0])}"
+            )
+            for warning in unexpected_warnings[file][0]:
+                print(warning)
+
         return 1
 
     return 0
@@ -162,14 +168,14 @@ def get_unexpected_improvements(
     unexpected_improvements = []
     for file in files_with_expected_warnings:
         if file.name not in files_with_warnings.keys():
-            unexpected_improvements.append(file)
+            unexpected_improvements.append((file.name, file.count, 0))
         elif len(files_with_warnings[file.name]) < file.count:
-            unexpected_improvements.append(file)
+            unexpected_improvements.append((file.name, file.count, len(files_with_warnings[file.name])))
 
     if unexpected_improvements:
         print("Unexpected improvements:")
         for file in unexpected_improvements:
-            print(file.name)
+            print(f"{file[0]} expected {file[1]} warnings, found {file[2]}")
         return 1
 
     return 0
