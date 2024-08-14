@@ -173,10 +173,10 @@ New typing features:
 
 Platform support:
 
-* :pep:`730`: Apple's iOS is now an officially supported platform,
-  at :pep:`tier 3 <11#tier-3>`.
+* :pep:`730`: Apple's iOS is now an :ref:`officially supported platform
+  <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
   Official Android support (:pep:`738`) is in the works as well.
-* ``wasm32-wasi`` is now a supported as a :pep:`tier 2 <11#tier-2>` platform.
+* ``wasm32-wasi`` is now supported as a :pep:`tier 2 <11#tier-2>` platform.
 * ``wasm32-emscripten`` is no longer an officially supported platform.
 
 Important removals:
@@ -457,22 +457,27 @@ and deprecations. Porting notes are also provided below for the affected
 Alyssa Coghlan.)
 
 
+.. _whatsnew313-platform-support:
+
 Support for mobile platforms
 ----------------------------
 
-iOS is now a :pep:`11` supported platform, with the
+:pep:`730`: iOS is now a :pep:`11` supported platform, with the
 ``arm64-apple-ios`` and ``arm64-apple-ios-simulator`` targets at tier 3
 (iPhone and iPad devices released after 2013 and the Xcode iOS simulator
 running on Apple silicon hardware, respectively).
-
-``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older ``x86_64``
-hardware) is not a tier 3 supported platform, but will be supported on a
-best-effort basis.
-
+``x86_64-apple-ios-simulator``
+(the Xcode iOS simulator running on older ``x86_64`` hardware)
+is not a tier 3 supported platform, but will have best-effort support.
 (PEP written and implementation contributed by Russell Keith-Magee in
 :gh:`114099`.)
 
-.. seealso:: :pep:`730`
+:pep:`738`: Android support is being actively worked on,
+but the platform is not yet officially supported.
+(PEP written and implementation contributed by Malcom Smith in
+:gh:`116622`.)
+
+.. seealso:: :pep:`730`, :pep:`738`
 
 
 Incremental garbage collection
