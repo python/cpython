@@ -1,0 +1,1 @@
+Add support for wasm32-wasip2 .
