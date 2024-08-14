@@ -949,11 +949,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1275,11 +1285,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1344,11 +1364,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1412,11 +1442,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1466,11 +1506,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1485,89 +1535,105 @@
             _PyStackRef callargs_st;
             _PyStackRef kwargs_st = PyStackRef_NULL;
             _PyStackRef result;
+            // __DO_CALL_FUNCTION_EX
             if (oparg & 1) { kwargs_st = stack_pointer[-(oparg & 1)]; }
             callargs_st = stack_pointer[-1 - (oparg & 1)];
             func_st = stack_pointer[-3 - (oparg & 1)];
-            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
-            PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
-            PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
-            // DICT_MERGE is called before this opcode if there are kwargs.
-            // It converts all dict subtypes in kwargs into regular dicts.
-            assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-            if (!PyTuple_CheckExact(callargs)) {
-                int err = check_args_iterable(tstate, func, callargs);
-                if (err < 0) {
-                    goto error;
-                }
-                PyObject *tuple = PySequence_Tuple(callargs);
-                if (tuple == NULL) {
-                    goto error;
-                }
-                PyStackRef_CLOSE(callargs_st);
-                callargs_st = PyStackRef_FromPyObjectSteal(tuple);
-                callargs = tuple;
-            }
-            assert(PyTuple_CheckExact(callargs));
-            EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
-            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
-                PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
-                PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
-                int err = _Py_call_instrumentation_2args(
-                    tstate, PY_MONITORING_EVENT_CALL,
-                    frame, this_instr, func, arg);
-                if (err) goto error;
-                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
-                if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
-                    if (PyStackRef_IsNull(result)) {
-                        _Py_call_instrumentation_exc2(
-                            tstate, PY_MONITORING_EVENT_C_RAISE,
-                            frame, this_instr, func, arg);
+            {
+                PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+                PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+                PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+                // DICT_MERGE is called before this opcode if there are kwargs.
+                // It converts all dict subtypes in kwargs into regular dicts.
+                assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+                if (!PyTuple_CheckExact(callargs)) {
+                    int err = check_args_iterable(tstate, func, callargs);
+                    if (err < 0) {
+                        goto error;
                     }
-                    else {
-                        int err = _Py_call_instrumentation_2args(
-                            tstate, PY_MONITORING_EVENT_C_RETURN,
-                            frame, this_instr, func, arg);
-                        if (err < 0) {
-                            PyStackRef_CLEAR(result);
+                    PyObject *tuple = PySequence_Tuple(callargs);
+                    if (tuple == NULL) {
+                        goto error;
+                    }
+                    PyStackRef_CLOSE(callargs_st);
+                    callargs_st = PyStackRef_FromPyObjectSteal(tuple);
+                    callargs = tuple;
+                }
+                assert(PyTuple_CheckExact(callargs));
+                EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
+                if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
+                    PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
+                    PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
+                    int err = _Py_call_instrumentation_2args(
+                        tstate, PY_MONITORING_EVENT_CALL,
+                        frame, this_instr, func, arg);
+                    if (err) goto error;
+                    result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                    if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                        if (PyStackRef_IsNull(result)) {
+                            _Py_call_instrumentation_exc2(
+                                tstate, PY_MONITORING_EVENT_C_RAISE,
+                                frame, this_instr, func, arg);
+                        }
+                        else {
+                            int err = _Py_call_instrumentation_2args(
+                                tstate, PY_MONITORING_EVENT_C_RETURN,
+                                frame, this_instr, func, arg);
+                            if (err < 0) {
+                                PyStackRef_CLEAR(result);
+                            }
                         }
                     }
                 }
+                else {
+                    if (Py_TYPE(func) == &PyFunction_Type &&
+                        tstate->interp->eval_frame == NULL &&
+                        ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                        assert(PyTuple_CheckExact(callargs));
+                        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                        int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                        PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+                        _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
+                            (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
+                            nargs, callargs, kwargs);
+                        // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
+                        STACK_SHRINK(oparg + 3);
+                        if (new_frame == NULL) {
+                            goto error;
+                        }
+                        assert(next_instr - this_instr == 1);
+                        frame->return_offset = 1;
+                        DISPATCH_INLINED(new_frame);
+                    }
+                    result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                }
+                PyStackRef_CLOSE(func_st);
+                PyStackRef_CLOSE(callargs_st);
+                PyStackRef_XCLOSE(kwargs_st);
+                assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
+                if (PyStackRef_IsNull(result)) {
+                    stack_pointer += -3 - (oparg & 1);
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
             }
-            else {
-                if (Py_TYPE(func) == &PyFunction_Type &&
-                    tstate->interp->eval_frame == NULL &&
-                    ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
-                    assert(PyTuple_CheckExact(callargs));
-                    Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-                    int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
-                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
-                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
-                        (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
-                        nargs, callargs, kwargs);
-                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
-                    STACK_SHRINK(oparg + 3);
-                    if (new_frame == NULL) {
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-3 - (oparg & 1)] = result;
+                        stack_pointer += -2 - (oparg & 1);
+                        assert(WITHIN_STACK_BOUNDS());
                         goto error;
                     }
-                    assert(next_instr - this_instr == 1);
-                    frame->return_offset = 1;
-                    DISPATCH_INLINED(new_frame);
                 }
-                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
-            }
-            PyStackRef_CLOSE(func_st);
-            PyStackRef_CLOSE(callargs_st);
-            PyStackRef_XCLOSE(kwargs_st);
-            assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
-            if (PyStackRef_IsNull(result)) {
-                stack_pointer += -3 - (oparg & 1);
-                assert(WITHIN_STACK_BOUNDS());
-                goto error;
             }
             stack_pointer[-3 - (oparg & 1)] = result;
             stack_pointer += -2 - (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1782,7 +1848,6 @@
             stack_pointer[-3 - oparg] = res;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -1959,11 +2024,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-3 - oparg] = res;
+                        stack_pointer += -2 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-3 - oparg] = res;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2192,11 +2267,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2263,11 +2348,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2321,11 +2416,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2382,11 +2487,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2455,11 +2570,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2649,11 +2774,16 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto pop_2_error;
+                }
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -2685,11 +2815,16 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto pop_2_error;
+                }
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4016,11 +4151,21 @@
             }
             // _CHECK_PERIODIC
             {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) {
+                        stack_pointer[-2 - oparg] = res;
+                        stack_pointer += -1 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
+                }
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4157,8 +4302,19 @@
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_BACKWARD);
             /* Skip 1 cache entry */
-            CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto error;
+                }
+            }
+            // _MONITOR_JUMP_BACKWARD
+            {
+                INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
+            }
             DISPATCH();
         }
 
@@ -4303,19 +4459,34 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
-            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
-            if (code_version != global_version && tstate->tracing == 0) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                if (err) {
-                    goto error;
+            // _MAYBE_INSTRUMENT
+            {
+                if (tstate->tracing == 0) {
+                    uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+                    if (code_version != global_version) {
+                        int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                        if (err) {
+                            goto error;
+                        }
+                        next_instr = this_instr;
+                        DISPATCH();
+                    }
                 }
-                next_instr = this_instr;
             }
-            else {
+            // _CHECK_PERIODIC_IF_NOT_YIELD_FROM
+            {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                    CHECK_EVAL_BREAKER();
+                    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                    QSBR_QUIESCENT_STATE(tstate); \
+                    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                        int err = _Py_HandlePending(tstate);
+                        if (err != 0) goto error;
+                    }
                 }
+            }
+            // _MONITOR_RESUME
+            {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
                     tstate, oparg > 0, frame, this_instr);
@@ -4324,7 +4495,6 @@
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
                     next_instr = frame->instr_ptr;
-                    DISPATCH();
                 }
             }
             DISPATCH();
@@ -4529,37 +4699,49 @@
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
-            /* Skip 1 cache entry */
-            CHECK_EVAL_BREAKER();
-            assert(oparg <= INSTR_OFFSET());
-            JUMPBY(-oparg);
-            #ifdef _Py_TIER2
-            #if ENABLE_SPECIALIZATION
-            _Py_BackoffCounter counter = this_instr[1].counter;
-            if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
-                _Py_CODEUNIT *start = this_instr;
-                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                while (oparg > 255) {
-                    oparg >>= 8;
-                    start--;
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) goto error;
                 }
-                _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
-                if (optimized < 0) goto error;
-                if (optimized) {
-                    assert(tstate->previous_executor == NULL);
-                    tstate->previous_executor = Py_None;
-                    GOTO_TIER_TWO(executor);
+            }
+            // _JUMP_BACKWARD
+            {
+                uint16_t the_counter = read_u16(&this_instr[1].cache);
+                (void)the_counter;
+                assert(oparg <= INSTR_OFFSET());
+                JUMPBY(-oparg);
+                #ifdef _Py_TIER2
+                #if ENABLE_SPECIALIZATION
+                _Py_BackoffCounter counter = this_instr[1].counter;
+                if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
+                    _Py_CODEUNIT *start = this_instr;
+                    /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                    while (oparg > 255) {
+                        oparg >>= 8;
+                        start--;
+                    }
+                    _PyExecutorObject *executor;
+                    int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
+                    if (optimized < 0) goto error;
+                    if (optimized) {
+                        assert(tstate->previous_executor == NULL);
+                        tstate->previous_executor = Py_None;
+                        GOTO_TIER_TWO(executor);
+                    }
+                    else {
+                        this_instr[1].counter = restart_backoff_counter(counter);
+                    }
                 }
                 else {
-                    this_instr[1].counter = restart_backoff_counter(counter);
+                    ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
+                #endif  /* ENABLE_SPECIALIZATION */
+                #endif /* _Py_TIER2 */
             }
-            else {
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            }
-            #endif  /* ENABLE_SPECIALIZATION */
-            #endif /* _Py_TIER2 */
             DISPATCH();
         }
 
@@ -6174,32 +6356,39 @@
             PREDICTED(RESUME);
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
-            assert(frame == tstate->current_frame);
-            if (tstate->tracing == 0) {
-                uintptr_t global_version =
-                _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
-                ~_PY_EVAL_EVENTS_MASK;
-                PyCodeObject* code = _PyFrame_GetCode(frame);
-                uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
-                assert((code_version & 255) == 0);
-                if (code_version != global_version) {
-                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                    if (err) goto error;
-                    next_instr = this_instr;
-                    DISPATCH();
-                }
-                assert(this_instr->op.code == RESUME ||
-                       this_instr->op.code == RESUME_CHECK ||
-                       this_instr->op.code == INSTRUMENTED_RESUME ||
-                       this_instr->op.code == ENTER_EXECUTOR);
-                if (this_instr->op.code == RESUME) {
-                    #if ENABLE_SPECIALIZATION
-                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
-                    #endif  /* ENABLE_SPECIALIZATION */
+            // _MAYBE_INSTRUMENT
+            {
+                if (tstate->tracing == 0) {
+                    uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+                    if (code_version != global_version) {
+                        int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                        if (err) {
+                            goto error;
+                        }
+                        next_instr = this_instr;
+                        DISPATCH();
+                    }
                 }
             }
-            if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                CHECK_EVAL_BREAKER();
+            // _QUICKEN_RESUME
+            {
+                #if ENABLE_SPECIALIZATION
+                if (tstate->tracing == 0 && this_instr->op.code == RESUME) {
+                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                }
+                #endif  /* ENABLE_SPECIALIZATION */
+            }
+            // _CHECK_PERIODIC_IF_NOT_YIELD_FROM
+            {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                    QSBR_QUIESCENT_STATE(tstate); \
+                    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                        int err = _Py_HandlePending(tstate);
+                        if (err != 0) goto error;
+                    }
+                }
             }
             DISPATCH();
         }
@@ -7390,6 +7579,100 @@
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
             stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(_DO_CALL_FUNCTION_EX) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(_DO_CALL_FUNCTION_EX);
+            _PyStackRef func_st;
+            _PyStackRef callargs_st;
+            _PyStackRef kwargs_st = PyStackRef_NULL;
+            _PyStackRef result;
+            if (oparg & 1) { kwargs_st = stack_pointer[-(oparg & 1)]; }
+            callargs_st = stack_pointer[-1 - (oparg & 1)];
+            func_st = stack_pointer[-3 - (oparg & 1)];
+            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+            PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+            PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+            // DICT_MERGE is called before this opcode if there are kwargs.
+            // It converts all dict subtypes in kwargs into regular dicts.
+            assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+            if (!PyTuple_CheckExact(callargs)) {
+                int err = check_args_iterable(tstate, func, callargs);
+                if (err < 0) {
+                    goto error;
+                }
+                PyObject *tuple = PySequence_Tuple(callargs);
+                if (tuple == NULL) {
+                    goto error;
+                }
+                PyStackRef_CLOSE(callargs_st);
+                callargs_st = PyStackRef_FromPyObjectSteal(tuple);
+                callargs = tuple;
+            }
+            assert(PyTuple_CheckExact(callargs));
+            EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
+            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
+                PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
+                PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
+                int err = _Py_call_instrumentation_2args(
+                    tstate, PY_MONITORING_EVENT_CALL,
+                    frame, this_instr, func, arg);
+                if (err) goto error;
+                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                    if (PyStackRef_IsNull(result)) {
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, this_instr, func, arg);
+                    }
+                    else {
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, this_instr, func, arg);
+                        if (err < 0) {
+                            PyStackRef_CLEAR(result);
+                        }
+                    }
+                }
+            }
+            else {
+                if (Py_TYPE(func) == &PyFunction_Type &&
+                    tstate->interp->eval_frame == NULL &&
+                    ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                    assert(PyTuple_CheckExact(callargs));
+                    Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                    int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
+                        (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
+                        nargs, callargs, kwargs);
+                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
+                    STACK_SHRINK(oparg + 3);
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
+                    assert(next_instr - this_instr == 1);
+                    frame->return_offset = 1;
+                    DISPATCH_INLINED(new_frame);
+                }
+                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+            }
+            PyStackRef_CLOSE(func_st);
+            PyStackRef_CLOSE(callargs_st);
+            PyStackRef_XCLOSE(kwargs_st);
+            assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
+            if (PyStackRef_IsNull(result)) {
+                stack_pointer += -3 - (oparg & 1);
+                assert(WITHIN_STACK_BOUNDS());
+                goto error;
+            }
+            stack_pointer[-3 - (oparg & 1)] = result;
+            stack_pointer += -2 - (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
