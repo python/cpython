@@ -85,6 +85,7 @@ PyCriticalSection2_End(PyCriticalSection2 *c);
 #ifndef Py_GIL_DISABLED
 # define Py_BEGIN_CRITICAL_SECTION(op)      \
     {
+# define Py_EXIT_CRITICAL_SECTION()
 # define Py_END_CRITICAL_SECTION()          \
     }
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)   \
