@@ -2036,9 +2036,9 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL_KW);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     int fail = -1;
-//    if (PyFunction_Check(callable)) {
-//        fail = specialize_py_call_kw((PyFunctionObject *)callable, instr, nargs, false);
-//    }
+    if (PyFunction_Check(callable)) {
+        fail = specialize_py_call_kw((PyFunctionObject *)callable, instr, nargs, false);
+    }
 //     else if (PyMethod_Check(callable)) {
 //         PyObject *func = ((PyMethodObject *)callable)->im_func;
 //         if (PyFunction_Check(func)) {
