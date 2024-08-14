@@ -30,10 +30,6 @@ def extract_warnings_from_compiler_output_clang(
     compiler_warnings = []
     for line in compiler_output.splitlines():
         if match := clang_warning_regex.match(line):
-            if match.group('line') == '4051':
-                print("THIS IS A VERY IMPORTANT LINE")
-                print(line)
-                print("################################")
             compiler_warnings.append(
                 {
                     "file": match.group("file").lstrip(path_prefix),
@@ -61,7 +57,7 @@ def extract_warnings_from_compiler_output_json(
     """
     # Regex to find json arrays at the top level of the file
     # in the compiler output
-    json_arrays = re.findall(r"\[(?:[^[\]]|\[[^]]*])*]", compiler_output)
+    json_arrays = re.findall(r'\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\]', compiler_output)
     compiler_warnings = []
     for array in json_arrays:
         try:
