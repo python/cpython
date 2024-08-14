@@ -176,8 +176,8 @@ def lazycache(filename, module_globals):
     if not filename or (filename.startswith('<') and filename.endswith('>')):
         return False
 
-    if not isinstance(module_globals, dict):
-        return False
+    if module_globals is not None and not isinstance(module_globals, dict):
+        raise TypeError(f'module_globals must be a dict, not {type(module_globals).__name__}')
     if not module_globals or '__name__' not in module_globals:
         return False
 
