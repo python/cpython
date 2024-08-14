@@ -1882,15 +1882,7 @@
             _PyStackRef list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                for (int _i = oparg; --_i >= 0;) {
-                    PyStackRef_CLOSE(values[_i]);
-                }
-                if (true) JUMP_TO_ERROR();
-            }
-            PyObject *list_o = _PyList_FromArraySteal(values_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
             if (list_o == NULL) JUMP_TO_ERROR();
             list = PyStackRef_FromPyObjectSteal(list_o);
             stack_pointer[-oparg] = list;
@@ -1957,11 +1949,10 @@
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
                 if (err == 0) {
-                    err = PySet_Add(set_o, item);
+                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
                 }
-                Py_DECREF(item);
+                PyStackRef_CLOSE(values[i]);
             }
             if (err != 0) {
                 Py_DECREF(set_o);
@@ -5024,7 +5015,8 @@
                     Py_INCREF(executor);
                 }
                 else {
-                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                    int chain_depth = current_executor->vm_data.chain_depth + 1;
+                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, chain_depth);
                     if (optimized <= 0) {
                         exit->temperature = restart_backoff_counter(temperature);
                         if (optimized < 0) {
@@ -5156,7 +5148,7 @@
                     exit->temperature = advance_backoff_counter(exit->temperature);
                     GOTO_TIER_ONE(target);
                 }
-                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, 0);
                 if (optimized <= 0) {
                     exit->temperature = restart_backoff_counter(exit->temperature);
                     if (optimized < 0) {

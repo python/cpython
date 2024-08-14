@@ -534,7 +534,7 @@ NON_ESCAPING_FUNCTIONS = (
     "STACKREFS_TO_PYOBJECTS",
     "STACKREFS_TO_PYOBJECTS_CLEANUP",
     "CONVERSION_FAILED",
-    "_PyList_FromArraySteal",
+    "_PyList_FromStackRefSteal",
     "_PyTuple_FromArraySteal",
     "_PyTuple_FromStackRefSteal",
 )
@@ -882,6 +882,7 @@ def assign_opcodes(
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
     instmap["INSTRUMENTED_LINE"] = 254
+    instmap["ENTER_EXECUTOR"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
