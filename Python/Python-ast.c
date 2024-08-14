@@ -5802,6 +5802,8 @@ ast_repr_max_depth(AST_object *self, int depth)
             value_repr = PyObject_Repr(value);
         }
 
+        Py_DECREF(value);
+
         if (!value_repr) {
             Py_DECREF(name);
             Py_DECREF(value);
@@ -5811,32 +5813,27 @@ ast_repr_max_depth(AST_object *self, int depth)
         if (i > 0) {
             if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
                 Py_DECREF(name);
-                Py_DECREF(value);
                 Py_DECREF(value_repr);
                 goto error;
             }
         }
         if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
             Py_DECREF(name);
-            Py_DECREF(value);
-            Py_DECREF(value_repr);
-            goto error;
-        }
-        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
-            Py_DECREF(name);
-            Py_DECREF(value);
-            Py_DECREF(value_repr);
-            goto error;
-        }
-        if (_PyUnicodeWriter_WriteStr(&writer, value_repr) < 0) {
-            Py_DECREF(name);
-            Py_DECREF(value);
             Py_DECREF(value_repr);
             goto error;
         }
 
         Py_DECREF(name);
-        Py_DECREF(value);
+
+        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+            Py_DECREF(value_repr);
+            goto error;
+        }
+        if (_PyUnicodeWriter_WriteStr(&writer, value_repr) < 0) {
+            Py_DECREF(value_repr);
+            goto error;
+        }
+
         Py_DECREF(value_repr);
     }
 
