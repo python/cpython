@@ -265,16 +265,6 @@ def main(argv: list[str] | None = None) -> int:
             compiler_output_file_contents,
         )
 
-    print("######### Warnings by file #########")
-    files_with_warnings = get_warnings_by_file(warnings)
-    for filename in files_with_warnings.keys():
-        print(f"{filename} {len(files_with_warnings[filename])}")
-
-    print("######### Expected warnings #########")
-    for file in files_with_expected_warnings:
-        print(f"{file.name} {file.count}")
-    print("####################################")
-
     status = get_unexpected_warnings(
         files_with_expected_warnings, files_with_warnings
     )
