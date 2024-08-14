@@ -569,6 +569,7 @@ Data Types
          1
          >>> len(white)
          3
+
       .. versionadded:: 3.11
 
    .. method:: __bool__(self):
