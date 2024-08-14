@@ -1937,10 +1937,12 @@
                         goto error;
                     }
                 }
+                PyObject *kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
+                int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames_o);
                 PyObject *res_o = PyObject_Vectorcall(
                     callable_o, args_o,
-                    total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                    PyStackRef_AsPyObjectBorrow(kwnames));
+                    positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                    kwnames_o);
                 PyStackRef_CLOSE(kwnames);
                 STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
