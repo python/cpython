@@ -3069,25 +3069,25 @@ class ASTOptimiziationTests(unittest.TestCase):
         non_optimized_tree = ast.parse(code, optimize=-1)
         optimized_tree = ast.parse(code, optimize=1)
 
-        # Searching for a non-optimized node in an unoptimized AST
+        # Is a non-optimized tree equal to a non-optimized target?
         self.assertTrue(
             ast.compare(non_optimized_tree, non_optimized_target),
-            f"{ast.dump(non_optimized_target)} is unexpectedly "
-            f"unequal to {ast.dump(non_optimized_tree)}",
+            f"{ast.dump(non_optimized_target)} must equal to "
+            f"{ast.dump(non_optimized_tree)}",
         )
 
-        # Searching for a non-optimized node in an optimized AST
+        # Is a optimized tree equal to a non-optimized target?
         self.assertFalse(
             ast.compare(optimized_tree, non_optimized_target),
-            f"{ast.dump(non_optimized_target)} is unexpectedly "
-            f"equal to {ast.dump(non_optimized_tree)}"
+            f"{ast.dump(non_optimized_target)} must not equal to "
+            f"{ast.dump(non_optimized_tree)}"
         )
 
-        # Searching for a constant node in an optimized AST
+        # Is a optimized tree is equal to an optimized target?
         self.assertTrue(
             ast.compare(optimized_tree,  optimized_target),
-            f"{ast.dump(optimized_target)} is unexpectedly "
-            f"unequal to {ast.dump(optimized_tree)}",
+            f"{ast.dump(optimized_target)} must equal to "
+            f"{ast.dump(optimized_tree)}",
         )
 
     def test_folding_binop(self):
