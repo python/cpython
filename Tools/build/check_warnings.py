@@ -217,7 +217,8 @@ def main(argv: list[str] | None = None) -> int:
         "-p",
         "--path-prefix",
         type=str,
-        help="Path prefix to remove from the start of file paths",
+        help="Path prefix to remove from the start of file paths"
+        " in compiler output",
     )
 
     args = parser.parse_args(argv)
