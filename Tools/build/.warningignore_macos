@@ -54,7 +54,7 @@ Objects/mimalloc/page.c 1
 Objects/mimalloc/random.c 1
 Objects/mimalloc/segment.c 11
 Objects/mimalloc/stats.c 1
-Objects/mimalloc/prim/osx/.unix/prim.c 2
+Objects/mimalloc/prim/osx/../unix/prim.c 2
 Objects/obmalloc.c 6
 Objects/rangeobject.c 10
 Objects/setobject.c 13

@@ -18,6 +18,7 @@ class FileWarnings(NamedTuple):
 
 def extract_warnings_from_compiler_output_clang(
     compiler_output: str,
+    path_prefix: str | None = None,
 ) -> list[dict]:
     """
     Extracts warnings from the compiler output when using clang
@@ -31,7 +32,7 @@ def extract_warnings_from_compiler_output_clang(
         if match := clang_warning_regex.match(line):
             compiler_warnings.append(
                 {
-                    "file": match.group("file"),
+                    "file": match.group("file").lstrip(path_prefix),
                     "line": match.group("line"),
                     "column": match.group("column"),
                     "message": match.group("message"),
@@ -263,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.compiler_output_type == "clang":
         warnings = extract_warnings_from_compiler_output_clang(
             compiler_output_file_contents,
+            args.path_prefix
         )
 
     files_with_warnings = get_warnings_by_file(warnings)
