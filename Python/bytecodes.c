@@ -4842,7 +4842,10 @@ dummy_func(
             current_executor = (_PyExecutorObject*)executor;
 #endif
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
-        ((_PyExecutorObject *)executor)->run_count++;
+        }
+
+        tier2 op(_INCREMENT_RUN_COUNT, (--)) {
+            current_executor->run_count++;
         }
 
         tier2 op(_FATAL_ERROR, (--)) {

@@ -2375,6 +2375,10 @@
             break;
         }
 
+        case _INCREMENT_RUN_COUNT: {
+            break;
+        }
+
         case _FATAL_ERROR: {
             break;
         }
