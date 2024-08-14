@@ -5,6 +5,7 @@ import types
 import inspect
 import keyword
 import itertools
+import annotationlib
 import abc
 from reprlib import recursive_repr
 
@@ -655,7 +656,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
-        # (instead of just concatenting the lists together).
+        # (instead of just concatenating the lists together).
         _init_params += ['*']
         _init_params += [_init_param(f) for f in kw_only_fields]
     func_builder.add_fn('__init__',
@@ -981,7 +982,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
-    cls_annotations = inspect.get_annotations(cls)
+    cls_annotations = annotationlib.get_annotations(
+        cls, format=annotationlib.Format.FORWARDREF)
 
     # Now find fields in our class.  While doing so, validate some
     # things, and set the default values (as class attributes) where
