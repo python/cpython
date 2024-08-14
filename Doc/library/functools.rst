@@ -328,6 +328,14 @@ The :mod:`functools` module defines the following functions:
       Returning ``NotImplemented`` from the underlying comparison function for
       unrecognised types is now supported.
 
+.. data:: Placeholder
+
+   A singleton object used as a sentinel to reserve a place
+   for positional arguments when calling :func:`partial`
+   and :func:`partialmethod`.
+
+   .. versionadded:: 3.14
+
 .. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
@@ -348,7 +356,7 @@ The :mod:`functools` module defines the following functions:
 
    The :func:`partial` is used for partial function application which "freezes"
    some portion of a function's arguments and/or keywords resulting in a new object
-   with a simplified signature. For example, :func:`partial` can be used to create
+   with a simplified signature.  For example, :func:`partial` can be used to create
    a callable that behaves like the :func:`int` function where the *base* argument
    defaults to two:
 
@@ -395,12 +403,6 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.14
       Added support for :data:`Placeholder` in positional arguments.
-
-.. data:: Placeholder
-
-   A singleton object used as a sentinel to reserve a place
-   for positional arguments when calling :func:`partial`
-   and :func:`partialmethod`.
 
 .. class:: partialmethod(func, /, *args, **keywords)
 
