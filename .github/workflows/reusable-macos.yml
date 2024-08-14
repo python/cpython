@@ -59,5 +59,6 @@ jobs:
         --compiler-output-type=clang
         --fail-on-regression
         --fail-on-improvement
+        --path-prefix="./"
     - name: Tests
       run: make test
