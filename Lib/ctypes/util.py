@@ -74,19 +74,21 @@ if os.name == "nt":
     # https://learn.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamew
 
     _kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-    _psapi = ctypes.WinDLL('psapi', use_last_error=True)
+    _get_current_process = _kernel32["GetCurrentProcess"]
+    _get_current_process.restype = wintypes.HANDLE
 
-    _kernel32.GetCurrentProcess.restype = wintypes.HANDLE
-
-    _kernel32.GetModuleFileNameW.restype = wintypes.DWORD
-    _kernel32.GetModuleFileNameW.argtypes = (
+    _k32_get_module_file_name = _kernel32["GetModuleFileNameW"]
+    _k32_get_module_file_name.restype = wintypes.DWORD
+    _k32_get_module_file_name.argtypes = (
         wintypes.HMODULE,
         wintypes.LPWSTR,
         wintypes.DWORD,
     )
 
-    _psapi.EnumProcessModules.restype = wintypes.BOOL
-    _psapi.EnumProcessModules.argtypes = (
+    _psapi = ctypes.WinDLL('psapi', use_last_error=True)
+    _enum_process_modules = _psapi["EnumProcessModules"]
+    _enum_process_modules.restype = wintypes.BOOL
+    _enum_process_modules.argtypes = (
         wintypes.HANDLE,
         ctypes.POINTER(wintypes.HMODULE),
         wintypes.DWORD,
@@ -95,27 +97,26 @@ if os.name == "nt":
 
     def _get_module_filename(module: wintypes.HMODULE):
         name = (wintypes.WCHAR * 32767)() # UNICODE_STRING_MAX_CHARS
-        if _kernel32.GetModuleFileNameW(module, name, len(name)):
+        if _k32_get_module_file_name(module, name, len(name)):
             return name.value
         return None
 
 
     def _get_module_handles():
-        process = _kernel32.GetCurrentProcess()
+        process = _get_current_process()
         space_needed = wintypes.DWORD()
         n = 1024
         while True:
             modules = (wintypes.HMODULE * n)()
-            if not _psapi.EnumProcessModules(process,
-                                             modules,
-                                             ctypes.sizeof(modules),
-                                             ctypes.byref(space_needed)):
-                break
+            if not _enum_process_modules(process,
+                                         modules,
+                                         ctypes.sizeof(modules),
+                                         ctypes.byref(space_needed)):
+                error = ctypes.get_last_error()
+                raise RuntimeError(f"EnumProcessModules failed with error code {error}")
             n = space_needed.value // ctypes.sizeof(wintypes.HMODULE)
             if n <= len(modules):
                 return modules[:n]
-        error = ctypes.get_last_error()
-        raise RuntimeError(f"EnumProcessModules failed with error code {error}")
 
     def dllist():
         try:
@@ -141,21 +142,20 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
         return None
 
     import ctypes
-    from ctypes.util import find_library
 
     # https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
+    _libc = ctypes.CDLL(find_library("c"))
+    _dyld_get_image_name = _libc["_dyld_get_image_name"]
+    _dyld_get_image_name.restype = ctypes.c_char_p
 
     def dllist():
         try:
             libraries = []
-            libc = ctypes.CDLL(find_library("c"))
-            num_images = libc._dyld_image_count()
-            get_image_name = libc._dyld_get_image_name
-            get_image_name.restype = ctypes.c_char_p
+            num_images = _libc._dyld_image_count()
 
             # start at 1 to skip executable
             for i in range(1, num_images):
-                raw_name = get_image_name(i)
+                raw_name = _dyld_get_image_name(i)
                 name = os.fsdecode(raw_name)
                 libraries.append(name)
 
