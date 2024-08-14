@@ -20,15 +20,12 @@
 from __future__ import annotations
 
 import io
-from multiprocessing import Value
 import os
 import sys
 import time
 import msvcrt
 
-from abc import ABC, abstractmethod
 from collections import deque
-from dataclasses import dataclass, field
 import ctypes
 from ctypes.wintypes import (
     _COORD,
@@ -234,7 +231,7 @@ class WindowsConsole(Console):
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
-        # sequene
+        # sequence
         while (
             x_coord < minlen
             and oldline[x_pos] == newline[x_pos]
@@ -256,7 +253,7 @@ class WindowsConsole(Console):
         else:
             self.__posxy = wlen(newline), y
 
-            if "\x1b" in newline or y != self.__posxy[1]:
+            if "\x1b" in newline or y != self.__posxy[1] or '\x1a' in newline:
                 # ANSI escape characters are present, so we can't assume
                 # anything about the position of the cursor.  Moving the cursor
                 # to the left margin should work to get to a known position.
@@ -294,6 +291,9 @@ class WindowsConsole(Console):
         self.__write("\x1b[?12l")
 
     def __write(self, text: str) -> None:
+        if "\x1a" in text:
+            text = ''.join(["^Z" if x == '\x1a' else x for x in text])
+
         if self.out is not None:
             self.out.write(text.encode(self.encoding, "replace"))
             self.out.flush()
