@@ -1,0 +1,2 @@
+Add ability to ignore warnings per file with warning count in warning checking tooling.
+Patch by Nate Ohlson.
