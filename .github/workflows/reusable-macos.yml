@@ -52,6 +52,12 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Check compiler warnings
-      run: python3 Tools/build/check_warnings.py --compiler-output-file-path=compiler_output.txt --warning-ignore-file-path=Tools/build/.warningignore_macos --compiler-output-type=clang
+      run: >-
+        python3 Tools/build/check_warnings.py
+        --compiler-output-file-path=compiler_output.txt
+        --warning-ignore-file-path=Tools/build/.warningignore_macos
+        --compiler-output-type=clang
+        --fail-on-regression
+        --fail-on-improvement
     - name: Tests
       run: make test
