@@ -272,11 +272,13 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.compiler_output_type == "json":
         warnings = extract_warnings_from_compiler_output_json(
-            compiler_output_file_contents, args.path_prefix
+            compiler_output_file_contents,
+            args.path_prefix
         )
     elif args.compiler_output_type == "clang":
         warnings = extract_warnings_from_compiler_output_clang(
-            compiler_output_file_contents, args.path_prefix
+            compiler_output_file_contents,
+            args.path_prefix
         )
 
     files_with_warnings = get_warnings_by_file(warnings)
