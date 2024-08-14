@@ -2061,7 +2061,7 @@ dummy_func(
 
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            DEOPT_IF(dict == NULL);
+            EXIT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
         }
 
@@ -2112,9 +2112,9 @@ dummy_func(
         op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
-            DEOPT_IF(!PyType_Check(owner_o));
+            EXIT_IF(!PyType_Check(owner_o));
             assert(type_version != 0);
-            DEOPT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version);
+            EXIT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version);
 
         }
 
@@ -2189,8 +2189,8 @@ dummy_func(
 
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            DEOPT_IF(_PyObject_GetManagedDict(owner_o));
-            DEOPT_IF(_PyObject_InlineValues(owner_o)->valid == 0);
+            EXIT_IF(_PyObject_GetManagedDict(owner_o));
+            EXIT_IF(_PyObject_InlineValues(owner_o)->valid == 0);
         }
 
         op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
@@ -3655,11 +3655,11 @@ dummy_func(
                 args--;
                 total_args++;
             }
-            DEOPT_IF(total_args != 1);
-            DEOPT_IF(!PyCFunction_CheckExact(callable_o));
-            DEOPT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
+            EXIT_IF(total_args != 1);
+            EXIT_IF(!PyCFunction_CheckExact(callable_o));
+            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            DEOPT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(tstate->c_recursion_remaining <= 0);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             _PyStackRef arg = args[0];
@@ -3851,15 +3851,15 @@ dummy_func(
             }
 
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
-            DEOPT_IF(total_args != 2);
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(total_args != 2);
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
-            DEOPT_IF(meth->ml_flags != METH_O);
+            EXIT_IF(meth->ml_flags != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            DEOPT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(tstate->c_recursion_remaining <= 0);
             _PyStackRef arg_stackref = args[1];
             _PyStackRef self_stackref = args[0];
-            DEOPT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
+            EXIT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
                                  method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -3891,12 +3891,12 @@ dummy_func(
                 total_args++;
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
-            DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
+            EXIT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
             PyTypeObject *d_type = method->d_common.d_type;
             PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
-            DEOPT_IF(!Py_IS_TYPE(self, d_type));
+            EXIT_IF(!Py_IS_TYPE(self, d_type));
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
@@ -3935,16 +3935,16 @@ dummy_func(
                 args--;
                 total_args++;
             }
-            DEOPT_IF(total_args != 1);
+            EXIT_IF(total_args != 1);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             _PyStackRef self_stackref = args[0];
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-            DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
-            DEOPT_IF(meth->ml_flags != METH_NOARGS);
+            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+            EXIT_IF(meth->ml_flags != METH_NOARGS);
             // CPython promises to check all non-vectorcall function calls.
-            DEOPT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(tstate->c_recursion_remaining <= 0);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
@@ -3973,11 +3973,11 @@ dummy_func(
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             /* Builtin METH_FASTCALL methods, without keywords */
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
-            DEOPT_IF(meth->ml_flags != METH_FASTCALL);
+            EXIT_IF(meth->ml_flags != METH_FASTCALL);
             PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
-            DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunctionFast cfunc =
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
