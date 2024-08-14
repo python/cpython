@@ -1748,8 +1748,8 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
     return 0;
 
 bail:
-    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
     Py_XDECREF(ident);
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
     Py_DECREF(s_fast);
     Py_XDECREF(separator_indent);
     Py_XDECREF(new_newline_indent);
