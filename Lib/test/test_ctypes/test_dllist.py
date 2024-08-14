@@ -35,7 +35,7 @@ class ListSharedLibraries(unittest.TestCase):
 
     def test_lists_updates(self):
         dlls = dllist()
-        
+
         if dlls is not None:
             if any("_ctypes_test" in dll for dll in dlls):
                 self.skipTest("Test library is already loaded")
