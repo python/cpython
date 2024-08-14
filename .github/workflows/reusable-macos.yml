@@ -48,7 +48,7 @@ jobs:
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
-      run: set -o pipefail; make -j8 2>&1 | tee compiler_output.txt
+      run: set -o pipefail; make -j1 2>&1 | tee compiler_output.txt
     - name: Display build info
       run: make pythoninfo
     - name: Check compiler warnings
