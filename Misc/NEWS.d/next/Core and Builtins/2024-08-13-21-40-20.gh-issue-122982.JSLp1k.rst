@@ -1,3 +1,3 @@
-Bitwise inversion (``~``) is prohibited for operand of type :func:`bool`.
+Bitwise inversion (``~``) is prohibited for operand of type :class:`bool`.
 Since Python 3.12 it raises a :exc:`DeprecationWarning`, now it raises a
 :exc:`TypeError`.

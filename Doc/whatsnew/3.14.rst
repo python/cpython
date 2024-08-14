@@ -273,7 +273,7 @@ asyncio
 builtins
 --------
 
-* Prohibit bitwise inversion (``~``) on operand of type :func:`bool` which had
+* Prohibit bitwise inversion (``~``) on operand of type :class:`bool` which had
   previously raised a :exc:`DeprecationWarning` since Python 3.12.
 
 collections.abc
