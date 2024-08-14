@@ -148,6 +148,7 @@ dummy_func(
         };
 
         op(_CHECK_PERIODIC, (--)) {
+            SYNC_SP();
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate); \
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
@@ -157,6 +158,7 @@ dummy_func(
         }
 
         op(_CHECK_PERIODIC_IF_NOT_YIELD_FROM, (--)) {
+            SYNC_SP();
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate); \
@@ -4108,11 +4110,16 @@ dummy_func(
             _DO_CALL_KW +
             _CHECK_PERIODIC;
 
-        inst(INSTRUMENTED_CALL_FUNCTION_EX, ( -- )) {
+        inst(INSTRUMENTED_CALL_FUNCTION_EX, (counter/1, version/2 -- )) {
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
-        inst(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st -- result)) {
+
+        tier1 op(_SPECIALIZE_CALL_FUNCTION_EX, (counter/1, func_st, unused, callargs_st, kwargs_st -- func_st, unused, callargs_st, kwargs_st)) {
+            /* Place holder -- Do nothing for now */
+        }
+
+        op(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st -- result)) {
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
             PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
@@ -4177,8 +4184,8 @@ dummy_func(
                     if (new_frame == NULL) {
                         ERROR_NO_POP();
                     }
-                    assert(next_instr - this_instr == 1);
-                    frame->return_offset = 1;
+                    assert(next_instr - this_instr == 1 + INLINE_CACHE_ENTRIES_CALL);
+                    frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
@@ -4191,6 +4198,8 @@ dummy_func(
         }
 
         macro(CALL_FUNCTION_EX) =
+            _SPECIALIZE_CALL_FUNCTION_EX +
+            unused/2 +
             _DO_CALL_FUNCTION_EX +
             _CHECK_PERIODIC;
 
