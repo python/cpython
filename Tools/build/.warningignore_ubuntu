@@ -5,6 +5,7 @@
 # /path/to/file (number of warnings in file)
 Include/internal/pycore_gc.h 1
 Parser/string_parser.c 7
+Parser/pegen.c 8
 Parser/lexer/buffer.c 1
 Include/internal/pycore_backoff.h 3
 Include/internal/pycore_list.h 1
