@@ -647,6 +647,13 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
         Py_DECREF(o); \
     } while(0)
 
+int
+_PyST_SetSymbol(PySTEntryObject *ste, PyObject *name, long symbol)
+{
+    SET_SCOPE(ste->ste_symbols, name, symbol);
+    return 1;
+}
+
 /* Decide on scope of name, given flags.
 
    The namespace dictionaries may be modified to record information
