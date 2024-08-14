@@ -2049,9 +2049,9 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
             fail = -1;
         }
     }
-     else {
-         instr->op.code = CALL_KW_NON_PY;
-         fail = 0;
+    else {
+        instr->op.code = CALL_KW_NON_PY;
+        fail = 0;
     }
     if (fail) {
         STAT_INC(CALL, failure);

@@ -1969,8 +1969,21 @@
         /* _DO_CALL_KW is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_KW: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsSymbol *kwnames;
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UOpsAbstractFrame *new_frame;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            (void)kwnames;
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-3 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
