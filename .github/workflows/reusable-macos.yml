@@ -48,13 +48,13 @@ jobs:
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
-      run: set -o pipefail; make -j1 2>&1 | tee compiler_output.txt
+      run: set -o pipefail; make -j1 2>&1 | tee compiler_output_macos.txt
     - name: Display build info
       run: make pythoninfo
     - name: Check compiler warnings
       run: >-
         python3 Tools/build/check_warnings.py
-        --compiler-output-file-path=compiler_output.txt
+        --compiler-output-file-path=compiler_output_macos.txt
         --warning-ignore-file-path=Tools/build/.warningignore_macos
         --compiler-output-type=clang
         --fail-on-regression
