@@ -15,9 +15,8 @@ Modules/_bz2module.c 5
 Modules/_collectionsmodule.c 2
 Modules/_csv.c 3
 Modules/_ctypes/_ctypes.c 37
-Modules/_ctypes/_ctypes_test.c 1
 Modules/_ctypes/_ctypes_test_generated.c.h 100
-Modules/_ctypes/callbacks.c 6
+Modules/_ctypes/callbacks.c 5
 Modules/_ctypes/callproc.c 15
 Modules/_ctypes/cfield.c 55
 Modules/_ctypes/malloc_closure.c 3
@@ -143,7 +142,7 @@ Objects/mimalloc/alloc.c 6
 Objects/mimalloc/arena.c 6
 Objects/mimalloc/heap.c 1
 Objects/mimalloc/init.c 2
-Objects/mimalloc/options.c 2
+Objects/mimalloc/options.c 1
 Objects/mimalloc/os.c 4
 Objects/mimalloc/page-queue.c 2
 Objects/mimalloc/page.c 1
@@ -169,7 +168,7 @@ Objects/structseq.c 14
 Objects/tupleobject.c 10
 Objects/typeobject.c 17
 Objects/unicodectype.c 7
-Objects/unicodeobject.c 125
+Objects/unicodeobject.c 114
 Parser/action_helpers.c 4
 Parser/lexer/buffer.c 1
 Parser/lexer/lexer.c 12
@@ -202,7 +201,6 @@ Python/frame.c 4
 Python/gc.c 7
 Python/generated_cases.c.h 31
 Python/getargs.c 11
-Python/getversion.c 1
 Python/import.c 5
 Python/initconfig.c 3
 Python/instrumentation.c 31
@@ -216,7 +214,7 @@ Python/pathconfig.c 1
 Python/preconfig.c 2
 Python/pyarena.c 1
 Python/pyhash.c 2
-Python/pylifecycle.c 8
+Python/pylifecycle.c 7
 Python/pystate.c 6
 Python/pystrhex.c 19
 Python/pystrtod.c 3
@@ -224,7 +222,7 @@ Python/qsbr.c 2
 Python/specialize.c 8
 Python/suggestions.c 12
 Python/symtable.c 18
-Python/sysmodule.c 3
+Python/sysmodule.c 2
 Python/thread_pthread.h 1
 Python/traceback.c 6
-Python/tracemalloc.c 7
+Python/tracemalloc.c 6

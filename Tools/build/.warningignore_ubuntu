@@ -177,7 +177,7 @@ Objects/structseq.c 13
 Objects/tupleobject.c 8
 Objects/typeobject.c 44
 Objects/unicodectype.c 7
-Objects/unicodeobject.c 155
+Objects/unicodeobject.c 144
 Parser/action_helpers.c 3
 Parser/lexer/buffer.c 1
 Parser/lexer/lexer.c 14
@@ -211,7 +211,6 @@ Python/frame.c 3
 Python/gc.c 8
 Python/generated_cases.c.h 23
 Python/getargs.c 13
-Python/getversion.c 1
 Python/hashtable.c 1
 Python/import.c 6
 Python/initconfig.c 3
