@@ -1369,6 +1369,11 @@ test case
         with self.assertRaisesRegex(self.failureException, 'foobar'):
             with self.assertRaises(ExceptionMock, msg='foobar'):
                 pass
+        # Custom exact message
+        expected_string = 'ExceptionMock not raised : foobar'
+        with self.assertRaisesString(self.failureException, expected_string):
+            with self.assertRaises(ExceptionMock, msg='foobar'):
+                pass
         # Invalid keyword argument
         with self.assertRaisesRegex(TypeError, 'foobar'):
             with self.assertRaises(ExceptionMock, foobar=42):
@@ -1413,6 +1418,22 @@ test case
         self.assertRaisesRegex(ExceptionMock, 'expect$', Stub)
         with self.assertRaises(TypeError):
             self.assertRaisesRegex(ExceptionMock, 'expect$', None)
+
+    def testAssertRaisesString(self):
+        class ExceptionMock(Exception):
+            pass
+
+        def Stub():
+            raise ExceptionMock('We expect')
+
+        self.assertRaisesString(ExceptionMock, 'We expect', Stub)
+        with self.assertRaises(TypeError):
+            self.assertRaisesString(ExceptionMock, 'We expect', None)
+
+        # Raises TypeError if expected_string is not of str type
+        expected_regex = re.compile('^"expected_string" arg must be a str type$')
+        with self.assertRaisesRegex(TypeError, expected_regex):
+            self.assertRaisesString(ExceptionMock, re.compile('We expect'), Stub)
 
     def testAssertNotRaisesRegex(self):
         self.assertRaisesRegex(

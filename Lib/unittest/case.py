@@ -201,13 +201,17 @@ class _BaseTestCaseContext:
 
 class _AssertRaisesBaseContext(_BaseTestCaseContext):
 
-    def __init__(self, expected, test_case, expected_regex=None):
+    def __init__(self, expected, test_case, expected_string=None, regex=True):
         _BaseTestCaseContext.__init__(self, test_case)
         self.expected = expected
         self.test_case = test_case
-        if expected_regex is not None:
-            expected_regex = re.compile(expected_regex)
-        self.expected_regex = expected_regex
+        if expected_string is not None:
+            if regex:
+                expected_string = re.compile(expected_string)
+            elif not isinstance(expected_string, str):
+                raise TypeError('"expected_string" arg must be a str type')
+        self.expected_string = expected_string
+        self.regex = regex
         self.obj_name = None
         self.msg = None
 
@@ -268,13 +272,20 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
             return False
         # store exception, without traceback, for later retrieval
         self.exception = exc_value.with_traceback(None)
-        if self.expected_regex is None:
+        if self.expected_string is None:
             return True
 
-        expected_regex = self.expected_regex
-        if not expected_regex.search(str(exc_value)):
-            self._raiseFailure('"{}" does not match "{}"'.format(
-                     expected_regex.pattern, str(exc_value)))
+        actual_msg = str(exc_value)
+        if self.regex:
+            expected_regex = self.expected_string
+            if not expected_regex.search(actual_msg):
+                self._raiseFailure('"{}" does not match "{}"'.format(
+                    expected_regex.pattern, actual_msg))
+        else:
+            expected_string = self.expected_string
+            if expected_string != actual_msg:
+                self._raiseFailure('"{}" is not equal to "{}"'.format(
+                    expected_string, actual_msg))
         return True
 
     __class_getitem__ = classmethod(types.GenericAlias)
@@ -313,9 +324,13 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                 continue
             if first_matching is None:
                 first_matching = w
-            if (self.expected_regex is not None and
-                not self.expected_regex.search(str(w))):
-                continue
+            if self.expected_string is not None:
+                if self.regex:
+                    if self.expected_string.search(str(w)) is None:
+                        continue
+                else:
+                    if self.expected_string != str(w):
+                        continue
             # store warning for later retrieval
             self.warning = w
             self.filename = m.filename
@@ -323,8 +338,12 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             return
         # Now we simply try to choose a helpful failure message
         if first_matching is not None:
-            self._raiseFailure('"{}" does not match "{}"'.format(
-                     self.expected_regex.pattern, str(first_matching)))
+            if self.regex:
+                self._raiseFailure('"{}" does not match "{}"'.format(
+                    self.expected_string.pattern, str(first_matching)))
+            else:
+                self._raiseFailure('"{}" is not equal to "{}"'.format(
+                    self.expected_string, str(first_matching)))
         if self.obj_name:
             self._raiseFailure("{} not triggered by {}".format(exc_name,
                                                                self.obj_name))
@@ -1343,7 +1362,24 @@ class TestCase(object):
             msg: Optional message used in case of failure. Can only be used
                     when assertRaisesRegex is used as a context manager.
         """
-        context = _AssertRaisesContext(expected_exception, self, expected_regex)
+        context = _AssertRaisesContext(
+            expected_exception, self, expected_regex, regex=True)
+        return context.handle('assertRaisesRegex', args, kwargs)
+
+    def assertRaisesString(self, expected_exception, expected_string,
+                           *args, **kwargs):
+        """Asserts that the message in a raised exception equals to a string.
+
+        Args:
+            expected_exception: Exception class expected to be raised.
+            expected_string: expected error message string
+            args: Function to be called and extra positional args.
+            kwargs: Extra kwargs.
+            msg: Optional message used in case of failure. Can only be used
+                    when assertRaisesRegex is used as a context manager.
+        """
+        context = _AssertRaisesContext(
+            expected_exception, self, expected_string, regex=False)
         return context.handle('assertRaisesRegex', args, kwargs)
 
     def assertWarnsRegex(self, expected_warning, expected_regex,
@@ -1362,7 +1398,8 @@ class TestCase(object):
             msg: Optional message used in case of failure. Can only be used
                     when assertWarnsRegex is used as a context manager.
         """
-        context = _AssertWarnsContext(expected_warning, self, expected_regex)
+        context = _AssertWarnsContext(
+            expected_warning, self, expected_regex, regex=True)
         return context.handle('assertWarnsRegex', args, kwargs)
 
     def assertRegex(self, text, expected_regex, msg=None):
