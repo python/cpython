@@ -112,9 +112,9 @@ if os.name == "nt":
         while True:
             modules = (wintypes.HMODULE * n)()
             if not _psapi.EnumProcessModules(process,
-                                            modules,
-                                            ctypes.sizeof(modules),
-                                            ctypes.byref(space_needed)):
+                                             modules,
+                                             ctypes.sizeof(modules),
+                                             ctypes.byref(space_needed)):
                 break
             n = space_needed.value // ctypes.sizeof(wintypes.HMODULE)
             if n <= len(modules):
@@ -166,13 +166,9 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
 
             # start at 1 to skip executable
             for i in range(1, num_images):
-                raw_name = libc._dyld_get_image_name(i)
-                try:
-                    name = raw_name.decode("utf-8")
-                    libraries.append(name)
-                except:
-                    import warnings
-                    warnings.warn(f"Could not decode library name {raw_name}")
+                raw_name = get_image_name(i)
+                name = os.fsdecode(raw_name)
+                libraries.append(name)
 
             return libraries
         except Exception as e:
@@ -484,14 +480,8 @@ if (os.name == "posix" and
         )
         def _info_callback(info, _size, data):
             libraries = data.contents.value
-            try:
-                name = info.contents.dlpi_name.decode("utf-8")
-                libraries.append(name)
-            except:
-                import warnings
-                warnings.warn("Could not decode library name" +
-                              str(info.contents.dlpi_name))
-
+            name = os.fsdecode(info.contents.dlpi_name)
+            libraries.append(name)
             return 0
 
 
@@ -501,11 +491,8 @@ if (os.name == "posix" and
                 _libc.dl_iterate_phdr(_info_callback,
                                       ctypes.byref(ctypes.py_object(libraries)))
 
-                if libraries:
-                    # remove the first entry, which is the executable itself
-                    libraries.pop(0)
-
-                return libraries
+                # remove the first entry, which is the executable itself
+                return libraries[1:]
             except Exception as e:
                 import warnings
                 warnings.warn(
