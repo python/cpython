@@ -2039,16 +2039,16 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     if (PyFunction_Check(callable)) {
         fail = specialize_py_call_kw((PyFunctionObject *)callable, instr, nargs, false);
     }
-//     else if (PyMethod_Check(callable)) {
-//         PyObject *func = ((PyMethodObject *)callable)->im_func;
-//         if (PyFunction_Check(func)) {
-//             fail = specialize_py_call_kw((PyFunctionObject *)func, instr, nargs, true);
-//         }
-//         else {
-//             SPECIALIZATION_FAIL(CALL_KW, SPEC_FAIL_CALL_BOUND_METHOD);
-//             fail = -1;
-//         }
-//     }
+    else if (PyMethod_Check(callable)) {
+        PyObject *func = ((PyMethodObject *)callable)->im_func;
+        if (PyFunction_Check(func)) {
+            fail = specialize_py_call_kw((PyFunctionObject *)func, instr, nargs, true);
+        }
+        else {
+            SPECIALIZATION_FAIL(CALL_KW, SPEC_FAIL_CALL_BOUND_METHOD);
+            fail = -1;
+        }
+    }
 //     else {
 //         instr->op.code = CALL_KW_NON_PY;
 //         fail = 0;
