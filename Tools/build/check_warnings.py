@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
+
 class FileWarnings(NamedTuple):
     name: str
     count: int
@@ -25,7 +26,8 @@ def extract_warnings_from_compiler_output_clang(
     """
     # Regex to find warnings in the compiler output
     clang_warning_regex = re.compile(
-        r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: (?P<message>.*) (?P<option>\[-[^\]]+\])$"
+        r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: "
+        r"(?P<message>.*) (?P<option>\[-[^\]]+\])$"
     )
     compiler_warnings = []
     for line in compiler_output.splitlines():
@@ -75,8 +77,11 @@ def extract_warnings_from_compiler_output_json(
                         if key in location:
                             compiler_warnings.append(
                                 {
-                                    # Remove leading current directory if present
-                                    "file": location[key]["file"].lstrip(path_prefix),
+                                    # Remove leading current
+                                    # directory if present
+                                    "file": location[key]["file"].lstrip(
+                                        path_prefix
+                                    ),
                                     "line": location[key]["line"],
                                     "column": location[key]["column"],
                                     "message": warning["message"],
@@ -98,9 +103,9 @@ def extract_warnings_from_compiler_output_json(
 
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
-    Returns a dictionary where the key is the file and the data is the warnings
-    in that file. Does not include duplicate warnings for a file from list of
-    provided warnings.
+    Returns a dictionary where the key is the file and the data is the
+    warningsw in that file. Does not include duplicate warnings for a
+    file from list of provided warnings.
     """
     warnings_by_file = defaultdict(list)
     warnings_added = set()
@@ -159,7 +164,7 @@ def get_unexpected_improvements(
         if file.name not in files_with_warnings.keys():
             unexpected_improvements.append(file)
         elif len(files_with_warnings[file.name]) < file.count:
-                unexpected_improvements.append(file)
+            unexpected_improvements.append(file)
 
     if unexpected_improvements:
         print("Unexpected improvements:")
@@ -248,7 +253,9 @@ def main(argv: list[str] | None = None) -> int:
             # where the first element is the file name and the second element
             # is the number of warnings expected in that file
             files_with_expected_warnings = {
-                FileWarnings(file.strip().split()[0], int(file.strip().split()[1]))
+                FileWarnings(
+                    file.strip().split()[0], int(file.strip().split()[1])
+                )
                 for file in clean_files
                 if file.strip() and not file.startswith("#")
             }
@@ -258,13 +265,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.compiler_output_type == "json":
         warnings = extract_warnings_from_compiler_output_json(
-            compiler_output_file_contents,
-            args.path_prefix
+            compiler_output_file_contents, args.path_prefix
         )
     elif args.compiler_output_type == "clang":
         warnings = extract_warnings_from_compiler_output_clang(
-            compiler_output_file_contents,
-            args.path_prefix
+            compiler_output_file_contents, args.path_prefix
         )
 
     files_with_warnings = get_warnings_by_file(warnings)
