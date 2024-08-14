@@ -6,6 +6,7 @@ import copy
 from itertools import permutations
 import pickle
 from random import choice
+import re
 import sys
 from test import support
 import threading
@@ -361,16 +362,16 @@ class TestPartial:
         f = self.partial(signature)
         f.__setstate__((capture, (PH, 1), dict(a=10), dict(attr=[])))
         self.assertEqual(signature(f), (capture, (PH, 1), dict(a=10), dict(attr=[])))
-        msg_regex = ("^missing positional arguments in 'partial' call; "
-                     "expected at least 1, got 0$")
-        with self.assertRaisesRegex(TypeError, msg_regex) as cm:
+        msg_regex = re.escape("missing positional arguments in 'partial' call; "
+                              "expected at least 1, got 0")
+        with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
             f()
         self.assertEqual(f(2), ((2, 1), dict(a=10)))
 
         # Trailing Placeholder error
         f = self.partial(signature)
-        msg_regex = "^trailing Placeholders are not allowed$"
-        with self.assertRaisesRegex(TypeError, msg_regex) as cm:
+        msg_regex = re.escape("trailing Placeholders are not allowed")
+        with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
             f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
 
     def test_setstate_errors(self):
