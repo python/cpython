@@ -359,8 +359,8 @@ free-threaded build.
 
 .. _whatsnew313-jit-compiler:
 
-An experimental JIT compiler
------------------------------------
+An experimental just-in-time (JIT) compiler
+-------------------------------------------
 
 When CPython is configured and built using
 the :option:`!--enable-experimental-jit` option,
