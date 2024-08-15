@@ -2,18 +2,18 @@
 
 Note: BaseHTTPRequestHandler doesn't implement any HTTP request; see
 SimpleHTTPRequestHandler for simple implementations of GET, HEAD and POST,
-and CGIHTTPRequestHandler for CGI scripts.
+and (deprecated) CGIHTTPRequestHandler for CGI scripts.
 
-It does, however, optionally implement HTTP/1.1 persistent connections,
-as of version 0.3.
+It does, however, optionally implement HTTP/1.1 persistent connections.
 
 Notes on CGIHTTPRequestHandler
 ------------------------------
 
-This class implements GET and POST requests to cgi-bin scripts.
+This class is deprecated. It implements GET and POST requests to cgi-bin scripts.
 
-If the os.fork() function is not present (e.g. on Windows),
-subprocess.Popen() is used as a fallback, with slightly altered semantics.
+If the os.fork() function is not present (Windows), subprocess.Popen() is used,
+with slightly altered but never documented semantics.  Use from a threaded
+process is likely to trigger a warning at os.fork() time.
 
 In all cases, the implementation is intentionally naive -- all
 requests are executed synchronously.
@@ -129,7 +129,8 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 class HTTPServer(socketserver.TCPServer):
 
-    allow_reuse_address = 1    # Seems to make sense in testing environment
+    allow_reuse_address = True    # Seems to make sense in testing environment
+    allow_reuse_port = True
 
     def server_bind(self):
         """Override server_bind to store the server name."""
@@ -897,7 +898,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         ext = ext.lower()
         if ext in self.extensions_map:
             return self.extensions_map[ext]
-        guess, _ = mimetypes.guess_type(path)
+        guess, _ = mimetypes.guess_file_type(path)
         if guess:
             return guess
         return 'application/octet-stream'
@@ -985,6 +986,12 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
     The POST command is *only* implemented for CGI scripts.
 
     """
+
+    def __init__(self, *args, **kwargs):
+        import warnings
+        warnings._deprecated("http.server.CGIHTTPRequestHandler",
+                             remove=(3, 15))
+        super().__init__(*args, **kwargs)
 
     # Determine platform specifics
     have_fork = hasattr(os, 'fork')

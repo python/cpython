@@ -4,7 +4,7 @@
 #include "Python.h"
 #include "pycore_interp.h"    // _PyInterpreterState.dlopenflags
 #include "pycore_pystate.h"   // _PyInterpreterState_GET()
-#include "importdl.h"
+#include "pycore_importdl.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

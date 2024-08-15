@@ -19,7 +19,7 @@ setenv VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
 set _OLD_VIRTUAL_PROMPT="$prompt"
 
 if (! "$?VIRTUAL_ENV_DISABLE_PROMPT") then
-    set prompt = "__VENV_PROMPT__$prompt"
+    set prompt = "(__VENV_PROMPT__) $prompt"
 endif
 
 alias pydoc python -m pydoc

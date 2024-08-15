@@ -1,6 +1,9 @@
 import collections
 import subprocess
 import warnings
+import os
+import signal
+import sys
 
 from . import protocols
 from . import transports
@@ -115,7 +118,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
             try:
                 self._proc.kill()
-            except ProcessLookupError:
+            except (ProcessLookupError, PermissionError):
+                # the process may have already exited or may be running setuid
                 pass
 
             # Don't clear the _proc reference yet: _post_init() may still run
@@ -141,17 +145,31 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._proc is None:
             raise ProcessLookupError()
 
-    def send_signal(self, signal):
-        self._check_proc()
-        self._proc.send_signal(signal)
+    if sys.platform == 'win32':
+        def send_signal(self, signal):
+            self._check_proc()
+            self._proc.send_signal(signal)
 
-    def terminate(self):
-        self._check_proc()
-        self._proc.terminate()
+        def terminate(self):
+            self._check_proc()
+            self._proc.terminate()
 
-    def kill(self):
-        self._check_proc()
-        self._proc.kill()
+        def kill(self):
+            self._check_proc()
+            self._proc.kill()
+    else:
+        def send_signal(self, signal):
+            self._check_proc()
+            try:
+                os.kill(self._proc.pid, signal)
+            except ProcessLookupError:
+                pass
+
+        def terminate(self):
+            self.send_signal(signal.SIGTERM)
+
+        def kill(self):
+            self.send_signal(signal.SIGKILL)
 
     async def _connect_pipes(self, waiter):
         try:

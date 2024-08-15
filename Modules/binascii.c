@@ -185,13 +185,7 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
                      "not '%.100s'", Py_TYPE(arg)->tp_name);
         return 0;
     }
-    if (!PyBuffer_IsContiguous(buf, 'C')) {
-        PyErr_Format(PyExc_TypeError,
-                     "argument should be a contiguous buffer, "
-                     "not '%.100s'", Py_TYPE(arg)->tp_name);
-        PyBuffer_Release(buf);
-        return 0;
-    }
+    assert(PyBuffer_IsContiguous(buf, 'C'));
     return Py_CLEANUP_SUPPORTED;
 }
 
@@ -420,6 +414,13 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         if (this_ch == BASE64_PAD) {
             padding_started = 1;
 
+            if (strict_mode && quad_pos == 0) {
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error, "Excess padding not allowed");
+                }
+                goto error_end;
+            }
             if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
                 /* A pad sequence means we should not parse more input.
                 ** We've already interpreted the data from the quad at this point.
@@ -776,12 +777,20 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. crc32() takes
-           length as an unsigned int, which may be narrower than Py_ssize_t. */
-        while ((size_t)len > UINT_MAX) {
-            crc = crc32(crc, buf, UINT_MAX);
-            buf += (size_t) UINT_MAX;
-            len -= (size_t) UINT_MAX;
+           length as an unsigned int, which may be narrower than Py_ssize_t.
+           We further limit size due to bugs in Apple's macOS zlib.
+           See https://github.com/python/cpython/issues/105967
+         */
+#define ZLIB_CRC_CHUNK_SIZE 0x40000000
+#if ZLIB_CRC_CHUNK_SIZE > INT_MAX
+# error "unsupported less than 32-bit platform?"
+#endif
+        while ((size_t)len > ZLIB_CRC_CHUNK_SIZE) {
+            crc = crc32(crc, buf, ZLIB_CRC_CHUNK_SIZE);
+            buf += (size_t) ZLIB_CRC_CHUNK_SIZE;
+            len -= (size_t) ZLIB_CRC_CHUNK_SIZE;
         }
+#undef ZLIB_CRC_CHUNK_SIZE
         crc = crc32(crc, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
@@ -1276,6 +1285,7 @@ binascii_exec(PyObject *module)
 static PyModuleDef_Slot binascii_slots[] = {
     {Py_mod_exec, binascii_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -17,7 +17,6 @@ struct _frozen {
     const unsigned char *code;
     int size;
     int is_package;
-    PyObject *(*get_code)(void);
 };
 
 /* Embedding apps may change this pointer to point to their favorite

@@ -1,2 +1,0 @@
-Improve performance of :func:`operator.methodcaller` using the :pep:`590` ``vectorcall`` convention.
-Patch by Anthony Lee and Pieter Eendebak.

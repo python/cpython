@@ -1,2 +1,0 @@
-No longer suppress arbitrary errors in the ``__annotations__`` getter and
-setter in the type and module types.

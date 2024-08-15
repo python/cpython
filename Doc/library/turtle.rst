@@ -120,7 +120,7 @@ off-screen)::
    home()
 
 The home position is at the center of the turtle's screen. If you ever need to
-know them, get the turtle's x-y co-ordinates with::
+know them, get the turtle's x-y coordinates with::
 
     pos()
 
@@ -606,7 +606,7 @@ Turtle motion
       >>> turtle.pos()
       (20.00,30.00)
 
-   .. versionadded: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: setx(x)
@@ -2315,7 +2315,7 @@ Public classes
 .. class:: RawTurtle(canvas)
            RawPen(canvas)
 
-   :param canvas: a :class:`tkinter.Canvas`, a :class:`ScrolledCanvas` or a
+   :param canvas: a :class:`!tkinter.Canvas`, a :class:`ScrolledCanvas` or a
                   :class:`TurtleScreen`
 
    Create a turtle.  The turtle has all methods described above as "methods of
@@ -2330,7 +2330,7 @@ Public classes
 
 .. class:: TurtleScreen(cv)
 
-   :param cv: a :class:`tkinter.Canvas`
+   :param cv: a :class:`!tkinter.Canvas`
 
    Provides screen oriented methods like :func:`bgcolor` etc. that are described
    above.
@@ -2414,7 +2414,7 @@ instance if one is not already present.
 
 ``Turtle`` is a subclass of :class:`RawTurtle`, which *doesn't* automatically
 create a drawing surface - a *canvas* will need to be provided or created for
-it. The *canvas* can be a :class:`tkinter.Canvas`, :class:`ScrolledCanvas`
+it. The *canvas* can be a :class:`!tkinter.Canvas`, :class:`ScrolledCanvas`
 or :class:`TurtleScreen`.
 
 
@@ -2422,7 +2422,7 @@ or :class:`TurtleScreen`.
 turtle. :class:`Screen` is a subclass of ``TurtleScreen``, and
 includes :ref:`some additional methods <screenspecific>` for managing its
 appearance (including size and title) and behaviour. ``TurtleScreen``'s
-constructor needs a :class:`tkinter.Canvas` or a
+constructor needs a :class:`!tkinter.Canvas` or a
 :class:`ScrolledCanvas` as an argument.
 
 The functional interface for turtle graphics uses the various methods of

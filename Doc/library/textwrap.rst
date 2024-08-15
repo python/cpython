@@ -1,5 +1,5 @@
-:mod:`textwrap` --- Text wrapping and filling
-=============================================
+:mod:`!textwrap` --- Text wrapping and filling
+==============================================
 
 .. module:: textwrap
    :synopsis: Text wrapping and filling
@@ -154,7 +154,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       wrapper = TextWrapper()
       wrapper.initial_indent = "* "
 
-   You can re-use the same :class:`TextWrapper` object many times, and you can
+   You can reuse the same :class:`TextWrapper` object many times, and you can
    change any of its options through direct assignment to instance attributes
    between uses.
 
@@ -238,7 +238,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       However, the sentence detection algorithm is imperfect: it assumes that a
       sentence ending consists of a lowercase letter followed by one of ``'.'``,
       ``'!'``, or ``'?'``, possibly followed by one of ``'"'`` or ``"'"``,
-      followed by a space.  One problem with this is algorithm is that it is
+      followed by a space.  One problem with this algorithm is that it is
       unable to detect the difference between "Dr." in ::
 
          [...] Dr. Frankenstein's monster [...]

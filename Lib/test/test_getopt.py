@@ -1,8 +1,8 @@
 # test_getopt.py
 # David Goodger <dgoodger@bigfoot.com> 2000-08-19
 
-from test.support import verbose, run_doctest
 from test.support.os_helper import EnvironmentVarGuard
+import doctest
 import unittest
 
 import getopt
@@ -134,48 +134,49 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(opts, [('-a', '')])
         self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2'])
 
-    def test_libref_examples(self):
-        s = """
-        Examples from the Library Reference:  Doc/lib/libgetopt.tex
-
-        An example using only Unix style options:
-
-
-        >>> import getopt
-        >>> args = '-a -b -cfoo -d bar a1 a2'.split()
-        >>> args
-        ['-a', '-b', '-cfoo', '-d', 'bar', 'a1', 'a2']
-        >>> optlist, args = getopt.getopt(args, 'abc:d:')
-        >>> optlist
-        [('-a', ''), ('-b', ''), ('-c', 'foo'), ('-d', 'bar')]
-        >>> args
-        ['a1', 'a2']
-
-        Using long option names is equally easy:
-
-
-        >>> s = '--condition=foo --testing --output-file abc.def -x a1 a2'
-        >>> args = s.split()
-        >>> args
-        ['--condition=foo', '--testing', '--output-file', 'abc.def', '-x', 'a1', 'a2']
-        >>> optlist, args = getopt.getopt(args, 'x', [
-        ...     'condition=', 'output-file=', 'testing'])
-        >>> optlist
-        [('--condition', 'foo'), ('--testing', ''), ('--output-file', 'abc.def'), ('-x', '')]
-        >>> args
-        ['a1', 'a2']
-        """
-
-        import types
-        m = types.ModuleType("libreftest", s)
-        run_doctest(m, verbose)
-
     def test_issue4629(self):
         longopts, shortopts = getopt.getopt(['--help='], '', ['help='])
         self.assertEqual(longopts, [('--help', '')])
         longopts, shortopts = getopt.getopt(['--help=x'], '', ['help='])
         self.assertEqual(longopts, [('--help', 'x')])
         self.assertRaises(getopt.GetoptError, getopt.getopt, ['--help='], '', ['help'])
+
+def test_libref_examples():
+    """
+    Examples from the Library Reference:  Doc/lib/libgetopt.tex
+
+    An example using only Unix style options:
+
+
+    >>> import getopt
+    >>> args = '-a -b -cfoo -d bar a1 a2'.split()
+    >>> args
+    ['-a', '-b', '-cfoo', '-d', 'bar', 'a1', 'a2']
+    >>> optlist, args = getopt.getopt(args, 'abc:d:')
+    >>> optlist
+    [('-a', ''), ('-b', ''), ('-c', 'foo'), ('-d', 'bar')]
+    >>> args
+    ['a1', 'a2']
+
+    Using long option names is equally easy:
+
+
+    >>> s = '--condition=foo --testing --output-file abc.def -x a1 a2'
+    >>> args = s.split()
+    >>> args
+    ['--condition=foo', '--testing', '--output-file', 'abc.def', '-x', 'a1', 'a2']
+    >>> optlist, args = getopt.getopt(args, 'x', [
+    ...     'condition=', 'output-file=', 'testing'])
+    >>> optlist
+    [('--condition', 'foo'), ('--testing', ''), ('--output-file', 'abc.def'), ('-x', '')]
+    >>> args
+    ['a1', 'a2']
+    """
+
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == "__main__":
     unittest.main()

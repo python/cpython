@@ -1,2 +1,0 @@
-Deprecate :func:`typing.no_type_check_decorator`. No major type checker ever
-added support for this decorator. Patch by Alex Waygood.

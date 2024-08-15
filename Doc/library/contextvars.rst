@@ -1,5 +1,5 @@
-:mod:`contextvars` --- Context Variables
-========================================
+:mod:`!contextvars` --- Context Variables
+=========================================
 
 .. module:: contextvars
    :synopsis: Context Variables
@@ -131,7 +131,7 @@ Manual Context Management
       ctx: Context = copy_context()
       print(list(ctx.items()))
 
-   The function has an O(1) complexity, i.e. works equally fast for
+   The function has an *O*\ (1) complexity, i.e. works equally fast for
    contexts with a few context variables and for contexts that have
    a lot of them.
 

@@ -5,8 +5,10 @@ import itertools
 import contextlib
 import pathlib
 import re
+import stat
+import sys
 
-from .glob import translate
+from .glob import Translator
 
 
 __all__ = ['Path']
@@ -83,7 +85,69 @@ class InitializedState:
         super().__init__(*args, **kwargs)
 
 
-class CompleteDirs(InitializedState, zipfile.ZipFile):
+class SanitizedNames:
+    """
+    ZipFile mix-in to ensure names are sanitized.
+    """
+
+    def namelist(self):
+        return list(map(self._sanitize, super().namelist()))
+
+    @staticmethod
+    def _sanitize(name):
+        r"""
+        Ensure a relative path with posix separators and no dot names.
+
+        Modeled after
+        https://github.com/python/cpython/blob/bcc1be39cb1d04ad9fc0bd1b9193d3972835a57c/Lib/zipfile/__init__.py#L1799-L1813
+        but provides consistent cross-platform behavior.
+
+        >>> san = SanitizedNames._sanitize
+        >>> san('/foo/bar')
+        'foo/bar'
+        >>> san('//foo.txt')
+        'foo.txt'
+        >>> san('foo/.././bar.txt')
+        'foo/bar.txt'
+        >>> san('foo../.bar.txt')
+        'foo../.bar.txt'
+        >>> san('\\foo\\bar.txt')
+        'foo/bar.txt'
+        >>> san('D:\\foo.txt')
+        'D/foo.txt'
+        >>> san('\\\\server\\share\\file.txt')
+        'server/share/file.txt'
+        >>> san('\\\\?\\GLOBALROOT\\Volume3')
+        '?/GLOBALROOT/Volume3'
+        >>> san('\\\\.\\PhysicalDrive1\\root')
+        'PhysicalDrive1/root'
+
+        Retain any trailing slash.
+        >>> san('abc/')
+        'abc/'
+
+        Raises a ValueError if the result is empty.
+        >>> san('../..')
+        Traceback (most recent call last):
+        ...
+        ValueError: Empty filename
+        """
+
+        def allowed(part):
+            return part and part not in {'..', '.'}
+
+        # Remove the drive letter.
+        # Don't use ntpath.splitdrive, because that also strips UNC paths
+        bare = re.sub('^([A-Z]):', r'\1', name, flags=re.IGNORECASE)
+        clean = bare.replace('\\', '/')
+        parts = clean.split('/')
+        joined = '/'.join(filter(allowed, parts))
+        if not joined:
+            raise ValueError("Empty filename")
+        return joined + '/' * name.endswith('/')
+
+
+class CompleteDirs(InitializedState, SanitizedNames, zipfile.ZipFile):
     """
     A ZipFile subclass that ensures that implied directories
     are always included in the namelist.
@@ -147,6 +211,16 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
         source.__class__ = cls
         return source
 
+    @classmethod
+    def inject(cls, zf: zipfile.ZipFile) -> zipfile.ZipFile:
+        """
+        Given a writable zip file zf, inject directory entries for
+        any directories implied by the presence of children.
+        """
+        for name in cls._implied_dirs(zf.namelist()):
+            zf.writestr(name, b"")
+        return zf
+
 
 class FastLookup(CompleteDirs):
     """
@@ -168,13 +242,18 @@ class FastLookup(CompleteDirs):
 
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
-    # stacklevel=3 so that the caller of the caller see any warning.
-    return io.text_encoding(encoding, 3), args, kwargs
+    # compute stack level so that the caller of the caller sees any warning.
+    is_pypy = sys.implementation.name == 'pypy'
+    stack_level = 3 + is_pypy
+    return io.text_encoding(encoding, stack_level), args, kwargs
 
 
 class Path:
     """
-    A pathlib-compatible interface for zip files.
+    A :class:`importlib.resources.abc.Traversable` interface for zip files.
+
+    Implements many of the features users enjoy from
+    :class:`pathlib.Path`.
 
     Consider a zip file with this structure::
 
@@ -194,13 +273,13 @@ class Path:
 
     Path accepts the zipfile object itself or a filename
 
-    >>> root = Path(zf)
+    >>> path = Path(zf)
 
     From there, several path operations are available.
 
     Directory iteration (including the zip file itself):
 
-    >>> a, b = root.iterdir()
+    >>> a, b = path.iterdir()
     >>> a
     Path('mem/abcde.zip', 'a.txt')
     >>> b
@@ -238,16 +317,38 @@ class Path:
     'mem/abcde.zip/b/c.txt'
 
     At the root, ``name``, ``filename``, and ``parent``
-    resolve to the zipfile. Note these attributes are not
-    valid and will raise a ``ValueError`` if the zipfile
-    has no filename.
+    resolve to the zipfile.
 
-    >>> root.name
+    >>> str(path)
+    'mem/abcde.zip/'
+    >>> path.name
     'abcde.zip'
-    >>> str(root.filename).replace(os.sep, posixpath.sep)
-    'mem/abcde.zip'
-    >>> str(root.parent)
+    >>> path.filename == pathlib.Path('mem/abcde.zip')
+    True
+    >>> str(path.parent)
     'mem'
+
+    If the zipfile has no filename, such ﻿attributes are not
+    valid and accessing them will raise an Exception.
+
+    >>> zf.filename = None
+    >>> path.name
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    >>> path.filename
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    >>> path.parent
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    # workaround python/cpython#106763
+    >>> pass
     """
 
     __repr = "{self.__class__.__name__}({self.root.filename!r}, {self.at!r})"
@@ -355,16 +456,19 @@ class Path:
 
     def is_symlink(self):
         """
-        Return whether this path is a symlink. Always false (python/cpython#82102).
+        Return whether this path is a symlink.
         """
-        return False
+        info = self.root.getinfo(self.at)
+        mode = info.external_attr >> 16
+        return stat.S_ISLNK(mode)
 
     def glob(self, pattern):
         if not pattern:
             raise ValueError(f"Unacceptable pattern: {pattern!r}")
 
         prefix = re.escape(self.at)
-        matches = re.compile(prefix + translate(pattern)).fullmatch
+        tr = Translator(seps='/')
+        matches = re.compile(prefix + tr.translate(pattern)).fullmatch
         return map(self._next, filter(matches, self.root.namelist()))
 
     def rglob(self, pattern):

@@ -613,5 +613,14 @@ _PyTestCapi_Init_Mem(PyObject *mod)
         return -1;
     }
 
+#ifdef WITH_MIMALLOC
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    if (PyModule_AddObjectRef(mod, "WITH_MIMALLOC", v) < 0) {
+        return -1;
+    }
+
     return 0;
 }

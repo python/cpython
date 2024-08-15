@@ -1,2 +1,0 @@
-Fix a bug in the :mod:`posix` module where an exception could be
-overwritten.

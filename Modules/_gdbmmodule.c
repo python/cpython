@@ -1,7 +1,11 @@
-
 /* GDBM module using dictionary interface */
 /* Author: Anthony Baxter, after dbmmodule.c */
 /* Doc strings: Mitch Chapman */
+
+// clinic/_gdbmmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "gdbm.h"
@@ -821,6 +825,7 @@ _gdbm_module_free(void *module)
 static PyModuleDef_Slot _gdbm_module_slots[] = {
     {Py_mod_exec, _gdbm_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

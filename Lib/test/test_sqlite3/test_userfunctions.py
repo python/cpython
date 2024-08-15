@@ -29,7 +29,7 @@ from unittest.mock import Mock, patch
 from test.support import bigmemtest, gc_collect
 
 from .util import cx_limit, memory_database
-from .util import with_tracebacks, check_tracebacks
+from .util import with_tracebacks
 
 
 def func_returntext():
@@ -421,6 +421,29 @@ class FunctionTests(unittest.TestCase):
         self.assertRaisesRegex(sqlite.OperationalError, msg,
                                self.con.execute, "select badreturn()")
 
+    def test_func_keyword_args(self):
+        regex = (
+            r"Passing keyword arguments 'name', 'narg' and 'func' to "
+            r"_sqlite3.Connection.create_function\(\) is deprecated. "
+            r"Parameters 'name', 'narg' and 'func' will become "
+            r"positional-only in Python 3.15."
+        )
+
+        def noop():
+            return None
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_function("noop", 0, func=noop)
+        self.assertEqual(cm.filename, __file__)
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_function("noop", narg=0, func=noop)
+        self.assertEqual(cm.filename, __file__)
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_function(name="noop", narg=0, func=noop)
+        self.assertEqual(cm.filename, __file__)
+
 
 class WindowSumInt:
     def __init__(self):
@@ -714,6 +737,27 @@ class AggregateTests(unittest.TestCase):
                 val = cur.fetchone()[0]
                 self.assertEqual(val, txt)
 
+    def test_agg_keyword_args(self):
+        regex = (
+            r"Passing keyword arguments 'name', 'n_arg' and 'aggregate_class' to "
+            r"_sqlite3.Connection.create_aggregate\(\) is deprecated. "
+            r"Parameters 'name', 'n_arg' and 'aggregate_class' will become "
+            r"positional-only in Python 3.15."
+        )
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_aggregate("test", 1, aggregate_class=AggrText)
+        self.assertEqual(cm.filename, __file__)
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_aggregate("test", n_arg=1, aggregate_class=AggrText)
+        self.assertEqual(cm.filename, __file__)
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_aggregate(name="test", n_arg=0,
+                                      aggregate_class=AggrText)
+        self.assertEqual(cm.filename, __file__)
+
 
 class AuthorizerTests(unittest.TestCase):
     @staticmethod
@@ -755,6 +799,18 @@ class AuthorizerTests(unittest.TestCase):
         self.con.set_authorizer(None)
         self.con.execute("select * from t2")
         self.con.execute("select c2 from t1")
+
+    def test_authorizer_keyword_args(self):
+        regex = (
+            r"Passing keyword argument 'authorizer_callback' to "
+            r"_sqlite3.Connection.set_authorizer\(\) is deprecated. "
+            r"Parameter 'authorizer_callback' will become positional-only in "
+            r"Python 3.15."
+        )
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.set_authorizer(authorizer_callback=lambda: None)
+        self.assertEqual(cm.filename, __file__)
 
 
 class AuthorizerRaiseExceptionTests(AuthorizerTests):

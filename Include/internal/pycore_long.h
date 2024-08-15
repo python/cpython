@@ -47,7 +47,6 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
-
 /* runtime lifecycle */
 
 extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
@@ -100,56 +99,10 @@ extern PyObject* _PyLong_FromBytes(const char *, Py_ssize_t, int);
 // Export for '_datetime' shared extension.
 PyAPI_DATA(PyObject*) _PyLong_DivmodNear(PyObject *, PyObject *);
 
-// _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
-// base 256, and return a Python int with the same numeric value.
-// If n is 0, the integer is 0.  Else:
-// If little_endian is 1/true, bytes[n-1] is the MSB and bytes[0] the LSB;
-// else (little_endian is 0/false) bytes[0] is the MSB and bytes[n-1] the
-// LSB.
-// If is_signed is 0/false, view the bytes as a non-negative integer.
-// If is_signed is 1/true, view the bytes as a 2's-complement integer,
-// non-negative if bit 0x80 of the MSB is clear, negative if set.
-// Error returns:
-// + Return NULL with the appropriate exception set if there's not
-//   enough memory to create the Python int.
-//
-// Export for '_multibytecodec' shared extension.
-PyAPI_DATA(PyObject*) _PyLong_FromByteArray(
-    const unsigned char* bytes, size_t n,
-    int little_endian, int is_signed);
-
-// _PyLong_AsByteArray: Convert the least-significant 8*n bits of long
-// v to a base-256 integer, stored in array bytes.  Normally return 0,
-// return -1 on error.
-// If little_endian is 1/true, store the MSB at bytes[n-1] and the LSB at
-// bytes[0]; else (little_endian is 0/false) store the MSB at bytes[0] and
-// the LSB at bytes[n-1].
-// If is_signed is 0/false, it's an error if v < 0; else (v >= 0) n bytes
-// are filled and there's nothing special about bit 0x80 of the MSB.
-// If is_signed is 1/true, bytes is filled with the 2's-complement
-// representation of v's value.  Bit 0x80 of the MSB is the sign bit.
-// Error returns (-1):
-// + is_signed is 0 and v < 0.  TypeError is set in this case, and bytes
-//   isn't altered.
-// + n isn't big enough to hold the full mathematical value of v.  For
-//   example, if is_signed is 0 and there are more digits in the v than
-//   fit in n; or if is_signed is 1, v < 0, and n is just 1 bit shy of
-//   being large enough to hold a sign bit.  OverflowError is set in this
-//   case, but bytes holds the least-significant n bytes of the true value.
-//
-// Export for '_struct' shared extension.
-PyAPI_DATA(int) _PyLong_AsByteArray(PyLongObject* v,
-    unsigned char* bytes, size_t n,
-    int little_endian, int is_signed);
-
 // _PyLong_Format: Convert the long to a string object with given base,
 // appending a base prefix of 0[box] if base is 2, 8 or 16.
 // Export for '_tkinter' shared extension.
 PyAPI_DATA(PyObject*) _PyLong_Format(PyObject *obj, int base);
-
-// For use by the math.gcd() function.
-// Export for 'math' shared extension.
-PyAPI_DATA(PyObject*) _PyLong_GCD(PyObject *, PyObject *);
 
 // Export for 'math' shared extension
 PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, size_t);
@@ -157,9 +110,9 @@ PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, size_t);
 // Export for 'math' shared extension
 PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, size_t);
 
-extern PyObject* _PyLong_Add(PyLongObject *left, PyLongObject *right);
-extern PyObject* _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-extern PyObject* _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
@@ -185,6 +138,23 @@ extern char* _PyLong_FormatBytesWriter(
     PyObject *obj,
     int base,
     int alternate);
+
+// Argument converters used by Argument Clinic
+
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
@@ -270,7 +240,7 @@ static inline int
 _PyLong_CompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(_PyLong_IsCompact(op));
+    assert(_PyLong_IsCompact((PyLongObject *)op));
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
@@ -278,7 +248,7 @@ static inline int
 _PyLong_NonCompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(!_PyLong_IsCompact(op));
+    assert(!_PyLong_IsCompact((PyLongObject *)op));
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
@@ -318,7 +288,7 @@ _PyLong_FlipSign(PyLongObject *op) {
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
-        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type) \
+        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type), \
         .long_value  = { \
             .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \

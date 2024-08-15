@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
@@ -92,53 +93,26 @@ winreg_HKEYType___enter__(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_HKEYType___exit____doc__,
-"__exit__($self, /, exc_type, exc_value, traceback)\n"
+"__exit__($self, exc_type, exc_value, traceback, /)\n"
 "--\n"
 "\n");
 
 #define WINREG_HKEYTYPE___EXIT___METHODDEF    \
-    {"__exit__", _PyCFunction_CAST(winreg_HKEYType___exit__), METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
+    {"__exit__", _PyCFunction_CAST(winreg_HKEYType___exit__), METH_FASTCALL, winreg_HKEYType___exit____doc__},
 
 static PyObject *
 winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback);
 
 static PyObject *
-winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 3
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(exc_type), &_Py_ID(exc_value), &_Py_ID(traceback), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__exit__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[3];
     PyObject *exc_type;
     PyObject *exc_value;
     PyObject *traceback;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
         goto exit;
     }
     exc_type = args[0];
@@ -401,7 +375,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[2]) {
-        reserved = _PyLong_AsInt(args[2]);
+        reserved = PyLong_AsInt(args[2]);
         if (reserved == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -409,7 +383,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    access = _PyLong_AsInt(args[3]);
+    access = PyLong_AsInt(args[3]);
     if (access == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -579,7 +553,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[2]) {
-        access = _PyLong_AsInt(args[2]);
+        access = PyLong_AsInt(args[2]);
         if (access == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -587,7 +561,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    reserved = _PyLong_AsInt(args[3]);
+    reserved = PyLong_AsInt(args[3]);
     if (reserved == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -695,7 +669,7 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!clinic_HKEY_converter(_PyModule_GetState(module), args[0], &key)) {
         goto exit;
     }
-    index = _PyLong_AsInt(args[1]);
+    index = PyLong_AsInt(args[1]);
     if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -752,7 +726,7 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!clinic_HKEY_converter(_PyModule_GetState(module), args[0], &key)) {
         goto exit;
     }
-    index = _PyLong_AsInt(args[1]);
+    index = PyLong_AsInt(args[1]);
     if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1016,7 +990,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto skip_optional_pos;
     }
     if (args[2]) {
-        reserved = _PyLong_AsInt(args[2]);
+        reserved = PyLong_AsInt(args[2]);
         if (reserved == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -1024,7 +998,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_pos;
         }
     }
-    access = _PyLong_AsInt(args[3]);
+    access = PyLong_AsInt(args[3]);
     if (access == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1133,7 +1107,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto skip_optional_pos;
     }
     if (args[2]) {
-        reserved = _PyLong_AsInt(args[2]);
+        reserved = PyLong_AsInt(args[2]);
         if (reserved == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -1141,7 +1115,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    access = _PyLong_AsInt(args[3]);
+    access = PyLong_AsInt(args[3]);
     if (access == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1788,4 +1762,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=d2bf1f58ad07e5f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ee4098b2f143b6a input=a9049054013a1b77]*/

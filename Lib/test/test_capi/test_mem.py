@@ -112,6 +112,9 @@ class PyMemDebugTests(unittest.TestCase):
     def test_pyobject_freed_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
 
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_set_nomemory(self):
         code = """if 1:
             import _testcapi
@@ -145,10 +148,12 @@ class PyMemDebugTests(unittest.TestCase):
             self.assertIn(b'MemoryError', out)
             *_, count = line.split(b' ')
             count = int(count)
-            self.assertLessEqual(count, i*5)
-            self.assertGreaterEqual(count, i*5-2)
+            self.assertLessEqual(count, i*10)
+            self.assertGreaterEqual(count, i*10-4)
 
 
+# free-threading requires mimalloc (not malloc)
+@support.requires_gil_enabled()
 class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 
@@ -156,6 +161,11 @@ class PyMemMallocDebugTests(PyMemDebugTests):
 @unittest.skipUnless(support.with_pymalloc(), 'need pymalloc')
 class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
+
+
+@unittest.skipUnless(support.with_mimalloc(), 'need mimaloc')
+class PyMemMimallocDebugTests(PyMemDebugTests):
+    PYTHONMALLOC = 'mimalloc_debug'
 
 
 @unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')

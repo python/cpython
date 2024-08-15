@@ -19,21 +19,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
-
-uint32_t _Py_next_func_version = 1;
-
-/* Empty initializer for deepfrozen modules */
-int _Py_Deepfreeze_Init(void)
-{
-    return 0;
-}
-/* Empty finalizer for deepfrozen modules */
-void
-_Py_Deepfreeze_Fini(void)
-{
-}
 
 /* To avoid a circular dependency on frozen.o, we create our own structure
    of frozen modules instead, left deliberately blank so as to avoid

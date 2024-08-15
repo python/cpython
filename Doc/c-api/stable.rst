@@ -16,9 +16,9 @@ CPython's Application Binary Interface (ABI) is forward- and
 backwards-compatible across a minor release (if these are compiled the same
 way; see :ref:`stable-abi-platform` below).
 So, code compiled for Python 3.10.0 will work on 3.10.8 and vice versa,
-but will need to be compiled separately for 3.9.x and 3.10.x.
+but will need to be compiled separately for 3.9.x and 3.11.x.
 
-There are two tiers of C API with different stability exepectations:
+There are two tiers of C API with different stability expectations:
 
 - :ref:`Unstable API <unstable-c-api>`, may change in minor versions without
   a deprecation period. It is marked by the ``PyUnstable`` prefix in names.

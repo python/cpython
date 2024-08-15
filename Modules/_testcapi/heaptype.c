@@ -269,16 +269,16 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     // (Explicitly overwrite memory before freeing,
     // so bugs show themselves even without the debug allocator's help.)
     memset(spec, 0xdd, sizeof(PyType_Spec));
-    PyMem_Del(spec);
+    PyMem_Free(spec);
     spec = NULL;
     memset(name, 0xdd, sizeof(NAME));
-    PyMem_Del(name);
+    PyMem_Free(name);
     name = NULL;
     memset(doc, 0xdd, sizeof(DOC));
-    PyMem_Del(doc);
+    PyMem_Free(doc);
     doc = NULL;
     memset(slots, 0xdd, 3 * sizeof(PyType_Slot));
-    PyMem_Del(slots);
+    PyMem_Free(slots);
     slots = NULL;
 
     /* check that everything works */
@@ -304,10 +304,10 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     result = Py_NewRef(Py_None);
   finally:
-    PyMem_Del(spec);
-    PyMem_Del(name);
-    PyMem_Del(doc);
-    PyMem_Del(slots);
+    PyMem_Free(spec);
+    PyMem_Free(name);
+    PyMem_Free(doc);
+    PyMem_Free(slots);
     Py_XDECREF(class);
     Py_XDECREF(instance);
     Py_XDECREF(obj);
@@ -805,13 +805,13 @@ static int
 heapmanaged_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return _PyObject_VisitManagedDict((PyObject *)self, visit, arg);
+    return PyObject_VisitManagedDict((PyObject *)self, visit, arg);
 }
 
 static int
 heapmanaged_clear(HeapCTypeObject *self)
 {
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -819,7 +819,7 @@ static void
 heapmanaged_dealloc(HeapCTypeObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     PyObject_GC_UnTrack(self);
     PyObject_GC_Del(self);
     Py_DECREF(tp);

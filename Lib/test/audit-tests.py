@@ -186,7 +186,7 @@ def test_monkeypatch():
     )
 
 
-def test_open():
+def test_open(testfn):
     # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
     try:
         import ssl
@@ -199,11 +199,11 @@ def test_open():
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
         for fn, *args in [
-            (open, sys.argv[2], "r"),
+            (open, testfn, "r"),
             (open, sys.executable, "rb"),
             (open, 3, "wb"),
-            (open, sys.argv[2], "w", -1, None, None, None, False, lambda *a: 1),
-            (load_dh_params, sys.argv[2]),
+            (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
+            (load_dh_params, testfn),
         ]:
             if not fn:
                 continue
@@ -216,11 +216,11 @@ def test_open():
         [
             i
             for i in [
-                (sys.argv[2], "r"),
+                (testfn, "r"),
                 (sys.executable, "r"),
                 (3, "w"),
-                (sys.argv[2], "w"),
-                (sys.argv[2], "rb") if load_dh_params else None,
+                (testfn, "w"),
+                (testfn, "rb") if load_dh_params else None,
             ]
             if i is not None
         ],
@@ -289,7 +289,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testcapi import write_unraisable_exc
+    from _testcapi import err_formatunraisable
 
     def unraisablehook(hookargs):
         pass
@@ -302,7 +302,8 @@ def test_unraisablehook():
 
     sys.addaudithook(hook)
     sys.unraisablehook = unraisablehook
-    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+    err_formatunraisable(RuntimeError("nonfatal-error"),
+                         "Exception ignored for audit hook test")
 
 
 def test_winreg():
@@ -454,6 +455,9 @@ def test_threading():
     i = _thread.start_new_thread(test_func(), ())
     lock.acquire()
 
+    handle = _thread.start_joinable_thread(test_func())
+    handle.join()
+
 
 def test_threading_abort():
     # Ensures that aborting PyThreadState_New raises the correct exception
@@ -483,7 +487,13 @@ def test_wmi_exec_query():
             print(event, args[0])
 
     sys.addaudithook(hook)
-    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    try:
+        _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    except WindowsError as e:
+        # gh-112278: WMI may be slow response when first called, but we still
+        # get the audit event, so just ignore the timeout
+        if e.winerror != 258:
+            raise
 
 def test_syslog():
     import syslog
@@ -517,12 +527,15 @@ def test_not_in_gc():
             assert hook not in o
 
 
-def test_time():
+def test_time(mode):
     import time
 
     def hook(event, args):
         if event.startswith("time."):
-            print(event, *args)
+            if mode == 'print':
+                print(event, *args)
+            elif mode == 'fail':
+                raise AssertionError('hook failed')
     sys.addaudithook(hook)
 
     time.sleep(0)
@@ -543,10 +556,21 @@ def test_sys_monitoring_register_callback():
     sys.monitoring.register_callback(1, 1, None)
 
 
+def test_winapi_createnamedpipe(pipe_name):
+    import _winapi
+
+    def hook(event, args):
+        if event == "_winapi.CreateNamedPipe":
+            print(event, args)
+
+    sys.addaudithook(hook)
+    _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
     suppress_msvcrt_asserts()
 
     test = sys.argv[1]
-    globals()[test]()
+    globals()[test](*sys.argv[2:])

@@ -5,6 +5,7 @@ import gc
 import re
 import sys
 import threading
+import traceback
 import unittest
 from unittest import mock
 from types import GenericAlias
@@ -270,10 +271,6 @@ class BaseFutureTests:
         f = self._new_future(loop=self.loop)
         self.assertRaises(asyncio.InvalidStateError, f.exception)
 
-        # StopIteration cannot be raised into a Future - CPython issue26221
-        self.assertRaisesRegex(TypeError, "StopIteration .* cannot be raised",
-                               f.set_exception, StopIteration)
-
         f.set_exception(exc)
         self.assertFalse(f.cancelled())
         self.assertTrue(f.done())
@@ -282,6 +279,25 @@ class BaseFutureTests:
         self.assertRaises(asyncio.InvalidStateError, f.set_result, None)
         self.assertRaises(asyncio.InvalidStateError, f.set_exception, None)
         self.assertFalse(f.cancel())
+
+    def test_stop_iteration_exception(self, stop_iteration_class=StopIteration):
+        exc = stop_iteration_class()
+        f = self._new_future(loop=self.loop)
+        f.set_exception(exc)
+        self.assertFalse(f.cancelled())
+        self.assertTrue(f.done())
+        self.assertRaises(RuntimeError, f.result)
+        exc = f.exception()
+        cause = exc.__cause__
+        self.assertIsInstance(exc, RuntimeError)
+        self.assertRegex(str(exc), 'StopIteration .* cannot be raised')
+        self.assertIsInstance(cause, stop_iteration_class)
+
+    def test_stop_iteration_subclass_exception(self):
+        class MyStopIteration(StopIteration):
+            pass
+
+        self.test_stop_iteration_exception(MyStopIteration)
 
     def test_exception_class(self):
         f = self._new_future(loop=self.loop)
@@ -400,6 +416,24 @@ class BaseFutureTests:
         newf_cancelled = self._new_future(loop=self.loop)
         _copy_future_state(f_cancelled, newf_cancelled)
         self.assertTrue(newf_cancelled.cancelled())
+
+        try:
+            raise concurrent.futures.InvalidStateError
+        except BaseException as e:
+            f_exc = e
+
+        f_conexc = self._new_future(loop=self.loop)
+        f_conexc.set_exception(f_exc)
+
+        newf_conexc = self._new_future(loop=self.loop)
+        _copy_future_state(f_conexc, newf_conexc)
+        self.assertTrue(newf_conexc.done())
+        try:
+            newf_conexc.result()
+        except BaseException as e:
+            newf_exc = e # assertRaises context manager drops the traceback
+        newf_tb = ''.join(traceback.format_tb(newf_exc.__traceback__))
+        self.assertEqual(newf_tb.count('raise concurrent.futures.InvalidStateError'), 1)
 
     def test_iter(self):
         fut = self._new_future(loop=self.loop)

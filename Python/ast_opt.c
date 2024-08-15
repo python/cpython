@@ -15,6 +15,19 @@ typedef struct {
     int recursion_limit;            /* recursion limit */
 } _PyASTOptimizeState;
 
+#define ENTER_RECURSIVE(ST) \
+    do { \
+        if (++(ST)->recursion_depth > (ST)->recursion_limit) { \
+            PyErr_SetString(PyExc_RecursionError, \
+                "maximum recursion depth exceeded during compilation"); \
+            return 0; \
+        } \
+    } while(0)
+
+#define LEAVE_RECURSIVE(ST) \
+    do { \
+        --(ST)->recursion_depth; \
+    } while(0)
 
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
@@ -142,15 +155,6 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
         }
         return limit;
     }
-    else if (PyFrozenSet_Check(obj)) {
-        Py_ssize_t i = 0;
-        PyObject *item;
-        Py_hash_t hash;
-        limit -= PySet_GET_SIZE(obj);
-        while (limit >= 0 && _PySet_NextEntry(obj, &i, &item, &hash)) {
-            limit = check_complexity(item, limit);
-        }
-    }
     return limit;
 }
 
@@ -174,9 +178,8 @@ safe_multiply(PyObject *v, PyObject *w)
             return NULL;
         }
     }
-    else if (PyLong_Check(v) && (PyTuple_Check(w) || PyFrozenSet_Check(w))) {
-        Py_ssize_t size = PyTuple_Check(w) ? PyTuple_GET_SIZE(w) :
-                                             PySet_GET_SIZE(w);
+    else if (PyLong_Check(v) && PyTuple_Check(w)) {
+        Py_ssize_t size = PyTuple_GET_SIZE(w);
         if (size) {
             long n = PyLong_AsLong(v);
             if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
@@ -198,8 +201,7 @@ safe_multiply(PyObject *v, PyObject *w)
         }
     }
     else if (PyLong_Check(w) &&
-             (PyTuple_Check(v) || PyFrozenSet_Check(v) ||
-              PyUnicode_Check(v) || PyBytes_Check(v)))
+             (PyTuple_Check(v) || PyUnicode_Check(v) || PyBytes_Check(v)))
     {
         return safe_multiply(w, v);
     }
@@ -284,10 +286,9 @@ parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
     PyObject *str = PyUnicode_Substring(fmt, start, pos);
     /* str = str.replace('%%', '%') */
     if (str && has_percents) {
-        _Py_DECLARE_STR(percent, "%");
         _Py_DECLARE_STR(dbl_percent, "%%");
         Py_SETREF(str, PyUnicode_Replace(str, &_Py_STR(dbl_percent),
-                                         &_Py_STR(percent), -1));
+                                         _Py_LATIN1_CHR('%'), -1));
     }
     if (!str) {
         return NULL;
@@ -533,7 +534,7 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 static PyObject*
 make_const_tuple(asdl_expr_seq *elts)
 {
-    for (int i = 0; i < asdl_seq_LEN(elts); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         if (e->kind != Constant_kind) {
             return NULL;
@@ -545,7 +546,7 @@ make_const_tuple(asdl_expr_seq *elts)
         return NULL;
     }
 
-    for (int i = 0; i < asdl_seq_LEN(elts); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         PyObject *v = e->v.Constant.value;
         PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
@@ -662,7 +663,7 @@ static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimize
         return 0;
 
 #define CALL_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
+    Py_ssize_t i; \
     asdl_ ## TYPE ## _seq *seq = (ARG); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
@@ -720,11 +721,7 @@ astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        return 0;
-    }
+    ENTER_RECURSIVE(state);
     switch (node_->kind) {
     case BoolOp_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.BoolOp.values);
@@ -823,7 +820,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Name_kind:
         if (node_->v.Name.ctx == Load &&
                 _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
-            state->recursion_depth--;
+            LEAVE_RECURSIVE(state);
             return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;
@@ -836,7 +833,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new expression
     // kinds are added without being handled here
     }
-    state->recursion_depth--;
+    LEAVE_RECURSIVE(state);;
     return 1;
 }
 
@@ -883,11 +880,7 @@ astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        return 0;
-    }
+    ENTER_RECURSIVE(state);
     switch (node_->kind) {
     case FunctionDef_kind:
         CALL_SEQ(astfold_type_param, type_param, node_->v.FunctionDef.type_params);
@@ -1011,7 +1004,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new statement
     // kinds are added without being handled here
     }
-    state->recursion_depth--;
+    LEAVE_RECURSIVE(state);
     return 1;
 }
 
@@ -1043,11 +1036,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // Currently, this is really only used to form complex/negative numeric
     // constants in MatchValue and MatchMapping nodes
     // We still recurse into all subexpressions and subpatterns anyway
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        return 0;
-    }
+    ENTER_RECURSIVE(state);
     switch (node_->kind) {
         case MatchValue_kind:
             CALL(astfold_expr, expr_ty, node_->v.MatchValue.value);
@@ -1079,7 +1068,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new pattern
     // kinds are added without being handled here
     }
-    state->recursion_depth--;
+    LEAVE_RECURSIVE(state);
     return 1;
 }
 
@@ -1111,9 +1100,6 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_OPT
 #undef CALL_SEQ
 
-/* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 2
-
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
 {
@@ -1130,10 +1116,10 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth;
     state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    state.recursion_limit = Py_C_RECURSION_LIMIT;
 
     int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());
