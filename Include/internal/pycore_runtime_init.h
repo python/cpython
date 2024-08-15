@@ -49,8 +49,8 @@ extern PyTypeObject _PyExc_MemoryError;
                 .imports_modules = offsetof(PyInterpreterState, imports.modules), \
                 .sysdict = offsetof(PyInterpreterState, sysdict), \
                 .builtins = offsetof(PyInterpreterState, builtins), \
-                ._gil = offsetof(PyInterpreterState, _gil), \
                 .ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
+                .gil_runtime_state= offsetof(PyInterpreterState, _gil), \
                 .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
                 .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
             }, \

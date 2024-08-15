@@ -73,8 +73,8 @@ typedef struct _Py_DebugOffsets {
         uint64_t imports_modules;
         uint64_t sysdict;
         uint64_t builtins;
-        uint64_t _gil;
         uint64_t ceval_gil;
+        uint64_t gil_runtime_state;
         uint64_t gil_runtime_state_locked;
         uint64_t gil_runtime_state_holder;
     } interpreter_state;
