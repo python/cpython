@@ -5371,38 +5371,28 @@ typedef struct {
     PyObject *temp_symbols;
     PyObject *fast_hidden;
     jump_target_label cleanup;
-    jump_target_label end;
 } inlined_comprehension_state;
 
 static int
-push_inlined_comprehension_state(struct compiler *c, location loc,
-                                 PySTEntryObject *entry,
-                                 inlined_comprehension_state *state)
+compiler_tweak_inlined_comprehension_scopes(struct compiler *c, location loc,
+                                            PySTEntryObject *entry,
+                                            inlined_comprehension_state *state)
 {
     int in_class_block = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
     c->u->u_in_inlined_comp++;
-    // iterate over names bound in the comprehension and ensure we isolate
-    // them from the outer scope as needed
+
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         long symbol = PyLong_AsLong(v);
-        if (symbol == -1 && PyErr_Occurred()) {
-            return ERROR;
-        }
+        assert(symbol >= 0 || PyErr_Occurred());
+        RETURN_IF_ERROR(symbol);
         long scope = SYMBOL_TO_SCOPE(symbol);
-        PyObject *outv = PyDict_GetItemWithError(SYMTABLE_ENTRY(c)->ste_symbols, k);
-        if (outv == NULL) {
-            if (PyErr_Occurred()) {
-                return ERROR;
-            }
-            outv = _PyLong_GetZero();
-        }
-        long outsymbol = PyLong_AsLong(outv);
-        if (outsymbol == -1 && PyErr_Occurred()) {
-            return ERROR;
-        }
+
+        long outsymbol = _PyST_GetSymbol(SYMTABLE_ENTRY(c), k);
+        RETURN_IF_ERROR(outsymbol);
         long outsc = SYMBOL_TO_SCOPE(outsymbol);
+
         // If a name has different scope inside than outside the comprehension,
         // we need to temporarily handle it with the right scope while
         // compiling the comprehension. If it's free in the comprehension
@@ -5422,16 +5412,16 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             // update the symbol to the in-comprehension version and save
             // the outer version; we'll restore it after running the
             // comprehension
-            Py_INCREF(outv);
             if (PyDict_SetItem(SYMTABLE_ENTRY(c)->ste_symbols, k, v) < 0) {
-                Py_DECREF(outv);
                 return ERROR;
             }
-            if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
-                Py_DECREF(outv);
+            PyObject *outv = PyLong_FromLong(outsymbol);
+            if (outv == NULL) {
                 return ERROR;
             }
+            int res = PyDict_SetItem(state->temp_symbols, k, outv);
             Py_DECREF(outv);
+            RETURN_IF_ERROR(res);
         }
         // locals handling for names bound in comprehension (DEF_LOCAL |
         // DEF_NONLOCAL occurs in assignment expression to nonlocal)
@@ -5442,9 +5432,8 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, k, &orig) < 0) {
                     return ERROR;
                 }
-                int orig_is_true = (orig == Py_True);
-                Py_XDECREF(orig);
-                if (!orig_is_true) {
+                assert(orig == NULL || orig == Py_True || orig == Py_False);
+                if (orig != Py_True) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
                         return ERROR;
                     }
@@ -5459,6 +5448,33 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                     }
                 }
             }
+        }
+    }
+    return SUCCESS;
+}
+
+static int
+codegen_push_inlined_comprehension_locals(struct compiler *c, location loc,
+                                          PySTEntryObject *comp,
+                                          inlined_comprehension_state *state)
+{
+    int in_class_block = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
+    PySTEntryObject *outer = SYMTABLE_ENTRY(c);
+    // iterate over names bound in the comprehension and ensure we isolate
+    // them from the outer scope as needed
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
+        long symbol = PyLong_AsLong(v);
+        assert(symbol >= 0 || PyErr_Occurred());
+        RETURN_IF_ERROR(symbol);
+        long scope = SYMBOL_TO_SCOPE(symbol);
+
+        long outsymbol = _PyST_GetSymbol(outer, k);
+        RETURN_IF_ERROR(outsymbol);
+        long outsc = SYMBOL_TO_SCOPE(outsymbol);
+
+        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             // local names bound in comprehension must be isolated from
             // outer scope; push existing value (which may be NULL if
             // not defined) on stack
@@ -5496,31 +5512,40 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // handler or finally block.
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         state->cleanup = cleanup;
-        NEW_JUMP_TARGET_LABEL(c, end);
-        state->end = end;
 
         // no need to push an fblock for this "virtual" try/finally; there can't
         // be return/continue/break inside a comprehension
         ADDOP_JUMP(c, loc, SETUP_FINALLY, cleanup);
     }
+    return SUCCESS;
+}
 
+static int
+push_inlined_comprehension_state(struct compiler *c, location loc,
+                                 PySTEntryObject *comp,
+                                 inlined_comprehension_state *state)
+{
+    RETURN_IF_ERROR(
+        compiler_tweak_inlined_comprehension_scopes(c, loc, comp, state));
+    RETURN_IF_ERROR(
+        codegen_push_inlined_comprehension_locals(c, loc, comp, state));
     return SUCCESS;
 }
 
 static int
 restore_inlined_comprehension_locals(struct compiler *c, location loc,
-                                     inlined_comprehension_state state)
+                                     inlined_comprehension_state *state)
 {
     PyObject *k;
     // pop names we pushed to stack earlier
-    Py_ssize_t npops = PyList_GET_SIZE(state.pushed_locals);
+    Py_ssize_t npops = PyList_GET_SIZE(state->pushed_locals);
     // Preserve the comprehension result (or exception) as TOS. This
-    // reverses the SWAP we did in push_inlined_comprehension_state to get
-    // the outermost iterable to TOS, so we can still just iterate
+    // reverses the SWAP we did in push_inlined_comprehension_state
+    // to get the outermost iterable to TOS, so we can still just iterate
     // pushed_locals in simple reverse order
     ADDOP_I(c, loc, SWAP, npops + 1);
     for (Py_ssize_t i = npops - 1; i >= 0; --i) {
-        k = PyList_GetItem(state.pushed_locals, i);
+        k = PyList_GetItem(state->pushed_locals, i);
         if (k == NULL) {
             return ERROR;
         }
@@ -5530,43 +5555,47 @@ restore_inlined_comprehension_locals(struct compiler *c, location loc,
 }
 
 static int
-pop_inlined_comprehension_state(struct compiler *c, location loc,
-                                inlined_comprehension_state state)
+codegen_pop_inlined_comprehension_locals(struct compiler *c, location loc,
+                                         inlined_comprehension_state *state)
 {
-    c->u->u_in_inlined_comp--;
-    PyObject *k, *v;
-    Py_ssize_t pos = 0;
-    if (state.temp_symbols) {
-        while (PyDict_Next(state.temp_symbols, &pos, &k, &v)) {
+    if (state->pushed_locals) {
+        ADDOP(c, NO_LOCATION, POP_BLOCK);
+
+        NEW_JUMP_TARGET_LABEL(c, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+
+        // cleanup from an exception inside the comprehension
+        USE_LABEL(c, state->cleanup);
+        // discard incomplete comprehension result (beneath exc on stack)
+        ADDOP_I(c, NO_LOCATION, SWAP, 2);
+        ADDOP(c, NO_LOCATION, POP_TOP);
+        RETURN_IF_ERROR(restore_inlined_comprehension_locals(c, loc, state));
+        ADDOP_I(c, NO_LOCATION, RERAISE, 0);
+
+        USE_LABEL(c, end);
+        RETURN_IF_ERROR(restore_inlined_comprehension_locals(c, loc, state));
+        Py_CLEAR(state->pushed_locals);
+    }
+    return SUCCESS;
+}
+
+static int
+compiler_revert_inlined_comprehension_scopes(struct compiler *c, location loc,
+                                             inlined_comprehension_state *state)
+{
+    if (state->temp_symbols) {
+        PyObject *k, *v;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(state->temp_symbols, &pos, &k, &v)) {
             if (PyDict_SetItem(SYMTABLE_ENTRY(c)->ste_symbols, k, v)) {
                 return ERROR;
             }
         }
-        Py_CLEAR(state.temp_symbols);
+        Py_CLEAR(state->temp_symbols);
     }
-    if (state.pushed_locals) {
-        ADDOP(c, NO_LOCATION, POP_BLOCK);
-        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, state.end);
-
-        // cleanup from an exception inside the comprehension
-        USE_LABEL(c, state.cleanup);
-        // discard incomplete comprehension result (beneath exc on stack)
-        ADDOP_I(c, NO_LOCATION, SWAP, 2);
-        ADDOP(c, NO_LOCATION, POP_TOP);
-        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
-            return ERROR;
-        }
-        ADDOP_I(c, NO_LOCATION, RERAISE, 0);
-
-        USE_LABEL(c, state.end);
-        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
-            return ERROR;
-        }
-        Py_CLEAR(state.pushed_locals);
-    }
-    if (state.fast_hidden) {
-        while (PySet_Size(state.fast_hidden) > 0) {
-            PyObject *k = PySet_Pop(state.fast_hidden);
+    if (state->fast_hidden) {
+        while (PySet_Size(state->fast_hidden) > 0) {
+            PyObject *k = PySet_Pop(state->fast_hidden);
             if (k == NULL) {
                 return ERROR;
             }
@@ -5578,8 +5607,18 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             }
             Py_DECREF(k);
         }
-        Py_CLEAR(state.fast_hidden);
+        Py_CLEAR(state->fast_hidden);
     }
+    return SUCCESS;
+}
+
+static int
+pop_inlined_comprehension_state(struct compiler *c, location loc,
+                                inlined_comprehension_state *state)
+{
+    c->u->u_in_inlined_comp--;
+    RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
+    RETURN_IF_ERROR(compiler_revert_inlined_comprehension_scopes(c, loc, state));
     return SUCCESS;
 }
 
@@ -5603,7 +5642,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
                        expr_ty val)
 {
     PyCodeObject *co = NULL;
-    inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL, NO_LABEL};
+    inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
 #ifndef NDEBUG
     int scope_type = c->u->u_scope_type;
@@ -5671,7 +5710,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     if (is_inlined) {
-        if (pop_inlined_comprehension_state(c, loc, inline_state)) {
+        if (pop_inlined_comprehension_state(c, loc, &inline_state)) {
             goto error;
         }
         return SUCCESS;
