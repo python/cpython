@@ -34,6 +34,7 @@ extern PyTypeObject _PyExc_MemoryError;
         .debug_offsets = { \
             .cookie = "xdebugpy", \
             .version = PY_VERSION_HEX, \
+            .free_threaded = Py_GIL_DISABLED, \
             .runtime_state = { \
                 .size = sizeof(_PyRuntimeState), \
                 .finalizing = offsetof(_PyRuntimeState, _finalizing), \
@@ -48,6 +49,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .imports_modules = offsetof(PyInterpreterState, imports.modules), \
                 .sysdict = offsetof(PyInterpreterState, sysdict), \
                 .builtins = offsetof(PyInterpreterState, builtins), \
+                ._gil = offsetof(PyInterpreterState, _gil), \
                 .ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
                 .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
                 .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
@@ -90,10 +92,36 @@ extern PyTypeObject _PyExc_MemoryError;
             .type_object = { \
                 .size = sizeof(PyTypeObject), \
                 .tp_name = offsetof(PyTypeObject, tp_name), \
+                .tp_repr = offsetof(PyTypeObject, tp_repr), \
+                .tp_flags = offsetof(PyTypeObject, tp_flags), \
             }, \
             .tuple_object = { \
                 .size = sizeof(PyTupleObject), \
                 .ob_item = offsetof(PyTupleObject, ob_item), \
+                .ob_size = offsetof(PyTupleObject, ob_base.ob_size), \
+            }, \
+            .list_object = { \
+                .size = sizeof(PyListObject), \
+                .ob_item = offsetof(PyListObject, ob_item), \
+            }, \
+            .dict_object = { \
+                .size = sizeof(PyDictObject), \
+                .ma_keys = offsetof(PyDictObject, ma_keys), \
+                .ma_values = offsetof(PyDictObject, ma_values), \
+            }, \
+            .float_object = { \
+                .size = sizeof(PyFloatObject), \
+                .ob_fval = offsetof(PyFloatObject, ob_fval), \
+            }, \
+            .long_object = { \
+                .size = sizeof(PyLongObject), \
+                .lv_tag = offsetof(_PyLongValue, lv_tag), \
+                .ob_digit = offsetof(_PyLongValue, ob_digit), \
+            }, \
+            .bytes_object = { \
+                .size = sizeof(PyBytesObject), \
+                .ob_size = offsetof(PyBytesObject, ob_base.ob_size), \
+                .ob_sval = offsetof(PyBytesObject, ob_sval), \
             }, \
             .unicode_object = { \
                 .size = sizeof(PyUnicodeObject), \
