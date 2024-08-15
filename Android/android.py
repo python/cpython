@@ -373,6 +373,7 @@ async def find_device(context, initial_devices):
 # workaround in PythonSuite.kt to stop it being *too* short-lived.
 async def find_pid(serial):
     print("Waiting for app to start - this may take several minutes")
+    shown_error = False
     while True:
         try:
             pid = (await async_check_output(
@@ -380,9 +381,13 @@ async def find_pid(serial):
             )).strip()
         except CalledProcessError as e:
             # If the app isn't running yet, pidof gives no output. So if there
-            # is output, there must have been some other error.
-            if e.stdout or e.stderr:
-                raise
+            # is output, there must have been some other error. However, this
+            # sometimes happens transiently, especially when running a managed
+            # emulator for the first time, so don't make it fatal.
+            if (e.stdout or e.stderr) and not shown_error:
+                print_called_process_error(e)
+                print("This may be transient, so continuing to wait")
+                shown_error = True
         else:
             # Some older devices (e.g. Nexus 4) return zero even when no process
             # was found, so check whether we actually got any output.
@@ -601,23 +606,28 @@ def main():
         if asyncio.iscoroutine(result):
             asyncio.run(result)
     except CalledProcessError as e:
-        for stream_name in ["stdout", "stderr"]:
-            content = getattr(e, stream_name)
-            stream = getattr(sys, stream_name)
-            if content:
-                stream.write(content)
-                if not content.endswith("\n"):
-                    stream.write("\n")
+        print_called_process_error(e)
+        sys.exit(1)
 
-        # Format the command so it can be copied into a shell. shlex uses single
-        # quotes, so we surround the whole command with double quotes.
-        args_joined = (
-            e.cmd if isinstance(e.cmd, str)
-            else " ".join(shlex.quote(str(arg)) for arg in e.cmd)
-        )
-        sys.exit(
-            f'Command "{args_joined}" returned exit status {e.returncode}'
-        )
+
+def print_called_process_error(e):
+    for stream_name in ["stdout", "stderr"]:
+        content = getattr(e, stream_name)
+        stream = getattr(sys, stream_name)
+        if content:
+            stream.write(content)
+            if not content.endswith("\n"):
+                stream.write("\n")
+
+    # Format the command so it can be copied into a shell. shlex uses single
+    # quotes, so we surround the whole command with double quotes.
+    args_joined = (
+        e.cmd if isinstance(e.cmd, str)
+        else " ".join(shlex.quote(str(arg)) for arg in e.cmd)
+    )
+    print(
+        f'Command "{args_joined}" returned exit status {e.returncode}'
+    )
 
 
 if __name__ == "__main__":
