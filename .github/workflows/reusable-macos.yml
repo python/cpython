@@ -47,7 +47,7 @@ jobs:
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
-    - name: Build CPython for Compiler Warning Check
+    - name: Build CPython for compiler warning check
       if : ${{ !inputs.free-threading && inputs.os == 'macos-14' }}
       run: set -o pipefail; make -j1 2>&1 | tee compiler_output_macos.txt
     - name: Build CPython
