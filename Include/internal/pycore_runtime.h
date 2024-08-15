@@ -46,6 +46,11 @@ struct _gilstate_runtime_state {
 
 #define _Py_Debug_Cookie "xdebugpy"
 
+#ifdef Py_GIL_DISABLED
+# define _Py_Debug_gilruntimestate_enabled offsetof(struct _gil_runtime_state, enabled)
+#else
+# define _Py_Debug_gilruntimestate_enabled 0
+#endif
 typedef struct _Py_AuditHookEntry {
     struct _Py_AuditHookEntry *next;
     Py_AuditHookFunction hookCFunction;
@@ -75,6 +80,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t builtins;
         uint64_t ceval_gil;
         uint64_t gil_runtime_state;
+        uint64_t gil_runtime_state_enabled;
         uint64_t gil_runtime_state_locked;
         uint64_t gil_runtime_state_holder;
     } interpreter_state;
