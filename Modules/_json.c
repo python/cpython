@@ -1600,11 +1600,13 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0))
             goto bail;
 
+        Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(items);
         for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
             PyObject *item = PyList_GET_ITEM(items, i);
 
             if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
                 PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+                Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST();
                 goto bail;
             }
 
@@ -1612,9 +1614,12 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
             value = PyTuple_GET_ITEM(item, 1);
             if (encoder_encode_key_value(s, writer, &first, dct, key, value,
                                          new_newline_indent,
-                                         current_item_separator) < 0)
+                                         current_item_separator) < 0) {
+                Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST();
                 goto bail;
+            }
         }
+        Py_END_CRITICAL_SECTION_SEQUENCE_FAST(items);
         Py_CLEAR(items);
 
     } else {
