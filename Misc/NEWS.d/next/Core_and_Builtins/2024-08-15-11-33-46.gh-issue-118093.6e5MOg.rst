@@ -1,0 +1,4 @@
+Add two specializations for :opcode:`CALL_FUNTION_EX`:
+
+* :opcode:`!CALL_FUNCTION_EX_PY` for calls to Python functions
+* :opcode:`!CALL_FUNCTION_EX_NON_PY` for all other calls
