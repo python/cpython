@@ -125,7 +125,7 @@ class ReferencesTestCase(TestBase):
         ref = weakref.ref(obj)
         self.assertRegex(repr(ref),
                          rf"<weakref at 0x[0-9a-fA-F]+; "
-                         rf"to '{C.__module__}.{C.__qualname__}' "
+                         rf"to '({C.__module__}.)?{C.__qualname__}' "
                          rf"at 0x[0-9a-fA-F]+>")
 
         obj = None
@@ -143,7 +143,7 @@ class ReferencesTestCase(TestBase):
         ref2 = weakref.ref(obj2)
         self.assertRegex(repr(ref2),
                          rf"<weakref at 0x[0-9a-fA-F]+; "
-                         rf"to '{WithName.__module__}.{WithName.__qualname__}' "
+                         rf"to '({WithName.__module__}.)?{WithName.__qualname__}' "
                          rf"at 0x[0-9a-fA-F]+ \(custom_name\)>")
 
     def test_repr_failure_gh99184(self):
@@ -231,7 +231,7 @@ class ReferencesTestCase(TestBase):
         ref = weakref.proxy(obj, self.callback)
         self.assertRegex(repr(ref),
                          rf"<weakproxy at 0x[0-9a-fA-F]+; "
-                         rf"to '{C.__module__}.{C.__qualname__}' "
+                         rf"to '({C.__module__}.)?{C.__qualname__}' "
                          rf"at 0x[0-9a-fA-F]+>")
 
         obj = None
