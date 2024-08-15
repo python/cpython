@@ -359,7 +359,7 @@ free-threaded build.
 
 .. _whatsnew313-jit-compiler:
 
-A just-in-time compiler for CPython
+An experimental JIT compiler
 -----------------------------------
 
 When CPython is configured and built using
