@@ -1,0 +1,1 @@
+Make empty line in :mod:`pdb` repeats the last command even when the command is from ``cmdqueue``.

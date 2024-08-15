@@ -100,7 +100,7 @@ PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
 
 /* In signalmodule.c */
 
-int PySignal_SetWakeupFd(int fd);
+PyAPI_FUNC(int) PySignal_SetWakeupFd(int fd);
 
 /* Support for adding program text to SyntaxErrors */
 

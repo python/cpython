@@ -591,8 +591,8 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
    .. versionadded:: 3.12
 
-   .. versionchanged:: 3.12.4
-      Prior to 3.12.4, ``is_symlink`` would unconditionally return ``False``.
+   .. versionchanged:: 3.13
+      Previously, ``is_symlink`` would unconditionally return ``False``.
 
 .. method:: Path.exists()
 
