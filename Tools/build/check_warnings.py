@@ -104,7 +104,7 @@ def extract_warnings_from_compiler_output_json(
 def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     """
     Returns a dictionary where the key is the file and the data is the
-    warningsw in that file. Does not include duplicate warnings for a
+    warnings in that file. Does not include duplicate warnings for a
     file from list of provided warnings.
     """
     warnings_by_file = defaultdict(list)
