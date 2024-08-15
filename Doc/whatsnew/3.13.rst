@@ -88,7 +88,7 @@ Several legacy standard library modules have now `been removed
 This article doesn't attempt to provide a complete specification
 of all new features, but instead gives a convenient overview.
 For full details refer to the documentation,
-such as the  :ref:`Library Reference <library-index>`
+such as the :ref:`Library Reference <library-index>`
 and :ref:`Language Reference <reference-index>`.
 To understand the complete implementation and design rationale for a change,
 refer to the PEP for a particular new feature;
@@ -173,10 +173,10 @@ New typing features:
 
 Platform support:
 
-* :pep:`730`: Apple's iOS is now an officially supported platform,
-  at :pep:`tier 3 <11#tier-3>`.
+* :pep:`730`: Apple's iOS is now an :ref:`officially supported platform
+  <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
   Official Android support (:pep:`738`) is in the works as well.
-* ``wasm32-wasi`` is now a supported as a :pep:`tier 2 <11#tier-2>` platform.
+* ``wasm32-wasi`` is now supported as a :pep:`tier 2 <11#tier-2>` platform.
 * ``wasm32-emscripten`` is no longer an officially supported platform.
 
 Important removals:
@@ -187,7 +187,7 @@ Important removals:
   :mod:`!crypt`, :mod:`!imghdr`, :mod:`!mailcap`, :mod:`!msilib`, :mod:`!nis`,
   :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`,
   :mod:`!spwd`, :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
-* Remove the :program:`!2to3` tool and :mod:`!lib2to3` module
+* Remove the :program:`2to3` tool and :mod:`!lib2to3` module
   (deprecated in Python 3.11).
 * Remove the :mod:`!tkinter.tix` module (deprecated in Python 3.6).
 * Remove :func:`!locale.resetlocale()`.
@@ -209,51 +209,50 @@ This updated policy means that:
 New Features
 ============
 
+
 .. _whatsnew313-better-interactive-interpreter:
 
-A Better Interactive Interpreter
+A better interactive interpreter
 --------------------------------
 
-On Unix-like systems like Linux or macOS as well as Windows, Python now
-uses a new :term:`interactive` shell. When the user starts the
-:term:`REPL` from an interactive terminal the interactive shell now
-supports the following new features:
+Python now uses a new :term:`interactive` shell by default.
+When the user starts the :term:`REPL` from an interactive terminal,
+the following new features are now supported:
 
-* Colorized prompts.
 * Multiline editing with history preservation.
+* Direct support for REPL-specific commands like :kbd:`help`, :kbd:`exit`,
+  and :kbd:`quit`, without the need to call them as functions.
+* Prompts and tracebacks with :ref:`color enabled by default
+  <using-on-controlling-color>`.
 * Interactive help browsing using :kbd:`F1` with a separate command
   history.
 * History browsing using :kbd:`F2` that skips output as well as the
   :term:`>>>` and :term:`...` prompts.
 * "Paste mode" with :kbd:`F3` that makes pasting larger blocks of code
   easier (press :kbd:`F3` again to return to the regular prompt).
-* The ability to issue REPL-specific commands like :kbd:`help`, :kbd:`exit`,
-  and :kbd:`quit` without the need to use call parentheses after the command
-  name.
 
-If the new interactive shell is not desired, it can be disabled via
-the :envvar:`PYTHON_BASIC_REPL` environment variable.
-
-The new shell requires :mod:`curses` on Unix-like systems.
-
+To disable the new interactive shell,
+set the :envvar:`PYTHON_BASIC_REPL` environment variable.
 For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
 Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
 Windows support contributed by Dino Viehland and Anthony Shaw.)
 
+
 .. _whatsnew313-improved-error-messages:
 
-Improved Error Messages
+Improved error messages
 -----------------------
 
-* The interpreter now colorizes error messages when displaying tracebacks by default.
-  This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
-  variables. See also :ref:`using-on-controlling-color`.
+* The interpreter now uses color by default when displaying tracebacks in the
+  terminal. This feature :ref:`can be controlled <using-on-controlling-color>`
+  via the new :envvar:`PYTHON_COLORS` environment variable as well as
+  the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment variables.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 .. Apparently this how you hack together a formatted link:
+   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
 
 .. |FORCE_COLOR| replace:: ``FORCE_COLOR``
 .. _FORCE_COLOR: https://force-color.org/
@@ -265,207 +264,81 @@ Improved Error Messages
   standard library module. When this results in errors, we now
   display a more helpful error message:
 
-  .. code-block:: shell-session
+  .. code-block:: pytb
 
-    $ python random.py
-    Traceback (most recent call last):
-      File "/home/random.py", line 1, in <module>
-        import random; print(random.randint(5))
-        ^^^^^^^^^^^^^
-      File "/home/random.py", line 1, in <module>
-        import random; print(random.randint(5))
-                            ^^^^^^^^^^^^^^
-    AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+     $ python random.py
+     Traceback (most recent call last):
+       File "/home/me/random.py", line 1, in <module>
+         import random
+       File "/home/me/random.py", line 3, in <module>
+         print(random.randint(5))
+               ^^^^^^^^^^^^^^
+     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
 
   Similarly, if a script has the same name as a third-party
-  module it attempts to import, and this results in errors,
+  module that it attempts to import and this results in errors,
   we also display a more helpful error message:
 
-  .. code-block:: shell-session
+  .. code-block:: pytb
 
-    $ python numpy.py
-    Traceback (most recent call last):
-      File "/home/numpy.py", line 1, in <module>
-        import numpy as np; np.array([1,2,3])
-        ^^^^^^^^^^^^^^^^^^
-      File "/home/numpy.py", line 1, in <module>
-        import numpy as np; np.array([1,2,3])
-                            ^^^^^^^^
-    AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/numpy.py' if it has the same name as a third-party module you intended to import)
+     $ python numpy.py
+     Traceback (most recent call last):
+       File "/home/me/numpy.py", line 1, in <module>
+         import numpy as np
+       File "/home/me/numpy.py", line 3, in <module>
+         np.array([1, 2, 3])
+         ^^^^^^^^
+     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a third-party module you intended to import)
 
   (Contributed by Shantanu Jain in :gh:`95754`.)
 
-* When an incorrect keyword argument is passed to a function, the error message
-  now potentially suggests the correct keyword argument.
+* The error message now tries to suggest the correct keyword argument
+  when an incorrect keyword argument is passed to a function.
+
+  .. code-block:: pycon
+
+     >>> "Better error messages!".split(max_split=1)
+     Traceback (most recent call last):
+       File "<python-input-0>", line 1, in <module>
+         "Better error messages!".split(max_split=1)
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
+
   (Contributed by Pablo Galindo Salgado and Shantanu Jain in :gh:`107944`.)
 
-    >>> "better error messages!".split(max_split=1)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-        "better error messages!".split(max_split=1)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-    TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
-
-* Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
-  with a tuple of names of attributes of this class which are assigned
-  through ``self.X`` from any function in its body. (Contributed by Irit Katriel
-  in :gh:`115775`.)
-
-.. _whatsnew313-locals-semantics:
-
-Defined mutation semantics for :py:func:`locals`
-------------------------------------------------
-
-Historically, the expected result of mutating the return value of :func:`locals`
-has been left to individual Python implementations to define.
-
-Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
-for most code execution scopes, but changes
-:term:`optimized scopes <optimized scope>` (functions, generators, coroutines,
-comprehensions, and generator expressions) to explicitly return independent
-snapshots of the currently assigned local variables, including locally
-referenced nonlocal variables captured in closures.
-
-This change to the semantics of :func:`locals` in optimized scopes also affects the default
-behaviour of code execution functions that implicitly target ``locals()`` if no explicit
-namespace is provided (such as :func:`exec` and :func:`eval`). In previous versions, whether
-or not changes could be accessed by calling ``locals()`` after calling the code execution
-function was implementation dependent. In CPython specifically, such code would typically
-appear to work as desired, but could sometimes fail in optimized scopes based on other code
-(including debuggers and code execution tracing tools) potentially resetting the shared
-snapshot in that scope. Now, the code will always run against an independent snapshot of the
-local variables in optimized scopes, and hence the changes will never be visible in
-subsequent calls to ``locals()``. To access the changes made in these cases, an explicit
-namespace reference must now be passed to the relevant function. Alternatively, it may make
-sense to update affected code to use a higher level code execution API that returns the
-resulting code execution namespace (e.g. :func:`runpy.run_path` when executing Python
-files from disk).
-
-To ensure debuggers and similar tools can reliably update local variables in
-scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
-returns a write-through proxy to the frame's local and locally referenced
-nonlocal variables in these scopes, rather than returning an inconsistently
-updated shared  ``dict`` instance with undefined runtime semantics.
-
-See :pep:`667` for more details, including related C API changes and deprecations. Porting
-notes are also provided below for the affected :ref:`Python APIs <pep667-porting-notes-py>`
-and :ref:`C APIs <pep667-porting-notes-c>`.
-
-(PEP and implementation contributed by Mark Shannon and Tian Gao in
-:gh:`74929`. Documentation updates provided by Guido van Rossum and
-Alyssa Coghlan.)
-
-Incremental Garbage Collection
-------------------------------
-
-* The cycle garbage collector is now incremental.
-  This means that maximum pause times are reduced
-  by an order of magnitude or more for larger heaps.
-
-Support For Mobile Platforms
-----------------------------
-
-* iOS is now a :pep:`11` supported platform. ``arm64-apple-ios``
-  (iPhone and iPad devices released after 2013) and
-  ``arm64-apple-ios-simulator`` (Xcode iOS simulator running on Apple Silicon
-  hardware) are now tier 3 platforms.
-
-  ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older x86_64
-  hardware) is not a tier 3 supported platform, but will be supported on a
-  best-effort basis.
-
-  See :pep:`730`: for more details.
-
-  (PEP written and implementation contributed by Russell Keith-Magee in
-  :gh:`114099`.)
-
-.. _whatsnew313-jit-compiler:
-
-Experimental JIT Compiler
--------------------------
-
-When CPython is configured using the ``--enable-experimental-jit`` option,
-a just-in-time compiler is added which may speed up some Python programs.
-
-The internal architecture is roughly as follows.
-
-* We start with specialized *Tier 1 bytecode*.
-  See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
-
-* When the Tier 1 bytecode gets hot enough, it gets translated
-  to a new, purely internal *Tier 2 IR*, a.k.a. micro-ops ("uops").
-
-* The Tier 2 IR uses the same stack-based VM as Tier 1, but the
-  instruction format is better suited to translation to machine code.
-
-* We have several optimization passes for Tier 2 IR, which are applied
-  before it is interpreted or translated to machine code.
-
-* There is a Tier 2 interpreter, but it is mostly intended for debugging
-  the earlier stages of the optimization pipeline.
-  The Tier 2 interpreter can be enabled by configuring Python
-  with ``--enable-experimental-jit=interpreter``.
-
-* When the JIT is enabled, the optimized
-  Tier 2 IR is translated to machine code, which is then executed.
-
-* The machine code translation process uses a technique called
-  *copy-and-patch*. It has no runtime dependencies, but there is a new
-  build-time dependency on LLVM.
-
-The ``--enable-experimental-jit`` flag has the following optional values:
-
-* ``no`` (default) -- Disable the entire Tier 2 and JIT pipeline.
-
-* ``yes`` (default if the flag is present without optional value)
-  -- Enable the JIT. To disable the JIT at runtime,
-  pass the environment variable ``PYTHON_JIT=0``.
-
-* ``yes-off`` -- Build the JIT but disable it by default.
-  To enable the JIT at runtime, pass the environment variable
-  ``PYTHON_JIT=1``.
-
-* ``interpreter`` -- Enable the Tier 2 interpreter but disable the JIT.
-  The interpreter can be disabled by running with
-  ``PYTHON_JIT=0``.
-
-(On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
-or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.)
-
-See :pep:`744` for more details.
-
-(JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
-Tier 2 IR by Mark Shannon and Guido van Rossum.
-Tier 2 optimizer by Ken Jin.)
 
 .. _whatsnew313-free-threaded-cpython:
 
 Free-threaded CPython
 ---------------------
 
-CPython will run with the :term:`global interpreter lock` (GIL) disabled when
-configured using the ``--disable-gil`` option at build time. This is an
-experimental feature and therefore isn't used by default. Users need to
-either compile their own interpreter, or install one of the experimental
-builds that are marked as *free-threaded*. See :pep:`703` "Making the Global
-Interpreter Lock Optional in CPython" for more detail.
+CPython now has experimental support for running in a free-threaded mode,
+with the :term:`global interpreter lock` (GIL) disabled.
+This is an experimental feature and therefore is not enabled by default.
+The free-threaded mode requires a different executable,
+usually called ``python3.13t`` or ``python3.13t.exe``.
+Pre-built binaries marked as *free-threaded* can be installed as part of
+the official :ref:`Windows <install-freethreaded-windows>`
+and :ref:`macOS <getting-and-installing-macpython>` installers,
+or CPython can be built from source with the :option:`--disable-gil` option.
+
+.. better macOS link pending
+   https://github.com/python/cpython/issues/109975#issuecomment-2286391179
 
 Free-threaded execution allows for full utilization of the available
 processing power by running threads in parallel on available CPU cores.
 While not all software will benefit from this automatically, programs
-designed with threading in mind will run faster on multicore hardware.
-
-Work is still ongoing: expect some bugs and a substantial single-threaded
-performance hit.
-
-The free-threaded build still supports optionally running with the GIL
+designed with threading in mind will run faster on multi-core hardware.
+**The free-threaded mode is experimental** and work is ongoing to improve it:
+expect some bugs and a substantial single-threaded performance hit.
+Free-threaded builds of CPython support optionally running with the GIL
 enabled at runtime using the environment variable :envvar:`PYTHON_GIL` or
-the command line option :option:`-X gil`.
+the command-line option :option:`-X gil`.
 
-To check if the current interpreter is configured with ``--disable-gil``,
-use ``sysconfig.get_config_var("Py_GIL_DISABLED")``. To check if the :term:`GIL`
-is actually disabled in the running process, the :func:`!sys._is_gil_enabled`
-function can be used.
+To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
+and :attr:`sys.version` contain "experimental free-threading build".
+The new :func:`!sys._is_gil_enabled` function can be used to check whether
+the GIL is actually disabled in the running process.
 
 C-API extension modules need to be built specifically for the free-threaded
 build. Extensions that support running with the :term:`GIL` disabled should
@@ -475,12 +348,157 @@ running with the GIL disabled. Importing C extensions that don't use these
 mechanisms will cause the GIL to be enabled, unless the GIL was explicitly
 disabled with the :envvar:`PYTHON_GIL` environment variable or the
 :option:`-X gil=0` option.
-
-pip 24.1b1 or newer is required to install packages with C extensions in the
+pip 24.1 or newer is required to install packages with C extensions in the
 free-threaded build.
+
+.. seealso::
+
+   :pep:`703` "Making the Global Interpreter Lock Optional in CPython"
+   contains rationale and information surrounding this work.
+
+
+.. _whatsnew313-jit-compiler:
+
+An experimental just-in-time (JIT) compiler
+-------------------------------------------
+
+When CPython is configured and built using
+the :option:`!--enable-experimental-jit` option,
+a just-in-time (JIT) compiler is added which may speed up some Python programs.
+On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
+or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.
+Build requirements and further supporting information `are contained at`__
+:file:`Tools/jit/README.md`.
+
+__ https://github.com/python/cpython/blob/main/Tools/jit/README.md
+
+The :option:`!--enable-experimental-jit` option takes these (optional) values,
+defaulting to ``yes`` if :option:`!--enable-experimental-jit` is present
+without the optional value.
+
+* ``no``: Disable the entire Tier 2 and JIT pipeline.
+* ``yes``: Enable the JIT.
+  To disable the JIT at runtime, pass the environment variable ``PYTHON_JIT=0``.
+* ``yes-off``: Build the JIT but disable it by default.
+  To enable the JIT at runtime, pass the environment variable ``PYTHON_JIT=1``.
+* ``interpreter``: Enable the Tier 2 interpreter but disable the JIT.
+  The interpreter can be disabled by running with ``PYTHON_JIT=0``.
+
+The internal architecture is roughly as follows:
+
+* We start with specialized *Tier 1 bytecode*.
+  See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
+* When the Tier 1 bytecode gets hot enough, it gets translated
+  to a new purely internal intermediate representation (IR),
+  called the *Tier 2 IR*, and sometimes referred to as micro-ops ("uops").
+* The Tier 2 IR uses the same stack-based virtual machine as Tier 1,
+  but the instruction format is better suited to translation to machine code.
+* We have several optimization passes for Tier 2 IR, which are applied
+  before it is interpreted or translated to machine code.
+* There is a Tier 2 interpreter, but it is mostly intended for debugging
+  the earlier stages of the optimization pipeline.
+  The Tier 2 interpreter can be enabled by configuring Python
+  with ``--enable-experimental-jit=interpreter``.
+* When the JIT is enabled, the optimized
+  Tier 2 IR is translated to machine code, which is then executed.
+* The machine code translation process uses a technique called
+  *copy-and-patch*. It has no runtime dependencies, but there is a new
+  build-time dependency on LLVM.
+
+.. seealso:: :pep:`744`
+
+(JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
+Tier 2 IR by Mark Shannon and Guido van Rossum.
+Tier 2 optimizer by Ken Jin.)
+
+
+.. _whatsnew313-locals-semantics:
+
+Defined mutation semantics for :py:func:`locals`
+------------------------------------------------
+
+Historically, the expected result of mutating the return value of
+:func:`locals` has been left to individual Python implementations to define.
+Starting from Python 3.13, :pep:`667` standardises
+the historical behaviour of CPython for most code execution scopes,
+but changes :term:`optimized scopes <optimized scope>`
+(functions, generators, coroutines, comprehensions, and generator expressions)
+to explicitly return independent snapshots of the currently assigned local
+variables, including locally referenced nonlocal variables captured in closures.
+
+This change to the semantics of :func:`locals` in optimized scopes also
+affects the default behaviour of code execution functions that implicitly
+target :func:`!locals` if no explicit namespace is provided
+(such as :func:`exec` and :func:`eval`).
+In previous versions, whether or not changes could be accessed by calling
+:func:`!locals` after calling the code execution function was
+implementation-dependent. In CPython specifically, such code would typically
+appear to work as desired, but could sometimes fail in optimized scopes based
+on other code (including debuggers and code execution tracing tools)
+potentially resetting the shared snapshot in that scope.
+Now, the code will always run against an independent snapshot of
+the local variables in optimized scopes, and hence the changes will never
+be visible in subsequent calls to :func:`!locals`.
+To access the changes made in these cases, an explicit namespace reference
+must now be passed to the relevant function.
+Alternatively, it may make sense to update affected code to use a higher level
+code execution API that returns the resulting code execution namespace
+(e.g. :func:`runpy.run_path` when executing Python files from disk).
+
+To ensure debuggers and similar tools can reliably update local variables in
+scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
+returns a write-through proxy to the frame's local and locally referenced
+nonlocal variables in these scopes, rather than returning an inconsistently
+updated shared ``dict`` instance with undefined runtime semantics.
+
+See :pep:`667` for more details, including related C API changes
+and deprecations. Porting notes are also provided below for the affected
+:ref:`Python APIs <pep667-porting-notes-py>` and :ref:`C APIs
+<pep667-porting-notes-c>`.
+
+(PEP and implementation contributed by Mark Shannon and Tian Gao in
+:gh:`74929`. Documentation updates provided by Guido van Rossum and
+Alyssa Coghlan.)
+
+
+.. _whatsnew313-platform-support:
+
+Support for mobile platforms
+----------------------------
+
+:pep:`730`: iOS is now a :pep:`11` supported platform, with the
+``arm64-apple-ios`` and ``arm64-apple-ios-simulator`` targets at tier 3
+(iPhone and iPad devices released after 2013 and the Xcode iOS simulator
+running on Apple silicon hardware, respectively).
+``x86_64-apple-ios-simulator``
+(the Xcode iOS simulator running on older ``x86_64`` hardware)
+is not a tier 3 supported platform, but will have best-effort support.
+(PEP written and implementation contributed by Russell Keith-Magee in
+:gh:`114099`.)
+
+:pep:`738`: Android support is being actively worked on,
+but the platform is not yet officially supported.
+(PEP written and implementation contributed by Malcolm Smith in
+:gh:`116622`.)
+
+.. seealso:: :pep:`730`, :pep:`738`
+
+
+Incremental garbage collection
+------------------------------
+
+The cycle garbage collector is now incremental.
+This means that maximum pause times are reduced
+by an order of magnitude or more for larger heaps.
+
 
 Other Language Changes
 ======================
+
+* Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
+  with a tuple of names of attributes of this class which are assigned
+  through ``self.X`` from any function in its body. (Contributed by Irit Katriel
+  in :gh:`115775`.)
 
 * The :func:`exec` and :func:`eval` built-ins now accept their ``globals``
   and ``locals`` namespace arguments as keywords.
@@ -2021,8 +2039,8 @@ Changes in the Python API
   independent snapshot on each call, and hence no longer implicitly updates
   previously returned references. Obtaining the legacy CPython behaviour now
   requires explicit calls to update the initially returned dictionary with the
-  results of subsequent calls to ``locals()``. Code execution functions that
-  implicitly target ``locals()`` (such as ``exec`` and ``eval``) must be
+  results of subsequent calls to :func:`!locals`. Code execution functions that
+  implicitly target :func:`!locals` (such as ``exec`` and ``eval``) must be
   passed an explicit namespace to access their results in an optimized scope.
   (Changed as part of :pep:`667`.)
 
