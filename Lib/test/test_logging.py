@@ -2142,6 +2142,7 @@ class HTTPHandlerTest(BaseTest):
 
     def handle_request(self, request):
         self.command = request.command
+        self.headers = request.headers
         self.log_data = urlparse(request.path)
         if self.command == 'POST':
             try:
@@ -2181,10 +2182,12 @@ class HTTPHandlerTest(BaseTest):
             server.ready.wait()
             host = 'localhost:%d' % server.server_port
             secure_client = secure and sslctx
+            content_type = "application/json"
             self.h_hdlr = logging.handlers.HTTPHandler(host, '/frob',
                                                        secure=secure_client,
                                                        context=context,
-                                                       credentials=('foo', 'bar'))
+                                                       credentials=('foo', 'bar'),
+                                                       content_type=content_type)
             self.log_data = None
             root_logger.addHandler(self.h_hdlr)
 
@@ -2201,6 +2204,9 @@ class HTTPHandlerTest(BaseTest):
                     d = parse_qs(self.log_data.query)
                 else:
                     d = parse_qs(self.post_data.decode('utf-8'))
+                    self.assertEqual(self.headers["Content-type"],
+                                     content_type)
+
                 self.assertEqual(d['name'], ['http'])
                 self.assertEqual(d['funcName'], ['test_output'])
                 self.assertEqual(d['msg'], [msg])

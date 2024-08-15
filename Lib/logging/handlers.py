@@ -1215,7 +1215,7 @@ class HTTPHandler(logging.Handler):
     POST semantics.
     """
     def __init__(self, host, url, method="GET", secure=False, credentials=None,
-                 context=None):
+                 context=None, content_type="application/x-www-form-urlencoded"):                          
         """
         Initialize the instance with the host, the request URL, and the method
         ("GET" or "POST")
@@ -1233,6 +1233,7 @@ class HTTPHandler(logging.Handler):
         self.secure = secure
         self.credentials = credentials
         self.context = context
+        self.content_type = content_type
 
     def mapLogRecord(self, record):
         """
@@ -1285,7 +1286,7 @@ class HTTPHandler(logging.Handler):
             # h.putheader("Host", host)
             if self.method == "POST":
                 h.putheader("Content-type",
-                            "application/x-www-form-urlencoded")
+                            self.content_type)
                 h.putheader("Content-length", str(len(data)))
             if self.credentials:
                 import base64
