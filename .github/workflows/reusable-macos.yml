@@ -52,7 +52,7 @@ jobs:
       run: set -o pipefail; make -j1 2>&1 | tee compiler_output_macos.txt
     - name: Build CPython
       if : ${{ inputs.free-threading || inputs.os != 'macos-14' }}
-      run: make -j4
+      run: make -j8
     - name: Display build info
       run: make pythoninfo
     - name: Check compiler warnings
