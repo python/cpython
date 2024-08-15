@@ -141,6 +141,7 @@ typedef struct _Py_DebugOffsets {
     struct _list_object {
         uint64_t size;
         uint64_t ob_item;
+        uint64_t ob_size;
     } list_object;
 
     // PyDict object offset;
@@ -175,7 +176,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t size;
         uint64_t state;
         uint64_t length;
-        size_t asciiobject_size;
+        uint64_t asciiobject_size;
     } unicode_object;
 
     // GC runtime state offset;

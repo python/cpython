@@ -103,6 +103,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .list_object = { \
                 .size = sizeof(PyListObject), \
                 .ob_item = offsetof(PyListObject, ob_item), \
+                .ob_size = offsetof(PyListObject, ob_base.ob_size), \
             }, \
             .dict_object = { \
                 .size = sizeof(PyDictObject), \
