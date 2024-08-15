@@ -1619,7 +1619,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
                 goto bail;
             }
         }
-        Py_END_CRITICAL_SECTION_SEQUENCE_FAST(items);
+        Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
         Py_CLEAR(items);
 
     } else {
