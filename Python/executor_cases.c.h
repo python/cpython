@@ -12,6 +12,31 @@
             break;
         }
 
+        case _CHECK_PERIODIC: {
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate); \
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                int err = _Py_HandlePending(tstate);
+                if (err != 0) JUMP_TO_ERROR();
+            }
+            break;
+        }
+
+        case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
+            oparg = CURRENT_OPARG();
+            if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate); \
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) JUMP_TO_ERROR();
+                }
+            }
+            break;
+        }
+
+        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+
         case _RESUME_CHECK: {
             #if defined(__EMSCRIPTEN__)
             if (_Py_emscripten_signal_clock == 0) {
@@ -30,7 +55,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_RESUME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _LOAD_FAST_CHECK: {
             _PyStackRef value;
@@ -1882,15 +1907,7 @@
             _PyStackRef list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                for (int _i = oparg; --_i >= 0;) {
-                    PyStackRef_CLOSE(values[_i]);
-                }
-                if (true) JUMP_TO_ERROR();
-            }
-            PyObject *list_o = _PyList_FromArraySteal(values_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
             if (list_o == NULL) JUMP_TO_ERROR();
             list = PyStackRef_FromPyObjectSteal(list_o);
             stack_pointer[-oparg] = list;
@@ -1957,11 +1974,10 @@
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
                 if (err == 0) {
-                    err = PySet_Add(set_o, item);
+                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
                 }
-                Py_DECREF(item);
+                PyStackRef_CLOSE(values[i]);
             }
             if (err != 0) {
                 Py_DECREF(set_o);
@@ -3564,11 +3580,6 @@
 
         /* _DO_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        case _CHECK_PERIODIC: {
-            CHECK_EVAL_BREAKER();
-            break;
-        }
-
         /* _MONITOR_CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _PY_FRAME_GENERAL: {
@@ -4464,7 +4475,7 @@
             _PyStackRef arg_stackref = args[1];
             _PyStackRef self_stackref = args[0];
             if (!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
-                                 method->d_common.d_type)) {
+                                method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -4666,11 +4677,11 @@
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* _DO_CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _MAKE_FUNCTION: {
             _PyStackRef codeobj_st;
@@ -4891,7 +4902,7 @@
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is instrumented */
 
@@ -5024,7 +5035,8 @@
                     Py_INCREF(executor);
                 }
                 else {
-                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                    int chain_depth = current_executor->vm_data.chain_depth + 1;
+                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, chain_depth);
                     if (optimized <= 0) {
                         exit->temperature = restart_backoff_counter(temperature);
                         if (optimized < 0) {
@@ -5156,7 +5168,7 @@
                     exit->temperature = advance_backoff_counter(exit->temperature);
                     GOTO_TIER_ONE(target);
                 }
-                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, 0);
                 if (optimized <= 0) {
                     exit->temperature = restart_backoff_counter(exit->temperature);
                     if (optimized < 0) {

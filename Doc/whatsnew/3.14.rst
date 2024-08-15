@@ -124,6 +124,19 @@ Add notes for JSON serialization errors that allow to identify the source
 of the error.
 (Contributed by Serhiy Storchaka in :gh:`122163`.)
 
+Enable :mod:`json` module to work as a script using the :option:`-m` switch: ``python -m json``.
+See the :ref:`JSON command-line interface <json-commandline>` documentation.
+(Contributed by Trey Hunner in :gh:`122873`.)
+
+operator
+--------
+
+* Two new functions ``operator.is_none`` and ``operator.is_not_none``
+  have been added, such that ``operator.is_none(obj)`` is equivalent
+  to ``obj is None`` and ``operator.is_not_none(obj)`` is equivalent
+  to ``obj is not None``.
+  (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
+
 os
 --
 
@@ -137,10 +150,8 @@ pathlib
 
 * Add methods to :class:`pathlib.Path` to recursively copy or remove files:
 
-  * :meth:`~pathlib.Path.copy` copies the content of one file to another, like
-    :func:`shutil.copyfile`.
-  * :meth:`~pathlib.Path.copytree` copies one directory tree to another, like
-    :func:`shutil.copytree`.
+  * :meth:`~pathlib.Path.copy` copies a file or directory tree to a given
+    destination.
   * :meth:`~pathlib.Path.delete` removes a file or directory tree.
 
   (Contributed by Barney Gale in :gh:`73991`.)
@@ -408,6 +419,16 @@ New Features
   which has an ambiguous return value.
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
 
+* :c:func:`Py_Finalize` now deletes all interned strings. This
+  is backwards incompatible to any C-Extension that holds onto an interned
+  string after a call to :c:func:`Py_Finalize` and is then reused after a
+  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
+  normally result in crashes during the exectuion of the subsequent call to
+  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
+  an address sanitizer to identify any use-after-free coming from
+  an interned string and deallocate it during module shutdown.
+  (Contribued by Eddie Elizondo in :gh:`113601`.)
+
 * Add :c:func:`PyType_GetBaseByToken` function for easier superclass
   identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`.
@@ -429,6 +450,11 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* :func:`!asyncio.iscoroutinefunction` is deprecated
+  and will be removed in Python 3.16,
+  use :func:`inspect.iscoroutinefunction` instead.
+  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 

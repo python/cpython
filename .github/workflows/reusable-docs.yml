@@ -25,9 +25,15 @@ jobs:
     - name: 'Check out latest PR branch commit'
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: >-
+          ${{
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.sha
+            || ''
+          }}
     # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
     - name: 'Fetch commits to get branch diff'
+      if: github.event_name == 'pull_request'
       run: |
         # Fetch enough history to find a common ancestor commit (aka merge-base):
         git fetch origin ${{ env.refspec_pr }} --depth=$(( ${{ github.event.pull_request.commits }} + 1 )) \
