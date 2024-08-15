@@ -167,8 +167,6 @@ jobs:
         exclude:
         - os: ghcr.io/cirruslabs/macos-runner:sonoma
           is-fork: true
-        - os: macos-14
-          is-fork: false
         - os: macos-13
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
