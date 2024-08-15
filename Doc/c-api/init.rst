@@ -394,8 +394,7 @@ Initializing and finalizing the interpreter
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
    Python/C API functions, and destroy all sub-interpreters (see
    :c:func:`Py_NewInterpreter` below) that were created and not yet destroyed since
-   the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
-   allocated by the Python interpreter.  This is a no-op when called for a second
+   the last call to :c:func:`Py_Initialize`.  This is a no-op when called for a second
    time (without calling :c:func:`Py_Initialize` again first).
 
    Since this is the reverse of :c:func:`Py_Initialize`, it should be called
@@ -406,6 +405,12 @@ Initializing and finalizing the interpreter
    Normally the return value is ``0``.
    If there were errors during finalization (flushing buffered data),
    ``-1`` is returned.
+
+   Note that Python will do a best effort at freeing all memory allocated by the Python
+   interpreter.  Therefore, any C-Extension should make sure to correctly clean up all
+   of the preveiously allocated PyObjects before using them in subsequent calls to
+   :c:func:`Py_Initialize`.  Otherwise it could introduce vulnerabilities and incorrect
+   behavior.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -421,10 +426,11 @@ Initializing and finalizing the interpreter
    loaded extension modules loaded by Python are not unloaded.  Small amounts of
    memory allocated by the Python interpreter may not be freed (if you find a leak,
    please report it).  Memory tied up in circular references between objects is not
-   freed.  Some memory allocated by extension modules may not be freed.  Some
-   extensions may not work properly if their initialization routine is called more
-   than once; this can happen if an application calls :c:func:`Py_Initialize` and
-   :c:func:`Py_FinalizeEx` more than once.
+   freed.  Interned strings will all be deallocated regarldess of their reference count.
+   Some memory allocated by extension modules may not be freed.  Some extensions may not
+   work properly if their initialization routine is called more than once; this can
+   happen if an application calls :c:func:`Py_Initialize` and :c:func:`Py_FinalizeEx`
+   more than once.
 
    .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
