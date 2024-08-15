@@ -367,6 +367,10 @@ the :option:`!--enable-experimental-jit` option,
 a just-in-time (JIT) compiler is added which may speed up some Python programs.
 On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
 or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.
+Build requirements and further supporting information `are contained at`__
+:file:`Tools/jit/README.md`.
+
+__ https://github.com/python/cpython/blob/main/Tools/jit/README.md
 
 The :option:`!--enable-experimental-jit` option takes these (optional) values,
 defaulting to ``yes`` if :option:`!--enable-experimental-jit` is present
