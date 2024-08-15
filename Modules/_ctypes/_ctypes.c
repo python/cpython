@@ -500,7 +500,7 @@ CType_Type_dealloc(PyObject *self)
 {
     StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
-        PyErr_WriteUnraisable(NULL);  // do not print the repr here
+        PyErr_WriteUnraisable(NULL);  // use NULL here to avoid segfault
     }
     if (info) {
         PyMem_Free(info->ffi_type_pointer.elements);
