@@ -135,7 +135,6 @@ extern PyTypeObject PySTEntry_Type;
 
 extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
-
 extern int _PyST_IsFunctionLike(PySTEntryObject *);
 
 extern struct symtable* _PySymtable_Build(
