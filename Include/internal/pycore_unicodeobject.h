@@ -10,15 +10,16 @@ extern "C" {
 
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_global_objects.h"  // _Py_SINGLETON
 
 void _PyUnicode_ExactDealloc(PyObject *op);
 Py_ssize_t _PyUnicode_InternedSize(void);
 Py_ssize_t _PyUnicode_InternedSize_Immortal(void);
 
 /* runtime lifecycle */
+
 extern void _PyUnicode_InitState(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitGlobalObjects(PyInterpreterState *);
+extern PyStatus _PyUnicode_InitInternDict(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitTypes(PyInterpreterState *);
 extern void _PyUnicode_Fini(PyInterpreterState *);
 extern void _PyUnicode_FiniTypes(PyInterpreterState *);

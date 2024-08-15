@@ -14844,6 +14844,15 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
     }
     assert(INTERNED_STRINGS);
 
+    return _PyStatus_OK();
+}
+
+
+PyStatus
+_PyUnicode_InitInternDict(PyInterpreterState *interp)
+{
+    assert(INTERNED_STRINGS);
+
     if (init_interned_dict(interp)) {
         PyErr_Clear();
         return _PyStatus_ERR("failed to create interned dict");
