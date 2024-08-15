@@ -29,10 +29,10 @@ extern PyTypeObject _PyExc_MemoryError;
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
-#define _PyRuntimeState_INIT(runtime) \
+#define _PyRuntimeState_INIT(runtime, debug_cookie) \
     { \
         .debug_offsets = { \
-            .cookie = "xdebugpy", \
+            .cookie = debug_cookie, \
             .version = PY_VERSION_HEX, \
             .free_threaded = Py_GIL_DISABLED, \
             .runtime_state = { \

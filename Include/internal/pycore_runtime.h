@@ -44,6 +44,8 @@ struct _gilstate_runtime_state {
 
 /* Runtime audit hook state */
 
+#define _Py_Debug_Cookie "xdebugpy"
+
 typedef struct _Py_AuditHookEntry {
     struct _Py_AuditHookEntry *next;
     Py_AuditHookFunction hookCFunction;
