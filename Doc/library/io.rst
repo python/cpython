@@ -68,7 +68,7 @@ In-memory text streams are also available as :class:`StringIO` objects::
    If you are working with a non-blocking stream, be aware that operations on text I/O
    objects may raise a ``BlockingIOError``. This occurs when the underlying stream is
    in non-blocking mode and a read operation cannot be completed immediately, potentially
-   leading to a `BlockingIOError``. To handle this, ensure your code properly catches and
+   leading to a ``BlockingIOError``. To handle this, ensure your code properly catches and
    manages such exceptions when working with non-blocking streams.
 
 The text stream API is described in detail in the documentation of
