@@ -1215,7 +1215,7 @@ class HTTPHandler(logging.Handler):
     POST semantics.
     """
     def __init__(self, host, url, method="GET", secure=False, credentials=None,
-                 context=None, content_type="application/x-www-form-urlencoded"):                          
+                 context=None, content_type="application/x-www-form-urlencoded"):
         """
         Initialize the instance with the host, the request URL, and the method
         ("GET" or "POST")
