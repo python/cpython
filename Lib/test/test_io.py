@@ -3925,7 +3925,7 @@ class TextIOWrapperTest(unittest.TestCase):
         r, w = os.pipe()
         try:
             os.set_blocking(r, False)
-            with open(r, 'r') as textfile:
+            with self.io.open(r, 'rt') as textfile:
                 r = None
                 # Nothing has been written so a non-blocking read raises a BlockingIOError exception.
                 with self.assertRaises(BlockingIOError):
