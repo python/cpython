@@ -48,8 +48,10 @@ struct _gilstate_runtime_state {
 
 #ifdef Py_GIL_DISABLED
 # define _Py_Debug_gilruntimestate_enabled offsetof(struct _gil_runtime_state, enabled)
+# define _Py_Debug_Free_Threaded 1
 #else
 # define _Py_Debug_gilruntimestate_enabled 0
+# define _Py_Debug_Free_Threaded 0
 #endif
 typedef struct _Py_AuditHookEntry {
     struct _Py_AuditHookEntry *next;

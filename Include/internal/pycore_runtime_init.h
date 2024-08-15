@@ -34,7 +34,7 @@ extern PyTypeObject _PyExc_MemoryError;
         .debug_offsets = { \
             .cookie = debug_cookie, \
             .version = PY_VERSION_HEX, \
-            .free_threaded = Py_GIL_DISABLED, \
+            .free_threaded = _Py_Debug_Free_Threaded, \
             .runtime_state = { \
                 .size = sizeof(_PyRuntimeState), \
                 .finalizing = offsetof(_PyRuntimeState, _finalizing), \
