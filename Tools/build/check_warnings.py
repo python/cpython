@@ -158,7 +158,7 @@ def get_unexpected_warnings(
 
 
 def get_unexpected_improvements(
-    files_with_expected_warnings: set[tuple[str, int]],
+    files_with_expected_warnings: set[FileWarnings],
     files_with_warnings: set[FileWarnings],
 ) -> int:
     """
