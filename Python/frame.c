@@ -15,15 +15,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_locals);
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(_PyFrame_GetCode(frame));
-   /* locals */
-    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
-    _PyStackRef *sp = frame->stackpointer;
-    /* locals and stack */
-    while (sp > locals) {
-        sp--;
-        Py_VISIT(PyStackRef_AsPyObjectBorrow(*sp));
-    }
-    return 0;
+    return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
 PyFrameObject *
