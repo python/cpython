@@ -423,7 +423,7 @@ New Features
   call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
   normally result in crashes during the exectuion of the subsequent call to
   :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
-  an address sanitizer (i.e. ASAN) to identify any use-after-free coming from
+  an address sanitizer to identify any use-after-free coming from
   an interned string and deallocate it during module shutdown.
   (Contribued by Eddie Elizondo in :gh:`113601`.)
 
