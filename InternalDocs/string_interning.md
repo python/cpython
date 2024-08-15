@@ -28,7 +28,11 @@ for declaration, initialization and finalization.
 
 The empty string is one of the singletons: `_Py_STR(empty)`.
 
-The three sets of singletons (`_Py_LATIN1_CHR`, `_Py_ID`, `_Py_STR`)
+Deep-frozen modules (see `Tools/build/deepfreeze.py`) use either singletons,
+or statically allocated strings. These are added to `INTERNED_STRINGS`
+at runtime initialization, when deepfreeze modules are loaded.
+
+These sets of singletons (`_Py_LATIN1_CHR`, `_Py_ID`, `_Py_STR`, deepfreeze)
 are disjoint.
 If you have such a singleton, it (and no other copy) will be interned.
 

@@ -35,7 +35,7 @@ PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **
 PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
 // Left here to help backporting:
 PyAPI_FUNC(void) _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
-// Only for singletons in the _PyRuntime struct:
+// Only for statically allocated strings:
 extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 
 /* other API */
