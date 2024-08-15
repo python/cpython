@@ -222,6 +222,7 @@ LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
+LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
 LIBHACL_SIMD128_FLAGS=@LIBHACL_SIMD128_FLAGS@
 LIBHACL_SIMD256_FLAGS=@LIBHACL_SIMD256_FLAGS@
 LIBHACL_SIMD128_OBJS=@LIBHACL_SIMD128_OBJS@
@@ -1368,7 +1369,6 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a, and
 # libHacl_Blake2.a -- the contents of the latter vary depending on whether we
 # have the ability to compile vectorized versions
-LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
