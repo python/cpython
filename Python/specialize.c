@@ -1999,6 +1999,62 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     }
 }
 
+
+static int
+specialize_py_call_ex(PyFunctionObject *func, _Py_CODEUNIT *instr)
+{
+    _PyCallCache *cache = (_PyCallCache *)(instr + 1);
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    int kind = function_kind(code);
+    /* Don't specialize if PEP 523 is active */
+    if (_PyInterpreterState_GET()->eval_frame) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
+        return -1;
+    }
+    if (kind == SPEC_FAIL_CODE_NOT_OPTIMIZED) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CODE_NOT_OPTIMIZED);
+        return -1;
+    }
+    int version = _PyFunction_GetVersionForCurrentState(func);
+    if (version == 0) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
+    write_u32(cache->func_version, version);
+    instr->op.code = CALL_FUNCTION_EX_PY;
+    return 0;
+}
+
+void
+_Py_Specialize_CallEx(_PyStackRef callable_st, _Py_CODEUNIT *instr)
+{
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(callable_st);
+
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
+    assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
+    _PyCallCache *cache = (_PyCallCache *)(instr + 1);
+    int fail;
+    if (PyFunction_Check(callable)) {
+        fail = specialize_py_call_ex((PyFunctionObject *)callable, instr);
+    }
+    else {
+        instr->op.code = CALL_FUNCTION_EX_NON_PY;
+        fail = 0;
+    }
+    if (fail) {
+        STAT_INC(CALL, failure);
+        assert(!PyErr_Occurred());
+        instr->op.code = CALL_FUNCTION_EX;
+        cache->counter = adaptive_counter_backoff(cache->counter);
+    }
+    else {
+        STAT_INC(CALL, success);
+        assert(!PyErr_Occurred());
+        cache->counter = adaptive_counter_cooldown();
+    }
+}
+
 #ifdef Py_STATS
 static int
 binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)

@@ -4111,12 +4111,21 @@ dummy_func(
             _CHECK_PERIODIC;
 
         inst(INSTRUMENTED_CALL_FUNCTION_EX, (counter/1, version/2 -- )) {
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
-
         tier1 op(_SPECIALIZE_CALL_FUNCTION_EX, (counter/1, func_st, unused, callargs_st, kwargs_st -- func_st, unused, callargs_st, kwargs_st)) {
-            /* Place holder -- Do nothing for now */
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_CallEx(
+                    func_st, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(CALL_FUNCTION_EX, deferred);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            #endif  /* ENABLE_SPECIALIZATION */
         }
 
         op(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st -- result)) {
@@ -4167,27 +4176,26 @@ dummy_func(
                     }
                 }
             }
-            else {
-                if (Py_TYPE(func) == &PyFunction_Type &&
-                    tstate->interp->eval_frame == NULL &&
-                    ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
-                    assert(PyTuple_CheckExact(callargs));
-                    Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-                    int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
-                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+            else if (Py_TYPE(func) == &PyFunction_Type &&
+                     tstate->interp->eval_frame == NULL &&
+                     ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                assert(PyTuple_CheckExact(callargs));
+                Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
 
-                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
-                                                                                (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
-                                                                                nargs, callargs, kwargs);
-                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
-                    STACK_SHRINK(4);
-                    if (new_frame == NULL) {
-                        ERROR_NO_POP();
-                    }
-                    assert(next_instr - this_instr == 1 + INLINE_CACHE_ENTRIES_CALL);
-                    frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
-                    DISPATCH_INLINED(new_frame);
+                _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
+                                                                            (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
+                                                                            nargs, callargs, kwargs);
+                // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
+                STACK_SHRINK(4);
+                if (new_frame == NULL) {
+                    ERROR_NO_POP();
                 }
+                frame->return_offset = next_instr - this_instr;
+                DISPATCH_INLINED(new_frame);
+            }
+            else {
                 result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
             }
             PyStackRef_XCLOSE(kwargs_st);
@@ -4197,10 +4205,91 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(result), error);
         }
 
+        family(CALL_FUNCTION_EX, INLINE_CACHE_ENTRIES_CALL) = {
+            CALL_FUNCTION_EX_PY,
+            CALL_FUNCTION_EX_NON_PY,
+        };
+
         macro(CALL_FUNCTION_EX) =
             _SPECIALIZE_CALL_FUNCTION_EX +
             unused/2 +
             _DO_CALL_FUNCTION_EX +
+            _CHECK_PERIODIC;
+
+        op(_CHECK_FUNCTION_VERSION_EX, (func_version/2, callable, unused, callargs, kwargs -- callable, unused, callargs, kwargs)) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            EXIT_IF(!PyFunction_Check(callable_o));
+            PyFunctionObject *func = (PyFunctionObject *)callable_o;
+            EXIT_IF(func->func_version != func_version);
+        }
+
+        op(_CALLARGS_TO_TUPLE, (callable, unused, callargs, kwargs -- callable, unused, tuple, kwargs)) {
+            PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
+            if (PyTuple_CheckExact(callargs_o)) {
+                tuple = callargs;
+            }
+            else {
+                int err = check_args_iterable(tstate, PyStackRef_AsPyObjectBorrow(callable), callargs_o);
+                if (err < 0) {
+                    ERROR_NO_POP();
+                }
+                PyObject *tuple_o = PySequence_Tuple(callargs_o);
+                if (tuple_o == NULL) {
+                    ERROR_NO_POP();
+                }
+                PyStackRef_CLOSE(callargs);
+                tuple = PyStackRef_FromPyObjectSteal(tuple_o);
+            }
+        }
+
+        op(_PY_FRAME_EX, (callable, unused, callargs_st, kwargs_st -- new_frame: _PyInterpreterFrame*)) {
+            PyObject *func = PyStackRef_AsPyObjectBorrow(callable);
+            PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+            PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+            assert(PyFunction_Check(func));
+            assert(PyTuple_CheckExact(callargs));
+            Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+            int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+            PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+
+            new_frame = _PyEvalFramePushAndInit_Ex(tstate, (PyFunctionObject *)func,
+                                                   locals, nargs, callargs, kwargs);
+            ERROR_IF(new_frame == NULL, error);
+        }
+
+        macro(CALL_FUNCTION_EX_PY) =
+            unused/1 + // Skip over the counter
+            _CHECK_PEP_523 +
+            _CHECK_FUNCTION_VERSION_EX +
+            _CALLARGS_TO_TUPLE +
+            _PY_FRAME_EX +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        op(_CHECK_IS_NOT_PY_CALLABLE_EX, (callable, unused, callargs, kwargs -- callable, unused, callargs, kwargs)) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            EXIT_IF(PyFunction_Check(callable_o));
+        }
+
+        op(_CALL_EX_NON_PY, (callable, unused, callargs, kwargs -- res)) {
+            PyObject *result = PyObject_Call(
+                PyStackRef_AsPyObjectBorrow(callable),
+                PyStackRef_AsPyObjectBorrow(callargs),
+                PyStackRef_AsPyObjectBorrow(kwargs)
+            );
+            PyStackRef_XCLOSE(kwargs);
+            PyStackRef_CLOSE(callargs);
+            PyStackRef_CLOSE(callable);
+            ERROR_IF(result == NULL, error);
+            res = PyStackRef_FromPyObjectSteal(result);
+        }
+
+        macro(CALL_FUNCTION_EX_NON_PY) =
+            unused/1 + // Skip over the counter
+            unused/2 +
+            _CHECK_IS_NOT_PY_CALLABLE_EX +
+            _CALLARGS_TO_TUPLE +
+            _CALL_EX_NON_PY +
             _CHECK_PERIODIC;
 
 

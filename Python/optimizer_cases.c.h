@@ -1978,6 +1978,42 @@
 
         /* _DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
+        case _CHECK_FUNCTION_VERSION_EX: {
+            break;
+        }
+
+        case _CALLARGS_TO_TUPLE: {
+            _Py_UopsSymbol *tuple;
+            _Py_UopsSymbol *kwargs;
+            tuple = sym_new_not_null(ctx);
+            kwargs = sym_new_not_null(ctx);
+            stack_pointer[-2] = tuple;
+            stack_pointer[-1] = kwargs;
+            break;
+        }
+
+        case _PY_FRAME_EX: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = sym_new_not_null(ctx);
+            stack_pointer[-4] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE_EX: {
+            break;
+        }
+
+        case _CALL_EX_NON_PY: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-4] = res;
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _MAKE_FUNCTION: {
             _Py_UopsSymbol *func;
             func = sym_new_not_null(ctx);
