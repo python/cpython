@@ -381,8 +381,7 @@ extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
-
-// Functions to clear generator frames
+// GC visit callback for tracked interpreter frames
 extern int _PyGC_VisitFrameStack(struct _PyInterpreterFrame *frame, visitproc visit, void *arg);
 
 #ifdef __cplusplus
