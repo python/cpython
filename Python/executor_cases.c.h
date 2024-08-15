@@ -4475,7 +4475,7 @@
             _PyStackRef arg_stackref = args[1];
             _PyStackRef self_stackref = args[0];
             if (!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
-                                 method->d_common.d_type)) {
+                                method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
