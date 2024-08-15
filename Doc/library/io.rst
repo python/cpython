@@ -66,9 +66,9 @@ In-memory text streams are also available as :class:`StringIO` objects::
 
 .. note::
    If you are working with a non-blocking stream, be aware that operations on text I/O
-   objects may raise a `BlockingIOError`. This occurs when the underlying stream is
+   objects may raise a ``BlockingIOError``. This occurs when the underlying stream is
    in non-blocking mode and a read operation cannot be completed immediately, potentially
-   leading to a `BlockingIOError`. To handle this, ensure your code properly catches and
+   leading to a `BlockingIOError``. To handle this, ensure your code properly catches and
    manages such exceptions when working with non-blocking streams.
 
 The text stream API is described in detail in the documentation of
@@ -778,7 +778,7 @@ than raw I/O does.
       EOF or if the read call would block in non-blocking mode.
 
       .. note::
-         When the underlying raw stream is non-blocking, a `BlockingIOError`
+         When the underlying raw stream is non-blocking, a ``BlockingIOError``
          may be raised if the read operation cannot be completed immediately.
          Ensure proper exception handling in such cases.
 
@@ -792,7 +792,7 @@ than raw I/O does.
          The *size* argument is now optional.
 
       .. note::
-         When the underlying raw stream is non-blocking, a `BlockingIOError`
+         When the underlying raw stream is non-blocking, a ``BlockingIOError``
          may be raised if the read operation cannot be completed immediately.
          Ensure proper exception handling in such cases.
 
@@ -1024,8 +1024,8 @@ Text I/O
       The *encoding* argument now supports the ``"locale"`` dummy encoding name.
 
    .. note::
-      If the underlying raw stream is non-blocking, the `read()` method may raise a
-      `BlockingIOError` if no data is available immediately.
+      If the underlying raw stream is non-blocking, the ``read()`` method may raise a
+      ``BlockingIOError`` if no data is available immediately.
 
    :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:
