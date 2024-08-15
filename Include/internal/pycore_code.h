@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_stackref.h"    // _PyStackRef
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_tstate.h"      // _PyThreadStateImpl
 
 
 /* Each instruction in a code object is a fixed-width value,
@@ -599,6 +600,11 @@ extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 struct _PyCode8 _PyCode_DEF(8);
 
 PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
+
+#ifdef Py_GIL_DISABLED
+extern int _Py_ReserveSpecializedCodeIndex(PyInterpreterState *interp);
+extern void _Py_ClearSpecializedCodeIndex(_PyThreadStateImpl *tstate);
+#endif
 
 #ifdef __cplusplus
 }

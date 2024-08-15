@@ -6,6 +6,7 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_index_pool.h"     // _PyIndexPool
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_object.h"        // _PyObject_SetDeferredRefcount
@@ -2633,5 +2634,6 @@ _PyCode_Fini(PyInterpreterState *interp)
         _Py_hashtable_destroy(state->constants);
         state->constants = NULL;
     }
+    _PyIndexPool_Fini(&interp->specialized_code_indices);
 #endif
 }

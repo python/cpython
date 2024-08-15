@@ -2721,6 +2721,22 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_Py_ReserveSpecializedCodeIndex(PyInterpreterState *interp)
+{
+    return _PyIndexPool_AllocIndex(&interp->specialized_code_indices);
+}
+
+void
+_Py_ClearSpecializedCodeIndex(_PyThreadStateImpl *tstate)
+{
+    PyInterpreterState *interp = ((PyThreadState*) tstate)->interp;
+    _PyIndexPool_FreeIndex(&interp->specialized_code_indices, tstate->specialized_code_index);
+}
+
+#endif
+
 /* Code init cleanup.
  * CALL_ALLOC_AND_ENTER_INIT will set up
  * the frame to execute the EXIT_INIT_CHECK
