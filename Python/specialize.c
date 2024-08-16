@@ -1286,7 +1286,6 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
             return 0;
         }
         uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
