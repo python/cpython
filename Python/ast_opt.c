@@ -624,8 +624,11 @@ static int
 fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     asdl_int_seq *ops;
-    asdl_expr_seq *args;
+    asdl_expr_seq *args, *elts;
+    expr_ty arg;
+    PyObject *lhs_const;
     Py_ssize_t i;
+    Py_ssize_t elts_len;
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
@@ -633,11 +636,65 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
        tuple or frozenset respectively. */
     i = asdl_seq_LEN(ops) - 1;
     int op = asdl_seq_GET(ops, i);
+    arg = asdl_seq_GET(args, i);
+    if ((node->v.Compare.left->kind) != Constant_kind)
+            return 1;
+    lhs_const = node->v.Compare.left->v.Constant.value;
     if (op == In || op == NotIn) {
-        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena, state)) {
-            return 0;
+        if (arg->kind == List_kind) {
+            asdl_expr_seq *list_elts = arg->v.List.elts;
+            if (has_starred(list_elts))
+                return 1;
+            elts = list_elts;
         }
+        else if (arg->kind == Dict_kind) {
+            elts = arg->v.Dict.keys;
+        }
+        else if (arg->kind == Set_kind) {
+            elts = arg->v.Set.elts;
+        }
+        else {
+            return 1;
+        }
+        elts_len = asdl_seq_LEN(elts);
+        if (!elts_len) {
+            return make_const(node, op == In ? Py_False : Py_True, arena);
+        }
+        PyObject *newtuple = PyTuple_New(elts_len);
+        if (newtuple == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+                return 0;
+            }
+            PyErr_Clear();
+            return 1;
+        }
+        for (Py_ssize_t j = 0; j < elts_len; j++) {
+            expr_ty e = (expr_ty)asdl_seq_GET(elts, j);
+            if (e->kind != Constant_kind) {
+                PyObject_GC_UnTrack(newtuple);
+                PyObject_GC_Del(newtuple);
+                return 0;
+            }
+            PyObject *v = e->v.Constant.value;
+            PyTuple_SET_ITEM(newtuple, j, Py_NewRef(v));
+            if (v == lhs_const && op == In) {
+                PyObject_GC_UnTrack(newtuple);
+                PyObject_GC_Del(newtuple);
+                return make_const(node, Py_True, arena);
+            }
+        }
+        if (op == NotIn) {
+            PyObject_GC_UnTrack(newtuple);
+            PyObject_GC_Del(newtuple);
+            return make_const(node, Py_True, arena);
+        }
+        return make_const(arg, newtuple, arena);
     }
+    else if ((op == Eq || op == NotEq) && arg->kind == Constant_kind)  {
+        if (lhs_const == arg->v.Constant.value)
+            return make_const(node, op == Eq ? Py_True : Py_False, arena);
+    }
+
     return 1;
 }
 
