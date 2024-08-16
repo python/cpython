@@ -692,6 +692,10 @@ class RawConfigParser(MutableMapping):
         if section == self.default_section:
             raise ValueError('Invalid section name: %r' % section)
 
+        if section is UNNAMED_SECTION:
+            if not self._allow_unnamed_section:
+                raise ValueError("Unnamed section not enabled")
+
         if section in self._sections:
             raise DuplicateSectionError(section)
         self._sections[section] = self._dict()
@@ -1203,20 +1207,21 @@ class RawConfigParser(MutableMapping):
         return self.BOOLEAN_STATES[value.lower()]
 
     def _validate_value_types(self, *, section="", option="", value=""):
-        """Raises a TypeError for non-string values.
+        """Raises a TypeError for incorrect non-string values.
 
-        The only legal non-string value if we allow valueless
-        options is None, so we need to check if the value is a
-        string if:
-        - we do not allow valueless options, or
-        - we allow valueless options but the value is not None
+        Legal non-string values are UNNAMED_SECTION and valueless values if
+        they are are allowed.
 
         For compatibility reasons this method is not used in classic set()
         for RawConfigParsers. It is invoked in every case for mapping protocol
         access and in ConfigParser.set().
         """
-        if not isinstance(section, str):
-            raise TypeError("section names must be strings")
+        if section is UNNAMED_SECTION:
+            if not self._allow_unnamed_section:
+                raise ValueError("UNNAMED_SECTION is not allowed")
+        else:
+            if not isinstance(section, str):
+                raise TypeError("section names must be strings or UNNAMED_SECTION")
         if not isinstance(option, str):
             raise TypeError("option keys must be strings")
         if not self._allow_no_value or value:
