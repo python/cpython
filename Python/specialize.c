@@ -837,10 +837,33 @@ specialize_dict_access(
     int base_op, int values_op, int hint_op)
 {
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
-        kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
+        kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD ||
+        kind == METHOD);
     // No descriptor, or non overriding.
     if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+        switch (kind) {
+            case METHOD:
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
+                break;
+            case NON_OVERRIDING:
+                SPECIALIZATION_FAIL(LOAD_ATTR,
+                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
+                                SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR :
+                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+                break;
+            case NON_DESCRIPTOR:
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+                break;
+            case PYTHON_CLASSMETHOD:
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
+                break;
+            case BUILTIN_CLASSMETHOD:
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
+                break;
+            default:
+                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+                break;
+        }
         return 0;
     }
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
@@ -938,10 +961,7 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
                     goto success;
                 }
             }
-            else {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
-            }
-            goto fail;
+            goto try_instance;
         }
         case PROPERTY:
         {
@@ -1044,33 +1064,27 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
             goto success;
         }
         case BUILTIN_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ);
-            goto fail;
+            goto try_instance;
         case PYTHON_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_METHOD_OBJ);
-            goto fail;
+            goto try_instance;
         case NON_OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR,
-                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
-                                SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR :
-                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
-            goto fail;
+            goto try_instance;
         case NON_DESCRIPTOR:
             if ((instr->op.arg & 1) == 0) {
                 if (specialize_attr_loadclassattr(owner, instr, name, descr, kind, false)) {
                     goto success;
                 }
             }
-            else {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
-            }
-            goto fail;
+            goto try_instance;
         case ABSENT:
-            if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
+            goto try_instance;
+    }
+    Py_UNREACHABLE();
+try_instance:
+    if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
                                     LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
-            {
-                goto success;
-            }
+    {
+        goto success;
     }
 fail:
     STAT_INC(LOAD_ATTR, failure);
