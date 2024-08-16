@@ -80,9 +80,9 @@ class BoolTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             false.__invert__()
 
-        with self.assertRaisesRegex(TypeError, "Maybe you meant 'not' instead of '~'?"):
+        with self.assertRaisesRegex(TypeError, r"Maybe you meant 'not' instead of '~'\?"):
             ~true
-        with self.assertRaisesRegex(TypeError, "Maybe you meant 'not' instead of '~'?"):
+        with self.assertRaisesRegex(TypeError, r"Maybe you meant 'not' instead of '~'\?"):
             ~false
 
         self.assertEqual(False+2, 2)
