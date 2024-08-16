@@ -215,7 +215,8 @@ New Features
 A better interactive interpreter
 --------------------------------
 
-Python now uses a new :term:`interactive` shell by default.
+Python now uses a new :term:`interactive` shell by default, based on code
+from the `PyPy project`_.
 When the user starts the :term:`REPL` from an interactive terminal,
 the following new features are now supported:
 
@@ -239,6 +240,7 @@ For more on interactive mode, see :ref:`tut-interac`.
 Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
 Windows support contributed by Dino Viehland and Anthony Shaw.)
 
+.. _`PyPy project`: https://pypy.org/
 
 .. _whatsnew313-improved-error-messages:
 
