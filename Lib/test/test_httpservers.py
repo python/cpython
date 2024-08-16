@@ -484,18 +484,19 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader('Location'), expected_location)
 
         # If the second word in the http request (Request-URI for the http
-        # method) is a full URI, we don't worry about it, as that'll be parsed
-        # and reassembled as a full URI within BaseHTTPRequestHandler.send_head
-        # so no errant scheme-less //netloc//evil.co/ domain mixup can happen.
+        # method) has a scheme and netloc, it still gets treated as an
+        # absolute path by the server.  In that case, the redirect is
+        # constructed so it is parsed as a path.  The './' part of the path
+        # is added by urlunsplit() so that the 'https:' part of what is being
+        # treated as a path is not treated as a scheme in the redirect
+        # location.  http.server is not a proxy and doesn't handle Request-URI
+        # being an absolute URI with a scheme and or netloc.
         attack_scheme_netloc_2slash_url = f'https://pypi.org/{url}'
-        expected_scheme_netloc_location = f'{attack_scheme_netloc_2slash_url}/'
+        expected_location = f'./{attack_scheme_netloc_2slash_url}/'
         response = self.request(attack_scheme_netloc_2slash_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         location = response.getheader('Location')
-        # We're just ensuring that the scheme and domain make it through, if
-        # there are or aren't multiple slashes at the start of the path that
-        # follows that isn't important in this Location: header.
-        self.assertTrue(location.startswith('https://pypi.org/'), msg=location)
+        self.assertEqual(location, expected_location)
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
