@@ -126,7 +126,7 @@ if os.name == "nt":
             libraries = [name for h in modules
                             if (name := _get_module_filename(h)) is not None]
             return libraries
-        except Exception:
+        except OSError:
             return None
 
 elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}:
@@ -150,19 +150,12 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
     _dyld_get_image_name.restype = ctypes.c_char_p
 
     def dllist():
-        try:
-            libraries = []
-            num_images = _libc._dyld_image_count()
+        num_images = _libc._dyld_image_count()
+        # start at 1 to skip executable
+        libraries = [os.fsdecode(name) for i in range(1, num_images)
+                        if (name := _dyld_get_image_name(i)) is not None]
 
-            # start at 1 to skip executable
-            for i in range(1, num_images):
-                raw_name = _dyld_get_image_name(i)
-                name = os.fsdecode(raw_name)
-                libraries.append(name)
-
-            return libraries
-        except Exception:
-            return None
+        return libraries
 
 elif sys.platform.startswith("aix"):
     # AIX has two styles of storing shared libraries
@@ -464,14 +457,11 @@ if (os.name == "posix" and
 
 
         def dllist():
-            try:
-                libraries = []
-                _libc.dl_iterate_phdr(_info_callback,
-                                      ctypes.byref(ctypes.py_object(libraries)))
-                # remove the first entry, which is the executable itself
-                return libraries[1:]
-            except Exception:
-                return None
+            libraries = []
+            _libc.dl_iterate_phdr(_info_callback,
+                                    ctypes.byref(ctypes.py_object(libraries)))
+            # remove the first entry, which is the executable itself
+            return libraries[1:]
 
 ################################################################
 # test code
