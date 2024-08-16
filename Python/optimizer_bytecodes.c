@@ -627,6 +627,15 @@ dummy_func(void) {
         ctx->done = true;
     }
 
+    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame*)) {
+        (void)callable;
+        (void)self_or_null;
+        (void)args;
+        (void)kwnames;
+        new_frame = NULL;
+        ctx->done = true;
+    }
+
     op(_RETURN_VALUE, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;

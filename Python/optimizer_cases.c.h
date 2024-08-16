@@ -1974,6 +1974,62 @@
 
         /* _DO_CALL_KW is not a viable micro-op for tier 2 */
 
+        case _PY_FRAME_KW: {
+            _Py_UopsSymbol *kwnames;
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UOpsAbstractFrame *new_frame;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            (void)kwnames;
+            new_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-3 - oparg] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _CHECK_FUNCTION_VERSION_KW: {
+            break;
+        }
+
+        case _CHECK_METHOD_VERSION_KW: {
+            break;
+        }
+
+        case _EXPAND_METHOD_KW: {
+            _Py_UopsSymbol *method;
+            _Py_UopsSymbol *self;
+            _Py_UopsSymbol *kwnames;
+            method = sym_new_not_null(ctx);
+            self = sym_new_not_null(ctx);
+            kwnames = sym_new_not_null(ctx);
+            stack_pointer[-3 - oparg] = method;
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1] = kwnames;
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE_KW: {
+            break;
+        }
+
+        case _CALL_KW_NON_PY: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-3 - oparg] = res;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
