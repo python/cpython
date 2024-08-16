@@ -123,18 +123,11 @@ class ReferencesTestCase(TestBase):
     def test_ref_repr(self):
         obj = C()
         ref = weakref.ref(obj)
-        if __name__ == "__main__":
-            regex = (
-                rf"<weakref at 0x[0-9a-fA-F]+; "
-                rf"to '{C.__qualname__}' "
-                rf"at 0x[0-9a-fA-F]+>"
-            )
-        else:
-            regex = (
-                rf"<weakref at 0x[0-9a-fA-F]+; "
-                rf"to '{C.__module__}.{C.__qualname__}' "
-                rf"at 0x[0-9a-fA-F]+>"
-            )
+        regex = (
+            rf"<weakref at 0x[0-9a-fA-F]+; "
+            rf"to '{'' if __name__ == '__main__' else C.__module__ + '.'}{C.__qualname__}' "
+            rf"at 0x[0-9a-fA-F]+>"
+        )
         self.assertRegex(repr(ref), regex)
 
         obj = None
