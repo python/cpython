@@ -1961,9 +1961,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 #endif
         ) {
             /* 0-pad year with century as necessary */
-            PyObject *item = PyTuple_GET_ITEM(timetuple, 0);
+            PyObject *item = PyTuple_GetItem(timetuple, 0);
+            if (item == NULL) {
+                goto Done;
+            }
             long year_long = PyLong_AsLong(item);
-
             if (year_long == -1 && PyErr_Occurred()) {
                 goto Done;
             }
@@ -1989,28 +1991,14 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Done;
                 }
             }
+            ntoappend = PyOS_snprintf(buf, sizeof(buf),
 #ifdef Py_STRFTIME_C99_SUPPORT
-            if (ch == 'F') {
-                item = PyTuple_GET_ITEM(timetuple, 1);
-                long month = PyLong_AsLong(item);
-                if (month == -1 && PyErr_Occurred()) {
-                    goto Done;
-                }
-                item = PyTuple_GET_ITEM(timetuple, 2);
-                long day = PyLong_AsLong(item);
-                if (day == -1 && PyErr_Occurred()) {
-                    goto Done;
-                }
-                ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld-%02ld-%02ld",
-                                          year_long, month, day);
-            }
-            else {
+                                      ch == 'F' ? "%04ld-%%m-%%d" :
 #endif
-                ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+                                      "%04ld", year_long);
 #ifdef Py_STRFTIME_C99_SUPPORT
-                if (ch == 'C') {
-                    ntoappend -= 2;
-                }
+            if (ch == 'C') {
+                ntoappend -= 2;
             }
 #endif
             ptoappend = buf;
