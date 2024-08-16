@@ -1,0 +1,1 @@
+``Pathlib.read_bytes`` no longer opens the file in Python's buffered I/O mode. This reduces overheads as the code reads a file in whole leading to a modest speedup.

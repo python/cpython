@@ -585,7 +585,7 @@ class PathBase(PurePathBase):
         """
         Open the file in bytes mode, read it, and close the file.
         """
-        with self.open(mode='rb') as f:
+        with self.open(mode='rb', buffering=0) as f:
             return f.read()
 
     def read_text(self, encoding=None, errors=None, newline=None):

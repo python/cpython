@@ -1464,7 +1464,7 @@ class DummyPath(PathBase):
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
-        if buffering != -1:
+        if buffering != -1 and not (buffering == 0 and 'b' in mode):
             raise NotImplementedError
         path_obj = self.resolve()
         path = str(path_obj)
