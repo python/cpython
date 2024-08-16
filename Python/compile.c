@@ -2328,7 +2328,7 @@ codegen_function(struct compiler *c, stmt_ty s, int is_async)
         ADDOP_I_IN_SCOPE(c, loc, SWAP, 2);
         ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
-        assert(c->u->u_metadata.u_argcount = num_typeparam_args);
+        assert(c->u->u_metadata.u_argcount == num_typeparam_args);
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
