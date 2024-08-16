@@ -1914,7 +1914,7 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 PyThreadState *
 PyThreadState_Swap(PyThreadState *newts)
 {
-    return _PyThreadState_Swap(&_PyRuntime, newts);
+    return _PyThreadState_SwapNoGIL(newts);
 }
 
 
