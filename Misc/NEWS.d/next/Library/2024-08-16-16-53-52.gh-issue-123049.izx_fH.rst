@@ -1,1 +1,1 @@
-Add support for the unnamed section in :meth:`RawConfigParser.add_section`.
+Add support for the unnamed section in :meth:`configparser.ConfigParser.add_section`.
