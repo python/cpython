@@ -1112,31 +1112,25 @@ class TestMain(TestCase):
                         "x3()\n"
                         "exit()\n")
 
-            env.pop("PYTHON_BASIC_REPL", None)
-            output, exit_code = self.run_repl(commands, env=env)
-            if "can\'t use pyrepl" in output:
-                self.skipTest("pyrepl not available")
-            self.assertIn("in x1", output)
-            if set_tracebacklimit:
-                self.assertNotIn("in x2", output)
-                self.assertNotIn("in x3", output)
-                self.assertNotIn("in <module>", output)
-            else:
-                self.assertIn("in x2", output)
-                self.assertIn("in x3", output)
-                self.assertIn("in <module>", output)
-
-            env["PYTHON_BASIC_REPL"] = "1"
-            output, exit_code = self.run_repl(commands, env=env)
-            self.assertIn("in x1", output)
-            if set_tracebacklimit:
-                self.assertNotIn("in x2", output)
-                self.assertNotIn("in x3", output)
-                self.assertNotIn("in <module>", output)
-            else:
-                self.assertIn("in x2", output)
-                self.assertIn("in x3", output)
-                self.assertIn("in <module>", output)
+            for basic_repl in [True, False]:
+                if basic_repl:
+                    env["PYTHON_BASIC_REPL"] = "1"
+                else:
+                    env.pop("PYTHON_BASIC_REPL", None)
+                with self.subTest(set_tracebacklimit=set_tracebacklimit,
+                                  basic_repl=basic_repl):
+                    output, exit_code = self.run_repl(commands, env=env)
+                    if "can\'t use pyrepl" in output:
+                        self.skipTest("pyrepl not available")
+                    self.assertIn("in x1", output)
+                    if set_tracebacklimit:
+                        self.assertNotIn("in x2", output)
+                        self.assertNotIn("in x3", output)
+                        self.assertNotIn("in <module>", output)
+                    else:
+                        self.assertIn("in x2", output)
+                        self.assertIn("in x3", output)
+                        self.assertIn("in <module>", output)
 
     def run_repl(
         self,
