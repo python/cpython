@@ -2166,8 +2166,13 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
 
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_argcount = asdl_seq_LEN(args->args),
+        .u_posonlyargcount = asdl_seq_LEN(args->posonlyargs),
+        .u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs),
+    };
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, NULL));
+        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
@@ -2192,9 +2197,9 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     }
     Py_CLEAR(docstring);
 
-    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    assert(c->u->u_metadata.u_argcount == asdl_seq_LEN(args->args));
+    assert(c->u->u_metadata.u_posonlyargcount == asdl_seq_LEN(args->posonlyargs));
+    assert(c->u->u_metadata.u_kwonlyargcount == asdl_seq_LEN(args->kwonlyargs));
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
