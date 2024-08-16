@@ -82,7 +82,7 @@ class TestBase(unittest.TestCase):
 
 
 @contextlib.contextmanager
-def collect_in_thread(period=0.0001):
+def collect_in_thread(period=0.005):
     """
     Ensure GC collections happen in a different thread, at a high frequency.
     """
@@ -123,10 +123,12 @@ class ReferencesTestCase(TestBase):
     def test_ref_repr(self):
         obj = C()
         ref = weakref.ref(obj)
-        self.assertRegex(repr(ref),
-                         rf"<weakref at 0x[0-9a-fA-F]+; "
-                         rf"to '{C.__module__}.{C.__qualname__}' "
-                         rf"at 0x[0-9a-fA-F]+>")
+        regex = (
+            rf"<weakref at 0x[0-9a-fA-F]+; "
+            rf"to '{'' if __name__ == '__main__' else C.__module__ + '.'}{C.__qualname__}' "
+            rf"at 0x[0-9a-fA-F]+>"
+        )
+        self.assertRegex(repr(ref), regex)
 
         obj = None
         gc_collect()
@@ -141,10 +143,13 @@ class ReferencesTestCase(TestBase):
 
         obj2 = WithName()
         ref2 = weakref.ref(obj2)
-        self.assertRegex(repr(ref2),
-                         rf"<weakref at 0x[0-9a-fA-F]+; "
-                         rf"to '{WithName.__module__}.{WithName.__qualname__}' "
-                         rf"at 0x[0-9a-fA-F]+ \(custom_name\)>")
+        regex = (
+            rf"<weakref at 0x[0-9a-fA-F]+; "
+            rf"to '{'' if __name__ == '__main__' else WithName.__module__ + '.'}"
+            rf"{WithName.__qualname__}' "
+            rf"at 0x[0-9a-fA-F]+ +\(custom_name\)>"
+        )
+        self.assertRegex(repr(ref2), regex)
 
     def test_repr_failure_gh99184(self):
         class MyConfig(dict):
@@ -229,10 +234,12 @@ class ReferencesTestCase(TestBase):
     def test_proxy_repr(self):
         obj = C()
         ref = weakref.proxy(obj, self.callback)
-        self.assertRegex(repr(ref),
-                         rf"<weakproxy at 0x[0-9a-fA-F]+; "
-                         rf"to '{C.__module__}.{C.__qualname__}' "
-                         rf"at 0x[0-9a-fA-F]+>")
+        regex = (
+            rf"<weakproxy at 0x[0-9a-fA-F]+; "
+            rf"to '{'' if __name__ == '__main__' else C.__module__ + '.'}{C.__qualname__}' "
+            rf"at 0x[0-9a-fA-F]+>"
+        )
+        self.assertRegex(repr(ref), regex)
 
         obj = None
         gc_collect()
@@ -2025,6 +2032,7 @@ class MappingTestCase(TestBase):
             raise exc[0]
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_key_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
@@ -2038,6 +2046,7 @@ class MappingTestCase(TestBase):
         self.check_threaded_weak_dict_copy(weakref.WeakKeyDictionary, True)
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_value_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.

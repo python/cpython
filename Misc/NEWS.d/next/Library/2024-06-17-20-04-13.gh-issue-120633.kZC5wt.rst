@@ -1,0 +1,1 @@
+Move scrollbar and remove tear-off menus in turtledemo.

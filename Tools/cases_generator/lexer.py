@@ -242,7 +242,7 @@ def make_syntax_error(
     return SyntaxError(message, (filename, line, column, line_text))
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Token:
     filename: str
     kind: str

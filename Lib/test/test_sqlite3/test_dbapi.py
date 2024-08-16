@@ -878,9 +878,8 @@ class CursorTests(unittest.TestCase):
         msg = "Binding.*is a named parameter"
         for query, params in dataset:
             with self.subTest(query=query, params=params):
-                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                with self.assertRaisesRegex(sqlite.ProgrammingError, msg) as cm:
                     self.cu.execute(query, params)
-                self.assertEqual(cm.filename,  __file__)
 
     def test_execute_indexed_nameless_params(self):
         # See gh-117995: "'?1' is considered a named placeholder"
@@ -1435,7 +1434,7 @@ class BlobTests(unittest.TestCase):
             self.blob + self.blob
         with self.assertRaisesRegex(TypeError, "unsupported operand"):
             self.blob * 5
-        with self.assertRaisesRegex(TypeError, "is not iterable"):
+        with self.assertRaisesRegex(TypeError, "is not.+iterable"):
             b"a" in self.blob
 
     def test_blob_context_manager(self):
