@@ -1207,7 +1207,7 @@ class RawConfigParser(MutableMapping):
         return self.BOOLEAN_STATES[value.lower()]
 
     def _validate_value_types(self, *, section="", option="", value=""):
-        """Raises a TypeError for incorrect non-string values.
+        """Raises a TypeError for illegal values.
 
         Legal non-string values are UNNAMED_SECTION and valueless values if
         they are are allowed.
