@@ -1020,7 +1020,7 @@ class TestMain(TestCase):
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
-        self.assertIn("warning: can\'t use pyrepl", output)
+        self.assertIn("warning: can't use pyrepl", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
