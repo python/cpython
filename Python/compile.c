@@ -67,6 +67,13 @@
         return ERROR;       \
     }
 
+#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
+    if ((CALL) < 0) { \
+        compiler_exit_scope((C)); \
+        return ERROR; \
+    } \
+}
+
 #define IS_TOP_LEVEL_AWAIT(C) ( \
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && ((C)->u->u_ste->ste_type == ModuleBlock))
@@ -290,8 +297,6 @@ typedef struct {
     // failure.
     Py_ssize_t on_top;
 } pattern_context;
-
-static int codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
@@ -685,6 +690,29 @@ compiler_set_qualname(struct compiler *c)
     return SUCCESS;
 }
 
+/* Add an opcode with an integer argument */
+static int
+codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
+{
+    /* oparg value is unsigned, but a signed C int is usually used to store
+       it in the C code (like Python/ceval.c).
+
+       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
+
+       The argument of a concrete bytecode instruction is limited to 8-bit.
+       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
+
+    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
+    return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
+}
+
+#define ADDOP_I(C, LOC, OP, O) \
+    RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
+
+#define ADDOP_I_IN_SCOPE(C, LOC, OP, O) \
+    RETURN_IF_ERROR_IN_SCOPE(C, codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)));
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
@@ -692,6 +720,12 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return _PyInstructionSequence_Addop(seq, opcode, 0, loc);
 }
+
+#define ADDOP(C, LOC, OP) \
+    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
+
+#define ADDOP_IN_SCOPE(C, LOC, OP) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 static Py_ssize_t
 dict_add_o(PyObject *dict, PyObject *o)
@@ -854,24 +888,57 @@ compiler_add_const(struct compiler *c, PyObject *o)
 }
 
 static int
-compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
+codegen_addop_load_const(struct compiler *c, location loc, PyObject *o)
 {
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), LOAD_CONST, arg, loc);
+    ADDOP_I(c, loc, LOAD_CONST, arg);
+    return SUCCESS;
+}
+
+#define ADDOP_LOAD_CONST(C, LOC, O) \
+    RETURN_IF_ERROR(codegen_addop_load_const((C), (LOC), (O)))
+
+#define ADDOP_LOAD_CONST_IN_SCOPE(C, LOC, O) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_load_const((C), (LOC), (O)))
+
+/* Same as ADDOP_LOAD_CONST, but steals a reference. */
+#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
+    PyObject *__new_const = (O); \
+    if (__new_const == NULL) { \
+        return ERROR; \
+    } \
+    if (codegen_addop_load_const((C), (LOC), __new_const) < 0) { \
+        Py_DECREF(__new_const); \
+        return ERROR; \
+    } \
+    Py_DECREF(__new_const); \
 }
 
 static int
-compiler_addop_o(struct compiler *c, location loc,
-                 int opcode, PyObject *dict, PyObject *o)
+codegen_addop_o(struct compiler *c, location loc,
+                int opcode, PyObject *dict, PyObject *o)
 {
     Py_ssize_t arg = dict_add_o(dict, o);
-    if (arg < 0) {
-        return ERROR;
-    }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    RETURN_IF_ERROR(arg);
+    ADDOP_I(c, loc, opcode, arg);
+    return SUCCESS;
+}
+
+#define ADDOP_N(C, LOC, OP, O, TYPE) { \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    int ret = codegen_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)); \
+    Py_DECREF((O)); \
+    RETURN_IF_ERROR(ret); \
+}
+
+#define ADDOP_N_IN_SCOPE(C, LOC, OP, O, TYPE) { \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    int ret = codegen_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)); \
+    Py_DECREF((O)); \
+    RETURN_IF_ERROR_IN_SCOPE((C), ret); \
 }
 
 #define LOAD_METHOD -1
@@ -880,8 +947,8 @@ compiler_addop_o(struct compiler *c, location loc,
 #define LOAD_ZERO_SUPER_METHOD -4
 
 static int
-compiler_addop_name(struct compiler *c, location loc,
-                    int opcode, PyObject *dict, PyObject *o)
+codegen_addop_name(struct compiler *c, location loc,
+                   int opcode, PyObject *dict, PyObject *o)
 {
     PyObject *mangled = compiler_maybe_mangle(c, o);
     if (!mangled) {
@@ -918,25 +985,12 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 2;
         arg |= 1;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    ADDOP_I(c, loc, opcode, arg);
+    return SUCCESS;
 }
 
-/* Add an opcode with an integer argument */
-static int
-codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
-{
-    /* oparg value is unsigned, but a signed C int is usually used to store
-       it in the C code (like Python/ceval.c).
-
-       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
-
-       The argument of a concrete bytecode instruction is limited to 8-bit.
-       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
-
-    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
-}
+#define ADDOP_NAME(C, LOC, OP, O, TYPE) \
+    RETURN_IF_ERROR(codegen_addop_name((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
 
 static int
 codegen_addop_j(instr_sequence *seq, location loc,
@@ -947,49 +1001,6 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
-
-#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
-    if ((CALL) < 0) { \
-        compiler_exit_scope((C)); \
-        return ERROR; \
-    } \
-}
-
-#define ADDOP(C, LOC, OP) \
-    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
-
-#define ADDOP_IN_SCOPE(C, LOC, OP) RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
-
-#define ADDOP_LOAD_CONST(C, LOC, O) \
-    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
-
-/* Same as ADDOP_LOAD_CONST, but steals a reference. */
-#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
-    PyObject *__new_const = (O); \
-    if (__new_const == NULL) { \
-        return ERROR; \
-    } \
-    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
-        Py_DECREF(__new_const); \
-        return ERROR; \
-    } \
-    Py_DECREF(__new_const); \
-}
-
-#define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
-        Py_DECREF((O)); \
-        return ERROR; \
-    } \
-    Py_DECREF((O)); \
-}
-
-#define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
-
-#define ADDOP_I(C, LOC, OP, O) \
-    RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_j(INSTR_SEQUENCE(C), (LOC), (OP), (O)))
@@ -2279,7 +2290,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         for (int i = 0; i < num_typeparam_args; i++) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, i, loc));
+            ADDOP_I_IN_SCOPE(c, loc, LOAD_FAST, i);
         }
     }
 
@@ -2300,10 +2311,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (is_generic) {
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
-            INSTR_SEQUENCE(c), SWAP, 2, loc));
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
-            INSTR_SEQUENCE(c), CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS, loc));
+        ADDOP_I_IN_SCOPE(c, loc, SWAP, 2);
+        ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
         c->u->u_metadata.u_argcount = num_typeparam_args;
         PyCodeObject *co = optimize_and_assemble(c, 0);
@@ -2393,12 +2402,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         // We can't use compiler_nameop here because we need to generate a
         // STORE_DEREF in a class namespace, and compiler_nameop() won't do
         // that by default.
-        PyObject *cellvars = c->u->u_metadata.u_cellvars;
-        if (compiler_addop_o(c, loc, STORE_DEREF, cellvars,
-                             &_Py_ID(__classdict__)) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     /* compile the body proper */
     if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
@@ -2527,9 +2531,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         _Py_DECLARE_STR(type_params, ".type_params");
         _Py_DECLARE_STR(generic_base, ".generic_base");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
-        RETURN_IF_ERROR_IN_SCOPE(
-            c, codegen_addop_i(INSTR_SEQUENCE(c), CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC, loc)
-        )
+        ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(generic_base), Store));
 
         Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
@@ -2630,9 +2632,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(type_params_name);
-        RETURN_IF_ERROR_IN_SCOPE(
-            c, compiler_addop_load_const(c, loc, name)
-        );
+        ADDOP_LOAD_CONST_IN_SCOPE(c, loc, name);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
     }
     else {
@@ -2713,8 +2713,8 @@ check_compare(struct compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int compiler_addcompare(struct compiler *c, location loc,
-                               cmpop_ty op)
+static int
+compiler_addcompare(struct compiler *c, location loc, cmpop_ty op)
 {
     int cmp;
     switch (op) {
@@ -4041,6 +4041,13 @@ addop_yield(struct compiler *c, location loc) {
 }
 
 static int
+compiler_load_classdict_freevar(struct compiler *c, location loc)
+{
+    ADDOP_N(c, loc, LOAD_DEREF, &_Py_ID(__classdict__), freevars);
+    return SUCCESS;
+}
+
+static int
 compiler_nameop(struct compiler *c, location loc,
                 identifier name, expr_context_ty ctx)
 {
@@ -4119,8 +4126,7 @@ compiler_nameop(struct compiler *c, location loc,
             else if (SYMTABLE_ENTRY(c)->ste_can_see_class_scope) {
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the classdict
-                if (compiler_addop_o(c, loc, LOAD_DEREF,
-                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                if (compiler_load_classdict_freevar(c, loc) < 0) {
                     goto error;
                 }
             }
@@ -4146,8 +4152,7 @@ compiler_nameop(struct compiler *c, location loc,
             if (SYMTABLE_ENTRY(c)->ste_can_see_class_scope && scope == GLOBAL_IMPLICIT) {
                 op = LOAD_FROM_DICT_OR_GLOBALS;
                 // First load the classdict
-                if (compiler_addop_o(c, loc, LOAD_DEREF,
-                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                if (compiler_load_classdict_freevar(c, loc) < 0) {
                     goto error;
                 }
             } else {
@@ -4181,7 +4186,8 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), op, arg, loc);
+    ADDOP_I(c, loc, op, arg);
+    return SUCCESS;
 
 error:
     Py_DECREF(mangled);
