@@ -1103,27 +1103,40 @@ class TestMain(TestCase):
     @force_not_colorized
     def test_proper_tracebacklimit(self):
         env = os.environ.copy()
-        commands = ("import sys\n"
-                    "sys.tracebacklimit = 1\n"
-                    "def x1(): 1/0\n\n"
-                    "def x2(): x1()\n\n"
-                    "def x3(): x2()\n\n"
-                    "x3()\n"
-                    "exit()\n")
+        for set_tracebacklimit in [True, False]:
+            commands = ("import sys\n" +
+                        ("sys.tracebacklimit = 1\n" if set_tracebacklimit else "") +
+                        "def x1(): 1/0\n\n"
+                        "def x2(): x1()\n\n"
+                        "def x3(): x2()\n\n"
+                        "x3()\n"
+                        "exit()\n")
 
-        env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env)
-        if "can\'t use pyrepl" in output:
-            self.skipTest("pyrepl not available")
-        self.assertIn("in x1", output)
-        self.assertNotIn("in x3", output)
-        self.assertNotIn("in <module>", output)
+            env.pop("PYTHON_BASIC_REPL", None)
+            output, exit_code = self.run_repl(commands, env=env)
+            if "can\'t use pyrepl" in output:
+                self.skipTest("pyrepl not available")
+            self.assertIn("in x1", output)
+            if set_tracebacklimit:
+                self.assertNotIn("in x2", output)
+                self.assertNotIn("in x3", output)
+                self.assertNotIn("in <module>", output)
+            else:
+                self.assertIn("in x2", output)
+                self.assertIn("in x3", output)
+                self.assertIn("in <module>", output)
 
-        env["PYTHON_BASIC_REPL"] = "1"
-        output, exit_code = self.run_repl(commands, env=env)
-        self.assertIn("in x1", output)
-        self.assertNotIn("in x3", output)
-        self.assertNotIn("in <module>", output)
+            env["PYTHON_BASIC_REPL"] = "1"
+            output, exit_code = self.run_repl(commands, env=env)
+            self.assertIn("in x1", output)
+            if set_tracebacklimit:
+                self.assertNotIn("in x2", output)
+                self.assertNotIn("in x3", output)
+                self.assertNotIn("in <module>", output)
+            else:
+                self.assertIn("in x2", output)
+                self.assertIn("in x3", output)
+                self.assertIn("in <module>", output)
 
     def run_repl(
         self,
