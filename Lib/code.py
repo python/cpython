@@ -94,7 +94,7 @@ class InteractiveInterpreter:
         except:
             self.showtraceback()
 
-    def showsyntaxerror(self, filename=None, **kwargs):
+    def showsyntaxerror(self, filename=None):
         """Display the syntax error that just occurred.
 
         This doesn't display a stack trace because there isn't one.
@@ -106,8 +106,6 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
-        colorize = kwargs.pop('colorize', False)
-        limit = kwargs.pop('limit', None)
         try:
             typ, value, tb = sys.exc_info()
             if filename and typ is SyntaxError:
@@ -120,11 +118,11 @@ class InteractiveInterpreter:
                 else:
                     # Stuff in the right filename
                     value = SyntaxError(msg, (filename, lineno, offset, line))
-            self._showtraceback(typ, value, None, colorize, limit)
+            self._showtraceback(typ, value, None)
         finally:
             typ = value = tb = None
 
-    def showtraceback(self, **kwargs):
+    def showtraceback(self):
         """Display the exception that just occurred.
 
         We remove the first stack item because it is our own code.
@@ -132,15 +130,16 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
-        colorize = kwargs.pop('colorize', False)
-        limit = kwargs.pop('limit', None)
         try:
             typ, value, tb = sys.exc_info()
-            self._showtraceback(typ, value, tb.tb_next, colorize, limit)
+            self._showtraceback(typ, value, tb.tb_next)
         finally:
             typ = value = tb = None
 
-    def _showtraceback(self, typ, value, tb, colorize, limit):
+    def _showtraceback(self, typ, value, tb, colorize=False, limit=None):
+        # This method is being overwritten in
+        # _pyrepl.console.InteractiveColoredConsole to pass different values of
+        # colorize and limit
         sys.last_type = typ
         sys.last_traceback = tb
         sys.last_exc = sys.last_value = value = value.with_traceback(tb)

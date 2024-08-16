@@ -161,13 +161,11 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
 
-    def showsyntaxerror(self, filename=None):
+    def _showtraceback(self, typ, value, tb, colorize=False, limit=None):
         import traceback
-        super().showsyntaxerror(colorize=self.can_colorize, limit=traceback.BUILTIN_EXCEPTION_LIMIT)
-
-    def showtraceback(self):
-        import traceback
-        super().showtraceback(colorize=self.can_colorize, limit=traceback.BUILTIN_EXCEPTION_LIMIT)
+        return super()._showtraceback(
+            typ, value, tb, colorize=self.can_colorize,
+            limit=traceback.BUILTIN_EXCEPTION_LIMIT)
 
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
