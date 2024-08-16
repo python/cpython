@@ -504,6 +504,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE 31
 #define SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR 32
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ 33
+#define SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN 34
 
 /* Binary subscr and store subscr */
 
@@ -732,6 +733,48 @@ typedef enum {
 
 
 static DescriptorClassification
+classify_descriptor(PyObject *descriptor, bool has_getattr)
+{
+    if (descriptor == NULL) {
+        return ABSENT;
+    }
+    PyTypeObject *desc_cls = Py_TYPE(descriptor);
+    if (!(desc_cls->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        return MUTABLE;
+    }
+    if (desc_cls->tp_descr_set) {
+        if (desc_cls == &PyMemberDescr_Type) {
+            PyMemberDescrObject *member = (PyMemberDescrObject *)descriptor;
+            struct PyMemberDef *dmem = member->d_member;
+            if (dmem->type == Py_T_OBJECT_EX || dmem->type == _Py_T_OBJECT) {
+                return OBJECT_SLOT;
+            }
+            return OTHER_SLOT;
+        }
+        if (desc_cls == &PyProperty_Type) {
+            /* We can't detect at runtime whether an attribute exists
+               with property. So that means we may have to call
+               __getattr__. */
+            return has_getattr ? GETSET_OVERRIDDEN : PROPERTY;
+        }
+        return OVERRIDING;
+    }
+    if (desc_cls->tp_descr_get) {
+        if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
+            return METHOD;
+        }
+        if (Py_IS_TYPE(descriptor, &PyClassMethodDescr_Type)) {
+            return BUILTIN_CLASSMETHOD;
+        }
+        if (Py_IS_TYPE(descriptor, &PyClassMethod_Type)) {
+            return PYTHON_CLASSMETHOD;
+        }
+        return NON_OVERRIDING;
+    }
+    return NON_DESCRIPTOR;
+}
+
+static DescriptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
     bool has_getattr = false;
@@ -784,50 +827,12 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
     }
     PyObject *descriptor = _PyType_Lookup(type, name);
     *descr = descriptor;
-    if (descriptor == NULL) {
-        return ABSENT;
-    }
-    PyTypeObject *desc_cls = Py_TYPE(descriptor);
-    if (!(desc_cls->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
-        return MUTABLE;
-    }
-    if (desc_cls->tp_descr_set) {
-        if (desc_cls == &PyMemberDescr_Type) {
-            PyMemberDescrObject *member = (PyMemberDescrObject *)descriptor;
-            struct PyMemberDef *dmem = member->d_member;
-            if (dmem->type == Py_T_OBJECT_EX || dmem->type == _Py_T_OBJECT) {
-                return OBJECT_SLOT;
-            }
-            return OTHER_SLOT;
-        }
-        if (desc_cls == &PyProperty_Type) {
-            /* We can't detect at runtime whether an attribute exists
-               with property. So that means we may have to call
-               __getattr__. */
-            return has_getattr ? GETSET_OVERRIDDEN : PROPERTY;
-        }
-        if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
-            if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
-                return DUNDER_CLASS;
-            }
-        }
-        if (store) {
-            return OVERRIDING;
+    if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
+        if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
+            return DUNDER_CLASS;
         }
     }
-    if (desc_cls->tp_descr_get) {
-        if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
-            return METHOD;
-        }
-        if (Py_IS_TYPE(descriptor, &PyClassMethodDescr_Type)) {
-            return BUILTIN_CLASSMETHOD;
-        }
-        if (Py_IS_TYPE(descriptor, &PyClassMethod_Type)) {
-            return PYTHON_CLASSMETHOD;
-        }
-        return NON_OVERRIDING;
-    }
-    return NON_DESCRIPTOR;
+    return classify_descriptor(descriptor, has_getattr);
 }
 
 static int
@@ -1227,23 +1232,52 @@ static int
 specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                              PyObject *name)
 {
+    assert(PyType_Check(owner));
+    PyTypeObject *cls = (PyTypeObject *)owner;
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
-    if (!PyType_CheckExact(owner) || _PyType_Lookup(Py_TYPE(owner), name)) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
+    if (Py_TYPE(cls)->tp_getattro != _Py_type_getattro) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN);
         return -1;
+    }
+    PyObject *metadescriptor = _PyType_Lookup(Py_TYPE(cls), name);
+    DescriptorClassification metakind = classify_descriptor(metadescriptor, false);
+    switch (metakind) {
+        case METHOD:
+        case NON_DESCRIPTOR:
+        case NON_OVERRIDING:
+        case BUILTIN_CLASSMETHOD:
+        case PYTHON_CLASSMETHOD:
+        case ABSENT:
+            break;
+        default:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
+            return -1;
     }
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
-    kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
-    if (type_get_version((PyTypeObject *)owner, LOAD_ATTR) == 0) {
+    kind = analyze_descriptor(cls, name, &descr, 0);
+    if (type_get_version(cls, LOAD_ATTR) == 0) {
         return -1;
+    }
+    bool metaclass_check = false;
+    if ((Py_TYPE(cls)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+        metaclass_check = true;
+        if (type_get_version(Py_TYPE(cls), LOAD_ATTR) == 0) {
+            return -1;
+        }
     }
     switch (kind) {
         case METHOD:
         case NON_DESCRIPTOR:
-            write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
+            write_u32(cache->type_version, cls->tp_version_tag);
             write_obj(cache->descr, descr);
-            instr->op.code = LOAD_ATTR_CLASS;
+            if (metaclass_check) {
+                write_u32(cache->keys_version, Py_TYPE(cls)->tp_version_tag);
+                instr->op.code = LOAD_ATTR_CLASS_WITH_METACLASS_CHECK;
+            }
+            else {
+                instr->op.code = LOAD_ATTR_CLASS;
+            }
             return 0;
 #ifdef Py_STATS
         case ABSENT:
