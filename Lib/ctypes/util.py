@@ -112,8 +112,8 @@ if os.name == "nt":
                                          modules,
                                          ctypes.sizeof(modules),
                                          ctypes.byref(space_needed)):
-                error = ctypes.get_last_error()
-                raise RuntimeError(f"EnumProcessModules failed with error code {error}")
+                raise ctypes.WinError(ctypes.get_last_error(),
+                                      "EnumProcessModules failed")
             n = space_needed.value // ctypes.sizeof(wintypes.HMODULE)
             if n <= len(modules):
                 return modules[:n]
