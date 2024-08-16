@@ -152,14 +152,14 @@ class ReferencesTestCase(TestBase):
         ref2 = weakref.ref(obj2)
         if __name__ == "__main__":
             regex = (
-                rf"<weakref at 0x[0-9a-fA-F]+; " 
-                rf"to '{WithName.__qualname__}' " 
+                rf"<weakref at 0x[0-9a-fA-F]+; "
+                rf"to '{WithName.__qualname__}' "
                 rf"at 0x[0-9a-fA-F]+ \(custom_name\)>"
             )
         else:
             regex = (
-                rf"<weakref at 0x[0-9a-fA-F]+; " 
-                rf"to '{WithName.__module__}.{WithName.__qualname__}' " 
+                rf"<weakref at 0x[0-9a-fA-F]+; "
+                rf"to '{WithName.__module__}.{WithName.__qualname__}' "
                 rf"at 0x[0-9a-fA-F]+ \(custom_name\)>"
             )
         self.assertRegex(repr(ref2), regex)
