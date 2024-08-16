@@ -421,9 +421,7 @@ def _parse_args(args, **kwargs):
     # Continuous Integration (CI): common options for fast/slow CI modes
     if ns.slow_ci or ns.fast_ci:
         # Similar to options:
-        #
-        #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
-        #     --slowest --verbose3
+        #   -j0 --randomize --fail-env-changed --rerun --slowest --verbose3
         if ns.use_mp is None:
             ns.use_mp = 0
         ns.randomize = True
