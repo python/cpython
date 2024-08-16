@@ -807,7 +807,7 @@ translate_bytecode_to_trace(
                                 ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
                                 goto done;
                             }
-                            assert(_PyOpcode_Deopt[opcode] == CALL);
+                            assert(_PyOpcode_Deopt[opcode] == CALL || _PyOpcode_Deopt[opcode] == CALL_KW);
                             int func_version_offset =
                                 offsetof(_PyCallCache, func_version)/sizeof(_Py_CODEUNIT)
                                 // Add one to account for the actual opcode/oparg pair:
