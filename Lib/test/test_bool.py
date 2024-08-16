@@ -75,6 +75,15 @@ class BoolTest(unittest.TestCase):
             eval("~True")
         with self.assertRaises(TypeError):
             eval("~False")
+        with self.assertRaises(TypeError):
+            true.__invert__()
+        with self.assertRaises(TypeError):
+            false.__invert__()
+
+        with self.assertRaisesRegex(TypeError, "Maybe you meant 'not' instead of '~'?"):
+            ~true
+        with self.assertRaisesRegex(TypeError, "Maybe you meant 'not' instead of '~'?"):
+            ~false
 
         self.assertEqual(False+2, 2)
         self.assertEqual(True+2, 3)
