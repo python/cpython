@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
+import inspect
 import _opcode
 import os
 import re
@@ -892,8 +893,16 @@ def calcvobjsize(fmt):
     return struct.calcsize(_vheader + fmt + _align)
 
 
-_TPFLAGS_HAVE_GC = 1<<14
+_TPFLAGS_STATIC_BUILTIN = 1<<1
+_TPFLAGS_DISALLOW_INSTANTIATION = 1<<7
+_TPFLAGS_IMMUTABLETYPE = 1<<8
 _TPFLAGS_HEAPTYPE = 1<<9
+_TPFLAGS_BASETYPE = 1<<10
+_TPFLAGS_READY = 1<<12
+_TPFLAGS_READYING = 1<<13
+_TPFLAGS_HAVE_GC = 1<<14
+_TPFLAGS_BASE_EXC_SUBCLASS = 1<<30
+_TPFLAGS_TYPE_SUBCLASS = 1<<31
 
 def check_sizeof(test, o, size):
     try:
@@ -2608,19 +2617,121 @@ def copy_python_src_ignore(path, names):
     return ignored
 
 
+# XXX Move this to the inspect module?
+def walk_class_hierarchy(top, *, topdown=True):
+    # This is based on the logic in os.walk().
+    assert isinstance(top, type), repr(top)
+    stack = [top]
+    while stack:
+        top = stack.pop()
+        if isinstance(top, tuple):
+            yield top
+            continue
+
+        subs = type(top).__subclasses__(top)
+        if topdown:
+            # Yield before subclass traversal if going top down.
+            yield top, subs
+            # Traverse into subclasses.
+            for sub in reversed(subs):
+                stack.append(sub)
+        else:
+            # Yield after subclass traversal if going bottom up.
+            stack.append((top, subs))
+            # Traverse into subclasses.
+            for sub in reversed(subs):
+                stack.append(sub)
+
+
 def iter_builtin_types():
-    for obj in __builtins__.values():
-        if not isinstance(obj, type):
+    # First try the explicit route.
+    try:
+        import _testinternalcapi
+    except ImportError:
+        _testinternalcapi = None
+    if _testinternalcapi is not None:
+        yield from _testinternalcapi.get_static_builtin_types()
+        return
+
+    # Fall back to making a best-effort guess.
+    if hasattr(object, '__flags__'):
+        # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
+        import datetime
+        seen = set()
+        for cls, subs in walk_class_hierarchy(object):
+            if cls in seen:
+                continue
+            seen.add(cls)
+            if not (cls.__flags__ & _TPFLAGS_STATIC_BUILTIN):
+                # Do not walk its subclasses.
+                subs[:] = []
+                continue
+            yield cls
+    else:
+        # Fall back to a naive approach.
+        seen = set()
+        for obj in __builtins__.values():
+            if not isinstance(obj, type):
+                continue
+            cls = obj
+            # XXX?
+            if cls.__module__ != 'builtins':
+                continue
+            if cls == ExceptionGroup:
+                # It's a heap type.
+                continue
+            if cls in seen:
+                continue
+            seen.add(cls)
+            yield cls
+
+
+# XXX Move this to the inspect module?
+def iter_name_in_mro(cls, name):
+    """Yield matching items found in base.__dict__ across the MRO.
+
+    The descriptor protocol is not invoked.
+
+    list(iter_name_in_mro(cls, name))[0] is roughly equivalent to
+    find_name_in_mro() in Objects/typeobject.c (AKA PyType_Lookup()).
+
+    inspect.getattr_static() is similar.
+    """
+    # This can fail if "cls" is weird.
+    for base in inspect._static_getmro(cls):
+        # This can fail if "base" is weird.
+        ns = inspect._get_dunder_dict_of_class(base)
+        try:
+            obj = ns[name]
+        except KeyError:
             continue
-        cls = obj
-        if cls.__module__ != 'builtins':
-            continue
-        yield cls
+        yield obj, base
+
+
+# XXX Move this to the inspect module?
+def find_name_in_mro(cls, name, default=inspect._sentinel):
+    for res in iter_name_in_mro(cls, name):
+        # Return the first one.
+        return res
+    if default is not inspect._sentinel:
+        return default, None
+    raise AttributeError(name)
+
+
+# XXX The return value should always be exactly the same...
+def identify_type_slot_wrappers():
+    try:
+        import _testinternalcapi
+    except ImportError:
+        _testinternalcapi = None
+    if _testinternalcapi is not None:
+        names = {n: None for n in _testinternalcapi.identify_type_slot_wrappers()}
+        return list(names)
+    else:
+        raise NotImplementedError
 
 
 def iter_slot_wrappers(cls):
-    assert cls.__module__ == 'builtins', cls
-
     def is_slot_wrapper(name, value):
         if not isinstance(value, types.WrapperDescriptorType):
             assert not repr(value).startswith('<slot wrapper '), (cls, name, value)
@@ -2629,6 +2740,19 @@ def iter_slot_wrappers(cls):
         assert callable(value), (cls, name, value)
         assert name.startswith('__') and name.endswith('__'), (cls, name, value)
         return True
+
+    try:
+        attrs = identify_type_slot_wrappers()
+    except NotImplementedError:
+        attrs = None
+    if attrs is not None:
+        for attr in sorted(attrs):
+            obj, base = find_name_in_mro(cls, attr, None)
+            if obj is not None and is_slot_wrapper(attr, obj):
+                yield attr, base is cls
+        return
+
+    # Fall back to a naive best-effort approach.
 
     ns = vars(cls)
     unused = set(ns)
