@@ -1736,7 +1736,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_char('=')
 
         # test PyUnicodeWriter_WriteSubstring()
-        writer.write_substring("[long]", 1, 5);
+        writer.write_substring("[long]", 1, 5)
 
         # test PyUnicodeWriter_WriteStr()
         writer.write_str(" value ")
@@ -1862,6 +1862,10 @@ class PyUnicodeWriterTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             writer.write_ucs4("text", -1)
 
+    def test_substring_empty(self):
+        writer = self.create_writer(0)
+        writer.write_substring("abc", 1, 1)
+        self.assertEqual(writer.finish(), '')
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')

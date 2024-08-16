@@ -354,16 +354,6 @@ asend().throw()
 
 ..
 
-.. date: 2024-04-13-18-59-25
-.. gh-issue: 115874
-.. nonce: c3xG-E
-.. section: Core and Builtins
-
-Fixed a possible segfault during garbage collection of
-``_asyncio.FutureIter`` objects
-
-..
-
 .. date: 2024-04-13-16-55-53
 .. gh-issue: 117536
 .. nonce: xkVbfv
@@ -883,6 +873,16 @@ Alex Waygood.
 
 ..
 
+.. date: 2024-04-13-18-59-25
+.. gh-issue: 115874
+.. nonce: c3xG-E
+.. section: Library
+
+Fixed a possible segfault during garbage collection of
+``_asyncio.FutureIter`` objects. Patch by Savannah Ostrowski.
+
+..
+
 .. date: 2024-04-13-01-45-15
 .. gh-issue: 115060
 .. nonce: IxoM03
@@ -1315,7 +1315,7 @@ Hamdan.
 .. section: Library
 
 Adjust ``logging.LogRecord`` to use ``time.time_ns()`` and fix minor bug
-related to floating point math.
+related to floating-point math.
 
 ..
 
