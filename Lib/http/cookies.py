@@ -184,7 +184,7 @@ def _quote(str):
         return '"' + str.translate(_Translator) + '"'
 
 
-_unquote_re = re.compile(r'\\(?:([0-3][0-7][0-7])|(["\\]))')
+_unquote_re = re.compile(r'\\(?:([0-3][0-7][0-7])|(.))')
 def _unquote_replace(m):
     if m[1]:
         return chr(int(m[1], 8))
