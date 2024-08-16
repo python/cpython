@@ -19,6 +19,9 @@ if sys.platform != "android":
 
 api_level = platform.android_ver().api_level
 
+# (name, level, fileno)
+STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
+
 
 # Test redirection of stdout and stderr to the Android log.
 @unittest.skipIf(
@@ -94,19 +97,21 @@ class TestAndroidOutput(unittest.TestCase):
         stack = ExitStack()
         stack.enter_context(self.subTest(stream_name))
         stream = getattr(sys, stream_name)
+        native_stream = getattr(sys, f"__{stream_name}__")
         if isinstance(stream, io.StringIO):
             stack.enter_context(
                 patch(
                     f"sys.{stream_name}",
                     TextLogStream(
-                        prio, f"python.{stream_name}", errors="backslashreplace"
+                        prio, f"python.{stream_name}", native_stream.fileno(),
+                        errors="backslashreplace"
                     ),
                 )
             )
         return stack
 
     def test_str(self):
-        for stream_name, level in [("stdout", "I"), ("stderr", "W")]:
+        for stream_name, level, fileno in STREAM_INFO:
             with self.stream_context(stream_name, level):
                 stream = getattr(sys, stream_name)
                 tag = f"python.{stream_name}"
@@ -114,6 +119,7 @@ class TestAndroidOutput(unittest.TestCase):
 
                 self.assertIs(stream.writable(), True)
                 self.assertIs(stream.readable(), False)
+                self.assertEqual(stream.fileno(), fileno)
                 self.assertEqual("UTF-8", stream.encoding)
                 self.assertIs(stream.line_buffering, True)
                 self.assertIs(stream.write_through, False)
@@ -257,13 +263,14 @@ class TestAndroidOutput(unittest.TestCase):
                 write("\n", [s * 51])  # 0 bytes in, 510 bytes out
 
     def test_bytes(self):
-        for stream_name, level in [("stdout", "I"), ("stderr", "W")]:
+        for stream_name, level, fileno in STREAM_INFO:
             with self.stream_context(stream_name, level):
                 stream = getattr(sys, stream_name).buffer
                 tag = f"python.{stream_name}"
                 self.assertEqual(f"<BinaryLogStream '{tag}'>", repr(stream))
                 self.assertIs(stream.writable(), True)
                 self.assertIs(stream.readable(), False)
+                self.assertEqual(stream.fileno(), fileno)
 
                 def write(b, lines=None, *, write_len=None):
                     if write_len is None:
