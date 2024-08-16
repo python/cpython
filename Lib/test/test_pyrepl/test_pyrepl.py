@@ -1120,7 +1120,7 @@ class TestMain(TestCase):
                 with self.subTest(set_tracebacklimit=set_tracebacklimit,
                                   basic_repl=basic_repl):
                     output, exit_code = self.run_repl(commands, env=env)
-                    if "can\'t use pyrepl" in output:
+                    if "can't use pyrepl" in output:
                         self.skipTest("pyrepl not available")
                     self.assertIn("in x1", output)
                     if set_tracebacklimit:
