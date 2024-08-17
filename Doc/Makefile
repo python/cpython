@@ -226,9 +226,6 @@ dist:
 	@echo "Building LaTeX (US paper)..."
 	rm -rf build/latex
 	$(MAKE) latex PAPER=letter
-	# remove zip & bz2 dependency on all-pdf,
-	# as otherwise the full latexmk process is run twice.
-	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
 	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
 	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=12 --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
@@ -265,11 +262,11 @@ _ensure-package: venv
 
 .PHONY: _ensure-pre-commit
 _ensure-pre-commit:
-	make _ensure-package PACKAGE=pre-commit
+	$(MAKE) _ensure-package PACKAGE=pre-commit
 
 .PHONY: _ensure-sphinx-autobuild
 _ensure-sphinx-autobuild:
-	make _ensure-package PACKAGE=sphinx-autobuild
+	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
 
 .PHONY: check
 check: _ensure-pre-commit
