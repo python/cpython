@@ -188,6 +188,7 @@ dist:
 	mkdir -p dist
 
 	# archive the HTML
+	@echo "Building HTML..."
 	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
@@ -195,8 +196,10 @@ dist:
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)
 	rm -r dist/python-$(DISTVERSION)-docs-html
 	rm dist/python-$(DISTVERSION)-docs-html.tar
+	@echo "Build finished and archived!"
 
 	# archive the text build
+	@echo "Building text..."
 	$(MAKE) text
 	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
@@ -204,29 +207,37 @@ dist:
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-text.zip python-$(DISTVERSION)-docs-text)
 	rm -r dist/python-$(DISTVERSION)-docs-text
 	rm dist/python-$(DISTVERSION)-docs-text.tar
+	@echo "Build finished and archived!"
 
 	# archive the A4 latex
+	@echo "Building LaTeX (A4 paper)..."
 	rm -rf build/latex
 	$(MAKE) latex PAPER=a4
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; $(MAKE) clean && $(MAKE) all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
+	@echo "Build finished and archived!"
 
 	# archive the letter latex
+	@echo "Building LaTeX (US paper)..."
 	rm -rf build/latex
 	$(MAKE) latex PAPER=letter
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; $(MAKE) clean && $(MAKE) all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
+	@echo "Build finished and archived!"
 
 	# copy the epub build
+	@echo "Building EPUB..."
 	rm -rf build/epub
 	$(MAKE) epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
+	@echo "Build finished and archived!"
 
 	# archive the texinfo build
+	@echo "Building Texinfo..."
 	rm -rf build/texinfo
 	$(MAKE) texinfo
 	$(MAKE) info --directory=build/texinfo
@@ -236,6 +247,7 @@ dist:
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-texinfo.zip python-$(DISTVERSION)-docs-texinfo)
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
+	@echo "Build finished and archived!"
 
 .PHONY: _ensure-package
 _ensure-package: venv
