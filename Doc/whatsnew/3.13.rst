@@ -503,7 +503,7 @@ Other Language Changes
   from every line in a docstring.
   This reduces the size of the :term:`bytecode cache <bytecode>`
   (such as ``.pyc`` files), with reductions in file size of around 5%,
-  for example, in :mod:`!sqlalchemy.orm.session` from SQLAlchemy 2.0.
+  for example in :mod:`!sqlalchemy.orm.session` from SQLAlchemy 2.0.
   This change affects tools that use docstrings, such as :mod:`doctest`.
 
   .. doctest::
