@@ -328,7 +328,7 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = io.BytesIO()
         zipapp.create_archive(
-            source=str(source), 
+            source=str(source),
             target=target,
             include_pattern=re.compile(r".*\.py")
         )
@@ -348,7 +348,7 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = io.BytesIO()
         zipapp.create_archive(
-            source=str(source), 
+            source=str(source),
             target=target,
             exclude_pattern=re.compile(r".*\.py")
         )
@@ -368,7 +368,7 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = io.BytesIO()
         zipapp.create_archive(
-            source=str(source), 
+            source=str(source),
             target=target,
             include_pattern=re.compile(r".*\.py"),
             exclude_pattern=re.compile(r".*z.*")
@@ -478,6 +478,9 @@ class ZipAppCmdlineTest(unittest.TestCase):
             zipapp.main(args)
         # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
+
+    def test_cmdline_create_with_include_pattern(self):
+
 
 
 if __name__ == "__main__":
