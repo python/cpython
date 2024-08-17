@@ -850,8 +850,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'p': {/* boolean *p*redicate */
         int val = PyObject_IsTrue(arg);
         if (*format == '*') {
-            // p*
-	    format++;
+            format++;
             bool *p_bool = va_arg(*p_va, bool *);
             if (val > 0)
                 *p_bool = true;
