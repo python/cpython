@@ -1994,9 +1994,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
 
         if (bytes == Py_None){
             PyErr_SetString(PyExc_BlockingIOError, "Unexpected None encountered. This may be due to non-blocking I/O "
-                                                   "or an issue with the underlying I/O implementation. Please refer to "
-                                                   "the documentation or ensure that the I/O operation is properly "
-                                                   "configured.");
+                                                   "or an issue with the underlying I/O implementation.");
             return NULL;
 
         }

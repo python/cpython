@@ -2524,13 +2524,13 @@ class TextIOWrapper(TextIOBase):
         decoder = self._decoder or self._get_decoder()
         if size < 0:
 
-            b = self.buffer.read()
-            if b is None:
+            chunk = self.buffer.read()
+            if chunk is None:
                 raise BlockingIOError
 
             # Read everything.
             result = (self._get_decoded_chars() +
-                      decoder.decode(b, final=True))
+                      decoder.decode(chunk, final=True))
             if self._snapshot is not None:
                 self._set_decoded_chars('')
                 self._snapshot = None

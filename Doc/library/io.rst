@@ -65,11 +65,10 @@ In-memory text streams are also available as :class:`StringIO` objects::
    f = io.StringIO("some initial text data")
 
 .. note::
-   If you are working with a non-blocking stream, be aware that operations on text I/O
-   objects may raise a ``BlockingIOError``. This occurs when the underlying stream is
-   in non-blocking mode and a read operation cannot be completed immediately, potentially
-   leading to a ``BlockingIOError``. To handle this, ensure your code properly catches and
-   manages such exceptions when working with non-blocking streams.
+   When working with a non-blocking stream, be aware that operations on text I/O objects
+   might raise a :exc:`BlockingIOError` if the stream cannot perform a read operation
+   immediately.
+
 
 The text stream API is described in detail in the documentation of
 :class:`TextIOBase`.
@@ -778,9 +777,8 @@ than raw I/O does.
       EOF or if the read call would block in non-blocking mode.
 
       .. note::
-         When the underlying raw stream is non-blocking, a ``BlockingIOError``
-         may be raised if the read operation cannot be completed immediately.
-         Ensure proper exception handling in such cases.
+         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+         may be raised if a read operation cannot be completed immediately.
 
    .. method:: read1(size=-1, /)
 
