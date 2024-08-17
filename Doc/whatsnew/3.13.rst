@@ -735,16 +735,16 @@ base64
   (Contributed by Matan Perelman in :gh:`75299`.)
 
 
-concurrent.futures
-------------------
+compileall
+----------
 
 * Select the default number of worker threads and processes using
   :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
 
-compileall
-----------
+concurrent.futures
+------------------
 
 * Select the default number of worker threads and processes using
   :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
