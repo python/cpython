@@ -1,1 +1,2 @@
-Add support for the unnamed section in :meth:`configparser.ConfigParser.add_section`.
+Add support for :const:`~configparser.UNNAMED_SECTION`
+in :meth:`configparser.ConfigParser.add_section`.
