@@ -535,27 +535,28 @@ class Boolean_TestCase(unittest.TestCase):
         import _testcapi
 
         for parsefn in (_testcapi.getargs_p, _testcapi.getargs_P):
-            self.assertEqual(0, getargs_p(False))
-            self.assertEqual(0, getargs_p(None))
-            self.assertEqual(0, getargs_p(0))
-            self.assertEqual(0, getargs_p(0.0))
-            self.assertEqual(0, getargs_p(0j))
-            self.assertEqual(0, getargs_p(''))
-            self.assertEqual(0, getargs_p(()))
-            self.assertEqual(0, getargs_p([]))
-            self.assertEqual(0, getargs_p({}))
+            with self.subTest(name=parsefn.__name__):
+                self.assertEqual(0, parsefn(False))
+                self.assertEqual(0, parsefn(None))
+                self.assertEqual(0, parsefn(0))
+                self.assertEqual(0, parsefn(0.0))
+                self.assertEqual(0, parsefn(0j))
+                self.assertEqual(0, parsefn(''))
+                self.assertEqual(0, parsefn(()))
+                self.assertEqual(0, parsefn([]))
+                self.assertEqual(0, parsefn({}))
 
-            self.assertEqual(1, getargs_p(True))
-            self.assertEqual(1, getargs_p(1))
-            self.assertEqual(1, getargs_p(1.0))
-            self.assertEqual(1, getargs_p(1j))
-            self.assertEqual(1, getargs_p('x'))
-            self.assertEqual(1, getargs_p((1,)))
-            self.assertEqual(1, getargs_p([1]))
-            self.assertEqual(1, getargs_p({1:2}))
-            self.assertEqual(1, getargs_p(unittest.TestCase))
+                self.assertEqual(1, parsefn(True))
+                self.assertEqual(1, parsefn(1))
+                self.assertEqual(1, parsefn(1.0))
+                self.assertEqual(1, parsefn(1j))
+                self.assertEqual(1, parsefn('x'))
+                self.assertEqual(1, parsefn((1,)))
+                self.assertEqual(1, parsefn([1]))
+                self.assertEqual(1, parsefn({1:2}))
+                self.assertEqual(1, parsefn(unittest.TestCase))
 
-            self.assertRaises(NotImplementedError, getargs_p, Paradox())
+                self.assertRaises(NotImplementedError, parsefn, Paradox())
 
 
 class Tuple_TestCase(unittest.TestCase):
