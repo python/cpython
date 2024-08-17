@@ -5176,7 +5176,7 @@ PyType_GetModuleState(PyTypeObject *type)
 /* Get the module of the first superclass where the module has the
  * given PyModuleDef.
  */
-static inline PyObject *
+static inline Py_ALWAYS_INLINE PyObject *
 get_module_by_def(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
