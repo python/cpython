@@ -81,21 +81,18 @@ def translate(pat):
     return _join_translated_parts(parts, indices)
 
 _set_ops_re = re.compile(r'([&~|])')
+_re_escape = functools.lru_cache(maxsize=32768)(re.escape)
 
 def _translate(pat, STAR, QUESTION_MARK):
     res = []
     add = res.append
     indices = []
-    pending = []  # pending characters to escape
 
     i, n = 0, len(pat)
     while i < n:
         c = pat[i]
         i = i+1
         if c == '*':
-            if pending:
-                add(re.escape(''.join(pending)))
-                pending = []
             # store the position of the wildcard
             indices.append(len(res))
             add(STAR)
@@ -106,9 +103,6 @@ def _translate(pat, STAR, QUESTION_MARK):
             # Handling '?' one at a time seems to more efficient
             # even if there are consecutive '?' that could have
             # been written directly.
-            if pending:
-                add(re.escape(''.join(pending)))
-                pending = []
             add(QUESTION_MARK)
         elif c == '[':
             j = i
@@ -119,11 +113,8 @@ def _translate(pat, STAR, QUESTION_MARK):
             while j < n and pat[j] != ']':
                 j = j+1
             if j >= n:
-                pending.append('[')
+                add('\\[')
             else:
-                if pending:
-                    add(re.escape(''.join(pending)))
-                    pending = []
                 stuff = pat[i:j]
                 if '-' not in stuff:
                     stuff = stuff.replace('\\', r'\\')
@@ -167,9 +158,7 @@ def _translate(pat, STAR, QUESTION_MARK):
                         stuff = '\\' + stuff
                     add(f'[{stuff}]')
         else:
-            pending.append(c)
-    if pending:
-        add(re.escape(''.join(pending)))
+            add(_re_escape(c))
     assert i == n
     return res, indices
 
@@ -180,10 +169,14 @@ def _join_translated_parts(parts, indices):
     iter_indices = iter(indices)
     i, j = 0, next(iter_indices)
     buffer = parts[i:j]
+    append, extend = buffer.append, buffer.extend
     i = j + 1
     for j in iter_indices:
-        buffer.append(f'(?>.*?{"".join(parts[i:j])})')
+        append('(?>.*?')
+        extend(parts[i:j])
+        append(')')
         i = j + 1
-    buffer.append(f'.*{"".join(parts[i:])}')
+    append('.*')
+    extend(parts[i:])
     res = ''.join(buffer)
     return fr'(?s:{res})\Z'

@@ -309,9 +309,11 @@ class TranslateTestCase(unittest.TestCase):
 
         blocks = ['a^b', '***', '?', '?', '[a-z]', '[1-9]', '*', '++', '[[a']
         parts, indices = _translate(''.join(blocks), '*', '.')
-        expect_parts = [r'a\^b', '*', '.', '.', '[a-z]', '[1-9]', '*', r'\+\+\[\[a']
+        expect_parts = ['a', r'\^', 'b', '*',
+                        '.', '.', '[a-z]', '[1-9]', '*',
+                        r'\+', r'\+', r'\[', r'\[', 'a']
         self.assertListEqual(parts, expect_parts)
-        self.assertListEqual(indices, [1, 6])
+        self.assertListEqual(indices, [3, 8])
 
 
 class FilterTestCase(unittest.TestCase):
