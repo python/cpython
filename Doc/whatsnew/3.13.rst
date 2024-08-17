@@ -501,10 +501,10 @@ Other Language Changes
 
 * The compiler now strips common common leading whitespace
   from every line in a docstring.
-  This reduces the size of :term:`bytecode cache <bytecode>`
+  This reduces the size of the :term:`bytecode cache <bytecode>`
   (such as ``.pyc`` files), with reductions in file size of around 5%,
-  for example, for :mod:`!sqlalchemy.orm.session` in SQLAlchemy 2.0.
-  This change will affect tools using docstrings, such as :mod:`doctest`.
+  for example, in :mod:`!sqlalchemy.orm.session` from SQLAlchemy 2.0.
+  This change affects tools that use docstrings, such as :mod:`doctest`.
 
   .. doctest::
 
@@ -544,8 +544,8 @@ Other Language Changes
   Previously this raised an erroneous :exc:`SyntaxError`.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
-* Add a new environment variable :envvar:`PYTHON_FROZEN_MODULES`.
-  which determines whether frozen modules are ignored by the import machinery,
+* Add :envvar:`PYTHON_FROZEN_MODULES`, a new environment variable that
+  determines whether frozen modules are ignored by the import machinery,
   equivalent to the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
@@ -582,13 +582,13 @@ Other Language Changes
 * Add :exc:`PythonFinalizationError`, a new exception derived from
   :exc:`RuntimeError` and used to signal when operations are blocked
   during :term:`finalization <interpreter shutdown>`.
-  The following functions now raise :exc:`!PythonFinalizationError`,
+  The following callables now raise :exc:`!PythonFinalizationError`,
   instead of :exc:`RuntimeError`:
 
-  * :func:`_thread.start_new_thread`.
-  * :func:`os.fork`.
-  * :func:`os.forkpty`.
-  * :class:`subprocess.Popen`.
+  * :func:`_thread.start_new_thread`
+  * :func:`os.fork`
+  * :func:`os.forkpty`
+  * :class:`subprocess.Popen`
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
