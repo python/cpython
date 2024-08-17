@@ -1,1 +1,1 @@
-Fix quadratic complexity in parsing cookies with backslashes.
+Fix quadratic complexity in parsing ``"``-quoted cookie values with backslashes by :mod:`http.cookies`.
