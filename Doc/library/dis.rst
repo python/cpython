@@ -1462,7 +1462,7 @@ iterations of the loop.
 
       end = STACK.pop()
       start = STACK.pop()
-      STACK.append(slice(start, stop))
+      STACK.append(slice(start, end))
 
    if it is 3, implements::
 
