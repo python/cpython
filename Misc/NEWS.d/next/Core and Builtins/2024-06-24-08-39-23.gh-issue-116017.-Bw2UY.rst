@@ -1,0 +1,3 @@
+Simplify the warmup mechanism used for "side exits" in JIT code, resulting
+in slightly better performance and slightly lower memory usage for most
+platforms.

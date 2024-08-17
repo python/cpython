@@ -972,6 +972,10 @@ class TestReplace(unittest.TestCase):
             copy.replace(c, x=1, error=2)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, copy, not_exported={"dispatch_table", "error"})
+
 def global_foo(x, y): return x+y
 
 

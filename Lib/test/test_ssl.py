@@ -103,6 +103,7 @@ CRLFILE = data_file("revocation.crl")
 
 # Two keys and certs signed by the same CA (for SNI tests)
 SIGNED_CERTFILE = data_file("keycert3.pem")
+SINGED_CERTFILE_ONLY = data_file("cert3.pem")
 SIGNED_CERTFILE_HOSTNAME = 'localhost'
 
 SIGNED_CERTFILE_INFO = {
@@ -4719,6 +4720,40 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 self.assertEqual(
                     ssl.PEM_cert_to_DER_cert(pem), der
                 )
+
+    def test_certificate_chain(self):
+        client_context, server_context, hostname = testing_context(
+            server_chain=False
+        )
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+
+        with open(SIGNING_CA) as f:
+            expected_ca_cert = ssl.PEM_cert_to_DER_cert(f.read())
+
+        with open(SINGED_CERTFILE_ONLY) as f:
+            expected_ee_cert = ssl.PEM_cert_to_DER_cert(f.read())
+
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                vc = s.get_verified_chain()
+                self.assertEqual(len(vc), 2)
+
+                ee, ca = vc
+                self.assertIsInstance(ee, bytes)
+                self.assertIsInstance(ca, bytes)
+                self.assertEqual(expected_ca_cert, ca)
+                self.assertEqual(expected_ee_cert, ee)
+
+                uvc = s.get_unverified_chain()
+                self.assertEqual(len(uvc), 1)
+                self.assertIsInstance(uvc[0], bytes)
+
+                self.assertEqual(ee, uvc[0])
+                self.assertNotEqual(ee, ca)
 
     def test_internal_chain_server(self):
         client_context, server_context, hostname = testing_context()

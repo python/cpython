@@ -783,7 +783,7 @@ class SubprocessMixin:
 
     def test_subprocess_protocol_events(self):
         # gh-108973: Test that all subprocess protocol methods are called.
-        # The protocol methods are not called in a determistic order.
+        # The protocol methods are not called in a deterministic order.
         # The order depends on the event loop and the operating system.
         events = []
         fds = [1, 2]
@@ -861,6 +861,21 @@ class SubprocessMixin:
             res = await asyncio.gather(*[get_command_stdout(sys.executable, '-c',
                                         f'print({out!r})') for out in outputs])
             self.assertEqual(res, outputs)
+
+        self.loop.run_until_complete(main())
+
+    @unittest.skipIf(sys.platform != 'linux', "Linux only")
+    def test_subprocess_send_signal_race(self):
+        # See https://github.com/python/cpython/issues/87744
+        async def main():
+            for _ in range(10):
+                proc = await asyncio.create_subprocess_exec('sleep', '0.1')
+                await asyncio.sleep(0.1)
+                try:
+                    proc.send_signal(signal.SIGUSR1)
+                except ProcessLookupError:
+                    pass
+                self.assertNotEqual(await proc.wait(), 255)
 
         self.loop.run_until_complete(main())
 
