@@ -339,7 +339,7 @@ Other objects
 
    .. versionadded:: 3.3
 
-``p*`` (:class:`bool`) [_Bool]
+``P`` (:class:`bool`) [_Bool]
    Like ``p``, but converts to a :c:expr:`_Bool` instead of an integer.
 
    .. versionadded:: 3.14
