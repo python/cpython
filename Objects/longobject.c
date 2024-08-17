@@ -6672,12 +6672,12 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
 
 int
 PyUnstable_Long_IsCompact(const PyLongObject* op) {
-    return _PyLong_IsCompact(op);
+    return _PyLong_IsCompact((PyLongObject*)op);
 }
 
 #undef PyUnstable_Long_CompactValue
 
 Py_ssize_t
 PyUnstable_Long_CompactValue(const PyLongObject* op) {
-    return _PyLong_CompactValue(op);
+    return _PyLong_CompactValue((PyLongObject*)op);
 }

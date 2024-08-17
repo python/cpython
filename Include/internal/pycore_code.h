@@ -8,7 +8,52 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_stackref.h"    // _PyStackRef
 #include "pycore_lock.h"        // PyMutex
+#include "pycore_backoff.h"     // _Py_BackoffCounter
+
+
+/* Each instruction in a code object is a fixed-width value,
+ * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
+ * opcode allows for larger values but the current limit is 3 uses
+ * of EXTENDED_ARG (see Python/compile.c), for a maximum
+ * 32-bit value.  This aligns with the note in Python/compile.c
+ * (compiler_addop_i_line) indicating that the max oparg value is
+ * 2**32 - 1, rather than INT_MAX.
+ */
+
+typedef union {
+    uint16_t cache;
+    struct {
+        uint8_t code;
+        uint8_t arg;
+    } op;
+    _Py_BackoffCounter counter;  // First cache entry of specializable op
+} _Py_CODEUNIT;
+
+
+/* These macros only remain defined for compatibility. */
+#define _Py_OPCODE(word) ((word).op.code)
+#define _Py_OPARG(word) ((word).op.arg)
+
+static inline _Py_CODEUNIT
+_py_make_codeunit(uint8_t opcode, uint8_t oparg)
+{
+    // No designated initialisers because of C++ compat
+    _Py_CODEUNIT word;
+    word.op.code = opcode;
+    word.op.arg = oparg;
+    return word;
+}
+
+static inline void
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
+{
+    word->op.code = opcode;
+}
+
+#define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
+#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
 
 
 // We hide some of the newer PyCodeObject fields behind macros.
@@ -273,30 +318,30 @@ extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
 /* Specialization functions */
 
-extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
+extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef cls,
                                          _Py_CODEUNIT *instr, int load_method);
-extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
-extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
                                       _Py_CODEUNIT *instr, PyObject *name);
-extern void _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container,
+extern void _Py_Specialize_BinarySubscr(_PyStackRef sub, _PyStackRef container,
                                         _Py_CODEUNIT *instr);
-extern void _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub,
+extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
-extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
-extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                                    int oparg, PyObject **locals);
-extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
+extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
+                                    int oparg, _PyStackRef *locals);
+extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
-extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
                                           int oparg);
-extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
-extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 
 #ifdef Py_STATS
 

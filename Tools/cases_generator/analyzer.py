@@ -111,7 +111,7 @@ class StackItem:
         return f"{type}{self.name}{size}{cond} {self.peek}"
 
     def is_array(self) -> bool:
-        return self.type == "PyObject **"
+        return self.type == "_PyStackRef *"
 
 
 @dataclass
@@ -353,6 +353,21 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 
 
 NON_ESCAPING_FUNCTIONS = (
+    "PyStackRef_FromPyObjectSteal",
+    "PyStackRef_AsPyObjectBorrow",
+    "PyStackRef_AsPyObjectSteal",
+    "PyStackRef_CLOSE",
+    "PyStackRef_DUP",
+    "PyStackRef_CLEAR",
+    "PyStackRef_IsNull",
+    "PyStackRef_TYPE",
+    "PyStackRef_False",
+    "PyStackRef_True",
+    "PyStackRef_None",
+    "PyStackRef_Is",
+    "PyStackRef_FromPyObjectNew",
+    "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectImmortal",
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GetManagedDict",
@@ -399,8 +414,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_SetStackPointer",
     "_PyType_HasFeature",
     "PyUnicode_Concat",
-    "_PyList_FromArraySteal",
-    "_PyTuple_FromArraySteal",
     "PySlice_New",
     "_Py_LeaveRecursiveCallPy",
     "CALL_STAT_INC",
@@ -413,6 +426,11 @@ NON_ESCAPING_FUNCTIONS = (
     "PyFloat_AS_DOUBLE",
     "_PyFrame_PushUnchecked",
     "Py_FatalError",
+    "STACKREFS_TO_PYOBJECTS",
+    "STACKREFS_TO_PYOBJECTS_CLEANUP",
+    "CONVERSION_FAILED",
+    "_PyList_FromArraySteal",
+    "_PyTuple_FromArraySteal",
 )
 
 ESCAPING_FUNCTIONS = (

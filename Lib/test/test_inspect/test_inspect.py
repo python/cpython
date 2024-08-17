@@ -3873,10 +3873,12 @@ class TestSignatureObject(unittest.TestCase):
                 def __init__(self, b):
                     pass
 
-            self.assertEqual(C(1), (2, 1))
-            self.assertEqual(self.signature(C),
-                            ((('a', ..., ..., "positional_or_keyword"),),
-                            ...))
+            with self.assertWarns(FutureWarning):
+                self.assertEqual(C(1), (2, 1))
+            with self.assertWarns(FutureWarning):
+                self.assertEqual(self.signature(C),
+                                ((('a', ..., ..., "positional_or_keyword"),),
+                                ...))
 
         with self.subTest('partialmethod'):
             class CM(type):
@@ -4024,10 +4026,12 @@ class TestSignatureObject(unittest.TestCase):
             class C:
                 __init__ = functools.partial(lambda x, a: None, 2)
 
-            C(1)  # does not raise
-            self.assertEqual(self.signature(C),
-                            ((('a', ..., ..., "positional_or_keyword"),),
-                            ...))
+            with self.assertWarns(FutureWarning):
+                C(1)  # does not raise
+            with self.assertWarns(FutureWarning):
+                self.assertEqual(self.signature(C),
+                                ((('a', ..., ..., "positional_or_keyword"),),
+                                ...))
 
         with self.subTest('partialmethod'):
             class C:
@@ -4282,10 +4286,13 @@ class TestSignatureObject(unittest.TestCase):
             class C:
                 __call__ = functools.partial(lambda x, a: (x, a), 2)
 
-            self.assertEqual(C()(1), (2, 1))
-            self.assertEqual(self.signature(C()),
-                            ((('a', ..., ..., "positional_or_keyword"),),
-                            ...))
+            c = C()
+            with self.assertWarns(FutureWarning):
+                self.assertEqual(c(1), (2, 1))
+            with self.assertWarns(FutureWarning):
+                self.assertEqual(self.signature(c),
+                                ((('a', ..., ..., "positional_or_keyword"),),
+                                ...))
 
         with self.subTest('partialmethod'):
             class C:

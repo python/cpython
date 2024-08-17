@@ -969,7 +969,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(expected.encode(), out)
 
     def test_python_basic_repl(self):
-        # Currently this only tests that the env var is set
+        # Currently this only tests that the env var is set. See test_pyrepl.test_python_basic_repl.
         code = "import os; print('PYTHON_BASIC_REPL' in os.environ)"
         expected = "True"
         rc, out, err = assert_python_ok('-c', code, PYTHON_BASIC_REPL='1')

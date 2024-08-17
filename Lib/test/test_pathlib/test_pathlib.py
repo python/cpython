@@ -654,6 +654,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             self.assertEqual(f.read().strip(), b"this is file A")
 
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
+    @unittest.skipIf(root_in_posix, "test fails with root privilege")
     def test_copytree_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'

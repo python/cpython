@@ -1125,17 +1125,6 @@ _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 }
 
 int
-_PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
-{
-    int result;
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname)
-        return -1;
-    result = PyObject_SetAttr(v, oname, w);
-    return result;
-}
-
-int
 _PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
 {
     assert(PyErr_Occurred());

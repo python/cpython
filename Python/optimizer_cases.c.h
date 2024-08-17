@@ -955,9 +955,9 @@
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
         case _LOAD_SUPER_ATTR_ATTR: {
-            _Py_UopsSymbol *attr;
-            attr = sym_new_not_null(ctx);
-            stack_pointer[-3] = attr;
+            _Py_UopsSymbol *attr_st;
+            attr_st = sym_new_not_null(ctx);
+            stack_pointer[-3] = attr_st;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1319,9 +1319,9 @@
         }
 
         case _GET_LEN: {
-            _Py_UopsSymbol *len_o;
-            len_o = sym_new_not_null(ctx);
-            stack_pointer[0] = len_o;
+            _Py_UopsSymbol *len;
+            len = sym_new_not_null(ctx);
+            stack_pointer[0] = len;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1898,9 +1898,9 @@
         }
 
         case _SET_FUNCTION_ATTRIBUTE: {
-            _Py_UopsSymbol *func;
-            func = sym_new_not_null(ctx);
-            stack_pointer[-2] = func;
+            _Py_UopsSymbol *func_st;
+            func_st = sym_new_not_null(ctx);
+            stack_pointer[-2] = func_st;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;

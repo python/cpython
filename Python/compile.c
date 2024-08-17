@@ -4681,7 +4681,7 @@ check_subscripter(struct compiler *c, expr_ty e)
         {
             return SUCCESS;
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
     case Set_kind:
     case SetComp_kind:
     case GeneratorExp_kind:
@@ -4714,7 +4714,7 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
         if (!(PyUnicode_Check(v) || PyBytes_Check(v) || PyTuple_Check(v))) {
             return SUCCESS;
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
     case Tuple_kind:
     case List_kind:
     case ListComp_kind:
