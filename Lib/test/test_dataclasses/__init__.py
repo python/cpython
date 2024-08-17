@@ -1413,7 +1413,7 @@ class TestCase(unittest.TestCase):
         C().x
         self.assertEqual(factory.call_count, 2)
 
-    def test_default_factory_with_no_init_method(self):
+    def test_default_factory_and_init_method_interaction(self):
         # See https://github.com/python/cpython/issues/89529.
 
         @dataclass
@@ -1452,8 +1452,8 @@ class TestCase(unittest.TestCase):
                 self.assertListEqual(C().x, [])
 
             with self.subTest('user-defined __init__', base_class=base_class,
-                              init=False, slots=slots, field_init=field_init):
-                @dataclass(init=False, slots=slots)
+                              init=True, slots=slots, field_init=field_init):
+                @dataclass(init=True, slots=slots)
                 class C(base_class):
                     x: list = field(init=field_init, default_factory=list)
                     def __init__(self, *a, **kw):
@@ -1467,6 +1467,16 @@ class TestCase(unittest.TestCase):
                     @dataclass(init=False, slots=slots)
                     class C(base_class):
                         x: list = field(init=field_init, default_factory=list)
+
+            with self.subTest('user-defined __init__', base_class=base_class,
+                              init=False, slots=slots, field_init=field_init):
+                @dataclass(init=False, slots=slots)
+                class C(base_class):
+                    x: list = field(init=field_init, default_factory=list)
+                    def __init__(self, *a, **kw):
+                        # deliberately use something else
+                        self.x = 'world'
+                self.assertEqual(C().x, 'world')
 
     def test_default_factory_not_called_if_value_given(self):
         # We need a factory that we can test if it's been called.
