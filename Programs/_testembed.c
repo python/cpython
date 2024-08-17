@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -2022,6 +2023,22 @@ static int test_init_main_interpreter_settings(void)
     return 0;
 }
 
+static void do_init(void *unused)
+{
+    _testembed_Py_Initialize();
+    Py_Finalize();
+}
+
+static int test_init_in_background_thread(void)
+{
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    if (PyThread_start_joinable_thread(&do_init, NULL, &ident, &handle) < 0) {
+        return -1;
+    }
+    return PyThread_join_thread(handle);
+}
+
 
 #ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
@@ -2211,6 +2228,7 @@ static struct TestCase TestCases[] = {
     {"test_get_argc_argv", test_get_argc_argv},
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
+    {"test_init_in_background_thread", test_init_in_background_thread},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
