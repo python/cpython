@@ -3,7 +3,7 @@
  * APIs that parse and build arguments.
  */
 
-#include <stdbool.h> // For p*
+#include <stdbool.h> // For bool
 #include "parts.h"
 
 static PyObject *
