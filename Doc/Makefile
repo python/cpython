@@ -213,7 +213,6 @@ dist:
 	@echo "Building LaTeX (A4 paper)..."
 	rm -rf build/latex
 	$(MAKE) latex PAPER=a4
-	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; $(MAKE) clean && $(MAKE) all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
@@ -223,7 +222,6 @@ dist:
 	@echo "Building LaTeX (US paper)..."
 	rm -rf build/latex
 	$(MAKE) latex PAPER=letter
-	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; $(MAKE) clean && $(MAKE) all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
