@@ -213,7 +213,7 @@ dist:
 	@echo "Building LaTeX (A4 paper)..."
 	rm -rf build/latex
 	$(MAKE) latex PAPER=a4
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=12 --output-sync all-pdf && $(MAKE) FMT=pdf zip bz2)
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=12 --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
@@ -222,7 +222,7 @@ dist:
 	@echo "Building LaTeX (US paper)..."
 	rm -rf build/latex
 	$(MAKE) latex PAPER=letter
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=12 --output-sync all-pdf && $(MAKE) FMT=pdf zip bz2)
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=12 --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 	@echo "Build finished and archived!"
