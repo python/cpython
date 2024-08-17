@@ -535,7 +535,7 @@ class Boolean_TestCase(unittest.TestCase):
         import _testcapi
 
         for parsefn in (_testcapi.getargs_p, _testcapi.getargs_P):
-            with self.subTest(name=parsefn.__name__):
+            with self.subTest(parsefn=parsefn):
                 self.assertEqual(0, parsefn(False))
                 self.assertEqual(0, parsefn(None))
                 self.assertEqual(0, parsefn(0))
