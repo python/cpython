@@ -1,1 +1,1 @@
-In _io_TextIOWrapper_read_impl, raise BlockingIOError when read() from a non-blocking pipe does not return bytes.
+Reading text from a non-blocking stream with `.read()` may now raise a `BlockingIOError` if the operation cannot immediately return bytes.
