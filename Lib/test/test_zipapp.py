@@ -2,6 +2,7 @@
 
 import io
 import pathlib
+import re
 import stat
 import sys
 import tempfile
@@ -315,6 +316,67 @@ class ZipAppTest(unittest.TestCase):
         new_target.seek(0)
         with zipfile.ZipFile(new_target, 'r') as z:
             self.assertEqual(set(z.namelist()), {'__main__.py'})
+
+    def test_create_archive_with_include_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+        target = io.BytesIO()
+        zipapp.create_archive(
+            source=str(source), 
+            target=target,
+            include_pattern=re.compile(r".*\.py")
+        )
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py", "zed.py"])
+
+    def test_create_archive_with_exclude_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+        target = io.BytesIO()
+        zipapp.create_archive(
+            source=str(source), 
+            target=target,
+            exclude_pattern=re.compile(r".*\.py")
+        )
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                [".DS_Store", "bin/", "bin/baz", "bin/qux"])
+
+    def test_create_archive_with_include_and_exclude_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+        target = io.BytesIO()
+        zipapp.create_archive(
+            source=str(source), 
+            target=target,
+            include_pattern=re.compile(r".*\.py"),
+            exclude_pattern=re.compile(r".*z.*")
+        )
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py"])
 
     # (Unix only) tests that archives with shebang lines are made executable
     @unittest.skipIf(sys.platform == 'win32',
