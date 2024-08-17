@@ -6895,12 +6895,12 @@
                 PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
                 new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
                 ep->me_value = PyStackRef_AsPyObjectSteal(value);
-                Py_XDECREF(old_value);
                 STAT_INC(STORE_ATTR, hit);
                 /* Ensure dict is GC tracked if it needs to be */
                 if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                     _PyObject_GC_TRACK(dict);
                 }
+                Py_XDECREF(old_value);
                 /* PEP 509 */
                 dict->ma_version_tag = new_version;
                 PyStackRef_CLOSE(owner);
