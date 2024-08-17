@@ -790,9 +790,8 @@ than raw I/O does.
          The *size* argument is now optional.
 
       .. note::
-         When the underlying raw stream is non-blocking, a ``BlockingIOError``
-         may be raised if the read operation cannot be completed immediately.
-         Ensure proper exception handling in such cases.
+         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+         may be raised if a read operation cannot be completed immediately.
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
@@ -1022,8 +1021,8 @@ Text I/O
       The *encoding* argument now supports the ``"locale"`` dummy encoding name.
 
    .. note::
-      If the underlying raw stream is non-blocking, the ``read()`` method may raise a
-      ``BlockingIOError`` if no data is available immediately.
+      When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+      may be raised if a read operation cannot be completed immediately.
 
    :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:
