@@ -339,6 +339,12 @@ Other objects
 
    .. versionadded:: 3.3
 
+``p*`` (:class:`bool`) [_Bool]
+   Like ``p``, but the C pointer should be a ``_Bool``/``bool`` instead of an integer.
+
+   .. versionadded:: 3.14
+
+
 ``(items)`` (:class:`tuple`) [*matching-items*]
    The object must be a Python sequence whose length is the number of format units
    in *items*.  The C arguments must correspond to the individual format units in
