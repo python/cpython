@@ -503,7 +503,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         with zipfile.ZipFile(target, 'r') as zf:
             self.assertEqual(zf.namelist(),
                     ["__main__.py", "zed.py"])
-            
+
     def test_cmdline_create_with_exclude_pattern(self):
         source = self.tmpdir / 'source'
         source.mkdir()
@@ -537,7 +537,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         zipapp.main(args)
         target = source.with_suffix('.pyz')
         self.assertTrue(target.is_file())
-        
+
         with zipfile.ZipFile(target, 'r') as zf:
             self.assertEqual(zf.namelist(),
                 ["__main__.py"])
