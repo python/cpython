@@ -455,7 +455,7 @@ getargs_p_star(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "p*", &value)) {
         return NULL;
     }
-    return PyLong_FromLong((int) value);
+    return PyLong_FromLong((int)value);
 }
 
 static PyObject *
