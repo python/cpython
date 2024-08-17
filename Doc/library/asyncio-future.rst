@@ -51,6 +51,7 @@ Future Functions
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` to use when creating a new task.
+   A copy of the current context is used when no *context* is provided.
 
    .. important::
 
