@@ -188,7 +188,7 @@ dist:
 	mkdir -p dist
 
 	# archive the HTML
-	make html
+	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
@@ -197,7 +197,7 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-html.tar
 
 	# archive the text build
-	make text
+	$(MAKE) text
 	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-text.tar
@@ -207,29 +207,29 @@ dist:
 
 	# archive the A4 latex
 	rm -rf build/latex
-	make latex PAPER=a4
+	$(MAKE) latex PAPER=a4
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
-	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
+	(cd build/latex; $(MAKE) clean && $(MAKE) all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 
 	# archive the letter latex
 	rm -rf build/latex
-	make latex PAPER=letter
+	$(MAKE) latex PAPER=letter
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
-	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
+	(cd build/latex; $(MAKE) clean && $(MAKE) all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 
 	# copy the epub build
 	rm -rf build/epub
-	make epub
+	$(MAKE) epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 
 	# archive the texinfo build
 	rm -rf build/texinfo
-	make texinfo
-	make info --directory=build/texinfo
+	$(MAKE) texinfo
+	$(MAKE) info --directory=build/texinfo
 	cp -pPR build/texinfo dist/python-$(DISTVERSION)-docs-texinfo
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-texinfo.tar python-$(DISTVERSION)-docs-texinfo
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-texinfo.tar
@@ -271,12 +271,12 @@ serve:
 # for development releases: always build
 .PHONY: autobuild-dev
 autobuild-dev:
-	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for quick rebuilds (HTML only)
 .PHONY: autobuild-dev-html
 autobuild-dev-html:
-	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
@@ -286,7 +286,7 @@ autobuild-stable:
 		echo "Not building; $(DISTVERSION) is not a release version."; \
 		exit 1;; \
 	esac
-	@make autobuild-dev
+	@$(MAKE) autobuild-dev
 
 .PHONY: autobuild-stable-html
 autobuild-stable-html:
@@ -294,4 +294,4 @@ autobuild-stable-html:
 		echo "Not building; $(DISTVERSION) is not a release version."; \
 		exit 1;; \
 	esac
-	@make autobuild-dev-html
+	@$(MAKE) autobuild-dev-html
