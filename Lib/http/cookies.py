@@ -184,7 +184,8 @@ def _quote(str):
         return '"' + str.translate(_Translator) + '"'
 
 
-_unquote_re = re.compile(r'\\(?:([0-3][0-7][0-7])|(.))')
+_unquote_sub = re.compile(r'\\(?:([0-3][0-7][0-7])|(.))').sub
+
 def _unquote_replace(m):
     if m[1]:
         return chr(int(m[1], 8))
@@ -209,8 +210,7 @@ def _unquote(str):
     #    \012 --> \n
     #    \"   --> "
     #
-
-    return _unquote_re.sub(_unquote_replace, str)
+    return _unquote_sub(_unquote_replace, str)
 
 # The _getdate() routine is used to set the expiration time in the cookie's HTTP
 # header.  By default, _getdate() returns the current time in the appropriate
