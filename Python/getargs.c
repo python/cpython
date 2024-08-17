@@ -2690,7 +2690,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
         {
             if (p_va != NULL) {
                 if (*format == '*') {
-                    // allow p*
                     format++;
                 }
                 (void) va_arg(*p_va, void *);
