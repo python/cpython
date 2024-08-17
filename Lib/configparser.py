@@ -1210,7 +1210,7 @@ class RawConfigParser(MutableMapping):
         """Raises a TypeError for illegal values.
 
         Legal non-string values are UNNAMED_SECTION and valueless values if
-        they are are allowed.
+        they are allowed.
 
         For compatibility reasons this method is not used in classic set()
         for RawConfigParsers. It is invoked in every case for mapping protocol
