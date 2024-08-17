@@ -67,6 +67,13 @@
         return ERROR;       \
     }
 
+#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
+    if ((CALL) < 0) { \
+        compiler_exit_scope((C)); \
+        return ERROR; \
+    } \
+}
+
 #define IS_TOP_LEVEL_AWAIT(C) ( \
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && ((C)->u->u_ste->ste_type == ModuleBlock))
@@ -291,8 +298,6 @@ typedef struct {
     Py_ssize_t on_top;
 } pattern_context;
 
-static int codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc);
-
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
 static int compiler_warn(struct compiler *, location loc, const char *, ...);
@@ -491,7 +496,7 @@ each key.
 static PyObject *
 dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 {
-    Py_ssize_t i = offset, scope, num_keys, key_i;
+    Py_ssize_t i = offset, num_keys, key_i;
     PyObject *k, *v, *dest = PyDict_New();
     PyObject *sorted_keys;
 
@@ -533,10 +538,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
             Py_DECREF(dest);
             return NULL;
         }
-        /* XXX this should probably be a macro in symtable.h */
-        scope = (vi >> SCOPE_OFFSET) & SCOPE_MASK;
-
-        if (scope == scope_type || vi & flag) {
+        if (SYMBOL_TO_SCOPE(vi) == scope_type || vi & flag) {
             PyObject *item = PyLong_FromSsize_t(i);
             if (item == NULL) {
                 Py_DECREF(sorted_keys);
@@ -688,6 +690,29 @@ compiler_set_qualname(struct compiler *c)
     return SUCCESS;
 }
 
+/* Add an opcode with an integer argument */
+static int
+codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
+{
+    /* oparg value is unsigned, but a signed C int is usually used to store
+       it in the C code (like Python/ceval.c).
+
+       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
+
+       The argument of a concrete bytecode instruction is limited to 8-bit.
+       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
+
+    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
+    return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
+}
+
+#define ADDOP_I(C, LOC, OP, O) \
+    RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
+
+#define ADDOP_I_IN_SCOPE(C, LOC, OP, O) \
+    RETURN_IF_ERROR_IN_SCOPE(C, codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)));
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
@@ -695,6 +720,12 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return _PyInstructionSequence_Addop(seq, opcode, 0, loc);
 }
+
+#define ADDOP(C, LOC, OP) \
+    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
+
+#define ADDOP_IN_SCOPE(C, LOC, OP) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 static Py_ssize_t
 dict_add_o(PyObject *dict, PyObject *o)
@@ -857,24 +888,57 @@ compiler_add_const(struct compiler *c, PyObject *o)
 }
 
 static int
-compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
+codegen_addop_load_const(struct compiler *c, location loc, PyObject *o)
 {
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), LOAD_CONST, arg, loc);
+    ADDOP_I(c, loc, LOAD_CONST, arg);
+    return SUCCESS;
+}
+
+#define ADDOP_LOAD_CONST(C, LOC, O) \
+    RETURN_IF_ERROR(codegen_addop_load_const((C), (LOC), (O)))
+
+#define ADDOP_LOAD_CONST_IN_SCOPE(C, LOC, O) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_load_const((C), (LOC), (O)))
+
+/* Same as ADDOP_LOAD_CONST, but steals a reference. */
+#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
+    PyObject *__new_const = (O); \
+    if (__new_const == NULL) { \
+        return ERROR; \
+    } \
+    if (codegen_addop_load_const((C), (LOC), __new_const) < 0) { \
+        Py_DECREF(__new_const); \
+        return ERROR; \
+    } \
+    Py_DECREF(__new_const); \
 }
 
 static int
-compiler_addop_o(struct compiler *c, location loc,
-                 int opcode, PyObject *dict, PyObject *o)
+codegen_addop_o(struct compiler *c, location loc,
+                int opcode, PyObject *dict, PyObject *o)
 {
     Py_ssize_t arg = dict_add_o(dict, o);
-    if (arg < 0) {
-        return ERROR;
-    }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    RETURN_IF_ERROR(arg);
+    ADDOP_I(c, loc, opcode, arg);
+    return SUCCESS;
+}
+
+#define ADDOP_N(C, LOC, OP, O, TYPE) { \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    int ret = codegen_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)); \
+    Py_DECREF((O)); \
+    RETURN_IF_ERROR(ret); \
+}
+
+#define ADDOP_N_IN_SCOPE(C, LOC, OP, O, TYPE) { \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    int ret = codegen_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)); \
+    Py_DECREF((O)); \
+    RETURN_IF_ERROR_IN_SCOPE((C), ret); \
 }
 
 #define LOAD_METHOD -1
@@ -883,8 +947,8 @@ compiler_addop_o(struct compiler *c, location loc,
 #define LOAD_ZERO_SUPER_METHOD -4
 
 static int
-compiler_addop_name(struct compiler *c, location loc,
-                    int opcode, PyObject *dict, PyObject *o)
+codegen_addop_name(struct compiler *c, location loc,
+                   int opcode, PyObject *dict, PyObject *o)
 {
     PyObject *mangled = compiler_maybe_mangle(c, o);
     if (!mangled) {
@@ -921,25 +985,12 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 2;
         arg |= 1;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    ADDOP_I(c, loc, opcode, arg);
+    return SUCCESS;
 }
 
-/* Add an opcode with an integer argument */
-static int
-codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
-{
-    /* oparg value is unsigned, but a signed C int is usually used to store
-       it in the C code (like Python/ceval.c).
-
-       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
-
-       The argument of a concrete bytecode instruction is limited to 8-bit.
-       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
-
-    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
-}
+#define ADDOP_NAME(C, LOC, OP, O, TYPE) \
+    RETURN_IF_ERROR(codegen_addop_name((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
 
 static int
 codegen_addop_j(instr_sequence *seq, location loc,
@@ -950,49 +1001,6 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
-
-#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
-    if ((CALL) < 0) { \
-        compiler_exit_scope((C)); \
-        return ERROR; \
-    } \
-}
-
-#define ADDOP(C, LOC, OP) \
-    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
-
-#define ADDOP_IN_SCOPE(C, LOC, OP) RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
-
-#define ADDOP_LOAD_CONST(C, LOC, O) \
-    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
-
-/* Same as ADDOP_LOAD_CONST, but steals a reference. */
-#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
-    PyObject *__new_const = (O); \
-    if (__new_const == NULL) { \
-        return ERROR; \
-    } \
-    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
-        Py_DECREF(__new_const); \
-        return ERROR; \
-    } \
-    Py_DECREF(__new_const); \
-}
-
-#define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
-        Py_DECREF((O)); \
-        return ERROR; \
-    } \
-    Py_DECREF((O)); \
-}
-
-#define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
-
-#define ADDOP_I(C, LOC, OP, O) \
-    RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_j(INSTR_SEQUENCE(C), (LOC), (OP), (O)))
@@ -2282,7 +2290,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         for (int i = 0; i < num_typeparam_args; i++) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, i, loc));
+            ADDOP_I_IN_SCOPE(c, loc, LOAD_FAST, i);
         }
     }
 
@@ -2303,10 +2311,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (is_generic) {
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
-            INSTR_SEQUENCE(c), SWAP, 2, loc));
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
-            INSTR_SEQUENCE(c), CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS, loc));
+        ADDOP_I_IN_SCOPE(c, loc, SWAP, 2);
+        ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
         c->u->u_metadata.u_argcount = num_typeparam_args;
         PyCodeObject *co = optimize_and_assemble(c, 0);
@@ -2396,12 +2402,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         // We can't use compiler_nameop here because we need to generate a
         // STORE_DEREF in a class namespace, and compiler_nameop() won't do
         // that by default.
-        PyObject *cellvars = c->u->u_metadata.u_cellvars;
-        if (compiler_addop_o(c, loc, STORE_DEREF, cellvars,
-                             &_Py_ID(__classdict__)) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     /* compile the body proper */
     if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
@@ -2530,9 +2531,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         _Py_DECLARE_STR(type_params, ".type_params");
         _Py_DECLARE_STR(generic_base, ".generic_base");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
-        RETURN_IF_ERROR_IN_SCOPE(
-            c, codegen_addop_i(INSTR_SEQUENCE(c), CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC, loc)
-        )
+        ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(generic_base), Store));
 
         Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
@@ -2633,9 +2632,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(type_params_name);
-        RETURN_IF_ERROR_IN_SCOPE(
-            c, compiler_addop_load_const(c, loc, name)
-        );
+        ADDOP_LOAD_CONST_IN_SCOPE(c, loc, name);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
     }
     else {
@@ -2716,8 +2713,8 @@ check_compare(struct compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int compiler_addcompare(struct compiler *c, location loc,
-                               cmpop_ty op)
+static int
+compiler_addcompare(struct compiler *c, location loc, cmpop_ty op)
 {
     int cmp;
     switch (op) {
@@ -3051,7 +3048,6 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     NEW_JUMP_TARGET_LABEL(c, loop);
-    NEW_JUMP_TARGET_LABEL(c, body);
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, anchor);
 
@@ -3060,9 +3056,8 @@ compiler_while(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
     RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
-    USE_LABEL(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, body, 1));
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
@@ -4046,6 +4041,13 @@ addop_yield(struct compiler *c, location loc) {
 }
 
 static int
+compiler_load_classdict_freevar(struct compiler *c, location loc)
+{
+    ADDOP_N(c, loc, LOAD_DEREF, &_Py_ID(__classdict__), freevars);
+    return SUCCESS;
+}
+
+static int
 compiler_nameop(struct compiler *c, location loc,
                 identifier name, expr_context_ty ctx)
 {
@@ -4124,8 +4126,7 @@ compiler_nameop(struct compiler *c, location loc,
             else if (SYMTABLE_ENTRY(c)->ste_can_see_class_scope) {
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the classdict
-                if (compiler_addop_o(c, loc, LOAD_DEREF,
-                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                if (compiler_load_classdict_freevar(c, loc) < 0) {
                     goto error;
                 }
             }
@@ -4151,8 +4152,7 @@ compiler_nameop(struct compiler *c, location loc,
             if (SYMTABLE_ENTRY(c)->ste_can_see_class_scope && scope == GLOBAL_IMPLICIT) {
                 op = LOAD_FROM_DICT_OR_GLOBALS;
                 // First load the classdict
-                if (compiler_addop_o(c, loc, LOAD_DEREF,
-                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                if (compiler_load_classdict_freevar(c, loc) < 0) {
                     goto error;
                 }
             } else {
@@ -4186,7 +4186,8 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), op, arg, loc);
+    ADDOP_I(c, loc, op, arg);
+    return SUCCESS;
 
 error:
     Py_DECREF(mangled);
@@ -5376,38 +5377,28 @@ typedef struct {
     PyObject *temp_symbols;
     PyObject *fast_hidden;
     jump_target_label cleanup;
-    jump_target_label end;
 } inlined_comprehension_state;
 
 static int
-push_inlined_comprehension_state(struct compiler *c, location loc,
-                                 PySTEntryObject *entry,
-                                 inlined_comprehension_state *state)
+compiler_tweak_inlined_comprehension_scopes(struct compiler *c, location loc,
+                                            PySTEntryObject *entry,
+                                            inlined_comprehension_state *state)
 {
     int in_class_block = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
     c->u->u_in_inlined_comp++;
-    // iterate over names bound in the comprehension and ensure we isolate
-    // them from the outer scope as needed
+
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         long symbol = PyLong_AsLong(v);
-        if (symbol == -1 && PyErr_Occurred()) {
-            return ERROR;
-        }
-        long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
-        PyObject *outv = PyDict_GetItemWithError(SYMTABLE_ENTRY(c)->ste_symbols, k);
-        if (outv == NULL) {
-            if (PyErr_Occurred()) {
-                return ERROR;
-            }
-            outv = _PyLong_GetZero();
-        }
-        long outsymbol = PyLong_AsLong(outv);
-        if (outsymbol == -1 && PyErr_Occurred()) {
-            return ERROR;
-        }
-        long outsc = (outsymbol >> SCOPE_OFFSET) & SCOPE_MASK;
+        assert(symbol >= 0 || PyErr_Occurred());
+        RETURN_IF_ERROR(symbol);
+        long scope = SYMBOL_TO_SCOPE(symbol);
+
+        long outsymbol = _PyST_GetSymbol(SYMTABLE_ENTRY(c), k);
+        RETURN_IF_ERROR(outsymbol);
+        long outsc = SYMBOL_TO_SCOPE(outsymbol);
+
         // If a name has different scope inside than outside the comprehension,
         // we need to temporarily handle it with the right scope while
         // compiling the comprehension. If it's free in the comprehension
@@ -5427,16 +5418,16 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             // update the symbol to the in-comprehension version and save
             // the outer version; we'll restore it after running the
             // comprehension
-            Py_INCREF(outv);
             if (PyDict_SetItem(SYMTABLE_ENTRY(c)->ste_symbols, k, v) < 0) {
-                Py_DECREF(outv);
                 return ERROR;
             }
-            if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
-                Py_DECREF(outv);
+            PyObject *outv = PyLong_FromLong(outsymbol);
+            if (outv == NULL) {
                 return ERROR;
             }
+            int res = PyDict_SetItem(state->temp_symbols, k, outv);
             Py_DECREF(outv);
+            RETURN_IF_ERROR(res);
         }
         // locals handling for names bound in comprehension (DEF_LOCAL |
         // DEF_NONLOCAL occurs in assignment expression to nonlocal)
@@ -5447,9 +5438,8 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, k, &orig) < 0) {
                     return ERROR;
                 }
-                int orig_is_true = (orig == Py_True);
-                Py_XDECREF(orig);
-                if (!orig_is_true) {
+                assert(orig == NULL || orig == Py_True || orig == Py_False);
+                if (orig != Py_True) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
                         return ERROR;
                     }
@@ -5464,6 +5454,33 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                     }
                 }
             }
+        }
+    }
+    return SUCCESS;
+}
+
+static int
+codegen_push_inlined_comprehension_locals(struct compiler *c, location loc,
+                                          PySTEntryObject *comp,
+                                          inlined_comprehension_state *state)
+{
+    int in_class_block = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
+    PySTEntryObject *outer = SYMTABLE_ENTRY(c);
+    // iterate over names bound in the comprehension and ensure we isolate
+    // them from the outer scope as needed
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
+        long symbol = PyLong_AsLong(v);
+        assert(symbol >= 0 || PyErr_Occurred());
+        RETURN_IF_ERROR(symbol);
+        long scope = SYMBOL_TO_SCOPE(symbol);
+
+        long outsymbol = _PyST_GetSymbol(outer, k);
+        RETURN_IF_ERROR(outsymbol);
+        long outsc = SYMBOL_TO_SCOPE(outsymbol);
+
+        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             // local names bound in comprehension must be isolated from
             // outer scope; push existing value (which may be NULL if
             // not defined) on stack
@@ -5501,31 +5518,40 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // handler or finally block.
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         state->cleanup = cleanup;
-        NEW_JUMP_TARGET_LABEL(c, end);
-        state->end = end;
 
         // no need to push an fblock for this "virtual" try/finally; there can't
         // be return/continue/break inside a comprehension
         ADDOP_JUMP(c, loc, SETUP_FINALLY, cleanup);
     }
+    return SUCCESS;
+}
 
+static int
+push_inlined_comprehension_state(struct compiler *c, location loc,
+                                 PySTEntryObject *comp,
+                                 inlined_comprehension_state *state)
+{
+    RETURN_IF_ERROR(
+        compiler_tweak_inlined_comprehension_scopes(c, loc, comp, state));
+    RETURN_IF_ERROR(
+        codegen_push_inlined_comprehension_locals(c, loc, comp, state));
     return SUCCESS;
 }
 
 static int
 restore_inlined_comprehension_locals(struct compiler *c, location loc,
-                                     inlined_comprehension_state state)
+                                     inlined_comprehension_state *state)
 {
     PyObject *k;
     // pop names we pushed to stack earlier
-    Py_ssize_t npops = PyList_GET_SIZE(state.pushed_locals);
+    Py_ssize_t npops = PyList_GET_SIZE(state->pushed_locals);
     // Preserve the comprehension result (or exception) as TOS. This
-    // reverses the SWAP we did in push_inlined_comprehension_state to get
-    // the outermost iterable to TOS, so we can still just iterate
+    // reverses the SWAP we did in push_inlined_comprehension_state
+    // to get the outermost iterable to TOS, so we can still just iterate
     // pushed_locals in simple reverse order
     ADDOP_I(c, loc, SWAP, npops + 1);
     for (Py_ssize_t i = npops - 1; i >= 0; --i) {
-        k = PyList_GetItem(state.pushed_locals, i);
+        k = PyList_GetItem(state->pushed_locals, i);
         if (k == NULL) {
             return ERROR;
         }
@@ -5535,43 +5561,47 @@ restore_inlined_comprehension_locals(struct compiler *c, location loc,
 }
 
 static int
-pop_inlined_comprehension_state(struct compiler *c, location loc,
-                                inlined_comprehension_state state)
+codegen_pop_inlined_comprehension_locals(struct compiler *c, location loc,
+                                         inlined_comprehension_state *state)
 {
-    c->u->u_in_inlined_comp--;
-    PyObject *k, *v;
-    Py_ssize_t pos = 0;
-    if (state.temp_symbols) {
-        while (PyDict_Next(state.temp_symbols, &pos, &k, &v)) {
+    if (state->pushed_locals) {
+        ADDOP(c, NO_LOCATION, POP_BLOCK);
+
+        NEW_JUMP_TARGET_LABEL(c, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+
+        // cleanup from an exception inside the comprehension
+        USE_LABEL(c, state->cleanup);
+        // discard incomplete comprehension result (beneath exc on stack)
+        ADDOP_I(c, NO_LOCATION, SWAP, 2);
+        ADDOP(c, NO_LOCATION, POP_TOP);
+        RETURN_IF_ERROR(restore_inlined_comprehension_locals(c, loc, state));
+        ADDOP_I(c, NO_LOCATION, RERAISE, 0);
+
+        USE_LABEL(c, end);
+        RETURN_IF_ERROR(restore_inlined_comprehension_locals(c, loc, state));
+        Py_CLEAR(state->pushed_locals);
+    }
+    return SUCCESS;
+}
+
+static int
+compiler_revert_inlined_comprehension_scopes(struct compiler *c, location loc,
+                                             inlined_comprehension_state *state)
+{
+    if (state->temp_symbols) {
+        PyObject *k, *v;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(state->temp_symbols, &pos, &k, &v)) {
             if (PyDict_SetItem(SYMTABLE_ENTRY(c)->ste_symbols, k, v)) {
                 return ERROR;
             }
         }
-        Py_CLEAR(state.temp_symbols);
+        Py_CLEAR(state->temp_symbols);
     }
-    if (state.pushed_locals) {
-        ADDOP(c, NO_LOCATION, POP_BLOCK);
-        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, state.end);
-
-        // cleanup from an exception inside the comprehension
-        USE_LABEL(c, state.cleanup);
-        // discard incomplete comprehension result (beneath exc on stack)
-        ADDOP_I(c, NO_LOCATION, SWAP, 2);
-        ADDOP(c, NO_LOCATION, POP_TOP);
-        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
-            return ERROR;
-        }
-        ADDOP_I(c, NO_LOCATION, RERAISE, 0);
-
-        USE_LABEL(c, state.end);
-        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
-            return ERROR;
-        }
-        Py_CLEAR(state.pushed_locals);
-    }
-    if (state.fast_hidden) {
-        while (PySet_Size(state.fast_hidden) > 0) {
-            PyObject *k = PySet_Pop(state.fast_hidden);
+    if (state->fast_hidden) {
+        while (PySet_Size(state->fast_hidden) > 0) {
+            PyObject *k = PySet_Pop(state->fast_hidden);
             if (k == NULL) {
                 return ERROR;
             }
@@ -5583,8 +5613,18 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             }
             Py_DECREF(k);
         }
-        Py_CLEAR(state.fast_hidden);
+        Py_CLEAR(state->fast_hidden);
     }
+    return SUCCESS;
+}
+
+static int
+pop_inlined_comprehension_state(struct compiler *c, location loc,
+                                inlined_comprehension_state *state)
+{
+    c->u->u_in_inlined_comp--;
+    RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
+    RETURN_IF_ERROR(compiler_revert_inlined_comprehension_scopes(c, loc, state));
     return SUCCESS;
 }
 
@@ -5608,7 +5648,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
                        expr_ty val)
 {
     PyCodeObject *co = NULL;
-    inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL, NO_LABEL};
+    inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
 #ifndef NDEBUG
     int scope_type = c->u->u_scope_type;
@@ -5676,7 +5716,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     if (is_inlined) {
-        if (pop_inlined_comprehension_state(c, loc, inline_state)) {
+        if (pop_inlined_comprehension_state(c, loc, &inline_state)) {
             goto error;
         }
         return SUCCESS;

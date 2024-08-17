@@ -7,11 +7,21 @@
             break;
         }
 
+        case _CHECK_PERIODIC: {
+            break;
+        }
+
+        case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
+            break;
+        }
+
+        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
+
         case _RESUME_CHECK: {
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
+        /* _MONITOR_RESUME is not a viable micro-op for tier 2 */
 
         case _LOAD_FAST_CHECK: {
             _Py_UopsSymbol *value;
@@ -544,8 +554,15 @@
         }
 
         case _BINARY_SUBSCR_INIT_CALL: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsSymbol *sub;
+            _Py_UopsSymbol *container;
+            _Py_UOpsAbstractFrame *new_frame;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            (void)container;
+            (void)sub;
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1172,8 +1189,14 @@
         }
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsSymbol *owner;
+            _Py_UOpsAbstractFrame *new_frame;
+            owner = stack_pointer[-1];
+            PyObject *fget = (PyObject *)this_instr->operand;
+            (void)fget;
+            (void)owner;
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
             break;
         }
@@ -1631,10 +1654,6 @@
 
         /* _DO_CALL is not a viable micro-op for tier 2 */
 
-        case _CHECK_PERIODIC: {
-            break;
-        }
-
         /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
@@ -1953,11 +1972,67 @@
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 */
+        /* _DO_CALL_KW is not a viable micro-op for tier 2 */
+
+        case _PY_FRAME_KW: {
+            _Py_UopsSymbol *kwnames;
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UOpsAbstractFrame *new_frame;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            (void)kwnames;
+            new_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-3 - oparg] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _CHECK_FUNCTION_VERSION_KW: {
+            break;
+        }
+
+        case _CHECK_METHOD_VERSION_KW: {
+            break;
+        }
+
+        case _EXPAND_METHOD_KW: {
+            _Py_UopsSymbol *method;
+            _Py_UopsSymbol *self;
+            _Py_UopsSymbol *kwnames;
+            method = sym_new_not_null(ctx);
+            self = sym_new_not_null(ctx);
+            kwnames = sym_new_not_null(ctx);
+            stack_pointer[-3 - oparg] = method;
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1] = kwnames;
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE_KW: {
+            break;
+        }
+
+        case _CALL_KW_NON_PY: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-3 - oparg] = res;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+        /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_FUNCTION: {
             _Py_UopsSymbol *func;
@@ -2087,7 +2162,7 @@
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+        /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
