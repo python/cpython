@@ -502,8 +502,8 @@ Other Language Changes
 * The compiler now strips common common leading whitespace
   from every line in a docstring.
   This reduces the size of :term:`bytecode cache <bytecode>`
-  (e.g. ``.pyc`` files), with reductions in file size of around 5%,
-  for example for :mod:`!sqlalchemy.orm.session` in SQLAlchemy 2.0.
+  (such as ``.pyc`` files), with reductions in file size of around 5%,
+  for example, for :mod:`!sqlalchemy.orm.session` in SQLAlchemy 2.0.
   This change will affect tools using docstrings, such as :mod:`doctest`.
 
   .. doctest::
@@ -552,7 +552,7 @@ Other Language Changes
 * Add :ref:`support for the perf profiler <perf_profiling>` working
   without `frame pointers <https://en.wikipedia.org/wiki/Call_stack>`_ through
   the new environment variable :envvar:`PYTHON_PERF_JIT_SUPPORT`
-  and command-line option :option:`-X perf_jit <-X>`
+  and command-line option :option:`-X perf_jit <-X>`.
   (Contributed by Pablo Galindo in :gh:`118518`.)
 
 * The location of a :file:`.python_history` file can be changed via the
@@ -561,7 +561,7 @@ Other Language Changes
   in :gh:`73965`.)
 
 * Classes have a new :attr:`~class.__static_attributes__` attribute.
-  This is populated by the compiler with a tuple of the class' attribute names
+  This is populated by the compiler with a tuple of the class's attribute names
   which are assigned through ``self.<name>`` from any function in its body.
   (Contributed by Irit Katriel in :gh:`115775`.)
 
