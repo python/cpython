@@ -340,7 +340,7 @@ Other objects
    .. versionadded:: 3.3
 
 ``p*`` (:class:`bool`) [_Bool]
-   Like ``p``, but the C pointer should be a ``_Bool``/``bool`` instead of an integer.
+   Like ``p``, but converts to a :c:expr:`_Bool` instead of an integer.
 
    .. versionadded:: 3.14
 
