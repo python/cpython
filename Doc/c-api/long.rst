@@ -95,7 +95,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    digits and trailing whitespace, :exc:`ValueError` will be raised.
 
    .. seealso:: :c:func:`PyLong_AsNativeBytes()` and
-      :c:func:`PyLong_FromNativeBytes()` functions could be used to convert
+      :c:func:`PyLong_FromNativeBytes()` functions can be used to convert
       a :c:type:`PyLongObject` to/from an array of bytes in base ``256``.
 
 
