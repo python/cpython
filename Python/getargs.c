@@ -848,24 +848,23 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     }
 
     case 'p': {/* boolean *p*redicate */
-        int val = PyObject_IsTrue(arg);
-        if (*format == '*') {
-            // p*
-            format++;
-            bool *p_bool = va_arg(*p_va, bool *);
-            if (val < 0)
-                RETURN_ERR_OCCURRED;
-            *p_bool = (bool) val;
-            break;
-        }
-
         int *p = va_arg(*p_va, int *);
+        int val = PyObject_IsTrue(arg);
         if (val > 0)
             *p = 1;
         else if (val == 0)
             *p = 0;
         else
             RETURN_ERR_OCCURRED;
+        break;
+    }
+
+    case 'P': {/* boolean predicate with _Bool */
+        bool *p = va_arg(*p_va, bool *);
+        int val = PyObject_IsTrue(arg);
+        if (val < 0)
+            RETURN_ERR_OCCURRED;
+        *p = (bool)(val);
         break;
     }
 
@@ -2676,6 +2675,8 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'D': /* complex double */
     case 'c': /* char */
     case 'C': /* unicode char */
+    case 'p': /* boolean predicate */
+    case 'P': /* boolean predicate */
     case 'S': /* string object */
     case 'Y': /* string object */
     case 'U': /* unicode string object */
@@ -2686,16 +2687,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
             break;
         }
 
-    case 'p': /* boolean predicate */
-        {
-            if (p_va != NULL) {
-                if (*format == '*') {
-                    format++;
-                }
-                (void) va_arg(*p_va, void *);
-            }
-            break;
-        }
     /* string codes */
 
     case 'e': /* string with encoding */

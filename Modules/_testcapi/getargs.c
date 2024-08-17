@@ -449,10 +449,10 @@ getargs_p(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-getargs_p_star(PyObject *self, PyObject *args)
+getargs_P(PyObject *self, PyObject *args)
 {
     bool value;
-    if (!PyArg_ParseTuple(args, "p*", &value)) {
+    if (!PyArg_ParseTuple(args, "P", &value)) {
         return NULL;
     }
     return PyLong_FromLong((int)value);
@@ -805,7 +805,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_l",               getargs_l,                       METH_VARARGS},
     {"getargs_n",               getargs_n,                       METH_VARARGS},
     {"getargs_p",               getargs_p,                       METH_VARARGS},
-    {"getargs_p_star",          getargs_p_star,                  METH_VARARGS},
+    {"getargs_P",               getargs_P,                       METH_VARARGS},
     {"getargs_positional_only_and_keywords", _PyCFunction_CAST(getargs_positional_only_and_keywords), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},

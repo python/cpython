@@ -531,10 +531,10 @@ class Paradox:
         raise NotImplementedError
 
 class Boolean_TestCase(unittest.TestCase):
-    def test_p(self):
-        from _testcapi import getargs_p as _getargs_p, getargs_p_star
+    def test_p_and_P(self):
+        from _testcapi import getargs_p as _getargs_p, getargs_P
 
-        for getargs_p in (_getargs_p, getargs_p_star):
+        for getargs_p in (_getargs_p, getargs_P):
             self.assertEqual(0, getargs_p(False))
             self.assertEqual(0, getargs_p(None))
             self.assertEqual(0, getargs_p(0))
@@ -1164,7 +1164,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w*', 'p*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2
