@@ -72,7 +72,7 @@ bool_invert(PyObject *v)
 {
     PyErr_SetString(
         PyExc_TypeError,
-        "bad operand type for unary ~: 'bool'. Maybe you meant 'not' instead of '~'?"
+        "bad operand type for unary ~: 'bool'. Did you mean 'not' instead of '~'?"
     );
     return NULL;
 }
