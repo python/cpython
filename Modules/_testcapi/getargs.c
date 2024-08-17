@@ -3,6 +3,7 @@
  * APIs that parse and build arguments.
  */
 
+#include <stdbool.h> // For p*
 #include "parts.h"
 
 static PyObject *
@@ -448,6 +449,16 @@ getargs_p(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+getargs_p_star(PyObject *self, PyObject *args)
+{
+    bool value;
+    if (!PyArg_ParseTuple(args, "p*", &value)) {
+        return NULL;
+    }
+    return PyLong_FromLong((int) value);
+}
+
+static PyObject *
 getargs_L(PyObject *self, PyObject *args)
 {
     long long value;
@@ -794,6 +805,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_l",               getargs_l,                       METH_VARARGS},
     {"getargs_n",               getargs_n,                       METH_VARARGS},
     {"getargs_p",               getargs_p,                       METH_VARARGS},
+    {"getargs_p_star",          getargs_p_star,                  METH_VARARGS},
     {"getargs_positional_only_and_keywords", _PyCFunction_CAST(getargs_positional_only_and_keywords), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},

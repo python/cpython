@@ -532,28 +532,30 @@ class Paradox:
 
 class Boolean_TestCase(unittest.TestCase):
     def test_p(self):
-        from _testcapi import getargs_p
-        self.assertEqual(0, getargs_p(False))
-        self.assertEqual(0, getargs_p(None))
-        self.assertEqual(0, getargs_p(0))
-        self.assertEqual(0, getargs_p(0.0))
-        self.assertEqual(0, getargs_p(0j))
-        self.assertEqual(0, getargs_p(''))
-        self.assertEqual(0, getargs_p(()))
-        self.assertEqual(0, getargs_p([]))
-        self.assertEqual(0, getargs_p({}))
+        from _testcapi import getargs_p as _getargs_p, getargs_p_star
 
-        self.assertEqual(1, getargs_p(True))
-        self.assertEqual(1, getargs_p(1))
-        self.assertEqual(1, getargs_p(1.0))
-        self.assertEqual(1, getargs_p(1j))
-        self.assertEqual(1, getargs_p('x'))
-        self.assertEqual(1, getargs_p((1,)))
-        self.assertEqual(1, getargs_p([1]))
-        self.assertEqual(1, getargs_p({1:2}))
-        self.assertEqual(1, getargs_p(unittest.TestCase))
+        for getargs_p in (_getargs_p, getargs_p_star):
+            self.assertEqual(0, getargs_p(False))
+            self.assertEqual(0, getargs_p(None))
+            self.assertEqual(0, getargs_p(0))
+            self.assertEqual(0, getargs_p(0.0))
+            self.assertEqual(0, getargs_p(0j))
+            self.assertEqual(0, getargs_p(''))
+            self.assertEqual(0, getargs_p(()))
+            self.assertEqual(0, getargs_p([]))
+            self.assertEqual(0, getargs_p({}))
 
-        self.assertRaises(NotImplementedError, getargs_p, Paradox())
+            self.assertEqual(1, getargs_p(True))
+            self.assertEqual(1, getargs_p(1))
+            self.assertEqual(1, getargs_p(1.0))
+            self.assertEqual(1, getargs_p(1j))
+            self.assertEqual(1, getargs_p('x'))
+            self.assertEqual(1, getargs_p((1,)))
+            self.assertEqual(1, getargs_p([1]))
+            self.assertEqual(1, getargs_p({1:2}))
+            self.assertEqual(1, getargs_p(unittest.TestCase))
+
+            self.assertRaises(NotImplementedError, getargs_p, Paradox())
 
 
 class Tuple_TestCase(unittest.TestCase):
@@ -1162,7 +1164,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w*', 'p*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2
