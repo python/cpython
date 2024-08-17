@@ -864,7 +864,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         int val = PyObject_IsTrue(arg);
         if (val < 0)
             RETURN_ERR_OCCURRED;
-        *p = (bool)(val);
+        *p = (bool)val;
         break;
     }
 

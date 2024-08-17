@@ -532,9 +532,9 @@ class Paradox:
 
 class Boolean_TestCase(unittest.TestCase):
     def test_p_and_P(self):
-        from _testcapi import getargs_p as _getargs_p, getargs_P
+        import _testcapi
 
-        for getargs_p in (_getargs_p, getargs_P):
+        for parsefn in (_testcapi.getargs_p, _testcapi.getargs_P):
             self.assertEqual(0, getargs_p(False))
             self.assertEqual(0, getargs_p(None))
             self.assertEqual(0, getargs_p(0))
