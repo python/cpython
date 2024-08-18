@@ -96,8 +96,15 @@ Module contents
      generated.  The generated repr string will have the class name and
      the name and repr of each field, in the order they are defined in
      the class.  Fields that are marked as being excluded from the repr
-     are not included.  For example:
-     ``InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)``.
+     are not included.  For example::
+
+       @dataclass
+       class InventoryItem:
+           name: str = 'widget'
+           unit_price: float = 3.0
+           quantity_on_hand: int = field(default=10, repr=False)
+
+     ``InventoryItem(name='widget', unit_price=3.0)``.
 
      If the class already defines :meth:`!__repr__`, this parameter is
      ignored.
