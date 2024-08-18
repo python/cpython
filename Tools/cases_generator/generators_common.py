@@ -47,7 +47,7 @@ def write_header(
     )
 
 
-def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str, allow_unbalanced_parens=False) -> None:
+def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str, allow_unbalanced_parens: bool = False) -> None:
     parens = 0
     for tkn in tkn_iter:
         if tkn.kind == end and (parens == 0 or allow_unbalanced_parens):
