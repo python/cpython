@@ -1772,7 +1772,7 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'copyTarget'
         source.symlink_to(base / 'fileA')
         target.symlink_to(base / 'dirC')
-        with self.assertRaises(IsADirectoryError):
+        with self.assertRaises(OSError):
             source.copy(target)
         with self.assertRaises(FileExistsError):
             source.copy(target, follow_symlinks=False)
@@ -1784,7 +1784,7 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'copyTarget'
         source.symlink_to(base / 'fileA')
         target.symlink_to(base / 'dirC')
-        with self.assertRaises(IsADirectoryError):
+        with self.assertRaises(OSError):
             source.copy(target)
         with self.assertRaises(FileExistsError):
             source.copy(target, follow_symlinks=False)
