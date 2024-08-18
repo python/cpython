@@ -13,6 +13,7 @@ typedef struct {
     PyObject *re_module;            // import re
 
     PyObject *translator;           // LRU-cached translation unit
+    PyObject *re_escape;            // LRU-cached re.escape() function
 
     // strings used by translate.c
     PyObject *hyphen_str;           // hyphen '-'

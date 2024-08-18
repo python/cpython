@@ -113,6 +113,42 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
     return 0;
 }
 
+// ==== Cached re.escape() unit ===============================================
+
+/* Create an LRU-cached function for re.escape(). */
+static int
+fnmatchmodule_load_escapefunc(PyObject *Py_UNUSED(module),
+                              fnmatchmodule_state *st)
+{
+    // make sure that this function is called once
+    assert(st->re_escape == NULL);
+    PyObject *maxsize = PyLong_FromLong(LRU_CACHE_SIZE);
+    if (maxsize == NULL) {
+        return -1;
+    }
+    PyObject *cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    if (cache == NULL) {
+        Py_DECREF(maxsize);
+        return -1;
+    }
+    PyObject *wrapper = PyObject_CallOneArg(cache, maxsize);
+    Py_DECREF(maxsize);
+    Py_DECREF(cache);
+    if (wrapper == NULL) {
+        return -1;
+    }
+    assert(st->re_module != NULL);
+    PyObject *wrapped = PyObject_GetAttr(st->re_module, &_Py_ID(escape));
+    // reference on 'escapechar' will be removed upon module cleanup
+    st->re_escape = PyObject_CallOneArg(wrapper, wrapped);
+    Py_DECREF(wrapped);
+    Py_DECREF(wrapper);
+    if (st->re_escape == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 // ==== Module data getters ===================================================
 
 static inline PyObject * /* reference to re.compile(pattern).match() */
@@ -173,6 +209,9 @@ fnmatchmodule_exec(PyObject *module)
     if (fnmatchmodule_load_translator(module, st) < 0) {
         return -1;
     }
+    if (fnmatchmodule_load_escapefunc(module, st) < 0) {
+        return -1;
+    }
     INTERN_STRING(st, hyphen_str, "-");
     INTERN_STRING(st, hyphen_esc_str, "\\-");
     INTERN_STRING(st, backslash_str, "\\");
@@ -195,6 +234,7 @@ fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->backslash_str);
     Py_VISIT(st->hyphen_esc_str);
     Py_VISIT(st->hyphen_str);
+    Py_VISIT(st->re_escape);
     Py_VISIT(st->translator);
     Py_VISIT(st->re_module);
     Py_VISIT(st->posixpath_module);
@@ -212,6 +252,7 @@ fnmatchmodule_clear(PyObject *m)
     Py_CLEAR(st->backslash_str);
     Py_CLEAR(st->hyphen_esc_str);
     Py_CLEAR(st->hyphen_str);
+    Py_CLEAR(st->re_escape);
     Py_CLEAR(st->translator);
     Py_CLEAR(st->re_module);
     Py_CLEAR(st->posixpath_module);
