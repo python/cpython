@@ -271,7 +271,7 @@ class FilterTestCase(unittest.TestCase):
             # On non-POSIX platforms, we call os.path.normcase, which
             # itself calls os.fspath, thus allowing path-like objects.
             self.assertListEqual(filter([path], '*'), [path])
-            self.assertListEqual(filter([path], b'*'), [path])
+            self.assertRaises(TypeError, filter, [path], b'*')
         else:
             # On POSIX platforms, we assume that os.path.normcase is
             # a no-op, thereby rejecting path-like objects.
