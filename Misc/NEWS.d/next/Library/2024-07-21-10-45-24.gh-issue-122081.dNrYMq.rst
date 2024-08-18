@@ -1,1 +1,2 @@
-Fixed crash in optional :func:`!decimal.IEEEContext()` function.
+Fix a crash in the :func:`!decimal.IEEEContext()` optional function
+available via the ``EXTRA_FUNCTIONALITY`` configuration flag.
