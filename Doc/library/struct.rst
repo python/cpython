@@ -280,7 +280,7 @@ Notes:
    .. index:: single: ? (question mark); in struct format strings
 
    The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type
-   defined by C standards since C99.  In standard mode, it is always
+   defined by C standards since C99.  In standard mode, it is
    represented by one byte.
 
 (2)
