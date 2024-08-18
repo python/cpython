@@ -3,6 +3,7 @@ import sys
 import textwrap
 import unittest
 from dataclasses import dataclass
+from functools import cache
 from test import support
 from test.support.script_helper import run_python_until_end
 
@@ -11,9 +12,6 @@ _syscall_regex = re.compile(
     r"(?P<syscall>[^(]*)\((?P<args>[^)]*)\)\s*[=]\s*(?P<returncode>.+)")
 _returncode_regex = re.compile(
     br"\+\+\+ exited with (?P<returncode>\d+) \+\+\+")
-
-# Cached value of whether or not there is a compatible strace binary
-_strace_working = None
 
 
 @dataclass
@@ -149,6 +147,8 @@ def get_syscalls(code, strace_flags, prelude="", cleanup=""):
     return [ev.syscall for ev in events]
 
 
+# Moderately expensive (spawns a subprocess), so share results when possible.
+@cache
 def _can_strace():
     res = strace_python("import sys; sys.exit(0)", [], check=False)
     assert res.events(), "Should have parsed multiple calls"
@@ -157,16 +157,10 @@ def _can_strace():
 
 
 def requires_strace():
-    global _strace_working
-
     if sys.platform != "linux":
         return unittest.skip("Linux only, requires strace.")
-    # Moderately expensive (spawns a subprocess), so share results when possible.
-    if _strace_working is None:
-        _strace_working = _can_strace()
 
-    assert isinstance(_strace_working, bool), "Should have been set by here"
-    return unittest.skipUnless(_strace_working, "Requires working strace")
+    return unittest.skipUnless(_can_strace(), "Requires working strace")
 
 
 __all__ = ["requires_strace", "strace_python", "StraceEvent", "StraceResult"]
