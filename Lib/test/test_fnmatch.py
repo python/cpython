@@ -5,7 +5,9 @@ import os
 import string
 import warnings
 
+from pathlib import Path
 from fnmatch import fnmatch, fnmatchcase, translate, filter
+from test import support
 
 class FnmatchTestCase(unittest.TestCase):
 
@@ -261,6 +263,20 @@ class FilterTestCase(unittest.TestCase):
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filter, ['test'], b'*')
         self.assertRaises(TypeError, filter, [b'test'], '*')
+
+    def test_path_like_objects(self):
+        path = Path(__file__)
+
+        if support.MS_WINDOWS:
+            # On non-POSIX platforms, we call os.path.normcase, which
+            # itself calls os.fspath, thus allowing path-like objects.
+            self.assertListEqual(filter([path], '*'), [path])
+            self.assertListEqual(filter([path], b'*'), [path])
+        else:
+            # On POSIX platforms, we assume that os.path.normcase is
+            # a no-op, thereby rejecting path-like objects.
+            self.assertRaises(TypeError, filter, [path], '*')
+            self.assertRaises(TypeError, filter, [path], b'*')
 
     def test_case(self):
         ignorecase = os.path.normcase('P') == os.path.normcase('p')

@@ -51,7 +51,9 @@ def filter(names, pat):
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
     if os.path is posixpath:
-        # normcase on posix is NOP. Optimize it away from the loop.
+        # While normcase on POSIX is os.fspath, each NAME is assumed
+        # to have the same type as PAT, namely a str or bytes object.
+        # In particular, os.path.normcase is optimized away from the loop.
         for name in names:
             if match(name):
                 result.append(name)
