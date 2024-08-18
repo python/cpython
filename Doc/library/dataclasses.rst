@@ -97,6 +97,8 @@ Module contents
      the name and repr of each field, in the order they are defined in
      the class.  Fields that are marked as being excluded from the repr
      are not included.  For example::
+     >>> from dataclasses import dataclass, field
+
      >>> @dataclass(repr=False)
      ... class InventoryItem:
      ...     name: str
