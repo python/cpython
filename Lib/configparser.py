@@ -702,7 +702,7 @@ class RawConfigParser(MutableMapping):
 
         if section is UNNAMED_SECTION:
             if not self._allow_unnamed_section:
-                raise UnnamedSectionDisabledError()
+                raise UnnamedSectionDisabledError
 
         if section in self._sections:
             raise DuplicateSectionError(section)
@@ -1226,7 +1226,7 @@ class RawConfigParser(MutableMapping):
         """
         if section is UNNAMED_SECTION:
             if not self._allow_unnamed_section:
-                raise UnnamedSectionDisabledError()
+                raise UnnamedSectionDisabledError
         elif not isinstance(section, str):
             raise TypeError("section names must be strings or UNNAMED_SECTION")
         if not isinstance(option, str):
