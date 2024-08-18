@@ -695,7 +695,10 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             Py_SETREF(newval, PyFrozenSet_New(newval));
         return make_const(arg, newval, arena);
     }
-    else if ((op == Eq || op == NotEq) && arg->kind == Constant_kind)  {
+    else if ((op == Eq || op == NotEq) &&
+             (arg->kind == Constant_kind) &&
+             is_lhs_constant)
+    {
         if ((node->v.Compare.left->v.Constant.value) == (arg->v.Constant.value))
             return make_const(node, op == Eq ? Py_True : Py_False, arena);
     }
