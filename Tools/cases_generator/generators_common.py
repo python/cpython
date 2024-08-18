@@ -47,10 +47,10 @@ def write_header(
     )
 
 
-def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
+def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str, allow_unbalanced_parens=False) -> None:
     parens = 0
     for tkn in tkn_iter:
-        if tkn.kind == end and parens == 0:
+        if tkn.kind == end and (parens == 0 or allow_unbalanced_parens):
             return
         if tkn.kind == "LPAREN":
             parens += 1
@@ -77,6 +77,7 @@ class Emitter:
             "DECREF_INPUTS": self.decref_inputs,
             "SYNC_SP": self.sync_sp,
             "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
+            "STACK_ENTRY": self.stack_entry,
         }
         self.out = out
 
@@ -210,6 +211,33 @@ class Emitter:
         # stack pointer here, and instead are currently relying on initializing
         # unused portions of the stack to NULL.
         stack.flush_single_var(self.out, target, uop.stack.outputs)
+
+    def stack_entry(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        emit_to(self.out, tkn_iter, "LPAREN")
+        target = next(tkn_iter)
+        size = "0"
+        for output in uop.stack.inputs:
+            size += f" - {output.size or 1}"
+        for output in uop.stack.outputs:
+            if output.name == target.text:
+                self.out.emit(f" &stack_pointer[{size}]")
+                break
+            size += f" + {output.size or 1}"
+        else:
+            raise analysis_error("STACK_ENTRY operand is not a stack output", target)
+
+        next(tkn_iter) # Consume )
+        emit_to(self.out, tkn_iter, "SEMI", allow_unbalanced_parens=True)
+        self.emit(";\n")
+        # Update the variable
+        self.out.emit(f"{target.text} = stack_pointer[{size}];\n")
 
     def emit_tokens(
         self,

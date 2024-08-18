@@ -5287,9 +5287,8 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_GLOBALS);
             _PyStackRef mod_or_class_dict;
-            _PyStackRef *v;
+            _PyStackRef v;
             mod_or_class_dict = stack_pointer[-1];
-            v = &stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *v_o = NULL;
             if (PyMapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o) < 0) {
@@ -5301,9 +5300,9 @@
                 {
                     _PyDict_LoadGlobalStackRef((PyDictObject *)GLOBALS(),
                         (PyDictObject *)BUILTINS(),
-                        name,
-                        v);
-                    if (PyStackRef_IsNull(*v)) {
+                        name, &stack_pointer[0 - 1]);
+                    v = stack_pointer[0 - 1];
+                    if (PyStackRef_IsNull(v)) {
                         if (!_PyErr_Occurred(tstate)) {
                             /* _PyDict_LoadGlobalStackRef() sets NULL without raising
                              * an exception if the key doesn't exist */
@@ -5330,9 +5329,10 @@
                 }
             }
             if (v_o != NULL) {
-                *v = PyStackRef_FromPyObjectSteal(v_o);
+                v = PyStackRef_FromPyObjectSteal(v_o);
             }
             PyStackRef_CLOSE(mod_or_class_dict);
+            stack_pointer[-1] = v;
             DISPATCH();
         }
 
@@ -5343,7 +5343,7 @@
             PREDICTED(LOAD_GLOBAL);
             _Py_CODEUNIT *this_instr = next_instr - 5;
             (void)this_instr;
-            _PyStackRef *res;
+            _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             // _SPECIALIZE_LOAD_GLOBAL
             {
@@ -5365,12 +5365,13 @@
             /* Skip 1 cache entry */
             // _LOAD_GLOBAL
             {
-                res = &stack_pointer[0];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
-                if (PyStackRef_IsNull(*res)) goto error;
+                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, &stack_pointer[0]);
+                res = stack_pointer[0];
+                if (PyStackRef_IsNull(res)) goto error;
                 null = PyStackRef_NULL;
             }
+            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
