@@ -98,7 +98,7 @@ Module contents
      the class.  Fields that are marked as being excluded from the repr
      are not included.  For example:
      .. doctest::
-      
+
         >>> from dataclasses import dataclass, field
         >>> @dataclass(repr=False)
         ... class InventoryItem:
