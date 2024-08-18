@@ -80,7 +80,7 @@ def translate(pat):
     parts, indices = _translate(pat, '*', '.')
     return _join_translated_parts(parts, indices)
 
-_set_ops_re = re.compile(r'([&~|])')
+_re_setops_sub = re.compile(r'([&~|])').sub
 _re_escape = functools.lru_cache(maxsize=32768)(re.escape)
 
 def _translate(pat, STAR, QUESTION_MARK):
@@ -151,7 +151,7 @@ def _translate(pat, STAR, QUESTION_MARK):
                     add('.')
                 else:
                     # Escape set operations (&&, ~~ and ||).
-                    stuff = _set_ops_re.sub(r'\\\1', stuff)
+                    stuff = _re_setops_sub(r'\\\1', stuff)
                     if stuff[0] == '!':
                         stuff = '^' + stuff[1:]
                     elif stuff[0] in ('^', '['):
