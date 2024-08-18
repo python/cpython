@@ -1409,7 +1409,7 @@ Exceptions
 .. exception:: MissingSectionHeaderError
 
    Exception raised when attempting to parse a file which has no section
-   headers..
+   headers.
 
 .. exception:: ParsingError
 
