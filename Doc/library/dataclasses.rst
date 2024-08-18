@@ -106,8 +106,8 @@ Module contents
         ...     name: str
         ...     unit_price: float
         ...     quantity_on_hand: int
-        >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)  # doctest: +ELLIPSIS
-        <InventoryItem object at 0x7f0833cb7760>
+        >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10) #doctest:+ELLIPSIS
+        <InventoryItem object at 0x...>
 
      If the class already defines :meth:`!__repr__`, this parameter is
      ignored.
