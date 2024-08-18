@@ -160,7 +160,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "MultilineContinuationError",
+           "MultilineContinuationError", "UnnamedSectionDisabledError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
@@ -361,6 +361,14 @@ class MultilineContinuationError(ParsingError):
         self.lineno = lineno
         self.line = line
         self.args = (filename, lineno, line)
+
+
+class UnnamedSectionDisabledError(Error):
+    """Raised when an attempt to use UNNAMED_SECTION is made with the
+    feature disabled."""
+    def __init__(self):
+        Error.__init__(self, "Support for UNNAMED_SECTION is disabled.")
+
 
 class _UnnamedSection:
 
@@ -694,7 +702,7 @@ class RawConfigParser(MutableMapping):
 
         if section is UNNAMED_SECTION:
             if not self._allow_unnamed_section:
-                raise ValueError("Unnamed section not enabled")
+                raise UnnamedSectionDisabledError()
 
         if section in self._sections:
             raise DuplicateSectionError(section)
@@ -1207,9 +1215,9 @@ class RawConfigParser(MutableMapping):
         return self.BOOLEAN_STATES[value.lower()]
 
     def _validate_value_types(self, *, section="", option="", value=""):
-        """Raises a TypeError for illegal values.
+        """Raises a TypeError for illegal non-string values.
 
-        Legal non-string values are UNNAMED_SECTION and valueless values if
+        Legal non-string values are UNNAMED_SECTION and falsey values if
         they are allowed.
 
         For compatibility reasons this method is not used in classic set()
@@ -1218,10 +1226,9 @@ class RawConfigParser(MutableMapping):
         """
         if section is UNNAMED_SECTION:
             if not self._allow_unnamed_section:
-                raise ValueError("UNNAMED_SECTION is not allowed")
-        else:
-            if not isinstance(section, str):
-                raise TypeError("section names must be strings or UNNAMED_SECTION")
+                raise UnnamedSectionDisabledError()
+        elif not isinstance(section, str):
+            raise TypeError("section names must be strings or UNNAMED_SECTION")
         if not isinstance(option, str):
             raise TypeError("option keys must be strings")
         if not self._allow_no_value or value:

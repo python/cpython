@@ -1314,12 +1314,18 @@ RawConfigParser Objects
 
    .. method:: add_section(section)
 
-      Add a section named *section* to the instance.  If a section by the given
-      name already exists, :exc:`DuplicateSectionError` is raised.  If the
-      *default section* name is passed, :exc:`ValueError` is raised.
+      Add a section named *section* or :const:`UNNAMED_SECTION` to the instance.
+
+      If the given section already exists, :exc:`DuplicateSectionError` is
+      raised. If the *default section* name is passed, :exc:`ValueError` is
+      raised. If :const:`UNNAMED_SECTION` is passed and support is disabled,
+      :exc:`UnnamedSectionDisabledError` is raised.
 
       Type of *section* is not checked which lets users create non-string named
       sections.  This behaviour is unsupported and may cause internal errors.
+
+   .. versionchanged:: 3.14
+        Added support for :const:`UNNAMED_SECTION`.
 
 
    .. method:: set(section, option, value)
