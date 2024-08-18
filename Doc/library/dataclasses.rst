@@ -96,7 +96,7 @@ Module contents
      generated.  The generated repr string will have the class name and
      the name and repr of each field, in the order they are defined in
      the class.  Fields that are marked as being excluded from the repr
-     are not included.  For example::
+     are not included.  For example:
      .. doctest::
       
         >>> from dataclasses import dataclass, field
