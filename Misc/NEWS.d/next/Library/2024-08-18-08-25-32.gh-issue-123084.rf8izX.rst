@@ -1,0 +1,2 @@
+:class:`!shutil.ExecError` is now a deprecated alias of
+:class:`RuntimeError`.
