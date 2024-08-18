@@ -98,22 +98,18 @@ Module contents
      the class.  Fields that are marked as being excluded from the repr
      are not included.  For example::
      >>> from dataclasses import dataclass, field
-
      >>> @dataclass(repr=False)
      ... class InventoryItem:
      ...     name: str
      ...     unit_price: float
      ...     quantity_on_hand: int
      >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)  # doctest: +ELLIPSIS
-     <__main__.InventoryItem at 0x...>
-
      >>> @dataclass
      ... class InventoryItem:
      ...     name: str
      ...     unit_price: float
      ...     quantity_on_hand: int = field(repr=False)
      >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)
-     InventoryItem(name='widget', unit_price=3.0)
 
      If the class already defines :meth:`!__repr__`, this parameter is
      ignored.
