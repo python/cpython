@@ -1501,19 +1501,20 @@ class DummyPath(PathBase):
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
-        path = str(self.resolve())
-        if path in self._directories:
+        path = str(self.parent.resolve() / self.name)
+        parent = str(self.parent.resolve())
+        if path in self._directories or path in self._symlinks:
             if exist_ok:
                 return
             else:
                 raise FileExistsError(errno.EEXIST, "File exists", path)
         try:
             if self.name:
-                self._directories[str(self.parent)].add(self.name)
+                self._directories[parent].add(self.name)
             self._directories[path] = set()
         except KeyError:
             if not parents:
-                raise FileNotFoundError(errno.ENOENT, "File not found", str(self.parent)) from None
+                raise FileNotFoundError(errno.ENOENT, "File not found", parent) from None
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
 
@@ -1765,6 +1766,30 @@ class DummyPathTest(DummyPurePathTest):
         self.assertRaises(OSError, source.copy, source)
 
     @needs_symlinks
+    def test_copy_symlink_to_existing_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'copySource'
+        target = base / 'copyTarget'
+        source.symlink_to(base / 'fileA')
+        target.symlink_to(base / 'dirC')
+        with self.assertRaises(IsADirectoryError):
+            source.copy(target)
+        with self.assertRaises(FileExistsError):
+            source.copy(target, follow_symlinks=False)
+
+    @needs_symlinks
+    def test_copy_symlink_to_existing_directory_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'copySource'
+        target = base / 'copyTarget'
+        source.symlink_to(base / 'fileA')
+        target.symlink_to(base / 'dirC')
+        with self.assertRaises(IsADirectoryError):
+            source.copy(target)
+        with self.assertRaises(FileExistsError):
+            source.copy(target, follow_symlinks=False)
+
+    @needs_symlinks
     def test_copy_directory_symlink_follow_symlinks_false(self):
         base = self.cls(self.base)
         source = base / 'linkB'
@@ -1788,6 +1813,30 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'linkB' / 'copyB'
         self.assertRaises(OSError, source.copy, target)
         self.assertFalse(target.exists())
+
+    @needs_symlinks
+    def test_copy_directory_symlink_to_existing_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'copySource'
+        target = base / 'copyTarget'
+        source.symlink_to(base / 'dirC')
+        target.symlink_to(base / 'fileA')
+        with self.assertRaises(FileExistsError):
+            source.copy(target)
+        with self.assertRaises(FileExistsError):
+            source.copy(target, follow_symlinks=False)
+
+    @needs_symlinks
+    def test_copy_directory_symlink_to_existing_directory_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'copySource'
+        target = base / 'copyTarget'
+        source.symlink_to(base / 'dirC' / 'dirD')
+        target.symlink_to(base / 'dirC')
+        with self.assertRaises(FileExistsError):
+            source.copy(target)
+        with self.assertRaises(FileExistsError):
+            source.copy(target, follow_symlinks=False)
 
     def test_copy_file_to_existing_file(self):
         base = self.cls(self.base)
@@ -2922,8 +2971,12 @@ class DummyPathWithSymlinks(DummyPath):
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
     def symlink_to(self, target, target_is_directory=False):
-        self._directories[str(self.parent)].add(self.name)
-        self._symlinks[str(self)] = str(target)
+        path = str(self.parent.resolve() / self.name)
+        parent = str(self.parent.resolve())
+        if path in self._symlinks:
+            raise FileExistsError(errno.EEXIST, "File exists", path)
+        self._directories[parent].add(self.name)
+        self._symlinks[path] = str(target)
 
 
 class DummyPathWithSymlinksTest(DummyPathTest):
