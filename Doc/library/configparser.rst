@@ -1428,8 +1428,8 @@ Exceptions
 
 .. exception:: UnnamedSectionDisabledError
 
-   Exception raised when attempting to use the unnamed section without enabling
-   it.
+   Exception raised when attempting to use the
+   :const:`UNNAMED_SECTION` without enabling it.
 
     .. versionadded:: 3.14
 
