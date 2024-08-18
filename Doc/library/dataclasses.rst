@@ -104,7 +104,7 @@ Module contents
        ...     quantity_on_hand: int
        >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)  # doctest: +ELLIPSIS
        <__main__.InventoryItem at 0x...>
-   
+
        >>> @dataclass
        ... class InventoryItem:
        ...     name: str
