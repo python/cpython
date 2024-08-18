@@ -1325,7 +1325,7 @@ RawConfigParser Objects
       sections.  This behaviour is unsupported and may cause internal errors.
 
    .. versionchanged:: 3.14
-        Added support for :const:`UNNAMED_SECTION`.
+      Added support for :const:`UNNAMED_SECTION`.
 
 
    .. method:: set(section, option, value)
