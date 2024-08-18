@@ -1602,7 +1602,12 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
 {
     PyObject *val;
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &val);
-    *value_addr = PyStackRef_FromPyObjectNew(val);
+    if (val != NULL) {
+        *value_addr = PyStackRef_FromPyObjectNew(val);
+    }
+    else {
+        *value_addr = PyStackRef_NULL;
+    }
     return ix;
 }
 
