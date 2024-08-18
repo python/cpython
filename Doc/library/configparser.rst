@@ -1409,8 +1409,7 @@ Exceptions
 .. exception:: MissingSectionHeaderError
 
    Exception raised when attempting to parse a file which has no section
-   headers.
-
+   headers..
 
 .. exception:: ParsingError
 
@@ -1426,6 +1425,13 @@ Exceptions
    an indented line.
 
    .. versionadded:: 3.13
+
+.. exception:: UnnamedSectionDisabledError
+
+   Exception raised when attempting to use the unnamed section without enabling
+   it.
+
+    .. versionadded:: 3.14
 
 .. rubric:: Footnotes
 
