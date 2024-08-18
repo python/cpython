@@ -115,7 +115,7 @@ Module contents
         ...     quantity_on_hand: int = field(repr=False)
         >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)
         'InventoryItem(name='widget', unit_price=3.0)'
-     
+
      If the class already defines :meth:`!__repr__`, this parameter is
      ignored.
 
