@@ -33,7 +33,7 @@
 
 #include "clinic/_fnmatchmodule.c.h"
 
-#define COMPILED_CACHE_SIZE     32768
+#define LRU_CACHE_SIZE          32768
 #define INVALID_PATTERN_TYPE    "pattern must be a string or a bytes object"
 
 // ==== Cached translation unit ===============================================
@@ -84,7 +84,7 @@ fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
 {
     // make sure that this function is called once
     assert(st->translator == NULL);
-    PyObject *maxsize = PyLong_FromLong(COMPILED_CACHE_SIZE);
+    PyObject *maxsize = PyLong_FromLong(LRU_CACHE_SIZE);
     if (maxsize == NULL) {
         return -1;
     }
