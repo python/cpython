@@ -1401,7 +1401,7 @@ Christian's container image ``quay.io/tiran/cpython_autoconf:269``.
 .. nonce: fry4aK
 .. section: Build
 
-Building Python now requires support of IEEE 754 floating point numbers.
+Building Python now requires support of IEEE 754 floating-point numbers.
 Patch by Victor Stinner.
 
 ..

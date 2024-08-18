@@ -33,7 +33,7 @@ implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
 
-* otherwise, if either argument is a floating point number, the other is
+* otherwise, if either argument is a floating-point number, the other is
   converted to floating point;
 
 * otherwise, both must be integers and no conversion is necessary.
@@ -83,18 +83,47 @@ exception.
    pair: name; mangling
    pair: private; names
 
-**Private name mangling:** When an identifier that textually occurs in a class
-definition begins with two or more underscore characters and does not end in two
-or more underscores, it is considered a :dfn:`private name` of that class.
-Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name, with leading underscores
-removed and a single underscore inserted, in front of the name.  For example,
-the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
-to ``_Ham__spam``.  This transformation is independent of the syntactical
-context in which the identifier is used.  If the transformed name is extremely
-long (longer than 255 characters), implementation defined truncation may happen.
-If the class name consists only of underscores, no transformation is done.
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
 
+When an identifier that textually occurs in a class definition begins with two
+or more underscore characters and does not end in two or more underscores, it
+is considered a :dfn:`private name` of that class.
+
+.. seealso::
+
+   The :ref:`class specifications <class>`.
+
+More precisely, private names are transformed to a longer form before code is
+generated for them.  If the transformed name is longer than 255 characters,
+implementation-defined truncation may happen.
+
+The transformation is independent of the syntactical context in which the
+identifier is used but only the following private identifiers are mangled:
+
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The ``__name__`` attribute of nested functions, classes, and type aliases
+  is however not mangled.
+
+- The name of imported modules, e.g., ``__spam`` in ``import __spam``.
+  If the module is part of a package (i.e., its name contains a dot),
+  the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
+  is not mangled.
+
+- The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
+
+The transformation rule is defined as follows:
+
+- The class name, with leading underscores removed and a single leading
+  underscore inserted, is inserted in front of the identifier, e.g., the
+  identifier ``__spam`` occurring in a class named ``Foo``, ``_Foo`` or
+  ``__Foo`` is transformed to ``_Foo__spam``.
+
+- If the class name consists only of underscores, the transformation is the
+  identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
+  or ``__`` is left as is.
 
 .. _atom-literals:
 
@@ -110,8 +139,8 @@ Python supports string and bytes literals and various numeric literals:
           : | `integer` | `floatnumber` | `imagnumber`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
-integer, floating point number, complex number) with the given value.  The value
-may be approximated in the case of floating point and imaginary (complex)
+integer, floating-point number, complex number) with the given value.  The value
+may be approximated in the case of floating-point and imaginary (complex)
 literals.  See section :ref:`literals` for details.
 
 .. index::
@@ -1332,7 +1361,7 @@ The floor division operation can be customized using the special
 The ``%`` (modulo) operator yields the remainder from the division of the first
 argument by the second.  The numeric arguments are first converted to a common
 type.  A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
-arguments may be floating point numbers, e.g., ``3.14%0.7`` equals ``0.34``
+arguments may be floating-point numbers, e.g., ``3.14%0.7`` equals ``0.34``
 (since ``3.14`` equals ``4*0.7 + 0.34``.)  The modulo operator always yields a
 result with the same sign as its second operand (or zero); the absolute value of
 the result is strictly smaller than the absolute value of the second operand
@@ -1352,8 +1381,8 @@ The *modulo* operation can be customized using the special :meth:`~object.__mod_
 and :meth:`~object.__rmod__` methods.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
-function are not defined for complex numbers.  Instead, convert to a floating
-point number using the :func:`abs` function if appropriate.
+function are not defined for complex numbers.  Instead, convert to a
+floating-point number using the :func:`abs` function if appropriate.
 
 .. index::
    single: addition
