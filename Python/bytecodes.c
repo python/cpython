@@ -1436,7 +1436,7 @@ dummy_func(
             locals = PyStackRef_FromPyObjectNew(l);
         }
 
-        inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v: _PyStackRef *)) {
+        inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v[1])) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *v_o = NULL;
             if (PyMapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o) < 0) {
@@ -1509,40 +1509,8 @@ dummy_func(
 
         op(_LOAD_GLOBAL, ( -- res[1], null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            if (PyDict_CheckExact(GLOBALS())
-                && PyDict_CheckExact(BUILTINS()))
-            {
-                _PyDict_LoadGlobalStackRef((PyDictObject *)GLOBALS(),
-                                         (PyDictObject *)BUILTINS(),
-                                         name,
-                                         res);
-                if (PyStackRef_IsNull(*res)) {
-                    if (!_PyErr_Occurred(tstate)) {
-                        /* _PyDict_LoadGlobalStackRef() sets NULL without raising
-                         * an exception if the key doesn't exist */
-                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                                  NAME_ERROR_MSG, name);
-                    }
-                    ERROR_IF(true, error);
-                }
-            }
-            else {
-                PyObject *res_o;
-                /* Slow-path if globals or builtins is not a dict */
-                /* namespace 1: globals */
-                ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &res_o) < 0, error);
-                if (res_o == NULL) {
-                    /* namespace 2: builtins */
-                    ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &res_o) < 0, error);
-                    if (res_o == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                                    tstate, PyExc_NameError,
-                                    NAME_ERROR_MSG, name);
-                        ERROR_IF(true, error);
-                    }
-                }
-                *res = PyStackRef_FromPyObjectSteal(res_o);
-            }
+            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+            ERROR_IF(PyStackRef_IsNull(*res), error);
             null = PyStackRef_NULL;
         }
 
