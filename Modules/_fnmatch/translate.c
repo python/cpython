@@ -15,16 +15,12 @@
 // ==== Helper declarations ===================================================
 
 /*
- * Write re.escape(pattern[start:stop]).
+ * Write re.escape(ch).
  *
  * This returns the number of written characters, or -1 if an error occurred.
- *
- * @pre     0 <= start < stop <= len(pattern)
  */
-static inline Py_ssize_t
-escape_block(PyUnicodeWriter *writer,
-             PyObject *pattern, Py_ssize_t start, Py_ssize_t stop,
-             PyObject *re_escape_func);
+static Py_ssize_t
+escape_char(fnmatchmodule_state *state, PyUnicodeWriter *writer, Py_UCS4 ch);
 
 /*
  * Construct a regular expression out of a UNIX-style expression.
@@ -56,8 +52,7 @@ translate_expression(fnmatchmodule_state *state,
  */
 static Py_ssize_t
 write_expression(fnmatchmodule_state *state,
-                 PyUnicodeWriter *writer, PyObject *expression,
-                 PyObject *setops_re_sub_meth);
+                 PyUnicodeWriter *writer, PyObject *expression);
 
 /*
  * Build the final regular expression by processing the wildcards.
@@ -68,17 +63,6 @@ static PyObject *
 process_wildcards(PyObject *pattern, PyObject *indices);
 
 // ==== API implementation ====================================================
-
-static inline PyObject *
-get_setops_re_sub_method(fnmatchmodule_state *state)
-{
-    PyObject *compiled = PyObject_CallMethodOneArg(state->re_module,
-                                                   &_Py_ID(compile),
-                                                   state->setops_str);
-    PyObject *method = PyObject_GetAttr(compiled, &_Py_ID(sub));
-    Py_DECREF(compiled);
-    return method;
-}
 
 PyObject *
 _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
@@ -110,20 +94,11 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     // ---- decl local objects ------------------------------------------------
     // list containing the indices where '*' has a special meaning
     PyObject *wildcard_indices = NULL;
-    // cached functions (cache is local to the call)
-    PyObject *re_escape_func = NULL;        // re.escape()
-    PyObject *setops_re_subfn = NULL;       // re.compile('([&~|])').sub()
+    // call-level cached functions
     PyObject *pattern_str_find_meth = NULL; // pattern.find()
     // ---- def local objects -------------------------------------------------
     wildcard_indices = PyList_New(0);
     CHECK_NOT_NULL_OR_ABORT(wildcard_indices);
-    // The Python implementation always takes queries re.escape() and re.sub()
-    // inside translate() and thus we should at least allow external users to
-    // mock those functions (thus, we cannot cache them in the module's state).
-    re_escape_func = PyObject_GetAttr(state->re_module, &_Py_ID(escape));
-    CHECK_NOT_NULL_OR_ABORT(re_escape_func);
-    setops_re_subfn = get_setops_re_sub_method(state);
-    CHECK_NOT_NULL_OR_ABORT(setops_re_subfn);
     pattern_str_find_meth = PyObject_GetAttr(pattern, &_Py_ID(find));
     CHECK_NOT_NULL_OR_ABORT(pattern_str_find_meth);
     // ------------------------------------------------------------------------
@@ -138,28 +113,13 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             ++IND;                                          \
         }                                                   \
     } while (0)
-#define WRITE_PENDING(ESCSTOP)                                  \
-    do {                                                        \
-        if (escstart != -1) {                                   \
-            Py_ssize_t t = escape_block(writer, pattern,        \
-                                        escstart, (ESCSTOP),    \
-                                        re_escape_func);        \
-            if (t < 0) {                                        \
-                goto abort;                                     \
-            }                                                   \
-            written += t;                                       \
-            escstart = -1;                                      \
-        }                                                       \
-    } while (0)
     // ------------------------------------------------------------------------
     Py_ssize_t i = 0;                       // current index
     Py_ssize_t written = 0;                 // number of characters written
-    Py_ssize_t escstart = -1, escstop = -1; // start/stop escaping indices
-    while ((escstop = i) < maxind) {
+    while (i < maxind) {
         Py_UCS4 chr = READ_CHAR(i++);
         switch (chr) {
             case '*': {
-                WRITE_PENDING(escstop);
                 // translate wildcard '*' (fnmatch) into optional '.' (regex)
                 WRITE_CHAR_OR_ABORT(writer, '*');
                 // skip duplicated '*'
@@ -173,15 +133,13 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 break;
             }
             case '?': {
-                WRITE_PENDING(escstop);
                 // translate optional '?' (fnmatch) into optional '.' (regex)
                 WRITE_CHAR_OR_ABORT(writer, '.');
                 ++written; // increase the expected result's length
                 break;
             }
             case '[': {
-                WRITE_PENDING(escstop);
-                assert(READ_CHAR(escstop) == '[');
+                assert(READ_CHAR(i - 1) == '[');
                 Py_ssize_t j = i;
                 ADVANCE_IF_CHAR_IS('!', j, maxind);             // [!
                 ADVANCE_IF_CHAR_IS(']', j, maxind);             // [!] or []
@@ -209,8 +167,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                                                     pattern_str_find_meth);
                     }
                     CHECK_NOT_NULL_OR_ABORT(expr);
-                    Py_ssize_t expr_len = write_expression(state, writer, expr,
-                                                           setops_re_subfn);
+                    Py_ssize_t expr_len = write_expression(state, writer, expr);
                     Py_DECREF(expr);
                     if (expr_len < 0) {
                         goto abort;
@@ -221,21 +178,16 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                 }
             }
             default: {
-                if (escstart == -1) {
-                    assert(i >= 1);
-                    escstart = i - 1;
-                }
+                Py_ssize_t t = escape_char(state, writer, chr);
+                CHECK_RET_CODE_OR_ABORT(t);
+                written += t;
                 break;
             }
         }
     }
-    WRITE_PENDING(maxind);
-#undef WRITE_PENDING
 #undef ADVANCE_IF_CHAR_IS
 #undef READ_CHAR
     Py_DECREF(pattern_str_find_meth);
-    Py_DECREF(setops_re_subfn);
-    Py_DECREF(re_escape_func);
     PyObject *translated = PyUnicodeWriter_Finish(writer);
     if (translated == NULL) {
         Py_DECREF(wildcard_indices);
@@ -247,8 +199,6 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     return res;
 abort:
     Py_XDECREF(pattern_str_find_meth);
-    Py_XDECREF(setops_re_subfn);
-    Py_XDECREF(re_escape_func);
     Py_XDECREF(wildcard_indices);
     PyUnicodeWriter_Discard(writer);
     return NULL;
@@ -256,20 +206,38 @@ abort:
 
 // ==== Helper implementations ================================================
 
-static inline Py_ssize_t
-escape_block(PyUnicodeWriter *writer,
-             PyObject *pattern, Py_ssize_t start, Py_ssize_t stop,
-             PyObject *re_escape_func)
+/* taken from unicodeobject.c */
+static inline PyObject *
+unicode_char(Py_UCS4 ch)
 {
-#ifdef Py_DEBUG
-    if (start < 0 || start >= stop || stop > PyUnicode_GET_LENGTH(pattern)) {
-        PyErr_BadInternalCall();
-        return -1;
+#define MAX_UNICODE 0x10ffff
+    assert(ch <= MAX_UNICODE);
+#undef MAX_UNICODE
+    if (ch < 256) {
+        return _Py_LATIN1_CHR(ch);
     }
-#endif
-    PyObject *str = PyUnicode_Substring(pattern, start, stop);
+    PyObject *unicode = PyUnicode_New(1, ch);
+    if (unicode == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_KIND(unicode) != PyUnicode_1BYTE_KIND);
+    if (PyUnicode_KIND(unicode) == PyUnicode_2BYTE_KIND) {
+        PyUnicode_2BYTE_DATA(unicode)[0] = (Py_UCS2)ch;
+    }
+    else {
+        assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
+        PyUnicode_4BYTE_DATA(unicode)[0] = ch;
+    }
+    assert(_PyUnicode_CheckConsistency(unicode, 1));
+    return unicode;
+}
+
+static Py_ssize_t
+escape_char(fnmatchmodule_state *state, PyUnicodeWriter *writer, Py_UCS4 ch)
+{
+    PyObject *str = unicode_char(ch);
     CHECK_NOT_NULL_OR_ABORT(str);
-    PyObject *escaped = PyObject_CallOneArg(re_escape_func, str);
+    PyObject *escaped = PyObject_CallOneArg(state->re_escape, str);
     Py_DECREF(str);
     CHECK_NOT_NULL_OR_ABORT(escaped);
     Py_ssize_t written = PyUnicode_GET_LENGTH(escaped);
@@ -479,8 +447,7 @@ abort:
 
 static Py_ssize_t
 write_expression(fnmatchmodule_state *state,
-                 PyUnicodeWriter *writer, PyObject *expression,
-                 PyObject *setops_re_sub_meth)
+                 PyUnicodeWriter *writer, PyObject *expression)
 {
     PyObject *safe_expression = NULL;  // for the 'goto abort' statements
     Py_ssize_t grouplen = PyUnicode_GET_LENGTH(expression);
@@ -498,7 +465,7 @@ write_expression(fnmatchmodule_state *state,
     Py_ssize_t extra = 2; // '[' and ']'
     WRITE_CHAR_OR_ABORT(writer, '[');
     // escape set operations as late as possible
-    safe_expression = SETOPS_REPLACE(state, expression, setops_re_sub_meth);
+    safe_expression = SETOPS_REPLACE(state, expression, state->setops_re_subfn);
     CHECK_NOT_NULL_OR_ABORT(safe_expression);
     switch (token) {
         case '!': {
