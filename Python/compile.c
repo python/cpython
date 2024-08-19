@@ -319,9 +319,9 @@ static int codegen_with(struct compiler *, stmt_ty, int);
 static int codegen_async_with(struct compiler *, stmt_ty, int);
 static int codegen_async_for(struct compiler *, stmt_ty);
 static int codegen_call_simple_kw_helper(struct compiler *c,
-                                          location loc,
-                                          asdl_keyword_seq *keywords,
-                                          Py_ssize_t nkwelts);
+                                         location loc,
+                                         asdl_keyword_seq *keywords,
+                                         Py_ssize_t nkwelts);
 static int codegen_call_helper(struct compiler *c, location loc,
                                int n, asdl_expr_seq *args,
                                asdl_keyword_seq *keywords);
@@ -345,9 +345,9 @@ static int compiler_async_comprehension_generator(
 static int codegen_pattern(struct compiler *, pattern_ty, pattern_context *);
 static int codegen_match(struct compiler *, stmt_ty);
 static int codegen_pattern_subpattern(struct compiler *,
-                                       pattern_ty, pattern_context *);
+                                      pattern_ty, pattern_context *);
 static int codegen_make_closure(struct compiler *c, location loc,
-                                 PyCodeObject *co, Py_ssize_t flags);
+                                PyCodeObject *co, Py_ssize_t flags);
 
 static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
@@ -1726,7 +1726,7 @@ compiler_lookup_arg(struct compiler *c, PyCodeObject *co, PyObject *name)
 
 static int
 codegen_make_closure(struct compiler *c, location loc,
-                      PyCodeObject *co, Py_ssize_t flags)
+                     PyCodeObject *co, Py_ssize_t flags)
 {
     if (co->co_nfreevars) {
         int i = PyUnstable_Code_GetFirstFree(co);
@@ -2186,9 +2186,9 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
             docstring = NULL;
         }
     }
-    int ret = compiler_add_const(c, docstring ? docstring : Py_None);
+    int idx = compiler_add_const(c, docstring ? docstring : Py_None);
     Py_XDECREF(docstring);
-    RETURN_IF_ERROR_IN_SCOPE(c, ret);
+    RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
 
     assert(c->u->u_metadata.u_argcount == asdl_seq_LEN(args->args));
     assert(c->u->u_metadata.u_posonlyargcount == asdl_seq_LEN(args->posonlyargs));
@@ -2218,7 +2218,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         Py_XDECREF(co);
         return ERROR;
     }
-    ret = codegen_make_closure(c, LOC(s), co, funcflags);
+    int ret = codegen_make_closure(c, LOC(s), co, funcflags);
     Py_DECREF(co);
     return ret;
 }
@@ -7142,7 +7142,7 @@ error:
 
 static int
 codegen_pattern_sequence(struct compiler *c, pattern_ty p,
-                          pattern_context *pc)
+                         pattern_context *pc)
 {
     assert(p->kind == MatchSequence_kind);
     asdl_pattern_seq *patterns = p->v.MatchSequence.patterns;
