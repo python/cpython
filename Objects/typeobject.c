@@ -5304,6 +5304,11 @@ _token_found(PyTypeObject *type, PyTypeObject **result)
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        goto error;
+    }
     if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
@@ -5313,11 +5318,6 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         // Static type MRO contains no heap type,
         // which type_ready_mro() ensures.
         goto not_found;
-    }
-    if (token == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "PyType_GetBaseByToken called with token=NULL");
-        goto error;
     }
     if (((PyHeapTypeObject*)type)->ht_token == token) {
         return _token_found(type, result);
