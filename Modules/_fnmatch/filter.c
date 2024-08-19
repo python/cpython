@@ -5,8 +5,9 @@
 #include "Python.h"
 
 PyObject *
-_Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normalizer)
+_Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normcase)
 {
+    assert(normcase != NULL);
     PyObject *iter = PyObject_GetIter(names);
     if (iter == NULL) {
         return NULL;
@@ -18,18 +19,12 @@ _Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normalizer)
     }
     PyObject *name = NULL;
     while ((name = PyIter_Next(iter))) {
-        PyObject *match;
-        if (normalizer == NULL) {
-            match = PyObject_CallOneArg(matcher, name);
+        PyObject *normalized = PyObject_CallOneArg(normcase, name);
+        if (normalized == NULL) {
+            goto abort;
         }
-        else {
-            PyObject *normalized = PyObject_CallOneArg(normalizer, name);
-            if (normalized == NULL) {
-                goto abort;
-            }
-            match = PyObject_CallOneArg(matcher, normalized);
-            Py_DECREF(normalized);
-        }
+        PyObject *match = PyObject_CallOneArg(matcher, normalized);
+        Py_DECREF(normalized);
         if (match == NULL) {
             goto abort;
         }

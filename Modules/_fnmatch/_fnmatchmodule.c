@@ -185,7 +185,7 @@ get_matcher_function(PyObject *module, PyObject *pattern)
 }
 
 static inline PyObject * /* reference to os.path.normcase() */
-get_platform_normcase_function(PyObject *module, bool *isposix)
+get_platform_normcase_function(PyObject *module)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     PyObject *os_path = PyObject_GetAttr(st->os_module, &_Py_ID(path));
@@ -193,9 +193,6 @@ get_platform_normcase_function(PyObject *module, bool *isposix)
         return NULL;
     }
     PyObject *normcase = PyObject_GetAttr(os_path, &_Py_ID(normcase));
-    if (isposix != NULL) {
-        *isposix = Py_Is(os_path, st->posixpath_module);
-    }
     Py_DECREF(os_path);
     return normcase;
 }
@@ -225,7 +222,6 @@ fnmatchmodule_exec(PyObject *module)
     // ------------------------------------------------------------------------
     fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     IMPORT_MODULE(st, os_module, "os");
-    IMPORT_MODULE(st, posixpath_module, "posixpath");
     IMPORT_MODULE(st, re_module, "re");
     CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_translator(module, st));
     CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_escapefunc(module, st));
@@ -255,7 +251,6 @@ fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->re_escape);
     Py_VISIT(st->translator);
     Py_VISIT(st->re_module);
-    Py_VISIT(st->posixpath_module);
     Py_VISIT(st->os_module);
     return 0;
 }
@@ -273,7 +268,6 @@ fnmatchmodule_clear(PyObject *m)
     Py_CLEAR(st->re_escape);
     Py_CLEAR(st->translator);
     Py_CLEAR(st->re_module);
-    Py_CLEAR(st->posixpath_module);
     Py_CLEAR(st->os_module);
     return 0;
 }
@@ -303,9 +297,8 @@ static PyObject *
 fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pattern)
 /*[clinic end generated code: output=1a68530a2e3cf7d0 input=7ac729daad3b1404]*/
 {
-    bool isposix = 0;
     PyObject *normcase = NULL;  // for the 'goto abort' statements
-    normcase = get_platform_normcase_function(module, &isposix);
+    normcase = get_platform_normcase_function(module);
     CHECK_NOT_NULL_OR_ABORT(normcase);
     PyObject *normalized_pattern = PyObject_CallOneArg(normcase, pattern);
     CHECK_NOT_NULL_OR_ABORT(normalized_pattern);
@@ -349,8 +342,7 @@ static int
 fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pattern)
 /*[clinic end generated code: output=c9dc542e8d6933b6 input=279a4a4f2ddea6a2]*/
 {
-    // use the runtime 'os.path' value and not a cached one
-    PyObject *normcase = get_platform_normcase_function(module, NULL);
+    PyObject *normcase = get_platform_normcase_function(module);
     if (normcase == NULL) {
         return -1;
     }

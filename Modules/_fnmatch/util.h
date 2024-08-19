@@ -9,7 +9,6 @@
 
 typedef struct {
     PyObject *os_module;            // import os
-    PyObject *posixpath_module;     // import posixpath
     PyObject *re_module;            // import re
 
     PyObject *translator;           // LRU-cached translation unit
@@ -44,14 +43,14 @@ get_fnmatchmodule_state(PyObject *module)
  *
  *  matcher     A reference to the 'match()' method of a compiled pattern.
  *  names       An iterable of strings (str or bytes objects) to match.
- *  normalizer  Optional normalization function.
+ *  normcase    A reference to os.path.normcase().
  *
  *  This is equivalent to:
  *
- *      [name for name in names if matcher(normalizer(name))]
+ *      [name for name in names if matcher(normcase(name))]
  */
 extern PyObject *
-_Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normalizer);
+_Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normcase);
 
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.
