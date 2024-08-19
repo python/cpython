@@ -1,0 +1,1 @@
+Disable verbose repr of ``_ReadlineWrapper`` objects
