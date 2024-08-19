@@ -260,8 +260,9 @@ class TranslateTestCase(unittest.TestCase):
             ('ab*cd*12*34', r'(?s:ab(?>.*?cd)(?>.*?12).*34)\Z'),
             ('ab*cd*12*34*', r'(?s:ab(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
         ]:
-            translated = translate(pattern)
-            self.assertEqual(translated, expect, pattern)
+            with self.subTest(pattern):
+                translated = translate(pattern)
+                self.assertEqual(translated, expect, pattern)
 
         for pattern, expect in [
             ('*ab', r'(?s:.*ab)\Z'),
@@ -273,8 +274,9 @@ class TranslateTestCase(unittest.TestCase):
             ('*ab*cd*12*34', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*34)\Z'),
             ('*ab*cd*12*34*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
         ]:
-            translated = translate(pattern)
-            self.assertEqual(translated, expect, pattern)
+            with self.subTest(pattern):
+                translated = translate(pattern)
+                self.assertEqual(translated, expect, pattern)
 
     def test_translate_expressions(self):
         for pattern, expect in [
@@ -301,8 +303,9 @@ class TranslateTestCase(unittest.TestCase):
             (r'[\]', r'(?s:[\\])\Z'),
             (r'[\\]', r'(?s:[\\\\])\Z'),
         ]:
-            translated = translate(pattern)
-            self.assertEqual(translated, expect, pattern)
+            with self.subTest(pattern):
+                translated = translate(pattern)
+                self.assertEqual(translated, expect, pattern)
 
     def test_indices_locations(self):
         from fnmatch import _translate

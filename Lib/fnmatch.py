@@ -167,11 +167,18 @@ def _join_translated_parts(parts, indices):
     if not indices:
         return fr'(?s:{"".join(parts)})\Z'
     iter_indices = iter(indices)
-    i, j = 0, next(iter_indices)
-    buffer = parts[i:j]
+    j = next(iter_indices)
+    buffer = parts[:j]  # fixed pieces at the start
     append, extend = buffer.append, buffer.extend
     i = j + 1
     for j in iter_indices:
+        # Now deal with STAR fixed STAR fixed ...
+        # For an interior `STAR fixed` pairing, we want to do a minimal
+        # .*? match followed by `fixed`, with no possibility of backtracking.
+        # Atomic groups ("(?>...)") allow us to spell that directly.
+        # Note: people rely on the undocumented ability to join multiple
+        # translate() results together via "|" to build large regexps matching
+        # "one of many" shell patterns.
         append('(?>.*?')
         extend(parts[i:j])
         append(')')
