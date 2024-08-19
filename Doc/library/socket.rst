@@ -695,6 +695,13 @@ Constants
 
    .. versionadded:: 3.12
 
+.. data:: SHUT_RD
+          SHUT_WR
+          SHUT_RDWR
+
+   These constants are used by the :meth:`~socket.socket.shutdown` method of socket objects.
+
+   .. availability:: not WASI.
 
 Functions
 ^^^^^^^^^
