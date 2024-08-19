@@ -64,7 +64,7 @@ class InteractiveInterpreter:
             code = self.compile(source, filename, symbol)
         except (OverflowError, SyntaxError, ValueError):
             # Case 1
-            self.showsyntaxerror(filename)
+            self.showsyntaxerror(filename, source=source)
             return False
 
         if code is None:
@@ -123,6 +123,12 @@ class InteractiveInterpreter:
                 # Stuff in the right filename
                 value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_exc = sys.last_value = value
+        # Set the line of text that the exception refers to
+        source = kwargs.pop('source', '')
+        lines = source.splitlines()
+        if (source and type is SyntaxError
+                and not value.text and len(lines) >= value.lineno):
+            value.text = lines[value.lineno - 1]
         if sys.excepthook is sys.__excepthook__:
             lines = traceback.format_exception_only(type, value, colorize=colorize)
             self.write(''.join(lines))

@@ -161,8 +161,8 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
 
-    def showsyntaxerror(self, filename=None):
-        super().showsyntaxerror(colorize=self.can_colorize)
+    def showsyntaxerror(self, filename=None, **kwargs):
+        super().showsyntaxerror(colorize=self.can_colorize, **kwargs)
 
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
@@ -171,7 +171,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         try:
             tree = ast.parse(source)
         except (SyntaxError, OverflowError, ValueError):
-            self.showsyntaxerror(filename)
+            self.showsyntaxerror(filename, source=source)
             return False
         if tree.body:
             *_, last_stmt = tree.body
@@ -188,10 +188,10 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                         f"Try the asyncio REPL ({python} -m asyncio) to use"
                         f" top-level 'await' and run background asyncio tasks."
                     )
-                self.showsyntaxerror(filename)
+                self.showsyntaxerror(filename, source=source)
                 return False
             except (OverflowError, ValueError):
-                self.showsyntaxerror(filename)
+                self.showsyntaxerror(filename, source=source)
                 return False
 
             if code is None:
