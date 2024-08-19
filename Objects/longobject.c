@@ -3614,8 +3614,9 @@ long_dealloc(PyObject *self)
 }
 
 static Py_hash_t
-long_hash(PyLongObject *v)
+long_hash(PyObject *obj)
 {
+    PyLongObject *v = (PyLongObject *)obj;
     Py_uhash_t x;
     Py_ssize_t i;
     int sign;
@@ -6545,7 +6546,7 @@ PyDoc_STRVAR(long_doc,
 int(x, base=10) -> integer\n\
 \n\
 Convert a number or string to an integer, or return 0 if no arguments\n\
-are given.  If x is a number, return x.__int__().  For floating point\n\
+are given.  If x is a number, return x.__int__().  For floating-point\n\
 numbers, this truncates towards zero.\n\
 \n\
 If x is not a number or if base is given, then x must be a string,\n\
@@ -6607,7 +6608,7 @@ PyTypeObject PyLong_Type = {
     &long_as_number,                            /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)long_hash,                        /* tp_hash */
+    long_hash,                                  /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */

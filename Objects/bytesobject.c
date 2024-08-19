@@ -3066,7 +3066,7 @@ PyTypeObject PyBytes_Type = {
     0,                                          /* tp_init */
     bytes_alloc,                                /* tp_alloc */
     bytes_new,                                  /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 void

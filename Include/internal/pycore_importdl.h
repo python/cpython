@@ -56,9 +56,11 @@ extern int _Py_ext_module_loader_info_init_for_core(
 extern int _Py_ext_module_loader_info_init_for_builtin(
     struct _Py_ext_module_loader_info *p_info,
     PyObject *name);
+#ifdef HAVE_DYNAMIC_LOADING
 extern int _Py_ext_module_loader_info_init_from_spec(
     struct _Py_ext_module_loader_info *info,
     PyObject *spec);
+#endif
 
 /* The result from running an extension module's init function. */
 struct _Py_ext_module_loader_result {
@@ -87,9 +89,11 @@ extern void _Py_ext_module_loader_result_apply_error(
 
 /* The module init function. */
 typedef PyObject *(*PyModInitFunction)(void);
+#ifdef HAVE_DYNAMIC_LOADING
 extern PyModInitFunction _PyImport_GetModInitFunc(
     struct _Py_ext_module_loader_info *info,
     FILE *fp);
+#endif
 extern int _PyImport_RunModInitFunc(
     PyModInitFunction p0,
     struct _Py_ext_module_loader_info *info,

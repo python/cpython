@@ -59,6 +59,18 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
+>>> def __debug__(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> async def __debug__(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> class __debug__: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
 >>> del __debug__
 Traceback (most recent call last):
 SyntaxError: cannot delete __debug__
@@ -786,6 +798,9 @@ SyntaxError: cannot assign to __debug__
 >>> __debug__: int
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+>>> x.__debug__: int
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 >>> f(a=)
 Traceback (most recent call last):
 SyntaxError: expected argument value expression
@@ -1182,6 +1197,24 @@ Missing ':' before suites:
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> match x:
+   ...   case a, __debug__, b:
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> match x:
+   ...   case a, b, *__debug__:
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> match x:
+   ...   case Foo(a, __debug__=1, b=2):
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> if x = 3:
    ...    pass
    Traceback (most recent call last):
@@ -1274,6 +1307,15 @@ Custom error messages for try blocks that are not followed by except/finally
    ...
    Traceback (most recent call last):
    SyntaxError: expected 'except' or 'finally' block
+
+Custom error message for __debug__ as exception variable
+
+   >>> try:
+   ...    pass
+   ... except TypeError as __debug__:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
 
 Custom error message for try block mixing except and except*
 
@@ -1522,6 +1564,19 @@ Specialized indentation errors:
    Traceback (most recent call last):
    IndentationError: expected an indented block after class definition on line 1
 
+   >>> class C(__debug__=42): ...
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> class Meta(type):
+   ...     def __new__(*args, **kwargs):
+   ...         pass
+
+   >>> class C(metaclass=Meta, __debug__=42):
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> match something:
    ... pass
    Traceback (most recent call last):
@@ -1707,6 +1762,26 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 >>> import a.y.z, b.y.z, c.y.z from b.y.z as bar
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> import a as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> import a.b.c as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> from a import __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> from a import b as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
@@ -2185,6 +2260,14 @@ Invalid expressions in type scopes:
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a type alias
+
+   >>> type __debug__ = int
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> class A[__debug__]: pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
 
    >>> class A[T]((x := 3)): ...
    Traceback (most recent call last):

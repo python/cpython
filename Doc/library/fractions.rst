@@ -17,25 +17,30 @@ The :mod:`fractions` module provides support for rational number arithmetic.
 A Fraction instance can be constructed from a pair of integers, from
 another rational number, or from a string.
 
+.. index:: single: as_integer_ratio()
+
 .. class:: Fraction(numerator=0, denominator=1)
-           Fraction(other_fraction)
-           Fraction(float)
-           Fraction(decimal)
+           Fraction(number)
            Fraction(string)
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
    with value ``numerator/denominator``. If *denominator* is ``0``, it
-   raises a :exc:`ZeroDivisionError`. The second version requires that
-   *other_fraction* is an instance of :class:`numbers.Rational` and returns a
-   :class:`Fraction` instance with the same value.  The next two versions accept
-   either a :class:`float` or a :class:`decimal.Decimal` instance, and return a
-   :class:`Fraction` instance with exactly the same value.  Note that due to the
-   usual issues with binary floating-point (see :ref:`tut-fp-issues`), the
+   raises a :exc:`ZeroDivisionError`.
+
+   The second version requires that *number* is an instance of
+   :class:`numbers.Rational` or has the :meth:`!as_integer_ratio` method
+   (this includes :class:`float` and :class:`decimal.Decimal`).
+   It returns a :class:`Fraction` instance with exactly the same value.
+   Assumed, that the :meth:`!as_integer_ratio` method returns a pair
+   of coprime integers and last one is positive.
+   Note that due to the
+   usual issues with binary point (see :ref:`tut-fp-issues`), the
    argument to ``Fraction(1.1)`` is not exactly equal to 11/10, and so
    ``Fraction(1.1)`` does *not* return ``Fraction(11, 10)`` as one might expect.
    (But see the documentation for the :meth:`limit_denominator` method below.)
-   The last version of the constructor expects a string or unicode instance.
+
+   The last version of the constructor expects a string.
    The usual form for this instance is::
 
       [sign] numerator ['/' denominator]
@@ -87,7 +92,7 @@ another rational number, or from a string.
 
    .. versionchanged:: 3.9
       The :func:`math.gcd` function is now used to normalize the *numerator*
-      and *denominator*. :func:`math.gcd` always return a :class:`int` type.
+      and *denominator*. :func:`math.gcd` always returns an :class:`int` type.
       Previously, the GCD type depended on *numerator* and *denominator*.
 
    .. versionchanged:: 3.11
@@ -109,6 +114,10 @@ another rational number, or from a string.
    .. versionchanged:: 3.13
       Formatting of :class:`Fraction` instances without a presentation type
       now supports fill, alignment, sign handling, minimum width and grouping.
+
+   .. versionchanged:: 3.14
+      The :class:`Fraction` constructor now accepts any objects with the
+      :meth:`!as_integer_ratio` method.
 
    .. attribute:: numerator
 
