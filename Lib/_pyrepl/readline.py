@@ -338,7 +338,7 @@ class backspace_dedent(commands.Command):
 # ____________________________________________________________
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class _ReadlineWrapper:
     f_in: int = -1
     f_out: int = -1
