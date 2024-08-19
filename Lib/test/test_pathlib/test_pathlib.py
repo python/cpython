@@ -940,7 +940,10 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         spam = src / 'spam'
         spam.write_text('')
         _winapi.CreateJunction(str(src), str(dst))
-        self.assertRaises(OSError, dst.delete)
+        dst.delete()
+        self.assertFalse(dst.exists())
+        self.assertTrue(spam.exists())
+        self.assertTrue(src.exists())
 
     @unittest.skipUnless(delete_use_fd_functions, "requires safe delete")
     def test_delete_fails_on_close(self):
