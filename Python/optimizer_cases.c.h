@@ -1803,8 +1803,6 @@
             break;
         }
 
-        /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
-
         case _EXIT_INIT_CHECK: {
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());

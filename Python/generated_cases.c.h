@@ -485,7 +485,7 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             Py_INCREF(getitem);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container_st;
             new_frame->localsplus[1] = sub_st;
@@ -846,7 +846,7 @@
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                         tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
-                        args, total_args, NULL
+                        args, total_args, NULL, frame
                     );
                     // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     STACK_SHRINK(oparg + 2);
@@ -921,6 +921,10 @@
             _PyInterpreterFrame *init_frame;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, CALL);
+            }
             // _CHECK_AND_ALLOCATE_OBJECT
             args = &stack_pointer[-oparg];
             null = stack_pointer[-1 - oparg];
@@ -949,12 +953,12 @@
             // _CREATE_INIT_FRAME
             {
                 _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
-                    tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
+                    tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
                 assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
                 /* Push self onto stack of shim */
                 shim->localsplus[0] = PyStackRef_DUP(self);
                 PyFunctionObject *init_func = (PyFunctionObject *)PyStackRef_AsPyObjectSteal(init);
-                init_frame = _PyFrame_PushUnchecked(tstate, init_func, oparg+1);
+                init_frame = _PyFrame_PushUnchecked(tstate, init_func, oparg+1, shim);
                 /* Copy self followed by args to __init__ frame */
                 init_frame->localsplus[0] = self;
                 for (int i = 0; i < oparg; i++) {
@@ -963,9 +967,6 @@
                 frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                /* Link shim frame */
-                shim->previous = frame;
-                frame = shim;
                 /* Account for pushing the extra frame.
                  * We don't check recursion depth here,
                  * as it will be checked after start_frame */
@@ -978,7 +979,7 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame->previous = frame;
+                assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
@@ -1059,7 +1060,7 @@
                 int has_self = !PyStackRef_IsNull(self_or_null);
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
                 _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
                 new_frame->localsplus[0] = self_or_null;
                 for (int i = 0; i < oparg; i++) {
@@ -1083,7 +1084,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame->previous = frame;
+                assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
@@ -1152,7 +1153,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
-                    args, total_args, NULL
+                    args, total_args, NULL, frame
                 );
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
@@ -1177,7 +1178,7 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame->previous = frame;
+                assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
@@ -1482,7 +1483,7 @@
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
                         (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
-                        nargs, callargs, kwargs);
+                        nargs, callargs, kwargs, frame);
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
@@ -1633,7 +1634,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
-                    args, positional_args, kwnames_o
+                    args, positional_args, kwnames_o, frame
                 );
                 PyStackRef_CLOSE(kwnames);
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
@@ -2123,7 +2124,7 @@
                 int has_self = !PyStackRef_IsNull(self_or_null);
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
                 _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
                 new_frame->localsplus[0] = self_or_null;
                 for (int i = 0; i < oparg; i++) {
@@ -2147,7 +2148,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame->previous = frame;
+                assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
@@ -2198,7 +2199,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
-                    args, total_args, NULL
+                    args, total_args, NULL, frame
                 );
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
@@ -2223,7 +2224,7 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame->previous = frame;
+                assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
@@ -3138,6 +3139,7 @@
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
+                gen_frame->previous = frame;
                 // oparg is the return offset from the next instruction.
                 frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             }
@@ -3148,7 +3150,7 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame->previous = frame;
+                assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
@@ -4175,7 +4177,7 @@
             STAT_INC(LOAD_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             Py_INCREF(f);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2, frame);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
@@ -4497,7 +4499,7 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(fget);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1, frame);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
@@ -5793,6 +5795,8 @@
                     tstate->exc_info = &gen->gi_exc_state;
                     assert(next_instr - this_instr + oparg <= UINT16_MAX);
                     frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
+                    assert(gen_frame->previous == NULL);
+                    gen_frame->previous = frame;
                     DISPATCH_INLINED(gen_frame);
                 }
                 if (PyStackRef_Is(v, PyStackRef_None) && PyIter_Check(receiver_o)) {
@@ -5846,6 +5850,8 @@
             tstate->exc_info = &gen->gi_exc_state;
             assert(next_instr - this_instr + oparg <= UINT16_MAX);
             frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
+            gen_frame->previous = frame;
+            DISPATCH_INLINED(gen_frame);
             DISPATCH_INLINED(gen_frame);
         }
 

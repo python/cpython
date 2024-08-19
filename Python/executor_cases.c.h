@@ -3192,6 +3192,7 @@
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
+            gen_frame->previous = frame;
             // oparg is the return offset from the next instruction.
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             stack_pointer[0].bits = (uintptr_t)gen_frame;
@@ -3454,7 +3455,7 @@
             PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
             new_frame = _PyEvalFramePushAndInit(
                 tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
-                args, total_args, NULL
+                args, total_args, NULL, frame
             );
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
@@ -3693,7 +3694,7 @@
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
             _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
@@ -3719,7 +3720,7 @@
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
             _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
@@ -3745,7 +3746,7 @@
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
             _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
@@ -3771,7 +3772,7 @@
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
             _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
@@ -3797,7 +3798,7 @@
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
             _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
@@ -3822,7 +3823,7 @@
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
             _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
@@ -3843,7 +3844,7 @@
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            new_frame->previous = frame;
+            assert(new_frame->previous == frame || new_frame->previous->previous == frame);
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
@@ -4001,12 +4002,12 @@
             init = stack_pointer[-1 - oparg];
             self = stack_pointer[-2 - oparg];
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
-                tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
+                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self);
             PyFunctionObject *init_func = (PyFunctionObject *)PyStackRef_AsPyObjectSteal(init);
-            init_frame = _PyFrame_PushUnchecked(tstate, init_func, oparg+1);
+            init_frame = _PyFrame_PushUnchecked(tstate, init_func, oparg+1, shim);
             /* Copy self followed by args to __init__ frame */
             init_frame->localsplus[0] = self;
             for (int i = 0; i < oparg; i++) {
@@ -4015,9 +4016,6 @@
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            /* Link shim frame */
-            shim->previous = frame;
-            frame = shim;
             /* Account for pushing the extra frame.
              * We don't check recursion depth here,
              * as it will be checked after start_frame */
@@ -4027,8 +4025,6 @@
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
-
-        /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _EXIT_INIT_CHECK: {
             _PyStackRef should_be_none;
