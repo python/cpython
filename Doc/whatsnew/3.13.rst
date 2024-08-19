@@ -143,7 +143,7 @@ Significant improvements in the standard library:
   with support for many builtin types and any class defining
   the :func:`~object.__replace__` method.
 * The :mod:`dbm.sqlite3` module is now the default :mod:`dbm` backend.
-* The :mod:`os` module has a :ref:suite of new functions <os-timerfd>`
+* The :mod:`os` module has a :ref:`suite of new functions <os-timerfd>`
   for working with Linux's timer notification file descriptors.
 * The :mod:`random` module now has a :ref:`command-line interface <random-cli>`.
 
@@ -1396,7 +1396,7 @@ All other code will work just fine.
 :mod:`typing`
 -------------
 
-* :pep:`705`: Add :data:~`typing.ReadOnly`, a special typing construct
+* :pep:`705`: Add :data:`~typing.ReadOnly`, a special typing construct
   to mark a :class:`~typing.TypedDict` item as read-only for type checkers.
 
 * :pep:`742`: Add :data:`~typing.TypeIs`, a typing construct
