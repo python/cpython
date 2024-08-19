@@ -362,37 +362,38 @@ class ComplexTest(unittest.TestCase):
         exponents = [0, 1, 2, 3, 4, 5, 6, 19]
         for z in values:
             for e in exponents:
-                try:
-                    r_pow = z**e
-                except OverflowError:
-                    continue
-                r_pro = reduce(lambda x, y: x*y, [z]*e) if e else 1+0j
-                if str(r_pow) == str(r_pro):
-                    continue
+                with self.subTest(value=z, exponent=e):
+                    try:
+                        r_pow = z**e
+                    except OverflowError:
+                        continue
+                    r_pro = reduce(lambda x, y: x*y, [z]*e) if e else 1+0j
+                    if str(r_pow) == str(r_pro):
+                        continue
 
-                self.assertNotIn(z.real, {0.0, -0.0, INF, -INF, NAN})
-                self.assertNotIn(z.imag, {0.0, -0.0, INF, -INF, NAN})
+                    self.assertNotIn(z.real, {0.0, -0.0, INF, -INF, NAN})
+                    self.assertNotIn(z.imag, {0.0, -0.0, INF, -INF, NAN})
 
-                # We might fail here, because associativity of multiplication
-                # is broken already for floats.
-                # Consider z = 1-1j.  Then z*z*z*z = ((z*z)*z)*z = -4+0j,
-                # while in the algorithm for pow() a diffenent grouping
-                # of operations is used: z**4 = (z*z)*(z*z) = -4-0j.
-                #
-                # Fallback to the generic complex power algorithm.
-                r_pro, r_pro_errno = _testcapi._py_c_pow(z, e)
-                self.assertEqual(r_pro_errno, 0)
-                self.assertClose(r_pow, r_pro)
-                if isnan(r_pow.real):
-                    self.assertTrue(isnan(r_pro.real))
-                else:
-                    self.assertEqual(copysign(1, r_pow.real),
-                                     copysign(1, r_pro.real))
-                if isnan(r_pow.imag):
-                    self.assertTrue(isnan(r_pro.imag))
-                else:
-                    self.assertEqual(copysign(1, r_pow.imag),
-                                     copysign(1, r_pro.imag))
+                    # We might fail here, because associativity of multiplication
+                    # is broken already for floats.
+                    # Consider z = 1-1j.  Then z*z*z*z = ((z*z)*z)*z = -4+0j,
+                    # while in the algorithm for pow() a diffenent grouping
+                    # of operations is used: z**4 = (z*z)*(z*z) = -4-0j.
+                    #
+                    # Fallback to the generic complex power algorithm.
+                    r_pro, r_pro_errno = _testcapi._py_c_pow(z, e)
+                    self.assertEqual(r_pro_errno, 0)
+                    self.assertClose(r_pow, r_pro)
+                    if isnan(r_pow.real):
+                        self.assertTrue(isnan(r_pro.real))
+                    else:
+                        self.assertEqual(copysign(1, r_pow.real),
+                                         copysign(1, r_pro.real))
+                    if isnan(r_pow.imag):
+                        self.assertTrue(isnan(r_pro.imag))
+                    else:
+                        self.assertEqual(copysign(1, r_pow.imag),
+                                         copysign(1, r_pro.imag))
 
     def test_boolcontext(self):
         for i in range(100):
