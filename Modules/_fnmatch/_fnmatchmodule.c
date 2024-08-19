@@ -149,6 +149,34 @@ fnmatchmodule_load_escapefunc(PyObject *Py_UNUSED(module),
     return 0;
 }
 
+// ==== Cached re.sub() unit for set operation tokens =========================
+
+/* Create an LRU-cached function for re.compile('([&~|])').sub(). */
+static int
+fnmatchmodule_load_setops_re_sub(PyObject *Py_UNUSED(module),
+                                 fnmatchmodule_state *st)
+{
+    // make sure that this function is called once
+    assert(st->setops_re_subfn == NULL);
+    PyObject *pattern = PyUnicode_FromString("([&~|])");
+    if (pattern == NULL) {
+        return -1;
+    }
+    PyObject *compiled = PyObject_CallMethodOneArg(st->re_module,
+                                                   &_Py_ID(compile),
+                                                   pattern);
+    Py_DECREF(pattern);
+    if (compiled == NULL) {
+        return -1;
+    }
+    st->setops_re_subfn = PyObject_GetAttr(compiled, &_Py_ID(sub));
+    Py_DECREF(compiled);
+    if (st->setops_re_subfn == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 // ==== Module data getters ===================================================
 
 static inline PyObject * /* reference to re.compile(pattern).match() */
@@ -216,7 +244,9 @@ fnmatchmodule_exec(PyObject *module)
     INTERN_STRING(st, hyphen_esc_str, "\\-");
     INTERN_STRING(st, backslash_str, "\\");
     INTERN_STRING(st, backslash_esc_str, "\\\\");
-    INTERN_STRING(st, setops_str, "([&~|])");
+    if (fnmatchmodule_load_setops_re_sub(module, st) < 0) {
+        return -1;
+    }
     INTERN_STRING(st, setops_repl_str, "\\\\\\1");
     return 0;
 }
@@ -229,7 +259,7 @@ fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
     Py_VISIT(st->setops_repl_str);
-    Py_VISIT(st->setops_str);
+    Py_VISIT(st->setops_re_subfn);
     Py_VISIT(st->backslash_esc_str);
     Py_VISIT(st->backslash_str);
     Py_VISIT(st->hyphen_esc_str);
@@ -247,7 +277,7 @@ fnmatchmodule_clear(PyObject *m)
 {
     fnmatchmodule_state *st = get_fnmatchmodule_state(m);
     Py_CLEAR(st->setops_repl_str);
-    Py_CLEAR(st->setops_str);
+    Py_CLEAR(st->setops_re_subfn);
     Py_CLEAR(st->backslash_esc_str);
     Py_CLEAR(st->backslash_str);
     Py_CLEAR(st->hyphen_esc_str);

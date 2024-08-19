@@ -23,7 +23,7 @@ typedef struct {
     PyObject *backslash_esc_str;    // escaped backslash '\\\\'
 
     /* set operation tokens (&&, ~~ and ||) are not supported in regex */
-    PyObject *setops_str;           // set operation tokens '([&~|])'
+    PyObject *setops_re_subfn;      // cached re.compile('([&~|])').sub()
     PyObject *setops_repl_str;      // replacement pattern '\\\\\\1'
 } fnmatchmodule_state;
 
