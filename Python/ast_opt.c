@@ -651,6 +651,8 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         }
         else if (arg->kind == Dict_kind) {
             elts = arg->v.Dict.keys;
+            arg->kind = Set_kind;
+            arg->v.Set.elts = elts;
         }
         else if (arg->kind == Set_kind) {
             elts = arg->v.Set.elts;
