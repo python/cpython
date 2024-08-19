@@ -221,6 +221,12 @@ ENSUREPIP=      @ENSUREPIP@
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
+LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
+LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
+LIBHACL_SIMD128_FLAGS=@LIBHACL_SIMD128_FLAGS@
+LIBHACL_SIMD256_FLAGS=@LIBHACL_SIMD256_FLAGS@
+LIBHACL_SIMD128_OBJS=@LIBHACL_SIMD128_OBJS@
+LIBHACL_SIMD256_OBJS=@LIBHACL_SIMD256_OBJS@
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -646,6 +652,13 @@ LIBEXPAT_HEADERS= \
 LIBHACL_SHA2_OBJS= \
                 Modules/_hacl/Hacl_Hash_SHA2.o
 
+LIBHACL_BLAKE2_OBJS= \
+                Modules/_hacl/Hacl_Hash_Blake2s.o \
+                Modules/_hacl/Hacl_Hash_Blake2b.o \
+                Modules/_hacl/Lib_Memzero0.o \
+		$(LIBHACL_SIMD128_OBJS) \
+		$(LIBHACL_SIMD256_OBJS)
+
 LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
                 Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
@@ -659,6 +672,18 @@ LIBHACL_HEADERS= \
 LIBHACL_SHA2_HEADERS= \
                 Modules/_hacl/Hacl_Hash_SHA2.h \
                 Modules/_hacl/internal/Hacl_Hash_SHA2.h \
+		$(LIBHACL_HEADERS)
+
+LIBHACL_BLAKE2_HEADERS= \
+		Modules/_hacl/Hacl_Hash_Blake2b.h \
+		Modules/_hacl/Hacl_Hash_Blake2s.h \
+		Modules/_hacl/Hacl_Hash_Blake2s_Simd128.h \
+		Modules/_hacl/Hacl_Hash_Blake2b_Simd256.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2b.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2s.h \
+		Modules/_hacl/internal/Hacl_Impl_Blake2_Constants.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h \
+		Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h \
 		$(LIBHACL_HEADERS)
 
 #########################################################################
@@ -840,7 +865,7 @@ coverage-lcov:
 	@ # remove 3rd party modules, system headers and internal files with
 	@ # debug, test or dummy functions.
 	@lcov $(COVERAGE_LCOV_OPTIONS) --remove $(COVERAGE_INFO) \
-	    '*/Modules/_blake2/impl/*' \
+	    '*/Modules/_hacl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
 	    '*/Modules/expat/*' \
@@ -870,7 +895,7 @@ coverage-report: regen-token regen-frozen
 
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
-clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
+clinic: check-clean-src
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 
 .PHONY: clinic-tests
@@ -899,11 +924,6 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		rm -f ./pybuilddir.txt ; \
 		exit 1 ; \
 	fi
-
-# blake2s is auto-generated from blake2b
-$(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -1346,8 +1366,9 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 ##########################################################################
-# Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a
-LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+# Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a, and
+# libHacl_Blake2.a -- the contents of the latter vary depending on whether we
+# have the ability to compile vectorized versions
 
 Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
@@ -1355,6 +1376,25 @@ Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHA
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
+
+Modules/_hacl/Hacl_Hash_Blake2s.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c
+
+Modules/_hacl/Hacl_Hash_Blake2b.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b.c
+
+Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c
+
+Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c
+
+Modules/_hacl/Lib_Memzero0.o: $(srcdir)/Modules/_hacl/Lib_Memzero0.c $(LIBHACL_BLAKE2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Lib_Memzero0.c
+
+$(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_BLAKE2_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -3136,7 +3176,6 @@ MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
-MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_complex.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
@@ -3144,10 +3183,11 @@ MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA1.h Modules/_hacl/Hacl_Hash_SHA1.c
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/internal/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA1.h Modules/_hacl/internal/Hacl_Hash_SHA1.h Modules/_hacl/Hacl_Hash_SHA1.c
 MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_A)
-MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
+MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/internal/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_A)
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
