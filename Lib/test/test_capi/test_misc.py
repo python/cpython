@@ -1174,6 +1174,8 @@ class CAPITest(unittest.TestCase):
         # searching for NULL token is an error
         with self.assertRaises(SystemError):
             get_base_by_token(Z, 0)
+        with self.assertRaises(SystemError):
+            get_base_by_token(STATIC, 0)
 
         # share the token with A1
         C1 = create_type('_testcapi.C1', tokenA1)
