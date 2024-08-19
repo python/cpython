@@ -5,9 +5,9 @@ from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
 from random import random
-from math import atan2, isnan, copysign
+from math import isnan, copysign
 from functools import reduce
-from itertools import combinations
+from itertools import combinations_with_replacement
 import operator
 import _testcapi
 
@@ -356,8 +356,9 @@ class ComplexTest(unittest.TestCase):
 
         # Check that complex numbers with special components
         # are correctly handled.
-        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
-                                                     -3, INF, -INF, NAN], 2)]
+        values = [complex(*_)
+                  for _ in combinations_with_replacement([1, -1, 0.0, 0, -0.0, 2,
+                                                          -3, INF, -INF, NAN], 2)]
         exponents = [0, 1, 2, 3, 4, 5, 6, 19]
         for z in values:
             for e in exponents:
@@ -387,11 +388,11 @@ class ComplexTest(unittest.TestCase):
                 else:
                     self.assertEqual(copysign(1, r_pow.real),
                                      copysign(1, r_pro.real))
-                if not isnan(r_pow.imag):
+                if isnan(r_pow.imag):
+                    self.assertTrue(isnan(r_pro.imag))
+                else:
                     self.assertEqual(copysign(1, r_pow.imag),
                                      copysign(1, r_pro.imag))
-                else:
-                    self.assertTrue(isnan(r_pro.imag))
 
     def test_boolcontext(self):
         for i in range(100):
