@@ -102,7 +102,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     pattern_str_find_meth = PyObject_GetAttr(pattern, &_Py_ID(find));
     CHECK_NOT_NULL_OR_ABORT(pattern_str_find_meth);
     // ------------------------------------------------------------------------
-    const int pattern_kind = PyUnicode_KIND(pattern);
+    const unsigned int pattern_kind = PyUnicode_KIND(pattern);
     const void *const pattern_data = PyUnicode_DATA(pattern);
     // ---- def local macros --------------------------------------------------
 #define READ_CHAR(IND)  PyUnicode_READ(pattern_kind, pattern_data, IND)
