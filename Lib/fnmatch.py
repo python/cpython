@@ -10,7 +10,6 @@ The function translate(PATTERN) returns a regular expression
 corresponding to PATTERN.  (It does not compile it.)
 """
 import os
-import posixpath
 import re
 import functools
 
@@ -50,17 +49,9 @@ def filter(names, pat):
     result = []
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
-    if os.path is posixpath:
-        # While os.path.normcase on POSIX is os.fspath, each name in NAMES is
-        # assumed to be of the same type as PAT, namely a str or bytes object.
-        # In particular, os.path.normcase can be optimized away from the loop.
-        for name in names:
-            if match(name):
-                result.append(name)
-    else:
-        for name in names:
-            if match(os.path.normcase(name)):
-                result.append(name)
+    for name in names:
+        if match(os.path.normcase(name)):
+            result.append(name)
     return result
 
 def fnmatchcase(name, pat):
