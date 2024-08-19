@@ -3567,7 +3567,6 @@ dummy_func(
             PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init->func_code;
             DEOPT_IF(code->co_argcount != oparg+1);
-            DEOPT_IF(_Py_Specialize_CheckCode(code) != _Py_Specialize_Ok);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize));
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);
