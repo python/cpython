@@ -1522,12 +1522,14 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
         if (ix >= 0) {
             if (kind == DICT_KEYS_SPLIT) {
                 PyDictValues *values = _Py_atomic_load_ptr(&mp->ma_values);
-                if (values == NULL)
+                if (values == NULL) {
                     goto read_failed;
+                }
 
                 uint8_t capacity = _Py_atomic_load_uint8_relaxed(&values->capacity);
-                if (ix >= (Py_ssize_t)capacity)
+                if (ix >= (Py_ssize_t)capacity) {
                     goto read_failed;
+                }
 
                 *value_addr = PyStackRef_FromPyObjectNew(values->values[ix]);
                 if (PyStackRef_IsNull(*value_addr)) {
