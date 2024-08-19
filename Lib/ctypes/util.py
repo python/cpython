@@ -121,13 +121,13 @@ if os.name == "nt":
 
     def dllist():
         try:
-            # skip first entry, which is the executable itself
-            modules = _get_module_handles()[1:]
-            libraries = [name for h in modules
-                            if (name := _get_module_filename(h)) is not None]
-            return libraries
+            modules = _get_module_handles()
         except OSError:
             return None
+        # skip first entry, which is the executable itself
+        libraries = [name for h in modules[1:]
+                        if (name := _get_module_filename(h)) is not None]
+        return libraries
 
 elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}:
     from ctypes.macholib.dyld import dyld_find as _dyld_find
