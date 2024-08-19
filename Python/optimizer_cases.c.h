@@ -7,11 +7,21 @@
             break;
         }
 
+        case _CHECK_PERIODIC: {
+            break;
+        }
+
+        case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
+            break;
+        }
+
+        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
+
         case _RESUME_CHECK: {
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
+        /* _MONITOR_RESUME is not a viable micro-op for tier 2 */
 
         case _LOAD_FAST_CHECK: {
             _Py_UopsSymbol *value;
@@ -539,7 +549,25 @@
             break;
         }
 
-        /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 */
+        case _BINARY_SUBSCR_CHECK_FUNC: {
+            break;
+        }
+
+        case _BINARY_SUBSCR_INIT_CALL: {
+            _Py_UopsSymbol *sub;
+            _Py_UopsSymbol *container;
+            _Py_UOpsAbstractFrame *new_frame;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            (void)container;
+            (void)sub;
+            new_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _LIST_APPEND: {
             stack_pointer += -1;
@@ -753,7 +781,7 @@
             for (int i = 0; i < totalargs; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
-            stack_pointer += (oparg >> 8) + (oparg & 0xFF);
+            stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1161,8 +1189,14 @@
         }
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsSymbol *owner;
+            _Py_UOpsAbstractFrame *new_frame;
+            owner = stack_pointer[-1];
+            PyObject *fget = (PyObject *)this_instr->operand;
+            (void)fget;
+            (void)owner;
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
             break;
         }
@@ -1607,6 +1641,7 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
             (void)callable;
             (void)self_or_null;
             (void)args;
@@ -1618,10 +1653,6 @@
         }
 
         /* _DO_CALL is not a viable micro-op for tier 2 */
-
-        case _CHECK_PERIODIC: {
-            break;
-        }
 
         /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
@@ -1941,11 +1972,11 @@
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 */
+        /* _DO_CALL_KW is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+        /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_FUNCTION: {
             _Py_UopsSymbol *func;
@@ -2075,7 +2106,7 @@
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+        /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 

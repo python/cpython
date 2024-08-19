@@ -28,6 +28,7 @@
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_typeid.h"        // _PyType_FinalizeIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
@@ -103,7 +104,7 @@ _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
-= _PyRuntimeState_INIT(_PyRuntime);
+= _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
 static int runtime_initialized = 0;
@@ -1832,6 +1833,9 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyTypes_FiniTypes(interp);
 
     _PyTypes_Fini(interp);
+#ifdef Py_GIL_DISABLED
+    _PyType_FinalizeIdPool(interp);
+#endif
 
     _PyCode_Fini(interp);
 
