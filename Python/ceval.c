@@ -671,8 +671,6 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START }
 };
 
-extern const struct _PyCode_DEF(8) _Py_InitCleanup;
-
 #ifdef Py_DEBUG
 extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 #endif
