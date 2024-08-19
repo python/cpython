@@ -1447,9 +1447,9 @@ dummy_func(
                     && PyDict_CheckExact(BUILTINS()))
                 {
                     _PyDict_LoadGlobalStackRef((PyDictObject *)GLOBALS(),
-                                            (PyDictObject *)BUILTINS(),
-                                            name,
-                                            STACK_ENTRY(v));
+                                               (PyDictObject *)BUILTINS(),
+                                               name,
+                                               STACK_ENTRY(v));
                     if (PyStackRef_IsNull(v)) {
                         if (!_PyErr_Occurred(tstate)) {
                             /* _PyDict_LoadGlobalStackRef() sets NULL without raising
