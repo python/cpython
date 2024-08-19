@@ -1535,7 +1535,6 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
                 if (PyStackRef_IsNull(*value_addr)) {
                     goto read_failed;
                 }
-
                 if (values != _Py_atomic_load_ptr(&mp->ma_values)) {
                     goto read_failed;
                 }
@@ -1545,7 +1544,6 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
                 if (PyStackRef_IsNull(*value_addr)) {
                     goto read_failed;
                 }
-
                 if (dk != _Py_atomic_load_ptr(&mp->ma_keys)) {
                     goto read_failed;
                 }
