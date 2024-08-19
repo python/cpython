@@ -267,7 +267,8 @@ class FilterTestCase(unittest.TestCase):
     def test_path_like_objects(self):
         path = Path(__file__)
         self.assertListEqual(filter([path], '*'), [path])
-        # os.path.normcase() always returns a string
+        # os.path.normcase() always returns a string for Path objects
+        # since Path objects expect strings paths and not bytes ones.
         self.assertRaises(TypeError, filter, [path], b'*')
 
     def test_case(self):
