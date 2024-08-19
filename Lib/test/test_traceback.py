@@ -696,6 +696,35 @@ class TracebackErrorLocationCaretTestBase:
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
 
+        # Check custom error messages covering multiple lines
+        code = textwrap.dedent("""
+        dummy_call(
+            "dummy value"
+            foo="bar",
+        )
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '  File "?", line 3\n'
+            '    "dummy value"\n'
+            '    ^^^^^^^^^^^^^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
     def test_caret_multiline_expression_bin_op(self):
         # Make sure no carets are printed for expressions spanning multiple
         # lines.
@@ -2309,19 +2338,22 @@ class BaseExceptionReportingTests:
     def test_syntax_error_various_offsets(self):
         for offset in range(-5, 10):
             for add in [0, 2]:
-                text = " "*add + "text%d" % offset
+                text = " " * add + "text%d" % offset
                 expected = ['  File "file.py", line 1']
                 if offset < 1:
                     expected.append("    %s" % text.lstrip())
                 elif offset <= 6:
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*(offset-1)))
+                    # Set the caret length to match the length of the text minus the offset.
+                    caret_length = max(1, len(text.lstrip()) - offset + 1)
+                    expected.append("    %s%s" % (" " * (offset - 1), "^" * caret_length))
                 else:
+                    caret_length = max(1, len(text.lstrip()) - 4)
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*5))
+                    expected.append("    %s%s" % (" " * 5, "^" * caret_length))
                 expected.append("SyntaxError: msg")
                 expected.append("")
-                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
+                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset + add, text)))
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
