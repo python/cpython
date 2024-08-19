@@ -382,11 +382,11 @@ class ComplexTest(unittest.TestCase):
                 r_pro, r_pro_errno = _testcapi._py_c_pow(z, e)
                 self.assertEqual(r_pro_errno, 0)
                 self.assertClose(r_pow, r_pro)
-                if not isnan(r_pow.real):
+                if isnan(r_pow.real):
+                    self.assertTrue(isnan(r_pro.real))
+                else:
                     self.assertEqual(copysign(1, r_pow.real),
                                      copysign(1, r_pro.real))
-                else:
-                    self.assertTrue(isnan(r_pro.real))
                 if not isnan(r_pow.imag):
                     self.assertEqual(copysign(1, r_pow.imag),
                                      copysign(1, r_pro.imag))
