@@ -3972,10 +3972,6 @@
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init_func = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;
-            if (code->co_argcount != oparg+1) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -3985,8 +3981,8 @@
             if (PyStackRef_IsNull(self)) {
                 JUMP_TO_ERROR();
             }
-            init = PyStackRef_FromPyObjectNew(init_func);
             PyStackRef_CLOSE(callable);
+            init = PyStackRef_FromPyObjectNew(init_func);
             stack_pointer[-2 - oparg] = self;
             stack_pointer[-1 - oparg] = init;
             break;
@@ -4007,12 +4003,9 @@
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self);
             PyFunctionObject *init_func = (PyFunctionObject *)PyStackRef_AsPyObjectSteal(init);
-            init_frame = _PyFrame_PushUnchecked(tstate, init_func, oparg+1, shim);
-            /* Copy self followed by args to __init__ frame */
-            init_frame->localsplus[0] = self;
-            for (int i = 0; i < oparg; i++) {
-                init_frame->localsplus[i+1] = args[i];
-            }
+            args[-1] = self;
+            init_frame = _PyEvalFramePushAndInit(
+                tstate, init_func, NULL, args-1, oparg+1, NULL, shim);
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
