@@ -3054,6 +3054,23 @@ class TestPath(unittest.TestCase):
         data = ['/'.join(string.ascii_lowercase + str(n)) for n in range(10000)]
         zipfile.CompleteDirs._implied_dirs(data)
 
+    def test_malformed_paths(self):
+        """
+        Path should handle malformed paths.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr("/one-slash.txt", b"content")
+        zf.writestr("//two-slash.txt", b"content")
+        zf.writestr("../parent.txt", b"content")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        assert list(map(str, root.iterdir())) == [
+            'one-slash.txt',
+            'two-slash.txt',
+            'parent.txt',
+        ]
+
 
 if __name__ == "__main__":
     unittest.main()
