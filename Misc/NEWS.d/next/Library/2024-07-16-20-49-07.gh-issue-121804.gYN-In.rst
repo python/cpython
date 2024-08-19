@@ -1,3 +1,2 @@
-Add new kwarg ``source`` for
-:meth:`code.InteractiveInterpreter.showsyntaxerror()` to support enhanced error
-messages, including error locations.  Patch by Sergey B Kirpichev.
+Correctly show error locations, when :exc:`SyntaxError` raised in new repl.
+Patch by Sergey B Kirpichev.

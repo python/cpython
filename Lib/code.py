@@ -142,8 +142,10 @@ class InteractiveInterpreter:
         sys.last_traceback = tb
         value = value.with_traceback(tb)
         # Set the line of text that the exception refers to
-        if source and typ is SyntaxError and not value.text:
-            value.text = source.splitlines()[value.lineno - 1]
+        lines = source.splitlines()
+        if (source and typ is SyntaxError
+                and not value.text and len(lines) >= value.lineno):
+            value.text = lines[value.lineno - 1]
         sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
             self._excepthook(typ, value, tb)
