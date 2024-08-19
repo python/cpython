@@ -1522,18 +1522,19 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
         if (ix >= 0) {
             if (kind == DICT_KEYS_SPLIT) {
                 PyDictValues *values = _Py_atomic_load_ptr(&mp->ma_values);
-                if (values == NULL)
+                if (values == NULL) {
                     goto read_failed;
+                }
 
                 uint8_t capacity = _Py_atomic_load_uint8_relaxed(&values->capacity);
-                if (ix >= (Py_ssize_t)capacity)
+                if (ix >= (Py_ssize_t)capacity) {
                     goto read_failed;
+                }
 
                 *value_addr = PyStackRef_FromPyObjectNew(values->values[ix]);
                 if (PyStackRef_IsNull(*value_addr)) {
                     goto read_failed;
                 }
-
                 if (values != _Py_atomic_load_ptr(&mp->ma_values)) {
                     goto read_failed;
                 }
@@ -1543,7 +1544,6 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
                 if (PyStackRef_IsNull(*value_addr)) {
                     goto read_failed;
                 }
-
                 if (dk != _Py_atomic_load_ptr(&mp->ma_keys)) {
                     goto read_failed;
                 }
@@ -1602,12 +1602,7 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
 {
     PyObject *val;
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &val);
-    if (val != NULL) {
-        *value_addr = PyStackRef_FromPyObjectNew(val);
-    }
-    else {
-        *value_addr = PyStackRef_NULL;
-    }
+	*value_addr = value == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectNew(value);
     return ix;
 }
 
