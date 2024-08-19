@@ -20,7 +20,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
-#include "pycore_typeid.h"        // _PyType_FinalizeIdPool
+#include "pycore_typeid.h"        // _PyType_FinalizeThreadLocalRefcounts()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -390,7 +390,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
    Note that we initialize "initial" relative to _PyRuntime,
    to ensure pre-initialized pointers point to the active
    runtime state (and not "initial"). */
-static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
+static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime, "");
 _Py_COMP_DIAG_POP
 
 #define LOCKS_INIT(runtime) \
@@ -455,6 +455,8 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         // Py_Initialize() must be running again.
         // Reset to _PyRuntimeState_INIT.
         memcpy(runtime, &initial, sizeof(*runtime));
+        // Preserve the cookie from the original runtime.
+        memcpy(runtime->debug_offsets.cookie, _Py_Debug_Cookie, 8);
         assert(!runtime->_initialized);
     }
 
