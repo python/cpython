@@ -169,9 +169,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
                     CHECK_NOT_NULL_OR_ABORT(expr);
                     Py_ssize_t expr_len = write_expression(state, writer, expr);
                     Py_DECREF(expr);
-                    if (expr_len < 0) {
-                        goto abort;
-                    }
+                    CHECK_UNSIGNED_INT_OR_ABORT(expr_len);
                     written += expr_len;
                     i = j + 1;  // jump to the character after ']'
                     break;      // explicit early break for clarity
@@ -179,7 +177,7 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
             }
             default: {
                 Py_ssize_t t = escape_char(state, writer, chr);
-                CHECK_RET_CODE_OR_ABORT(t);
+                CHECK_UNSIGNED_INT_OR_ABORT(t);
                 written += t;
                 break;
             }
@@ -526,9 +524,8 @@ process_wildcards(PyObject *pattern, PyObject *indices)
 #define LOAD_WILDCARD_INDEX(VAR, IND)                               \
     do {                                                            \
         VAR = PyLong_AsSsize_t(PyList_GET_ITEM(indices, (IND)));    \
-        if ((VAR) < 0 && PyErr_Occurred())  {                       \
-            goto abort;                                             \
-        }                                                           \
+        /* wildcard indices must be >= 0 */                         \
+        CHECK_UNSIGNED_INT_OR_ABORT(VAR);                           \
     } while (0)
     // ------------------------------------------------------------------------
     WRITE_ASCII_OR_ABORT(writer, "(?s:", 4);

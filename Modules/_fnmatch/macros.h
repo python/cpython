@@ -1,6 +1,6 @@
 /*
  * This file contains various macro definitions in order to reduce the
- * number of lines in translate.c. Do not use them for something else.
+ * number of lines in '_fnmatch'. Do not use them for something else.
  */
 
 #ifndef _FNMATCH_MACROS_H
@@ -22,6 +22,12 @@
             goto abort;                 \
         }                               \
     } while (0)
+
+/*
+ * Identical to CHECK_RET_CODE_OR_ABORT but where the
+ * argument is semantically used as a positive integer.
+ */
+#define CHECK_UNSIGNED_INT_OR_ABORT     CHECK_RET_CODE_OR_ABORT
 
 /*
  * Check that OBJ is not NULL or execute 'goto abort'.
