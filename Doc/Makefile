@@ -4,7 +4,7 @@
 #
 
 # You can set these variables from the command line.
-PYTHON       = python3
+PYTHON       ?= python3
 VENVDIR      = ./venv
 UV           = uv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
