@@ -338,14 +338,14 @@ class backspace_dedent(commands.Command):
 # ____________________________________________________________
 
 
-@dataclass(slots=True, repr=False)
+@dataclass(slots=True)
 class _ReadlineWrapper:
     f_in: int = -1
     f_out: int = -1
-    reader: ReadlineAlikeReader | None = None
+    reader: ReadlineAlikeReader | None = field(default=None, repr=False)
     saved_history_length: int = -1
     startup_hook: Callback | None = None
-    config: ReadlineConfig = field(default_factory=ReadlineConfig)
+    config: ReadlineConfig = field(default_factory=ReadlineConfig, repr=False)
 
     def __post_init__(self) -> None:
         if self.f_in == -1:
