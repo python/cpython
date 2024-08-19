@@ -301,6 +301,14 @@ _Py_INCREF_TYPE(PyTypeObject *type)
         return;
     }
 
+    // gh-122974: GCC 11 warns about the access to PyHeapTypeObject fields when
+    // _Py_INCREF_TYPE() is called on a statically allocated type.  The
+    // _PyType_HasFeature check above ensures that the type is a heap type.
+#if defined(__GNUC__) && __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
 
@@ -319,6 +327,10 @@ _Py_INCREF_TYPE(PyTypeObject *type)
         // It handles the unique_id=-1 case to keep the inlinable function smaller.
         _PyType_IncrefSlow(ht);
     }
+
+#if defined(__GNUC__) && __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif
 }
 
 static inline void
