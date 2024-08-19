@@ -1,0 +1,2 @@
+Fix :term:`path-like objects <path-like object>` support in
+:func:`fnmatch.filter`.  Patch by Bénédikt Tran.
