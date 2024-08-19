@@ -2705,14 +2705,6 @@ class DummyPathTest(DummyPurePathTest):
         # filename is guaranteed not to exist
         filename = tmp / 'foo'
         self.assertRaises(FileNotFoundError, filename.delete)
-        # test that ignore_errors option is honored
-        filename.delete(ignore_errors=True)
-        # test on_error
-        errors = []
-        filename.delete(on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], FileNotFoundError)
-        self.assertEqual(errors[0].filename, str(filename))
 
     def setUpWalk(self):
         # Build:

@@ -923,23 +923,13 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
 
-    def delete(self, ignore_errors=False, on_error=None):
+    def delete(self):
         """
         Delete this file or directory (including all sub-directories).
-
-        If *ignore_errors* is true, exceptions raised from scanning the
-        filesystem and removing files and directories are ignored. Otherwise,
-        if *on_error* is set, it will be called to handle the error. If
-        neither *ignore_errors* nor *on_error* are set, exceptions are
-        propagated to the caller.
         """
-        if ignore_errors:
-            def on_error(err):
-                pass
-        elif on_error is None:
+        if self.is_dir(follow_symlinks=False):
             def on_error(err):
                 raise err
-        if self.is_dir(follow_symlinks=False):
             results = self.walk(
                 on_error=on_error,
                 top_down=False,  # So we rmdir() empty directories.
@@ -955,14 +945,9 @@ class PathBase(PurePathBase):
                         dirpath.joinpath(name).rmdir()
                     except OSError as err:
                         on_error(err)
-            delete_self = self.rmdir
+            self.rmdir()
         else:
-            delete_self = self.unlink
-        try:
-            delete_self()
-        except OSError as err:
-            err.filename = str(self)
-            on_error(err)
+            self.unlink()
     delete.avoids_symlink_attacks = False
 
     def owner(self, *, follow_symlinks=True):

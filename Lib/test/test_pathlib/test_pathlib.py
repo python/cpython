@@ -904,10 +904,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             child_dir_path.chmod(new_mode)
             tmp.chmod(new_mode)
 
-            errors = []
-            tmp.delete(on_error=errors.append)
-            # Test whether onerror has actually been called.
-            self.assertEqual(len(errors), 3)
+            self.assertRaises(PermissionError, tmp.delete)
         finally:
             tmp.chmod(old_dir_mode)
             child_file_path.chmod(old_child_file_mode)
@@ -1003,16 +1000,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(dir2.is_dir())
         self.assertEqual(close_count, 2)
 
-        close_count = 0
-        errors = []
-
-        with swap_attr(os, 'close', close) as orig_close:
-            dir1.delete(on_error=errors.append)
-        self.assertEqual(len(errors), 2)
-        self.assertEqual(errors[0].filename, str(dir2))
-        self.assertEqual(errors[1].filename, str(dir1))
-        self.assertEqual(close_count, 2)
-
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
                      "fifo requires special path on VxWorks")
@@ -1027,63 +1014,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         os.mkfifo(p / 'mypipe')
         p.delete()
         self.assertFalse(p.exists())
-
-    @unittest.skipIf(sys.platform[:6] == 'cygwin',
-                     "This test can't be run on Cygwin (issue #1071513).")
-    @os_helper.skip_if_dac_override
-    @os_helper.skip_unless_working_chmod
-    def test_delete_deleted_race_condition(self):
-        # bpo-37260
-        #
-        # Test that a file or a directory deleted after it is enumerated
-        # by scandir() but before unlink() or rmdr() is called doesn't
-        # generate any errors.
-        def on_error(exc):
-            assert exc.filename
-            if not isinstance(exc, PermissionError):
-                raise
-            # Make the parent and the children writeable.
-            for p, mode in zip(paths, old_modes):
-                p.chmod(mode)
-            # Remove other dirs except one.
-            keep = next(p for p in dirs if str(p) != exc.filename)
-            for p in dirs:
-                if p != keep:
-                    p.rmdir()
-            # Remove other files except one.
-            keep = next(p for p in files if str(p) != exc.filename)
-            for p in files:
-                if p != keep:
-                    p.unlink()
-
-        tmp = self.cls(self.base, 'delete')
-        tmp.mkdir()
-        paths = [tmp] + [tmp / f'child{i}' for i in range(6)]
-        dirs = paths[1::2]
-        files = paths[2::2]
-        for path in dirs:
-            path.mkdir()
-        for path in files:
-            path.write_text('')
-
-        old_modes = [path.stat().st_mode for path in paths]
-
-        # Make the parent and the children non-writeable.
-        new_mode = stat.S_IREAD | stat.S_IEXEC
-        for path in reversed(paths):
-            path.chmod(new_mode)
-
-        try:
-            tmp.delete(on_error=on_error)
-        except:
-            # Test failed, so cleanup artifacts.
-            for path, mode in zip(paths, old_modes):
-                try:
-                    path.chmod(mode)
-                except OSError:
-                    pass
-            tmp.delete()
-            raise
 
     def test_delete_does_not_choke_on_failing_lstat(self):
         try:

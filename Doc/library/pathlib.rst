@@ -1637,19 +1637,10 @@ Copying, renaming and deleting
    :meth:`Path.delete` to remove a non-empty directory.
 
 
-.. method:: Path.delete(ignore_errors=False, on_error=None)
+.. method:: Path.delete()
 
    Delete this file or directory. If this path refers to a non-empty
    directory, its files and sub-directories are deleted recursively.
-
-   If *ignore_errors* is true, errors resulting from failed deletions will be
-   ignored. If *ignore_errors* is false or omitted, and a callable is given as
-   the optional *on_error* argument, it will be called with one argument of
-   type :exc:`OSError` each time an exception is raised. The callable can
-   handle the error to continue the deletion process or re-raise it to stop.
-   Note that the filename is available as the :attr:`~OSError.filename`
-   attribute of the exception object. If neither *ignore_errors* nor
-   *on_error* are supplied, exceptions are propagated to the caller.
 
    .. note::
 
