@@ -1,0 +1,2 @@
+IDLE Shell no longer ignores Ctrl+C when an interpreter waits on a
+blocking function. Patch by Louie Lu.
