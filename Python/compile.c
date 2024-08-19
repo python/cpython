@@ -2186,7 +2186,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
             docstring = NULL;
         }
     }
-    int idx = compiler_add_const(c, docstring ? docstring : Py_None);
+    Py_ssize_t idx = compiler_add_const(c, docstring ? docstring : Py_None);
     Py_XDECREF(docstring);
     RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
 
