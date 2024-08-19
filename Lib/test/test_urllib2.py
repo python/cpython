@@ -803,13 +803,15 @@ class HandlerTests(unittest.TestCase):
                             timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
                 raise self._exception
 
-        exception = ftplib.error_perm("500 OOPS: cannot change directory:/nonexistent")
+        exception = ftplib.error_perm(
+            "500 OOPS: cannot change directory:/nonexistent")
         h = ErrorFTPHandler(exception)
         urlopen = urllib.request.build_opener(h).open
         try:
             urlopen("ftp://www.pythontest.net/")
         except urllib.error.URLError as raised:
-            self.assertEqual(raised.reason, exception.args[0])
+            self.assertEqual(raised.reason,
+                             f"ftp error: {exception.args[0]}")
         else:
             self.fail("Did not raise ftplib exception")
 
