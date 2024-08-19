@@ -27,6 +27,7 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
+#include "macros.h"
 #include "util.h"                       // prototypes
 
 #include "pycore_runtime.h"             // for _Py_ID()
@@ -159,22 +160,18 @@ fnmatchmodule_load_setops_re_sub(PyObject *Py_UNUSED(module),
     // make sure that this function is called once
     assert(st->setops_re_subfn == NULL);
     PyObject *pattern = PyUnicode_FromString("([&~|])");
-    if (pattern == NULL) {
-        return -1;
-    }
+    CHECK_NOT_NULL_OR_ABORT(pattern);
     PyObject *compiled = PyObject_CallMethodOneArg(st->re_module,
                                                    &_Py_ID(compile),
                                                    pattern);
     Py_DECREF(pattern);
-    if (compiled == NULL) {
-        return -1;
-    }
+    CHECK_NOT_NULL_OR_ABORT(compiled);
     st->setops_re_subfn = PyObject_GetAttr(compiled, &_Py_ID(sub));
     Py_DECREF(compiled);
-    if (st->setops_re_subfn == NULL) {
-        return -1;
-    }
+    CHECK_NOT_NULL_OR_ABORT(st->setops_re_subfn);
     return 0;
+abort:
+    return -1;
 }
 
 // ==== Module data getters ===================================================
@@ -205,54 +202,45 @@ get_platform_normcase_function(PyObject *module, bool *isposix)
 
 // ==== Module state functions ================================================
 
-/* Import a named module and store it in 'STATE->ATTRIBUTE'. */
+static int
+fnmatchmodule_exec(PyObject *module)
+{
+    // ---- def local macros --------------------------------------------------
+    /* Import a named module and store it in 'STATE->ATTRIBUTE'. */
 #define IMPORT_MODULE(STATE, ATTRIBUTE, MODULE_NAME)                \
     do {                                                            \
         /* make sure that the attribute is initialized once */      \
         assert(STATE->ATTRIBUTE == NULL);                           \
         STATE->ATTRIBUTE = PyImport_ImportModule((MODULE_NAME));    \
-        if (STATE->ATTRIBUTE == NULL) {                             \
-            return -1;                                              \
-        }                                                           \
+        CHECK_NOT_NULL_OR_ABORT(STATE->ATTRIBUTE);                  \
     } while (0)
-
-/* Intern a literal STRING and store it in 'STATE->ATTRIBUTE'. */
+    /* Intern a literal STRING and store it in 'STATE->ATTRIBUTE'. */
 #define INTERN_STRING(STATE, ATTRIBUTE, STRING)                     \
     do {                                                            \
         /* make sure that the attribute is initialized once */      \
         assert(STATE->ATTRIBUTE == NULL);                           \
         STATE->ATTRIBUTE = PyUnicode_InternFromString((STRING));    \
-        if (STATE->ATTRIBUTE == NULL) {                             \
-            return -1;                                              \
-        }                                                           \
+        CHECK_NOT_NULL_OR_ABORT(STATE->ATTRIBUTE);                  \
     } while (0)
-
-static int
-fnmatchmodule_exec(PyObject *module)
-{
+    // ------------------------------------------------------------------------
     fnmatchmodule_state *st = get_fnmatchmodule_state(module);
     IMPORT_MODULE(st, os_module, "os");
     IMPORT_MODULE(st, posixpath_module, "posixpath");
     IMPORT_MODULE(st, re_module, "re");
-    if (fnmatchmodule_load_translator(module, st) < 0) {
-        return -1;
-    }
-    if (fnmatchmodule_load_escapefunc(module, st) < 0) {
-        return -1;
-    }
+    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_translator(module, st));
+    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_escapefunc(module, st));
     INTERN_STRING(st, hyphen_str, "-");
     INTERN_STRING(st, hyphen_esc_str, "\\-");
     INTERN_STRING(st, backslash_str, "\\");
     INTERN_STRING(st, backslash_esc_str, "\\\\");
-    if (fnmatchmodule_load_setops_re_sub(module, st) < 0) {
-        return -1;
-    }
+    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_setops_re_sub(module, st));
     INTERN_STRING(st, setops_repl_str, "\\\\\\1");
     return 0;
-}
-
+abort:
+    return -1;
 #undef INTERN_STRING
 #undef IMPORT_MODULE
+}
 
 static int
 fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
@@ -316,27 +304,22 @@ fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pattern)
 /*[clinic end generated code: output=1a68530a2e3cf7d0 input=7ac729daad3b1404]*/
 {
     bool isposix = 0;
-    PyObject *normcase = get_platform_normcase_function(module, &isposix);
-    if (normcase == NULL) {
-        return NULL;
-    }
+    PyObject *normcase = NULL;  // for the 'goto abort' statements
+    normcase = get_platform_normcase_function(module, &isposix);
+    CHECK_NOT_NULL_OR_ABORT(normcase);
     PyObject *normalized_pattern = PyObject_CallOneArg(normcase, pattern);
-    if (normalized_pattern == NULL) {
-        Py_DECREF(normcase);
-        return NULL;
-    }
+    CHECK_NOT_NULL_OR_ABORT(normalized_pattern);
     // the matcher is cached with respect to the *normalized* pattern
     PyObject *matcher = get_matcher_function(module, normalized_pattern);
     Py_DECREF(normalized_pattern);
-    if (matcher == NULL) {
-        Py_DECREF(normcase);
-        return NULL;
-    }
-    PyObject *normalizer = isposix ? NULL : normcase;
-    PyObject *filtered = _Py_fnmatch_filter(matcher, names, normalizer);
+    CHECK_NOT_NULL_OR_ABORT(matcher);
+    PyObject *filtered = _Py_fnmatch_filter(matcher, names, normcase);
     Py_DECREF(matcher);
     Py_DECREF(normcase);
     return filtered;
+abort:
+    Py_XDECREF(normcase);
+    return NULL;
 }
 
 /*[clinic input]
@@ -437,14 +420,10 @@ fnmatch_translate_impl(PyObject *module, PyObject *pattern)
         PyObject *decoded = PyUnicode_DecodeLatin1(PyBytes_AS_STRING(pattern),
                                                    PyBytes_GET_SIZE(pattern),
                                                    "strict");
-        if (decoded == NULL) {
-            return NULL;
-        }
+        CHECK_NOT_NULL_OR_ABORT(decoded);
         PyObject *translated = _Py_fnmatch_translate(module, decoded);
         Py_DECREF(decoded);
-        if (translated == NULL) {
-            return NULL;
-        }
+        CHECK_NOT_NULL_OR_ABORT(translated);
         PyObject *res = PyUnicode_AsLatin1String(translated);
         Py_DECREF(translated);
         return res;
@@ -456,6 +435,8 @@ fnmatch_translate_impl(PyObject *module, PyObject *pattern)
         PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
         return NULL;
     }
+abort:
+    return NULL;
 }
 
 // ==== Module specs ==========================================================
