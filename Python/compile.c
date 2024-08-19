@@ -1057,7 +1057,8 @@ codegen_addop_j(instr_sequence *seq, location loc,
 
 static int
 compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
-                     void *key, int lineno, PyObject *private)
+                     void *key, int lineno, PyObject *private,
+                    _PyCompile_CodeUnitMetadata *umd)
 {
     location loc = LOCATION(lineno, lineno, 0, 0);
 
@@ -1069,9 +1070,14 @@ compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
         return ERROR;
     }
     u->u_scope_type = scope_type;
-    u->u_metadata.u_argcount = 0;
-    u->u_metadata.u_posonlyargcount = 0;
-    u->u_metadata.u_kwonlyargcount = 0;
+    if (umd != NULL) {
+        u->u_metadata = *umd;
+    }
+    else {
+        u->u_metadata.u_argcount = 0;
+        u->u_metadata.u_posonlyargcount = 0;
+        u->u_metadata.u_kwonlyargcount = 0;
+    }
     u->u_ste = _PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
@@ -1441,14 +1447,19 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
 }
 
 static int
-compiler_setup_annotations_scope(struct compiler *c, location loc,
-                                 void *key, PyObject *name)
+codegen_setup_annotations_scope(struct compiler *c, location loc,
+                                void *key, PyObject *name)
 {
-    if (compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
-                             key, loc.lineno, NULL) == -1) {
-        return ERROR;
-    }
-    c->u->u_metadata.u_posonlyargcount = 1;
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_posonlyargcount = 1,
+    };
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
+                             key, loc.lineno, NULL, &umd));
+    assert(c->u->u_metadata.u_posonlyargcount == 1);
+    assert(c->u->u_metadata.u_argcount == 0);
+    assert(c->u->u_metadata.u_kwonlyargcount == 0);
+
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -1463,8 +1474,8 @@ compiler_setup_annotations_scope(struct compiler *c, location loc,
 }
 
 static int
-compiler_leave_annotations_scope(struct compiler *c, location loc,
-                                 Py_ssize_t annotations_len)
+codegen_leave_annotations_scope(struct compiler *c, location loc,
+                                Py_ssize_t annotations_len)
 {
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
@@ -1534,8 +1545,8 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
         assert(ste->ste_annotation_block != NULL);
         PyObject *deferred_anno = Py_NewRef(c->u->u_deferred_annotations);
         void *key = (void *)((uintptr_t)ste->ste_id + 1);
-        if (compiler_setup_annotations_scope(c, loc, key,
-                                             ste->ste_annotation_block->ste_name) == -1) {
+        if (codegen_setup_annotations_scope(c, loc, key,
+                                            ste->ste_annotation_block->ste_name) == -1) {
             Py_DECREF(deferred_anno);
             return ERROR;
         }
@@ -1555,7 +1566,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
         Py_DECREF(deferred_anno);
 
         RETURN_IF_ERROR(
-            compiler_leave_annotations_scope(c, loc, annotations_len)
+            codegen_leave_annotations_scope(c, loc, annotations_len)
         );
         RETURN_IF_ERROR(
             compiler_nameop(c, loc, &_Py_ID(__annotate__), Store)
@@ -1618,7 +1629,7 @@ compiler_enter_anonymous_scope(struct compiler* c, mod_ty mod)
     _Py_DECLARE_STR(anon_module, "<module>");
     RETURN_IF_ERROR(
         compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
-                             mod, 1, NULL));
+                             mod, 1, NULL, NULL));
     return SUCCESS;
 }
 
@@ -1828,7 +1839,7 @@ compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 }
 
 static int
-compiler_argannotation(struct compiler *c, identifier id,
+codegen_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, Py_ssize_t *annotations_len, location loc)
 {
     if (!annotation) {
@@ -1862,14 +1873,14 @@ compiler_argannotation(struct compiler *c, identifier id,
 }
 
 static int
-compiler_argannotations(struct compiler *c, asdl_arg_seq* args,
-                        Py_ssize_t *annotations_len, location loc)
+codegen_argannotations(struct compiler *c, asdl_arg_seq* args,
+                       Py_ssize_t *annotations_len, location loc)
 {
     int i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
         RETURN_IF_ERROR(
-            compiler_argannotation(
+            codegen_argannotation(
                         c,
                         arg->arg,
                         arg->annotation,
@@ -1880,40 +1891,40 @@ compiler_argannotations(struct compiler *c, asdl_arg_seq* args,
 }
 
 static int
-compiler_annotations_in_scope(struct compiler *c, location loc,
-                              arguments_ty args, expr_ty returns,
-                              Py_ssize_t *annotations_len)
+codegen_annotations_in_scope(struct compiler *c, location loc,
+                             arguments_ty args, expr_ty returns,
+                             Py_ssize_t *annotations_len)
 {
     RETURN_IF_ERROR(
-        compiler_argannotations(c, args->args, annotations_len, loc));
+        codegen_argannotations(c, args->args, annotations_len, loc));
 
     RETURN_IF_ERROR(
-        compiler_argannotations(c, args->posonlyargs, annotations_len, loc));
+        codegen_argannotations(c, args->posonlyargs, annotations_len, loc));
 
     if (args->vararg && args->vararg->annotation) {
         RETURN_IF_ERROR(
-            compiler_argannotation(c, args->vararg->arg,
-                                         args->vararg->annotation, annotations_len, loc));
+            codegen_argannotation(c, args->vararg->arg,
+                                     args->vararg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_argannotations(c, args->kwonlyargs, annotations_len, loc));
+        codegen_argannotations(c, args->kwonlyargs, annotations_len, loc));
 
     if (args->kwarg && args->kwarg->annotation) {
         RETURN_IF_ERROR(
-            compiler_argannotation(c, args->kwarg->arg,
-                                         args->kwarg->annotation, annotations_len, loc));
+            codegen_argannotation(c, args->kwarg->arg,
+                                     args->kwarg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
+        codegen_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
 
     return 0;
 }
 
 static int
-compiler_annotations(struct compiler *c, location loc,
-                           arguments_ty args, expr_ty returns)
+codegen_annotations(struct compiler *c, location loc,
+                    arguments_ty args, expr_ty returns)
 {
     /* Push arg annotation names and values.
        The expressions are evaluated separately from the rest of the source code.
@@ -1930,15 +1941,15 @@ compiler_annotations(struct compiler *c, location loc,
     bool annotations_used = ste->ste_annotations_used;
 
     if (annotations_used) {
-        if (compiler_setup_annotations_scope(c, loc, (void *)args,
-                                             ste->ste_name) < 0) {
+        if (codegen_setup_annotations_scope(c, loc, (void *)args,
+                                            ste->ste_name) < 0) {
             Py_DECREF(ste);
             return ERROR;
         }
     }
     Py_DECREF(ste);
 
-    if (compiler_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
+    if (codegen_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
         if (annotations_used) {
             compiler_exit_scope(c);
         }
@@ -1947,7 +1958,7 @@ compiler_annotations(struct compiler *c, location loc,
 
     if (annotations_used) {
         RETURN_IF_ERROR(
-            compiler_leave_annotations_scope(c, loc, annotations_len)
+            codegen_leave_annotations_scope(c, loc, annotations_len)
         );
         return MAKE_FUNCTION_ANNOTATE;
     }
@@ -2011,7 +2022,7 @@ compiler_type_param_bound_or_default(struct compiler *c, expr_ty e,
 {
     PyObject *defaults = PyTuple_Pack(1, _PyLong_GetOne());
     ADDOP_LOAD_CONST_NEW(c, LOC(e), defaults);
-    if (compiler_setup_annotations_scope(c, LOC(e), key, name) == -1) {
+    if (codegen_setup_annotations_scope(c, LOC(e), key, name) == -1) {
         return ERROR;
     }
     if (allow_starred && e->kind == Starred_kind) {
@@ -2155,8 +2166,13 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
 
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_argcount = asdl_seq_LEN(args->args),
+        .u_posonlyargcount = asdl_seq_LEN(args->posonlyargs),
+        .u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs),
+    };
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL));
+        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
@@ -2181,9 +2197,9 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     }
     Py_CLEAR(docstring);
 
-    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    assert(c->u->u_metadata.u_argcount == asdl_seq_LEN(args->args));
+    assert(c->u->u_metadata.u_posonlyargcount == asdl_seq_LEN(args->posonlyargs));
+    assert(c->u->u_metadata.u_kwonlyargcount == asdl_seq_LEN(args->kwonlyargs));
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
@@ -2222,7 +2238,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
 }
 
 static int
-compiler_function(struct compiler *c, stmt_ty s, int is_async)
+codegen_function(struct compiler *c, stmt_ty s, int is_async)
 {
     arguments_ty args;
     expr_ty returns;
@@ -2282,8 +2298,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         if (!type_params_name) {
             return ERROR;
         }
+        _PyCompile_CodeUnitMetadata umd = {
+            .u_argcount = num_typeparam_args,
+        };
         if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno, NULL) == -1) {
+                                 (void *)type_params, firstlineno, NULL, &umd) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
         }
@@ -2294,7 +2313,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
 
-    int annotations_flag = compiler_annotations(c, loc, args, returns);
+    int annotations_flag = codegen_annotations(c, loc, args, returns);
     if (annotations_flag < 0) {
         if (is_generic) {
             compiler_exit_scope(c);
@@ -2314,7 +2333,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         ADDOP_I_IN_SCOPE(c, loc, SWAP, 2);
         ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
-        c->u->u_metadata.u_argcount = num_typeparam_args;
+        assert(c->u->u_metadata.u_argcount == num_typeparam_args);
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2365,7 +2384,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     /* 1. compile the class body into a code object */
     RETURN_IF_ERROR(
         compiler_enter_scope(c, s->v.ClassDef.name, COMPILER_SCOPE_CLASS,
-                             (void *)s, firstlineno, s->v.ClassDef.name));
+                             (void *)s, firstlineno, s->v.ClassDef.name, NULL));
 
     location loc = LOCATION(firstlineno, firstlineno, 0, 0);
     /* load (global) __name__ ... */
@@ -2508,7 +2527,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno, s->v.ClassDef.name) == -1) {
+                                 (void *)type_params, firstlineno, s->v.ClassDef.name, NULL) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
         }
@@ -2592,7 +2611,7 @@ compiler_typealias_body(struct compiler *c, stmt_ty s)
     PyObject *defaults = PyTuple_Pack(1, _PyLong_GetOne());
     ADDOP_LOAD_CONST_NEW(c, loc, defaults);
     RETURN_IF_ERROR(
-        compiler_setup_annotations_scope(c, LOC(s), s, name));
+        codegen_setup_annotations_scope(c, LOC(s), s, name));
     /* Make None the first constant, so the evaluate function can't have a
         docstring. */
     RETURN_IF_ERROR(compiler_add_const(c, Py_None));
@@ -2627,7 +2646,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, loc.lineno, NULL) == -1) {
+                                 (void *)type_params, loc.lineno, NULL, NULL) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
         }
@@ -2889,18 +2908,23 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return ERROR;
     }
 
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_argcount = asdl_seq_LEN(args->args),
+        .u_posonlyargcount = asdl_seq_LEN(args->posonlyargs),
+        .u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs),
+    };
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
     RETURN_IF_ERROR(
         compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
-                             (void *)e, e->lineno, NULL));
+                             (void *)e, e->lineno, NULL, &umd));
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
     RETURN_IF_ERROR(compiler_add_const(c, Py_None));
 
-    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    assert(c->u->u_metadata.u_argcount == asdl_seq_LEN(args->args));
+    assert(c->u->u_metadata.u_posonlyargcount == asdl_seq_LEN(args->posonlyargs));
+    assert(c->u->u_metadata.u_kwonlyargcount == asdl_seq_LEN(args->kwonlyargs));
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (SYMTABLE_ENTRY(c)->ste_generator) {
         co = optimize_and_assemble(c, 0);
@@ -3867,7 +3891,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 
     switch (s->kind) {
     case FunctionDef_kind:
-        return compiler_function(c, s, 0);
+        return codegen_function(c, s, 0);
     case ClassDef_kind:
         return compiler_class(c, s);
     case TypeAlias_kind:
@@ -3949,7 +3973,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case With_kind:
         return compiler_with(c, s, 0);
     case AsyncFunctionDef_kind:
-        return compiler_function(c, s, 1);
+        return codegen_function(c, s, 1);
     case AsyncWith_kind:
         return compiler_async_with(c, s, 0);
     case AsyncFor_kind:
@@ -5674,7 +5698,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     else {
         if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                                (void *)e, e->lineno, NULL) < 0) {
+                                (void *)e, e->lineno, NULL, NULL) < 0) {
             goto error;
         }
     }
