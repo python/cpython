@@ -64,7 +64,7 @@ class InteractiveInterpreter:
             code = self.compile(source, filename, symbol)
         except (OverflowError, SyntaxError, ValueError):
             # Case 1
-            self.showsyntaxerror(filename)
+            self.showsyntaxerror(filename, source=source)
             return False
 
         if code is None:
@@ -94,7 +94,7 @@ class InteractiveInterpreter:
         except:
             self.showtraceback()
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Display the syntax error that just occurred.
 
         This doesn't display a stack trace because there isn't one.
@@ -118,7 +118,8 @@ class InteractiveInterpreter:
                 else:
                     # Stuff in the right filename
                     value = SyntaxError(msg, (filename, lineno, offset, line))
-            self._showtraceback(typ, value, None)
+            source = kwargs.pop('source', "")
+            self._showtraceback(typ, value, None, source)
         finally:
             typ = value = tb = None
 
@@ -132,14 +133,20 @@ class InteractiveInterpreter:
         """
         try:
             typ, value, tb = sys.exc_info()
-            self._showtraceback(typ, value, tb.tb_next)
+            self._showtraceback(typ, value, tb.tb_next, "")
         finally:
             typ = value = tb = None
 
-    def _showtraceback(self, typ, value, tb):
+    def _showtraceback(self, typ, value, tb, source):
         sys.last_type = typ
         sys.last_traceback = tb
-        sys.last_exc = sys.last_value = value = value.with_traceback(tb)
+        value = value.with_traceback(tb)
+        # Set the line of text that the exception refers to
+        lines = source.splitlines()
+        if (source and typ is SyntaxError
+                and not value.text and len(lines) >= value.lineno):
+            value.text = lines[value.lineno - 1]
+        sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
             self._excepthook(typ, value, tb)
         else:
