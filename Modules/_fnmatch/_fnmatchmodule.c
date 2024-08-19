@@ -1,17 +1,6 @@
 /*
  * C accelerator for the 'fnmatch' module.
  *
- * Currently, the following inconsistencies in the Python implementation exist:
- *
- * - fnmatch.filter(NAMES, PATTERN) works with pathlib.Path() instances
- *   in NAMES on Windows but raises a TypeError on POSIX platforms.
- *
- * The reason is that os.path.normcase() is called on each NAME in NAMES
- * but not on POSIX platforms. In particular, os.fspath() is never called:
- *
- *      POSIX       fnmatch.filter([Path("a")], "*") -> TypeError
- *      Windows     fnmatch.filter([Path("a")], "*") -> [Path("a")]
- *
  * - Case normalization uses the runtime value of os.path.normcase(),
  *   forcing us to query the attribute each time.
  *
