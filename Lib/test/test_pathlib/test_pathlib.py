@@ -715,11 +715,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         target = base / 'copyE'
         self.assertRaises(PermissionError, source.copy, target)
         self.assertFalse(target.exists())
-        errors = []
-        source.copy(target, on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], PermissionError)
-        self.assertFalse(target.exists())
 
     def test_copy_dir_preserve_metadata(self):
         base = self.cls(self.base)
@@ -939,42 +934,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         import _winapi
         tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
-        try:
-            src = tmp / 'cheese'
-            dst = tmp / 'shop'
-            src.mkdir()
-            spam = src / 'spam'
-            spam.write_text('')
-            _winapi.CreateJunction(str(src), str(dst))
-            self.assertRaises(OSError, dst.delete)
-            dst.delete(ignore_errors=True)
-        finally:
-            tmp.delete(ignore_errors=True)
-
-    @needs_windows
-    def test_delete_outer_junction_on_error(self):
-        import _winapi
-        tmp = self.cls(self.base, 'delete')
-        tmp.mkdir()
-        dir_ = tmp / 'dir'
-        dir_.mkdir()
-        link = tmp / 'link'
-        _winapi.CreateJunction(str(dir_), str(link))
-        try:
-            self.assertRaises(OSError, link.delete)
-            self.assertTrue(dir_.exists())
-            self.assertTrue(link.exists(follow_symlinks=False))
-            errors = []
-
-            def on_error(error):
-                errors.append(error)
-
-            link.delete(on_error=on_error)
-            self.assertEqual(len(errors), 1)
-            self.assertIsInstance(errors[0], OSError)
-            self.assertEqual(errors[0].filename, str(link))
-        finally:
-            os.unlink(str(link))
+        src = tmp / 'cheese'
+        dst = tmp / 'shop'
+        src.mkdir()
+        spam = src / 'spam'
+        spam.write_text('')
+        _winapi.CreateJunction(str(src), str(dst))
+        self.assertRaises(OSError, dst.delete)
 
     @unittest.skipUnless(delete_use_fd_functions, "requires safe delete")
     def test_delete_fails_on_close(self):
