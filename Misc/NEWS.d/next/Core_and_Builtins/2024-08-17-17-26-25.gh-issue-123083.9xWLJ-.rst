@@ -1,1 +1,1 @@
-Fix STORE_ATTR_WITH_HINT has potential use-after-free.
+Fix a potential use-after-free in ``STORE_ATTR_WITH_HINT``.
