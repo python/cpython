@@ -499,7 +499,7 @@ by an order of magnitude or more for larger heaps.
 Other Language Changes
 ======================
 
-* The compiler now strips common common leading whitespace
+* The compiler now strips common leading whitespace
   from every line in a docstring.
   This reduces the size of the :term:`bytecode cache <bytecode>`
   (such as ``.pyc`` files), with reductions in file size of around 5%,
@@ -941,7 +941,7 @@ All other code will work just fine.
 :mod:`io`
 ---------
 
-* The :class:`~io.IOBase` finalizer now logs any errors in
+* The :class:`~io.IOBase` finalizer now logs any errors raised by
   the :meth:`~io.IOBase.close` method with :data:`sys.unraisablehook`.
   Previously, errors were ignored silently by default,
   and only logged in :ref:`Python Development Mode <devmode>`
@@ -1162,7 +1162,7 @@ All other code will work just fine.
   (Contributed by Tian Gao in :gh:`118501`.)
 
 * Add ability to move between chained exceptions during
-  post mortem debugging in :func:`~pdb.pm` using
+  post-mortem debugging in :func:`~pdb.pm` using
   the new ``exceptions [exc_number]`` command for Pdb.
   (Contributed by Matthias Bussonnier in :gh:`106676`.)
 
@@ -1270,7 +1270,7 @@ All other code will work just fine.
   :func:`~os.posix_spawn` will be used when the C library provides
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`,
   which includes recent versions of Linux, FreeBSD, and Solaris.
-  On Linux, this should perform similar to the existing
+  On Linux, this should perform similarly to the existing
   Linux :c:func:`!vfork` based code.
 
   A private control knob :attr:`!subprocess._USE_POSIX_SPAWN` can
@@ -1285,7 +1285,7 @@ All other code will work just fine.
 :mod:`sys`
 ----------
 
-* Add the :func:`~sys._is_interned` function to test if the string was interned.
+* Add the :func:`~sys._is_interned` function to test if a string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
@@ -1834,7 +1834,7 @@ New Deprecations
 
   (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
-* :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
+* :mod:`sys`: The :func:`sys._enablelegacywindowsfsencoding` function is deprecated.
   Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
   (Contributed by Inada Naoki in :gh:`73427`.)
 
@@ -1858,8 +1858,8 @@ New Deprecations
     deprecated. Passing ``None`` to the 'fields' parameter
     (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
     deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
-    class with 0 fields, use ``class NT(NamedTuple): pass`` or
-    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+    class with zero fields, use ``class NT(NamedTuple): pass`` or
+    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with zero fields, use
     ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
@@ -1876,7 +1876,7 @@ New Deprecations
 
 * :ref:`user-defined-funcs`:
   Assignment to a function's :attr:`~function.__code__` attribute where the new code
-  object's type does not match the function's type, is deprecated. The
+  object's type does not match the function's type is deprecated. The
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
@@ -2117,7 +2117,7 @@ New Features
   (Contributed by Victor Stinner in :gh:`116936`.)
 
 * Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
-  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  :c:func:`PyRefTracer_GetTracer`, that allow to track object creation and
   destruction the same way the :mod:`tracemalloc` module does. (Contributed
   by Pablo Galindo in :gh:`93502`.)
 
