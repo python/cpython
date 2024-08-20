@@ -7478,7 +7478,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, LOC(m->pattern), POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body
