@@ -288,37 +288,175 @@ Now let's see what they look like in Python.
 Free-threading
 --------------
 
-The stdlib :mod:`threading` module ...
+For free-threading we can use the stdlib :mod:`threading` module:
 
-...
+::
+
+    import threading
+
+    def task():
+        # Do something.
+        pass
+
+    threads = []
+    for _ in range(5):
+        t = threading.Thread(target=task)
+        t.start()
+        threads.append(t)
+
+    # Wait for all the threads to finish
+    for t in threads:
+        t.join()
+
+You can also use :mod:`concurrent.futures`:
+
+::
+
+    import concurrent.futures
+
+    def task(arg):
+        return arg
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {}
+        for i in range(10):
+            fut = executor.submit(task, i)
+            futures[fut] = i
+        for fut in concurrent.futures.as_completed(futures):
+            res = fut.result()
+            assert res == futures[fut]
+
+Note that there are some limitations to the parallelism Python
+can provide.  See :pep:`630`.
 
 Isolated Threads (CSP/Actor Model)
 ----------------------------------
 
-The future stdlib :mod:`!interpreters` module ...
+The future stdlib :mod:`!interpreters` module supports isolated execution:
 
-...
+::
+
+    import interpreters
+    import threading
+
+    script = """if True:
+        # Do something.
+        pass
+        """
+
+    def task():
+        interp = interpreters.create()
+        interp.exec(script)
+
+    threads = []
+    for _ in range(5):
+        t = threading.Thread(target=task)
+        t.start()
+        threads.append(t)
+
+    # Wait for all the subinterpreters to finish
+    for t in threads:
+        t.join()
+
+You will also be able to use :mod:`concurrent.futures`:
+
+::
+
+    import concurrent.futures
+
+    def task(arg):
+        return arg
+
+    with concurrent.futures.InterpreterPoolExecutor(max_workers=5) as executor:
+        futures = {}
+        for i in range(10):
+            fut = executor.submit(task, i)
+            futures[fut] = i
+        for fut in concurrent.futures.as_completed(futures):
+            res = fut.result()
+            assert res == futures[fut]
 
 Multi-processing
 ----------------
 
-The stdlib :mod:`multiprocessing` module ...
+You can use the stdlib :mod:`multiprocessing` module:
 
-...
+::
+
+    import multiprocessing
+
+    def task()
+        # Do something.
+        pass
+
+    procs = []
+    for _ in range(5):
+        p = multiprocessing.Process(target=task)
+        p.start()
+        procs.append(p)
+
+    # Wait for all the subprocesses to finish
+    for p in procs:
+        p.join()
+
+You will also be able to use :mod:`concurrent.futures`:
+
+::
+
+    import concurrent.futures
+
+    def task(arg):
+        return arg
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
+        futures = {}
+        for i in range(10):
+            fut = executor.submit(task, i)
+            futures[fut] = i
+        for fut in concurrent.futures.as_completed(futures):
+            res = fut.result()
+            assert res == futures[fut]
 
 Distributed
 -----------
 
-The popular :mod:`!dask` module ...
+The popular :mod:`!dask` module gives us distributed concurrency:
 
-...
+::
+
+    from dask.distributed import LocalCluster
+
+    def task()
+        # Do something.
+        pass
+
+    client = LocalCluster().get_client()
+
+    futures = []
+    for _ in range(5):
+        fut = client.submit(task)
+        futures.append(fut)
+
+    # Wait for all the tasks to finish.
+    client.gather(futures)
 
 Async/Await
 -----------
 
-The stdlib :mod:`asyncio` module ...
+The stdlib :mod:`asyncio` module provides an event loop you can use:
 
-...
+::
+
+    import asyncio
+
+    async def task():
+        # Do something.
+        pass
+
+    coros = [task() for _ in range(5)]
+
+    # Wait for all the coroutines to finish.
+    await asyncio.gather(*coros)
 
 .. _concurrency-models-comparison:
 
@@ -472,24 +610,6 @@ Workload 1
        .. raw:: html
 
           </details>
-
-Using :mod:`concurrent.futures`:
-
-.. raw:: html
-
-   <details>
-   <summary>(expand)</summary>
-
-.. literalinclude:: ../includes/concurrency.py
-   :name: concurrency-workload-1-concurrent-futures-thread
-   :start-after: [start-w1-concurrent-futures-thread]
-   :end-before: [end-w1-concurrent-futures-thread]
-   :dedent:
-   :linenos:
-
-.. raw:: html
-
-   </details>
 
 Workload 2
 ----------
