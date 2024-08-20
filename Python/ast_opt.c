@@ -668,9 +668,6 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
         PyObject *newval = PyTuple_New(elts_len);
         if (newval == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-                return 0;
-            }
             PyErr_Clear();
             return 1;
         }
