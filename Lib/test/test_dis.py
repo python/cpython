@@ -127,6 +127,22 @@ dis_f_with_offsets = """\
        _f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
 
+dis_f_with_positions = f"""\
+%-14s           RESUME                   0
+
+%-14s           LOAD_GLOBAL              1 (print + NULL)
+%-14s           LOAD_FAST                0 (a)
+%-14s           CALL                     1
+%-14s           POP_TOP
+
+%-14s           RETURN_CONST             1 (1)
+""" % tuple(map('%s:%s-%s:%s'.__mod__, [
+    tuple('?' if __p is None else __p for __p in __instruction.positions)
+    for __instruction in dis._get_instructions_bytes(
+        dis._get_code_array(_f.__code__, True),
+        co_positions=_f.__code__.co_positions(),
+    )
+]))
 
 dis_f_co_code = """\
           RESUME                   0
@@ -949,6 +965,9 @@ class DisTests(DisTestBase):
 
     def test_dis_with_offsets(self):
         self.do_disassembly_test(_f, dis_f_with_offsets, show_offsets=True)
+
+    def test_dis_with_positions(self):
+        self.do_disassembly_test(_f, dis_f_with_positions, show_positions=True)
 
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
