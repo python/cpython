@@ -8,10 +8,6 @@
 #include "Python.h"
 
 typedef struct {
-    PyObject *os_module;            // import os
-    PyObject *re_module;            // import re
-
-    PyObject *translator;           // LRU-cached translation unit
     PyObject *re_escape;            // LRU-cached re.escape() function
 
     // strings used by translate.c
@@ -35,22 +31,6 @@ get_fnmatchmodule_state(PyObject *module)
 }
 
 // ==== Helper prototypes =====================================================
-
-/*
- * Returns a list of matched names, or NULL if an error occurred.
- *
- * Parameters
- *
- *  matcher     A reference to the 'match()' method of a compiled pattern.
- *  names       An iterable of strings (str or bytes objects) to match.
- *  normcase    A reference to os.path.normcase().
- *
- *  This is equivalent to:
- *
- *      [name for name in names if matcher(normcase(name))]
- */
-extern PyObject *
-_Py_fnmatch_filter(PyObject *matcher, PyObject *names, PyObject *normcase);
 
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.

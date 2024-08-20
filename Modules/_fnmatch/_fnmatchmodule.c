@@ -1,15 +1,5 @@
 /*
  * C accelerator for the 'fnmatch' module.
- *
- * - Case normalization uses the runtime value of os.path.normcase(),
- *   forcing us to query the attribute each time.
- *
- * The C implementation of fnmatch.filter() uses the same os.path.normcase()
- * when iterating over NAMES, ignoring side-effects on os.path.normcase()
- * that may occur when processing a NAME in NAMES.
- *
- * More generally, os.path.normcase() is retrieved at most once per call
- * to fnmatch.filter() or fnmatch.fnmatch().
  */
 
 #ifndef Py_BUILD_CORE_BUILTIN
@@ -26,83 +16,6 @@
 #define LRU_CACHE_SIZE          32768
 #define INVALID_PATTERN_TYPE    "pattern must be a string or a bytes object"
 
-// ==== Cached translation unit ===============================================
-
-/*
- * Compile a UNIX shell pattern into a RE pattern
- * and returns the corresponding 'match()' method.
- *
- * This function is LRU-cached by the module itself.
- */
-static PyObject *
-get_matcher_function_impl(PyObject *module, PyObject *pattern)
-{
-    // translate the pattern into a RE pattern
-    assert(module != NULL);
-    PyObject *translated = fnmatch_translate_impl(module, pattern);
-    if (translated == NULL) {
-        return NULL;
-    }
-    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
-    // compile the pattern
-    PyObject *compile_func = PyObject_GetAttr(st->re_module, &_Py_ID(compile));
-    if (compile_func == NULL) {
-        Py_DECREF(translated);
-        return NULL;
-    }
-    PyObject *compiled = PyObject_CallOneArg(compile_func, translated);
-    Py_DECREF(compile_func);
-    Py_DECREF(translated);
-    if (compiled == NULL) {
-        return NULL;
-    }
-    // get the compiled pattern matcher function
-    PyObject *matcher = PyObject_GetAttr(compiled, &_Py_ID(match));
-    Py_DECREF(compiled);
-    return matcher;
-}
-
-static PyMethodDef get_matcher_function_def = {
-    "get_matcher_function",
-    get_matcher_function_impl,
-    METH_O,
-    NULL
-};
-
-static int
-fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
-{
-    // make sure that this function is called once
-    assert(st->translator == NULL);
-    PyObject *maxsize = PyLong_FromLong(LRU_CACHE_SIZE);
-    if (maxsize == NULL) {
-        return -1;
-    }
-    PyObject *cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
-    if (cache == NULL) {
-        Py_DECREF(maxsize);
-        return -1;
-    }
-    PyObject *args[3] = {NULL, maxsize, Py_True};
-    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    PyObject *wrapper = PyObject_Vectorcall(cache, &args[1], nargsf, NULL);
-    Py_DECREF(maxsize);
-    Py_DECREF(cache);
-    if (wrapper == NULL) {
-        return -1;
-    }
-    assert(module != NULL);
-    PyObject *wrapped = PyCFunction_New(&get_matcher_function_def, module);
-    // reference on 'translator' will be removed upon module cleanup
-    st->translator = PyObject_CallOneArg(wrapper, wrapped);
-    Py_DECREF(wrapped);
-    Py_DECREF(wrapper);
-    if (st->translator == NULL) {
-        return -1;
-    }
-    return 0;
-}
-
 // ==== Cached re.escape() unit ===============================================
 
 /* Create an LRU-cached function for re.escape(). */
@@ -113,9 +26,7 @@ fnmatchmodule_load_escapefunc(PyObject *Py_UNUSED(module),
     // make sure that this function is called once
     assert(st->re_escape == NULL);
     PyObject *maxsize = PyLong_FromLong(LRU_CACHE_SIZE);
-    if (maxsize == NULL) {
-        return -1;
-    }
+    CHECK_NOT_NULL_OR_ABORT(maxsize);
     PyObject *cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
     if (cache == NULL) {
         Py_DECREF(maxsize);
@@ -124,35 +35,39 @@ fnmatchmodule_load_escapefunc(PyObject *Py_UNUSED(module),
     PyObject *wrapper = PyObject_CallOneArg(cache, maxsize);
     Py_DECREF(maxsize);
     Py_DECREF(cache);
-    if (wrapper == NULL) {
+    CHECK_NOT_NULL_OR_ABORT(wrapper);
+    PyObject *wrapped = _PyImport_GetModuleAttrString("re", "escape");
+    if (wrapped == NULL) {
+        Py_DECREF(wrapper);
         return -1;
     }
-    assert(st->re_module != NULL);
-    PyObject *wrapped = PyObject_GetAttr(st->re_module, &_Py_ID(escape));
-    // reference on 'escapechar' will be removed upon module cleanup
     st->re_escape = PyObject_CallOneArg(wrapper, wrapped);
     Py_DECREF(wrapped);
     Py_DECREF(wrapper);
-    if (st->re_escape == NULL) {
-        return -1;
-    }
+    CHECK_NOT_NULL_OR_ABORT(st->re_escape);
     return 0;
+abort:
+    return -1;
 }
 
 // ==== Cached re.sub() unit for set operation tokens =========================
 
-/* Create an LRU-cached function for re.compile('([&~|])').sub(). */
+/* Store a reference to re.compile('([&~|])').sub(). */
 static int
 fnmatchmodule_load_setops_re_sub(PyObject *Py_UNUSED(module),
                                  fnmatchmodule_state *st)
 {
     // make sure that this function is called once
     assert(st->setops_re_subfn == NULL);
-    PyObject *pattern = PyUnicode_FromString("([&~|])");
+    PyObject *pattern = PyUnicode_FromStringAndSize("([&~|])", 7);
     CHECK_NOT_NULL_OR_ABORT(pattern);
-    PyObject *compiled = PyObject_CallMethodOneArg(st->re_module,
-                                                   &_Py_ID(compile),
-                                                   pattern);
+    PyObject *re_compile = _PyImport_GetModuleAttrString("re", "compile");
+    if (re_compile == NULL) {
+        Py_DECREF(pattern);
+        return -1;
+    }
+    PyObject *compiled = PyObject_CallOneArg(re_compile, pattern);
+    Py_DECREF(re_compile);
     Py_DECREF(pattern);
     CHECK_NOT_NULL_OR_ABORT(compiled);
     st->setops_re_subfn = PyObject_GetAttr(compiled, &_Py_ID(sub));
@@ -163,56 +78,20 @@ abort:
     return -1;
 }
 
-// ==== Module data getters ===================================================
-
-static inline PyObject * /* reference to re.compile(pattern).match() */
-get_matcher_function(PyObject *module, PyObject *pattern)
-{
-    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
-    assert(st->translator != NULL);
-    return PyObject_CallOneArg(st->translator, pattern);
-}
-
-static inline PyObject * /* reference to os.path.normcase() */
-get_platform_normcase_function(PyObject *module)
-{
-    fnmatchmodule_state *st = get_fnmatchmodule_state(module);
-    PyObject *os_path = PyObject_GetAttr(st->os_module, &_Py_ID(path));
-    if (os_path == NULL) {
-        return NULL;
-    }
-    PyObject *normcase = PyObject_GetAttr(os_path, &_Py_ID(normcase));
-    Py_DECREF(os_path);
-    return normcase;
-}
-
 // ==== Module state functions ================================================
 
 static int
 fnmatchmodule_exec(PyObject *module)
 {
     // ---- def local macros --------------------------------------------------
-    /* Import a named module and store it in 'STATE->ATTRIBUTE'. */
-#define IMPORT_MODULE(STATE, ATTRIBUTE, MODULE_NAME)                \
-    do {                                                            \
-        /* make sure that the attribute is initialized once */      \
-        assert(STATE->ATTRIBUTE == NULL);                           \
-        STATE->ATTRIBUTE = PyImport_ImportModule((MODULE_NAME));    \
-        CHECK_NOT_NULL_OR_ABORT(STATE->ATTRIBUTE);                  \
-    } while (0)
     /* Intern a literal STRING and store it in 'STATE->ATTRIBUTE'. */
 #define INTERN_STRING(STATE, ATTRIBUTE, STRING)                     \
     do {                                                            \
-        /* make sure that the attribute is initialized once */      \
-        assert(STATE->ATTRIBUTE == NULL);                           \
         STATE->ATTRIBUTE = PyUnicode_InternFromString((STRING));    \
         CHECK_NOT_NULL_OR_ABORT(STATE->ATTRIBUTE);                  \
     } while (0)
     // ------------------------------------------------------------------------
     fnmatchmodule_state *st = get_fnmatchmodule_state(module);
-    IMPORT_MODULE(st, os_module, "os");
-    IMPORT_MODULE(st, re_module, "re");
-    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_translator(module, st));
     CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_escapefunc(module, st));
     INTERN_STRING(st, hyphen_str, "-");
     INTERN_STRING(st, hyphen_esc_str, "\\-");
@@ -224,7 +103,6 @@ fnmatchmodule_exec(PyObject *module)
 abort:
     return -1;
 #undef INTERN_STRING
-#undef IMPORT_MODULE
 }
 
 static int
@@ -238,9 +116,6 @@ fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->hyphen_esc_str);
     Py_VISIT(st->hyphen_str);
     Py_VISIT(st->re_escape);
-    Py_VISIT(st->translator);
-    Py_VISIT(st->re_module);
-    Py_VISIT(st->os_module);
     return 0;
 }
 
@@ -255,9 +130,6 @@ fnmatchmodule_clear(PyObject *m)
     Py_CLEAR(st->hyphen_esc_str);
     Py_CLEAR(st->hyphen_str);
     Py_CLEAR(st->re_escape);
-    Py_CLEAR(st->translator);
-    Py_CLEAR(st->re_module);
-    Py_CLEAR(st->os_module);
     return 0;
 }
 
@@ -271,117 +143,6 @@ fnmatchmodule_free(void *m)
 module fnmatch
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=797aa965370a9ef2]*/
-
-/*[clinic input]
-fnmatch.filter -> object
-
-    names: object
-    pat as pattern: object
-
-Construct a list from the names in *names* matching *pat*.
-
-[clinic start generated code]*/
-
-static PyObject *
-fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pattern)
-/*[clinic end generated code: output=1a68530a2e3cf7d0 input=7ac729daad3b1404]*/
-{
-    PyObject *normcase = NULL;  // for the 'goto abort' statements
-    normcase = get_platform_normcase_function(module);
-    CHECK_NOT_NULL_OR_ABORT(normcase);
-    PyObject *normalized_pattern = PyObject_CallOneArg(normcase, pattern);
-    CHECK_NOT_NULL_OR_ABORT(normalized_pattern);
-    // the matcher is cached with respect to the *normalized* pattern
-    PyObject *matcher = get_matcher_function(module, normalized_pattern);
-    Py_DECREF(normalized_pattern);
-    CHECK_NOT_NULL_OR_ABORT(matcher);
-    PyObject *filtered = _Py_fnmatch_filter(matcher, names, normcase);
-    Py_DECREF(matcher);
-    Py_DECREF(normcase);
-    return filtered;
-abort:
-    Py_XDECREF(normcase);
-    return NULL;
-}
-
-/*[clinic input]
-fnmatch.fnmatch -> bool
-
-    name: object
-    pat as pattern: object
-
-Test whether *name* matches *pat*.
-
-Patterns are Unix shell style:
-
-*       matches everything
-?       matches any single character
-[seq]   matches any character in seq
-[!seq]  matches any char not in seq
-
-An initial period in *name* is not special.
-Both *name* and *pat* are first case-normalized
-if the operating system requires it.
-
-If you don't want this, use fnmatchcase(name, pat).
-
-[clinic start generated code]*/
-
-static int
-fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pattern)
-/*[clinic end generated code: output=c9dc542e8d6933b6 input=279a4a4f2ddea6a2]*/
-{
-    PyObject *normcase = get_platform_normcase_function(module);
-    if (normcase == NULL) {
-        return -1;
-    }
-    // apply case normalization on both arguments
-    PyObject *norm_name = PyObject_CallOneArg(normcase, name);
-    if (norm_name == NULL) {
-        Py_DECREF(normcase);
-        return -1;
-    }
-    PyObject *norm_pattern = PyObject_CallOneArg(normcase, pattern);
-    Py_DECREF(normcase);
-    if (norm_pattern == NULL) {
-        Py_DECREF(norm_name);
-        return -1;
-    }
-    int matching = fnmatch_fnmatchcase_impl(module, norm_name, norm_pattern);
-    Py_DECREF(norm_pattern);
-    Py_DECREF(norm_name);
-    return matching;
-}
-
-/*[clinic input]
-fnmatch.fnmatchcase -> bool
-
-    name: object
-    pat as pattern: object
-
-Test whether *name* matches *pat*, including case.
-
-This is a version of fnmatch() which doesn't case-normalize
-its arguments.
-[clinic start generated code]*/
-
-static int
-fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pattern)
-/*[clinic end generated code: output=4d6b268169001876 input=91d62999c08fd55e]*/
-{
-    // fnmatchcase() does not apply any case normalization on the inputs
-    PyObject *matcher = get_matcher_function(module, pattern);
-    if (matcher == NULL) {
-        return -1;
-    }
-    // If 'name' is of incorrect type, it will be detected when calling
-    // the matcher function (we check 're.compile(pattern).match(name)').
-    PyObject *match = PyObject_CallOneArg(matcher, name);
-    Py_DECREF(matcher);
-    int matching = match == NULL ? -1 : !Py_IsNone(match);
-    Py_XDECREF(match);
-    return matching;
-}
 
 /*[clinic input]
 fnmatch.translate -> object
@@ -422,21 +183,7 @@ abort:
 
 // ==== Module specs ==========================================================
 
-// fmt: off
-PyDoc_STRVAR(fnmatchmodule_doc,
-"Filename matching with shell patterns.\n"
-"fnmatch(FILENAME, PATTERN) matches according to the local convention.\n"
-"fnmatchcase(FILENAME, PATTERN) always takes case in account.\n\n"
-"The functions operate by translating the pattern into a regular\n"
-"expression.  They cache the compiled regular expressions for speed.\n\n"
-"The function translate(PATTERN) returns a regular expression\n"
-"corresponding to PATTERN.  (It does not compile it.)");
-// fmt: on
-
 static PyMethodDef fnmatchmodule_methods[] = {
-    FNMATCH_FILTER_METHODDEF
-    FNMATCH_FNMATCH_METHODDEF
-    FNMATCH_FNMATCHCASE_METHODDEF
     FNMATCH_TRANSLATE_METHODDEF
     {NULL, NULL}
 };
@@ -451,7 +198,7 @@ static struct PyModuleDef_Slot fnmatchmodule_slots[] = {
 static struct PyModuleDef _fnmatchmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_fnmatch",
-    .m_doc = fnmatchmodule_doc,
+    .m_doc = NULL,
     .m_size = sizeof(fnmatchmodule_state),
     .m_methods = fnmatchmodule_methods,
     .m_slots = fnmatchmodule_slots,
@@ -467,4 +214,4 @@ PyInit__fnmatch(void)
 }
 
 #undef INVALID_PATTERN_TYPE
-#undef COMPILED_CACHE_SIZE
+#undef LRU_CACHE_SIZE

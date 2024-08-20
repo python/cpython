@@ -229,9 +229,6 @@ class FnmatchTestCaseMixin:
 class PurePythonFnmatchTestCase(FnmatchTestCaseMixin, unittest.TestCase):
     fnmatch = py_fnmatch
 
-class CPythonFnmatchTestCase(FnmatchTestCaseMixin, unittest.TestCase):
-    fnmatch = c_fnmatch
-
 class TranslateTestCaseMixin:
     fnmatch = None
 
@@ -382,7 +379,6 @@ class FilterTestCaseMixin:
         with self.assertRaisesRegex(ValueError, r'^nope$'):
             self.fnmatch.filter(BadList(), '*')
 
-
     def test_mix_bytes_str(self):
         filter = self.fnmatch.filter
         self.assertRaises(TypeError, filter, ['test'], b'*')
@@ -406,9 +402,6 @@ class FilterTestCaseMixin:
 
 class PurePythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
     fnmatch = py_fnmatch
-
-class CPythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
-    fnmatch = c_fnmatch
 
 if __name__ == "__main__":
     unittest.main()

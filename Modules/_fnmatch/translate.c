@@ -70,32 +70,13 @@ _Py_fnmatch_translate(PyObject *module, PyObject *pattern)
     assert(PyUnicode_Check(pattern));
     fnmatchmodule_state *state = get_fnmatchmodule_state(module);
     const Py_ssize_t maxind = PyUnicode_GET_LENGTH(pattern);
-
-    // We would write less data if there are successive '*',
-    // which usually happens once or twice in the pattern.
-    // Otherwise, we write >= maxind characters since escaping
-    // them always add more characters.
-    //
-    // Note that only '()[]{}?*+-|^$\\.&~# \t\n\r\v\f' need to
-    // be escaped when translated to RE patterns and '*' and '?'
-    // are already handled without being escaped.
-    //
-    // In general, UNIX style patterns are more likely to contain
-    // wildcards than characters to be escaped, with the exception
-    // of '-', '\' and '~' (we usually want to match filenmaes),
-    // and there is a sparse number of them. Therefore, we only
-    // estimate the number of characters to be written to be the
-    // same as the number of characters in the pattern.
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(maxind);
     if (writer == NULL) {
         return NULL;
     }
-
     // ---- decl local objects ------------------------------------------------
-    // list containing the indices where '*' has a special meaning
-    PyObject *wildcard_indices = NULL;
-    // call-level cached functions
-    PyObject *pattern_str_find_meth = NULL; // pattern.find()
+    PyObject *wildcard_indices = NULL;      // positions of stars
+    PyObject *pattern_str_find_meth = NULL; // cached pattern.find()
     // ---- def local objects -------------------------------------------------
     wildcard_indices = PyList_New(0);
     CHECK_NOT_NULL_OR_ABORT(wildcard_indices);
@@ -251,8 +232,6 @@ abort:
  * Extract a list of chunks from the pattern group described by start and stop.
  *
  * For instance, the chunks for [a-z0-9] or [!a-z0-9] are ['a', 'z0', '9'].
- *
- * See translate_expression() for its usage.
  */
 static PyObject *
 split_expression(fnmatchmodule_state *state,
@@ -307,11 +286,7 @@ split_expression(fnmatchmodule_state *state,
         Py_ssize_t chunkscount = PyList_GET_SIZE(chunks);
         assert(chunkscount > 0);
         PyObject *chunk = PyList_GET_ITEM(chunks, chunkscount - 1);
-        assert(chunk != NULL);
         PyObject *str = PyUnicode_Concat(chunk, hyphen);
-        // PyList_SetItem() does not create a new reference on 'str'
-        // so we should not decref 'str' after the call, unless there
-        // is an issue while setting the item.
         if (str == NULL || PyList_SetItem(chunks, chunkscount - 1, str) < 0) {
             Py_XDECREF(str);
             goto abort;
@@ -326,25 +301,17 @@ abort:
     return NULL;
 }
 
-/*
- * Remove empty ranges (they are invalid in RE).
- *
- * See translate_expression() for its usage.
- */
+/* Remove empty ranges (they are invalid in RE). */
 static int
 simplify_expression(PyObject *chunks)
 {
     // for k in range(len(chunks) - 1, 0, -1):
     for (Py_ssize_t k = PyList_GET_SIZE(chunks) - 1; k > 0; --k) {
         PyObject *c1 = PyList_GET_ITEM(chunks, k - 1);
-        assert(c1 != NULL);
         Py_ssize_t c1len = PyUnicode_GET_LENGTH(c1);
-        assert(c1len > 0);
 
         PyObject *c2 = PyList_GET_ITEM(chunks, k);
-        assert(c2 != NULL);
         Py_ssize_t c2len = PyUnicode_GET_LENGTH(c2);
-        assert(c2len > 0);
 
         if (PyUnicode_READ_CHAR(c1, c1len - 1) > PyUnicode_READ_CHAR(c2, 0)) {
             Py_ssize_t olen = c1len + c2len - 2;
@@ -352,19 +319,14 @@ simplify_expression(PyObject *chunks)
             PyObject *str = NULL;
             if (olen == 0) {        // c1[:1] + c2[1:] == ''
                 str = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-                assert(_Py_IsImmortal(str));
             }
             else if (c1len == 1) {  // c1[:1] + c2[1:] == c2[1:]
-                assert(c2len > 1);
                 str = PyUnicode_Substring(c2, 1, c2len);
             }
             else if (c2len == 1) {  // c1[:1] + c2[1:] == c1[:1]
-                assert(c1len > 1);
                 str = PyUnicode_Substring(c1, 0, c1len - 1);
             }
             else {
-                assert(c1len > 1);
-                assert(c2len > 1);
                 PyUnicodeWriter *writer = PyUnicodeWriter_Create(olen);
                 CHECK_NOT_NULL_OR_ABORT(writer);
                 // all but the last character in the first chunk
@@ -379,9 +341,6 @@ simplify_expression(PyObject *chunks)
                 }
                 str = PyUnicodeWriter_Finish(writer);
             }
-            // PyList_SetItem() does not create a new reference on 'str'
-            // so we should not decref 'str' after the call, unless there
-            // is an issue while setting the item.
             if (str == NULL || PyList_SetItem(chunks, k - 1, str) < 0) {
                 Py_XDECREF(str);
                 goto abort;
@@ -394,26 +353,17 @@ abort:
     return -1;
 }
 
-/*
- * Escape backslashes and hyphens for set difference (--),
- * but hyphens that create ranges should not be escaped.
- *
- * See translate_expression() for its usage.
- */
+/* Escape backslashes and hyphens for set difference (--). */
 static int
 escape_expression(fnmatchmodule_state *state, PyObject *chunks)
 {
-    for (Py_ssize_t c = 0; c < PyList_GET_SIZE(chunks); ++c) {
-        PyObject *s0 = PyList_GET_ITEM(chunks, c);
-        assert(s0 != NULL);
-        PyObject *s1 = BACKSLASH_REPLACE(state, s0);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(chunks); ++i) {
+        PyObject *chunk = PyList_GET_ITEM(chunks, i);
+        PyObject *s1 = BACKSLASH_REPLACE(state, chunk);
         CHECK_NOT_NULL_OR_ABORT(s1);
         PyObject *s2 = HYPHEN_REPLACE(state, s1);
         Py_DECREF(s1);
-        // PyList_SetItem() does not create a new reference on 's2'
-        // so we should not decref 's2' after the call, unless there
-        // is an issue while setting the item.
-        if (s2 == NULL || PyList_SetItem(chunks, c, s2) < 0) {
+        if (s2 == NULL || PyList_SetItem(chunks, i, s2) < 0) {
             Py_XDECREF(s2);
             goto abort;
         }
@@ -431,9 +381,7 @@ translate_expression(fnmatchmodule_state *state,
     PyObject *chunks = split_expression(state, pattern, start, stop,
                                         pattern_str_find_meth);
     CHECK_NOT_NULL_OR_ABORT(chunks);
-    // remove empty ranges
     CHECK_RET_CODE_OR_ABORT(simplify_expression(chunks));
-    // escape backslashes and set differences
     CHECK_RET_CODE_OR_ABORT(escape_expression(state, chunks));
     PyObject *res = PyUnicode_Join(state->hyphen_str, chunks);
     Py_DECREF(chunks);
@@ -463,7 +411,7 @@ write_expression(fnmatchmodule_state *state,
     Py_ssize_t extra = 2; // '[' and ']'
     WRITE_CHAR_OR_ABORT(writer, '[');
     // escape set operations as late as possible
-    safe_expression = SETOPS_REPLACE(state, expression, state->setops_re_subfn);
+    safe_expression = SETOPS_REPLACE(state, expression);
     CHECK_NOT_NULL_OR_ABORT(safe_expression);
     switch (token) {
         case '!': {
@@ -520,27 +468,21 @@ process_wildcards(PyObject *pattern, PyObject *indices)
     if (writer == NULL) {
         return NULL;
     }
-    // ---- def local macros --------------------------------------------------
-#define LOAD_WILDCARD_INDEX(VAR, IND)                               \
-    do {                                                            \
-        VAR = PyLong_AsSsize_t(PyList_GET_ITEM(indices, (IND)));    \
-        /* wildcard indices must be >= 0 */                         \
-        CHECK_UNSIGNED_INT_OR_ABORT(VAR);                           \
-    } while (0)
-    // ------------------------------------------------------------------------
     WRITE_ASCII_OR_ABORT(writer, "(?s:", 4);
     if (m == 0) {
         WRITE_STRING_OR_ABORT(writer, pattern);
     }
     else {
-        Py_ssize_t i = 0, j = -1;
+        Py_ssize_t i = 0;
         // process the optional PREFIX
-        LOAD_WILDCARD_INDEX(j, 0);
+        Py_ssize_t j = PyLong_AsSsize_t(PyList_GET_ITEM(indices, 0));
+        CHECK_UNSIGNED_INT_OR_ABORT(j);
         WRITE_SUBSTRING_OR_ABORT(writer, pattern, i, j);
         i = j + 1;
         for (Py_ssize_t k = 1; k < m; ++k) {
             // process the (* INNER) groups
-            LOAD_WILDCARD_INDEX(j, k);
+            j = PyLong_AsSsize_t(PyList_GET_ITEM(indices, k));
+            CHECK_UNSIGNED_INT_OR_ABORT(j);
             assert(i < j);
             // write the atomic RE group '(?>.*?' + INNER + ')'
             WRITE_ASCII_OR_ABORT(writer, "(?>.*?", 6);
@@ -559,5 +501,4 @@ process_wildcards(PyObject *pattern, PyObject *indices)
 abort:
     PyUnicodeWriter_Discard(writer);
     return NULL;
-#undef LOAD_WILDCARD_INDEX
 }

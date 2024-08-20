@@ -6,8 +6,6 @@
 #ifndef _FNMATCH_MACROS_H
 #define _FNMATCH_MACROS_H
 
-// ==== Macro definitions =====================================================
-
 /*
  * Check that STATUS is >= 0 or execute 'goto abort'.
  *
@@ -116,17 +114,13 @@
         NULL                                \
     )
 
-/*
- * Escape set operations in STRING using re.sub().
- *
- * SETOPS_RE_SUB_METH is a reference to re.compile('([&~|])').sub().
- */
-#define SETOPS_REPLACE(STATE, STRING, SETOPS_RE_SUB_METH)   \
-    PyObject_CallFunctionObjArgs(                           \
-        (SETOPS_RE_SUB_METH),                               \
-        (STATE)->setops_repl_str,                           \
-        (STRING),                                           \
-        NULL                                                \
+/* Escape set operations in STRING using re.sub(). */
+#define SETOPS_REPLACE(STATE, STRING)       \
+    PyObject_CallFunctionObjArgs(           \
+        (STATE)->setops_re_subfn,           \
+        (STATE)->setops_repl_str,           \
+        (STRING),                           \
+        NULL                                \
     )
 
 #endif // _FNMATCH_MACROS_H

@@ -477,7 +477,6 @@
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_fnmatch\_fnmatchmodule.c" />
-    <ClCompile Include="..\Modules\_fnmatch\filter.c" />
     <ClCompile Include="..\Modules\_fnmatch\translate.c" />
     <ClCompile Include="..\Modules\_interpretersmodule.c" />
     <ClCompile Include="..\Modules\_interpchannelsmodule.c" />

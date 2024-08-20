@@ -1103,7 +1103,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nlocals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_depth));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_offset));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(normcase));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ns));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nstype));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nt));
