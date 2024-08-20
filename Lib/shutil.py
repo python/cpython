@@ -1586,7 +1586,8 @@ def __getattr__(name):
         import warnings
         warnings._deprecated(
             "shutil.ExecError",
-            f"{warnings._DEPRECATED_MSG}; use RuntimeError instead",
+            f"{warnings._DEPRECATED_MSG}; it "
+            "isn't raised by any shutil function.",
             remove=(3, 16)
         )
         return RuntimeError
