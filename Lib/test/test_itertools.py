@@ -15,26 +15,6 @@ import sys
 import struct
 import threading
 import gc
-import warnings
-
-def pickle_deprecated(testfunc):
-    """ Run the test three times.
-    First, verify that a Deprecation Warning is raised.
-    Second, run normally but with DeprecationWarnings temporarily disabled.
-    Third, run with warnings promoted to errors.
-    """
-    def inner(self):
-        with self.assertWarns(DeprecationWarning):
-            testfunc(self)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            testfunc(self)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=DeprecationWarning)
-            with self.assertRaises((DeprecationWarning, AssertionError, SystemError)):
-                testfunc(self)
-
-    return inner
 
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1

@@ -225,9 +225,6 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
 
 #endif
 
-static void monitor_raise(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr);
 static void monitor_reraise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
@@ -245,9 +242,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
 
-static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
-                              PyObject *, PyObject *, PyObject *);
-static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static  _PyInterpreterFrame *
@@ -726,6 +720,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
     }
 }
 
+
 /* _PyEval_EvalFrameDefault() is a *big* function,
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
@@ -838,46 +833,6 @@ resume_frame:
 
 #include "generated_cases.c.h"
 
-    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
-     * because it needs to capture frame->instr_ptr before it is updated,
-     * as happens in the standard instruction prologue.
-     */
-#if USE_COMPUTED_GOTOS
-        TARGET_INSTRUMENTED_LINE:
-#else
-        case INSTRUMENTED_LINE:
-#endif
-    {
-        _Py_CODEUNIT *prev = frame->instr_ptr;
-        _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
-        int original_opcode = 0;
-        if (tstate->tracing) {
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            original_opcode = code->_co_monitoring->lines[(int)(here - _PyCode_CODE(code))].original_opcode;
-        } else {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame, here, prev);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (original_opcode < 0) {
-                next_instr = here+1;
-                goto error;
-            }
-            next_instr = frame->instr_ptr;
-            if (next_instr != here) {
-                DISPATCH();
-            }
-        }
-        if (_PyOpcode_Caches[original_opcode]) {
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
-            /* Prevent the underlying instruction from specializing
-             * and overwriting the instrumentation. */
-            PAUSE_ADAPTIVE_COUNTER(cache->counter);
-        }
-        opcode = original_opcode;
-        DISPATCH_GOTO();
-    }
-
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
@@ -927,7 +882,7 @@ error:
                 PyTraceBack_Here(f);
             }
         }
-        monitor_raise(tstate, frame, next_instr-1);
+        _PyEval_MonitorRaise(tstate, frame, next_instr-1);
 exception_unwind:
         {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
@@ -2243,8 +2198,8 @@ no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     }
 }
 
-static void
-monitor_raise(PyThreadState *tstate, _PyInterpreterFrame *frame,
+void
+_PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
     if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RAISE)) {
@@ -2544,7 +2499,7 @@ PyEval_GetLocals(void)
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
         PyObject *ret = f->f_locals_cache;
         if (ret == NULL) {
-            PyObject *ret = PyDict_New();
+            ret = PyDict_New();
             if (ret == NULL) {
                 Py_DECREF(locals);
                 return NULL;
@@ -2727,8 +2682,8 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
     return 1;
 }
 
-static PyObject *
-import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
+PyObject *
+_PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
@@ -2766,8 +2721,8 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     return res;
 }
 
-static PyObject *
-import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
+PyObject *
+_PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
@@ -3077,3 +3032,137 @@ void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall();
 }
+
+PyObject *
+_PyEval_GetANext(PyObject *aiter)
+{
+    unaryfunc getter = NULL;
+    PyObject *next_iter = NULL;
+    PyTypeObject *type = Py_TYPE(aiter);
+    if (PyAsyncGen_CheckExact(aiter)) {
+        return type->tp_as_async->am_anext(aiter);
+    }
+    if (type->tp_as_async != NULL){
+        getter = type->tp_as_async->am_anext;
+    }
+
+    if (getter != NULL) {
+        next_iter = (*getter)(aiter);
+        if (next_iter == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                        "'async for' requires an iterator with "
+                        "__anext__ method, got %.100s",
+                        type->tp_name);
+        return NULL;
+    }
+
+    PyObject *awaitable = _PyCoro_GetAwaitableIter(next_iter);
+    if (awaitable == NULL) {
+        _PyErr_FormatFromCause(
+            PyExc_TypeError,
+            "'async for' received an invalid object "
+            "from __anext__: %.100s",
+            Py_TYPE(next_iter)->tp_name);
+    }
+    Py_DECREF(next_iter);
+    return awaitable;
+}
+
+PyObject *
+_PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
+{
+    PyObject *res;
+    if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
+        res = _PyDict_LoadGlobal((PyDictObject *)globals,
+                                    (PyDictObject *)builtins,
+                                    name);
+        if (res == NULL && !PyErr_Occurred()) {
+            /* _PyDict_LoadGlobal() returns NULL without raising
+                * an exception if the key doesn't exist */
+            _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+        }
+    }
+    else {
+        /* Slow-path if globals or builtins is not a dict */
+        /* namespace 1: globals */
+        if (PyMapping_GetOptionalItem(globals, name, &res) < 0) {
+            return NULL;
+        }
+        if (res == NULL) {
+            /* namespace 2: builtins */
+            if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
+                return NULL;
+            }
+            if (res == NULL) {
+                _PyEval_FormatExcCheckArg(
+                            PyThreadState_GET(), PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+            }
+        }
+    }
+    return res;
+}
+
+PyObject *
+_PyEval_GetAwaitable(PyObject *iterable, int oparg)
+{
+    PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
+
+    if (iter == NULL) {
+        _PyEval_FormatAwaitableError(PyThreadState_GET(),
+            Py_TYPE(iterable), oparg);
+    }
+    else if (PyCoro_CheckExact(iter)) {
+        PyObject *yf = _PyGen_yf((PyGenObject*)iter);
+        if (yf != NULL) {
+            /* `iter` is a coroutine object that is being
+                awaited, `yf` is a pointer to the current awaitable
+                being awaited on. */
+            Py_DECREF(yf);
+            Py_CLEAR(iter);
+            _PyErr_SetString(PyThreadState_GET(), PyExc_RuntimeError,
+                                "coroutine is being awaited already");
+        }
+    }
+    return iter;
+}
+
+PyObject *
+_PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name)
+{
+
+    PyObject *value;
+    if (frame->f_locals == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError,
+                            "no locals found");
+        return NULL;
+    }
+    if (PyMapping_GetOptionalItem(frame->f_locals, name, &value) < 0) {
+        return NULL;
+    }
+    if (value != NULL) {
+        return value;
+    }
+    if (PyDict_GetItemRef(frame->f_globals, name, &value) < 0) {
+        return NULL;
+    }
+    if (value != NULL) {
+        return value;
+    }
+    if (PyMapping_GetOptionalItem(frame->f_builtins, name, &value) < 0) {
+        return NULL;
+    }
+    if (value == NULL) {
+        _PyEval_FormatExcCheckArg(
+                    tstate, PyExc_NameError,
+                    NAME_ERROR_MSG, name);
+    }
+    return value;
+}
+
+

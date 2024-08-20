@@ -133,16 +133,6 @@ do { \
 // Use this instead of 'goto error' so Tier 2 can go to a different label
 #define GOTO_ERROR(LABEL) goto LABEL
 
-#define CHECK_EVAL_BREAKER() \
-    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    QSBR_QUIESCENT_STATE(tstate); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
-        if (_Py_HandlePending(tstate) != 0) { \
-            GOTO_ERROR(error); \
-        } \
-    }
-
-
 /* Tuple access macros */
 
 #ifndef Py_DEBUG
@@ -316,17 +306,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         /* gh-115999 tracks progress on addressing this. */ \
         static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) ((void)COUNTER)
 #else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
     } while (0);
-#endif
 
 #define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+#endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
@@ -374,13 +365,6 @@ do { \
 } while (0);
 
 
-// GH-89279: Force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
-
 static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
     return (tstate->py_recursion_remaining-- <= 0) &&
         _Py_CheckRecursiveCallPy(tstate);
@@ -402,7 +386,10 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 /* There's no STORE_IP(), it's inlined by the code generator. */
 
 #define LOAD_SP() \
-stack_pointer = _PyFrame_GetStackPointer(frame);
+stack_pointer = _PyFrame_GetStackPointer(frame)
+
+#define SAVE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
