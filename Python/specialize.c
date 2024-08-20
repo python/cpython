@@ -489,7 +489,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_READ_ONLY 16
 #define SPEC_FAIL_ATTR_AUDITED_SLOT 17
 #define SPEC_FAIL_ATTR_NOT_MANAGED_DICT 18
-#define SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT 19
+#define SPEC_FAIL_ATTR_NON_STRING 19
 #define SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND 20
 #define SPEC_FAIL_ATTR_SHADOWED 21
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD 22
@@ -505,6 +505,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_CLASS_ATTR_DESCRIPTOR 32
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ 33
 #define SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN 34
+#define SPEC_FAIL_ATTR_SPLIT_DICT 35
 
 /* Binary subscr and store subscr */
 
@@ -649,7 +650,7 @@ specialize_module_load_attr(
         return -1;
     }
     if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_STRING);
         return -1;
     }
     Py_ssize_t index = _PyDict_LookupIndex(dict, &_Py_ID(__getattr__));
@@ -896,7 +897,7 @@ specialize_dict_access(
         }
         // We found an instance with a __dict__.
         if (dict->ma_values) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
             return 0;
         }
         Py_ssize_t index =
