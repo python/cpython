@@ -927,9 +927,7 @@ class PathBase(PurePathBase):
         """
         Delete this file or directory (including all sub-directories).
         """
-        if self.is_symlink() or self.is_junction():
-            self.unlink()
-        elif self.is_dir():
+        if self.is_dir(follow_symlinks=False):
             def on_error(err):
                 raise err
             results = self.walk(
