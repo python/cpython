@@ -657,7 +657,7 @@ class ParseArgsCodeGen:
                 self.flags = "METH_FASTCALL|METH_KEYWORDS"
                 self.parser_prototype = PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
-                self.declarations += "\nPyObject *argsbuf[%s];" % len(self.converters)
+                self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 if self.varpos:
                     self.declarations += "\nPyObject * const *fastargs;"
                     argsname = 'fastargs'
@@ -675,7 +675,7 @@ class ParseArgsCodeGen:
                 argsname = 'fastargs'
                 argname_fmt = 'fastargs[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
-                self.declarations += "\nPyObject *argsbuf[%s];" % len(self.converters)
+                self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 self.declarations += "\nPyObject * const *fastargs;"
                 self.declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:

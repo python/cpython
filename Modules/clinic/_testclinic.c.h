@@ -3733,7 +3733,7 @@ _testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[0];
+    PyObject *argsbuf[1];
     PyObject * const *fastargs;
     PyObject *__clinic_args = NULL;
 
@@ -3809,4 +3809,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=fa10ab215bdd6259 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4717fe7fdaf5cf3 input=a9049054013a1b77]*/
