@@ -637,9 +637,9 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     int op = asdl_seq_GET(ops, i);
     arg = asdl_seq_GET(args, i);
     _Bool is_lhs_constant = (node->v.Compare.left->kind) == Constant_kind;
-    //lhs_const = node->v.Compare.left->v.Constant.value;
+
     if (op == In || op == NotIn) {
-        if (arg->kind == List_kind) {
+        if ((arg->kind) == List_kind) {
             asdl_expr_seq *list_elts = arg->v.List.elts;
             if (has_starred(list_elts))
                 return 1;
@@ -649,12 +649,12 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             arg->v.Tuple.ctx = ctx;
             elts = list_elts;
         }
-        else if (arg->kind == Dict_kind) {
+        else if ((arg->kind) == Dict_kind) {
             elts = arg->v.Dict.keys;
             arg->kind = Set_kind;
             arg->v.Set.elts = elts;
         }
-        else if (arg->kind == Set_kind) {
+        else if ((arg->kind) == Set_kind) {
             elts = arg->v.Set.elts;
         }
         else {
@@ -693,15 +693,15 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             }
         }
 
-        if (arg->kind == Set_kind)
+        if ((arg->kind) == Set_kind)
             Py_SETREF(newval, PyFrozenSet_New(newval));
         return make_const(arg, newval, arena);
     }
-    else if ((op == Eq || op == NotEq) &&
-             (arg->kind == Constant_kind) &&
+    else if (((op == Eq) || (op == NotEq)) &&
+             ((arg->kind) == Constant_kind) &&
              is_lhs_constant)
     {
-        if ((node->v.Compare.left->v.Constant.value) == (arg->v.Constant.value))
+        if (((node->v.Compare.left)->v.Constant.value) == (arg->v.Constant.value))
             return make_const(node, op == Eq ? Py_True : Py_False, arena);
     }
 
