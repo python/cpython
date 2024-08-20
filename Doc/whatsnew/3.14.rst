@@ -114,7 +114,7 @@ dis
 ---
 
 * Added support for rendering :class:`instruction positions <dis.Positions>`
-  when available. This feature is available on the following interfaces via
+  when available. This feature is added to the following interfaces via
   the ``show_positions`` flag:
 
   - :class:`dis.Bytecode`,

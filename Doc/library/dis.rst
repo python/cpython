@@ -57,7 +57,7 @@ interpreter.
       option and the ``show_offsets`` argument were added.
 
    .. versionchanged:: 3.14
-      Added the :option:`-K <dis --show-positions>` command-line option
+      Added the :option:`-P <dis --show-positions>` command-line option
       and the ``show_positions`` argument.
 
 Example: Given the function :func:`!myfunc`::
@@ -107,7 +107,7 @@ The following options are accepted:
 
    Show offsets of instructions.
 
-.. cmdoption:: -K, --show-positions
+.. cmdoption:: -P, --show-positions
 
    Show positions of instructions.
 

@@ -426,8 +426,8 @@ class Instruction(_Instruction):
 
 class Formatter:
 
-    def __init__(self, file=None, lineno_width=0, offset_width=0, positions_width=0, label_width=0,
-                       line_offset=0, show_caches=False):
+    def __init__(self, file=None, lineno_width=0, offset_width=0, label_width=0,
+                       line_offset=0, show_caches=False, *, positions_width=0):
         """Create a Formatter
 
         *file* where to write the output
@@ -479,24 +479,23 @@ class Formatter:
 
         fields = []
         # Column: Source code line number
-        if lineno_width or positions_width:
-            if positions_width:
-                # reporting positions instead of just line numbers
-                assert lineno_width > 0
-                if instr_positions := instr.positions:
-                    ps = tuple('?' if p is None else p for p in instr_positions)
-                    positions_str = "%s:%s-%s:%s" % ps
-                    fields.append(f'{positions_str:{positions_width}}')
-                else:
-                    fields.append(' ' * positions_width)
+        if positions_width:
+            # reporting positions instead of just line numbers
+            assert lineno_width > 0
+            if instr_positions := instr.positions:
+                ps = tuple('?' if p is None else p for p in instr_positions)
+                positions_str = "%s:%s-%s:%s" % ps
+                fields.append(f'{positions_str:{positions_width}}')
             else:
-                if instr.starts_line:
-                    lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
-                    lineno_fmt = lineno_fmt % lineno_width
-                    lineno = _NO_LINENO if instr.line_number is None else instr.line_number
-                    fields.append(lineno_fmt % lineno)
-                else:
-                    fields.append(' ' * lineno_width)
+                fields.append(' ' * positions_width)
+        elif lineno_width:
+            if instr.starts_line:
+                lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
+                lineno_fmt = lineno_fmt % lineno_width
+                lineno = _NO_LINENO if instr.line_number is None else instr.line_number
+                fields.append(lineno_fmt % lineno)
+            else:
+                fields.append(' ' * lineno_width)
         # Column: Label
         if instr.label is not None:
             lbl = f"L{instr.label}:"
@@ -849,16 +848,13 @@ def _get_lineno_width(linestarts):
     return lineno_width
 
 def _get_positions_width(code):
-    # Positions are formatted as 'LINE:COL-ENDLINE:ENDCOL' with an additional
-    # whitespace after the end column. If one of the component is missing, we
-    # will print ? instead, thus the minimum width is 8 = 1 + len('?:?-?:?'),
-    # except if all positions are undefined, in which case positions are not
-    # printed (i.e. positions_width = 0).
+    # Positions are formatted as 'LINE:COL-ENDLINE:ENDCOL ' (note trailing space).
+    # A missing component appears as '?', so the minimum width is 8 = 1 + len('?:?-?:?').
+    # If all values are missing, positions are not printed (i.e. positions_width = 0).
     has_value = False
     values_width = 0
     for positions in code.co_positions():
-        if not has_value and any(isinstance(p, int) for p in positions):
-            has_value = True
+        has_value |= any(isinstance(p, int) for p in positions)
         width = sum(1 if p is None else len(str(p)) for p in positions)
         values_width = max(width, values_width)
     if has_value:
