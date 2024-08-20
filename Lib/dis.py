@@ -834,7 +834,7 @@ def _make_labels_map(original_code, exception_entries=()):
         e.target_label = labels_map[e.target]
     return labels_map
 
-_NO_LINENO =    '  --'
+_NO_LINENO = '  --'
 
 def _get_lineno_width(linestarts):
     if linestarts is None:
