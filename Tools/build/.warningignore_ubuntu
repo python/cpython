@@ -209,7 +209,7 @@ Python/flowgraph.c 8
 Python/formatter_unicode.c 6
 Python/frame.c 3
 Python/gc.c 8
-Python/generated_cases.c.h 23
+Python/generated_cases.c.h 26
 Python/getargs.c 13
 Python/hashtable.c 1
 Python/import.c 6
@@ -233,7 +233,7 @@ Python/pystrhex.c 18
 Python/pystrtod.c 14
 Python/pytime.c 2
 Python/qsbr.c 2
-Python/specialize.c 7
+Python/specialize.c 9
 Python/suggestions.c 12
 Python/symtable.c 18
 Python/sysmodule.c 3
