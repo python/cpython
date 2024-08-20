@@ -154,6 +154,3 @@ although there is currently no date scheduled for their removal.
 
 * :meth:`zipimport.zipimporter.load_module` is deprecated:
   use :meth:`~zipimport.zipimporter.exec_module` instead.
-
-* :class:`!shutil.ExecError` is deprecated:
-  use :class:`RuntimeError` instead.
