@@ -442,9 +442,9 @@ class Formatter:
         self.file = file
         self.lineno_width = lineno_width
         self.offset_width = offset_width
-        self.positions_width = positions_width
         self.label_width = label_width
         self.show_caches = show_caches
+        self.positions_width = positions_width
 
     def print_instruction(self, instr, mark_as_current=False):
         self.print_instruction_line(instr, mark_as_current)
