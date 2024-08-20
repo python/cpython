@@ -139,8 +139,7 @@ dis_f_with_positions = f"""\
 """ % tuple(map('%s:%s-%s:%s'.__mod__, [
     tuple('?' if __p is None else __p for __p in __instruction.positions)
     for __instruction in dis._get_instructions_bytes(
-        dis._get_code_array(_f.__code__, True),
-        co_positions=_f.__code__.co_positions(),
+        _f.__code__.co_code, co_positions=_f.__code__.co_positions(),
     )
 ]))
 
