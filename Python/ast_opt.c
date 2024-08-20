@@ -607,12 +607,21 @@ fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
         arg->v.Tuple.ctx = ctx;
         /* Try to create a constant tuple. */
         newval = make_const_tuple(elts);
+        if (newval == NULL) {
+            return 0;
+        }
     }
     else if (arg->kind == Set_kind) {
         newval = make_const_tuple(arg->v.Set.elts);
-        if (newval) {
-            Py_SETREF(newval, PyFrozenSet_New(newval));
+        if (newval == NULL) {
+            return 0;
         }
+        PyObject* the_set = PyFrozenSet_New(newval);
+        if (the_set == NULL) {
+            Py_DECREF(newval);
+            return 0;
+        }
+        Py_SETREF(newval, the_set);
     }
     else {
         return 1;

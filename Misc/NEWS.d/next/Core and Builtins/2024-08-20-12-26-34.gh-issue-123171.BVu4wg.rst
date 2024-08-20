@@ -1,0 +1,2 @@
+Fix potential reference leaks in the error paths of AST optimisations. Patch
+by Pablo Galindo
