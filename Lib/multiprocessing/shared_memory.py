@@ -308,7 +308,9 @@ class ShareableList:
     def _get_str_or_bytes_format(self, item):
         """Used to ensure the correct length is inserted into the
         the formatted _types_mapping for multibyte utf-8 characters."""
-        length = len(item if isinstance(item, bytes) else item.encode())
+        length = len(
+            item if isinstance(item, bytes) else item.encode(_encoding)
+        )
         aligned_length = self._alignment * (length // self._alignment + 1)
         return self._types_mapping[type(item)] % aligned_length
 
