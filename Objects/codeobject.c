@@ -12,10 +12,13 @@
 #include "pycore_object.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
+#include "pycore_pymem.h"         // _PyMem_FreeDelayed
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
+
+#define INITIAL_SPECIALIZED_CODE_SIZE 16
 
 static const char *
 code_event_name(PyCodeEvent event) {
@@ -450,7 +453,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 
 extern void _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size);
 
-static void
+static int
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(con->localsplusnames);
@@ -513,6 +516,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
+#ifdef Py_GIL_DISABLED
+    // XXX - initialize code array
+    co->co_specialized_code = PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(void*) * INITIAL_SPECIALIZED_CODE_SIZE);
+    co->co_specialized_code->size = INITIAL_SPECIALIZED_CODE_SIZE;
+    co->co_specialized_code->entries[0] = (char *) _PyCode_CODE(co);
+#endif
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
         _PyCode_CODE(co)[entry_point].op.code != RESUME) {
@@ -521,6 +530,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->_co_firsttraceable = entry_point;
     _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co));
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
+    return 0;
 }
 
 static int
@@ -675,7 +685,12 @@ _PyCode_New(struct _PyCodeConstructor *con)
         PyErr_NoMemory();
         return NULL;
     }
-    init_code(co, con);
+
+    if (init_code(co, con) < 0) {
+        Py_DECREF(co);
+        return NULL;
+    }
+
 #ifdef Py_GIL_DISABLED
     _PyObject_SetDeferredRefcount((PyObject *)co);
     _PyObject_GC_TRACK(co);
@@ -1871,6 +1886,15 @@ code_dealloc(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject*)co);
     }
     free_monitoring_data(co->_co_monitoring);
+#ifdef Py_GIL_DISABLED
+    // The first element always points to the bytecode that follows the fixed
+    // part of the code object, which will be freed when the code object is
+    // freed.
+    for (Py_ssize_t i = 1; i < co->co_specialized_code->size; i++) {
+        PyMem_Free(co->co_specialized_code->entries[i]);
+    }
+    PyMem_Free(co->co_specialized_code);
+#endif
     PyObject_Free(co);
 }
 
@@ -2637,3 +2661,56 @@ _PyCode_Fini(PyInterpreterState *interp)
     _PyIndexPool_Fini(&interp->specialized_code_indices);
 #endif
 }
+
+#ifdef Py_GIL_DISABLED
+
+static void
+copy_code(_Py_CODEUNIT *dst, _Py_CODEUNIT *src, Py_ssize_t nbytes)
+{
+    int code_len = Py_SIZE(co);
+    _Py_CODEUNIT *dst_bytecode = (_Py_CODEUNIT *) dst->bytecode;
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
+        dst_bytecode[i] = _Py_GetBaseCodeUnit(co, i);
+    }
+    _PyCode_Quicken(dst_bytecode, code_len);
+}
+
+static _Py_CODEUNIT *
+create_specializable_code_lock_held(PyCodeObject *co)
+{
+    _PyCodeArray *spec_code = co->co_specialized_code;
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
+    Py_ssize_t idx = tstate->specialized_code_index;
+    if (idx >= spec_code->size) {
+        Py_ssize_t new_size = spec_code->size * 2;
+        _PyCodeArray *new_spec_code = PyMem_Calloc(sizeof(_PyCodeArray) + sizeof(char*) * new_size, 1);
+        if (new_spec_code == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        new_spec_code->size = new_size;
+        memcpy(new_spec_code->entries, spec_code->entries, spec_code->size * sizeof(char*));
+        _Py_atomic_store_ptr_release(&co->co_specialized_code, new_spec_code);
+        _PyMem_FreeDelayed(spec_code);
+        spec_code = new_spec_code;
+    }
+    spec_code->entries[idx] = PyMem_Malloc(_PyCode_NBYTES(co));
+    if (spec_code->entries[idx] == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    copy_code((_Py_CODEUNIT *) spec_code->entries[idx], _PyCode_CODE(co), _PyCode_NBYTES(co));
+    return (_Py_CODEUNIT *) spec_code->entries[idx];
+}
+
+_Py_CODEUNIT *
+_PyCode_CreateSpecializableCode(PyCodeObject *co)
+{
+    _Py_CODEUNIT *result;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    result = create_specializable_code_lock_held(co);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+#endif

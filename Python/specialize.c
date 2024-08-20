@@ -2721,6 +2721,7 @@ success:
 }
 
 #ifdef Py_GIL_DISABLED
+
 int
 _Py_ReserveSpecializedCodeIndex(PyInterpreterState *interp)
 {

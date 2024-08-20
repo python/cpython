@@ -583,7 +583,8 @@ sanity_check_instrumentation(PyCodeObject *code)
 _Py_CODEUNIT
 _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
 {
-    _Py_CODEUNIT inst = _PyCode_CODE(code)[i];
+    _Py_CODEUNIT *src_instr = _PyCode_CODE(code) + i;
+    _Py_CODEUNIT inst = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t *)src_instr)};
     int opcode = inst.op.code;
     if (opcode < MIN_INSTRUMENTED_OPCODE) {
         inst.op.code = _PyOpcode_Deopt[opcode];

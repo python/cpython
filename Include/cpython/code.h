@@ -68,6 +68,20 @@ typedef struct {
     uint8_t *per_instruction_tools;
 } _PyCoMonitoringData;
 
+#ifdef Py_GIL_DISABLED
+/* Each thread specializes a thread-local copy of the bytecode in free-threaded
+ * builds. These copies are stored on the code object in a `_PyCodeArray`.
+ */
+typedef struct {
+    Py_ssize_t size;
+    char *entries[];
+} _PyCodeArray;
+
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE() _PyCodeArray *co_specialized_code;
+#else
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE()
+#endif
+
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
 #define _PyCode_DEF(SIZE) {                                                    \
@@ -133,6 +147,7 @@ typedef struct {
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
     void *co_extra;                                                            \
+    _PyCode_DEF_THREAD_LOCAL_BYTECODE()                                        \
     char co_code_adaptive[(SIZE)];                                             \
 }
 

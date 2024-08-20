@@ -68,6 +68,9 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
+#ifdef Py_GIL_DISABLED
+    _Py_CODEUNIT *bytecode;
+#endif
     _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
@@ -84,7 +87,11 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
 }
 
 static inline _Py_CODEUNIT *_PyFrame_GetBytecode(_PyInterpreterFrame *f) {
+#ifdef Py_GIL_DISABLED
+    return f->bytecode;
+#else
     return _PyCode_CODE(_PyFrame_GetCode(f));
+#endif
 }
 
 static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
@@ -167,6 +174,7 @@ _PyFrame_Initialize(
     }
 
 #ifdef Py_GIL_DISABLED
+    frame->bytecode = frame->instr_ptr;
     // On GIL disabled, we walk the entire stack in GC. Since stacktop
     // is not always in sync with the real stack pointer, we have
     // no choice but to traverse the entire stack.
@@ -339,6 +347,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->return_offset = 0;
 
 #ifdef Py_GIL_DISABLED
+    frame->bytecode = frame->instr_ptr;
     assert(code->co_nlocalsplus == 0);
     for (int i = 0; i < code->co_stacksize; i++) {
         frame->localsplus[i] = PyStackRef_NULL;

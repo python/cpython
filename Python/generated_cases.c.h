@@ -4489,6 +4489,17 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
+            // _LOAD_BYTECODE
+            {
+                #ifdef Py_GIL_DISABLED
+                if (frame->instr_ptr == frame->bytecode) {
+                    frame->bytecode = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
+                    frame->instr_ptr = frame->bytecode;
+                    this_instr = frame->instr_ptr;
+                    next_instr = frame->instr_ptr + 1;
+                }
+                #endif
+            }
             // _MAYBE_INSTRUMENT
             {
                 if (tstate->tracing == 0) {
@@ -6428,6 +6439,17 @@
             PREDICTED(RESUME);
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
+            // _LOAD_BYTECODE
+            {
+                #ifdef Py_GIL_DISABLED
+                if (frame->instr_ptr == frame->bytecode) {
+                    frame->bytecode = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
+                    frame->instr_ptr = frame->bytecode;
+                    this_instr = frame->instr_ptr;
+                    next_instr = frame->instr_ptr + 1;
+                }
+                #endif
+            }
             // _MAYBE_INSTRUMENT
             {
                 if (tstate->tracing == 0) {

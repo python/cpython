@@ -190,7 +190,19 @@ dummy_func(
             }
         }
 
+        op(_LOAD_BYTECODE, (--)) {
+            #ifdef Py_GIL_DISABLED
+            if (frame->instr_ptr == frame->bytecode) {
+                frame->bytecode = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
+                frame->instr_ptr = frame->bytecode;
+                this_instr = frame->instr_ptr;
+                next_instr = frame->instr_ptr + 1;
+            }
+            #endif
+        }
+
         macro(RESUME) =
+            _LOAD_BYTECODE +
             _MAYBE_INSTRUMENT +
             _QUICKEN_RESUME +
             _CHECK_PERIODIC_IF_NOT_YIELD_FROM;
@@ -219,6 +231,7 @@ dummy_func(
         }
 
         macro(INSTRUMENTED_RESUME) =
+            _LOAD_BYTECODE +
             _MAYBE_INSTRUMENT +
             _CHECK_PERIODIC_IF_NOT_YIELD_FROM +
             _MONITOR_RESUME;
