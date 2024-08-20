@@ -649,7 +649,7 @@ Improved Modules
   If an optional field on an AST node is not included as an argument when
   constructing an instance, the field will now be set to ``None``. Similarly,
   if a list field is omitted, that field will now be set to an empty list,
-  and if a :class:`!ast.expr_context` field is omitted, it defaults to
+  and if an :class:`!expr_context` field is omitted, it defaults to
   :class:`Load() <ast.Load>`.
   (Previously, in all cases, the attribute would be missing on the newly
   constructed AST node instance.)
@@ -815,7 +815,7 @@ Improved Modules
 * Change the output of :mod:`dis` module functions to show logical
   labels for jump targets and exception handlers, rather than offsets.
   The offsets can be added with the new
-  :option:`-O <dis --show-offsets>` command line option
+  :option:`-O <dis --show-offsets>` command-line option
   or the *show_offsets* argument.
   (Contributed by Irit Katriel in :gh:`112137`.)
 
@@ -885,7 +885,7 @@ which changes the meaning of the results of
 as well as :meth:`~gc.get_count` and :meth:`~gc.get_stats`.
 
 * For backwards compatibility, :meth:`~gc.get_threshold` continues to return
-  a three-item tuple .
+  a three-item tuple.
   The first value is the threshold for young collections, as before;
   the second value determines the rate at which the old collection is scanned
   (the default is 10, and higher values mean that the old collection
@@ -1101,7 +1101,7 @@ All other code will work just fine.
   (Contributed by Barney Gale in :gh:`88569`.)
 
 * On Windows, :func:`~os.path.isabs` no longer considers paths
-  starting with exactly one (back)slash (``\`` or ``/``) to be absolute.
+  starting with exactly one slash (``\`` or ``/``) to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
 
 * :func:`~os.path.realpath` now resolves MS-DOS style file names
