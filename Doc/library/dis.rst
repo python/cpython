@@ -89,7 +89,7 @@ The :mod:`dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
-   python -m dis [-h] [-C] [-O] [-K] [infile]
+   python -m dis [-h] [-C] [-O] [-P] [infile]
 
 The following options are accepted:
 
