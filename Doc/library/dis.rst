@@ -314,7 +314,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
               disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
-              show_offsets=False, show_positions=False)
+                    show_offsets=False, show_positions=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
