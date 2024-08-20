@@ -1,2 +1,3 @@
-:class:`!shutil.ExecError` is now a deprecated alias of
-:class:`RuntimeError`.
+Deprecate :class:`!shutil.ExecError`, which hasn't been
+raised by any :mod:`shutil` function since Python 3.4. It's
+now an alias for :exc:`RuntimeError`.
