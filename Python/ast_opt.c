@@ -678,8 +678,7 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         for (Py_ssize_t j = 0; j < elts_len; j++) {
             expr_ty e = (expr_ty)asdl_seq_GET(elts, j);
             if (e->kind != Constant_kind) {
-                PyObject_GC_UnTrack(newval);
-                PyObject_GC_Del(newval);
+                Py_DECREF(newval);
                 return 1;
             }
             PyObject *v = e->v.Constant.value;
@@ -687,8 +686,7 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             if (is_lhs_constant &&
                 (v == (node->v.Compare.left->v.Constant.value)))
             {
-                PyObject_GC_UnTrack(newval);
-                PyObject_GC_Del(newval);
+                Py_DECREF(newval);
                 return make_const(node, op == In ? Py_True : Py_False, arena);
             }
         }
