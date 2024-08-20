@@ -244,7 +244,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None, depth=None, show_caches=False,
+.. function:: dis(x=None, *, file=None, depth=None, show_caches=False,\
                   adaptive=False, show_offsets=False, show_positions=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
