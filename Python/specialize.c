@@ -1809,10 +1809,6 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             return -1;
         }
         if (init != NULL) {
-            if (((PyCodeObject *)init->func_code)->co_argcount != nargs+1) {
-                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-                return -1;
-            }
             _PyCallCache *cache = (_PyCallCache *)(instr + 1);
             write_u32(cache->func_version, tp->tp_version_tag);
             _Py_SET_OPCODE(*instr, CALL_ALLOC_AND_ENTER_INIT);
@@ -2654,7 +2650,7 @@ static const PyBytesObject no_location = {
     .ob_sval = { NO_LOC_4 }
 };
 
-const struct _PyCode_DEF(8) _Py_InitCleanup = {
+const struct _PyCode8 _Py_InitCleanup = {
     _PyVarObject_HEAD_INIT(&PyCode_Type, 3),
     .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),

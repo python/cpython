@@ -593,6 +593,10 @@ extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
+struct _PyCode8 _PyCode_DEF(8);
+
+PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
+
 #ifdef __cplusplus
 }
 #endif

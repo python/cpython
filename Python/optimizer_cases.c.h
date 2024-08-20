@@ -1866,7 +1866,46 @@
             break;
         }
 
-        /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
+        case _CHECK_AND_ALLOCATE_OBJECT: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *null;
+            _Py_UopsSymbol *callable;
+            _Py_UopsSymbol *self;
+            _Py_UopsSymbol *init;
+            args = &stack_pointer[-oparg];
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            (void)type_version;
+            (void)callable;
+            (void)null;
+            (void)args;
+            self = sym_new_not_null(ctx);
+            init = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1 - oparg] = init;
+            break;
+        }
+
+        case _CREATE_INIT_FRAME: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *init;
+            _Py_UopsSymbol *self;
+            _Py_UOpsAbstractFrame *init_frame;
+            args = &stack_pointer[-oparg];
+            init = stack_pointer[-1 - oparg];
+            self = stack_pointer[-2 - oparg];
+            (void)self;
+            (void)init;
+            (void)args;
+            init_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)init_frame;
+            stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _EXIT_INIT_CHECK: {
             stack_pointer += -1;

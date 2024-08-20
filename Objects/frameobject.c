@@ -1796,8 +1796,7 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_Initialize(frame, (PyFunctionObject*)Py_NewRef(func),
-                        Py_XNewRef(locals), code, 0);
-    frame->previous = NULL;
+                        Py_XNewRef(locals), code, 0, NULL);
 }
 
 PyFrameObject*
