@@ -285,7 +285,6 @@ typedef struct pyruntimestate {
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
-    PyThreadState *tstate_current;
     /* Used for the thread state bound to the current thread. */
     Py_tss_t autoTSSkey;
 

@@ -79,19 +79,12 @@ current_fast_get(void)
 #endif
 }
 
-static inline PyThreadState *
-current_fast_get2(void)
-{
-    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&_PyRuntime.tstate_current);
-}
-
 static inline void
 current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
     assert(tstate != NULL);
 #ifdef HAVE_THREAD_LOCAL
     _Py_tss_tstate = tstate;
-    _Py_atomic_store_ptr_relaxed(&_PyRuntime.tstate_current, tstate);
 #else
     // XXX Fall back to the PyThread_tss_*() API.
 #  error "no supported thread-local variable storage classifier"
@@ -99,11 +92,10 @@ current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 }
 
 static inline void
-current_fast_clear(_PyRuntimeState *runtime)
+current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 {
 #ifdef HAVE_THREAD_LOCAL
     _Py_tss_tstate = NULL;
-    _Py_atomic_store_ptr_relaxed(&runtime->tstate_current, NULL);
 #else
     // XXX Fall back to the PyThread_tss_*() API.
 #  error "no supported thread-local variable storage classifier"
@@ -118,7 +110,7 @@ current_fast_clear(_PyRuntimeState *runtime)
 PyThreadState *
 _PyThreadState_GetCurrent(void)
 {
-    return current_fast_get2();
+    return current_fast_get();
 }
 
 
@@ -1339,7 +1331,7 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 PyInterpreterState*
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get2();
+    PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -2420,14 +2412,14 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 PyThreadState *
 PyThreadState_GetUnchecked(void)
 {
-    return current_fast_get2();
+    return current_fast_get();
 }
 
 
 PyThreadState *
 PyThreadState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get2();
+    PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     return tstate;
 }

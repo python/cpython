@@ -135,7 +135,7 @@ static inline PyThreadState*
 _PyThreadState_GET(void)
 {
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
-    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&_PyRuntime.tstate_current);
+    return _Py_tss_tstate;
 #else
     return _PyThreadState_GetCurrent();
 #endif
