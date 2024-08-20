@@ -38,7 +38,7 @@ for comparison, when possible.
    newer programming languages typically avoid exposing threads directly.
    Take that into consideration before reaching for threads and look at
    the alternatives first.
-   See `the table below`_.
+   See `the table below <concurrency-models-comparison_>`_.
 
 
 All About Concurrency
@@ -320,6 +320,35 @@ The stdlib :mod:`asyncio` module ...
 
 ...
 
+.. _concurrency-models-comparison:
+
+Comparison
+----------
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless
+   :align: left
+
+   * - model
+     - pros
+     - cons
+   * - threads
+     - ...
+     - ...
+   * - multiple interpreters
+     - ...
+     - ...
+   * - multiprocessing
+     - ...
+     - ...
+   * - distributed
+     - ...
+     - ...
+   * - async/await
+     - ...
+     - ...
+
 
 Python Concurrency Workloads
 ============================
@@ -333,20 +362,6 @@ also see:
 
 * https://github.com/faster-cpython/ideas/wiki/Tables:-Workloads
 * https://github.com/ericsnowcurrently/concurrency-benchmarks
-
-
-.. _the table below:
-
-.. rst-class:: align-left
-
-======== ========= =============== ===== =============== ===
-workload threading subinterpreters async multiprocessing smp
-======== ========= =============== ===== =============== ===
-1        Y         Y               Y     Y               Y
-2        Y         Y               Y     Y               Y
-3        Y         Y               Y     Y               Y
-4        Y         Y               Y     Y               Y
-======== ========= =============== ===== =============== ===
 
 
 Workload 1
