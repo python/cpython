@@ -728,7 +728,7 @@ Improved Modules
 
   (Inspired by an issue reported by Arthur Tacca in :gh:`116720`.)
 
-* When :func:`.TaskGroup.create_task` is called on an inactive
+* When :meth:`.TaskGroup.create_task` is called on an inactive
   :class:`~asyncio.TaskGroup`, the given coroutine will be closed (which
   prevents a :exc:`RuntimeWarning` about the given coroutine being
   never awaited).
