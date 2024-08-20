@@ -283,6 +283,34 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     _PyArena_Free(arena);
     Py_DECREF(main_module);
     if (res == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        PyObject *exc = tstate->current_exception;
+        if ((PyObject *)Py_TYPE(exc) == PyExc_SyntaxError) {
+            /* fix "text" attribute */
+            assert(interactive_src);
+            PyObject *xs = PyUnicode_Splitlines(interactive_src, 1);
+            if (xs == NULL) {
+                return -1;
+            }
+            PyObject *ln = PyObject_GetAttr(exc, &_Py_ID(lineno));
+            if (ln == NULL) {
+                Py_DECREF(xs);
+                return -1;
+            }
+            int n = PyLong_AsInt(ln);
+            Py_DECREF(ln);
+            assert(n>0);
+            assert(PyList_GET_SIZE(xs)>=n);
+            PyObject *line = PyList_GET_ITEM(xs, n - 1);
+            Py_INCREF(line);
+            Py_DECREF(xs);
+            if (PyObject_SetAttr(exc, &_Py_ID(text), line) == -1) {
+                Py_DECREF(line);
+                _PyErr_Clear(tstate);
+                return -1;
+            }
+            Py_DECREF(line);
+        }
         return -1;
     }
     Py_DECREF(res);
