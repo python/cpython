@@ -1027,20 +1027,6 @@ All other code will work just fine.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
 
-:mod:`!opcode`
---------------
-
-* Move :attr:`!opcode.ENABLE_SPECIALIZATION` to :attr:`!_opcode.ENABLE_SPECIALIZATION`.
-  This field was added in 3.12, it was never documented,
-  and is not intended for external use.
-  (Contributed by Irit Katriel in :gh:`105481`.)
-
-* Removed :func:`!opcode.is_pseudo`, :attr:`!opcode.MIN_PSEUDO_OPCODE`,
-  and :attr:`!opcode.MAX_PSEUDO_OPCODE`, which were added in 3.12,
-  but were neither documented nor exposed through ``dis``,
-  and were not intended to be used externally.
-
-
 :mod:`os`
 ---------
 
@@ -1650,6 +1636,19 @@ locale
 * Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
   use ``locale.setlocale(locale.LC_ALL, "")`` instead.
   (Contributed by Victor Stinner in :gh:`104783`.)
+
+opcode
+------
+
+* Move :attr:`!opcode.ENABLE_SPECIALIZATION` to :attr:`!_opcode.ENABLE_SPECIALIZATION`.
+  This field was added in 3.12, it was never documented,
+  and is not intended for external use.
+  (Contributed by Irit Katriel in :gh:`105481`.)
+
+* Removed :func:`!opcode.is_pseudo`, :attr:`!opcode.MIN_PSEUDO_OPCODE`,
+  and :attr:`!opcode.MAX_PSEUDO_OPCODE`, which were added in 3.12,
+  but were neither documented nor exposed through ``dis``,
+  and were not intended to be used externally.
 
 pathlib
 -------
