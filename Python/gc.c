@@ -1854,7 +1854,6 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             gc_collect_increment(tstate, &stats);
              if (++invalidation_counter >= invalidation_threshold) {
                 invalidation_counter = 0;
-                printf("Invalidating old objects\n");
                 _Py_Executors_InvalidateOld(tstate->interp, 0);
             }
             break;
