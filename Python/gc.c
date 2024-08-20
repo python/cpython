@@ -1852,6 +1852,11 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             break;
         case 1:
             gc_collect_increment(tstate, &stats);
+             if (++invalidation_counter >= invalidation_threshold) {
+                invalidation_counter = 0;
+                printf("Invalidating old objects\n");
+                _Py_Executors_InvalidateOld(tstate->interp, 0);
+            }
             break;
         case 2:
             gc_collect_full(tstate, &stats);
@@ -1864,11 +1869,6 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "stop", generation, &stats);
-
-        if (++invalidation_counter >= invalidation_threshold) {
-            invalidation_counter = 0;
-            _Py_Executors_InvalidateOld(tstate->interp, 0);
-        }
     }
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
