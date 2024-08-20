@@ -824,7 +824,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
     def test_getsource_on_generated_class(self):
-        A = type('A', (), {})
+        A = type('A', (unittest.TestCase,), {})
         self.assertEqual(inspect.getsourcefile(A), __file__)
         self.assertEqual(inspect.getfile(A), __file__)
         self.assertIs(inspect.getmodule(A), sys.modules[__name__])
@@ -931,6 +931,24 @@ class TestOneliners(GetSourceBase):
         # Test inspect.getsource with a lambda function defined
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
+
+    def test_enum(self):
+        self.assertSourceEqual(mod2.enum322, 322, 323)
+        self.assertSourceEqual(mod2.enum326, 326, 327)
+        self.assertSourceEqual(mod2.flag330, 330, 331)
+        self.assertSourceEqual(mod2.flag334, 334, 335)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_enum338)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_enum339)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_flag340)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_flag341)
+
+    def test_namedtuple(self):
+        self.assertSourceEqual(mod2.nt346, 346, 348)
+        self.assertRaises(OSError, inspect.getsource, mod2.nt351)
+
+    def test_typeddict(self):
+        self.assertSourceEqual(mod2.td354, 354, 356)
+        self.assertRaises(OSError, inspect.getsource, mod2.td359)
 
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
