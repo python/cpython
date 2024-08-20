@@ -84,7 +84,7 @@ static char *redirect_stream(StreamInfo *si) {
     return 0;
 }
 
-JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_redirectStdioToLogcat(
+JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_redirectStdioToLogcat(
     JNIEnv *env, jobject obj
 ) {
     for (StreamInfo *si = STREAMS; si->file; si++) {
@@ -115,7 +115,7 @@ static void throw_status(JNIEnv *env, PyStatus status) {
     throw_runtime_exception(env, status.err_msg ? status.err_msg : "");
 }
 
-JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_runPython(
+JNIEXPORT int JNICALL Java_org_python_testbed_PythonTestRunner_runPython(
     JNIEnv *env, jobject obj, jstring home, jstring runModule
 ) {
     PyConfig config;
@@ -125,13 +125,13 @@ JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_runPython(
     status = set_config_string(env, &config, &config.home, home);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
     status = set_config_string(env, &config, &config.run_module, runModule);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
     // Some tests generate SIGPIPE and SIGXFSZ, which should be ignored.
@@ -140,8 +140,8 @@ JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_runPython(
     status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
-    Py_RunMain();
+    return Py_RunMain();
 }

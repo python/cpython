@@ -925,7 +925,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = m_atan2(z.imag, z.real); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -950,7 +950,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     double r, phi;
 
     errno = 0;
-    phi = m_atan2(z.imag, z.real); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();
