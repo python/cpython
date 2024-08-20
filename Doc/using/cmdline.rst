@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiIOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiIOPqRsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -447,6 +447,7 @@ Miscellaneous options
        -Wdefault  # Warn once per call location
        -Werror    # Convert to exceptions
        -Walways   # Warn every time
+       -Wall      # Same as -Walways
        -Wmodule   # Warn once per calling module
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
@@ -623,7 +624,7 @@ Miscellaneous options
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
      respectively. Only available in builds configured with
      :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
-     :ref:`free-threaded-cpython`.
+     :ref:`whatsnew313-free-threaded-cpython`.
 
      .. versionadded:: 3.13
 
@@ -792,6 +793,15 @@ conflict.
    This variable can also be modified by Python code using :data:`os.environ`
    to force inspect mode on program termination.
 
+   .. audit-event:: cpython.run_stdin "" ""
+
+   .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+      Emits audit events.
+
+   .. versionchanged:: 3.13
+      Uses PyREPL if possible, in which case :envvar:`PYTHONSTARTUP` is
+      also executed. Emits audit events.
+
 
 .. envvar:: PYTHONUNBUFFERED
 
@@ -915,6 +925,7 @@ conflict.
        PYTHONWARNINGS=default  # Warn once per call location
        PYTHONWARNINGS=error    # Convert to exceptions
        PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=all      # Same as PYTHONWARNINGS=always
        PYTHONWARNINGS=module   # Warn once per calling module
        PYTHONWARNINGS=once     # Warn once per Python process
        PYTHONWARNINGS=ignore   # Never warn
@@ -1213,7 +1224,7 @@ conflict.
    forced on. Setting it to ``0`` forces the GIL off.
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable, and :ref:`free-threaded-cpython`.
+   precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
 
    Needs Python configured with the :option:`--disable-gil` build option.
 

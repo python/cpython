@@ -55,6 +55,11 @@ Command = commands.Command
 from collections.abc import Callable, Collection
 from .types import Callback, Completer, KeySpec, CommandName
 
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any, Mapping
+
 
 MoreLinesCallable = Callable[[str], bool]
 
@@ -92,7 +97,7 @@ __all__ = [
 
 @dataclass
 class ReadlineConfig:
-    readline_completer: Completer | None = RLCompleter().complete
+    readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
 
 
@@ -263,6 +268,10 @@ class maybe_accept(commands.Command):
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
 
+        if self.reader.in_bracketed_paste:
+            r.insert("\n")
+            return
+
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
         text = r.get_unicode()
@@ -333,10 +342,10 @@ class backspace_dedent(commands.Command):
 class _ReadlineWrapper:
     f_in: int = -1
     f_out: int = -1
-    reader: ReadlineAlikeReader | None = None
+    reader: ReadlineAlikeReader | None = field(default=None, repr=False)
     saved_history_length: int = -1
     startup_hook: Callback | None = None
-    config: ReadlineConfig = field(default_factory=ReadlineConfig)
+    config: ReadlineConfig = field(default_factory=ReadlineConfig, repr=False)
 
     def __post_init__(self) -> None:
         if self.f_in == -1:
@@ -550,7 +559,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup() -> None:
+def _setup(namespace: Mapping[str, Any]) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice
@@ -566,9 +575,13 @@ def _setup() -> None:
     _wrapper.f_in = f_in
     _wrapper.f_out = f_out
 
+    # set up namespace in rlcompleter, which requires it to be a bona fide dict
+    if not isinstance(namespace, dict):
+        namespace = dict(namespace)
+    _wrapper.config.readline_completer = RLCompleter(namespace).complete
+
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins
-
     raw_input = builtins.input
     builtins.input = _wrapper.input
 

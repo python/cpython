@@ -446,7 +446,7 @@ void mi_heap_delete(mi_heap_t* heap)
   if (heap==NULL || !mi_heap_is_initialized(heap)) return;
 
   if (!mi_heap_is_backing(heap)) {
-    // tranfer still used pages to the backing heap
+    // transfer still used pages to the backing heap
     mi_heap_absorb(heap->tld->heap_backing, heap);
   }
   else {

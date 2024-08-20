@@ -320,7 +320,7 @@ parse_internal_render_format_spec(PyObject *obj,
                 format->thousands_separators = LT_UNDER_FOUR_LOCALE;
                 break;
             }
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             invalid_thousands_separator_type(format->thousands_separators, format->type);
             return 0;

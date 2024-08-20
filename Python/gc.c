@@ -534,6 +534,17 @@ visit_decref(PyObject *op, void *parent)
     return 0;
 }
 
+int
+_PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
+{
+    _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
+    /* locals and stack */
+    for (; ref < frame->stackpointer; ref++) {
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
+    }
+    return 0;
+}
+
 /* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
  * for all objects in containers, and is GC_REACHABLE for all tracked gc
  * objects not in containers.  The ones with gc_refs > 0 are directly
@@ -2083,7 +2094,7 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
-    const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
+    const size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
     if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return (PyVarObject *)PyErr_NoMemory();
@@ -2101,7 +2112,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 void
 PyObject_GC_Del(void *op)
 {
-    size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
+    size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
@@ -2109,7 +2120,7 @@ PyObject_GC_Del(void *op)
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
                                      "gc", NULL, "Object of type %s is not untracked before destruction",
-                                     ((PyObject*)op)->ob_type->tp_name)) {
+                                     Py_TYPE(op)->tp_name)) {
             PyErr_WriteUnraisable(NULL);
         }
         PyErr_SetRaisedException(exc);

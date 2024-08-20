@@ -69,9 +69,6 @@ PACKAGE_TO_FILES = {
             "Lib/ctypes/macholib/fetch_macholib.bat",
         ],
     ),
-    "libb2": PackageFiles(
-        include=["Modules/_blake2/impl/**"]
-    ),
     "hacl-star": PackageFiles(
         include=["Modules/_hacl/**"],
         exclude=[
@@ -108,6 +105,10 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
 
         '.gitignore:9:*.a    Tools/lib.a'
     """
+    # No paths means no filtering to be done.
+    if not paths:
+        return []
+
     # Filter out files in gitignore.
     # Non-matching files show up as '::<whitespace><path>'
     git_check_ignore_proc = subprocess.run(

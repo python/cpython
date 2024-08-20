@@ -4,7 +4,6 @@ Test script for doctest.
 
 from test import support
 from test.support import import_helper
-from test.support.pty_helper import FakeInput  # used in doctests
 import doctest
 import functools
 import os
@@ -16,7 +15,6 @@ import unittest
 import tempfile
 import types
 import contextlib
-import _colorize
 
 
 def doctest_skip_if(condition):
@@ -471,7 +469,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:38 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:36 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -893,6 +891,7 @@ Unit tests for the `DocTestRunner` class.
 DocTestRunner is used to run DocTest test cases, and to accumulate
 statistics.  Here's a simple DocTest case we can use:
 
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
@@ -1027,6 +1026,7 @@ An expected exception is specified with a traceback message.  The
 lines between the first line and the type/value may be omitted or
 replaced with any other string:
 
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
@@ -1303,6 +1303,7 @@ together).
 The DONT_ACCEPT_TRUE_FOR_1 flag disables matches between True/False
 and 1/0:
 
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
@@ -1736,6 +1737,7 @@ Option directives can be used to turn option flags on or off for a
 single example.  To turn an option on for an example, follow that
 example with a comment of the form ``# doctest: +OPTION``:
 
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
@@ -2002,6 +2004,7 @@ Create a docstring that we want to debug:
 
 Create some fake stdin input, to feed to the debugger:
 
+    >>> from test.support.pty_helper import FakeInput
     >>> real_stdin = sys.stdin
     >>> sys.stdin = FakeInput(['next', 'print(x)', 'continue'])
 
@@ -2031,6 +2034,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         with a version that restores stdout.  This is necessary for you to
         see debugger output.
 
+          >>> import _colorize
           >>> save_colorize = _colorize.COLORIZE
           >>> _colorize.COLORIZE = False
 
@@ -2048,6 +2052,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         To demonstrate this, we'll create a fake standard input that
         captures our debugger input:
 
+          >>> from test.support.pty_helper import FakeInput
           >>> real_stdin = sys.stdin
           >>> sys.stdin = FakeInput([
           ...    'print(x)',  # print data defined by the example
@@ -2086,7 +2091,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           ...     runner.run(test)
           ... finally:
           ...     sys.stdin = real_stdin
-          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[9]>(3)calls_set_trace()
+          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[11]>(3)calls_set_trace()
           -> import pdb; pdb.set_trace()
           (Pdb) print(y)
           2
@@ -2188,6 +2193,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         >>> parser = doctest.DocTestParser()
         >>> runner = doctest.DocTestRunner(verbose=False)
         >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
+        >>> from test.support.pty_helper import FakeInput
         >>> real_stdin = sys.stdin
         >>> sys.stdin = FakeInput([
         ...    'step',
@@ -2700,6 +2706,7 @@ calling module.  The return value is (#failures, #tests).
 
 We don't want color or `-v` in sys.argv for these tests.
 
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
@@ -3007,6 +3014,7 @@ if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
@@ -3331,6 +3339,7 @@ def test_run_doctestsuite_multiple_times():
 
 def test_exception_with_note(note):
     """
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
@@ -3465,6 +3474,7 @@ def test_syntax_error_subclass_from_stdlib():
 
 def test_syntax_error_with_incorrect_expected_note():
     """
+    >>> import _colorize
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
 
