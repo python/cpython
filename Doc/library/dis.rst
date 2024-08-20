@@ -57,7 +57,7 @@ interpreter.
       option and the ``show_offsets`` argument were added.
 
    .. versionchanged:: 3.14
-      Add the :option:`-K <dis --show-positions>` command-line option
+      Added the :option:`-K <dis --show-positions>` command-line option
       and the ``show_positions`` argument.
 
 Example: Given the function :func:`!myfunc`::
