@@ -1,4 +1,5 @@
 import doctest
+import traceback
 import unittest
 
 
@@ -148,6 +149,48 @@ We also repeat each of the above scoping tests inside a function
 
 """
 
+class SetComprehensionTest(unittest.TestCase):
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should should be the iterator expression
+
+        class Iter:
+            def __init__(self, init_raises=False, next_raises=False):
+                if init_raises:
+                    1/0
+                self.next_raises = next_raises
+
+            def __next__(self):
+                if self.next_raises:
+                    1/0
+
+            def __iter__(self):
+                return self
+
+        def init_raises():
+            try:
+                {x for x in Iter(init_raises=True)}
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                {x for x in Iter(next_raises=True)}
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "Iter(init_raises=True)"),
+                               (next_raises, "Iter(next_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
 
 __test__ = {'doctests' : doctests}
 
