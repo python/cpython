@@ -73,14 +73,14 @@ jobs:
         --enable-slower-safety
         --with-openssl=$OPENSSL_DIR
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
-    - name: Build CPython out-of-tree
-      if: ${{ inputs.free-threading }}
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make -j4
     - name: Build CPython out-of-tree (for compiler warning check)
       if: ${{ !inputs.free-threading}}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: set -o pipefail; make -j4 2>&1 | tee compiler_output_ubuntu.txt
+    - name: Build CPython out-of-tree
+      if: ${{ inputs.free-threading }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make -j4
     - name: Display build info
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
