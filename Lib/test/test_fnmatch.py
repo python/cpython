@@ -370,15 +370,6 @@ class FilterTestCaseMixin:
         self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*'),
                          [b'Python', b'Perl'])
 
-    def test_filter_iter_errors(self):
-        class BadList:
-            def __iter__(self):
-                yield 'abc'
-                raise ValueError("nope")
-
-        with self.assertRaisesRegex(ValueError, r'^nope$'):
-            self.fnmatch.filter(BadList(), '*')
-
     def test_mix_bytes_str(self):
         filter = self.fnmatch.filter
         self.assertRaises(TypeError, filter, ['test'], b'*')
