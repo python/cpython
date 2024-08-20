@@ -110,6 +110,21 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+dis
+---
+
+* Added support for rendering :class:`instruction positions <dis.Positions>`
+  when available. This feature is available on the following interfaces via
+  the ``show_positions`` flag:
+
+  - :class:`dis.Bytecode`,
+  - :func:`dis.dis`, :func:`dis.distb`, and
+  - :func:`dis.disassemble`.
+
+  This feature is also exposed via :option:`dis --show-positions`.
+
+  (Contributed by Bénédikt Tran in :gh:`123165`.)
+
 fractions
 ---------
 
