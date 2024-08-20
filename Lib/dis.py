@@ -1101,7 +1101,7 @@ def main():
                         help='show inline caches')
     parser.add_argument('-O', '--show-offsets', action='store_true',
                         help='show instruction offsets')
-    parser.add_argument('-K', '--show-positions', action='store_true',
+    parser.add_argument('-P', '--show-positions', action='store_true',
                         help='show instruction positions')
     parser.add_argument('infile', nargs='?', default='-')
     args = parser.parse_args()
