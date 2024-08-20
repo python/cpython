@@ -5226,6 +5226,57 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
     return res;
 }
 
+// copied from the above
+Py_NO_INLINE static PyObject *
+get_module_by_def_NoInline(PyTypeObject *type, PyModuleDef *def)
+{
+    assert(PyType_Check(type));
+
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // type_ready_mro() ensures that no heap type is
+        // contained in a static type MRO.
+        return NULL;
+    }
+    else {
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
+        PyObject *module = ht->ht_module;
+        if (module && _PyModule_GetDef(module) == def) {
+            return module;
+        }
+    }
+
+    PyObject *res = NULL;
+    BEGIN_TYPE_LOCK();
+
+    PyObject *mro = lookup_tp_mro(type);
+    // The type must be ready
+    assert(mro != NULL);
+    assert(PyTuple_Check(mro));
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyObject *super = PyTuple_GET_ITEM(mro, i);
+        if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+            // Static types in the MRO need to be skipped
+            continue;
+        }
+
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
+        PyObject *module = ht->ht_module;
+        if (module && _PyModule_GetDef(module) == def) {
+            res = module;
+            break;
+        }
+    }
+    END_TYPE_LOCK();
+    return res;
+}
+
 PyObject *
 PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {

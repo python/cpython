@@ -73,6 +73,9 @@
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64SignExtension) == 'true' and $(Platform) == 'ARM64'">-d2ssa-patterns-all- %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(GenerateSourceDependencies) == 'true'">/sourceDependencies "$(IntDir.Trim(`\`))" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Condition="!$(RootNamespace.Contains(`test`)) and $(RootNamespace) != '_freeze_module'">
+      <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
