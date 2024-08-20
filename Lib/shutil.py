@@ -1589,5 +1589,5 @@ def __getattr__(name):
             f"{warnings._DEPRECATED_MSG}; use RuntimeError instead",
             remove=(3, 16)
         )
-        return _ExecError
+        return RuntimeError
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
