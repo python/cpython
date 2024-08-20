@@ -481,10 +481,9 @@ class Formatter:
         # Column: Source code line number
         if positions_width:
             # reporting positions instead of just line numbers
-            assert lineno_width > 0
             if instr_positions := instr.positions:
                 ps = tuple('?' if p is None else p for p in instr_positions)
-                positions_str = "%s:%s-%s:%s" % ps
+                positions_str = "%s:%s-%s:%s" % (ps[0], ps[2], ps[1], ps[3])
                 fields.append(f'{positions_str:{positions_width}}')
             else:
                 fields.append(' ' * positions_width)
