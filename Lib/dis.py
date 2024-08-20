@@ -124,8 +124,7 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
         formatter = Formatter(file=file,
                               offset_width=len(str(max(len(x) - 2, 9999))) if show_offsets else 0,
                               label_width=label_width,
-                              show_caches=show_caches,
-                              show_positions=False)
+                              show_caches=show_caches)
         arg_resolver = ArgResolver(labels_map=labels_map)
         _disassemble_bytes(x, arg_resolver=arg_resolver, formatter=formatter)
     elif isinstance(x, str):    # Source code
@@ -427,26 +426,23 @@ class Instruction(_Instruction):
 
 class Formatter:
 
-    def __init__(self, file=None, lineno_width=0, offset_width=0, label_width=0,
-                       line_offset=0, show_caches=False, show_positions=False):
+    def __init__(self, file=None, lineno_width=0, offset_width=0, positions_width=0, label_width=0,
+                       line_offset=0, show_caches=False):
         """Create a Formatter
 
         *file* where to write the output
         *lineno_width* sets the width of the line number field (0 omits it)
         *offset_width* sets the width of the instruction offset field
+        *positions_width* sets the width of the instruction positions field (0 omits it)
         *label_width* sets the width of the label field
         *show_caches* is a boolean indicating whether to display cache lines
-        *show_positions* is a boolean indicate whether to display positions
-
-        If *show_positions* is true, *lineno_width* should take into account
-        the width that positions would take.
         """
         self.file = file
         self.lineno_width = lineno_width
         self.offset_width = offset_width
+        self.positions_width = positions_width
         self.label_width = label_width
         self.show_caches = show_caches
-        self.show_positions = show_positions
 
     def print_instruction(self, instr, mark_as_current=False):
         self.print_instruction_line(instr, mark_as_current)
@@ -778,14 +774,15 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = _parse_exception_table(co)
+    positions_width = _get_positions_width(co) if show_positions else 0
     labels_map = _make_labels_map(co.co_code, exception_entries=exception_entries)
     label_width = 4 + len(str(len(labels_map)))
     formatter = Formatter(file=file,
                           lineno_width=_get_lineno_width(linestarts),
                           offset_width=len(str(max(len(co.co_code) - 2, 9999))) if show_offsets else 0,
+                          positions_width=positions_width,
                           label_width=label_width,
-                          show_caches=show_caches,
-                          show_positions=show_positions)
+                          show_caches=show_caches)
     arg_resolver = ArgResolver(co_consts=co.co_consts,
                                names=co.co_names,
                                varname_from_oparg=co._varname_from_oparg,
@@ -838,6 +835,8 @@ def _get_lineno_width(linestarts):
         lineno_width = len(_NO_LINENO)
     return lineno_width
 
+def _get_positions_width(code):
+    return 0
 
 def _disassemble_bytes(code, lasti=-1, linestarts=None,
                        *, line_offset=0, exception_entries=(),
@@ -1043,17 +1042,17 @@ class Bytecode:
         with io.StringIO() as output:
             code = _get_code_array(co, self.adaptive)
             offset_width = len(str(max(len(code) - 2, 9999))) if self.show_offsets else 0
-
+            positions_width = _get_positions_width(co) if self.show_positions else 0
 
             labels_map = _make_labels_map(co.co_code, self.exception_entries)
             label_width = 4 + len(str(len(labels_map)))
             formatter = Formatter(file=output,
                                   lineno_width=_get_lineno_width(self._linestarts),
                                   offset_width=offset_width,
+                                  positions_width=positions_width,
                                   label_width=label_width,
                                   line_offset=self._line_offset,
-                                  show_caches=self.show_caches,
-                                  show_positions=show_positions)
+                                  show_caches=self.show_caches)
 
             arg_resolver = ArgResolver(co_consts=co.co_consts,
                                        names=co.co_names,
