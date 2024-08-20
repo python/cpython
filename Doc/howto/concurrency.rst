@@ -11,11 +11,11 @@ look in Python, with an emphasis on practical workload-oriented examples.
 
 The following Python concurrency models are covered:
 
-* threads (:mod:`threading` and :mod:`concurrent.futures`)
+* free-threading (:mod:`threading` and :mod:`concurrent.futures`)
+* isolated threads, AKA CSP/actor model (:mod:`!interpreters`)
 * multi-processing (:mod:`multiprocessing` and :mod:`concurrent.futures`)
-* async/await
-* CSP/actor model (:mod:`!interpreters`)
-* distributed (e.g. SMP)
+* distributed, e.g. SMP (:mod:`!dask`)
+* async/await (:mod:`asycio`)
 
 Each of these will be explained, with some simple examples.  The later
 workload-oriented examples will be implemented using each,
@@ -127,13 +127,15 @@ of well defined abstract models, with different characteristics and
 tradeoffs.  The application of the different theoretical concurrency
 models can be categorized as follows:
 
-* free threads - using multiple physical threads in the same process,
-  with no isolation between them
-* isolated threads - threads, often physical, with strict isolation
-  between them (e.g. CSP and actor model)
-* multiprocessing - using multiple isolated processes
-* distributed - multiprocessing across multiple computers
-* async/await - using coroutines (AKA "cooperative multitasking")
+================= ==========
+free threads      using multiple physical threads in the same process,
+                  with no isolation between them
+isolated threads  threads, often physical, with strict isolation
+                  between them (e.g. CSP and actor model)
+multiprocessing   using multiple isolated processes
+distributed       multiprocessing across multiple computers
+async/await       using coroutines (AKA "cooperative multitasking")
+================= ==========
 
 (There are certainly others, but these are the focus here.)
 
@@ -214,10 +216,67 @@ was registered.
 Workloads
 ---------
 
-We've looked at what you can do with concurrency from a high level.
-Now let's look at some concrete examples.
+In practice, concurrency is used in a wide variety of software.
+Here's a not-comprehensive list:
 
-...
+======================= ===========
+application             concurrency
+======================= ===========
+web server              handle simultaneous static requests, CGI requests
+web browser             load multiple resources at once
+database server         handle simultaneous requests
+devops script           process multiple files at once
+system logger           handle simultaneous logging requests
+ATM network             handle multiple bank transactions at once
+hacker toolkit          decode a passwd file with brute force
+raytracer               compute RGB for each image pixel
+machine learning        apply matrices on training data set
+astrophysics            merge black hole data from multiple satelites and observatories
+investing               combine thousands of industry data sources into a concise actionable analysis
+MMO game server         handle login requests, handle client updates
+game client             GUI, physics engine, handle server updates
+audio transcoder        process chunks
+engineering simultation calculate stress loads at vertices
+molecular modeling      try many permutations
+======================= ===========
+
+It can be helpful to identify common characteristics by which we could
+group concurrency workloads.  Here are some:
+
+* number of logical threads
+* main + workers vs. independent
+* main + background
+* how much computation, per thread
+* how much blocking on other threads, per thread
+* how much blocking IO, per thread
+* number of external inputs
+* number of external outputs
+* how much data used, per thread
+* how much data do logical threads share
+* size of the data shared by threads
+
+From our list of workloads above, we can observe some clustering:
+
+* ...
+
+Let's also revisit the ways concurrency can be helpful:
+
+* get work done faster
+   * run more tasks at once (multi-core)
+* make the app feel more responsive
+   * make sure critical tasks have priority
+   * process results as they come, instead of waiting for them all
+   * send payload to multiple targets before starting next task
+* use system resources more efficiently
+   * keep slow parts from blocking fast parts
+   * keep blocking resources from blocking the whole program
+   * make sure other tasks have a fair share of time
+   * task scheduling & resource usage optimization
+* scaling
+* handle asynchronous events
+
+All of these things factor in to how concurrency should be applied for
+a workload, or even if it should.
 
 
 Python Concurrency Models
@@ -233,29 +292,40 @@ The stdlib :mod:`threading` module ...
 
 ...
 
+Isolated Threads (CSP/Actor Model)
+----------------------------------
+
+The future stdlib :mod:`!interpreters` module ...
+
+...
+
 Multi-processing
 ----------------
 
-...
-
-Async/Await
------------
-
-...
-
-Isolated Threads (CSP/Actor Model)
-----------------------------------
+The stdlib :mod:`multiprocessing` module ...
 
 ...
 
 Distributed
 -----------
 
+The popular :mod:`!dask` module ...
+
+...
+
+Async/Await
+-----------
+
+The stdlib :mod:`asyncio` module ...
+
 ...
 
 
 Python Concurrency Workloads
 ============================
+
+Below we have a series of examples of how to implement the most
+common Python workloads that take advantage of concurrency.
 
 ...
 
