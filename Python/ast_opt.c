@@ -531,19 +531,19 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
-static PyObject*
-make_const_tuple(asdl_expr_seq *elts)
+static int
+make_const_tuple(asdl_expr_seq *elts, PyObject** res)
 {
     for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         if (e->kind != Constant_kind) {
-            return NULL;
+            return 1;
         }
     }
 
     PyObject *newval = PyTuple_New(asdl_seq_LEN(elts));
     if (newval == NULL) {
-        return NULL;
+        return 0;
     }
 
     for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
@@ -551,24 +551,29 @@ make_const_tuple(asdl_expr_seq *elts)
         PyObject *v = e->v.Constant.value;
         PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
     }
-    return newval;
+    *res = newval;
+    return 1;
 }
 
 static int
 fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
-    PyObject *newval;
+    PyObject *newval = NULL;
 
     if (node->v.Tuple.ctx != Load)
         return 1;
 
-    newval = make_const_tuple(node->v.Tuple.elts);
+    int res = make_const_tuple(node->v.Tuple.elts, &newval);
+    if (!res || newval == NULL) {
+        return res;
+    }
     return make_const(node, newval, arena);
 }
 
 static int
 fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
+    return 1;
     PyObject *newval;
     expr_ty arg, idx;
 
@@ -594,7 +599,7 @@ fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 static int
 fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
 {
-    PyObject *newval;
+    PyObject *newval = NULL;
     if (arg->kind == List_kind) {
         /* First change a list into tuple. */
         asdl_expr_seq *elts = arg->v.List.elts;
@@ -606,22 +611,24 @@ fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
         arg->v.Tuple.elts = elts;
         arg->v.Tuple.ctx = ctx;
         /* Try to create a constant tuple. */
-        newval = make_const_tuple(elts);
-        if (newval == NULL) {
-            return 0;
+        int res = make_const_tuple(elts, &newval);
+        if (!res || newval == NULL) {
+            return res;
         }
     }
     else if (arg->kind == Set_kind) {
-        newval = make_const_tuple(arg->v.Set.elts);
-        if (newval == NULL) {
-            return 0;
+        int res = make_const_tuple(arg->v.Set.elts, &newval);
+        if (!res || newval == NULL) {
+            return res;
         }
-        PyObject* the_set = PyFrozenSet_New(newval);
-        if (the_set == NULL) {
-            Py_DECREF(newval);
-            return 0;
+        if (newval) {
+            PyObject* the_set = PyFrozenSet_New(newval);
+            if (the_set == NULL) {
+                Py_DECREF(newval);
+                return 0;
+            }
+            Py_SETREF(newval, the_set);
         }
-        Py_SETREF(newval, the_set);
     }
     else {
         return 1;
