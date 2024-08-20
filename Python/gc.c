@@ -1825,6 +1825,8 @@ Py_ssize_t
 _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     GCState *gcstate = &tstate->interp->gc;
+    static int invalidation_counter = 0;
+    const int invalidation_threshold = 10;
 
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
@@ -1862,8 +1864,11 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "stop", generation, &stats);
-        _Py_Executors_InvalidateOld(tstate->interp, 0);
 
+        if (++invalidation_counter >= invalidation_threshold) {
+            invalidation_counter = 0;
+            _Py_Executors_InvalidateOld(tstate->interp, 0);
+        }
     }
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
