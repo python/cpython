@@ -32,15 +32,7 @@ typedef struct {
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
 {
-    // Even if no new value was calculated, make_const may still
-    // need to clear an error (e.g. for division by zero)
-    if (val == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            return 0;
-        }
-        PyErr_Clear();
-        return 1;
-    }
+    assert(val != NULL);
     if (_PyArena_AddPyObject(arena, val) < 0) {
         Py_DECREF(val);
         return 0;
@@ -133,6 +125,9 @@ fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         [USub] = PyNumber_Negative,
     };
     PyObject *newval = ops[node->v.UnaryOp.op](arg->v.Constant.value);
+    if (!newval) {
+        return 0;
+    }
     return make_const(node, newval, arena);
 }
 
@@ -163,8 +158,8 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
 #define MAX_STR_SIZE          4096  /* characters */
 #define MAX_TOTAL_ITEMS       1024  /* including nested collections */
 
-static PyObject *
-safe_multiply(PyObject *v, PyObject *w)
+static int
+safe_multiply(PyObject *v, PyObject *w, PyObject** result)
 {
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
@@ -172,10 +167,10 @@ safe_multiply(PyObject *v, PyObject *w)
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = _PyLong_NumBits(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
-            return NULL;
+            return 0;
         }
         if (vbits + wbits > MAX_INT_SIZE) {
-            return NULL;
+            return 1;
         }
     }
     else if (PyLong_Check(v) && PyTuple_Check(w)) {
@@ -183,10 +178,10 @@ safe_multiply(PyObject *v, PyObject *w)
         if (size) {
             long n = PyLong_AsLong(v);
             if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
-                return NULL;
+                return PyErr_Occurred() == NULL;
             }
             if (n && check_complexity(w, MAX_TOTAL_ITEMS / n) < 0) {
-                return NULL;
+                return 1;
             }
         }
     }
@@ -196,21 +191,22 @@ safe_multiply(PyObject *v, PyObject *w)
         if (size) {
             long n = PyLong_AsLong(v);
             if (n < 0 || n > MAX_STR_SIZE / size) {
-                return NULL;
+                return PyErr_Occurred() == NULL;
             }
         }
     }
     else if (PyLong_Check(w) &&
              (PyTuple_Check(v) || PyUnicode_Check(v) || PyBytes_Check(v)))
     {
-        return safe_multiply(w, v);
+        return safe_multiply(w, v, result);
     }
 
-    return PyNumber_Multiply(v, w);
+    *result = PyNumber_Multiply(v, w);
+    return *result == NULL;
 }
 
-static PyObject *
-safe_power(PyObject *v, PyObject *w)
+static int
+safe_power(PyObject *v, PyObject *w, PyObject** result)
 {
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
@@ -218,18 +214,19 @@ safe_power(PyObject *v, PyObject *w)
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
-            return NULL;
+            return 0;
         }
         if (vbits > MAX_INT_SIZE / wbits) {
-            return NULL;
+            return 1;
         }
     }
 
-    return PyNumber_Power(v, w, Py_None);
+    *result = PyNumber_Power(v, w, Py_None);
+    return *result == NULL;
 }
 
-static PyObject *
-safe_lshift(PyObject *v, PyObject *w)
+static int
+safe_lshift(PyObject *v, PyObject *w, PyObject** result)
 {
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
@@ -237,24 +234,26 @@ safe_lshift(PyObject *v, PyObject *w)
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
-            return NULL;
+            return 0;
         }
         if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
-            return NULL;
+            return 1;
         }
     }
 
-    return PyNumber_Lshift(v, w);
+    *result = PyNumber_Lshift(v, w);
+    return *result == NULL;
 }
 
-static PyObject *
-safe_mod(PyObject *v, PyObject *w)
+static int
+safe_mod(PyObject *v, PyObject *w, PyObject** result)
 {
     if (PyUnicode_Check(v) || PyBytes_Check(v)) {
-        return NULL;
+        return 1;
     }
 
-    return PyNumber_Remainder(v, w);
+    *result = PyNumber_Remainder(v, w);
+    return *result == NULL;
 }
 
 
@@ -481,6 +480,7 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         return 1;
     }
 
+    int res = 1;
     PyObject *rv = rhs->v.Constant.value;
     PyObject *newval = NULL;
 
@@ -492,22 +492,34 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         newval = PyNumber_Subtract(lv, rv);
         break;
     case Mult:
-        newval = safe_multiply(lv, rv);
+        res = safe_multiply(lv, rv, &newval);
+        if (res == 1 && newval == NULL) {
+            return 1;
+        }
         break;
     case Div:
         newval = PyNumber_TrueDivide(lv, rv);
-        break;
+       break;
     case FloorDiv:
         newval = PyNumber_FloorDivide(lv, rv);
         break;
-    case Mod:
-        newval = safe_mod(lv, rv);
+    case Mod: 
+        res = safe_mod(lv, rv, &newval);
+        if (res == 1 && newval == NULL) {
+            return 1;
+        }
         break;
     case Pow:
-        newval = safe_power(lv, rv);
+        res = safe_power(lv, rv, &newval);
+        if (res == 1 && newval == NULL) {
+            return 1;
+        }
         break;
     case LShift:
-        newval = safe_lshift(lv, rv);
+        res = safe_lshift(lv, rv, &newval);
+        if (res == 1 && newval == NULL) {
+            return 1;
+        }
         break;
     case RShift:
         newval = PyNumber_Rshift(lv, rv);
@@ -526,6 +538,15 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         return 1;
     // No default case, so the compiler will emit a warning if new binary
     // operators are added without being handled here
+    }
+
+    if (!newval) {
+        assert(PyErr_Occurred());
+        if (PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+            PyErr_Clear();
+            return 1;
+        }
+        return 0;
     }
 
     return make_const(node, newval, arena);
@@ -837,7 +858,11 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         if (node_->v.Name.ctx == Load &&
                 _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
             LEAVE_RECURSIVE(state);
-            return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
+            PyObject* the_bool = PyBool_FromLong(!state->optimize);
+            if (!the_bool) {
+                return 0;
+            }
+            return make_const(node_, the_bool, ctx_);
         }
         break;
     case NamedExpr_kind:
