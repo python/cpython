@@ -8341,7 +8341,6 @@ type_ready_managed_dict(PyTypeObject *type)
         }
     }
     if (type->tp_itemsize == 0) {
-        type->tp_inline_values_offset = type->tp_basicsize;
         type->tp_flags |= Py_TPFLAGS_INLINE_VALUES;
     }
     return 0;

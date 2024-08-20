@@ -804,10 +804,10 @@ static inline PyDictValues *
 _PyObject_InlineValues(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    assert(tp->tp_inline_values_offset > 0 && tp->tp_inline_values_offset % sizeof(PyObject *) == 0);
+    assert(tp->tp_basicsize > 0 && tp->tp_basicsize % sizeof(PyObject *) == 0);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return (PyDictValues *)((char *)obj + tp->tp_inline_values_offset);
+    return (PyDictValues *)((char *)obj + tp->tp_basicsize);
 }
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
