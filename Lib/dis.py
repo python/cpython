@@ -433,9 +433,9 @@ class Formatter:
         *file* where to write the output
         *lineno_width* sets the width of the line number field (0 omits it)
         *offset_width* sets the width of the instruction offset field
-        *positions_width* sets the width of the instruction positions field (0 omits it)
         *label_width* sets the width of the label field
         *show_caches* is a boolean indicating whether to display cache lines
+        *positions_width* sets the width of the instruction positions field (0 omits it)
 
         If *positions_width* is specified, *lineno_width* is ignored.
         """
