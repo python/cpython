@@ -688,8 +688,16 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             }
         }
 
-        if ((arg->kind) == Set_kind)
-            Py_SETREF(newval, PyFrozenSet_New(newval));
+        if ((arg->kind) == Set_kind) {
+            PyObject *frozenset = PyFrozenSet_New(newval);
+            if (frozenset == NULL) {
+                PyErr_Clear();
+                Py_DECREF(newval);
+                return 1;
+            }
+            Py_SETREF(newval, frozenset);
+            return make_const(arg, frozenset, arena);
+        }
         return make_const(arg, newval, arena);
     }
     else if (((op == Eq) || (op == NotEq)) &&
