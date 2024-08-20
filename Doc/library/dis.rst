@@ -124,7 +124,7 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 code.
 
 .. class:: Bytecode(x, *, first_line=None, current_offset=None,\
-                    show_caches=False, adaptive=False, show_offsets=False,
+                    show_caches=False, adaptive=False, show_offsets=False,\
                     show_positions=False)
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
@@ -290,7 +290,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,
+.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
                     show_offset=False, show_positions=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
@@ -313,7 +313,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_positions* parameter.
 
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
-              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,
+              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
               show_offsets=False, show_positions=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
