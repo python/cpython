@@ -19,7 +19,7 @@ class FileWarnings(NamedTuple):
 
 def extract_warnings_from_compiler_output_clang(
     compiler_output: str,
-    path_prefix: str | None = None,
+    path_prefix: str = "",
 ) -> list[dict]:
     """
     Extracts warnings from the compiler output when using clang
@@ -34,7 +34,7 @@ def extract_warnings_from_compiler_output_clang(
         if match := clang_warning_regex.match(line):
             compiler_warnings.append(
                 {
-                    "file": match.group("file").lstrip(path_prefix),
+                    "file": match.group("file").removeprefix(path_prefix),
                     "line": match.group("line"),
                     "column": match.group("column"),
                     "message": match.group("message"),
@@ -47,7 +47,7 @@ def extract_warnings_from_compiler_output_clang(
 
 def extract_warnings_from_compiler_output_json(
     compiler_output: str,
-    path_prefix: str | None = None,
+    path_prefix: str = "",
 ) -> list[dict]:
     """
     Extracts warnings from the compiler output when using
@@ -79,7 +79,7 @@ def extract_warnings_from_compiler_output_json(
                                 {
                                     # Remove leading current
                                     # directory if present
-                                    "file": location[key]["file"].lstrip(
+                                    "file": location[key]["file"].removeprefix(
                                         path_prefix
                                     ),
                                     "line": location[key]["line"],

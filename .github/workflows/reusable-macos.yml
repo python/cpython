@@ -47,12 +47,12 @@ jobs:
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
-    - name: Build CPython for compiler warning check
-      if : ${{ !inputs.free-threading && inputs.os == 'macos-13' }}
-      run: set -o pipefail; gmake -j8 --output-sync 2>&1 | tee compiler_output_macos.txt
     - name: Build CPython
       if : ${{ inputs.free-threading || inputs.os != 'macos-13' }}
       run: gmake -j8
+    - name: Build CPython for compiler warning check
+      if : ${{ !inputs.free-threading && inputs.os == 'macos-13' }}
+      run: set -o pipefail; gmake -j8 --output-sync 2>&1 | tee compiler_output_macos.txt
     - name: Display build info
       run: make pythoninfo
     - name: Check compiler warnings
