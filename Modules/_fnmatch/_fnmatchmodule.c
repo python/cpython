@@ -20,8 +20,7 @@
 
 /* Create an LRU-cached function for re.escape(). */
 static int
-fnmatchmodule_load_escapefunc(PyObject *Py_UNUSED(module),
-                              fnmatchmodule_state *st)
+fnmatchmodule_load_escapefunc(fnmatchmodule_state *st)
 {
     // make sure that this function is called once
     assert(st->re_escape == NULL);
@@ -54,8 +53,7 @@ abort:
 
 /* Store a reference to re.compile('([&~|])').sub(). */
 static int
-fnmatchmodule_load_setops_re_sub(PyObject *Py_UNUSED(module),
-                                 fnmatchmodule_state *st)
+fnmatchmodule_load_setops_re_sub(fnmatchmodule_state *st)
 {
     // make sure that this function is called once
     assert(st->setops_re_subfn == NULL);
@@ -92,17 +90,17 @@ fnmatchmodule_exec(PyObject *module)
     } while (0)
     // ------------------------------------------------------------------------
     fnmatchmodule_state *st = get_fnmatchmodule_state(module);
-    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_escapefunc(module, st));
+    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_escapefunc(st));
     INTERN_STRING(st, hyphen_str, "-");
     INTERN_STRING(st, hyphen_esc_str, "\\-");
     INTERN_STRING(st, backslash_str, "\\");
     INTERN_STRING(st, backslash_esc_str, "\\\\");
-    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_setops_re_sub(module, st));
+    CHECK_RET_CODE_OR_ABORT(fnmatchmodule_load_setops_re_sub(st));
     INTERN_STRING(st, setops_repl_str, "\\\\\\1");
+#undef INTERN_STRING
     return 0;
 abort:
     return -1;
-#undef INTERN_STRING
 }
 
 static int
