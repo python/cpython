@@ -618,10 +618,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(n)
 
-    async def sock_connect(self, sock, address):
+    async def sock_connect(self, sock, address, proto_addr_info = None):
         """Connect to a remote socket at address.
 
         This method is a coroutine.
+        
+        The proto_addr info parameter allows to specify a protocol to use for the 
+        resolution of the address. If not specified, default to the protocol used
+        by sock
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -629,8 +633,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         if sock.family == socket.AF_INET or (
                 base_events._HAS_IPv6 and sock.family == socket.AF_INET6):
+            proto = proto_addr_info if proto_addr_info is not None else sock.proto
             resolved = await self._ensure_resolved(
-                address, family=sock.family, type=sock.type, proto=sock.proto,
+                address, family=sock.family, type=sock.type, proto=proto,
                 loop=self,
             )
             _, _, _, _, address = resolved[0]
