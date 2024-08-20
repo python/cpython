@@ -745,4 +745,4 @@ Objects/object.c	-	constants	static PyObject*[]
 
 
 ## False positives
-Python/specialize.c	-	_Py_InitCleanup
+Python/specialize.c	-	_Py_InitCleanup	-
