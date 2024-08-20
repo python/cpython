@@ -1,0 +1,3 @@
+In urllib.request when URLError is raised opening an ftp URL, the exception
+argument is now consistently a string. Earlier versions passed either a
+string or an ftplib exception instance as the argument to URLError.
