@@ -9,5 +9,6 @@ Pending Removal in Python 3.16
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
 
-* :class:`!shutil.ExecError` is deprecated:
-  use :class:`RuntimeError` instead.
+* :mod:`shutil`: Deprecate :class:`!shutil.ExecError`, which hasn't
+  been raised by any :mod:`!shutil` function since Python 3.4. It's
+  now an alias for :exc:`RuntimeError`.
