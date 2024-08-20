@@ -29,6 +29,17 @@ for comparison, when possible.
    complicate the solution.  In-depth discussion of this point
    is outside the scope of this document.
 
+.. note::
+
+   Free-threading is one of the oldest concurrency models, fundamental
+   to operating systems, and widely supported in programming languages.
+   However, it is generally considered perilous and not human-friendly.
+   Other concurrency models have demonstrated better usability and
+   newer programming languages typically avoid exposing threads directly.
+   Take that into consideration before reaching for threads and look at
+   the alternatives first.
+   See `the table below`_.
+
 
 All About Concurrency
 =====================
@@ -39,11 +50,19 @@ What is concurrency?
 At its most fundamental, concurrency means doing multiple things at once,
 from a strictly *logical* viewpoint.
 
-When a computer program runs, it executes a sequence of code in order.
-Sometimes it makes sense to break up that sequence into smaller pieces,
-where some of them can run independently of others.
+When a computer program runs, it executes a sequence of code
+in a given order.  If you were to trace the actual execution, you would
+still end up with a *linear* series of executed intructions that matches
+the code.  We call this sequence of code (and instructions) a logical
+"thread" of execution.
 
-For example, consider the following program with three pieces::
+Sometimes it makes sense to break up that sequence into smaller pieces,
+where some of them can run independently of others.  Thus the program
+then involves multiple logical threads.  This is also called
+"multitasking" and each logical thread a "task".
+
+As an example of splitting up the sequence, consider the following
+abstract program with three pieces::
 
    prep
    do A
@@ -60,15 +79,20 @@ end up with the same result::
 In the first alternative, we swap ``do A`` and ``do B``.  In the second
 one we split the original program into two programs that we can run at
 the same time.  In the third one, we run ``do A`` and ``do B`` at the
-same time.  "At the same time" means concurrency.
+same time.  "At the same time" means concurrency.  It always involves
+multiple logical threads.
 
-Concurrency often involves some degree of synchronization between
-the tasks.  At the most basic conceptual level: one task may wait
-for another to finish.
+Additionally, concurrency often involves some degree of synchronization
+between the logical threads.  At the most basic conceptual level:
+one thread may wait for another to finish.
 
-In addition to code running at the same time, concurrency typically
+Aside from code running at the same time, concurrency typically
 also involves some amount of resources shared between the concurrent
 tasks.  That may include memory, files, and sockets.
+
+One important observation is that most concurrent programs
+can be represented instead as a single task, with the code of the
+concurrent tasks merged into a single sequence.
 
 What is parallelism?
 --------------------
@@ -81,6 +105,46 @@ are physically running at the same time, not just logically.
 
 That second way is parallelism.
 
+Modern CPUs are designed around parallelism, with multiple cores
+and sometimes multiple execution pipelines per core.  The operating
+system exposes physical CPU threads as OS threads and as processes.
+A programming language (or runtime) may add additional layers of
+abstraction on top of that.
+
+Parallelism is where concurrent logical threads are running
+on distinct physical threads across multiple cores,
+
+Concurrency Models
+------------------
+
+The concept of concurrency has been a part of the study and practice
+of computer software since very early on, in the 1950s and 1960s,
+long before the wide-spread adotion of multi-core CPUs.  Clearly
+its about more than just parallelism.
+
+Over the decades, research and use of concurrency has led to a variety
+of well defined abstract models, with different characteristics and
+tradeoffs.  The application of the different theoretical concurrency
+models can be categorized as follows:
+
+* free threads - using multiple physical threads in the same process,
+  with no isolation between them
+* isolated threads - threads, often physical, with strict isolation
+  between them (e.g. CSP and actor model)
+* multiprocessing - using multiple isolated processes
+* distributed - multiprocessing across multiple computers
+* async/await - using coroutines (AKA "cooperative multitasking")
+
+(There are certainly others, but these are the focus here.)
+
+There are tradeoffs to each.  Free-threading probably has the most
+notoriety and the most examples, but is also the most likely to cause
+you pain.
+Isolated threads have few of the downsides but are less familiar.
+Multiprocessing and distributed are less efficient at smaller scales.
+Async can be straightforward, but may cascade throughout a code base
+and doesn't necessarily give you parallelism.
+
 What problems can concurrency help solve?
 -----------------------------------------
 
@@ -92,6 +156,7 @@ the following:
 * run on multiple CPU cores (parallelism)
 * keep blocking resources from blocking the whole program
 * make sure critical tasks have priority
+* make sure other tasks have a fair share of time
 * process results as they come, instead of waiting for them all
 
 Other possible benefits:
@@ -103,17 +168,48 @@ Other possible benefits:
 What are the downsides?
 -----------------------
 
-The main challenge when using concurrency is the extra complexity.
+The main challenge when using concurrency is the (potential) extra
+complexity.  This complexity comes from the effect of multiple logical
+threads running at the same time and interacting with each other.
+In practice, this falls into two categories: data races and tracing
+relative execution.  Both are a form of "spooky action at a distance".
 
-.. XXX
+The first category relates to mutable data shared between threads:
+a data race is where one thread writes to memory at a time when another
+thread is expecting the value to be unchanged, invalidating its logic.
+Similarly, two threads could write to the same memory location at the
+same time, either corrupting the data there or invalidating
+the expectations of one of the threads.
 
-* races on shared resources
-* error handling
-* ...
+In each case, the non-deterministic scheduling of threads means it is
+both hard to reproduce races and to track down where a race happened.
+These qualities much these bugs especially frustrating
+and worth diligently avoiding.
 
-The operating system, along with some libraries and frameworks,
-can help mitigate the extra complexity.  So can the concurrency
-model you use, which we'll talk about a little later..
+Races are possible when the concurrency approach is subject
+to parallel execution or to non-deterministic switching.
+(This excludes "async/await", which relies on cooperative multitasking.)
+When all memory is possibly shared, as is the case with free-threading,
+then all memory is at risk.
+
+Dealing with data races is often managed using locks (AKA mutexes),
+at a low level, and thread-safe types and APIs at a high level.
+Depending on the programming language, the complexity is sometimes
+mitigated somewhat by the compiler and runtime.  There are even
+libraries and frameworks that help abstract away the complexity
+to an extent.  On top of that, there are tools that can help identify
+potential races via static analysis.  Unfortunately, none of these aids
+is foolproof and the risk of hitting a race is always looming.
+
+.. XXX mention reentrancy?
+
+The second category of complexity is the problem of tracing the execution
+of one logical thread relative to another.  This is especially relevant
+for error handling, when an error in the one thread is exposed in the
+other.  This applies equally to threads that start other threads as to
+concurrency models that use callbacks.  Knowing where the failing thread
+was started is valuable when debugging, as is knowing where a callback
+was registered.
 
 Workloads
 ---------
@@ -121,35 +217,7 @@ Workloads
 We've looked at what you can do with concurrency from a high level.
 Now let's look at some concrete examples.
 
-
 ...
-
-
-Concurrency Models
-------------------
-
-The concept of concurrency has been a part of the study and practice
-of computer software since the 1950s and 1960s, with various innovations
-since then.  The application of the different theoretical concurrency
-models can be categorized as follows:
-
-* free threads - using multiple threads in the same process,
-  with no isolation between them
-* isolated threads - threads with strict isolation between them
-  (e.g. CSP and actor model)
-* multiprocessing - using multiple isolated processes
-* distributed - multiprocessing across multiple computers
-* async/await - using coroutines (AKA cooperative multitasking)
-
-(There are certainly others, but these are the focus here.)
-
-There are tradeoffs to each.  Free-threading probably has the most
-notoriety and the most examples, but is also the most likely to cause
-you pain.
-Isolated threads have few of the downsides but are less familiar.
-Multiprocessing and distributed are less efficient at smaller scales.
-Async can be straightforward, but may cascade throughout a code base,
-doesn't necessarily give you parallelism.
 
 
 Python Concurrency Models
@@ -195,6 +263,20 @@ also see:
 
 * https://github.com/faster-cpython/ideas/wiki/Tables:-Workloads
 * https://github.com/ericsnowcurrently/concurrency-benchmarks
+
+
+.. _the table below:
+
+.. rst-class:: align-left
+
+======== ========= =============== ===== =============== ===
+workload threading subinterpreters async multiprocessing smp
+======== ========= =============== ===== =============== ===
+1        Y         Y               Y     Y               Y
+2        Y         Y               Y     Y               Y
+3        Y         Y               Y     Y               Y
+4        Y         Y               Y     Y               Y
+======== ========= =============== ===== =============== ===
 
 
 Workload 1
