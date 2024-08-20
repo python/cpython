@@ -436,6 +436,8 @@ class Formatter:
         *positions_width* sets the width of the instruction positions field (0 omits it)
         *label_width* sets the width of the label field
         *show_caches* is a boolean indicating whether to display cache lines
+
+        If *positions_width* is specified, *lineno_width* is ignored.
         """
         self.file = file
         self.lineno_width = lineno_width
@@ -465,10 +467,11 @@ class Formatter:
     def print_instruction_line(self, instr, mark_as_current):
         """Format instruction details for inclusion in disassembly output."""
         lineno_width = self.lineno_width
+        positions_width = self.positions_width
         offset_width = self.offset_width
         label_width = self.label_width
 
-        new_source_line = (lineno_width > 0 and
+        new_source_line = ((lineno_width > 0 or positions_width > 0) and
                            instr.starts_line and
                            instr.offset > 0)
         if new_source_line:
@@ -476,14 +479,24 @@ class Formatter:
 
         fields = []
         # Column: Source code line number
-        if lineno_width:
-            if instr.starts_line:
-                lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
-                lineno_fmt = lineno_fmt % lineno_width
-                lineno = _NO_LINENO if instr.line_number is None else instr.line_number
-                fields.append(lineno_fmt % lineno)
+        if lineno_width or positions_width:
+            if positions_width:
+                # reporting positions instead of just line numbers
+                assert lineno_width > 0
+                if instr_positions := instr.positions:
+                    ps = tuple('?' if p is None else p for p in instr_positions)
+                    positions_str = "%s:%s-%s:%s" % ps
+                    fields.append(f'{positions_str:{positions_width}}')
+                else:
+                    fields.append(' ' * positions_width)
             else:
-                fields.append(' ' * lineno_width)
+                if instr.starts_line:
+                    lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
+                    lineno_fmt = lineno_fmt % lineno_width
+                    lineno = _NO_LINENO if instr.line_number is None else instr.line_number
+                    fields.append(lineno_fmt % lineno)
+                else:
+                    fields.append(' ' * lineno_width)
         # Column: Label
         if instr.label is not None:
             lbl = f"L{instr.label}:"
@@ -821,7 +834,7 @@ def _make_labels_map(original_code, exception_entries=()):
         e.target_label = labels_map[e.target]
     return labels_map
 
-_NO_LINENO = '  --'
+_NO_LINENO =    '  --'
 
 def _get_lineno_width(linestarts):
     if linestarts is None:
@@ -836,6 +849,21 @@ def _get_lineno_width(linestarts):
     return lineno_width
 
 def _get_positions_width(code):
+    # Positions are formatted as 'LINE:COL-ENDLINE:ENDCOL' with an additional
+    # whitespace after the end column. If one of the component is missing, we
+    # will print ? instead, thus the minimum width is 8 = 1 + len('?:?-?:?'),
+    # except if all positions are undefined, in which case positions are not
+    # printed (i.e. positions_width = 0).
+    has_value = True
+    values_width = 0
+    for positions in code.co_positions():
+        if not has_value and any(isinstance(p) for p in positions):
+            has_value = True
+        width = sum(1 if p is None else len(str(p)) for p in positions)
+        values_width = max(width, values_width)
+    if has_value:
+        # 3 = number of separators in a normal format
+        return 1 + max(7, 3 + values_width)
     return 0
 
 def _disassemble_bytes(code, lasti=-1, linestarts=None,
