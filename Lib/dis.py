@@ -854,10 +854,10 @@ def _get_positions_width(code):
     # will print ? instead, thus the minimum width is 8 = 1 + len('?:?-?:?'),
     # except if all positions are undefined, in which case positions are not
     # printed (i.e. positions_width = 0).
-    has_value = True
+    has_value = False
     values_width = 0
     for positions in code.co_positions():
-        if not has_value and any(isinstance(p) for p in positions):
+        if not has_value and any(isinstance(p, int) for p in positions):
             has_value = True
         width = sum(1 if p is None else len(str(p)) for p in positions)
         values_width = max(width, values_width)
