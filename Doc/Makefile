@@ -188,54 +188,69 @@ dist:
 	mkdir -p dist
 
 	# archive the HTML
-	make html
+	@echo "Building HTML..."
+	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)
 	rm -r dist/python-$(DISTVERSION)-docs-html
 	rm dist/python-$(DISTVERSION)-docs-html.tar
+	@echo "Build finished and archived!"
 
 	# archive the text build
-	make text
+	@echo "Building text..."
+	$(MAKE) text
 	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-text.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-text.zip python-$(DISTVERSION)-docs-text)
 	rm -r dist/python-$(DISTVERSION)-docs-text
 	rm dist/python-$(DISTVERSION)-docs-text.tar
+	@echo "Build finished and archived!"
 
 	# archive the A4 latex
+	@echo "Building LaTeX (A4 paper)..."
 	rm -rf build/latex
-	make latex PAPER=a4
-	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
-	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
+	$(MAKE) latex PAPER=a4
+	# remove zip & bz2 dependency on all-pdf,
+	# as otherwise the full latexmk process is run twice.
+	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
+	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
+	@echo "Build finished and archived!"
 
 	# archive the letter latex
+	@echo "Building LaTeX (US paper)..."
 	rm -rf build/latex
-	make latex PAPER=letter
-	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
-	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
+	$(MAKE) latex PAPER=letter
+	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
+	@echo "Build finished and archived!"
 
 	# copy the epub build
+	@echo "Building EPUB..."
 	rm -rf build/epub
-	make epub
+	$(MAKE) epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
+	@echo "Build finished and archived!"
 
 	# archive the texinfo build
+	@echo "Building Texinfo..."
 	rm -rf build/texinfo
-	make texinfo
-	make info --directory=build/texinfo
+	$(MAKE) texinfo
+	$(MAKE) info --directory=build/texinfo
 	cp -pPR build/texinfo dist/python-$(DISTVERSION)-docs-texinfo
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-texinfo.tar python-$(DISTVERSION)-docs-texinfo
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-texinfo.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-texinfo.zip python-$(DISTVERSION)-docs-texinfo)
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
+	@echo "Build finished and archived!"
 
 .PHONY: _ensure-package
 _ensure-package: venv
@@ -247,11 +262,11 @@ _ensure-package: venv
 
 .PHONY: _ensure-pre-commit
 _ensure-pre-commit:
-	make _ensure-package PACKAGE=pre-commit
+	$(MAKE) _ensure-package PACKAGE=pre-commit
 
 .PHONY: _ensure-sphinx-autobuild
 _ensure-sphinx-autobuild:
-	make _ensure-package PACKAGE=sphinx-autobuild
+	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
 
 .PHONY: check
 check: _ensure-pre-commit
@@ -271,12 +286,12 @@ serve:
 # for development releases: always build
 .PHONY: autobuild-dev
 autobuild-dev:
-	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for quick rebuilds (HTML only)
 .PHONY: autobuild-dev-html
 autobuild-dev-html:
-	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
@@ -286,7 +301,7 @@ autobuild-stable:
 		echo "Not building; $(DISTVERSION) is not a release version."; \
 		exit 1;; \
 	esac
-	@make autobuild-dev
+	@$(MAKE) autobuild-dev
 
 .PHONY: autobuild-stable-html
 autobuild-stable-html:
@@ -294,4 +309,4 @@ autobuild-stable-html:
 		echo "Not building; $(DISTVERSION) is not a release version."; \
 		exit 1;; \
 	esac
-	@make autobuild-dev-html
+	@$(MAKE) autobuild-dev-html
