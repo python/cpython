@@ -10,7 +10,7 @@ zero or more bytes with most significant bit unset.
 
 Each entry contains the following information:
 
-* The number of code units covered by this entry (length).
+* The number of code units covered by this entry (length)
 * The start line
 * The end line
 * The start column
@@ -40,7 +40,7 @@ For example:
 The following helper can be used to convert an integer into a `varint`:
 
 ```py
-def write_varint(s):
+def encode_varint(s):
     ret = []
     while s >= 64:
         ret.append(((s & 0x3F) | 0x40) & 0x3F)
@@ -52,7 +52,7 @@ def write_varint(s):
 To convert a `varint` into an unsigned integer:
 
 ```py
-def read_varint(chunks):
+def decode_varint(chunks):
     ret = 0
     for chunk in reversed(chunks):
         ret = (ret << 6) | chunk
@@ -64,19 +64,17 @@ def read_varint(chunks):
 Signed integers are encoded by converting them to unsigned integers, using the following function:
 
 ```py
-def write_svarint(s):
+def svarint_to_varint(s):
     if s < 0:
-        uval = ((-s) << 1) | 1
+        return ((-s) << 1) | 1
     else:
-        uval = s << 1
-    return write_varint(uval)
+        return s << 1
 ```
 
-To convert a `svarint` into a signed integer:
+To convert a varint into a signed integer:
 
 ```py
-def read_svarint(s):
-    uval = read_varint(s)
+def varint_to_svarint(uval):
     return -(uval >> 1) if uval & 1 else (uval >> 1)
 ```
 
@@ -120,16 +118,16 @@ foo.__code__ = foo.__code__.replace(
     co_firstlineno=co_firstlineno, 
     co_linetable=bytes([
         # RESUME
-        (1 << 7)    | (13 << 3)             | (1 - 1),
-        # sentinel  # no column info        # number of units - 1
-        *write_svarint(2),  # start line delta
+        (1 << 7)    | (13 << 3)         | (1 - 1),
+        # sentinel  # no column info    # number of units - 1
+        *encode_varint(svarint_to_varint(2)),   # relative start line delta
         # RETURN_CONST (None)
-        (1 << 7)    | (14 << 3)             | (1 - 1),
-        # sentinel  # has column info       # number of units - 1
-        *write_svarint(5),  # relative start line delta
-        *write_varint(12),  # end line delta
-        *write_varint(3),   # start column  (starts from 1)
-        *write_varint(8),   # end column    (starts from 1)
+        (1 << 7)    | (14 << 3)         | (1 - 1),
+        # sentinel  # has column info   # number of units - 1
+        *encode_varint(svarint_to_varint(5)),   # relative start line delta
+        *encode_varint(12),                     # end line delta
+        *encode_varint(3),                      # start column  (starts from 1)
+        *encode_varint(8),                      # end column    (starts from 1)
     ])
 )
 
