@@ -1011,7 +1011,7 @@ class DisTests(DisTestBase):
         expect = '\n'.join([
             '43:?-43:?            RESUME                   0',
             '',
-            '?:?-?:?              NOP',
+            '  --                 NOP',
             '',
             '45:0-48:4            RETURN_CONST             0 (None)',
             '',
