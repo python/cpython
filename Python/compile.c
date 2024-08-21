@@ -5272,14 +5272,15 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
             }
             if (IS_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
-                ADDOP(c, loc, GET_ITER);
+                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
+
     if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
-        ADDOP_JUMP(c, loc, FOR_ITER, anchor);
+        ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
 

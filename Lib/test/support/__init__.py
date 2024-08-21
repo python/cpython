@@ -58,6 +58,7 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "C_RECURSION_LIMIT",
     "skip_on_s390x",
+    "BrokenIter",
     ]
 
 
@@ -2468,3 +2469,17 @@ def iter_slot_wrappers(cls):
         value = ns[name]
         if is_slot_wrapper(cls, name, value):
             yield name, True
+
+
+class BrokenIter:
+    def __init__(self, init_raises=False, next_raises=False):
+        if init_raises:
+            1/0
+        self.next_raises = next_raises
+
+    def __next__(self):
+        if self.next_raises:
+            1/0
+
+    def __iter__(self):
+        return self
