@@ -292,6 +292,9 @@ Now let's see what they look like in Python.
 
 We'll also `compare them below <concurrency-models-comparison_>`_.
 
+Finally, we'll look at how `concurrent.futures <concurrent.futures_>`_
+provides a high-level API for some of the concurrency models.
+
 Free-threading
 --------------
 
@@ -451,6 +454,113 @@ Comparison
    * - async/await
      - ...
      - ...
+
+concurrent.futures
+------------------
+
+.. currentmodule:: concurrent.futures
+
+:mod:`concurrent.futures` provides a high-level abstraction around
+using concurrency in Python.
+
+The :class:`Executor` base class is the focal point of the API.
+It is implemented for threads as :class:`ThreadPoolExecutor`, wrapping
+:class:`threading.Thread`.  It is implemented for subprocesses as
+:class:`ProcessPoolExecutor`, wrapping :mod:`multiprocessing`.
+It will be implemented for multiple interpreters as
+:class:`!InterpreterPoolExecutor`.  Each implementation has some very
+minor uniqueness that we'll look at in a moment.
+
+.. note: :mod:`multiprocessing`, :mod:`asyncio`, and ``dask``
+   provide similar APIs.  In the case of :mod:`!multiprocessing`,
+   that API also supports thread and interpreter backends.
+
+.. note: Generic examples in this section will use the thread-based
+   implementation.  However, any of the other implementations
+   can be simply substituted.
+
+With an executor you can call a function asynchronously (in the background)
+using :meth:`executor.submit() <Executor.submit>`.
+It returns a :class:`Future <Future>` object which tracks completion
+and provides the result.  :class:`Future <!Future>` objects have a few
+other tricks, like cancelation and completion callbacks, which we won't
+cover here.  Likewise we won't cover the various uses of timeouts.
+
+Here's an example of using :meth:`executor.submit() <!Executor.submit>`
+and :meth:`Future.result() <Future.result>`:
+
+.. literalinclude:: ../includes/concurrency.py
+   :name: concurrency-cf-basic
+   :start-after: [start-cf-basic]
+   :end-before: [end-cf-basic]
+   :dedent:
+   :linenos:
+
+You can use :meth:`executor.map() <Executor.map>` to call a function
+multiple times and yield each result:
+
+.. literalinclude:: ../includes/concurrency.py
+   :name: concurrency-cf-map-1
+   :start-after: [start-cf-map-1]
+   :end-before: [end-cf-map-1]
+   :dedent:
+   :linenos:
+
+.. literalinclude:: ../includes/concurrency.py
+   :name: concurrency-cf-map-2
+   :start-after: [start-cf-map-2]
+   :end-before: [end-cf-map-2]
+   :dedent:
+   :linenos:
+
+You can wait for an existing set of :class:`futures <!Future>`
+using :func:`wait`
+(and :func:`as_completed` and :meth:`executor.map() <Executor.map>`):
+
+.. literalinclude:: ../includes/concurrency.py
+   :name: concurrency-cf-wait
+   :start-after: [start-cf-wait]
+   :end-before: [end-cf-wait]
+   :dedent:
+   :linenos:
+
+You can use :func:`as_completed` to handle each :class:`future <!Future>`
+as it completes:
+
+.. literalinclude:: ../includes/concurrency.py
+   :name: concurrency-cf-as-completed
+   :start-after: [start-cf-as-completed]
+   :end-before: [end-cf-as-completed]
+   :dedent:
+   :linenos:
+
+In each case handling errors on a per-:class:`future <!Future>` basis
+is straightforward:
+
+.. literalinclude:: ../includes/concurrency.py
+   :name: concurrency-cf-error-result
+   :start-after: [start-cf-error-result]
+   :end-before: [end-cf-error-result]
+   :dedent:
+   :linenos:
+
+As promised, here's a look at what is unique to each of the
+:class:`Executor` implementations.
+
+
+:class:`ThreadPoolExecutor`:
+
+* ...
+
+:class:`ProcessPoolExecutor`:
+
+* ...
+
+:class:`!InterpreterPoolExecutor`:
+
+* ...
+
+.. currentmodule:: None
 
 
 Python Concurrency Workload Examples
