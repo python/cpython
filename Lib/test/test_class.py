@@ -788,7 +788,7 @@ class ClassTests(unittest.TestCase):
         self.assertEqual(calls, 100)
 
     def test_specialization_class_call_doesnt_crash(self):
-        # Issue 123185
+        # gh-123185
 
         class Foo:
             def __init__(self, arg):
