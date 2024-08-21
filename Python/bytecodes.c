@@ -4194,7 +4194,7 @@ dummy_func(
                 _Py_Specialize_CallKw(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                 DISPATCH_SAME_OPARG();
             }
-            STAT_INC(CALL, deferred);
+            STAT_INC(CALL_KW, deferred);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
