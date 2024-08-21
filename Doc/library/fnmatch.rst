@@ -83,6 +83,10 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
    It is the same as ``[n for n in names if fnmatch(n, pat)]``,
    but implemented more efficiently.
 
+   .. versionchanged:: 3.14
+      Added support for :term:`path-like objects <path-like object>` for
+      the *names* parameter.
+
 
 .. function:: translate(pat)
 
