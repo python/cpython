@@ -190,12 +190,12 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     } while (0)
 
 #ifdef Py_GIL_DISABLED
-#   define PyStackRef_CLOSE(stackref) \
-        do { \
-            _PyStackRef _close_tmp = (stackref); \
-            if (!PyStackRef_IsDeferred(_close_tmp)) { \
-                Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp)); \
-            } \
+#   define PyStackRef_CLOSE(REF)                                        \
+        do {                                                            \
+            _PyStackRef _close_tmp = (REF);                             \
+            if (!PyStackRef_IsDeferred(_close_tmp)) {                   \
+                Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
+            }                                                           \
         } while (0)
 #else
 #   define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref))
