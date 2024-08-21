@@ -2012,9 +2012,10 @@ dummy_func(
             DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid);
         }
 
-        split op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyObject *attr_o = _PyObject_InlineValues(owner_o)->values[index];
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *attr_o = *value_ptr;
             DEOPT_IF(attr_o == NULL);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr_o);
@@ -2196,16 +2197,17 @@ dummy_func(
             EXIT_IF(_PyObject_InlineValues(owner_o)->valid == 0);
         }
 
-        op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
+        op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner --)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             STAT_INC(STORE_ATTR, hit);
             assert(_PyObject_GetManagedDict(owner_o) == NULL);
-            PyDictValues *values = _PyObject_InlineValues(owner_o);
-
-            PyObject *old_value = values->values[index];
-            values->values[index] = PyStackRef_AsPyObjectSteal(value);
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *old_value = *value_ptr;
+            *value_ptr = PyStackRef_AsPyObjectSteal(value);
             if (old_value == NULL) {
+                PyDictValues *values = _PyObject_InlineValues(owner_o);
+                int index = value_ptr - values->values;
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
             else {
@@ -3584,8 +3586,12 @@ dummy_func(
             args[-1] = self;
             init_frame = _PyEvalFramePushAndInit(
                 tstate, init_func, NULL, args-1, oparg+1, NULL, shim);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             SYNC_SP();
+            if (init_frame == NULL) {
+                _PyEval_FrameClearAndPop(tstate, shim);
+                ERROR_NO_POP();
+            }
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             /* Account for pushing the extra frame.
              * We don't check recursion depth here,
              * as it will be checked after start_frame */
@@ -4190,7 +4196,7 @@ dummy_func(
                 _Py_Specialize_CallKw(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                 DISPATCH_SAME_OPARG();
             }
-            STAT_INC(CALL, deferred);
+            STAT_INC(CALL_KW, deferred);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
