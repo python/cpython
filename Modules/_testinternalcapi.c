@@ -2053,6 +2053,20 @@ is_version_overflowed_impl(PyObject *module, PyDictObject *dict)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _PyStaticType_GetBuiltins();
+}
+
+
+static PyObject *
+identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _PyType_GetSlotWrapperNames();
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2147,6 +2161,8 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
+    {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
     IS_VERSION_OVERFLOWED_METHODDEF
     {NULL, NULL} /* sentinel */
 };
