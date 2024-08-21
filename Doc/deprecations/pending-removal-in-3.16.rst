@@ -12,3 +12,4 @@ Pending Removal in Python 3.16
 * :mod:`shutil`: Deprecate :class:`!shutil.ExecError`, which hasn't
   been raised by any :mod:`!shutil` function since Python 3.4. It's
   now an alias for :exc:`RuntimeError`.
+
