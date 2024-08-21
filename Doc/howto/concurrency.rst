@@ -174,7 +174,9 @@ The main challenge when using concurrency is the (potential) extra
 complexity.  This complexity comes from the effect of multiple logical
 threads running at the same time and interacting with each other.
 In practice, this falls into two categories: data races and tracing
-relative execution.  Both are a form of "spooky action at a distance".
+relative execution.  Both are a form of "spooky action at a distance" [#f1]_
+(meaning something changes unexpectedly in one place due to unknown
+changes somewhere else).
 
 The first category relates to mutable data shared between threads:
 a data race is where one thread writes to memory at a time when another
@@ -615,3 +617,9 @@ Workload 2
 ----------
 
 ...
+
+
+.. rubric:: Footnotes
+
+.. [#f1] The phrase was originally said by Albert Einstein about
+   quantum entanglement.
