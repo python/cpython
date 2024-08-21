@@ -483,7 +483,7 @@ class Formatter:
             # reporting positions instead of just line numbers
             if instr_positions := instr.positions:
                 ps = tuple('?' if p is None else p for p in instr_positions)
-                positions_str = "%s:%s-%s:%s" % (ps[0], ps[2], ps[1], ps[3])
+                positions_str = f"{ps[0]}:{ps[2]}-{ps[1]}:{ps[3]}"
                 fields.append(f'{positions_str:{positions_width}}')
             else:
                 fields.append(' ' * positions_width)
