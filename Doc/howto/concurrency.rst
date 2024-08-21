@@ -538,9 +538,16 @@ In each case handling errors on a per-:class:`future <!Future>` basis
 is straightforward:
 
 .. literalinclude:: ../includes/concurrency.py
-   :name: concurrency-cf-error-result
-   :start-after: [start-cf-error-result]
-   :end-before: [end-cf-error-result]
+   :name: concurrency-cf-error-result-1
+   :start-after: [start-cf-error-result-1]
+   :end-before: [end-cf-error-result-1]
+   :dedent:
+   :linenos:
+
+.. literalinclude:: ../includes/concurrency.py
+   :name: concurrency-cf-error-result-2
+   :start-after: [start-cf-error-result-2]
+   :end-before: [end-cf-error-result-2]
    :dedent:
    :linenos:
 
