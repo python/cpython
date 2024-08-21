@@ -30,7 +30,7 @@ is set to `NULL`.
 
 In 3.13 only objects with no additional data could have inline values.
 That is, instances of classes with `tp_basicsize == sizeof(PyObject)`.
-In 3.14, any object who's class has `tp_itemsize == 0` can have inline values.
+In 3.14, any object whose class has `tp_itemsize == 0` can have inline values.
 In both versions, the inline values starts `tp_basicsize` bytes after the object.
 
 <details>
