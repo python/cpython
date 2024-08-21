@@ -1,6 +1,8 @@
 import traceback
 import unittest
 
+from test.support import BrokenIter
+
 # For scope testing.
 g = "Global variable"
 
@@ -131,34 +133,20 @@ class DictComprehensionTest(unittest.TestCase):
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
         # __next__ should should be the iterator expression
-
-        class Iter:
-            def __init__(self, init_raises=False, next_raises=False):
-                if init_raises:
-                    1/0
-                self.next_raises = next_raises
-
-            def __next__(self):
-                if self.next_raises:
-                    1/0
-
-            def __iter__(self):
-                return self
-
         def init_raises():
             try:
-                {(x, x) for x in Iter(init_raises=True)}
+                {x:x for x in BrokenIter(init_raises=True)}
             except Exception as e:
                 return e
 
         def next_raises():
             try:
-                {(x, x) for x in Iter(next_raises=True)}
+                {x:x for x in BrokenIter(next_raises=True)}
             except Exception as e:
                 return e
 
-        for func, expected in [(init_raises, "Iter(init_raises=True)"),
-                               (next_raises, "Iter(next_raises=True)"),
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
                               ]:
             with self.subTest(func):
                 exc = func()
