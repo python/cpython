@@ -1262,6 +1262,15 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label blo
     assert(SAME_LABEL(u->u_fblock[u->u_nfblocks].fb_block, block_label));
 }
 
+static struct fblockinfo *
+compiler_top_fblock(struct compiler *c)
+{
+    if (c->u->u_nfblocks == 0) {
+        return NULL;
+    }
+    return &c->u->u_fblock[c->u->u_nfblocks - 1];
+}
+
 static int
 codegen_call_exit_with_nones(struct compiler *c, location loc)
 {
@@ -1319,8 +1328,8 @@ codegen_pop_except_and_reraise(struct compiler *c, location loc)
  * be popped.
  */
 static int
-compiler_unwind_fblock(struct compiler *c, location *ploc,
-                       struct fblockinfo *info, int preserve_tos)
+codegen_unwind_fblock(struct compiler *c, location *ploc,
+                      struct fblockinfo *info, int preserve_tos)
 {
     switch (info->fb_type) {
         case WHILE_LOOP:
@@ -1422,13 +1431,13 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
 
 /** Unwind block stack. If loop is not NULL, then stop when the first loop is encountered. */
 static int
-compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
-                             int preserve_tos, struct fblockinfo **loop)
+codegen_unwind_fblock_stack(struct compiler *c, location *ploc,
+                            int preserve_tos, struct fblockinfo **loop)
 {
-    if (c->u->u_nfblocks == 0) {
+    struct fblockinfo *top = compiler_top_fblock(c);
+    if (top == NULL) {
         return SUCCESS;
     }
-    struct fblockinfo *top = &c->u->u_fblock[c->u->u_nfblocks-1];
     if (top->fb_type == EXCEPTION_GROUP_HANDLER) {
         return compiler_error(
             c, *ploc, "'break', 'continue' and 'return' cannot appear in an except* block");
@@ -1438,11 +1447,11 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
         return SUCCESS;
     }
     struct fblockinfo copy = *top;
-    c->u->u_nfblocks--;
-    RETURN_IF_ERROR(compiler_unwind_fblock(c, ploc, &copy, preserve_tos));
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, ploc, preserve_tos, loop));
-    c->u->u_fblock[c->u->u_nfblocks] = copy;
-    c->u->u_nfblocks++;
+    compiler_pop_fblock(c, top->fb_type, top->fb_block);
+    RETURN_IF_ERROR(codegen_unwind_fblock(c, ploc, &copy, preserve_tos));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, ploc, preserve_tos, loop));
+    compiler_push_fblock(c, copy.fb_loc, copy.fb_type, copy.fb_block,
+                         copy.fb_exit, copy.fb_datum);
     return SUCCESS;
 }
 
@@ -3077,7 +3086,7 @@ codegen_return(struct compiler *c, stmt_ty s)
         ADDOP(c, loc, NOP);
     }
 
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, &loc, preserve_tos, NULL));
     if (s->v.Return.value == NULL) {
         ADDOP_LOAD_CONST(c, loc, Py_None);
     }
@@ -3096,11 +3105,11 @@ codegen_break(struct compiler *c, location loc)
     location origin_loc = loc;
     /* Emit instruction with line number */
     ADDOP(c, loc, NOP);
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
         return compiler_error(c, origin_loc, "'break' outside loop");
     }
-    RETURN_IF_ERROR(compiler_unwind_fblock(c, &loc, loop, 0));
+    RETURN_IF_ERROR(codegen_unwind_fblock(c, &loc, loop, 0));
     ADDOP_JUMP(c, loc, JUMP, loop->fb_exit);
     return SUCCESS;
 }
@@ -3112,7 +3121,7 @@ codegen_continue(struct compiler *c, location loc)
     location origin_loc = loc;
     /* Emit instruction with line number */
     ADDOP(c, loc, NOP);
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
         return compiler_error(c, origin_loc, "'continue' not properly in loop");
     }
