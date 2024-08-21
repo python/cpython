@@ -2188,7 +2188,7 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        op(_GUARD_DORV_NO_DICT, (offset -- owner)) {
+        op(_GUARD_DORV_NO_DICT, (owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);

@@ -2565,6 +2565,7 @@
 
         case _GUARD_DORV_NO_DICT: {
             _PyStackRef owner;
+            owner = stack_pointer[-1];
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
@@ -2576,7 +2577,6 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            stack_pointer[-1] = owner;
             break;
         }
 

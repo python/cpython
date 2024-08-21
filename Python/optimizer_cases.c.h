@@ -1067,7 +1067,7 @@
             uint16_t offset = (uint16_t)this_instr->operand;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            (void)index;
+            (void)offset;
             (void)owner;
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
@@ -1204,9 +1204,6 @@
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
         case _GUARD_DORV_NO_DICT: {
-            _Py_UopsSymbol *owner;
-            owner = sym_new_not_null(ctx);
-            stack_pointer[-1] = owner;
             break;
         }
 
