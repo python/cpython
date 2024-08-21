@@ -2277,9 +2277,10 @@
             _PyStackRef null = PyStackRef_NULL;
             (void)null;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            uint16_t offset = (uint16_t)CURRENT_OPERAND();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyObject *attr_o = _PyObject_InlineValues(owner_o)->values[index];
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *attr_o = *value_ptr;
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2299,9 +2300,10 @@
             _PyStackRef null = PyStackRef_NULL;
             (void)null;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            uint16_t offset = (uint16_t)CURRENT_OPERAND();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyObject *attr_o = _PyObject_InlineValues(owner_o)->values[index];
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *attr_o = *value_ptr;
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2563,7 +2565,6 @@
 
         case _GUARD_DORV_NO_DICT: {
             _PyStackRef owner;
-            owner = stack_pointer[-1];
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
@@ -2575,6 +2576,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            stack_pointer[-1] = owner;
             break;
         }
 
@@ -2583,14 +2585,16 @@
             _PyStackRef value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            uint16_t offset = (uint16_t)CURRENT_OPERAND();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             STAT_INC(STORE_ATTR, hit);
             assert(_PyObject_GetManagedDict(owner_o) == NULL);
-            PyDictValues *values = _PyObject_InlineValues(owner_o);
-            PyObject *old_value = values->values[index];
-            values->values[index] = PyStackRef_AsPyObjectSteal(value);
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *old_value = *value_ptr;
+            *value_ptr = PyStackRef_AsPyObjectSteal(value);
             if (old_value == NULL) {
+                PyDictValues *values = _PyObject_InlineValues(owner_o);
+                int index = value_ptr - values->values;
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
             else {
