@@ -849,15 +849,19 @@ specialize_dict_access(
         assert(PyUnicode_CheckExact(name));
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         assert (index != DKIX_ERROR);
-        if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(base_op,
-                                index == DKIX_EMPTY ?
-                                SPEC_FAIL_ATTR_NOT_IN_KEYS :
-                                SPEC_FAIL_OUT_OF_RANGE);
+        if (index == DKIX_EMPTY) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
+            return 0;
+        }
+        assert(index >= 0);
+        char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
+        Py_ssize_t offset = value_addr - (char *)owner;
+        if (offset != (uint16_t)offset) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
         write_u32(cache->version, type->tp_version_tag);
-        cache->index = (uint16_t)index;
+        cache->index = (uint16_t)offset;
         instr->op.code = values_op;
     }
     else {
