@@ -25,7 +25,7 @@ you don't already have the SDK, here's how to install it:
 The `android.py` script also requires the following commands to be on the `PATH`:
 
 * `curl`
-* `java`
+* `java` (or set the `JAVA_HOME` environment variable)
 * `tar`
 * `unzip`
 
@@ -80,18 +80,54 @@ call. For example, if you want a pydebug build that also caches the results from
 
 ## Testing
 
-To run the Python test suite on Android:
+The tests can be run on Linux, macOS, or Windows, although on Windows you'll
+have to build the `cross-build/HOST` subdirectory on one of the other platforms
+and copy it over.
 
-* Install Android Studio, if you don't already have it.
-* Follow the instructions in the previous section to build all supported
-  architectures.
-* Run `./android.py setup-testbed` to download the Gradle wrapper.
-* Open the `testbed` directory in Android Studio.
-* In the *Device Manager* dock, connect a device or start an emulator.
-  Then select it from the drop-down list in the toolbar.
-* Click the "Run" button in the toolbar.
-* The testbed app displays nothing on screen while running. To see its output,
-  open the [Logcat window](https://developer.android.com/studio/debug/logcat).
+The test suite can usually be run on a device with 2 GB of RAM, though for some
+configurations or test orders you may need to increase this. As of Android
+Studio Koala, 2 GB is the default for all emulators, although the user interface
+may indicate otherwise. The effective setting is `hw.ramSize` in
+~/.android/avd/*.avd/hardware-qemu.ini, whereas Android Studio displays the
+value from config.ini. Changing the value in Android Studio will update both of
+these files.
 
-To run specific tests, or pass any other arguments to the test suite, edit the
-command line in testbed/app/src/main/python/main.py.
+Before running the test suite, follow the instructions in the previous section
+to build the architecture you want to test. Then run the test script in one of
+the following modes:
+
+* In `--connected` mode, it runs on a device or emulator you have already
+  connected to the build machine. List the available devices with
+  `$ANDROID_HOME/platform-tools/adb devices -l`, then pass a device ID to the
+  script like this:
+
+  ```sh
+  ./android.py test --connected emulator-5554
+  ```
+
+* In `--managed` mode, it uses a temporary headless emulator defined in the
+  `managedDevices` section of testbed/app/build.gradle.kts. This mode is slower,
+  but more reproducible.
+
+  We currently define two devices: `minVersion` and `maxVersion`, corresponding
+  to our minimum and maximum supported Android versions. For example:
+
+  ```sh
+  ./android.py test --managed maxVersion
+  ```
+
+By default, the only messages the script will show are Python's own stdout and
+stderr. Add the `-v` option to also show Gradle output, and non-Python logcat
+messages.
+
+Any other arguments on the `android.py test` command line will be passed through
+to `python -m test` – use `--` to separate them from android.py's own options.
+See the [Python Developer's
+Guide](https://devguide.python.org/testing/run-write-tests/) for common options
+– most of them will work on Android, except for those that involve subprocesses,
+such as `-j`.
+
+Every time you run `android.py test`, changes in pure-Python files in the
+repository's `Lib` directory will be picked up immediately. Changes in C files,
+and architecture-specific files such as sysconfigdata, will not take effect
+until you re-run `android.py make-host` or `build`.

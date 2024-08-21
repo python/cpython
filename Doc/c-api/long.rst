@@ -94,9 +94,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    ignored.  If there are no digits or *str* is not NULL-terminated following the
    digits and trailing whitespace, :exc:`ValueError` will be raised.
 
-   .. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
-      to convert a :c:type:`PyLongObject` to/from an array of bytes in base
-      ``256``. You can call those from C using :c:func:`PyObject_CallMethod`.
+   .. seealso:: :c:func:`PyLong_AsNativeBytes()` and
+      :c:func:`PyLong_FromNativeBytes()` functions can be used to convert
+      a :c:type:`PyLongObject` to/from an array of bytes in base ``256``.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
@@ -512,6 +512,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    if *obj* is a :c:type:`PyLongObject` or its subtype.
 
    .. versionadded:: 3.14
+
+
+.. c:function:: PyObject* PyLong_GetInfo(void)
+
+   On success, return a read only :term:`named tuple`, that holds
+   information about Python's internal representation of integers.
+   See :data:`sys.int_info` for description of individual fields.
+
+   On failure, return ``NULL`` with an exception set.
+
+   .. versionadded:: 3.1
 
 
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
