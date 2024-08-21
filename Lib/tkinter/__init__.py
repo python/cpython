@@ -4490,7 +4490,7 @@ class PhotoImage(Image):
         The FORMAT option specifies the name of the image file format
         handler to be used.  If this option is not given, this method uses
         a format that consists of a tuple (one element per row) of strings
-        containings space separated (one element per pixel/column) colors
+        containing space-separated (one element per pixel/column) colors
         in “#RRGGBB” format (where RR is a pair of hexadecimal digits for
         the red channel, GG for green, and BB for blue).
 

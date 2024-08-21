@@ -7,11 +7,21 @@
             break;
         }
 
+        case _CHECK_PERIODIC: {
+            break;
+        }
+
+        case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
+            break;
+        }
+
+        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
+
         case _RESUME_CHECK: {
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
+        /* _MONITOR_RESUME is not a viable micro-op for tier 2 */
 
         case _LOAD_FAST_CHECK: {
             _Py_UopsSymbol *value;
@@ -1054,10 +1064,10 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)this_instr->operand;
+            uint16_t offset = (uint16_t)this_instr->operand;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            (void)index;
+            (void)offset;
             (void)owner;
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
@@ -1644,10 +1654,6 @@
 
         /* _DO_CALL is not a viable micro-op for tier 2 */
 
-        case _CHECK_PERIODIC: {
-            break;
-        }
-
         /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
@@ -1860,7 +1866,46 @@
             break;
         }
 
-        /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
+        case _CHECK_AND_ALLOCATE_OBJECT: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *null;
+            _Py_UopsSymbol *callable;
+            _Py_UopsSymbol *self;
+            _Py_UopsSymbol *init;
+            args = &stack_pointer[-oparg];
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            (void)type_version;
+            (void)callable;
+            (void)null;
+            (void)args;
+            self = sym_new_not_null(ctx);
+            init = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1 - oparg] = init;
+            break;
+        }
+
+        case _CREATE_INIT_FRAME: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *init;
+            _Py_UopsSymbol *self;
+            _Py_UOpsAbstractFrame *init_frame;
+            args = &stack_pointer[-oparg];
+            init = stack_pointer[-1 - oparg];
+            self = stack_pointer[-2 - oparg];
+            (void)self;
+            (void)init;
+            (void)args;
+            init_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)init_frame;
+            stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _EXIT_INIT_CHECK: {
             stack_pointer += -1;
@@ -1966,11 +2011,67 @@
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 */
+        /* _DO_CALL_KW is not a viable micro-op for tier 2 */
+
+        case _PY_FRAME_KW: {
+            _Py_UopsSymbol *kwnames;
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UOpsAbstractFrame *new_frame;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            (void)kwnames;
+            new_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-3 - oparg] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _CHECK_FUNCTION_VERSION_KW: {
+            break;
+        }
+
+        case _CHECK_METHOD_VERSION_KW: {
+            break;
+        }
+
+        case _EXPAND_METHOD_KW: {
+            _Py_UopsSymbol *method;
+            _Py_UopsSymbol *self;
+            _Py_UopsSymbol *kwnames;
+            method = sym_new_not_null(ctx);
+            self = sym_new_not_null(ctx);
+            kwnames = sym_new_not_null(ctx);
+            stack_pointer[-3 - oparg] = method;
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1] = kwnames;
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE_KW: {
+            break;
+        }
+
+        case _CALL_KW_NON_PY: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-3 - oparg] = res;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+        /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_FUNCTION: {
             _Py_UopsSymbol *func;
@@ -2100,7 +2201,7 @@
 
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+        /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 

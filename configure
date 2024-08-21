@@ -713,6 +713,11 @@ MODULE__CURSES_FALSE
 MODULE__CURSES_TRUE
 MODULE__CTYPES_FALSE
 MODULE__CTYPES_TRUE
+LIBHACL_SIMD256_OBJS
+LIBHACL_SIMD256_FLAGS
+LIBHACL_SIMD128_OBJS
+LIBHACL_SIMD128_FLAGS
+LIBHACL_CFLAGS
 MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
 MODULE__SHA3_FALSE
@@ -817,8 +822,6 @@ MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
 TEST_MODULES
-LIBB2_LIBS
-LIBB2_CFLAGS
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
@@ -1175,9 +1178,7 @@ LIBEDIT_LIBS
 CURSES_CFLAGS
 CURSES_LIBS
 PANEL_CFLAGS
-PANEL_LIBS
-LIBB2_CFLAGS
-LIBB2_LIBS'
+PANEL_LIBS'
 
 
 # Initialize some variables set by options.
@@ -2022,9 +2023,6 @@ Some influential environment variables:
   PANEL_CFLAGS
               C compiler flags for PANEL, overriding pkg-config
   PANEL_LIBS  linker flags for PANEL, overriding pkg-config
-  LIBB2_CFLAGS
-              C compiler flags for LIBB2, overriding pkg-config
-  LIBB2_LIBS  linker flags for LIBB2, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -28749,88 +28747,6 @@ esac
 done
 IFS=$as_save_IFS
 
-if test "x$with_builtin_blake2" = xyes
-then :
-
-
-pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libb2" >&5
-printf %s "checking for libb2... " >&6; }
-
-if test -n "$LIBB2_CFLAGS"; then
-    pkg_cv_LIBB2_CFLAGS="$LIBB2_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libb2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libb2") 2>&5
-  ac_status=$?
-  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBB2_CFLAGS=`$PKG_CONFIG --cflags "libb2" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$LIBB2_LIBS"; then
-    pkg_cv_LIBB2_LIBS="$LIBB2_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libb2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libb2") 2>&5
-  ac_status=$?
-  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBB2_LIBS=`$PKG_CONFIG --libs "libb2" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        LIBB2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libb2" 2>&1`
-        else
-	        LIBB2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libb2" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$LIBB2_PKG_ERRORS" >&5
-
-	have_libb2=no
-elif test $pkg_failed = untried; then
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-	have_libb2=no
-else
-	LIBB2_CFLAGS=$pkg_cv_LIBB2_CFLAGS
-	LIBB2_LIBS=$pkg_cv_LIBB2_LIBS
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-    have_libb2=yes
-
-printf "%s\n" "#define HAVE_LIBB2 1" >>confdefs.h
-
-
-fi
-
-fi
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
@@ -30340,7 +30256,7 @@ fi
   if test "x$py_cv_module__md5" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
+
 
 
 fi
@@ -30378,7 +30294,7 @@ fi
   if test "x$py_cv_module__sha1" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
+
 
 
 fi
@@ -30416,7 +30332,7 @@ fi
   if test "x$py_cv_module__sha2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
+
 
 
 fi
@@ -30492,8 +30408,8 @@ fi
   if test "x$py_cv_module__blake2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBB2_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=$LIBB2_LIBS$as_nl"
+
+
 
 fi
    if test "$py_cv_module__blake2" = yes; then
@@ -30506,6 +30422,112 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__blake2" >&5
 printf "%s\n" "$py_cv_module__blake2" >&6; }
+
+
+LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+case "$ac_sys_system" in
+  Linux*)
+    if test "$ac_cv_func_explicit_bzero" = "no"; then
+      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+    fi
+  ;;
+esac
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
+printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
+if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -msse -msse2 -msse3 -msse4.1 -msse4.2"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" = xyes
+then :
+
+  LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
+  LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+
+printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
+printf %s "checking whether C compiler accepts -mavx2... " >&6; }
+if test ${ax_cv_check_cflags__Werror__mavx2+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -mavx2"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__mavx2=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__mavx2=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
+then :
+
+  LIBHACL_SIMD256_FLAGS="-mavx2"
+  LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+
+printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
+
+
+else $as_nop
+  :
+fi
+
+
+
 
 
 

@@ -452,10 +452,10 @@ dummy_func(void) {
         top, unused[oparg-2], bottom)) {
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
         null = sym_new_null(ctx);
-        (void)index;
+        (void)offset;
         (void)owner;
     }
 
@@ -624,6 +624,32 @@ dummy_func(void) {
         (void)self_or_null;
         (void)args;
         new_frame = NULL;
+        ctx->done = true;
+    }
+
+    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {
+        (void)callable;
+        (void)self_or_null;
+        (void)args;
+        (void)kwnames;
+        new_frame = NULL;
+        ctx->done = true;
+    }
+
+    op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, null, args[oparg] -- self, init, args[oparg])) {
+        (void)type_version;
+        (void)callable;
+        (void)null;
+        (void)args;
+        self = sym_new_not_null(ctx);
+        init = sym_new_not_null(ctx);
+    }
+
+    op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame: _Py_UOpsAbstractFrame *)) {
+        (void)self;
+        (void)init;
+        (void)args;
+        init_frame = NULL;
         ctx->done = true;
     }
 

@@ -1,4 +1,7 @@
+import traceback
 import unittest
+
+from test.support import BrokenIter
 
 # For scope testing.
 g = "Global variable"
@@ -126,6 +129,34 @@ class DictComprehensionTest(unittest.TestCase):
         expected = {0: 0, 1: 1, 2: 4, 3: 9}
         self.assertEqual({i: i*i for i in [*range(4)]}, expected)
         self.assertEqual({i: i*i for i in (*range(4),)}, expected)
+
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should should be the iterator expression
+        def init_raises():
+            try:
+                {x:x for x in BrokenIter(init_raises=True)}
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                {x:x for x in BrokenIter(next_raises=True)}
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
 
 
 if __name__ == "__main__":

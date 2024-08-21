@@ -7438,15 +7438,6 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
-dnl libb2 for blake2. _blake2 module falls back to vendored copy.
-AS_VAR_IF([with_builtin_blake2], [yes], [
-  PKG_CHECK_MODULES([LIBB2], [libb2], [
-    have_libb2=yes
-    AC_DEFINE([HAVE_LIBB2], [1],
-              [Define to 1 if you want to build _blake2 module with libb2])
-  ], [have_libb2=no])
-])
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 AC_MSG_CHECKING([for --disable-test-modules])
@@ -7767,19 +7758,40 @@ PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5],
-  [test "$with_builtin_md5" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha1],
-  [test "$with_builtin_sha1" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha2],
-  [test "$with_builtin_sha2" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2],
-  [test "$with_builtin_blake2" = yes], [],
-  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+
+LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+case "$ac_sys_system" in
+  Linux*)
+    if test "$ac_cv_func_explicit_bzero" = "no"; then
+      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+    fi
+  ;;
+esac
+AC_SUBST([LIBHACL_CFLAGS])
+
+dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
+AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
+  [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
+  [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+  AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+], [], [-Werror])
+
+AC_SUBST([LIBHACL_SIMD128_FLAGS])
+AC_SUBST([LIBHACL_SIMD128_OBJS])
+
+AX_CHECK_COMPILE_FLAG([-mavx2],[
+  [LIBHACL_SIMD256_FLAGS="-mavx2"]
+  [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+  AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+], [], [-Werror])
+
+AC_SUBST([LIBHACL_SIMD256_FLAGS])
+AC_SUBST([LIBHACL_SIMD256_OBJS])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
