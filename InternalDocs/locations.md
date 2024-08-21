@@ -110,6 +110,8 @@ When constructing artificial `co_linetable` values, only non-None values should
 be specified. For instance:
 
 ```py
+import dis
+
 def foo():
     pass
     
