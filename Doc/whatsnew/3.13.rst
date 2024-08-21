@@ -642,7 +642,7 @@ Improved Modules
 :mod:`ast`
 ----------
 
-* The constructors of node types in the :mod:`!ast` module are now
+* The constructors of node types in the :mod:`ast` module are now
   stricter in the arguments they accept,
   with more intuitive behaviour when arguments are omitted.
 
@@ -812,7 +812,7 @@ Improved Modules
 :mod:`dis`
 ----------
 
-* Change the output of :mod:`!dis` module functions to show logical
+* Change the output of :mod:`dis` module functions to show logical
   labels for jump targets and exception handlers, rather than offsets.
   The offsets can be added with the new
   :option:`-O <dis --show-offsets>` command-line option
@@ -833,7 +833,7 @@ Improved Modules
 :mod:`doctest`
 --------------
 
-* :mod:`!doctest` output is now colored by default.
+* :mod:`doctest` output is now colored by default.
   This can be controlled via the new :envvar:`PYTHON_COLORS` environment
   variable as well as the canonical |NO_COLOR|_
   and |FORCE_COLOR|_ environment variables.
@@ -1249,8 +1249,8 @@ All other code will work just fine.
 :mod:`subprocess`
 -----------------
 
-* The :mod:`!subprocess` module now uses the :func:`~os.posix_spawn` function
-  in more situations.
+* The :mod:`subprocess` module now uses the :func:`~os.posix_spawn` function in
+  more situations.
 
   Notably, when *close_fds* is ``True`` (the default),
   :func:`~os.posix_spawn` will be used when the C library provides
@@ -1260,7 +1260,7 @@ All other code will work just fine.
   Linux :c:func:`!vfork` based code.
 
   A private control knob :attr:`!subprocess._USE_POSIX_SPAWN` can
-  be set to ``False`` if you need to force :mod:`!subprocess`
+  be set to ``False`` if you need to force :mod:`subprocess`
   to never use :func:`~os.posix_spawn`.
   Please report your reason and platform details in
   the :ref:`issue tracker <using-the-tracker>` if you set this
@@ -1304,13 +1304,13 @@ All other code will work just fine.
 :mod:`tkinter`
 --------------
 
-* Add :mod:`!tkinter` widget methods:
+* Add :mod:`tkinter` widget methods:
   :meth:`!tk_busy_hold`, :meth:`!tk_busy_configure`,
   :meth:`!tk_busy_cget`, :meth:`!tk_busy_forget`,
   :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
   (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
 
-* The :mod:`!tkinter` widget method :meth:`!wm_attributes` now accepts
+* The :mod:`tkinter` widget method :meth:`!wm_attributes` now accepts
   the attribute name without the minus prefix to get window attributes,
   for example ``w.wm_attributes('alpha')``
   and allows specifying attributes and values to set as keyword arguments,
@@ -1389,7 +1389,7 @@ All other code will work just fine.
   that can be used to instruct a type checker how to narrow a type.
 
 * Add :data:`~typing.NoDefault`, a sentinel object used to represent
-  the defaults of some parameters in the :mod:`!typing` module.
+  the defaults of some parameters in the :mod:`typing` module.
   (Contributed by Jelle Zijlstra in :gh:`116126`.)
 
 * Add :func:`~typing.get_protocol_members` to return the set of members
