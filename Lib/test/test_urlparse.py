@@ -207,6 +207,9 @@ class UrlParseTestCase(unittest.TestCase):
             ('scheme://///path/to/file',
              ('scheme', '', '///path/to/file', '', '', ''),
              ('scheme', '', '///path/to/file', '', '')),
+            ('file:tmp/junk.txt',
+             ('file', '', 'tmp/junk.txt', '', '', ''),
+             ('file', '', 'tmp/junk.txt', '', '')),
             ('file:///tmp/junk.txt',
              ('file', '', '/tmp/junk.txt', '', '', ''),
              ('file', '', '/tmp/junk.txt', '', '')),
@@ -216,6 +219,18 @@ class UrlParseTestCase(unittest.TestCase):
             ('file://///tmp/junk.txt',
              ('file', '', '///tmp/junk.txt', '', '', ''),
              ('file', '', '///tmp/junk.txt', '', '')),
+            ('http:tmp/junk.txt',
+             ('http', '', 'tmp/junk.txt', '', '', ''),
+             ('http', '', 'tmp/junk.txt', '', '')),
+            ('http://example.com/tmp/junk.txt',
+             ('http', 'example.com', '/tmp/junk.txt', '', '', ''),
+             ('http', 'example.com', '/tmp/junk.txt', '', '')),
+            ('http:///example.com/tmp/junk.txt',
+             ('http', '', '/example.com/tmp/junk.txt', '', '', ''),
+             ('http', '', '/example.com/tmp/junk.txt', '', '')),
+            ('http:////example.com/tmp/junk.txt',
+             ('http', '', '//example.com/tmp/junk.txt', '', '', ''),
+             ('http', '', '//example.com/tmp/junk.txt', '', '')),
             ('imap://mail.python.org/mbox1',
              ('imap', 'mail.python.org', '/mbox1', '', '', ''),
              ('imap', 'mail.python.org', '/mbox1', '', '')),
@@ -260,7 +275,8 @@ class UrlParseTestCase(unittest.TestCase):
              ('', '', 'schème:path/to/file', '', '')),
             ]
         for url, parsed, split in str_cases + bytes_cases:
-            self.checkRoundtrips(url, parsed, split)
+            with self.subTest(url):
+                self.checkRoundtrips(url, parsed, split)
 
     def test_roundtrips_normalization(self):
         str_cases = [
@@ -292,7 +308,8 @@ class UrlParseTestCase(unittest.TestCase):
                     tuple(x.encode('ascii') for x in t[3]))
         bytes_cases = [_encode(x) for x in str_cases]
         for url, url2, parsed, split in str_cases + bytes_cases:
-            self.checkRoundtrips(url, parsed, split, url2)
+            with self.subTest(url):
+                self.checkRoundtrips(url, parsed, split, url2)
 
     def test_http_roundtrips(self):
         # urllib.parse.urlsplit treats 'http:' as an optimized special case,
@@ -333,11 +350,17 @@ class UrlParseTestCase(unittest.TestCase):
                     self.checkRoundtrips(url, parsed, split)
 
     def checkJoin(self, base, relurl, expected):
-        str_components = (base, relurl, expected)
-        self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
-        bytes_components = baseb, relurlb, expectedb = [
-                            x.encode('ascii') for x in str_components]
-        self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
+        with self.subTest(base=base, relurl=relurl):
+            self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
+            baseb = base.encode('ascii')
+            relurlb = relurl.encode('ascii')
+            expectedb = expected.encode('ascii')
+            self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
+
+            relurl = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurl))
+            self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
+            relurlb = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurlb))
+            self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
 
     def test_unparse_parse(self):
         str_cases = ['Python', './Python','x-newscheme://foo.com/stuff','x://y','x:/y','x:/','/',]
