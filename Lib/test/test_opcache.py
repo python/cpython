@@ -532,8 +532,8 @@ class TestCallCache(TestBase):
         def count_args(self, *args):
             self.num_args = len(args)
 
-        # Set MyClass.__init__.__code__ to a code object that is incompatible
-        # (uses varargs) with the current specialization
+        # Set MyClass.__init__.__code__ to a code object that uses different
+        # args
         MyClass.__init__.__code__ = count_args.__code__
         instantiate()
 
