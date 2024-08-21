@@ -199,6 +199,13 @@ asyncio
 Deprecated
 ==========
 
+* Currently, subscripting a class object with a metaclass
+  that defines the :meth:`~object.__class_getitem__` method
+  would invoke the metaclass's method. This behavior is now deprecated
+  and will be removed in Python 3.16.
+  To make instances of a metaclass subscriptable,
+  define a :meth:`~object.__getitem__` method on the metaclass.
+
 * :mod:`builtins`:
   Passing a complex number as the *real* or *imag* argument in the
   :func:`complex` constructor is now deprecated; it should only be passed

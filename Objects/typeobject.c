@@ -5646,6 +5646,16 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
         res = meta_get(meta_attribute, (PyObject *)type,
                        (PyObject *)metatype);
         Py_DECREF(meta_attribute);
+        if (res && PyUnicode_EqualToUTF8(name, "__class_getitem__")) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "Accessing __class_getitem__ on a metaclass is deprecated "
+                             "since 3.14 and will be removed in 3.16. "
+                             "Instead, define a regular __getitem__ method on a metaclass, "
+                             "if you need this behavior.",
+                             1) < 0) {
+                return NULL;
+            }
+        }
         return res;
     }
 
