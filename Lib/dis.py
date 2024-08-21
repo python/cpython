@@ -426,25 +426,35 @@ class Instruction(_Instruction):
 
 class Formatter:
 
-    def __init__(self, file=None, lineno_width=0, offset_width=0, label_width=0,
-                       line_offset=0, show_caches=False, *, positions_width=0):
+    def __init__(self, file=None, lineno_width=None, offset_width=0, label_width=0,
+                 line_offset=0, show_caches=False, *, locations_width=0,
+                 show_positions=False):
         """Create a Formatter
 
         *file* where to write the output
-        *lineno_width* sets the width of the line number field (0 omits it)
+        *lineno_width* sets the width of the line number field (deprecated)
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
         *show_caches* is a boolean indicating whether to display cache lines
-        *positions_width* sets the width of the instruction positions field (0 omits it)
-
-        If *positions_width* is specified, *lineno_width* is ignored.
+        *locations_width* sets the width of the instruction locations (0 omits it)
+        *show_positions* is a boolean indicating whether positions should be
+        reported instead of line numbers
         """
+        if lineno_width is not None:
+            import warnings
+            warnings.warn("The 'lineno_width' parameter is deprecated. It is "
+                          "now ignored and will be removed in Python 3.16. "
+                          "Use 'locations_width' instead.",
+                          DeprecationWarning, stacklevel=2)
+
         self.file = file
-        self.lineno_width = lineno_width
+        # keep the attribute in case someone is still using it
+        self.lineno_width = 0 if lineno_width is None else lineno_width
+        self.locations_width = locations_width
         self.offset_width = offset_width
         self.label_width = label_width
         self.show_caches = show_caches
-        self.positions_width = positions_width
+        self.show_positions = show_positions
 
     def print_instruction(self, instr, mark_as_current=False):
         self.print_instruction_line(instr, mark_as_current)
@@ -466,35 +476,35 @@ class Formatter:
 
     def print_instruction_line(self, instr, mark_as_current):
         """Format instruction details for inclusion in disassembly output."""
-        lineno_width = self.lineno_width
-        positions_width = self.positions_width
+        locations_width = self.locations_width
         offset_width = self.offset_width
         label_width = self.label_width
 
-        new_source_line = ((lineno_width > 0 or positions_width > 0) and
+        new_source_line = ((locations_width > 0) and
                            instr.starts_line and
                            instr.offset > 0)
         if new_source_line:
             print(file=self.file)
 
         fields = []
-        # Column: Source code line number
-        if positions_width:
-            # reporting positions instead of just line numbers
-            if instr_positions := instr.positions:
-                ps = tuple('?' if p is None else p for p in instr_positions)
-                positions_str = f"{ps[0]}:{ps[2]}-{ps[1]}:{ps[3]}"
-                fields.append(f'{positions_str:{positions_width}}')
+        # Column: Source code locations information
+        if locations_width:
+            if self.show_positions:
+                # reporting positions instead of just line numbers
+                if instr_positions := instr.positions:
+                    ps = tuple('?' if p is None else p for p in instr_positions)
+                    positions_str = f"{ps[0]}:{ps[2]}-{ps[1]}:{ps[3]}"
+                    fields.append(f'{positions_str:{locations_width}}')
+                else:
+                    fields.append(' ' * locations_width)
             else:
-                fields.append(' ' * positions_width)
-        elif lineno_width:
-            if instr.starts_line:
-                lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
-                lineno_fmt = lineno_fmt % lineno_width
-                lineno = _NO_LINENO if instr.line_number is None else instr.line_number
-                fields.append(lineno_fmt % lineno)
-            else:
-                fields.append(' ' * lineno_width)
+                if instr.starts_line:
+                    lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
+                    lineno_fmt = lineno_fmt % locations_width
+                    lineno = _NO_LINENO if instr.line_number is None else instr.line_number
+                    fields.append(lineno_fmt % lineno)
+                else:
+                    fields.append(' ' * locations_width)
         # Column: Label
         if instr.label is not None:
             lbl = f"L{instr.label}:"
@@ -785,15 +795,18 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = _parse_exception_table(co)
-    positions_width = _get_positions_width(co) if show_positions else 0
+    if show_positions:
+        locations_width = _get_positions_width(co)
+    else:
+        locations_width = _get_lineno_width(linestarts)
     labels_map = _make_labels_map(co.co_code, exception_entries=exception_entries)
     label_width = 4 + len(str(len(labels_map)))
     formatter = Formatter(file=file,
-                          lineno_width=_get_lineno_width(linestarts),
                           offset_width=len(str(max(len(co.co_code) - 2, 9999))) if show_offsets else 0,
-                          positions_width=positions_width,
+                          locations_width=locations_width,
                           label_width=label_width,
-                          show_caches=show_caches)
+                          show_caches=show_caches,
+                          show_positions=show_positions)
     arg_resolver = ArgResolver(co_consts=co.co_consts,
                                names=co.co_names,
                                varname_from_oparg=co._varname_from_oparg,
@@ -1065,17 +1078,19 @@ class Bytecode:
         with io.StringIO() as output:
             code = _get_code_array(co, self.adaptive)
             offset_width = len(str(max(len(code) - 2, 9999))) if self.show_offsets else 0
-            positions_width = _get_positions_width(co) if self.show_positions else 0
-
+            if self.show_positions:
+                locations_width = _get_positions_width(co)
+            else:
+                locations_width = _get_lineno_width(self._linestarts)
             labels_map = _make_labels_map(co.co_code, self.exception_entries)
             label_width = 4 + len(str(len(labels_map)))
             formatter = Formatter(file=output,
-                                  lineno_width=_get_lineno_width(self._linestarts),
                                   offset_width=offset_width,
-                                  positions_width=positions_width,
+                                  locations_width=locations_width,
                                   label_width=label_width,
                                   line_offset=self._line_offset,
-                                  show_caches=self.show_caches)
+                                  show_caches=self.show_caches,
+                                  show_positions=self.show_positions)
 
             arg_resolver = ArgResolver(co_consts=co.co_consts,
                                        names=co.co_names,
