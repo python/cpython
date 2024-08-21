@@ -1064,10 +1064,10 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)this_instr->operand;
+            uint16_t offset = (uint16_t)this_instr->operand;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            (void)index;
+            (void)offset;
             (void)owner;
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
