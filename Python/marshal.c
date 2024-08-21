@@ -1156,7 +1156,7 @@ r_object(RFILE *p)
 
     case TYPE_ASCII_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_ASCII:
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
@@ -1170,7 +1170,7 @@ r_object(RFILE *p)
 
     case TYPE_SHORT_ASCII_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_SHORT_ASCII:
         n = r_byte(p);
         if (n == EOF) {
@@ -1198,7 +1198,7 @@ r_object(RFILE *p)
 
     case TYPE_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_UNICODE:
         {
         const char *buffer;
@@ -1927,7 +1927,7 @@ machine architecture issues.\n\
 Not all Python object types are supported; in general, only objects\n\
 whose value is independent from a particular invocation of Python can be\n\
 written and read by this module. The following types are supported:\n\
-None, integers, floating point numbers, strings, bytes, bytearrays,\n\
+None, integers, floating-point numbers, strings, bytes, bytearrays,\n\
 tuples, lists, sets, dictionaries, and code objects, where it\n\
 should be understood that tuples, lists and dictionaries are only\n\
 supported as long as the values contained therein are themselves\n\
@@ -1938,7 +1938,7 @@ Variables:\n\
 \n\
 version -- indicates the format that the module uses. Version 0 is the\n\
     historical format, version 1 shares interned strings and version 2\n\
-    uses a binary format for floating point numbers.\n\
+    uses a binary format for floating-point numbers.\n\
     Version 3 shares common object references (New in version 3.4).\n\
 \n\
 Functions:\n\

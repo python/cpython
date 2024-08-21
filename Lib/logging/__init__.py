@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
-           'warning', 'getLogRecordFactory', 'setLogRecordFactory',
+           'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
            'getHandlerByName', 'getHandlerNames']
 
@@ -340,11 +340,14 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct / 1e9  # ns to float seconds
-
         # Get the number of whole milliseconds (0-999) in the fractional part of seconds.
         # Eg: 1_677_903_920_999_998_503 ns --> 999_998_503 ns--> 999 ms
         # Convert to float by adding 0.0 for historical reasons. See gh-89047
         self.msecs = (ct % 1_000_000_000) // 1_000_000 + 0.0
+        if self.msecs == 999.0 and int(self.created) != ct // 1_000_000_000:
+            # ns -> sec conversion can round up, e.g:
+            # 1_677_903_920_999_999_900 ns --> 1_677_903_921.0 sec
+            self.msecs = 0.0
 
         self.relativeCreated = (ct - _startTime) / 1e6
         if logThreads:
@@ -1527,6 +1530,11 @@ class Logger(Filterer):
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
 
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
+
     def error(self, msg, *args, **kwargs):
         """
         Log 'msg % args' with severity 'ERROR'.
@@ -1903,6 +1911,11 @@ class LoggerAdapter(object):
         """
         self.log(WARNING, msg, *args, **kwargs)
 
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
+
     def error(self, msg, *args, **kwargs):
         """
         Delegate an error call to the underlying logger.
@@ -2165,6 +2178,11 @@ def warning(msg, *args, **kwargs):
     if len(root.handlers) == 0:
         basicConfig()
     root.warning(msg, *args, **kwargs)
+
+def warn(msg, *args, **kwargs):
+    warnings.warn("The 'warn' function is deprecated, "
+        "use 'warning' instead", DeprecationWarning, 2)
+    warning(msg, *args, **kwargs)
 
 def info(msg, *args, **kwargs):
     """

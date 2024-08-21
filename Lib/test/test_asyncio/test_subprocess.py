@@ -783,7 +783,7 @@ class SubprocessMixin:
 
     def test_subprocess_protocol_events(self):
         # gh-108973: Test that all subprocess protocol methods are called.
-        # The protocol methods are not called in a determistic order.
+        # The protocol methods are not called in a deterministic order.
         # The order depends on the event loop and the operating system.
         events = []
         fds = [1, 2]
@@ -864,12 +864,25 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
+    @unittest.skipIf(sys.platform != 'linux', "Linux only")
+    def test_subprocess_send_signal_race(self):
+        # See https://github.com/python/cpython/issues/87744
+        async def main():
+            for _ in range(10):
+                proc = await asyncio.create_subprocess_exec('sleep', '0.1')
+                await asyncio.sleep(0.1)
+                try:
+                    proc.send_signal(signal.SIGUSR1)
+                except ProcessLookupError:
+                    pass
+                self.assertNotEqual(await proc.wait(), 255)
+
+        self.loop.run_until_complete(main())
+
 
 if sys.platform != 'win32':
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
-
-        Watcher = None
 
         def setUp(self):
             super().setUp()
@@ -877,23 +890,21 @@ if sys.platform != 'win32':
             self.loop = policy.new_event_loop()
             self.set_event_loop(self.loop)
 
-            watcher = self._get_watcher()
-            watcher.attach_loop(self.loop)
-            policy._watcher = watcher
+        def test_watcher_implementation(self):
+            loop = self.loop
+            watcher = loop._watcher
+            if unix_events.can_use_pidfd():
+                self.assertIsInstance(watcher, unix_events._PidfdChildWatcher)
+            else:
+                self.assertIsInstance(watcher, unix_events._ThreadedChildWatcher)
 
-        def tearDown(self):
-            super().tearDown()
-            policy = asyncio.get_event_loop_policy()
-            watcher = policy._watcher
-            policy._watcher = None
-            watcher.attach_loop(None)
-            watcher.close()
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
-
-        def _get_watcher(self):
-            return unix_events.ThreadedChildWatcher()
+        def setUp(self):
+            # Force the use of the threaded child watcher
+            unix_events.can_use_pidfd = mock.Mock(return_value=False)
+            super().setUp()
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),
@@ -902,9 +913,7 @@ if sys.platform != 'win32':
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
                                       test_utils.TestCase):
 
-        def _get_watcher(self):
-            return unix_events.PidfdChildWatcher()
-
+        pass
 
 else:
     # Windows

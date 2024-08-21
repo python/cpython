@@ -447,15 +447,24 @@ class HelpFormatter(object):
             parts.append(part)
 
         # group mutually exclusive actions
+        inserted_separators_indices = set()
         for start, end in sorted(inserts, reverse=True):
             group = inserts[start, end]
             group_parts = [item for item in parts[start:end] if item is not None]
+            group_size = len(group_parts)
             if group.required:
-                open, close = "()" if len(group_parts) > 1 else ("", "")
+                open, close = "()" if group_size > 1 else ("", "")
             else:
                 open, close = "[]"
-            parts[start] = open + " | ".join(group_parts) + close
-            for i in range(start + 1, end):
+            group_parts[0] = open + group_parts[0]
+            group_parts[-1] = group_parts[-1] + close
+            for i, part in enumerate(group_parts[:-1], start=start):
+                # insert a separator if not already done in a nested group
+                if i not in inserted_separators_indices:
+                    parts[i] = part + ' |'
+                    inserted_separators_indices.add(i)
+            parts[start + group_size - 1] = group_parts[-1]
+            for i in range(start + group_size, end):
                 parts[i] = None
 
         # return the usage parts
@@ -1791,7 +1800,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ==================================
     def add_subparsers(self, **kwargs):
         if self._subparsers is not None:
-            self.error(_('cannot have multiple subparser arguments'))
+            raise ArgumentError(None, _('cannot have multiple subparser arguments'))
 
         # add the parser class to the arguments if it's not present
         kwargs.setdefault('parser_class', type(self))
@@ -1843,8 +1852,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def parse_args(self, args=None, namespace=None):
         args, argv = self.parse_known_args(args, namespace)
         if argv:
-            msg = _('unrecognized arguments: %s')
-            self.error(msg % ' '.join(argv))
+            msg = _('unrecognized arguments: %s') % ' '.join(argv)
+            if self.exit_on_error:
+                self.error(msg)
+            else:
+                raise ArgumentError(None, msg)
         return args
 
     def parse_known_args(self, args=None, namespace=None):
@@ -2133,7 +2145,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                                 self._get_value(action, action.default))
 
         if required_actions:
-            self.error(_('the following arguments are required: %s') %
+            raise ArgumentError(None, _('the following arguments are required: %s') %
                        ', '.join(required_actions))
 
         # make sure all required groups had one option present
@@ -2149,7 +2161,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                              for action in group._group_actions
                              if action.help is not SUPPRESS]
                     msg = _('one of the arguments %s is required')
-                    self.error(msg % ' '.join(names))
+                    raise ArgumentError(None, msg % ' '.join(names))
 
         # return the updated namespace and the extra arguments
         return namespace, extras
@@ -2176,7 +2188,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                         arg_strings = self._read_args_from_files(arg_strings)
                         new_arg_strings.extend(arg_strings)
                 except OSError as err:
-                    self.error(str(err))
+                    raise ArgumentError(None, str(err))
 
         # return the modified argument list
         return new_arg_strings
@@ -2256,7 +2268,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 for action, option_string, sep, explicit_arg in option_tuples])
             args = {'option': arg_string, 'matches': options}
             msg = _('ambiguous option: %(option)s could match %(matches)s')
-            self.error(msg % args)
+            raise ArgumentError(None, msg % args)
 
         # if exactly one action matched, this segmentation is good,
         # so return the parsed action
@@ -2316,7 +2328,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # shouldn't ever get here
         else:
-            self.error(_('unexpected option string: %s') % option_string)
+            raise ArgumentError(None, _('unexpected option string: %s') % option_string)
 
         # return the collected option tuples
         return result
@@ -2373,8 +2385,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def parse_intermixed_args(self, args=None, namespace=None):
         args, argv = self.parse_known_intermixed_args(args, namespace)
         if argv:
-            msg = _('unrecognized arguments: %s')
-            self.error(msg % ' '.join(argv))
+            msg = _('unrecognized arguments: %s') % ' '.join(argv)
+            if self.exit_on_error:
+                self.error(msg)
+            else:
+                raise ArgumentError(None, msg)
         return args
 
     def parse_known_intermixed_args(self, args=None, namespace=None):

@@ -1312,7 +1312,7 @@ An early decision to limit the interoperability of various numeric types has
 been relaxed.  It is still unsupported (and ill-advised) to have implicit
 mixing in arithmetic expressions such as ``Decimal('1.1') + float('1.1')``
 because the latter loses information in the process of constructing the binary
-float.  However, since existing floating point value can be converted losslessly
+float.  However, since existing floating-point value can be converted losslessly
 to either a decimal or rational representation, it makes sense to add them to
 the constructor and to support mixed-type comparisons.
 
