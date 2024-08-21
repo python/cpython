@@ -25,6 +25,7 @@ TSAN_TESTS = [
     'test_threading_local',
     'test_threadsignals',
     'test_weakref',
+    'test_free_threading.test_slots',
 ]
 
 
