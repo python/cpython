@@ -452,10 +452,10 @@ dummy_func(void) {
         top, unused[oparg-2], bottom)) {
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
         null = sym_new_null(ctx);
-        (void)index;
+        (void)offset;
         (void)owner;
     }
 

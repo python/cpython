@@ -1810,6 +1810,9 @@ _PyObject_GC_New(PyTypeObject *tp)
         return NULL;
     }
     _PyObject_Init(op, tp);
+    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        _PyObject_InitInlineValues(op, tp);
+    }
     return op;
 }
 
