@@ -127,6 +127,16 @@ dis_f_with_offsets = """\
        _f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
 
+dis_f_with_positions_format = f"""\
+%-14s           RESUME                   0
+
+%-14s           LOAD_GLOBAL              1 (print + NULL)
+%-14s           LOAD_FAST                0 (a)
+%-14s           CALL                     1
+%-14s           POP_TOP
+
+%-14s           RETURN_CONST             1 (1)
+"""
 
 dis_f_co_code = """\
           RESUME                   0
@@ -949,6 +959,76 @@ class DisTests(DisTestBase):
 
     def test_dis_with_offsets(self):
         self.do_disassembly_test(_f, dis_f_with_offsets, show_offsets=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_all_positions(self):
+        def format_instr_positions(instr):
+            values = tuple('?' if p is None else p for p in instr.positions)
+            return '%s:%s-%s:%s' % (values[0], values[2], values[1], values[3])
+
+        instrs = list(dis.get_instructions(_f))
+        for instr in instrs:
+            with self.subTest(instr=instr):
+                self.assertTrue(all(p is not None for p in instr.positions))
+        positions = tuple(map(format_instr_positions, instrs))
+        expected = dis_f_with_positions_format % positions
+        self.do_disassembly_test(_f, expected, show_positions=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_some_positions(self):
+        def f():
+            pass
+
+        PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
+        PY_CODE_LOCATION_INFO_WITH_COLUMNS = 14
+        PY_CODE_LOCATION_INFO_NO_LOCATION = 15
+
+        f.__code__ = f.__code__.replace(
+            co_stacksize=1,
+            co_firstlineno=42,
+            co_code=bytes([
+                dis.opmap["RESUME"], 0,
+                dis.opmap["NOP"], 0,
+                dis.opmap["RETURN_CONST"], 0,
+            ]),
+            co_linetable=bytes([
+                (1 << 7)
+                | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
+                | (1 - 1),  # 1 code unit (RESUME)
+                (1 << 1),   # start line offset is 0 (encoded as an svarint)
+                (1 << 7)
+                | (PY_CODE_LOCATION_INFO_NO_LOCATION << 3)
+                | (1 - 1),  # 1 code unit (NOP)
+                (1 << 7)
+                | (PY_CODE_LOCATION_INFO_WITH_COLUMNS << 3)
+                | (1 - 1),  # 1 code unit (RETURN CONST)
+                (2 << 1),   # start line offset is 0 (encoded as an svarint)
+                3,          # end line offset is 0   (varint encoded)
+                1,          # 1-based start column (reported as COL - 1)
+                5,          # 1-based end column (reported as ENDCOL - 1)
+            ]
+        ))
+        expect = '\n'.join([
+            '43:?-43:?            RESUME                   0',
+            '',
+            '  --                 NOP',
+            '',
+            '45:0-48:4            RETURN_CONST             0 (None)',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
+
+    def test_dis_with_no_positions(self):
+        def f():
+            pass
+
+        f.__code__ = f.__code__.replace(co_linetable=b'')
+        expect = '\n'.join([
+            '          RESUME                   0',
+            '          RETURN_CONST             0 (None)',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
 
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
