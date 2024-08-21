@@ -290,12 +290,16 @@ Python Concurrency Models
 We've looked at concurrency and concurrency models generally.
 Now let's see what they look like in Python.
 
+We'll also `compare them below <concurrency-models-comparison_>`_.
+
 Free-threading
 --------------
 
-For free-threading we can use the stdlib :mod:`threading` module:
+.. currentmodule:: threading
 
-::
+For free-threading we can use the stdlib :mod:`threading` module.
+
+Here's a basic example of how it looks to use the threading module::
 
     import threading
 
@@ -313,26 +317,10 @@ For free-threading we can use the stdlib :mod:`threading` module:
     for t in threads:
         t.join()
 
-You can also use :mod:`concurrent.futures`:
-
-::
-
-    import concurrent.futures
-
-    def task(arg):
-        return arg
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        futures = {}
-        for i in range(10):
-            fut = executor.submit(task, i)
-            futures[fut] = i
-        for fut in concurrent.futures.as_completed(futures):
-            res = fut.result()
-            assert res == futures[fut]
-
 Note that there are some limitations to the parallelism Python
 can provide.  See :pep:`630`.
+
+.. currentmodule:: None
 
 Isolated Threads (CSP/Actor Model)
 ----------------------------------
@@ -363,26 +351,10 @@ The future stdlib :mod:`!interpreters` module supports isolated execution:
     for t in threads:
         t.join()
 
-You will also be able to use :mod:`concurrent.futures`:
-
-::
-
-    import concurrent.futures
-
-    def task(arg):
-        return arg
-
-    with concurrent.futures.InterpreterPoolExecutor(max_workers=5) as executor:
-        futures = {}
-        for i in range(10):
-            fut = executor.submit(task, i)
-            futures[fut] = i
-        for fut in concurrent.futures.as_completed(futures):
-            res = fut.result()
-            assert res == futures[fut]
-
 Multi-processing
 ----------------
+
+.. currentmodule:: multiprocessing
 
 You can use the stdlib :mod:`multiprocessing` module:
 
@@ -404,23 +376,7 @@ You can use the stdlib :mod:`multiprocessing` module:
     for p in procs:
         p.join()
 
-You will also be able to use :mod:`concurrent.futures`:
-
-::
-
-    import concurrent.futures
-
-    def task(arg):
-        return arg
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
-        futures = {}
-        for i in range(10):
-            fut = executor.submit(task, i)
-            futures[fut] = i
-        for fut in concurrent.futures.as_completed(futures):
-            res = fut.result()
-            assert res == futures[fut]
+.. currentmodule:: None
 
 Distributed
 -----------
@@ -448,6 +404,8 @@ The popular :mod:`!dask` module gives us distributed concurrency:
 Async/Await
 -----------
 
+.. currentmodule:: asyncio
+
 The stdlib :mod:`asyncio` module provides an event loop you can use:
 
 ::
@@ -462,6 +420,8 @@ The stdlib :mod:`asyncio` module provides an event loop you can use:
 
     # Wait for all the coroutines to finish.
     await asyncio.gather(*coros)
+
+.. currentmodule:: None
 
 .. _concurrency-models-comparison:
 
@@ -493,8 +453,8 @@ Comparison
      - ...
 
 
-Python Concurrency Workloads
-============================
+Python Concurrency Workload Examples
+====================================
 
 Below we have a series of examples of how to implement the most
 common Python workloads that take advantage of concurrency.
