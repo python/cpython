@@ -617,8 +617,8 @@ Improved Modules
 ================
 
 
-:mod:`argparse`
----------------
+argparse
+--------
 
 * Add the *deprecated* parameter to the
   :meth:`~argparse.ArgumentParser.add_argument`
@@ -627,8 +627,8 @@ Improved Modules
   (Contributed by Serhiy Storchaka in :gh:`83648`.)
 
 
-:mod:`array`
-------------
+array
+-----
 
 * Add the ``'w'`` type code (``Py_UCS4``) for Unicode characters.
   It should be used instead of the deprecated ``'u'`` type code.
@@ -639,8 +639,8 @@ Improved Modules
   (Contributed by Mike Zimin in :gh:`114894`.)
 
 
-:mod:`ast`
-----------
+ast
+---
 
 * The constructors of node types in the :mod:`ast` module are now
   stricter in the arguments they accept,
@@ -673,8 +673,8 @@ Improved Modules
   (Contributed by Irit Katriel in :gh:`108113`.)
 
 
-:mod:`asyncio`
---------------
+asyncio
+-------
 
 * :func:`asyncio.as_completed` now returns an object that is both an
   :term:`asynchronous iterator` and a plain :term:`iterator`
@@ -735,8 +735,8 @@ Improved Modules
   (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
 
 
-:mod:`base64`
--------------
+base64
+------
 
 * Add :func:`~base64.z85encode` and :func:`~base64.z85decode` functions
   for encoding :class:`bytes` as `Z85 data`_
@@ -746,24 +746,24 @@ Improved Modules
   .. _Z85 data: https://rfc.zeromq.org/spec/32/
 
 
-:mod:`compileall`
------------------
+compileall
+----------
 
 * The default number of worker threads and processes is now selected using
   :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
 
-:mod:`concurrent.futures`
--------------------------
+concurrent.futures
+------------------
 
 * The default number of worker threads and processes is now selected using
   :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
 
-:mod:`copy`
------------
+copy
+----
 
 * The new :func:`~copy.replace` function and the :meth:`replace protocol
   <object.__replace__>` make creating modified copies of objects much simpler.
@@ -783,8 +783,8 @@ Improved Modules
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
 
-:mod:`ctypes`
--------------
+ctypes
+------
 
 * The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>`
   in :class:`~ctypes.Structure` and :class:`~ctypes.Union`
@@ -797,8 +797,8 @@ Improved Modules
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
 
-:mod:`dbm`
-----------
+dbm
+---
 
 * Add :mod:`dbm.sqlite3`, a new module which implements an SQLite backend,
   and make it the default :mod:`!dbm` backend.
@@ -809,8 +809,8 @@ Improved Modules
   (Contributed by Donghee Na in :gh:`107122`.)
 
 
-:mod:`dis`
-----------
+dis
+---
 
 * Change the output of :mod:`dis` module functions to show logical
   labels for jump targets and exception handlers, rather than offsets.
@@ -830,8 +830,8 @@ Improved Modules
 
 .. _whatsnew313-doctest:
 
-:mod:`doctest`
---------------
+doctest
+-------
 
 * :mod:`doctest` output is now colored by default.
   This can be controlled via the new :envvar:`PYTHON_COLORS` environment
@@ -845,8 +845,8 @@ Improved Modules
   (Contributed by Victor Stinner in :gh:`108794`.)
 
 
-:mod:`email`
-------------
+email
+-----
 
 * Headers with embedded newlines are now quoted on output.
   The :mod:`~email.generator` will now refuse to serialize (write) headers
@@ -867,8 +867,8 @@ Improved Modules
   the :cve:`2023-27043` fix.)
 
 
-:mod:`fractions`
-----------------
+fractions
+---------
 
 * :class:`~fractions.Fraction` objects now support the standard
   :ref:`format specification mini-language <formatspec>` rules
@@ -876,8 +876,8 @@ Improved Modules
   (Contributed by Mark Dickinson in :gh:`111320`.)
 
 
-:mod:`gc`
----------
+gc
+--
 
 The cyclic garbage collector is now incremental,
 which changes the meaning of the results of
@@ -906,16 +906,16 @@ may not work exactly as intended, but it is very unlikely to be harmful.
 All other code will work just fine.
 
 
-:mod:`glob`
------------
+glob
+----
 
 * Add :func:`~glob.translate`, a function to convert a path specification
   with shell-style wildcards to a regular expression.
   (Contributed by Barney Gale in :gh:`72904`.)
 
 
-:mod:`importlib`
-----------------
+importlib
+---------
 
 * The following functions in :mod:`importlib.resources` now allow accessing
   a directory (or tree) of resources, using multiple positional arguments
@@ -938,8 +938,8 @@ All other code will work just fine.
   (Contributed by Petr Viktorin in :gh:`106532`.)
 
 
-:mod:`io`
----------
+io
+--
 
 * The :class:`~io.IOBase` finalizer now logs any errors raised by
   the :meth:`~io.IOBase.close` method with :data:`sys.unraisablehook`.
@@ -949,8 +949,8 @@ All other code will work just fine.
   (Contributed by Victor Stinner in :gh:`62948`.)
 
 
-:mod:`ipaddress`
-----------------
+ipaddress
+---------
 
 * Add the :attr:`.IPv4Address.ipv6_mapped` property,
   which returns the IPv4-mapped IPv6 address.
@@ -962,8 +962,8 @@ All other code will work just fine.
   (Contributed by Jakub Stasiak in :gh:`113171`.)
 
 
-:mod:`itertools`
-----------------
+itertools
+---------
 
 * :func:`~itertools.batched` has a new *strict* parameter,
   which raises a :exc:`ValueError` if the final batch is shorter
@@ -971,8 +971,8 @@ All other code will work just fine.
   (Contributed by Raymond Hettinger in :gh:`113202`.)
 
 
-:mod:`marshal`
---------------
+marshal
+-------
 
 * Add the *allow_code* parameter in module functions.
   Passing ``allow_code=False`` prevents serialization and de-serialization
@@ -980,8 +980,8 @@ All other code will work just fine.
   (Contributed by Serhiy Storchaka in :gh:`113626`.)
 
 
-:mod:`math`
------------
+math
+----
 
 * The new function :func:`~math.fma` performs fused multiply-add operations.
   This computes ``x * y + z`` with only a single round,
@@ -992,8 +992,8 @@ All other code will work just fine.
   (Contributed by Mark Dickinson and Victor Stinner in :gh:`73468`.)
 
 
-:mod:`mimetypes`
-----------------
+mimetypes
+---------
 
 * Add the :func:`~mimetypes.guess_file_type` function to guess a MIME type
   from a filesystem path.
@@ -1001,8 +1001,8 @@ All other code will work just fine.
   (Contributed by Serhiy Storchaka in :gh:`66543`.)
 
 
-:mod:`mmap`
------------
+mmap
+----
 
 * :class:`~mmap.mmap` is now protected from crashing on Windows when the
   mapped memory is inaccessible due to file system errors or access violations.
@@ -1019,16 +1019,16 @@ All other code will work just fine.
   (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
 
 
-:mod:`multiprocessing`
-----------------------
+multiprocessing
+---------------
 
 * The default number of worker threads and processes is now selected using
   :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
 
-:mod:`os`
----------
+os
+--
 
 * Add :func:`~os.process_cpu_count` function to get the number
   of logical CPU cores usable by the calling thread of the current process.
@@ -1078,8 +1078,8 @@ All other code will work just fine.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
 
-:mod:`os.path`
---------------
+os.path
+-------
 
 * Add :func:`~os.path.isreserved` to check if a path is reserved
   on the current system.
@@ -1095,8 +1095,8 @@ All other code will work just fine.
   (Contributed by Moonsik Park in :gh:`82367`.)
 
 
-:mod:`pathlib`
---------------
+pathlib
+-------
 
 * Add :exc:`~pathlib.UnsupportedOperation`, which is raised instead of
   :exc:`NotImplementedError` when a path operation isn't supported.
@@ -1131,8 +1131,8 @@ All other code will work just fine.
   (Contributed by Barney Gale in :gh:`105793` and Kamil Turek in :gh:`107962`.)
 
 
-:mod:`pdb`
-----------
+pdb
+---
 
 * :func:`breakpoint` and :func:`~pdb.set_trace` now enter the debugger immediately
   rather than on the next line of code to be executed. This change prevents the
@@ -1157,46 +1157,46 @@ All other code will work just fine.
   (Contributed by Tian Gao in :gh:`108464`.)
 
 
-:mod:`queue`
-------------
+queue
+-----
 
 * Add :meth:`Queue.shutdown <queue.Queue.shutdown>` and :exc:`~queue.ShutDown`
   to manage queue termination.
   (Contributed by Laurie Opperman and Yves Duprat in :gh:`104750`.)
 
 
-:mod:`random`
--------------
+random
+------
 
 * Add a :ref:`command-line interface <random-cli>`.
   (Contributed by Hugo van Kemenade in :gh:`118131`.)
 
 
-:mod:`re`
----------
+re
+--
 
 * Rename :exc:`!re.error` to :exc:`~re.PatternError` for improved clarity.
   :exc:`!re.error` is kept for backward compatibility.
 
 
-:mod:`shutil`
--------------
+shutil
+------
 
 * Support the *dir_fd* and *follow_symlinks* keyword arguments
   in :func:`~shutil.chown`.
   (Contributed by Berker Peksag and Tahia K in :gh:`62308`)
 
 
-:mod:`site`
------------
+site
+----
 
 * :file:`.pth` files are now decoded using UTF-8 first,
   and then with the :term:`locale encoding` if UTF-8 decoding fails.
   (Contributed by Inada Naoki in :gh:`117802`.)
 
 
-:mod:`sqlite3`
---------------
+sqlite3
+-------
 
 * A :exc:`ResourceWarning` is now emitted if a :class:`~sqlite3.Connection`
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
@@ -1207,8 +1207,8 @@ All other code will work just fine.
   (Contributed by Mariusz Felisiak in :gh:`91602`.)
 
 
-:mod:`ssl`
-----------
+ssl
+---
 
 * The :func:`~ssl.create_default_context` API now includes
   :data:`~ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`~ssl.VERIFY_X509_STRICT`
@@ -1231,8 +1231,8 @@ All other code will work just fine.
   (Contributed by William Woodruff in :gh:`112389`.)
 
 
-:mod:`statistics`
------------------
+statistics
+----------
 
 * Add :func:`~statistics.kde` for kernel density estimation.
   This makes it possible to estimate a continuous probability density function
@@ -1246,8 +1246,8 @@ All other code will work just fine.
 
 .. _whatsnew313-subprocess:
 
-:mod:`subprocess`
------------------
+subprocess
+----------
 
 * The :mod:`subprocess` module now uses the :func:`~os.posix_spawn` function in
   more situations.
@@ -1268,16 +1268,16 @@ All other code will work just fine.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
 
-:mod:`sys`
-----------
+sys
+---
 
 * Add the :func:`~sys._is_interned` function to test if a string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
 
-:mod:`tempfile`
----------------
+tempfile
+--------
 
 * On Windows, the default mode ``0o700`` used by :func:`tempfile.mkdtemp` now
   limits access to the new directory due to changes to :func:`os.mkdir`.
@@ -1285,8 +1285,8 @@ All other code will work just fine.
   (Contributed by Steve Dower in :gh:`118486`.)
 
 
-:mod:`time`
------------
+time
+----
 
 * On Windows, :func:`~time.monotonic` now uses the
   ``QueryPerformanceCounter()`` clock for a resolution of 1 microsecond,
@@ -1301,8 +1301,8 @@ All other code will work just fine.
   (Contributed by Victor Stinner in :gh:`63207`.)
 
 
-:mod:`tkinter`
---------------
+tkinter
+-------
 
 * Add :mod:`tkinter` widget methods:
   :meth:`!tk_busy_hold`, :meth:`!tk_busy_configure`,
@@ -1352,8 +1352,8 @@ All other code will work just fine.
   (Contributed by Serhiy Storchaka in :gh:`118271`.)
 
 
-:mod:`traceback`
-----------------
+traceback
+---------
 
 * Add the :attr:`~traceback.TracebackException.exc_type_str` attribute
   to :class:`~traceback.TracebackException`,
@@ -1370,8 +1370,8 @@ All other code will work just fine.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
 
-:mod:`types`
-------------
+types
+-----
 
 * :class:`~types.SimpleNamespace` can now take a single positional argument
   to initialise the namespace's arguments.
@@ -1379,8 +1379,8 @@ All other code will work just fine.
   (Contributed by Serhiy Storchaka in :gh:`108191`.)
 
 
-:mod:`typing`
--------------
+typing
+------
 
 * :pep:`705`: Add :data:`~typing.ReadOnly`, a special typing construct
   to mark a :class:`~typing.TypedDict` item as read-only for type checkers.
@@ -1405,8 +1405,8 @@ All other code will work just fine.
   (Contributed by Mehdi Drissi in :gh:`89547`.)
 
 
-:mod:`unicodedata`
-------------------
+unicodedata
+-----------
 
 * Update the Unicode database to `version 15.1.0`__.
   (Contributed by James Gerity in :gh:`109559`.)
@@ -1414,8 +1414,8 @@ All other code will work just fine.
   __ https://www.unicode.org/versions/Unicode15.1.0/
 
 
-:mod:`venv`
------------
+venv
+----
 
 * Add support for creating source control management (SCM) ignore files
   in a virtual environment's directory.
@@ -1427,8 +1427,8 @@ All other code will work just fine.
   (Contributed by Brett Cannon in :gh:`108125`.)
 
 
-:mod:`warnings`
----------------
+warnings
+--------
 
 * :pep:`702`: The new :func:`warnings.deprecated` decorator provides a way to
   communicate deprecations to a :term:`static type checker`
@@ -1438,8 +1438,8 @@ All other code will work just fine.
   (Contributed by Jelle Zijlstra in :gh:`104003`.)
 
 
-:mod:`xml`
-----------
+xml
+---
 
 * Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
   by adding five new methods:
@@ -1457,8 +1457,8 @@ All other code will work just fine.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
 
 
-:mod:`zipimport`
-----------------
+zipimport
+---------
 
 * Add support for ZIP64_ format files.
   Everybody loves huge data, right?
