@@ -855,7 +855,9 @@ def _get_lineno_width(linestarts):
 
 def _get_positions_width(code):
     # Positions are formatted as 'LINE:COL-ENDLINE:ENDCOL ' (note trailing space).
-    # A missing component appears as '?', so the minimum width is 8 = 1 + len('?:?-?:?').
+    # A missing component appears as '?', and when all components are None, we
+    # render '_NO_LINENO'. thus the minimum width is 1 + len(_NO_LINENO).
+    #
     # If all values are missing, positions are not printed (i.e. positions_width = 0).
     has_value = False
     values_width = 0
@@ -865,7 +867,7 @@ def _get_positions_width(code):
         values_width = max(width, values_width)
     if has_value:
         # 3 = number of separators in a normal format
-        return 1 + max(7, 3 + values_width)
+        return 1 + max(len(_NO_LINENO), 3 + values_width)
     return 0
 
 def _disassemble_bytes(code, lasti=-1, linestarts=None,
