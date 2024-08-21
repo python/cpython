@@ -997,8 +997,8 @@ class DisTests(DisTestBase):
                 (1 << 7)
                 | (PY_CODE_LOCATION_INFO_WITH_COLUMNS << 3)
                 | (1 - 1),  # 1 code unit (RETURN CONST)
-                0,          # start line offset is 0
-                0,          # end line offset is 0
+                (0 << 1),   # start line offset is 0 (encoded as an svarint)
+                0,          # end line offset is 0   (varint encoded)
                 1,          # 1-based start column (reported as COL - 1)
                 5,          # 1-based end column (reported as ENDCOL - 1)
             ]
