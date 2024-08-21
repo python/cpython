@@ -1020,9 +1020,13 @@
                 args[-1] = self;
                 init_frame = _PyEvalFramePushAndInit(
                     tstate, init_func, NULL, args-1, oparg+1, NULL, shim);
-                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
+                if (init_frame == NULL) {
+                    _PyEval_FrameClearAndPop(tstate, shim);
+                    goto error;
+                }
+                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 /* Account for pushing the extra frame.
                  * We don't check recursion depth here,
                  * as it will be checked after start_frame */
