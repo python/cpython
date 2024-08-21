@@ -187,8 +187,8 @@ _testfunc_array_in_struct3B_set_defaults(void)
 /*
  * Test3C struct tests the MAX_STRUCT_SIZE 32. Structs containing arrays of up
  * to four floating-point types are passed in registers on Arm platforms.
- * This struct is used for within bounds test on Arm platfroms and for an
- * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 32.
+ * This struct is used for within-bounds tests on Arm platforms and for an
+ * out-of-bounds test for platforms where MAX_STRUCT_SIZE is less than 32.
  * See gh-110190.
  */
 typedef struct {
