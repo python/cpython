@@ -57,8 +57,8 @@ interpreter.
       option and the ``show_offsets`` argument were added.
 
    .. versionchanged:: 3.14
-      Added the :option:`-P <dis --show-positions>` command-line option
-      and the ``show_positions`` argument.
+      The :option:`-P <dis --show-positions>` command-line option
+      and the ``show_positions`` argument were added.
 
 Example: Given the function :func:`!myfunc`::
 
@@ -109,7 +109,7 @@ The following options are accepted:
 
 .. cmdoption:: -P, --show-positions
 
-   Show positions of instructions.
+   Show positions of instructions in the source code.
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
@@ -154,7 +154,7 @@ code.
    offsets in the output.
 
    If *show_positions* is ``True``, :meth:`.dis` will include instruction
-   positions in the output.
+   source code positions in the output.
 
    .. classmethod:: from_traceback(tb, *, show_caches=False)
 
@@ -319,8 +319,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
 
-   #. the line number, for the first instruction of each line, or the
-      instruction positions if *show_positions* is true.
+   #. the source code location of the instruction. Complete location information
+      is shown if *show_positions* is true. Otherwise (the default) only the
+      line number is displayed.
    #. the current instruction, indicated as ``-->``,
    #. a labelled instruction, indicated with ``>>``,
    #. the address of the instruction,
