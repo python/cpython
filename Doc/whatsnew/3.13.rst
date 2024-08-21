@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.13, compared to 3.12.
-
+Python 3.13 will be released on October 1, 2024.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -66,14 +66,38 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 beta is the pre-release of the next version of the Python
-programming language, with a mix of changes to the language, the
-implementation and the standard library. The biggest changes to the
-implementation include a new interactive interpreter, and experimental
-support for dropping the Global Interpreter Lock (:pep:`703`) and a
-Just-In-Time compiler (:pep:`744`). The library changes contain removal of
-deprecated APIs and modules, as well as the usual improvements in
-user-friendliness and correctness.
+Python 3.13 will be the latest stable release of the Python programming
+language, with a mix of changes to the language, the implementation
+and the standard library.
+The biggest changes include a new `interactive interpreter
+<whatsnew313-better-interactive-interpreter_>`_,
+experimental support for running in a `free-threaded mode
+<whatsnew313-free-threaded-cpython_>`_ (:pep:`703`),
+and a `Just-In-Time compiler <whatsnew313-jit-compiler_>`_ (:pep:`744`).
+
+Error messages continue to improve, with tracebacks now highlighted in color
+by default. The :func:`locals` builtin now has :ref:`defined semantics
+<whatsnew313-locals-semantics>` for changing the returned mapping,
+and type parameters now support default values.
+
+The library changes contain removal of deprecated APIs and modules,
+as well as the usual improvements in user-friendliness and correctness.
+Several legacy standard library modules have now `been removed
+<whatsnew313-pep594_>`_ following their deprecation in Python 3.11 (:pep:`594`).
+
+This article doesn't attempt to provide a complete specification
+of all new features, but instead gives a convenient overview.
+For full details refer to the documentation,
+such as the :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+To understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+See `Porting to Python 3.13`_ for guidance on upgrading from
+earlier versions of Python.
+
+--------------
 
 .. PEP-sized items next.
 
@@ -82,118 +106,156 @@ Interpreter improvements:
 * A greatly improved :ref:`interactive interpreter
   <whatsnew313-better-interactive-interpreter>` and
   :ref:`improved error messages <whatsnew313-improved-error-messages>`.
-
-* Color support in the new :ref:`interactive interpreter
-  <whatsnew313-better-interactive-interpreter>`,
-  as well as in :ref:`tracebacks <whatsnew313-improved-error-messages>`
-  and :ref:`doctest <whatsnew313-doctest>` output. This can be disabled through the
-  :envvar:`PYTHON_COLORS` and |NO_COLOR|_ environment variables.
-
-* :pep:`744`: A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
-  It is currently disabled by default (though we may turn it on later).
-  Performance improvements are modest -- we expect to be improving this
-  over the next few releases.
-
 * :pep:`667`: The :func:`locals` builtin now has
   :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
   returned mapping. Python debuggers and similar tools may now more reliably
   update local variables in optimized scopes even during concurrent code
   execution.
+* :pep:`703`: CPython 3.13 has experimental support for running with the
+  :term:`global interpreter lock` disabled. See :ref:`Free-threaded CPython
+  <whatsnew313-free-threaded-cpython>` for more details.
+* :pep:`744`: A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
+  It is currently disabled by default (though we may turn it on later).
+  Performance improvements are modest -- we expect to improve this
+  over the next few releases.
+* Color support in the new :ref:`interactive interpreter
+  <whatsnew313-better-interactive-interpreter>`,
+  as well as in :ref:`tracebacks <whatsnew313-improved-error-messages>`
+  and :ref:`doctest <whatsnew313-doctest>` output.
+  This can be disabled through the :envvar:`PYTHON_COLORS` and |NO_COLOR|_
+  environment variables.
+
+Python data model improvements:
+
+* :attr:`~class.__static_attributes__` stores the names of attributes accessed
+  through ``self.X`` in any function in a class body.
+* :attr:`!__firstlineno__` records the first line number of a class definition.
+
+Significant improvements in the standard library:
+
+* Add a new :exc:`PythonFinalizationError` exception, raised when an operation
+  is blocked during :term:`finalization <interpreter shutdown>`.
+* The :mod:`argparse` module now supports deprecating command-line options,
+  positional arguments, and subcommands.
+* The new functions :func:`base64.z85encode` and :func:`base64.z85decode`
+  support encoding and decoding `Z85 data <https://rfc.zeromq.org/spec/32/>`_.
+* The :mod:`copy` module now has a :func:`copy.replace` function,
+  with support for many builtin types and any class defining
+  the :func:`~object.__replace__` method.
+* The :mod:`dbm.sqlite3` module is now the default :mod:`dbm` backend.
+* The :mod:`os` module has a suite of new functions for working with Linux's
+  timer notification file descriptors.
+* The :mod:`random` module now has a :ref:`command-line interface <random-cli>`.
+
+Security improvements:
+
+* :func:`ssl.create_default_context` sets :data:`ssl.VERIFY_X509_PARTIAL_CHAIN`
+  and :data:`ssl.VERIFY_X509_STRICT` as default flags.
+
+C API improvements:
+
+* The :c:data:`Py_mod_gil` slot is now used to indicate that
+  an extension module supports running with the :term:`GIL` disabled.
+* The :doc:`PyTime C API </c-api/time>` has been added,
+  providing access to system clocks.
+* :c:type:`PyMutex` is a new lightweight mutex that occupies a single byte.
 
 New typing features:
 
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
   and :data:`typing.TypeVarTuple`) now support defaults.
-
-* :pep:`702`: Support for marking deprecations in the type system using the
-  new :func:`warnings.deprecated` decorator.
-
-* :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
-  type narrowing behavior.
-
-* :pep:`705`: :data:`typing.ReadOnly` was added, to mark an item of a
+* :pep:`702`: The new :func:`warnings.deprecated` decorator adds support
+  for marking deprecations in the type system.
+* :pep:`705`: :data:`typing.ReadOnly` can be used to mark an item of a
   :class:`typing.TypedDict` as read-only for type checkers.
-
-Free-threading:
-
-* :pep:`703`: CPython 3.13 has experimental support for running with the
-  :term:`global interpreter lock` disabled when built with ``--disable-gil``.
-  See :ref:`Free-threaded CPython <free-threaded-cpython>` for more details.
+* :pep:`742`: :data:`typing.TypeIs` provides more intuitive
+  type narrowing behavior, as an alternative to :data:`typing.TypeGuard`.
 
 Platform support:
 
-* :pep:`730`: Apple's iOS is now an officially supported platform. Official
-  Android support (:pep:`738`) is in the works as well.
+* :pep:`730`: Apple's iOS is now an :ref:`officially supported platform
+  <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
+  Official Android support (:pep:`738`) is in the works as well.
+* ``wasm32-wasi`` is now supported as a :pep:`tier 2 <11#tier-2>` platform.
+* ``wasm32-emscripten`` is no longer an officially supported platform.
 
-Removed modules:
+Important removals:
 
 * :ref:`PEP 594 <whatsnew313-pep594>`: The remaining 19 "dead batteries"
   have been removed from the standard library:
   :mod:`!aifc`, :mod:`!audioop`, :mod:`!cgi`, :mod:`!cgitb`, :mod:`!chunk`,
   :mod:`!crypt`, :mod:`!imghdr`, :mod:`!mailcap`, :mod:`!msilib`, :mod:`!nis`,
-  :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`, :mod:`!spwd`,
-  :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
-
-* Also removed were the :mod:`!tkinter.tix` and :mod:`!lib2to3` modules, and the
-  ``2to3`` program.
+  :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`,
+  :mod:`!spwd`, :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
+* Remove the :program:`2to3` tool and :mod:`!lib2to3` module
+  (deprecated in Python 3.11).
+* Remove the :mod:`!tkinter.tix` module (deprecated in Python 3.6).
+* Remove :func:`!locale.resetlocale()`.
+* Remove :mod:`!typing.io` and :mod:`!typing.re`.
+* Remove chained :class:`classmethod` descriptors.
 
 Release schedule changes:
 
-* :pep:`602` ("Annual Release Cycle for Python") has been updated:
+:pep:`602` ("Annual Release Cycle for Python") has been updated
+to extend the full support ('bugfix') period for new releases to two years.
+This updated policy means that:
 
-  * Python 3.9 - 3.12 have one and a half years of full support,
-    followed by three and a half years of security fixes.
-  * Python 3.13 and later have two years of full support,
-    followed by three years of security fixes.
+* Python 3.9--3.12 have one and a half years of full support,
+  followed by three and a half years of security fixes.
+* Python 3.13 and later have two years of full support,
+  followed by three years of security fixes.
+
 
 New Features
 ============
 
+
 .. _whatsnew313-better-interactive-interpreter:
 
-A Better Interactive Interpreter
+A better interactive interpreter
 --------------------------------
 
-On Unix-like systems like Linux or macOS as well as Windows, Python now
-uses a new :term:`interactive` shell. When the user starts the
-:term:`REPL` from an interactive terminal the interactive shell now
-supports the following new features:
+Python now uses a new :term:`interactive` shell by default, based on code
+from the `PyPy project`_.
+When the user starts the :term:`REPL` from an interactive terminal,
+the following new features are now supported:
 
-* Colorized prompts.
 * Multiline editing with history preservation.
+* Direct support for REPL-specific commands like :kbd:`help`, :kbd:`exit`,
+  and :kbd:`quit`, without the need to call them as functions.
+* Prompts and tracebacks with :ref:`color enabled by default
+  <using-on-controlling-color>`.
 * Interactive help browsing using :kbd:`F1` with a separate command
   history.
 * History browsing using :kbd:`F2` that skips output as well as the
   :term:`>>>` and :term:`...` prompts.
 * "Paste mode" with :kbd:`F3` that makes pasting larger blocks of code
   easier (press :kbd:`F3` again to return to the regular prompt).
-* The ability to issue REPL-specific commands like :kbd:`help`, :kbd:`exit`,
-  and :kbd:`quit` without the need to use call parentheses after the command
-  name.
 
-If the new interactive shell is not desired, it can be disabled via
-the :envvar:`PYTHON_BASIC_REPL` environment variable.
-
-The new shell requires :mod:`curses` on Unix-like systems.
-
+To disable the new interactive shell,
+set the :envvar:`PYTHON_BASIC_REPL` environment variable.
 For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
 Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
 Windows support contributed by Dino Viehland and Anthony Shaw.)
 
+.. _`PyPy project`: https://pypy.org/
+
+
 .. _whatsnew313-improved-error-messages:
 
-Improved Error Messages
+Improved error messages
 -----------------------
 
-* The interpreter now colorizes error messages when displaying tracebacks by default.
-  This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
-  variables. See also :ref:`using-on-controlling-color`.
+* The interpreter now uses color by default when displaying tracebacks in the
+  terminal. This feature :ref:`can be controlled <using-on-controlling-color>`
+  via the new :envvar:`PYTHON_COLORS` environment variable as well as
+  the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment variables.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 .. Apparently this how you hack together a formatted link:
+   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
 
 .. |FORCE_COLOR| replace:: ``FORCE_COLOR``
 .. _FORCE_COLOR: https://force-color.org/
@@ -205,207 +267,81 @@ Improved Error Messages
   standard library module. When this results in errors, we now
   display a more helpful error message:
 
-  .. code-block:: shell-session
+  .. code-block:: pytb
 
-    $ python random.py
-    Traceback (most recent call last):
-      File "/home/random.py", line 1, in <module>
-        import random; print(random.randint(5))
-        ^^^^^^^^^^^^^
-      File "/home/random.py", line 1, in <module>
-        import random; print(random.randint(5))
-                            ^^^^^^^^^^^^^^
-    AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+     $ python random.py
+     Traceback (most recent call last):
+       File "/home/me/random.py", line 1, in <module>
+         import random
+       File "/home/me/random.py", line 3, in <module>
+         print(random.randint(5))
+               ^^^^^^^^^^^^^^
+     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
 
   Similarly, if a script has the same name as a third-party
-  module it attempts to import, and this results in errors,
+  module that it attempts to import and this results in errors,
   we also display a more helpful error message:
 
-  .. code-block:: shell-session
+  .. code-block:: pytb
 
-    $ python numpy.py
-    Traceback (most recent call last):
-      File "/home/numpy.py", line 1, in <module>
-        import numpy as np; np.array([1,2,3])
-        ^^^^^^^^^^^^^^^^^^
-      File "/home/numpy.py", line 1, in <module>
-        import numpy as np; np.array([1,2,3])
-                            ^^^^^^^^
-    AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/numpy.py' if it has the same name as a third-party module you intended to import)
+     $ python numpy.py
+     Traceback (most recent call last):
+       File "/home/me/numpy.py", line 1, in <module>
+         import numpy as np
+       File "/home/me/numpy.py", line 3, in <module>
+         np.array([1, 2, 3])
+         ^^^^^^^^
+     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a third-party module you intended to import)
 
   (Contributed by Shantanu Jain in :gh:`95754`.)
 
-* When an incorrect keyword argument is passed to a function, the error message
-  now potentially suggests the correct keyword argument.
+* The error message now tries to suggest the correct keyword argument
+  when an incorrect keyword argument is passed to a function.
+
+  .. code-block:: pycon
+
+     >>> "Better error messages!".split(max_split=1)
+     Traceback (most recent call last):
+       File "<python-input-0>", line 1, in <module>
+         "Better error messages!".split(max_split=1)
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
+
   (Contributed by Pablo Galindo Salgado and Shantanu Jain in :gh:`107944`.)
 
-    >>> "better error messages!".split(max_split=1)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-        "better error messages!".split(max_split=1)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-    TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
-* Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
-  with a tuple of names of attributes of this class which are assigned
-  through ``self.X`` from any function in its body. (Contributed by Irit Katriel
-  in :gh:`115775`.)
-
-.. _whatsnew313-locals-semantics:
-
-Defined mutation semantics for ``locals()``
--------------------------------------------
-
-Historically, the expected result of mutating the return value of :func:`locals`
-has been left to individual Python implementations to define.
-
-Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
-for most code execution scopes, but changes
-:term:`optimized scopes <optimized scope>` (functions, generators, coroutines,
-comprehensions, and generator expressions) to explicitly return independent
-snapshots of the currently assigned local variables, including locally
-referenced nonlocal variables captured in closures.
-
-This change to the semantics of :func:`locals` in optimized scopes also affects the default
-behaviour of code execution functions that implicitly target ``locals()`` if no explicit
-namespace is provided (such as :func:`exec` and :func:`eval`). In previous versions, whether
-or not changes could be accessed by calling ``locals()`` after calling the code execution
-function was implementation dependent. In CPython specifically, such code would typically
-appear to work as desired, but could sometimes fail in optimized scopes based on other code
-(including debuggers and code execution tracing tools) potentially resetting the shared
-snapshot in that scope. Now, the code will always run against an independent snapshot of the
-local variables in optimized scopes, and hence the changes will never be visible in
-subsequent calls to ``locals()``. To access the changes made in these cases, an explicit
-namespace reference must now be passed to the relevant function. Alternatively, it may make
-sense to update affected code to use a higher level code execution API that returns the
-resulting code execution namespace (e.g. :func:`runpy.run_path` when executing Python
-files from disk).
-
-To ensure debuggers and similar tools can reliably update local variables in
-scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
-returns a write-through proxy to the frame's local and locally referenced
-nonlocal variables in these scopes, rather than returning an inconsistently
-updated shared  ``dict`` instance with undefined runtime semantics.
-
-See :pep:`667` for more details, including related C API changes and deprecations. Porting
-notes are also provided below for the affected :ref:`Python APIs <pep667-porting-notes-py>`
-and :ref:`C APIs <pep667-porting-notes-c>`.
-
-(PEP and implementation contributed by Mark Shannon and Tian Gao in
-:gh:`74929`. Documentation updates provided by Guido van Rossum and
-Alyssa Coghlan.)
-
-Incremental Garbage Collection
-------------------------------
-
-* The cycle garbage collector is now incremental.
-  This means that maximum pause times are reduced
-  by an order of magnitude or more for larger heaps.
-
-Support For Mobile Platforms
-----------------------------
-
-* iOS is now a :pep:`11` supported platform. ``arm64-apple-ios``
-  (iPhone and iPad devices released after 2013) and
-  ``arm64-apple-ios-simulator`` (Xcode iOS simulator running on Apple Silicon
-  hardware) are now tier 3 platforms.
-
-  ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older x86_64
-  hardware) is not a tier 3 supported platform, but will be supported on a
-  best-effort basis.
-
-  See :pep:`730`: for more details.
-
-  (PEP written and implementation contributed by Russell Keith-Magee in
-  :gh:`114099`.)
-
-.. _whatsnew313-jit-compiler:
-
-Experimental JIT Compiler
-=========================
-
-When CPython is configured using the ``--enable-experimental-jit`` option,
-a just-in-time compiler is added which may speed up some Python programs.
-
-The internal architecture is roughly as follows.
-
-* We start with specialized *Tier 1 bytecode*.
-  See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
-
-* When the Tier 1 bytecode gets hot enough, it gets translated
-  to a new, purely internal *Tier 2 IR*, a.k.a. micro-ops ("uops").
-
-* The Tier 2 IR uses the same stack-based VM as Tier 1, but the
-  instruction format is better suited to translation to machine code.
-
-* We have several optimization passes for Tier 2 IR, which are applied
-  before it is interpreted or translated to machine code.
-
-* There is a Tier 2 interpreter, but it is mostly intended for debugging
-  the earlier stages of the optimization pipeline.
-  The Tier 2 interpreter can be enabled by configuring Python
-  with ``--enable-experimental-jit=interpreter``.
-
-* When the JIT is enabled, the optimized
-  Tier 2 IR is translated to machine code, which is then executed.
-
-* The machine code translation process uses a technique called
-  *copy-and-patch*. It has no runtime dependencies, but there is a new
-  build-time dependency on LLVM.
-
-The ``--enable-experimental-jit`` flag has the following optional values:
-
-* ``no`` (default) -- Disable the entire Tier 2 and JIT pipeline.
-
-* ``yes`` (default if the flag is present without optional value)
-  -- Enable the JIT. To disable the JIT at runtime,
-  pass the environment variable ``PYTHON_JIT=0``.
-
-* ``yes-off`` -- Build the JIT but disable it by default.
-  To enable the JIT at runtime, pass the environment variable
-  ``PYTHON_JIT=1``.
-
-* ``interpreter`` -- Enable the Tier 2 interpreter but disable the JIT.
-  The interpreter can be disabled by running with
-  ``PYTHON_JIT=0``.
-
-(On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
-or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.)
-
-See :pep:`744` for more details.
-
-(JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
-Tier 2 IR by Mark Shannon and Guido van Rossum.
-Tier 2 optimizer by Ken Jin.)
-
-.. _free-threaded-cpython:
+.. _whatsnew313-free-threaded-cpython:
 
 Free-threaded CPython
-=====================
+---------------------
 
-CPython will run with the :term:`global interpreter lock` (GIL) disabled when
-configured using the ``--disable-gil`` option at build time. This is an
-experimental feature and therefore isn't used by default. Users need to
-either compile their own interpreter, or install one of the experimental
-builds that are marked as *free-threaded*. See :pep:`703` "Making the Global
-Interpreter Lock Optional in CPython" for more detail.
+CPython now has experimental support for running in a free-threaded mode,
+with the :term:`global interpreter lock` (GIL) disabled.
+This is an experimental feature and therefore is not enabled by default.
+The free-threaded mode requires a different executable,
+usually called ``python3.13t`` or ``python3.13t.exe``.
+Pre-built binaries marked as *free-threaded* can be installed as part of
+the official :ref:`Windows <install-freethreaded-windows>`
+and :ref:`macOS <getting-and-installing-macpython>` installers,
+or CPython can be built from source with the :option:`--disable-gil` option.
+
+.. better macOS link pending
+   https://github.com/python/cpython/issues/109975#issuecomment-2286391179
 
 Free-threaded execution allows for full utilization of the available
 processing power by running threads in parallel on available CPU cores.
 While not all software will benefit from this automatically, programs
-designed with threading in mind will run faster on multicore hardware.
-
-Work is still ongoing: expect some bugs and a substantial single-threaded
-performance hit.
-
-The free-threaded build still supports optionally running with the GIL
+designed with threading in mind will run faster on multi-core hardware.
+**The free-threaded mode is experimental** and work is ongoing to improve it:
+expect some bugs and a substantial single-threaded performance hit.
+Free-threaded builds of CPython support optionally running with the GIL
 enabled at runtime using the environment variable :envvar:`PYTHON_GIL` or
-the command line option :option:`-X gil`.
+the command-line option :option:`-X gil`.
 
-To check if the current interpreter is configured with ``--disable-gil``,
-use ``sysconfig.get_config_var("Py_GIL_DISABLED")``. To check if the :term:`GIL`
-is actually disabled in the running process, the :func:`!sys._is_gil_enabled`
-function can be used.
+To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
+and :attr:`sys.version` contain "experimental free-threading build".
+The new :func:`!sys._is_gil_enabled` function can be used to check whether
+the GIL is actually disabled in the running process.
 
 C-API extension modules need to be built specifically for the free-threaded
 build. Extensions that support running with the :term:`GIL` disabled should
@@ -415,135 +351,266 @@ running with the GIL disabled. Importing C extensions that don't use these
 mechanisms will cause the GIL to be enabled, unless the GIL was explicitly
 disabled with the :envvar:`PYTHON_GIL` environment variable or the
 :option:`-X gil=0` option.
-
-pip 24.1b1 or newer is required to install packages with C extensions in the
+pip 24.1 or newer is required to install packages with C extensions in the
 free-threaded build.
+
+.. seealso::
+
+   :pep:`703` "Making the Global Interpreter Lock Optional in CPython"
+   contains rationale and information surrounding this work.
+
+
+.. _whatsnew313-jit-compiler:
+
+An experimental just-in-time (JIT) compiler
+-------------------------------------------
+
+When CPython is configured and built using
+the :option:`!--enable-experimental-jit` option,
+a just-in-time (JIT) compiler is added which may speed up some Python programs.
+On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
+or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.
+Build requirements and further supporting information `are contained at`__
+:file:`Tools/jit/README.md`.
+
+__ https://github.com/python/cpython/blob/main/Tools/jit/README.md
+
+The :option:`!--enable-experimental-jit` option takes these (optional) values,
+defaulting to ``yes`` if :option:`!--enable-experimental-jit` is present
+without the optional value.
+
+* ``no``: Disable the entire Tier 2 and JIT pipeline.
+* ``yes``: Enable the JIT.
+  To disable the JIT at runtime, pass the environment variable ``PYTHON_JIT=0``.
+* ``yes-off``: Build the JIT but disable it by default.
+  To enable the JIT at runtime, pass the environment variable ``PYTHON_JIT=1``.
+* ``interpreter``: Enable the Tier 2 interpreter but disable the JIT.
+  The interpreter can be disabled by running with ``PYTHON_JIT=0``.
+
+The internal architecture is roughly as follows:
+
+* We start with specialized *Tier 1 bytecode*.
+  See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
+* When the Tier 1 bytecode gets hot enough, it gets translated
+  to a new purely internal intermediate representation (IR),
+  called the *Tier 2 IR*, and sometimes referred to as micro-ops ("uops").
+* The Tier 2 IR uses the same stack-based virtual machine as Tier 1,
+  but the instruction format is better suited to translation to machine code.
+* We have several optimization passes for Tier 2 IR, which are applied
+  before it is interpreted or translated to machine code.
+* There is a Tier 2 interpreter, but it is mostly intended for debugging
+  the earlier stages of the optimization pipeline.
+  The Tier 2 interpreter can be enabled by configuring Python
+  with ``--enable-experimental-jit=interpreter``.
+* When the JIT is enabled, the optimized
+  Tier 2 IR is translated to machine code, which is then executed.
+* The machine code translation process uses a technique called
+  *copy-and-patch*. It has no runtime dependencies, but there is a new
+  build-time dependency on LLVM.
+
+.. seealso:: :pep:`744`
+
+(JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
+Tier 2 IR by Mark Shannon and Guido van Rossum.
+Tier 2 optimizer by Ken Jin.)
+
+
+.. _whatsnew313-locals-semantics:
+
+Defined mutation semantics for :py:func:`locals`
+------------------------------------------------
+
+Historically, the expected result of mutating the return value of
+:func:`locals` has been left to individual Python implementations to define.
+Starting from Python 3.13, :pep:`667` standardises
+the historical behaviour of CPython for most code execution scopes,
+but changes :term:`optimized scopes <optimized scope>`
+(functions, generators, coroutines, comprehensions, and generator expressions)
+to explicitly return independent snapshots of the currently assigned local
+variables, including locally referenced nonlocal variables captured in closures.
+
+This change to the semantics of :func:`locals` in optimized scopes also
+affects the default behaviour of code execution functions that implicitly
+target :func:`!locals` if no explicit namespace is provided
+(such as :func:`exec` and :func:`eval`).
+In previous versions, whether or not changes could be accessed by calling
+:func:`!locals` after calling the code execution function was
+implementation-dependent. In CPython specifically, such code would typically
+appear to work as desired, but could sometimes fail in optimized scopes based
+on other code (including debuggers and code execution tracing tools)
+potentially resetting the shared snapshot in that scope.
+Now, the code will always run against an independent snapshot of
+the local variables in optimized scopes, and hence the changes will never
+be visible in subsequent calls to :func:`!locals`.
+To access the changes made in these cases, an explicit namespace reference
+must now be passed to the relevant function.
+Alternatively, it may make sense to update affected code to use a higher level
+code execution API that returns the resulting code execution namespace
+(e.g. :func:`runpy.run_path` when executing Python files from disk).
+
+To ensure debuggers and similar tools can reliably update local variables in
+scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
+returns a write-through proxy to the frame's local and locally referenced
+nonlocal variables in these scopes, rather than returning an inconsistently
+updated shared ``dict`` instance with undefined runtime semantics.
+
+See :pep:`667` for more details, including related C API changes
+and deprecations. Porting notes are also provided below for the affected
+:ref:`Python APIs <pep667-porting-notes-py>` and :ref:`C APIs
+<pep667-porting-notes-c>`.
+
+(PEP and implementation contributed by Mark Shannon and Tian Gao in
+:gh:`74929`. Documentation updates provided by Guido van Rossum and
+Alyssa Coghlan.)
+
+
+.. _whatsnew313-platform-support:
+
+Support for mobile platforms
+----------------------------
+
+:pep:`730`: iOS is now a :pep:`11` supported platform, with the
+``arm64-apple-ios`` and ``arm64-apple-ios-simulator`` targets at tier 3
+(iPhone and iPad devices released after 2013 and the Xcode iOS simulator
+running on Apple silicon hardware, respectively).
+``x86_64-apple-ios-simulator``
+(the Xcode iOS simulator running on older ``x86_64`` hardware)
+is not a tier 3 supported platform, but will have best-effort support.
+(PEP written and implementation contributed by Russell Keith-Magee in
+:gh:`114099`.)
+
+:pep:`738`: Android support is being actively worked on,
+but the platform is not yet officially supported.
+(PEP written and implementation contributed by Malcolm Smith in
+:gh:`116622`.)
+
+.. seealso:: :pep:`730`, :pep:`738`
+
+
+Incremental garbage collection
+------------------------------
+
+The cycle garbage collector is now incremental.
+This means that maximum pause times are reduced
+by an order of magnitude or more for larger heaps.
+(Contributed by Mark Shannon in :gh:`108362`.)
+
 
 Other Language Changes
 ======================
 
-* The :func:`exec` and :func:`eval` built-ins now accept their ``globals``
-  and ``locals`` namespace arguments as keywords.
+* The compiler now strips common leading whitespace
+  from every line in a docstring.
+  This reduces the size of the :term:`bytecode cache <bytecode>`
+  (such as ``.pyc`` files), with reductions in file size of around 5%,
+  for example in :mod:`!sqlalchemy.orm.session` from SQLAlchemy 2.0.
+  This change affects tools that use docstrings, such as :mod:`doctest`.
+
+  .. doctest::
+
+     >>> def spam():
+     ...     """
+     ...         This is a docstring with
+     ...           leading whitespace.
+     ...
+     ...         It even has multiple paragraphs!
+     ...     """
+     ...
+     >>> spam.__doc__
+     '\nThis is a docstring with\n  leading whitespace.\n\nIt even has multiple paragraphs!\n'
+
+  (Contributed by Inada Naoki in :gh:`81283`.)
+
+* :ref:`Annotation scopes <annotation-scopes>` within class scopes
+  can now contain lambdas and comprehensions.
+  Comprehensions that are located within class scopes
+  are not inlined into their parent scope.
+
+  .. code-block:: python
+
+     class C[T]:
+         type Alias = lambda: T
+
+  (Contributed by Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
+
+* :ref:`Future statements <future>` are no longer triggered by
+  relative imports of the :mod:`__future__` module,
+  meaning that statements of the form  ``from .__future__ import ...``
+  are now simply standard relative imports, with no special features activated.
+  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
+
+* :keyword:`global` declarations are now permitted in :keyword:`except` blocks
+  when that global is used in the :keyword:`else` block.
+  Previously this raised an erroneous :exc:`SyntaxError`.
+  (Contributed by Irit Katriel in :gh:`111123`.)
+
+* Add :envvar:`PYTHON_FROZEN_MODULES`, a new environment variable that
+  determines whether frozen modules are ignored by the import machinery,
+  equivalent to the :option:`-X frozen_modules <-X>` command-line option.
+  (Contributed by Yilei Yang in :gh:`111374`.)
+
+* Add :ref:`support for the perf profiler <perf_profiling>` working
+  without `frame pointers <https://en.wikipedia.org/wiki/Call_stack>`_ through
+  the new environment variable :envvar:`PYTHON_PERF_JIT_SUPPORT`
+  and command-line option :option:`-X perf_jit <-X>`.
+  (Contributed by Pablo Galindo in :gh:`118518`.)
+
+* The location of a :file:`.python_history` file can be changed via the
+  new :envvar:`PYTHON_HISTORY` environment variable.
+  (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade
+  in :gh:`73965`.)
+
+* Classes have a new :attr:`~class.__static_attributes__` attribute.
+  This is populated by the compiler with a tuple of the class's attribute names
+  which are assigned through ``self.<name>`` from any function in its body.
+  (Contributed by Irit Katriel in :gh:`115775`.)
+
+* The compiler now creates a :attr:`!__firstlineno__` attribute on classes
+  with the line number of the first line of the class definition.
+  (Contributed by Serhiy Storchaka in :gh:`118465`.)
+
+* The :func:`exec` and :func:`eval` builtins now accept
+  the *globals* and *locals* arguments as keywords.
   (Contributed by Raphael Gaschignard in :gh:`105879`)
+
+* The :func:`compile` builtin now accepts a new flag,
+  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+  except that the returned AST is optimized according to
+  the value of the *optimize* argument.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
+* Add :exc:`PythonFinalizationError`, a new exception derived from
+  :exc:`RuntimeError` and used to signal when operations are blocked
+  during :term:`finalization <interpreter shutdown>`.
+  The following callables now raise :exc:`!PythonFinalizationError`,
+  instead of :exc:`RuntimeError`:
+
+  * :func:`_thread.start_new_thread`
+  * :func:`os.fork`
+  * :func:`os.forkpty`
+  * :class:`subprocess.Popen`
+
+  (Contributed by Victor Stinner in :gh:`114570`.)
 
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
-
-* Compiler now strip indents from docstrings.
-  This will reduce the size of :term:`bytecode cache <bytecode>` (e.g. ``.pyc`` file).
-  For example, cache file size for ``sqlalchemy.orm.session`` in SQLAlchemy 2.0
-  is reduced by about 5%.
-  This change will affect tools using docstrings, like :mod:`doctest`.
-  (Contributed by Inada Naoki in :gh:`81283`.)
-
-* The :func:`compile` built-in can now accept a new flag,
-  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
-  except that the returned ``AST`` is optimized according to the value
-  of the ``optimize`` argument.
-  (Contributed by Irit Katriel in :gh:`108113`).
-
-* :mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
-  Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
-  default number of worker threads and processes. Get the CPU affinity
-  if supported.
-  (Contributed by Victor Stinner in :gh:`109649`.)
-
-* :func:`os.path.realpath` now resolves MS-DOS style file names even if
-  the file is not accessible.
-  (Contributed by Moonsik Park in :gh:`82367`.)
-
-* Fixed a bug where a :keyword:`global` declaration in an :keyword:`except` block
-  is rejected when the global is used in the :keyword:`else` block.
-  (Contributed by Irit Katriel in :gh:`111123`.)
 
 * Many functions now emit a warning if a boolean value is passed as
   a file descriptor argument.
   This can help catch some errors earlier.
   (Contributed by Serhiy Storchaka in :gh:`82626`.)
 
-* Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
-  determines whether or not frozen modules are ignored by the import machinery,
-  equivalent of the :option:`-X frozen_modules <-X>` command-line option.
-  (Contributed by Yilei Yang in :gh:`111374`.)
-
-* Add :ref:`support for the perf profiler <perf_profiling>` working without
-  frame pointers through the new environment variable
-  :envvar:`PYTHON_PERF_JIT_SUPPORT` and command-line option :option:`-X perf_jit
-  <-X>` (Contributed by Pablo Galindo in :gh:`118518`.)
-
-* The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
-  the location of a ``.python_history`` file.
-  (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
-  :gh:`73965`.)
-
-* Add :exc:`PythonFinalizationError` exception. This exception derived from
-  :exc:`RuntimeError` is raised when an operation is blocked during
-  the :term:`Python finalization <interpreter shutdown>`.
-
-  The following functions now raise PythonFinalizationError, instead of
-  :exc:`RuntimeError`:
-
-  * :func:`_thread.start_new_thread`.
-  * :class:`subprocess.Popen`.
-  * :func:`os.fork`.
-  * :func:`os.forkpty`.
-
-  (Contributed by Victor Stinner in :gh:`114570`.)
-
-* Added :attr:`!name` and :attr:`!mode` attributes for compressed
-  and archived file-like objects in modules :mod:`bz2`, :mod:`lzma`,
-  :mod:`tarfile` and :mod:`zipfile`.
+* Added :attr:`!name` and :attr:`!mode` attributes
+  for compressed and archived file-like objects in
+  the :mod:`bz2`, :mod:`lzma`, :mod:`tarfile`, and :mod:`zipfile` modules.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
-
-* Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
-  by adding five new methods:
-
-  * :meth:`xml.etree.ElementTree.XMLParser.flush`
-  * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
-  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
-  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
-  * :meth:`!xml.sax.expatreader.ExpatParser.flush`
-
-  (Contributed by Sebastian Pipping in :gh:`115623`.)
-
-* The :func:`ssl.create_default_context` API now includes
-  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
-  in its default flags.
-
-  .. note::
-
-   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
-   certificates that the underlying OpenSSL implementation otherwise would
-   accept. While disabling this is not recommended, you can do so using::
-
-      ctx = ssl.create_default_context()
-      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
-
-  (Contributed by William Woodruff in :gh:`112389`.)
-
-* The :class:`configparser.ConfigParser` now accepts unnamed sections before named
-  ones if configured to do so.
-  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
-
-* :ref:`annotation scope <annotation-scopes>` within class scopes can now
-  contain lambdas and comprehensions. Comprehensions that are located within
-  class scopes are not inlined into their parent scope. (Contributed by
-  Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
-
-* Classes have a new :attr:`!__firstlineno__` attribute,
-  populated by the compiler, with the line number of the first line
-  of the class definition.
-  (Contributed by Serhiy Storchaka in :gh:`118465`.)
-
-* ``from __future__ import ...`` statements are now just normal
-  relative imports if dots are present before the module name.
-  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
 
 
 New Modules
 ===========
 
-* None.
+* :mod:`dbm.sqlite3`: An SQLite backend for :mod:`dbm`.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 
 Improved Modules
@@ -565,7 +632,7 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
-* Add ``clear()`` method in order to implement ``MutableSequence``.
+* Add ``clear()`` method in order to implement :class:`~collections.abc.MutableSequence`.
   (Contributed by Mike Zimin in :gh:`114894`.)
 
 ast
@@ -664,8 +731,25 @@ base64
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding Z85 data.
-  See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+  See the `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
   (Contributed by Matan Perelman in :gh:`75299`.)
+
+
+compileall
+----------
+
+* Select the default number of worker threads and processes using
+  :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+
+concurrent.futures
+------------------
+
+* Select the default number of worker threads and processes using
+  :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 
 copy
 ----
@@ -820,7 +904,7 @@ importlib
 io
 --
 
-* The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
+* The :class:`io.IOBase` finalizer now logs errors raised by the ``close()`` method with
   :data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
   and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
   built on debug mode <debug-build>`.
@@ -873,7 +957,7 @@ mimetypes
 mmap
 ----
 
-* The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
+* The :class:`mmap.mmap` class now has a :meth:`~mmap.mmap.seekable` method
   that can be used when a seekable file-like object is required.
   The :meth:`~mmap.mmap.seek` method now returns the new absolute position.
   (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
@@ -883,6 +967,15 @@ mmap
 * :class:`mmap.mmap` is now protected from crashing on Windows when the mapped memory
   is inaccessible due to file system errors or access violations.
   (Contributed by Jannis Weigend in :gh:`118209`.)
+
+
+multiprocessing
+---------------
+
+* Select the default number of worker threads and processes using
+  :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 
 opcode
 ------
@@ -948,9 +1041,14 @@ os.path
 * Add :func:`os.path.isreserved` to check if a path is reserved on the current
   system. This function is only available on Windows.
   (Contributed by Barney Gale in :gh:`88569`.)
+
 * On Windows, :func:`os.path.isabs` no longer considers paths starting with
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
+
+* :func:`os.path.realpath` now resolves MS-DOS style file names even if
+  the file is not accessible.
+  (Contributed by Moonsik Park in :gh:`82367`.)
 
 * Add support of *dir_fd* and *follow_symlinks* keyword arguments in
   :func:`shutil.chown`.
@@ -993,7 +1091,7 @@ pathlib
 pdb
 ---
 
-* Add ability to move between chained exceptions during post mortem debugging in :func:`~pdb.pm` using
+* Add ability to move between chained exceptions during post-mortem debugging in :func:`~pdb.pm` using
   the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
   Bussonnier in :gh:`106676`.)
 
@@ -1051,6 +1149,26 @@ sqlite3
   for filtering database objects to dump.
   (Contributed by Mariusz Felisiak in :gh:`91602`.)
 
+
+ssl
+---
+
+* The :func:`ssl.create_default_context` API now includes
+  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
+  in its default flags.
+
+  .. note::
+
+   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
+   certificates that the underlying OpenSSL implementation otherwise would
+   accept. While disabling this is not recommended, you can do so using::
+
+      ctx = ssl.create_default_context()
+      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+  (Contributed by William Woodruff in :gh:`112389`.)
+
+
 statistics
 ----------
 
@@ -1069,7 +1187,7 @@ subprocess
   more situations.  Notably in the default case of ``close_fds=True`` on more
   recent versions of platforms including Linux, FreeBSD, and Solaris where the
   C library provides :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
-  On Linux this should perform similar to our existing Linux :c:func:`!vfork`
+  On Linux this should perform similarly to the existing Linux :c:func:`!vfork`
   based code.  A private control knob :attr:`!subprocess._USE_POSIX_SPAWN` can
   be set to ``False`` if you need to force :mod:`subprocess` not to ever use
   :func:`os.posix_spawn`.  Please report your reason and platform details in
@@ -1080,7 +1198,7 @@ subprocess
 sys
 ---
 
-* Add the :func:`sys._is_interned` function to test if the string was interned.
+* Add the :func:`sys._is_interned` function to test if a string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
@@ -1096,7 +1214,7 @@ time
 ----
 
 * On Windows, :func:`time.monotonic()` now uses the
-  ``QueryPerformanceCounter()`` clock to have a resolution better than 1 us,
+  ``QueryPerformanceCounter()`` clock to have a resolution better than 1 μs,
   instead of the ``GetTickCount64()`` clock which has a resolution of 15.6 ms.
   (Contributed by Victor Stinner in :gh:`88494`.)
 
@@ -1127,7 +1245,7 @@ tkinter
 
 * Add new optional keyword-only parameter *return_ints* in
   the :meth:`!Text.count` method.
-  Passing ``return_ints=True`` makes it always returning the single count
+  Passing ``return_ints=True`` makes it always return the single count
   as an integer instead of a 1-tuple or ``None``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
@@ -1170,8 +1288,8 @@ traceback
 types
 -----
 
-* :class:`~types.SimpleNamespace` constructor now allows specifying initial
-  values of attributes as a positional argument which must be a mapping or
+* The :class:`~types.SimpleNamespace` constructor now allows specifying initial
+  values of attributes as a positional argument, which must be a mapping or
   an iterable of key-value pairs.
   (Contributed by Serhiy Storchaka in :gh:`108191`.)
 
@@ -1216,12 +1334,25 @@ warnings
   warning may also be emitted when a decorated function or class is used at runtime.
   See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
 
-xml.etree.ElementTree
----------------------
+
+xml
+---
+
+* Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
+  by adding five new methods:
+
+  * :meth:`xml.etree.ElementTree.XMLParser.flush`
+  * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
+  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
+  * :meth:`!xml.sax.expatreader.ExpatParser.flush`
+
+  (Contributed by Sebastian Pipping in :gh:`115623`.)
 
 * Add the :meth:`!close` method for the iterator returned by
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
 
 zipimport
 ---------
@@ -1377,6 +1508,10 @@ PEP 594: dead batteries (and other module removals)
 
 configparser
 ------------
+
+* The :class:`configparser.ConfigParser` now accepts unnamed sections
+  before named ones if configured to do so.
+  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 * Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
   deprecated in the docstring since Python 3.2,
@@ -1580,7 +1715,7 @@ New Deprecations
 
   (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
-* :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
+* :mod:`sys`: The :func:`sys._enablelegacywindowsfsencoding` function is deprecated.
   Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
   (Contributed by Inada Naoki in :gh:`73427`.)
 
@@ -1604,8 +1739,8 @@ New Deprecations
     deprecated. Passing ``None`` to the 'fields' parameter
     (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
     deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
-    class with 0 fields, use ``class NT(NamedTuple): pass`` or
-    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+    class with zero fields, use ``class NT(NamedTuple): pass`` or
+    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with zero fields, use
     ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
@@ -1622,7 +1757,7 @@ New Deprecations
 
 * :ref:`user-defined-funcs`:
   Assignment to a function's :attr:`~function.__code__` attribute where the new code
-  object's type does not match the function's type, is deprecated. The
+  object's type does not match the function's type is deprecated. The
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
@@ -1863,7 +1998,7 @@ New Features
   (Contributed by Victor Stinner in :gh:`116936`.)
 
 * Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
-  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  :c:func:`PyRefTracer_GetTracer`, that allow to track object creation and
   destruction the same way the :mod:`tracemalloc` module does. (Contributed
   by Pablo Galindo in :gh:`93502`.)
 
@@ -1972,8 +2107,8 @@ Changes in the Python API
   independent snapshot on each call, and hence no longer implicitly updates
   previously returned references. Obtaining the legacy CPython behaviour now
   requires explicit calls to update the initially returned dictionary with the
-  results of subsequent calls to ``locals()``. Code execution functions that
-  implicitly target ``locals()`` (such as ``exec`` and ``eval``) must be
+  results of subsequent calls to :func:`!locals`. Code execution functions that
+  implicitly target :func:`!locals` (such as ``exec`` and ``eval``) must be
   passed an explicit namespace to access their results in an optimized scope.
   (Changed as part of :pep:`667`.)
 

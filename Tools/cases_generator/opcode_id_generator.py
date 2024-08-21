@@ -37,6 +37,7 @@ def generate_opcode_header(
 
         out.emit("\n")
         write_define("HAVE_ARGUMENT", analysis.have_arg)
+        write_define("MIN_SPECIALIZED_OPCODE", analysis.opmap["RESUME"]+1)
         write_define("MIN_INSTRUMENTED_OPCODE", analysis.min_instrumented)
 
 

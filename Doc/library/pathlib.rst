@@ -178,8 +178,8 @@ we also call *flavours*:
    A subclass of :class:`PurePath`, this path flavour represents non-Windows
    filesystem paths::
 
-      >>> PurePosixPath('/etc')
-      PurePosixPath('/etc')
+      >>> PurePosixPath('/etc/hosts')
+      PurePosixPath('/etc/hosts')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
@@ -188,8 +188,8 @@ we also call *flavours*:
    A subclass of :class:`PurePath`, this path flavour represents Windows
    filesystem paths, including `UNC paths`_::
 
-      >>> PureWindowsPath('c:/Program Files/')
-      PureWindowsPath('c:/Program Files')
+      >>> PureWindowsPath('c:/', 'Users', 'Ximénez')
+      PureWindowsPath('c:/Users/Ximénez')
       >>> PureWindowsPath('//server/share/file')
       PureWindowsPath('//server/share/file')
 
@@ -783,8 +783,8 @@ calls on path objects.  There are three ways to instantiate concrete paths:
    A subclass of :class:`Path` and :class:`PurePosixPath`, this class
    represents concrete non-Windows filesystem paths::
 
-      >>> PosixPath('/etc')
-      PosixPath('/etc')
+      >>> PosixPath('/etc/hosts')
+      PosixPath('/etc/hosts')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
@@ -798,8 +798,8 @@ calls on path objects.  There are three ways to instantiate concrete paths:
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
    represents concrete Windows filesystem paths::
 
-      >>> WindowsPath('c:/Program Files/')
-      WindowsPath('c:/Program Files')
+      >>> WindowsPath('c:/', 'Users', 'Ximénez')
+      WindowsPath('c:/Users/Ximénez')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
@@ -1539,50 +1539,33 @@ Creating files and directories
 Copying, renaming and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target, *, follow_symlinks=True, preserve_metadata=False)
+.. method:: Path.copy(target, *, follow_symlinks=True, dirs_exist_ok=False, \
+                      preserve_metadata=False, ignore=None, on_error=None)
 
-   Copy the contents of this file to the *target* file. If *target* specifies
-   a file that already exists, it will be replaced.
+   Copy this file or directory tree to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.
 
-   If *follow_symlinks* is false, and this file is a symbolic link, *target*
-   will be created as a symbolic link. If *follow_symlinks* is true and this
-   file is a symbolic link, *target* will be a copy of the symlink target.
+   If the source is a file, the target will be replaced if it is an existing
+   file. If the source is a symlink and *follow_symlinks* is true (the
+   default), the symlink's target is copied. Otherwise, the symlink is
+   recreated at the destination.
 
-   If *preserve_metadata* is false (the default), only the file data is
-   guaranteed to be copied. Set *preserve_metadata* to true to ensure that the
-   file mode (permissions), flags, last access and modification times, and
-   extended attributes are copied where supported. This argument has no effect
-   on Windows, where metadata is always preserved when copying.
+   If the source is a directory and *dirs_exist_ok* is false (the default), a
+   :exc:`FileExistsError` is raised if the target is an existing directory.
+   If *dirs_exists_ok* is true, the copying operation will overwrite
+   existing files within the destination tree with corresponding files
+   from the source tree.
 
-   .. versionadded:: 3.14
-
-
-.. method:: Path.copytree(target, *, follow_symlinks=True, \
-                          preserve_metadata=False, dirs_exist_ok=False, \
-                          ignore=None, on_error=None)
-
-   Recursively copy this directory tree to the given destination.
-
-   If a symlink is encountered in the source tree, and *follow_symlinks* is
-   true (the default), the symlink's target is copied. Otherwise, the symlink
-   is recreated in the destination tree.
-
-   If *preserve_metadata* is false (the default), only the directory structure
+   If *preserve_metadata* is false (the default), only directory structures
    and file data are guaranteed to be copied. Set *preserve_metadata* to true
    to ensure that file and directory permissions, flags, last access and
    modification times, and extended attributes are copied where supported.
-   This argument has no effect on Windows, where metadata is always preserved
-   when copying.
-
-   If the destination is an existing directory and *dirs_exist_ok* is false
-   (the default), a :exc:`FileExistsError` is raised. Otherwise, the copying
-   operation will continue if it encounters existing directories, and files
-   within the destination tree will be overwritten by corresponding files from
-   the source tree.
+   This argument has no effect when copying files on Windows (where
+   metadata is always preserved).
 
    If *ignore* is given, it should be a callable accepting one argument: a
-   file or directory path within the source tree. The callable may return true
-   to suppress copying of the path.
+   source file or directory path. The callable may return true to suppress
+   copying of the path.
 
    If *on_error* is given, it should be a callable accepting one argument: an
    instance of :exc:`OSError`. The callable may re-raise the exception or do
