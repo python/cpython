@@ -431,15 +431,14 @@ class Formatter:
         """Create a Formatter
 
         *file* where to write the output
-        *lineno_width* sets the width of the line number field (0 omits it)
+        *lineno_width* sets the width of the source location field (0 omits it).
+        Should be large enough for a line number or full positions (depending
+        on the value of *show_positions*).
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
         *show_caches* is a boolean indicating whether to display cache lines
-        *show_positions* is a boolean indicating whether positions should be
-        reported instead of line numbers.
-
-        If *show_positions* is true, then *lineno_width* should be computed
-        accordingly.
+        *show_positions* is a boolean indicating whether full positions should
+        be reported instead of only the line numbers.
         """
         self.file = file
         self.lineno_width = lineno_width

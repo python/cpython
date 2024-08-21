@@ -116,7 +116,7 @@ dis
 * Added support for rendering full source location information of
   :class:`instructions <dis.Instruction>`, rather than only the line number.
   This feature is added to the following interfaces via the ``show_positions``
-  flag:
+  keyword argument:
 
   - :class:`dis.Bytecode`,
   - :func:`dis.dis`, :func:`dis.distb`, and
