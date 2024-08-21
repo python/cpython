@@ -110,6 +110,22 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+dis
+---
+
+* Added support for rendering full source location information of
+  :class:`instructions <dis.Instruction>`, rather than only the line number.
+  This feature is added to the following interfaces via the ``show_positions``
+  keyword argument:
+
+  - :class:`dis.Bytecode`,
+  - :func:`dis.dis`, :func:`dis.distb`, and
+  - :func:`dis.disassemble`.
+
+  This feature is also exposed via :option:`dis --show-positions`.
+
+  (Contributed by Bénédikt Tran in :gh:`123165`.)
+
 fractions
 ---------
 
