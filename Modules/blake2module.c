@@ -317,10 +317,10 @@ static inline bool is_blake2s(blake2_impl impl) {
 }
 
 static inline blake2_impl type_to_impl(PyTypeObject *type) {
-    if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
     Blake2State* st = blake2_get_state_from_type(type);
 #endif
+    if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #ifdef HACL_CAN_COMPILE_SIMD256
       if (has_simd256(&st->flags))
         return Blake2b_256;
