@@ -3681,7 +3681,7 @@ class Scale(Widget):
 
     def coords(self, value=None):
         """Return a tuple (X,Y) of the point along the centerline of the
-        trough that corresponds to VALUE or the current value if None is
+        through that corresponds to VALUE or the current value if None is
         given."""
 
         return self._getints(self.tk.call(self._w, 'coords', value))
@@ -4490,7 +4490,7 @@ class PhotoImage(Image):
         The FORMAT option specifies the name of the image file format
         handler to be used.  If this option is not given, this method uses
         a format that consists of a tuple (one element per row) of strings
-        containings space separated (one element per pixel/column) colors
+        containing space separated (one element per pixel/column) colors
         in “#RRGGBB” format (where RR is a pair of hexadecimal digits for
         the red channel, GG for green, and BB for blue).
 
