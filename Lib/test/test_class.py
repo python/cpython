@@ -787,11 +787,12 @@ class ClassTests(unittest.TestCase):
             Type(i)
         self.assertEqual(calls, 100)
 
-    def test_specialization_failing_class_call(self):
+    def test_specialization_class_call_doesnt_crash(self):
         # Issue 123185
 
         class Foo:
-            def __init__(self, arg): pass
+            def __init__(self, arg):
+                pass
 
         for _ in range(8):
             try:
