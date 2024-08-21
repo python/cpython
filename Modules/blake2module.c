@@ -112,7 +112,7 @@ static inline bool has_simd128(cpu_flags *flags) {
 }
 #endif
 
-#ifdef HACL_CAN_COMPILE_SIMD1256
+#ifdef HACL_CAN_COMPILE_SIMD256
 static inline bool has_simd256(cpu_flags *flags) {
   return flags->avx && flags->avx2;
 }
