@@ -97,9 +97,16 @@ The Δ means the value is encoded as a delta from another value:
 * Start line: Delta from the previous start line, or `co_firstlineno` for the first entry.
 * End line: Delta from the start line
 
-Note that the indexation of the start and end column values are assumed to
-start from 1 and are absolute but that `dis.Positions` is using 0-based values
-for the column start and end offsets, when available.
+### The short forms
+
+Codes 0-9 are the short forms. The short form consists of two bytes,
+the second byte holding additional column information. The code is the
+start column divided by 8 (and rounded down).
+
+* Start column: `(code*8) + ((second_byte>>4)&7)`
+* End column: `start_column + (second_byte&15)`
+
+## Artificial constructions
 
 When constructing artificial `co_linetable` values, only non-None values should
 be specified. For instance:
@@ -137,11 +144,6 @@ assert ip0 == (co_firstlineno + 2, co_firstlineno + 2, None, None)
 assert ip1 == (ip0.lineno + 5, ip1.lineno + 12, (3 - 1), (8 - 1))
 ```
 
-### The short forms
-
-Codes 0-9 are the short forms. The short form consists of two bytes,
-the second byte holding additional column information. The code is the
-start column divided by 8 (and rounded down).
-
-* Start column: `(code*8) + ((second_byte>>4)&7)`
-* End column: `start_column + (second_byte&15)`
+Note that the indexation of the start and end column values are assumed to
+start from 1 and are absolute but that `dis.Positions` is using 0-based values
+for the column start and end offsets, when available.
