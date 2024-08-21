@@ -981,31 +981,39 @@ class DisTests(DisTestBase):
 
         PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
         PY_CODE_LOCATION_INFO_WITH_COLUMNS = 14
+        PY_CODE_LOCATION_INFO_NO_LOCATION = 15
 
         f.__code__ = f.__code__.replace(
             co_stacksize=1,
             co_firstlineno=42,
             co_code=bytes([
                 dis.opmap["RESUME"], 0,
+                dis.opmap["NOP"], 0,
                 dis.opmap["RETURN_CONST"], 0,
             ]),
             co_linetable=bytes([
                 (1 << 7)
                 | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
                 | (1 - 1),  # 1 code unit (RESUME)
-                0,          # start line offset is 0
+                (1 << 1),   # start line offset is 0 (encoded as an svarint)
+                (1 << 7)
+                | (PY_CODE_LOCATION_INFO_NO_LOCATION << 3)
+                | (1 - 1),  # 1 code unit (NOP)
                 (1 << 7)
                 | (PY_CODE_LOCATION_INFO_WITH_COLUMNS << 3)
                 | (1 - 1),  # 1 code unit (RETURN CONST)
-                (0 << 1),   # start line offset is 0 (encoded as an svarint)
-                0,          # end line offset is 0   (varint encoded)
+                (2 << 1),   # start line offset is 0 (encoded as an svarint)
+                3,          # end line offset is 0   (varint encoded)
                 1,          # 1-based start column (reported as COL - 1)
                 5,          # 1-based end column (reported as ENDCOL - 1)
             ]
         ))
         expect = '\n'.join([
-            '42:?-42:?            RESUME                   0',
-            '42:0-42:4            RETURN_CONST             0 (None)',
+            '43:?-43:?            RESUME                   0',
+            '',
+            '?:?-?:?              NOP',
+            '',
+            '45:0-48:4            RETURN_CONST             0 (None)',
             '',
         ])
         self.do_disassembly_test(f, expect, show_positions=True)
