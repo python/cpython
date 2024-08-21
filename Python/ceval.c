@@ -104,7 +104,8 @@
 
 #else // Py_GIL_DISABLED
 
-#define _DECREF(arg, DEALLOC) \
+#undef Py_DECREF
+#define Py_DECREF(arg) \
     do { \
         PyObject *op = _PyObject_CAST(arg); \
         uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local); \
@@ -124,11 +125,8 @@
         } \
     } while (0)
 
-#undef Py_DECREF
-#define Py_DECREF(arg) _DECREF(arg, Py_TYPE(op)->tp_dealloc)
-
 #undef _Py_DECREF_SPECIALIZED
-#define _Py_DECREF_SPECIALIZED(arg, dealloc) _DECREF(arg, (destructor)(dealloc))
+#define _Py_DECREF_SPECIALIZED(arg, dealloc) Py_DECREF(arg)
 
 #endif
 #endif
