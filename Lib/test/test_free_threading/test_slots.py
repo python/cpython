@@ -269,3 +269,19 @@ class TestSlots(TestCase):
                 spam_new.T_ULONGLONG
 
         run_in_threads([writer, reader])
+
+    def test_T_CHAR(self):
+        spam_old = _testcapi._test_structmembersType_OldAPI()
+        spam_new = _testcapi._test_structmembersType_NewAPI()
+
+        def writer():
+            for _ in range(1_000):
+                spam_old.T_CHAR = "c"
+                spam_new.T_CHAR = "c"
+
+        def reader():
+            for _ in range(1_000):
+                spam_old.T_CHAR
+                spam_new.T_CHAR
+
+        run_in_threads([writer, reader])
