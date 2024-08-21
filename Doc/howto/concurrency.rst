@@ -140,10 +140,11 @@ async/await       using coroutines (AKA "cooperative multitasking")
 (There are certainly others, but these are the focus here.)
 
 There are tradeoffs to each.  Free-threading probably has the most
-notoriety and the most examples, but is also the most likely to cause
-you pain.
-Isolated threads have few of the downsides but are less familiar.
-Multiprocessing and distributed are less efficient at smaller scales.
+notoriety and the most examples, but is also has the most pitfalls
+(see `concurrency-downsides`_ below).
+Isolated threads have few of those pitfalls but are less familiar.
+Multiprocessing and distributed are likewise isolated, but less
+efficient, which can have a larger negative impact at smaller scales.
 Async can be straightforward, but may cascade throughout a code base
 and doesn't necessarily give you parallelism.
 
@@ -166,6 +167,8 @@ Other possible benefits:
 * asynchronous events can be handled more cleanly
 * better efficiency using hardware resources
 * improved scalability
+
+.. _concurrency-downsides:
 
 What are the downsides?
 -----------------------
