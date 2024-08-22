@@ -100,13 +100,11 @@ See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#index-mms-bitfields for 
 We do not support zero length bitfields.  In fact we use bitsize != 0 elsewhere
 to indicate a bitfield. Here, non-bitfields need bitsize set to size*8.
 
-PyCField_FromDesc manages:
-- *palign: the alignment requirements of the last field we placed.
+PyCField_FromDesc manages the pack state struct.
 */
 
 static int
 PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
-                Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info
                 )
 {
@@ -116,7 +114,7 @@ PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
 
     assert(self->pack == 0); // TODO: This shouldn't be a C assertion
 
-    *palign = info->align;
+    packstate->align = info->align;
 
     if (bitsize > 0) {
         // Determine whether the bit field, if placed at the next free bit,
@@ -152,14 +150,13 @@ PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
 static int
 PyCField_FromDesc_msvc(
                 _CFieldPackState *packstate, Py_ssize_t bitsize,
-                Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info
                 )
 {
     if (self->pack) {
-        *palign = Py_MIN(self->pack, info->align);
+        packstate->align = Py_MIN(self->pack, info->align);
     } else {
-        *palign = info->align;
+        packstate->align = info->align;
     }
 
     // packstate->offset points to end of current bitfield.
@@ -169,7 +166,7 @@ PyCField_FromDesc_msvc(
     if (0 < packstate->bitofs + bitsize || 8 * info->size != packstate->field_size) {
         // Close the previous bitfield (if any).
         // and start a new bitfield:
-        packstate->offset = round_up(packstate->offset, *palign);
+        packstate->offset = round_up(packstate->offset, packstate->align);
 
         packstate->offset += info->size;
 
@@ -328,8 +325,7 @@ error:
 
 int
 PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
-                _CFieldPackState *packstate,
-                Py_ssize_t *palign)
+                _CFieldPackState *packstate)
 {
     if (self == NULL) {
         return -1;
@@ -399,14 +395,12 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     if (self->_ms_layout) {
         result = PyCField_FromDesc_msvc(
                 packstate, bitsize,
-                palign,
                 self, info
                 );
     } else {
         result = PyCField_FromDesc_gcc(
                 packstate,
                 bitsize,
-                palign,
                 self, info
                 );
     }

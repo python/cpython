@@ -220,8 +220,7 @@ struct CFieldObject;
 struct _CFieldPackState;
 extern int
 PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self,
-                struct _CFieldPackState *pack_state,
-                Py_ssize_t *palign);
+                struct _CFieldPackState *pack_state);
 
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
@@ -279,6 +278,7 @@ typedef struct _CFieldPackState {
     Py_ssize_t offset;
 
     Py_ssize_t size;  // the size of the structure / union so far
+    Py_ssize_t align; // the alignment requirements of the last field placed
 } _CFieldPackState; // TODO: remove this...
 
 /****************************************************************

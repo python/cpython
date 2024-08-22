@@ -240,7 +240,7 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
 int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
-    Py_ssize_t len, align, i;
+    Py_ssize_t len, i;
     Py_ssize_t union_size, total_align, aligned_size;
     _CFieldPackState packstate = {0};
     PyObject *tmp;
@@ -393,9 +393,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     if (baseinfo) {
         packstate.size = packstate.offset = baseinfo->size;
-        align = baseinfo->align;
+        packstate.align = baseinfo->align;
         union_size = 0;
-        total_align = align ? align : 1;
+        total_align = packstate.align ? packstate.align : 1;
         total_align = max(total_align, forced_alignment);
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, baseinfo->length + len + 1);
@@ -414,7 +414,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     } else {
         packstate.offset = 0;
         packstate.size = 0;
-        align = 0;
+        packstate.align = 0;
         union_size = 0;
         total_align = forced_alignment;
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
@@ -489,9 +489,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            int res = PyCField_InitFromDesc(st, prop,
-                                   &packstate,
-                                   &align);
+            int res = PyCField_InitFromDesc(st, prop, &packstate);
             if (res < 0) {
                 goto error;
             }
@@ -536,16 +534,14 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             packstate.size = 0;
             packstate.bitofs = 0;
             packstate.offset = 0;
-            align = 0;
-            int res = PyCField_InitFromDesc(st, prop,
-                                   &packstate,
-                                   &align);
+            packstate.align = 0;
+            int res = PyCField_InitFromDesc(st, prop, &packstate);
             if (res < 0) {
                 goto error;
             }
             union_size = max(packstate.size, union_size);
         }
-        total_align = max(align, total_align);
+        total_align = max(packstate.align, total_align);
 
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
