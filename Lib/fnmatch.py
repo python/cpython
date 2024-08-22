@@ -68,7 +68,7 @@ def fnmatchcase(name, pat):
     its arguments.
     """
     match = _compile_pattern(pat)
-    return match(name) is not None
+    return match(os.fspath(name)) is not None
 
 
 def translate(pat):
