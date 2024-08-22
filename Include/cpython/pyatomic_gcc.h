@@ -330,6 +330,10 @@ static inline float
 _Py_atomic_load_float_relaxed(const float *obj)
 { float ret; __atomic_load(obj, &ret, __ATOMIC_RELAXED); return ret; }
 
+static inline double
+_Py_atomic_load_double_relaxed(const double *obj)
+{ double ret; __atomic_load(obj, &ret, __ATOMIC_RELAXED); return ret; }
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_RELAXED); }
@@ -558,6 +562,10 @@ _Py_atomic_store_long_release(long *obj, long value)
 
 static inline void
 _Py_atomic_store_float_release(float *obj, float value)
+{ __atomic_store(obj, &value, __ATOMIC_RELEASE); }
+
+static inline void
+_Py_atomic_store_double_release(double *obj, double value)
 { __atomic_store(obj, &value, __ATOMIC_RELEASE); }
 
 static inline void

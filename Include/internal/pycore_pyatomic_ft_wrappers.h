@@ -97,6 +97,10 @@ extern "C" {
     _Py_atomic_store_float_release(&value, new_value)
 #define FT_ATOMIC_LOAD_FLOAT_RELAXED(value) \
     _Py_atomic_load_float_relaxed(&value)
+#define FT_ATOMIC_STORE_DOUBLE_RELEASE(value, new_value) \
+    _Py_atomic_store_double_release(&value, new_value)
+#define FT_ATOMIC_LOAD_DOUBLE_RELAXED(value) \
+    _Py_atomic_load_double_relaxed(&value)
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
@@ -138,6 +142,8 @@ extern "C" {
 #define FT_ATOMIC_STORE_SSIZE_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_FLOAT_RELAXED(value) value
 #define FT_ATOMIC_STORE_FLOAT_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_LOAD_DOUBLE_RELAXED(value) value
+#define FT_ATOMIC_STORE_DOUBLE_RELEASE(value, new_value) value = new_value
 
 #endif
 

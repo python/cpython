@@ -670,6 +670,12 @@ _Py_atomic_load_float_relaxed(const float *obj)
     return *(volatile float *)obj;
 }
 
+static inline double
+_Py_atomic_load_double_relaxed(const double *obj)
+{
+    return *(volatile double *)obj;
+}
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj)
 {
@@ -1085,9 +1091,22 @@ _Py_atomic_store_float_release(float *obj, float value)
     *(float volatile *)obj = value;
 #elif defined(_M_ARM64)
     _Py_atomic_ASSERT_ARG_TYPE(unsigned __int32);
-    __stlr64((unsigned __int32 volatile *)obj, (unsigned __int32)value);
+    __stlr32((unsigned __int32 volatile *)obj, (unsigned __int32)value);
 #else
 #  error "no implementation of _Py_atomic_store_float_release"
+#endif
+}
+
+static inline void
+_Py_atomic_store_double_release(double *obj, double value)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    *(double volatile *)obj = value;
+#elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int64);
+    __stlr64((unsigned __int64 volatile *)obj, (unsigned __int64)value);
+#else
+#  error "no implementation of _Py_atomic_store_double_release"
 #endif
 }
 
