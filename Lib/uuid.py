@@ -1,8 +1,9 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5() for generating version 1, 3, 4, and 5
-UUIDs as specified in RFC 4122.
+uuid1(), uuid3(), uuid4(), uuid5(), and uuid8() for generating version 1, 3,
+4, 5, and 8 UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still
+referred to as RFC 4122 for compatibility purposes).
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -129,7 +130,7 @@ class UUID:
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 5, meaningful only
+        version     the UUID version number (1 through 8, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -214,7 +215,7 @@ class UUID:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 5:
+            if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
@@ -719,6 +720,27 @@ def uuid5(namespace, name):
     hash = sha1(namespace.bytes + name).digest()
     return UUID(bytes=hash[:16], version=5)
 
+def uuid8(a=None, b=None, c=None):
+    """Generate a UUID from three custom blocks.
+    'a' is the first 48-bit chunk of the UUID (octets 0-5);
+    'b' is the mid 12-bit chunk (octets 6-7);
+    'c' is the last 62-bit chunk (octets 8-15).
+    When a value is not specified, a random value is generated.
+    """
+    if a is None:
+        import random
+        a = random.getrandbits(48)
+    if b is None:
+        import random
+        b = random.getrandbits(12)
+    if c is None:
+        import random
+        c = random.getrandbits(62)
+
+    int_uuid_8 = (a & 0xffffffffffff) << 80
+    int_uuid_8 |= (b & 0xfff) << 64
+    int_uuid_8 |= c & 0x3fffffffffffffff
+    return UUID(int=int_uuid_8, version=8)
 
 def main():
     """Run the uuid command line interface."""
@@ -726,7 +748,8 @@ def main():
         "uuid1": uuid1,
         "uuid3": uuid3,
         "uuid4": uuid4,
-        "uuid5": uuid5
+        "uuid5": uuid5,
+        "uuid8": uuid8,
     }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {
