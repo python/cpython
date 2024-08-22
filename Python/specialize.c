@@ -144,8 +144,18 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     fprintf(out, "opcode[BINARY_SLICE].specializable : 1\n");
     fprintf(out, "opcode[STORE_SLICE].specializable : 1\n");
     for (int i = 0; i < 256; i++) {
-        if (_PyOpcode_Caches[i] && i != JUMP_BACKWARD) {
-            fprintf(out, "opcode[%s].specializable : 1\n", _PyOpcode_OpName[i]);
+        if (_PyOpcode_Caches[i]) {
+            /* Ignore jumps as they cannot be specialized */
+            switch (i) {
+                case POP_JUMP_IF_FALSE:
+                case POP_JUMP_IF_TRUE:
+                case POP_JUMP_IF_NONE:
+                case POP_JUMP_IF_NOT_NONE:
+                case JUMP_BACKWARD:
+                    break;
+                default:
+                    fprintf(out, "opcode[%s].specializable : 1\n", _PyOpcode_OpName[i]);
+            }
         }
         PRINT_STAT(i, specialization.success);
         PRINT_STAT(i, specialization.failure);
