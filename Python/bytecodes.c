@@ -672,6 +672,7 @@ dummy_func(
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                                                         PyStackRef_AsPyObjectSteal(stop));
             PyObject *res_o;
+            OPCODE_DEFERRED_INC(BINARY_SLICE);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
@@ -689,6 +690,7 @@ dummy_func(
         inst(STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                                                         PyStackRef_AsPyObjectSteal(stop));
+            OPCODE_DEFERRED_INC(STORE_SLICE);
             int err;
             if (slice == NULL) {
                 err = 1;
