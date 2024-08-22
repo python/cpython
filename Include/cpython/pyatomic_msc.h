@@ -640,6 +640,12 @@ _Py_atomic_load_char_relaxed(const char *obj)
     return *(volatile char *)obj;
 }
 
+static inline int
+_Py_atomic_load_uchar_relaxed(const unsigned char *obj)
+{
+    return *(volatile unsigned char *)obj;
+}
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj)
 {
