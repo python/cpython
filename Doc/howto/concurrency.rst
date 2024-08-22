@@ -9,13 +9,13 @@ from procedural to object-oriented to functional.  The same applies
 to concurrency.  Here we'll look at how different concurrency models
 look in Python, with an emphasis on practical workload-oriented examples.
 
-The following Python concurrency models are covered:
+The following concurrency models are covered:
 
-* free-threading (:mod:`threading` and :mod:`concurrent.futures`)
-* isolated threads, AKA CSP/actor model (:mod:`!interpreters`)
-* multi-processing (:mod:`multiprocessing` and :mod:`concurrent.futures`)
-* distributed, e.g. SMP (:mod:`!dask`)
-* async/await (:mod:`asyncio`)
+* free-threading
+* isolated threads, AKA CSP/actor model
+* multi-processing
+* distributed, e.g. SMP
+* async/await
 
 Each of these will be explained, with some simple examples.  The later
 workload-oriented examples will be implemented using each,
@@ -38,7 +38,71 @@ for comparison, when possible.
    newer programming languages typically avoid exposing threads directly.
    Take that into consideration before reaching for threads and look at
    the alternatives first.
-   See `the table below <concurrency-models-comparison_>`_.
+
+.. raw:: html
+
+   <style>
+       table.vert-aligned th
+       {
+           vertical-align: top;
+       }
+
+       table.vert-aligned td
+       {
+           vertical-align: top;
+       }
+   </style>
+
+For convenience, here's a summary comparng the concurrency models
+in Python:
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - `model <Concurrency Models_>`_
+     - Python API
+     - scale
+     - `multi-core <What is parallelism?_>`_
+     - `races <concurrency-downsides_>`_
+     - overhead
+     - `c.f <concurrent.futures_>`_
+   * - free threading `(Python) <python-free-threading_>`_
+     - :mod:`threading`
+     - small-medium
+     - `yes* <python-gil_>`_
+     - **yes**
+     - very low
+     - yes
+   * - isolated threads `(Python) <python-isolated-threads_>`_
+     - `interpreters <python-stdlib-interpreters_>`_
+     - small-medium
+     - yes
+     - no
+     - `low+ <python-interpreters-overhead_>`_
+     - `yes* <python-stdlib-interpreters_>`_
+   * - multiprocessing `(Python) <python-multiprocessing_>`_
+     - :mod:`multiprocessing`
+     - small
+     - yes
+     - no
+     - **medium**
+     - yes
+   * - distributed `(Python) <python-distributed_>`_
+     - :mod:`!dask`
+     - large
+     - yes
+     - no
+     - **medium+**
+     - no
+   * - async/await `(Python) <python-async-await_>`_
+     - :mod:`asyncio`
+     - small-medium
+     - **no**
+     - no
+     - low
+     - no
 
 
 All About Concurrency
@@ -288,12 +352,118 @@ Python Concurrency Models
 =========================
 
 We've looked at concurrency and concurrency models generally.
-Now let's see what they look like in Python.
-
-We'll also `compare them below <concurrency-models-comparison_>`_.
-
-Finally, we'll look at how `concurrent.futures <concurrent.futures_>`_
+Now let's see what each looks like in Python.
+We'll also look at `concurrent.futures <concurrent.futures_>`_
 provides a high-level API for some of the concurrency models.
+
+Here's a summary:
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - model
+     - Python API
+     - scale
+     - pros
+     - cons
+   * - free threading
+     - :mod:`threading`
+     - small-medium
+     - * familiar to many
+       * many examples available
+       * can enable multi-core parallelism (`caveat: GIL <python-gil_>`_)
+     - * all memory is subject to races
+       * some IO may have races (e.g. writing to stdout)
+       * can be hard for humans to follow what's happening in different
+         threads at any given point
+   * - multiple interpreters (isolated threads)
+     - `interpreters <python-stdlib-interpreters_>`_
+     - small-medium
+     - * isolation eliminates nearly all races, by default
+         (sharing is strictly opt-in)
+       * synchronization is built in to cross-interpreter interaction
+       * enables full multi-core parallelism of all Python code
+     - * unfamiliar to many
+       * less efficient than threads
+       * (currently) limited in what data can be shared between
+         interpreters
+   * - multiprocessing
+     - :mod:`multiprocessing`
+     - small
+     - * isolated (no races)
+       * enables full multi-core parallelism of all Python code
+     - * substantially less efficient than using a single process
+       * can lead to exhaustion of system resources
+         (e.g. file handles, PIDs)
+       * API can be hard to use
+   * - distributed
+     - :mod:`!dask`
+     - large
+     - * isolated (no races)
+       * fully parallel
+       * facilitates massive scaling
+     - * not necessarily a good fit for small-scale applications
+       * often requires configuration
+   * - async/await
+     - :mod:`asyncio`
+     - small-medium
+     - * not subject to races
+       * increasingly familiar to many; popular in newer languages
+       * has a long history in Python (e.g. ``twisted``)
+     - * async and non-async functions don't mix well,
+         potentially leading to duplication of code
+       * switching to async can require substantial cascading code churn
+       * callbacks can make it difficult to follow program logic,
+         making debugging harder
+       * does not enable multi-core parallelism
+
+Here's a comparison of the overhead of each model in Python:
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - model
+     - memory
+     - startup
+     - cross-task
+     - management
+     - system
+   * - free threading
+     - very low
+     - very low
+     - none
+     - very low
+     - none
+   * - multiple interpreters
+     - `low* <python-interpreters-overhead_>`_
+     - `medium* <python-interpreters-overhead_>`_
+     - low
+     - very low
+     - none
+   * - multiprocessing
+     - medium
+     - medium
+     - medium
+     - medium
+     - low
+   * - distributed
+     - medium+
+     - medium+
+     - medium-high
+     - medium
+     - low-medium
+   * - async/await
+     - low
+     - low
+     - none
+     - low
+     - none
+
+.. _python-free-threading:
 
 Free-threading
 --------------
@@ -320,10 +490,24 @@ Here's a basic example of how it looks to use the threading module::
     for t in threads:
         t.join()
 
+.. _python-gil:
+
+The Global Interpreter Lock (GIL)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Note that there are some limitations to the parallelism Python
 can provide.  See :pep:`630`.
 
+the :term:`global interpreter lock` (GIL) prevents multi-core
+parallelism for CPU-bound Python code (:pep:`for now... <630>`)
+
+the :term:`global interpreter lock` (GIL)
+
+...
+
 .. currentmodule:: None
+
+.. _python-isolated-threads:
 
 Isolated Threads (CSP/Actor Model)
 ----------------------------------
@@ -354,6 +538,22 @@ The future stdlib :mod:`!interpreters` module supports isolated execution:
     for t in threads:
         t.join()
 
+.. _python-stdlib-interpreters:
+
+A Stdlib Module for Using Multiple Interpreters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:pep:`734`
+
+.. _python-interpreters-overhead:
+
+Improving Performance for Multiple Interpreters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+improving...
+
+.. _python-multiprocessing:
+
 Multi-processing
 ----------------
 
@@ -381,6 +581,8 @@ You can use the stdlib :mod:`multiprocessing` module:
 
 .. currentmodule:: None
 
+.. _python-distributed:
+
 Distributed
 -----------
 
@@ -404,6 +606,8 @@ The popular :mod:`!dask` module gives us distributed concurrency:
     # Wait for all the tasks to finish.
     client.gather(futures)
 
+.. _python-async-await:
+
 Async/Await
 -----------
 
@@ -425,35 +629,6 @@ The stdlib :mod:`asyncio` module provides an event loop you can use:
     await asyncio.gather(*coros)
 
 .. currentmodule:: None
-
-.. _concurrency-models-comparison:
-
-Comparison
-----------
-
-.. list-table::
-   :header-rows: 1
-   :class: borderless
-   :align: left
-
-   * - model
-     - pros
-     - cons
-   * - threads
-     - ...
-     - ...
-   * - multiple interpreters
-     - ...
-     - ...
-   * - multiprocessing
-     - ...
-     - ...
-   * - distributed
-     - ...
-     - ...
-   * - async/await
-     - ...
-     - ...
 
 concurrent.futures
 ------------------
@@ -588,23 +763,9 @@ Workload 1
 
 # ...
 
-.. raw:: html
-
-   <style>
-       table.workload-example th
-       {
-           vertical-align: top;
-       }
-
-       table.workload-example td
-       {
-           vertical-align: top;
-       }
-   </style>
-
 .. list-table::
    :header-rows: 1
-   :class: borderless workload-example
+   :class: borderless vert-aligned
    :align: left
 
    * - threads
