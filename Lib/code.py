@@ -113,16 +113,7 @@ class InteractiveInterpreter:
         sys.last_value = value
         sys.last_traceback = tb
         if filename and type is SyntaxError:
-            # Work hard to stuff the correct filename in the exception
-            try:
-                msg, (dummy_filename, lineno, offset, line) = value.args
-            except ValueError:
-                # Not the format we expect; leave it alone
-                pass
-            else:
-                # Stuff in the right filename
-                value = SyntaxError(msg, (filename, lineno, offset, line))
-                sys.last_exc = sys.last_value = value
+            value.filename = filename
         # Set the line of text that the exception refers to
         source = kwargs.pop('source', '')
         lines = source.splitlines()
