@@ -39,6 +39,8 @@
 #include "pydtrace.h"
 #include "setobject.h"
 
+#include <stddef.h>               // ptrdiff_t
+
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
@@ -2207,8 +2209,8 @@ dummy_func(
             *value_ptr = PyStackRef_AsPyObjectSteal(value);
             if (old_value == NULL) {
                 PyDictValues *values = _PyObject_InlineValues(owner_o);
-                int index = value_ptr - values->values;
-                _PyDictValues_AddToInsertionOrder(values, index);
+                ptrdiff_t index = value_ptr - values->values;
+                _PyDictValues_AddToInsertionOrder(values, (Py_ssize_t)index);
             }
             else {
                 Py_DECREF(old_value);
