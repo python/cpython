@@ -929,7 +929,7 @@ instance_has_key(PyObject *obj, PyObject* name)
     return true;
 }
 
-int
+static int
 specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name)
 {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
