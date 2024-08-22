@@ -52,7 +52,7 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
 
 .. function:: fnmatch(name, pat)
 
-   Test whether the filename string *name* matches the pattern string *pat*,
+   Test whether the filename *name* matches the pattern string *pat*,
    returning ``True`` or ``False``.  Both parameters are case-normalized
    using :func:`os.path.normcase`. :func:`fnmatchcase` can be used to perform a
    case-sensitive comparison, regardless of whether that's standard for the
@@ -71,9 +71,13 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
 
 .. function:: fnmatchcase(name, pat)
 
-   Test whether the filename string *name* matches the pattern string *pat*,
+   Test whether the filename *name* matches the pattern string *pat*,
    returning ``True`` or ``False``;
    the comparison is case-sensitive and does not apply :func:`os.path.normcase`.
+
+   .. versionchanged:: 3.14
+      Added support for :term:`path-like objects <path-like object>` for
+      the *name* parameter.
 
 
 .. function:: filter(names, pat)
