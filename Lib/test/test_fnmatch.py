@@ -14,12 +14,12 @@ class FnmatchTestCase(unittest.TestCase):
     def check_match(self, filename, pattern, should_match=True, fn=fnmatch):
         if should_match:
             self.assertTrue(fn(filename, pattern),
-                         "expected %r to match pattern %r"
-                         % (filename, pattern))
+                         "expected %r (%r) to match pattern %r"
+                         % (filename, os.fspath(filename), pattern))
         else:
             self.assertFalse(fn(filename, pattern),
-                         "expected %r not to match pattern %r"
-                         % (filename, pattern))
+                         "expected %r (%r) not to match pattern %r"
+                         % (filename, os.fspath(filename), pattern))
 
     def test_fnmatch(self):
         check = self.check_match
