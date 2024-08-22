@@ -562,8 +562,6 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_INIT_NOT_PYTHON 21
 #define SPEC_FAIL_CALL_PEP_523 22
 #define SPEC_FAIL_CALL_BOUND_METHOD 23
-#define SPEC_FAIL_CALL_STR 24
-#define SPEC_FAIL_CALL_CLASS_NO_VECTORCALL 25
 #define SPEC_FAIL_CALL_CLASS_MUTABLE 26
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 28
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
@@ -1800,9 +1798,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             instr->op.code = CALL_BUILTIN_CLASS;
             return 0;
         }
-        SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
-            SPEC_FAIL_CALL_STR : SPEC_FAIL_CALL_CLASS_NO_VECTORCALL);
-        return -1;
+        goto generic;
     }
     if (Py_TYPE(tp) != &PyType_Type) {
         goto generic;
