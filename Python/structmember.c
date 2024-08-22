@@ -58,7 +58,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromLong(FT_ATOMIC_LOAD_LONG_RELAXED(*(long*)addr));
         break;
     case Py_T_ULONG:
-        v = PyLong_FromUnsignedLong(*(unsigned long*)addr);
+        v = PyLong_FromUnsignedLong(FT_ATOMIC_LOAD_ULONG_RELAXED(*(unsigned long*)addr));
         break;
     case Py_T_PYSSIZET:
         v = PyLong_FromSsize_t(*(Py_ssize_t*)addr);
@@ -269,7 +269,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (long_val == -1 && PyErr_Occurred()) {
                 return -1;
             }
-            *(unsigned long *)addr = (unsigned long)long_val;
+            FT_ATOMIC_STORE_ULONG(*(unsigned long *)addr, (unsigned long)long_val);
             WARN("Writing negative value into unsigned field");
         }
         else {
@@ -278,7 +278,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
                 return -1;
             }
-            *(unsigned long*)addr = ulong_val;
+            FT_ATOMIC_STORE_ULONG(*(unsigned long *)addr, ulong_val);
         }
         break;
     }
