@@ -1961,6 +1961,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 #endif
         ) {
             /* 0-pad year with century as necessary */
+            if (!PyTuple_Check(timetuple)) {
+                goto Done;
+            }
             PyObject *item = PyTuple_GetItem(timetuple, 0);
             if (item == NULL) {
                 goto Done;

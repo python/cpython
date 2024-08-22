@@ -223,7 +223,7 @@ def _can_support_c99():
             _supports_c99 = (
                 _time.strftime("%F", (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == "1900-01-01")
         except ValueError:
-            return False
+            _supports_c99 = False
     return _supports_c99
 
 # Correctly substitute for %z and %Z escapes in strftime formats.
