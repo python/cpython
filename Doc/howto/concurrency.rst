@@ -470,40 +470,74 @@ Free-threading
 
 .. currentmodule:: threading
 
-For free-threading we can use the stdlib :mod:`threading` module.
+Threads, through the :mod:`threading` module, have been the dominant
+tool in Python concurrency for decades, which mirrors the generate state
+of software in general.  Threads are very light-weight and efficient.
+Most importantly, they are the most direct route to taking advantage
+of multi-core parallelism (more an that in a moment).
 
-Here's a basic example of how it looks to use the threading module::
+The main downside to using threads is that each one shares the full
+memory of the process with all the others.  That exposes programs
+to a significant risk of `races <concurrency-downsides_>`_.
+
+The other potential problem with using threads is that the conceptual
+model has no inherent synchronization, so it can be hard to follow
+what is going on in the program at any given moment.  That is
+especially challenging for testing and debugging.
+
+Using threads for concurrency boils down to:
+
+1. create a thread object to run a function
+2. start the thread
+3. (optionally) wait for it to finish
+
+Here's how that looks::
 
     import threading
 
     def task():
         # Do something.
-        pass
+        ...
 
-    threads = []
-    for _ in range(5):
-        t = threading.Thread(target=task)
-        t.start()
-        threads.append(t)
+    t = threading.Thread(target=task)
+    t.start()
 
-    # Wait for all the threads to finish
-    for t in threads:
-        t.join()
+    # Do other stuff.
+
+    t.join()
 
 .. _python-gil:
 
 The Global Interpreter Lock (GIL)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Note that there are some limitations to the parallelism Python
-can provide.  See :pep:`630`.
+While physical threads are the direct route to multi-core parallelism,
+Python's threads have always had an extra wrinkle that gets in the way:
+the :term:`global interpreter lock` (GIL).
 
-the :term:`global interpreter lock` (GIL) prevents multi-core
-parallelism for CPU-bound Python code (:pep:`for now... <630>`)
+The :term:`!GIL` is very efficient tool for keeping the Python
+implementation simple, which is an important constraint for the project.
+In fact, it protects Python's maintainers and users from a large
+category of concurrency problems that one must normally face when
+threads are involved.
 
-the :term:`global interpreter lock` (GIL)
+The big tradeoff is that the bytecode interpreter, which executes your
+Python code, only runs while holding the :term:`!GIL`.  That means only
+one thread can be running Python code at a time.  Threads will take
+short turns, so none have to wait too long, but it still prevents
+any actual parallelism.
 
-...
+At the same time, the Python runtime (and extension modules) can
+release the :term:`!GIL` when the thread is going to be doing something
+unrelated to Python, particularly something slow or long,
+like a blocking IO operation.
+
+There is also an ongoing effort to eliminate the :term:`!GIL`:
+:pep:`630`.  Any attempt to remove the :term:`!GIL` necessarily involves
+some slowdown to single-threaded performance and extra maintenance
+burden to the Python project and extension module maintainers.
+However, there is sufficient interest in unlocking full multi-core
+parallelism to justify the current experiment.
 
 .. currentmodule:: None
 
