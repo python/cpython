@@ -288,7 +288,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         PyObject *exc = tstate->current_exception;
         if ((PyObject *)Py_TYPE(exc) == PyExc_SyntaxError) {
             /* fix "text" attribute */
-            assert(interactive_src);
+            assert(interactive_src != NULL);
             PyObject *xs = PyUnicode_Splitlines(interactive_src, 1);
             Py_DECREF(interactive_src);
             if (xs == NULL) {
@@ -301,8 +301,8 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             }
             int n = PyLong_AsInt(ln);
             Py_DECREF(ln);
-            assert(n>0);
-            assert(PyList_GET_SIZE(xs)>=n);
+            assert(n > 0);
+            assert(PyList_GET_SIZE(xs) >= n);
             PyObject *line = PyList_GET_ITEM(xs, n - 1);
             Py_INCREF(line);
             Py_DECREF(xs);
