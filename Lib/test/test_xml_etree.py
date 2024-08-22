@@ -2423,6 +2423,13 @@ class BugsTest(unittest.TestCase):
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
 
+    def test_123213_correct_extend_exception(self):
+        # Does not hide the internal exception when extending the element
+        self.assertRaises(ZeroDivisionError, ET.Element('tag').extend,
+                          (1/0 for i in range(2)))
+        # Still raises the TypeError when extending with a non-iterable
+        self.assertRaises(TypeError, ET.Element('tag').extend, None)
+
 
 
 # --------------------------------------------------------------------
