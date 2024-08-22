@@ -588,6 +588,9 @@ Available Context Managers
     Each object in the list has attributes with the same names as the arguments to
     :func:`showwarning`.
 
+    The definition of *category* and *lineno* are same as defined
+    at the top of :ref:`warning-filter` field.
+
     The *module* argument takes a module that will be used instead of the
     module returned when you import :mod:`warnings` whose filter will be
     protected. This argument exists primarily for testing the :mod:`warnings`
