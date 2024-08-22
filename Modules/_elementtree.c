@@ -1213,7 +1213,7 @@ _elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
     PyObject* seq;
     Py_ssize_t i;
 
-    seq = PySequence_Fast(elements, "argument must be an iterable");
+    seq = PySequence_Fast(elements, "'elements' must be an iterable");
     if (!seq) {
         return NULL;
     }
