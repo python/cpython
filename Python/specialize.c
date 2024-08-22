@@ -902,7 +902,11 @@ static int specialize_attr_loadclassattr(PyObject* owner, _Py_CODEUNIT* instr, P
     PyObject* descr, DescriptorClassification kind, bool is_method);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
-/* Returns true if instance may have attribute `name`. */
+/* Returns true if instances of obj's class are
+ * likely to have `name` in their __dict__.
+ * For objects with inline values, we check in the shared keys.
+ * For other objects, we check their actual dictionary.
+ */
 static bool
 instance_has_key(PyObject *obj, PyObject* name)
 {
@@ -912,7 +916,7 @@ instance_has_key(PyObject *obj, PyObject* name)
     }
     if (cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)cls)->ht_cached_keys;
-        int index = _PyDictKeys_StringLookup(keys, name);
+        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         return index >= 0;
     }
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
