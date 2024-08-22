@@ -40,7 +40,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromLong(FT_ATOMIC_LOAD_CHAR_RELAXED(*(char*)addr));
         break;
     case Py_T_UBYTE:
-        v = PyLong_FromUnsignedLong(*(unsigned char*)addr);
+        v = PyLong_FromUnsignedLong(FT_ATOMIC_LOAD_UCHAR_RELAXED(*(unsigned char*)addr));
         break;
     case Py_T_SHORT:
         v = PyLong_FromLong(*(short*)addr);
@@ -189,7 +189,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
-        *(unsigned char*)addr = (unsigned char)long_val;
+        FT_ATOMIC_STORE_UCHAR_RELEASE(*(unsigned char*)addr, (unsigned char)long_val);
         if ((long_val > UCHAR_MAX) || (long_val < 0))
             WARN("Truncation of value to unsigned char");
         break;
