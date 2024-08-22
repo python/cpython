@@ -1105,6 +1105,8 @@ class TestMain(TestCase):
         env = os.environ.copy()
         commands = "a b c\nexit()\n"
         output, exit_code = self.run_repl(commands, env=env)
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
         self.assertIn("SyntaxError: invalid syntax", output)
         self.assertIn("<python-input-0>", output)
 
