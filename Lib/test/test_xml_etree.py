@@ -2423,7 +2423,7 @@ class BugsTest(unittest.TestCase):
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
 
-    def test_123213_correct_extend_exception(self):
+    def test_issue123213_correct_extend_exception(self):
         # Does not hide the internal exception when extending the element
         self.assertRaises(ZeroDivisionError, ET.Element('tag').extend,
                           (1/0 for i in range(2)))
@@ -3755,6 +3755,15 @@ class ElementSlicingTest(unittest.TestCase):
         e[1::-sys.maxsize<<64] = [ET.Element('d')]
         self.assertEqual(self._subelem_tags(e), ['a0', 'd', 'a2', 'a3'])
 
+    def test_issue123213_setslice_exception(self):
+        e = ET.Element('tag')
+        # Does not hide the internal exception when assigning to the element
+        with self.assertRaises(ZeroDivisionError):
+            e[:1] = (1/0 for i in range(2))
+        
+        # Still raises the TypeError when assigning with a non-iterable
+        with self.assertRaises(TypeError):
+            e[:1] = None
 
 class IOTest(unittest.TestCase):
     def test_encoding(self):
