@@ -974,8 +974,13 @@ class DisTests(DisTestBase):
         expected = dis_f_with_positions_format % positions
         self.do_disassembly_test(_f, expected, show_positions=True)
 
+    @cpython_only
     @requires_debug_ranges()
     def test_dis_with_some_positions(self):
+        # If this test fails, it means that the construction of co_linetable
+        # has been changed. Please update this test and the internal docs
+        # accordingly so that they stay in sync.
+
         def f():
             pass
 
@@ -995,15 +1000,15 @@ class DisTests(DisTestBase):
                 (1 << 7)
                 | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
                 | (1 - 1),  # 1 code unit (RESUME)
-                (1 << 1),   # start line offset is 0 (encoded as an svarint)
+                (1 << 1),   # start line offset (encoded as an svarint)
                 (1 << 7)
                 | (PY_CODE_LOCATION_INFO_NO_LOCATION << 3)
                 | (1 - 1),  # 1 code unit (NOP)
                 (1 << 7)
                 | (PY_CODE_LOCATION_INFO_WITH_COLUMNS << 3)
                 | (1 - 1),  # 1 code unit (RETURN CONST)
-                (2 << 1),   # start line offset is 0 (encoded as an svarint)
-                3,          # end line offset is 0   (varint encoded)
+                (2 << 1),   # start line offset (encoded as an svarint)
+                3,          # end line offset   (encoded as a varint)
                 1,          # 1-based start column (reported as COL - 1)
                 5,          # 1-based end column (reported as ENDCOL - 1)
             ]
