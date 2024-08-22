@@ -1101,6 +1101,14 @@ class TestMain(TestCase):
         self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
 
     @force_not_colorized
+    def test_correct_filename_in_syntaxerrors(self):
+        env = os.environ.copy()
+        commands = "a b c\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertIn("SyntaxError: invalid syntax", output)
+        self.assertIn("<python-input-0>", output)
+
+    @force_not_colorized
     def test_proper_tracebacklimit(self):
         env = os.environ.copy()
         for set_tracebacklimit in [True, False]:
