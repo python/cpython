@@ -2427,6 +2427,7 @@ class BugsTest(unittest.TestCase):
         # Does not hide the internal exception when extending the element
         self.assertRaises(ZeroDivisionError, ET.Element('tag').extend,
                           (1/0 for i in range(2)))
+
         # Still raises the TypeError when extending with a non-iterable
         self.assertRaises(TypeError, ET.Element('tag').extend, None)
 
@@ -3760,7 +3761,7 @@ class ElementSlicingTest(unittest.TestCase):
         # Does not hide the internal exception when assigning to the element
         with self.assertRaises(ZeroDivisionError):
             e[:1] = (1/0 for i in range(2))
-        
+
         # Still raises the TypeError when assigning with a non-iterable
         with self.assertRaises(TypeError):
             e[:1] = None
