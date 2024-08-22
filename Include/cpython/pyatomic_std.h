@@ -1032,6 +1032,15 @@ _Py_atomic_store_llong_release(long long *obj, long long value)
 }
 
 static inline void
+_Py_atomic_store_ullong_release(unsigned long long *obj,
+                                unsigned long long value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(unsigned long long)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
 {
     _Py_USING_STD;

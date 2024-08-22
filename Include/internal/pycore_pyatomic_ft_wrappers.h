@@ -105,6 +105,10 @@ extern "C" {
     _Py_atomic_store_llong_release(&value, new_value)
 #define FT_ATOMIC_LOAD_LLONG_RELAXED(value) \
     _Py_atomic_load_llong_relaxed(&value)
+#define FT_ATOMIC_STORE_ULLONG_RELEASE(value, new_value) \
+    _Py_atomic_store_ullong_release(&value, new_value)
+#define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) \
+    _Py_atomic_load_ullong_relaxed(&value)
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
@@ -150,6 +154,8 @@ extern "C" {
 #define FT_ATOMIC_STORE_DOUBLE_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_LLONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_LLONG_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
+#define FT_ATOMIC_STORE_ULLONG_RELEASE(value, new_value) value = new_value
 
 #endif
 

@@ -577,6 +577,11 @@ _Py_atomic_store_llong_release(long long *obj, long long value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void
+_Py_atomic_store_ullong_release(unsigned long long *obj,
+                                unsigned long long value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 

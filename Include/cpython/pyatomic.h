@@ -529,6 +529,10 @@ _Py_atomic_store_double_release(double *obj, double value);
 static inline void
 _Py_atomic_store_llong_release(long long *obj, long long value);
 
+static inline void
+_Py_atomic_store_ullong_release(unsigned long long *obj,
+                                unsigned long long value);
+
 static inline int
 _Py_atomic_load_int_acquire(const int *obj);
 
