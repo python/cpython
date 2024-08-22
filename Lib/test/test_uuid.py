@@ -690,11 +690,13 @@ class BaseTestUUID:
         fake_nanoseconds = 1545052026752910643
         fake_node_value = 93328246233727
         fake_clock_seq = 5317
-        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
-                mock.patch.object(self.uuid, '_last_timestamp_v6', None), \
-                mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value), \
-                mock.patch('time.time_ns', return_value=fake_nanoseconds), \
-                mock.patch('random.getrandbits', return_value=fake_clock_seq):
+        with (
+            mock.patch.object(self.uuid, '_generate_time_safe', None),
+            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
+            mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value),
+            mock.patch('time.time_ns', return_value=fake_nanoseconds),
+            mock.patch('random.getrandbits', return_value=fake_clock_seq)
+        ):
             u = self.uuid.uuid6()
             equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 0b0110)  # 6
@@ -709,6 +711,30 @@ class BaseTestUUID:
             equal(u.fields[3], 0b10_010100)  # 2 bits of variant + 6 high bits of clock_seq
             equal(u.fields[4], 0b11000101)  # 8 low bits of clock_seq
             equal(u.fields[5], fake_node_value)
+
+    def test_uuid6_test_vectors(self):
+        # https://www.rfc-editor.org/rfc/rfc9562#name-test-vectors
+        fake_nanoseconds = (0x1EC9414C232AB00 - 0x01B21DD213814000) * 100
+        # https://www.rfc-editor.org/rfc/rfc9562#name-example-of-a-uuidv6-value
+        node = 0x9F6BDECED846
+        clock_seq = (0b11 << 12) | 0x3C8
+
+        with (
+            mock.patch.object(self.uuid, '_generate_time_safe', None),
+            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
+            mock.patch('time.time_ns', return_value=fake_nanoseconds)
+        ):
+            u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
+            self.assertEqual(str(u).upper(), '1EC9414C-232A-6B00-B3C8-9F6BDECED846')
+            #   32          16      4      12       2      14         48
+            # time_hi | time_mid | ver | time_lo | var | clock_seq | node
+            self.assertEqual(u.int & 0xFFFFFFFFFFFF, node)
+            self.assertEqual((u.int >> 48) & 0x3FFF, clock_seq)
+            self.assertEqual((u.int >> 62) & 0x3, 0b10)
+            self.assertEqual((u.int >> 64) & 0xFFF, 0xB00)
+            self.assertEqual((u.int >> 76) & 0xF, 0x6)
+            self.assertEqual((u.int >> 80) & 0xFFFF, 0x232A)
+            self.assertEqual((u.int >> 96) & 0xFFFFFFFF, 0x1EC9414C)
 
     @support.requires_fork()
     def testIssue8621(self):
