@@ -546,45 +546,121 @@ parallelism to justify the current experiment.
 Isolated Threads (CSP/Actor Model)
 ----------------------------------
 
-The future stdlib :mod:`!interpreters` module supports isolated execution:
+There's a major alternative to free-threading, both for multi-core
+parallelism and for a simpler conceptual model: use multiple interpreters.
 
-::
+Python's major implementation, CPython, has for decades supported
+running with multiple independent copies of the Python runtime
+("interpreter") in a single process.  However, these interpreters
+weren't completely isolated from one another; most importantly they
+shared the one :term:`!GIL`.  Over several years a lot of work went
+into improving the isolation between interpreters, culminating in
+no longer sharing a single :term:`!GIL`.
+
+Besides unlocking full multi-core parallelism, the isolation between
+interpreters means that, from a conceptual level, concurrency can be
+simpler.  An interpreter encapsulates all of Python's runtime state,
+including things like :data:`sys.modules`.  By default, interpreters
+mostly don't share any data (including objects) at all.  Anything that
+gets shared is done on a strictly opt-in basis.  That means programmers
+don't need to worry about possible `races <concurrency-downsides_>`_
+with *any* data in the program.  They only need to worry about data
+that was explicitly shared.
+
+Using multiple interpreters is fairly straight-forward:
+
+1. create a new interpreter
+2. switch the current thread to use that interpreter
+3. call :func:`exec`, but targeting the new interpreter
+4. switch back
+
+You can use the :mod:`!interpreters` module (more on that in a moment)
+to do this::
+
+    import interpreters
+
+    script = """if True:
+        # Do something.
+        ...
+        """
+
+    interp = interpreters.create()
+    interp.exec(script)
+
+Note that no threads were involved.  That's because running in an
+interpreter happens relative to the current thread.  New threads
+aren't implicitly involved.  They can be added in explicitly though.
+Why?  For multi-core parallelism.
+
+If you want multi-core parallelism, run a different interpreter in each
+thread.  Their isolation means that each can run unblocked in that
+thread.
+
+Here's the very explicit way to do that::
 
     import interpreters
     import threading
 
     script = """if True:
         # Do something.
-        pass
+        ...
         """
 
     def task():
         interp = interpreters.create()
         interp.exec(script)
 
-    threads = []
-    for _ in range(5):
-        t = threading.Thread(target=task)
-        t.start()
-        threads.append(t)
+    t = threading.Thread(target=task)
+    t.start()
 
-    # Wait for all the subinterpreters to finish
-    for t in threads:
-        t.join()
+    # Do other stuff.
+
+    t.join()
+
+There's a convenience method too::
+
+    import interpreters
+
+    def task():
+        # Do something.
+        ...
+
+    interp = interpreters.create()
+    t = interp.call_in_thread(task)
+
+    # Do other stuff.
+
+    t.join()
 
 .. _python-stdlib-interpreters:
 
 A Stdlib Module for Using Multiple Interpreters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:pep:`734`
+While use of multiple interpreters has been part of Python's C-API
+for decades, the feature hasn't been exposed to Python code through
+the stdlib.  :pep:`734` proposes changing that by adding a new
+:mod:`!interpreters` module.
+
+In the meantime, an implementation of that PEP is available for
+Python 3.13+ on PyPI: :pypi:`interpreters-pep-734`.
 
 .. _python-interpreters-overhead:
 
 Improving Performance for Multiple Interpreters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-improving...
+The long effort to improve on Python's implementation of multiple
+interpreters focused on isolation and stability.  There was very little
+done to improve performance.  This has the most impact on:
+
+* how much memory each interpreter uses
+  (i.e. how many can run at the same time)
+* how long it takes to create a new interpreter
+
+As the work on isolation wraps up, improvements will shift to focus
+on performance and memory usage.  Thus the overhead associated with
+using multiple interpreters will drastically decrease over time.
 
 .. _python-multiprocessing:
 
