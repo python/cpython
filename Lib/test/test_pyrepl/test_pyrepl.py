@@ -1109,6 +1109,10 @@ class TestMain(TestCase):
             self.skipTest("pyrepl not available")
         self.assertIn("SyntaxError: invalid syntax", output)
         self.assertIn("<python-input-0>", output)
+        commands = " b\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertIn("IndentationError: unexpected indent", output)
+        self.assertIn("<python-input-0>", output)
 
     @force_not_colorized
     def test_proper_tracebacklimit(self):

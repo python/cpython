@@ -108,7 +108,7 @@ class InteractiveInterpreter:
         """
         try:
             typ, value, tb = sys.exc_info()
-            if filename and typ is SyntaxError:
+            if filename and issubclass(typ, SyntaxError):
                 value.filename = filename
             source = kwargs.pop('source', "")
             self._showtraceback(typ, value, None, source)
