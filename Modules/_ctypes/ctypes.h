@@ -218,7 +218,7 @@ extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
 struct CFieldObject;
 extern int
-PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self, Py_ssize_t index,
+PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self,
                 Py_ssize_t *pfield_size,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign);

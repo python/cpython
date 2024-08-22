@@ -453,6 +453,13 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         CFieldObject *prop = (CFieldObject *)prop_obj; // borrow from prop_obj
 
+        if (prop->index != i) {
+            PyErr_Format(PyExc_ValueError,
+                        "field %R index mismatch (expected %d, got %d)",
+                         prop->name, i, prop->index);
+            goto error;
+        }
+
         if (PyCArrayTypeObject_Check(st, prop->proto)) {
             arrays_seen = 1;
         }
@@ -484,7 +491,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            int res = PyCField_InitFromDesc(st, prop, i,
+            int res = PyCField_InitFromDesc(st, prop,
                                    &field_size, &bitofs,
                                    &size, &offset, &align);
             if (res < 0) {
@@ -532,7 +539,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             bitofs = 0;
             offset = 0;
             align = 0;
-            int res = PyCField_InitFromDesc(st, prop, i,
+            int res = PyCField_InitFromDesc(st, prop,
                                    &field_size, &bitofs,
                                    &size, &offset, &align);
             if (res < 0) {

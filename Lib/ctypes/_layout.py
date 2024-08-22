@@ -34,7 +34,7 @@ class _BaseLayout:
         self._pack_ = getattr(cls, '_pack_', None)
 
     def __iter__(self):
-        for field in self.fields:
+        for i, field in enumerate(self.fields):
             field = tuple(field)
             try:
                 name, ftype, bit_size = field
@@ -51,6 +51,7 @@ class _BaseLayout:
                 bit_size=bit_size,
                 swapped_bytes=self.swapped_bytes,
                 pack=self._pack_,
+                index=i,
                 **self._field_args(),
             )
             self.offset += self.size

@@ -210,6 +210,7 @@ _ctypes.CField.__new__ as PyCField_new
     type as proto: object
     size: Py_ssize_t
     offset: Py_ssize_t
+    index: Py_ssize_t
     bit_size as bit_size_obj: object = None
     swapped_bytes: bool = False
     _ms: bool = False
@@ -219,9 +220,10 @@ _ctypes.CField.__new__ as PyCField_new
 
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
-                  Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj,
-                  int swapped_bytes, int _ms, PyObject *pack_obj)
-/*[clinic end generated code: output=96c276e7033f8fe2 input=6f5e15c4b2015849]*/
+                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
+                  PyObject *bit_size_obj, int swapped_bytes, int _ms,
+                  PyObject *pack_obj)
+/*[clinic end generated code: output=ceac8ecaf7724c6f input=54d25dff55e27e4a]*/
 {
     PyTypeObject *tp = type;
     ctypes_state *st = get_module_state_by_class(tp);
@@ -316,10 +318,10 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         self->big_endian = PY_BIG_ENDIAN;
     }
     self->_ms_layout = _ms;
+    self->index = index;
 
     self->setfunc = NULL; // XXX
     self->getfunc = NULL; // XXX
-    self->index = 0; // XXX
 
     return (PyObject *)self;
 error:
@@ -329,7 +331,7 @@ error:
 
 
 int
-PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
+PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
                 Py_ssize_t *pfield_size,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign)
 {
@@ -385,7 +387,6 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
 
     self->setfunc = setfunc;
     self->getfunc = getfunc;
-    self->index = index;
 
     Py_ssize_t bitsize = self->bit_size;
     if(!_cfield_is_bitfield(self)) {
