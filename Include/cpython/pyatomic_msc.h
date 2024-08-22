@@ -634,7 +634,7 @@ _Py_atomic_load_int_relaxed(const int *obj)
     return *(volatile int *)obj;
 }
 
-static inline int
+static inline char
 _Py_atomic_load_char_relaxed(const char *obj)
 {
     return *(volatile char *)obj;
