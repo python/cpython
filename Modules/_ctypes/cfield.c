@@ -117,6 +117,8 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
     *pbitofs += *poffset * 8;
     *poffset = 0;
 
+    assert(self->pack == 0); // TODO: This shouldn't be a C assertion
+
     *palign = info->align;
 
     if (bitsize > 0) {
@@ -154,12 +156,12 @@ static int
 PyCField_FromDesc_msvc(
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
-                Py_ssize_t *palign, int pack,
+                Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info
                 )
 {
-    if (pack) {
-        *palign = Py_MIN(pack, info->align);
+    if (self->pack) {
+        *palign = Py_MIN(self->pack, info->align);
     } else {
         *palign = info->align;
     }
@@ -211,14 +213,15 @@ _ctypes.CField.__new__ as PyCField_new
     bit_size as bit_size_obj: object = None
     swapped_bytes: bool = False
     _ms: bool = False
+    pack as pack_obj: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t size, Py_ssize_t offset, PyObject *bit_size_obj,
-                  int swapped_bytes, int _ms)
-/*[clinic end generated code: output=ce7cebd241952cb1 input=2857465d20fd1002]*/
+                  int swapped_bytes, int _ms, PyObject *pack_obj)
+/*[clinic end generated code: output=96c276e7033f8fe2 input=6f5e15c4b2015849]*/
 {
     PyTypeObject *tp = type;
     ctypes_state *st = get_module_state_by_class(tp);
@@ -247,7 +250,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
 
     if (bit_size_obj == Py_None) {
         self->bit_size = -1;
-    } else {
+    }
+    else {
         self->bit_size = PyLong_AsSsize_t(bit_size_obj);
         if (self->bit_size < 0) {
             if (!PyErr_Occurred()) {
@@ -288,6 +292,20 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         }
     }
 
+    if (pack_obj == Py_None) {
+        self->pack = 0;
+    }
+    else {
+        self->pack = PyLong_AsSsize_t(pack_obj);
+        if (self->pack < 0) {
+            if (!PyErr_Occurred()) {
+                PyErr_Format(PyExc_ValueError,
+                             "_pack_ cannot be negative");
+            }
+            goto error;
+        }
+    }
+
     self->proto = Py_NewRef(proto);
     self->size = size;
     self->offset = offset;
@@ -313,8 +331,7 @@ error:
 int
 PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
                 Py_ssize_t *pfield_size,
-                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack)
+                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign)
 {
     if (self == NULL) {
         return -1;
@@ -386,11 +403,9 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
         result = PyCField_FromDesc_msvc(
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
-                pack,
                 self, info
                 );
     } else {
-        assert(pack == 0);
         result = PyCField_FromDesc_gcc(
                 bitsize, pbitofs,
                 psize, poffset, palign,

@@ -486,8 +486,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                corrected alignment */
             int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, &bitofs,
-                                   &size, &offset, &align,
-                                   pack);
+                                   &size, &offset, &align);
             if (res < 0) {
                 goto error;
             }
@@ -535,8 +534,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             align = 0;
             int res = PyCField_InitFromDesc(st, prop, i,
                                    &field_size, &bitofs,
-                                   &size, &offset, &align,
-                                   pack);
+                                   &size, &offset, &align);
             if (res < 0) {
                 goto error;
             }
