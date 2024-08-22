@@ -126,6 +126,14 @@ dis
 
   (Contributed by Bénédikt Tran in :gh:`123165`.)
 
+fnmatch
+-------
+
+* Added support for :term:`path-like objects <path-like object>` for
+  the *name* parameter of :func:`fnmatch.fnmatchcase`.
+
+  (Contributed by Bénédikt Tran in :gh:`123215`.)
+
 fractions
 ---------
 
