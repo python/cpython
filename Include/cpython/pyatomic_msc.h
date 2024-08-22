@@ -1021,7 +1021,7 @@ _Py_atomic_store_short_release(short *obj, short value)
     *(short volatile *)obj = value;
 #elif defined(_M_ARM64)
     _Py_atomic_ASSERT_ARG_TYPE(unsigned __int16);
-    __stlr8((unsigned __int16 volatile *)obj, (unsigned __int16)value);
+    __stlr16((unsigned __int16 volatile *)obj, (unsigned __int16)value);
 #else
 #  error "no implementation of _Py_atomic_store_short_release"
 #endif
@@ -1034,7 +1034,7 @@ _Py_atomic_store_ushort_release(unsigned short *obj, unsigned short value)
     *(short volatile *)obj = value;
 #elif defined(_M_ARM64)
     _Py_atomic_ASSERT_ARG_TYPE(unsigned __int16);
-    __stlr8((unsigned __int16 volatile *)obj, (unsigned __int16)value);
+    __stlr16((unsigned __int16 volatile *)obj, (unsigned __int16)value);
 #else
 #  error "no implementation of _Py_atomic_store_ushort_release"
 #endif
