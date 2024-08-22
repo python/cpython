@@ -13,6 +13,7 @@ from codeop import CommandCompiler, compile_command
 __all__ = ["InteractiveInterpreter", "InteractiveConsole", "interact",
            "compile_command"]
 
+
 class InteractiveInterpreter:
     """Base class for InteractiveConsole.
 
@@ -112,7 +113,7 @@ class InteractiveInterpreter:
         sys.last_type = type
         sys.last_value = value
         sys.last_traceback = tb
-        if filename and type is SyntaxError:
+        if filename and type and issubclass(type, SyntaxError):
             value.filename = filename
         # Set the line of text that the exception refers to
         source = kwargs.pop('source', '')
@@ -121,7 +122,8 @@ class InteractiveInterpreter:
                 and not value.text and len(lines) >= value.lineno):
             value.text = lines[value.lineno - 1]
         if sys.excepthook is sys.__excepthook__:
-            lines = traceback.format_exception_only(type, value, colorize=colorize)
+            lines = traceback.format_exception_only(
+                type, value, colorize=colorize)
             self.write(''.join(lines))
         else:
             # If someone has set sys.excepthook, we let that take precedence
@@ -142,7 +144,8 @@ class InteractiveInterpreter:
         sys.last_exc = ei[1]
         try:
             if sys.excepthook is sys.__excepthook__:
-                lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next, colorize=colorize)
+                lines = traceback.format_exception(
+                    ei[0], ei[1], last_tb.tb_next, colorize=colorize)
                 self.write(''.join(lines))
             else:
                 # If someone has set sys.excepthook, we let that take precedence
@@ -376,7 +379,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', action='store_true',
-                       help="don't print version and copyright messages")
+                        help="don't print version and copyright messages")
     args = parser.parse_args()
     if args.q or sys.flags.quiet:
         banner = ''
