@@ -246,6 +246,8 @@ than one MIME-type database; it provides an interface similar to the one of the
       Similar to the :func:`add_type` function, using the tables stored as part of
       the object.
 
+      .. versionadded:: 2.3
+
 
    .. method:: MimeTypes.guess_extension(type, strict=True)
 
