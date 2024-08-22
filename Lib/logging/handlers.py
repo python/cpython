@@ -1015,16 +1015,16 @@ class SysLogHandler(logging.Handler):
                     self.socket.close()
                     self._connect_unixsocket(self.address)
                     self.socket.send(msg)
-            # UDP socket type 
+            # UDP socket type
             elif self.socktype == socket.SOCK_DGRAM:
                 self.socket.sendto(msg, self.address)
             # TCP socket type
-            # This block doesn't exist in original handlers.py code for TCP 
+            # This block doesn't exist in original handlers.py code for TCP
             elif self.socktype == socket.SOCK_STREAM:
                 try:
 
                     self.socket.sendall(msg)
-                #create new TCP socket stream, if TCP socket broken or disconnected 
+                #create new TCP socket stream, if TCP socket broken or disconnected
                 except OSError:
 
                     self.socket = socket.socket(socket.AF_INET, self.socktype)
