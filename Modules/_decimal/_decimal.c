@@ -6149,10 +6149,22 @@ decimal_clear(PyObject *module)
     Py_CLEAR(state->SignalTuple);
     Py_CLEAR(state->PyDecimal);
 
-    PyMem_Free(state->signal_map);
-    PyMem_Free(state->cond_map);
-    state->signal_map = NULL;
-    state->cond_map = NULL;
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_CLEAR(cm->ex);
+        }
+        PyMem_Free(state->signal_map);
+        state->signal_map = NULL;
+    }
+
+    if (state->cond_map != NULL) {
+        // signal_map[0] is assigned to cond_map[0]
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_CLEAR(cm->ex);
+        }
+        PyMem_Free(state->cond_map);
+        state->cond_map = NULL;
+    }
     return 0;
 }
 
