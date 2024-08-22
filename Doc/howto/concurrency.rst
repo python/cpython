@@ -669,9 +669,23 @@ Multi-processing
 
 .. currentmodule:: multiprocessing
 
-You can use the stdlib :mod:`multiprocessing` module:
+The stdlib :mod:`multiprocessing` module, which has been around many
+years, provides an API for using multiple processes for concurrency.
+Furthermore, processes are always isolated, so you have many of the
+same benefits of using multiple interpreters, including multi-core
+parallelism.
 
-::
+There are some obstacles however.  First of all, using multiple
+processes has a higher overhead than operating in a single process,
+sometimes significantly higher.  This applies in just about every
+dimension of overhead.  Secondly, the :mod:`multiprocessing` module's
+API is substantially larger and more complex that what we use for
+threads and multiple interpreters.  Finally, there are some scaling
+issues with using multiple processes, related both to the performance
+overhead and to how the operating system assigns resources like
+file handles.
+
+Here's a very basic example::
 
     import multiprocessing
 
@@ -679,15 +693,18 @@ You can use the stdlib :mod:`multiprocessing` module:
         # Do something.
         pass
 
-    procs = []
-    for _ in range(5):
-        p = multiprocessing.Process(target=task)
-        p.start()
-        procs.append(p)
+    p = multiprocessing.Process(target=task)
+    p.start()
 
-    # Wait for all the subprocesses to finish
-    for p in procs:
-        p.join()
+    # Do other stuff.
+
+    p.join()
+
+The similarity with :class:`threading.Thread` is intentional.
+On top of that, the :mod:`multiprocessing` module provides an extensive
+API to address a variety of needs, including machinery for inter-process
+shared memory.  Also note that that API can be used for threads and
+(eventually) interpreters using different backends.
 
 .. currentmodule:: None
 
