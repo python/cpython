@@ -73,6 +73,10 @@ extern "C" {
     _Py_atomic_store_short_release(&value, new_value)
 #define FT_ATOMIC_LOAD_SHORT_RELAXED(value) \
     _Py_atomic_load_short_relaxed(&value)
+#define FT_ATOMIC_STORE_USHORT_RELEASE(value, new_value) \
+    _Py_atomic_store_ushort_release(&value, new_value)
+#define FT_ATOMIC_LOAD_USHORT_RELAXED(value) \
+    _Py_atomic_load_ushort_relaxed(&value)
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
@@ -102,6 +106,8 @@ extern "C" {
 #define FT_ATOMIC_STORE_UCHAR_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_SHORT_RELAXED(value) value
 #define FT_ATOMIC_STORE_SHORT_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_LOAD_USHORT_RELAXED(value) value
+#define FT_ATOMIC_STORE_USHORT_RELEASE(value, new_value) value = new_value
 
 #endif
 
