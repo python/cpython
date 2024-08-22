@@ -1,5 +1,6 @@
 # Minimal tests for dis module
 
+import ast
 import contextlib
 import dis
 import functools
@@ -976,44 +977,47 @@ class DisTests(DisTestBase):
 
     @requires_debug_ranges()
     def test_dis_with_some_positions(self):
-        def f():
-            pass
+        code = ("def f():\n"
+                "   try: pass\n"
+                "   finally:pass")
+        f = compile(ast.parse(code), "?", "exec").co_consts[0]
 
-        PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
-        PY_CODE_LOCATION_INFO_WITH_COLUMNS = 14
-        PY_CODE_LOCATION_INFO_NO_LOCATION = 15
-
-        f.__code__ = f.__code__.replace(
-            co_stacksize=1,
-            co_firstlineno=42,
-            co_code=bytes([
-                dis.opmap["RESUME"], 0,
-                dis.opmap["NOP"], 0,
-                dis.opmap["RETURN_CONST"], 0,
-            ]),
-            co_linetable=bytes([
-                (1 << 7)
-                | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-                | (1 - 1),  # 1 code unit (RESUME)
-                (1 << 1),   # start line offset is 0 (encoded as an svarint)
-                (1 << 7)
-                | (PY_CODE_LOCATION_INFO_NO_LOCATION << 3)
-                | (1 - 1),  # 1 code unit (NOP)
-                (1 << 7)
-                | (PY_CODE_LOCATION_INFO_WITH_COLUMNS << 3)
-                | (1 - 1),  # 1 code unit (RETURN CONST)
-                (2 << 1),   # start line offset is 0 (encoded as an svarint)
-                3,          # end line offset is 0   (varint encoded)
-                1,          # 1-based start column (reported as COL - 1)
-                5,          # 1-based end column (reported as ENDCOL - 1)
-            ]
-        ))
         expect = '\n'.join([
-            '43:?-43:?            RESUME                   0',
+            '1:0-1:0              RESUME                   0',
             '',
-            '  --                 NOP',
+            '2:3-3:15             NOP',
             '',
-            '45:0-48:4            RETURN_CONST             0 (None)',
+            '3:11-3:15            RETURN_CONST             0 (None)',
+            '',
+            '  --         L1:     PUSH_EXC_INFO',
+            '',
+            '3:11-3:15            RERAISE                  0',
+            '',
+            '  --         L2:     COPY                     3',
+            '  --                 POP_EXCEPT',
+            '  --                 RERAISE                  1',
+            'ExceptionTable:',
+            '  L1 to L2 -> L2 [1] lasti',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_linenos_but_no_columns(self):
+        code = "def f():\n\tx = 1"
+        tree = ast.parse(code)
+        func = tree.body[0]
+        ass_x = func.body[0].targets[0]
+        # remove columns information but keep line information
+        ass_x.col_offset = ass_x.end_col_offset = -1
+        f = compile(tree, "?", "exec").co_consts[0]
+
+        expect = '\n'.join([
+            '1:0-1:0            RESUME                   0',
+            '',
+            '2:5-2:6            LOAD_CONST               1 (1)',
+            '2:?-2:?            STORE_FAST               0 (x)',
+            '2:?-2:?            RETURN_CONST             0 (None)',
             '',
         ])
         self.do_disassembly_test(f, expect, show_positions=True)
