@@ -72,6 +72,12 @@ Py_ssize_t LOW_BIT(Py_ssize_t offset);
 static inline
 Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
 
+static bool
+_cfield_is_bitfield(CFieldObject* self)
+{
+    return self->bit_size >= 0;
+}
+
 /* PyCField_FromDesc creates and returns a struct/union field descriptor.
 
 The function expects to be called repeatedly for all fields in a struct or
@@ -104,8 +110,7 @@ PyCField_FromDesc manages:
 static int
 PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                CFieldObject* self, StgInfo* info,
-                int is_bitfield
+                CFieldObject* self, StgInfo* info
                 )
 {
     // We don't use poffset here, so clear it, if it has been set.
@@ -131,7 +136,7 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
     assert(*poffset == 0);
 
     self->offset = round_down(*pbitofs, 8*info->align) / 8;
-    if(is_bitfield) {
+    if(_cfield_is_bitfield(self)) {
         Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
         self->size = BUILD_SIZE(bitsize, effective_bitsof);
         assert(effective_bitsof <= info->size * 8);
@@ -150,8 +155,7 @@ PyCField_FromDesc_msvc(
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign, int pack,
-                CFieldObject* self, StgInfo* info,
-                int is_bitfield
+                CFieldObject* self, StgInfo* info
                 )
 {
     if (pack) {
@@ -181,7 +185,7 @@ PyCField_FromDesc_msvc(
     assert(8 * info->size == *pfield_size);
 
     self->offset = *poffset - (*pfield_size) / 8;
-    if(is_bitfield) {
+    if(_cfield_is_bitfield(self)) {
         assert(0 <= (*pfield_size + *pbitofs));
         assert((*pfield_size + *pbitofs) < info->size * 8);
         self->size = BUILD_SIZE(bitsize, *pfield_size + *pbitofs);
@@ -308,7 +312,7 @@ error:
 
 int
 PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
-                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
+                Py_ssize_t *pfield_size,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack)
 {
@@ -366,8 +370,8 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
     self->getfunc = getfunc;
     self->index = index;
 
-    int is_bitfield = bitsize >= 0;
-    if(!is_bitfield) {
+    Py_ssize_t bitsize = self->bit_size;
+    if(!_cfield_is_bitfield(self)) {
         assert(info->size >= 0);
         // assert: no overflow;
         assert((unsigned long long int) info->size
@@ -383,23 +387,21 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self, Py_ssize_t index,
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
                 pack,
-                self, info,
-                is_bitfield
+                self, info
                 );
     } else {
         assert(pack == 0);
         result = PyCField_FromDesc_gcc(
                 bitsize, pbitofs,
                 psize, poffset, palign,
-                self, info,
-                is_bitfield
+                self, info
                 );
     }
     if (result < 0) {
         return -1;
     }
-    assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
-    if(self->big_endian && is_bitfield) {
+    assert(!_cfield_is_bitfield(self) || (LOW_BIT(self->size) <= self->size * 8));
+    if(self->big_endian && _cfield_is_bitfield(self)) {
         self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
     }
     return 0;

@@ -452,7 +452,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
         }
         CFieldObject *prop = (CFieldObject *)prop_obj; // borrow from prop_obj
-        Py_ssize_t bitsize = prop->bit_size;
 
         if (PyCArrayTypeObject_Check(st, prop->proto)) {
             arrays_seen = 1;
@@ -486,7 +485,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
             int res = PyCField_InitFromDesc(st, prop, i,
-                                   &field_size, bitsize, &bitofs,
+                                   &field_size, &bitofs,
                                    &size, &offset, &align,
                                    pack);
             if (res < 0) {
@@ -535,7 +534,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             offset = 0;
             align = 0;
             int res = PyCField_InitFromDesc(st, prop, i,
-                                   &field_size, bitsize, &bitofs,
+                                   &field_size, &bitofs,
                                    &size, &offset, &align,
                                    pack);
             if (res < 0) {
