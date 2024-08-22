@@ -480,14 +480,14 @@ minor uniqueness that we'll look at in a moment.
    can be simply substituted.
 
 With an executor you can call a function asynchronously (in the background)
-using :meth:`executor.submit() <Executor.submit>`.
-It returns a :class:`Future <Future>` object which tracks completion
-and provides the result.  :class:`Future <Future>` objects have a few
-other tricks, like cancelation and completion callbacks, which we won't
-cover here.  Likewise we won't cover the various uses of timeouts.
+using :meth:`Executor.submit`.  It returns a :class:`Future` object
+which tracks completion and provides the result.
+:class:`!Future` objects have a few other tricks, like cancelation
+and completion callbacks, which we won't cover here.
+Likewise we won't cover the various uses of timeouts.
 
-Here's an example of using :meth:`executor.submit() <Executor.submit>`
-and :meth:`Future.result() <Future.result>`:
+Here's an example of using :meth:`Executor.submit`
+and :meth:`Future.result`:
 
 .. literalinclude:: ../includes/concurrency.py
    :name: concurrency-cf-basic
@@ -496,8 +496,8 @@ and :meth:`Future.result() <Future.result>`:
    :dedent:
    :linenos:
 
-You can use :meth:`executor.map() <Executor.map>` to call a function
-multiple times and yield each result:
+You can use :meth:`Executor.map` to call a function multiple times
+and yield each result:
 
 .. literalinclude:: ../includes/concurrency.py
    :name: concurrency-cf-map-1
@@ -513,9 +513,8 @@ multiple times and yield each result:
    :dedent:
    :linenos:
 
-You can wait for an existing set of :class:`futures <Future>`
-using :func:`wait`
-(and :func:`as_completed` and :meth:`executor.map() <Executor.map>`):
+You can wait for an existing set of :class:`!Future` objects using
+:func:`wait` (and :func:`as_completed` and :meth:`Executor.map`):
 
 .. literalinclude:: ../includes/concurrency.py
    :name: concurrency-cf-wait
@@ -524,7 +523,7 @@ using :func:`wait`
    :dedent:
    :linenos:
 
-You can use :func:`as_completed` to handle each :class:`future <Future>`
+You can use :func:`as_completed` to handle each :class:`!Future`
 as it completes:
 
 .. literalinclude:: ../includes/concurrency.py
@@ -534,7 +533,7 @@ as it completes:
    :dedent:
    :linenos:
 
-In each case handling errors on a per-:class:`future <Future>` basis
+In each case handling errors on a per-:class:`!Future` basis
 is straightforward:
 
 .. literalinclude:: ../includes/concurrency.py
