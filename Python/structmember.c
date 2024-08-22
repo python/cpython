@@ -107,7 +107,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
 #endif
         break;
     case Py_T_LONGLONG:
-        v = PyLong_FromLongLong(*(long long *)addr);
+        v = PyLong_FromLongLong(FT_ATOMIC_LOAD_LLONG_RELAXED(*(long long *)addr));
         break;
     case Py_T_ULONGLONG:
         v = PyLong_FromUnsignedLongLong(*(unsigned long long *)addr);
@@ -329,8 +329,8 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         PyErr_SetString(PyExc_TypeError, "readonly attribute");
         return -1;
     case Py_T_LONGLONG:{
-        long long value;
-        *(long long*)addr = value = PyLong_AsLongLong(v);
+        long long value = PyLong_AsLongLong(v);
+        FT_ATOMIC_STORE_LLONG_RELEASE(*(long long*)addr, value);
         if ((value == -1) && PyErr_Occurred())
             return -1;
         break;

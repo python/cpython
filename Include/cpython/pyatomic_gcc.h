@@ -390,6 +390,10 @@ static inline unsigned long long
 _Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
 { return __atomic_load_n(obj, __ATOMIC_RELAXED); }
 
+static inline long long
+_Py_atomic_load_llong_relaxed(const long long *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
 
 // --- _Py_atomic_store ------------------------------------------------------
 
@@ -567,6 +571,10 @@ _Py_atomic_store_float_release(float *obj, float value)
 static inline void
 _Py_atomic_store_double_release(double *obj, double value)
 { __atomic_store(obj, &value, __ATOMIC_RELEASE); }
+
+static inline void
+_Py_atomic_store_llong_release(long long *obj, long long value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)

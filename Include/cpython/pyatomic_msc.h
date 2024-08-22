@@ -760,6 +760,12 @@ _Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
     return *(volatile unsigned long long *)obj;
 }
 
+static inline long long
+_Py_atomic_load_llong_relaxed(const long long *obj)
+{
+    return *(volatile long long *)obj;
+}
+
 
 // --- _Py_atomic_store ------------------------------------------------------
 
@@ -1107,6 +1113,19 @@ _Py_atomic_store_double_release(double *obj, double value)
     __stlr64((unsigned __int64 volatile *)obj, (unsigned __int64)value);
 #else
 #  error "no implementation of _Py_atomic_store_double_release"
+#endif
+}
+
+static inline void
+_Py_atomic_store_llong_release(long long *obj, long long value)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    *(long long volatile *)obj = value;
+#elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int128);
+    __stlr128((unsigned __int128 volatile *)obj, (unsigned __int128)value);
+#else
+#  error "no implementation of _Py_atomic_store_llong_release"
 #endif
 }
 

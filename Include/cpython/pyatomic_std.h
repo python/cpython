@@ -683,6 +683,14 @@ _Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
                                 memory_order_relaxed);
 }
 
+static inline long long
+_Py_atomic_load_llong_relaxed(const long long *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(long long)*)obj,
+                                memory_order_relaxed);
+}
+
 
 // --- _Py_atomic_store ------------------------------------------------------
 
@@ -1012,6 +1020,14 @@ _Py_atomic_store_double_release(double *obj, double value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(double)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
+_Py_atomic_store_llong_release(long long *obj, long long value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(long long)*)obj, value,
                           memory_order_release);
 }
 
