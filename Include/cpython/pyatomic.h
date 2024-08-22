@@ -321,6 +321,9 @@ _Py_atomic_load_ptr(const void *obj);
 static inline int
 _Py_atomic_load_int_relaxed(const int *obj);
 
+static inline char
+_Py_atomic_load_char_relaxed(const char *obj);
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj);
 
@@ -480,6 +483,9 @@ _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
 
 static inline void
 _Py_atomic_store_int_release(int *obj, int value);
+
+static inline void
+_Py_atomic_store_char_release(char *obj, char value);
 
 static inline int
 _Py_atomic_load_int_acquire(const int *obj);

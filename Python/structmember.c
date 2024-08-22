@@ -34,10 +34,10 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
     const char* addr = obj_addr + l->offset;
     switch (l->type) {
     case Py_T_BOOL:
-        v = PyBool_FromLong(*(char*)addr);
+        v = PyBool_FromLong(FT_ATOMIC_LOAD_CHAR_RELAXED(*(char*)addr));
         break;
     case Py_T_BYTE:
-        v = PyLong_FromLong(*(char*)addr);
+        v = PyLong_FromLong(FT_ATOMIC_LOAD_CHAR_RELAXED(*(char*)addr));
         break;
     case Py_T_UBYTE:
         v = PyLong_FromUnsignedLong(*(unsigned char*)addr);
@@ -169,16 +169,16 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             return -1;
         }
         if (v == Py_True)
-            *(char*)addr = (char) 1;
+            FT_ATOMIC_STORE_CHAR_RELEASE(*(char*)addr, 1);
         else
-            *(char*)addr = (char) 0;
+            FT_ATOMIC_STORE_CHAR_RELEASE(*(char*)addr, 0);
         break;
         }
     case Py_T_BYTE:{
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
-        *(char*)addr = (char)long_val;
+        FT_ATOMIC_STORE_CHAR_RELEASE(*(char*)addr, (char)long_val);
         /* XXX: For compatibility, only warn about truncations
            for now. */
         if ((long_val > CHAR_MAX) || (long_val < CHAR_MIN))

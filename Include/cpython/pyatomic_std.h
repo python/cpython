@@ -515,6 +515,14 @@ _Py_atomic_load_int_relaxed(const int *obj)
                                 memory_order_relaxed);
 }
 
+static inline char
+_Py_atomic_load_char_relaxed(const char *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(char)*)obj,
+                                memory_order_relaxed);
+}
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj)
 {
@@ -892,6 +900,14 @@ _Py_atomic_store_int_release(int *obj, int value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(int)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
+_Py_atomic_store_char_release(char *obj, char value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(char)*)obj, value,
                           memory_order_release);
 }
 
