@@ -600,6 +600,9 @@ class FakePath:
     def __repr__(self):
         return f'<FakePath {self.path!r}>'
 
+    def __eq__(self, other):
+        return isinstance(other, type(self)) and self.path == other.path
+
     def __fspath__(self):
         if (isinstance(self.path, BaseException) or
             isinstance(self.path, type) and
