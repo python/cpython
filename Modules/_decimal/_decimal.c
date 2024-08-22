@@ -6151,6 +6151,8 @@ decimal_clear(PyObject *module)
 
     PyMem_Free(state->signal_map);
     PyMem_Free(state->cond_map);
+    state->signal_map = NULL;
+    state->cond_map = NULL;
     return 0;
 }
 
