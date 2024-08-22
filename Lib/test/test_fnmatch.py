@@ -70,10 +70,10 @@ class FnmatchTestCase(unittest.TestCase):
                 check(cls('abc'), 'AbC', False, fnmatchcase)
                 check(cls('AbC'), 'AbC', True, fnmatchcase)
 
-                check(cls('usr/bin'), 'usr/bin', True, fnmatchcase)
-                check(cls('usr\\bin'), 'usr/bin', False, fnmatchcase)
-                check(cls('usr/bin'), 'usr\\bin', False, fnmatchcase)
-                check(cls('usr\\bin'), 'usr\\bin', True, fnmatchcase)
+                check(cls('usr/bin'), 'usr/bin', os.fspath(cls('/')) == '/', fnmatchcase)
+                check(cls('usr\\bin'), 'usr/bin', os.fspath(cls('\\')) == '/', fnmatchcase)
+                check(cls('usr/bin'), 'usr\\bin', os.fspath(cls('/')) == '\\', fnmatchcase)
+                check(cls('usr\\bin'), 'usr\\bin', os.fspath(cls('\\')) == '\\', fnmatchcase)
 
     def test_bytes(self):
         self.check_match(b'test', b'te*')
