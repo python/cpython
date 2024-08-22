@@ -313,8 +313,39 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     self->_ms_layout = _ms;
     self->index = index;
 
-    self->setfunc = NULL; // XXX
-    self->getfunc = NULL; // XXX
+    /*  Field descriptors for 'c_char * n' are be scpecial cased to
+        return a Python string instead of an Array object instance...
+    */
+    self->setfunc = NULL;
+    self->getfunc = NULL;
+    if (PyCArrayTypeObject_Check(st, proto)) {
+        StgInfo *ainfo;
+        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
+            goto error;
+        }
+
+        if (ainfo && ainfo->proto) {
+            StgInfo *iinfo;
+            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
+                goto error;
+            }
+            if (!iinfo) {
+                PyErr_SetString(PyExc_TypeError,
+                                "has no _stginfo_");
+                goto error;
+            }
+            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("s");
+                self->getfunc = fd->getfunc;
+                self->setfunc = fd->setfunc;
+            }
+            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("U");
+                self->getfunc = fd->getfunc;
+                self->setfunc = fd->setfunc;
+            }
+        }
+    }
 
     return (PyObject *)self;
 error:
@@ -340,45 +371,6 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
                         "has no _stginfo_");
         return -1;
     }
-
-    PyObject* proto = self->proto;
-
-    /*  Field descriptors for 'c_char * n' are be scpecial cased to
-        return a Python string instead of an Array object instance...
-    */
-    SETFUNC setfunc = NULL;
-    GETFUNC getfunc = NULL;
-    if (PyCArrayTypeObject_Check(st, proto)) {
-        StgInfo *ainfo;
-        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
-            return -1;
-        }
-
-        if (ainfo && ainfo->proto) {
-            StgInfo *iinfo;
-            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
-                return -1;
-            }
-            if (!iinfo) {
-                PyErr_SetString(PyExc_TypeError,
-                                "has no _stginfo_");
-                return -1;
-            }
-            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("s");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("U");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-        }
-    }
-
-    self->setfunc = setfunc;
-    self->getfunc = getfunc;
 
     Py_ssize_t bitsize = self->bit_size;
     if(!_cfield_is_bitfield(self)) {
