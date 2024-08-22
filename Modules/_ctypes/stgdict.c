@@ -243,7 +243,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align, aligned_size;
     _CFieldPackState packstate = {0};
-    Py_ssize_t bitofs = 0;
     PyObject *tmp;
     int pack;
     Py_ssize_t ffi_ofs;
@@ -491,7 +490,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
             int res = PyCField_InitFromDesc(st, prop,
-                                   &packstate, &bitofs,
+                                   &packstate,
                                    &size, &offset, &align);
             if (res < 0) {
                 goto error;
@@ -535,11 +534,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         } else /* union */ {
             packstate.field_size = 0;
             size = 0;
-            bitofs = 0;
+            packstate.bitofs = 0;
             offset = 0;
             align = 0;
             int res = PyCField_InitFromDesc(st, prop,
-                                   &packstate, &bitofs,
+                                   &packstate,
                                    &size, &offset, &align);
             if (res < 0) {
                 goto error;
