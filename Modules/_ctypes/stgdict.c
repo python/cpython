@@ -240,7 +240,7 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
 int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
-    Py_ssize_t len, offset, align, i;
+    Py_ssize_t len, align, i;
     Py_ssize_t union_size, total_align, aligned_size;
     _CFieldPackState packstate = {0};
     PyObject *tmp;
@@ -392,7 +392,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     if (baseinfo) {
-        packstate.size = offset = baseinfo->size;
+        packstate.size = packstate.offset = baseinfo->size;
         align = baseinfo->align;
         union_size = 0;
         total_align = align ? align : 1;
@@ -412,7 +412,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         ffi_ofs = baseinfo->length;
     } else {
-        offset = 0;
+        packstate.offset = 0;
         packstate.size = 0;
         align = 0;
         union_size = 0;
@@ -491,7 +491,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                corrected alignment */
             int res = PyCField_InitFromDesc(st, prop,
                                    &packstate,
-                                   &offset, &align);
+                                   &align);
             if (res < 0) {
                 goto error;
             }
@@ -535,11 +535,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             packstate.field_size = 0;
             packstate.size = 0;
             packstate.bitofs = 0;
-            offset = 0;
+            packstate.offset = 0;
             align = 0;
             int res = PyCField_InitFromDesc(st, prop,
                                    &packstate,
-                                   &offset, &align);
+                                   &align);
             if (res < 0) {
                 goto error;
             }
