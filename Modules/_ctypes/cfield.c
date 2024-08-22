@@ -108,7 +108,7 @@ PyCField_FromDesc manages:
 */
 
 static int
-PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
+PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info
                 )
@@ -154,7 +154,7 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
 
 static int
 PyCField_FromDesc_msvc(
-                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
+                _CFieldPackState *packstate, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info
@@ -170,31 +170,31 @@ PyCField_FromDesc_msvc(
     // *pbitofs is generally non-positive,
     // and 8 * (*poffset) + *pbitofs points just behind
     // the end of the last field we placed.
-    if (0 < *pbitofs + bitsize || 8 * info->size != *pfield_size) {
+    if (0 < *pbitofs + bitsize || 8 * info->size != packstate->field_size) {
         // Close the previous bitfield (if any).
         // and start a new bitfield:
         *poffset = round_up(*poffset, *palign);
 
         *poffset += info->size;
 
-        *pfield_size = info->size * 8;
+        packstate->field_size = info->size * 8;
         // Reminder: 8 * (*poffset) + *pbitofs points to where we would start a
         // new field.  Ie just behind where we placed the last field plus an
         // allowance for alignment.
-        *pbitofs = - *pfield_size;
+        *pbitofs = - packstate->field_size;
     }
 
-    assert(8 * info->size == *pfield_size);
+    assert(8 * info->size == packstate->field_size);
 
-    self->offset = *poffset - (*pfield_size) / 8;
+    self->offset = *poffset - (packstate->field_size) / 8;
     if(_cfield_is_bitfield(self)) {
-        assert(0 <= (*pfield_size + *pbitofs));
-        assert((*pfield_size + *pbitofs) < info->size * 8);
-        self->size = BUILD_SIZE(bitsize, *pfield_size + *pbitofs);
+        assert(0 <= (packstate->field_size + *pbitofs));
+        assert((packstate->field_size + *pbitofs) < info->size * 8);
+        self->size = BUILD_SIZE(bitsize, packstate->field_size + *pbitofs);
     } else {
         self->size = info->size;
     }
-    assert(*pfield_size + *pbitofs <= info->size * 8);
+    assert(packstate->field_size + *pbitofs <= info->size * 8);
 
     *pbitofs += bitsize;
     *psize = *poffset;
@@ -332,7 +332,7 @@ error:
 
 int
 PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
-                Py_ssize_t *pfield_size,
+                _CFieldPackState *packstate,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign)
 {
     if (self == NULL) {
@@ -402,12 +402,13 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     int result;
     if (self->_ms_layout) {
         result = PyCField_FromDesc_msvc(
-                pfield_size, bitsize, pbitofs,
+                packstate, bitsize, pbitofs,
                 psize, poffset, palign,
                 self, info
                 );
     } else {
         result = PyCField_FromDesc_gcc(
+                packstate,
                 bitsize, pbitofs,
                 psize, poffset, palign,
                 self, info

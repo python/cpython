@@ -217,9 +217,10 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
 struct CFieldObject;
+struct _CFieldPackState;
 extern int
 PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self,
-                Py_ssize_t *pfield_size,
+                struct _CFieldPackState *pack_state,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign);
 
@@ -271,6 +272,9 @@ typedef struct CFieldObject {
     bool _ms_layout;
     Py_ssize_t pack;                /* 0 if undefined */
 } CFieldObject;
+typedef struct _CFieldPackState {
+    Py_ssize_t field_size;
+} _CFieldPackState; // TODO: remove this...
 
 /****************************************************************
  StgInfo
