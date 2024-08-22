@@ -1122,8 +1122,8 @@ _Py_atomic_store_llong_release(long long *obj, long long value)
 #if defined(_M_X64) || defined(_M_IX86)
     *(long long volatile *)obj = value;
 #elif defined(_M_ARM64)
-    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int128);
-    __stlr128((unsigned __int128 volatile *)obj, (unsigned __int128)value);
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int64);
+    __stlr64((unsigned __int64 volatile *)obj, (unsigned __int64)value);
 #else
 #  error "no implementation of _Py_atomic_store_llong_release"
 #endif
@@ -1135,8 +1135,8 @@ _Py_atomic_store_ullong_release(unsigned long long *obj, unsigned long long valu
 #if defined(_M_X64) || defined(_M_IX86)
     *(unsigned long long volatile *)obj = value;
 #elif defined(_M_ARM64)
-    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int128);
-    __stlr128((unsigned __int128 volatile *)obj, (unsigned __int128)value);
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+    __stlr64((unsigned __int64 volatile *)obj, (unsigned __int64)value);
 #else
 #  error "no implementation of _Py_atomic_store_ullong_release"
 #endif
