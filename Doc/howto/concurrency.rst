@@ -482,11 +482,11 @@ minor uniqueness that we'll look at in a moment.
 With an executor you can call a function asynchronously (in the background)
 using :meth:`executor.submit() <Executor.submit>`.
 It returns a :class:`Future <Future>` object which tracks completion
-and provides the result.  :class:`Future <!Future>` objects have a few
+and provides the result.  :class:`Future <Future>` objects have a few
 other tricks, like cancelation and completion callbacks, which we won't
 cover here.  Likewise we won't cover the various uses of timeouts.
 
-Here's an example of using :meth:`executor.submit() <!Executor.submit>`
+Here's an example of using :meth:`executor.submit() <Executor.submit>`
 and :meth:`Future.result() <Future.result>`:
 
 .. literalinclude:: ../includes/concurrency.py
@@ -513,7 +513,7 @@ multiple times and yield each result:
    :dedent:
    :linenos:
 
-You can wait for an existing set of :class:`futures <!Future>`
+You can wait for an existing set of :class:`futures <Future>`
 using :func:`wait`
 (and :func:`as_completed` and :meth:`executor.map() <Executor.map>`):
 
@@ -524,7 +524,7 @@ using :func:`wait`
    :dedent:
    :linenos:
 
-You can use :func:`as_completed` to handle each :class:`future <!Future>`
+You can use :func:`as_completed` to handle each :class:`future <Future>`
 as it completes:
 
 .. literalinclude:: ../includes/concurrency.py
@@ -534,7 +534,7 @@ as it completes:
    :dedent:
    :linenos:
 
-In each case handling errors on a per-:class:`future <!Future>` basis
+In each case handling errors on a per-:class:`future <Future>` basis
 is straightforward:
 
 .. literalinclude:: ../includes/concurrency.py
