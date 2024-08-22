@@ -1,0 +1,2 @@
+Added support for :term:`path-like objects <path-like object>` for the
+*name* parameter of :func:`fnmatch.fnmatchcase`. Patch by Bénédikt Tran.
