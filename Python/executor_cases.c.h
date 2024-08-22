@@ -2637,18 +2637,19 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            old_value = ep->me_value;
-            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
-            new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
-            ep->me_value = PyStackRef_AsPyObjectSteal(value);
-            Py_XDECREF(old_value);
-            STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                 _PyObject_GC_TRACK(dict);
             }
-            /* PEP 509 */
-            dict->ma_version_tag = new_version;
+            old_value = ep->me_value;
+            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
+            new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            ep->me_value = PyStackRef_AsPyObjectSteal(value);
+            dict->ma_version_tag = new_version; // PEP 509
+            // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
+            // when dict only holds the strong reference to value in ep->me_value.
+            Py_XDECREF(old_value);
+            STAT_INC(STORE_ATTR, hit);
             PyStackRef_CLOSE(owner);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
