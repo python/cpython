@@ -221,7 +221,7 @@ struct _CFieldPackState;
 extern int
 PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self,
                 struct _CFieldPackState *pack_state,
-                Py_ssize_t *psize, Py_ssize_t *poffset,
+                Py_ssize_t *poffset,
                 Py_ssize_t *palign);
 
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
@@ -277,6 +277,8 @@ typedef struct _CFieldPackState {
 
     // `8 * offset + bitofs points` to where the  next field would start.
     Py_ssize_t bitofs;
+
+    Py_ssize_t size;  // the size of the structure / union so far
 } _CFieldPackState; // TODO: remove this...
 
 /****************************************************************

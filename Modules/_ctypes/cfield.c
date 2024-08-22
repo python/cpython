@@ -101,13 +101,12 @@ We do not support zero length bitfields.  In fact we use bitsize != 0 elsewhere
 to indicate a bitfield. Here, non-bitfields need bitsize set to size*8.
 
 PyCField_FromDesc manages:
-- *psize: the size of the structure / union so far.
 - *palign: the alignment requirements of the last field we placed.
 */
 
 static int
 PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
+                Py_ssize_t *poffset, Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info
                 )
 {
@@ -145,7 +144,7 @@ PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
     }
 
     packstate->bitofs += bitsize;
-    *psize = round_up(packstate->bitofs, 8) / 8;
+    packstate->size = round_up(packstate->bitofs, 8) / 8;
 
     return 0;
 }
@@ -153,7 +152,7 @@ PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
 static int
 PyCField_FromDesc_msvc(
                 _CFieldPackState *packstate, Py_ssize_t bitsize,
-                Py_ssize_t *psize, Py_ssize_t *poffset,
+                Py_ssize_t *poffset,
                 Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info
                 )
@@ -195,7 +194,7 @@ PyCField_FromDesc_msvc(
     assert(packstate->field_size + packstate->bitofs <= info->size * 8);
 
     packstate->bitofs += bitsize;
-    *psize = *poffset;
+    packstate->size = *poffset;
 
     return 0;
 }
@@ -331,7 +330,7 @@ error:
 int
 PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
                 _CFieldPackState *packstate,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign)
+                Py_ssize_t *poffset, Py_ssize_t *palign)
 {
     if (self == NULL) {
         return -1;
@@ -401,14 +400,14 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     if (self->_ms_layout) {
         result = PyCField_FromDesc_msvc(
                 packstate, bitsize,
-                psize, poffset, palign,
+                poffset, palign,
                 self, info
                 );
     } else {
         result = PyCField_FromDesc_gcc(
                 packstate,
                 bitsize,
-                psize, poffset, palign,
+                poffset, palign,
                 self, info
                 );
     }
