@@ -1104,42 +1104,35 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[LOAD_ATTR] == INLINE_CACHE_ENTRIES_LOAD_ATTR);
     PyTypeObject *type = Py_TYPE(owner);
+    bool fail;
     if (!_PyType_IsReady(type)) {
         // We *might* not really need this check, but we inherited it from
         // PyObject_GenericGetAttr and friends... and this way we still do the
         // right thing if someone forgets to call PyType_Ready(type):
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
-        goto fail;
+        fail = true;
     }
-    if (PyModule_CheckExact(owner)) {
-        if (specialize_module_load_attr(owner, instr, name))
-        {
-            goto fail;
-        }
-        goto success;
+    else if (PyModule_CheckExact(owner)) {
+        fail = specialize_module_load_attr(owner, instr, name);
     }
-    if (PyType_Check(owner)) {
-        if (specialize_class_load_attr(owner, instr, name)) {
-            goto fail;
-        }
-        goto success;
+    else if (PyType_Check(owner)) {
+        fail = specialize_class_load_attr(owner, instr, name);
     }
-    if (specialize_instance_load_attr(owner, instr, name))
-    {
-        goto fail;
+    else {
+        fail = specialize_instance_load_attr(owner, instr, name);
     }
-    goto success;
 
-fail:
-    STAT_INC(LOAD_ATTR, failure);
-    assert(!PyErr_Occurred());
-    instr->op.code = LOAD_ATTR;
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-success:
-    STAT_INC(LOAD_ATTR, success);
-    assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_cooldown();
+    if (fail) {
+        STAT_INC(LOAD_ATTR, failure);
+        assert(!PyErr_Occurred());
+        instr->op.code = LOAD_ATTR;
+        cache->counter = adaptive_counter_backoff(cache->counter);
+    }
+    else {
+        STAT_INC(LOAD_ATTR, success);
+        assert(!PyErr_Occurred());
+        cache->counter = adaptive_counter_cooldown();
+    }
 }
 
 void
