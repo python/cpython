@@ -55,7 +55,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromUnsignedLong(FT_ATOMIC_LOAD_UINT_RELAXED(*(unsigned int*)addr));
         break;
     case Py_T_LONG:
-        v = PyLong_FromLong(*(long*)addr);
+        v = PyLong_FromLong(FT_ATOMIC_LOAD_LONG_RELAXED(*(long*)addr));
         break;
     case Py_T_ULONG:
         v = PyLong_FromUnsignedLong(*(unsigned long*)addr);
@@ -251,7 +251,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     }
     case Py_T_LONG:{
-        *(long*)addr = PyLong_AsLong(v);
+        FT_ATOMIC_STORE_LONG_RELEASE(*(long*)addr, PyLong_AsLong(v));
         if ((*(long*)addr == -1) && PyErr_Occurred())
             return -1;
         break;
