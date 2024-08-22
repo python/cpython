@@ -5290,21 +5290,21 @@
             _PyStackRef v;
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *v_o = NULL;
-            if (PyMapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o) < 0) {
+            PyObject *v_o;
+            int err = PyMapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o);
+            if (err < 0) {
                 goto error;
             }
             if (v_o == NULL) {
                 if (PyDict_CheckExact(GLOBALS())
                     && PyDict_CheckExact(BUILTINS()))
                 {
-                    _PyDict_LoadGlobalStackRef((PyDictObject *)GLOBALS(),
+                    v_o = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
                         (PyDictObject *)BUILTINS(),
-                        name, &stack_pointer[0 - 1]);
-                    v = stack_pointer[0 - 1];
-                    if (PyStackRef_IsNull(v)) {
+                        name);
+                    if (v_o == NULL) {
                         if (!_PyErr_Occurred(tstate)) {
-                            /* _PyDict_LoadGlobalStackRef() sets NULL without raising
+                            /* _PyDict_LoadGlobal() returns NULL without raising
                              * an exception if the key doesn't exist */
                             _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                 NAME_ERROR_MSG, name);
@@ -5328,10 +5328,8 @@
                     }
                 }
             }
-            if (v_o != NULL) {
-                v = PyStackRef_FromPyObjectSteal(v_o);
-            }
             PyStackRef_CLOSE(mod_or_class_dict);
+            v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[-1] = v;
             DISPATCH();
         }

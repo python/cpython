@@ -2491,8 +2491,33 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
  * key hash failed, key comparison failed, ...). Return NULL if the key doesn't
  * exist. Return the value if the key exists.
  *
- * Stores a new stack reference.
+ * Returns a new reference.
  */
+PyObject *
+_PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
+{
+    Py_ssize_t ix;
+    Py_hash_t hash;
+    PyObject *value;
+
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return NULL;
+    }
+
+    /* namespace 1: globals */
+    ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
+    if (ix == DKIX_ERROR)
+        return NULL;
+    if (ix != DKIX_EMPTY && value != NULL)
+        return value;
+
+    /* namespace 2: builtins */
+    ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
+    assert(ix >= 0 || value == NULL);
+    return value;
+}
+
 void
 _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObject *key, _PyStackRef *res)
 {
