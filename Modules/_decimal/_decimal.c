@@ -112,6 +112,8 @@ typedef struct {
     PyCFunction _py_float_as_integer_ratio;
 } decimal_state;
 
+static PyType_Spec dec_spec;
+
 static inline decimal_state *
 get_module_state(PyObject *mod)
 {
@@ -129,16 +131,6 @@ get_module_state_by_def(PyTypeObject *tp)
     assert(mod != NULL);
     return get_module_state(mod);
 }
-
-static inline decimal_state *
-find_state_left_or_right(PyObject *left, PyObject *right)
-{
-    PyObject *mod = _PyType_GetModuleByDef2(Py_TYPE(left), Py_TYPE(right),
-                                            &_decimal_module);
-    assert(mod != NULL);
-    return get_module_state(mod);
-}
-
 
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02050000
   #error "libmpdec version >= 2.5.0 required"
@@ -174,6 +166,7 @@ typedef struct {
     Py_hash_t hash;
     mpd_t dec;
     mpd_uint_t data[_Py_DEC_MINALLOC];
+    decimal_state *mstate;
 } PyDecObject;
 
 typedef struct {
@@ -208,6 +201,39 @@ typedef struct {
 #define CTX(v) (&((PyDecContextObject *)v)->ctx)
 #define CtxCaps(v) (((PyDecContextObject *)v)->capitals)
 
+static inline decimal_state *
+find_state_left_or_right(PyObject *left, PyObject *right)
+{
+    decimal_state *state;
+    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, NULL) == 1) {
+        state = ((PyDecObject *)left)->mstate;
+    }
+    else {
+        assert(!PyErr_Occurred());
+        assert(PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, NULL) == 1);
+        state = ((PyDecObject *)right)->mstate;
+    }
+    assert(state != NULL);
+    return state;
+}
+
+/*  Alternative ver.
+
+static inline decimal_state *
+find_state_left_or_right(PyObject *left, PyObject *right)
+{
+    // No slower than _PyType_GetModuleByDef2() on PGO, but unstable.
+    // Prefer the `right` argument to be a static type.
+    PyTypeObject *base;
+    if (PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base) == 1) {
+        void *state = _PyType_GetModuleState(base);
+        Py_DECREF(base);
+        return (decimal_state *)state;
+    }
+    assert(!PyErr_Occurred());
+    return get_module_state_by_def(Py_TYPE(left));
+}
+ */
 
 Py_LOCAL_INLINE(PyObject *)
 incr_true(void)
@@ -749,7 +775,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 {
     PyObject *res = Py_NotImplemented;
 
-    decimal_state *state = find_state_left_or_right(v, w);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
     assert(PyDecSignalDict_Check(state, v));
 
     if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
@@ -2030,6 +2056,7 @@ PyDecType_New(PyTypeObject *type)
     }
 
     dec->hash = -1;
+    dec->mstate = state;
 
     MPD(dec)->flags = MPD_STATIC|MPD_STATIC_DATA;
     MPD(dec)->exp = 0;
@@ -4648,7 +4675,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     uint32_t status = 0;
     int a_issnan, b_issnan;
     int r;
-    decimal_state *state = find_state_left_or_right(v, w);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
 
 #ifdef Py_DEBUG
     assert(PyDec_Check(state, v));
@@ -5036,6 +5063,7 @@ static PyMethodDef dec_methods [] =
 };
 
 static PyType_Slot dec_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, dec_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_traverse, dec_traverse},
