@@ -2281,7 +2281,7 @@ codegen_function(struct compiler *c, stmt_ty s, int is_async)
             .u_argcount = num_typeparam_args,
         };
         int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno, NULL, &umd);
+                                       (void *)type_params, firstlineno, NULL, &umd);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
@@ -2471,7 +2471,7 @@ codegen_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
+                                       (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
