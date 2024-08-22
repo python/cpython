@@ -1390,6 +1390,9 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
     CtxCaps(self) = 1;
     self->tstate = NULL;
 
+    if (type == state->PyDecContext_Type) {
+        PyObject_GC_Track(self);
+    }
     return (PyObject *)self;
 }
 
@@ -2038,6 +2041,9 @@ PyDecType_New(PyTypeObject *type)
     MPD(dec)->alloc = _Py_DEC_MINALLOC;
     MPD(dec)->data = dec->data;
 
+    if (type == state->PyDec_Type) {
+        PyObject_GC_Track(dec);
+    }
     return (PyObject *)dec;
 }
 #define dec_alloc(st) PyDecType_New((st)->PyDec_Type)
