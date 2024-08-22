@@ -314,6 +314,10 @@ static inline unsigned char
 _Py_atomic_load_uchar_relaxed(const unsigned char *obj)
 { return __atomic_load_n(obj, __ATOMIC_RELAXED); }
 
+static inline short
+_Py_atomic_load_short_relaxed(const short *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_RELAXED); }
@@ -522,6 +526,10 @@ _Py_atomic_store_char_release(char *obj, char value)
 
 static inline void
 _Py_atomic_store_uchar_release(unsigned char *obj, unsigned char value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
+_Py_atomic_store_short_release(short *obj, short value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void

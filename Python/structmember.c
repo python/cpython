@@ -43,7 +43,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromUnsignedLong(FT_ATOMIC_LOAD_UCHAR_RELAXED(*(unsigned char*)addr));
         break;
     case Py_T_SHORT:
-        v = PyLong_FromLong(*(short*)addr);
+        v = PyLong_FromLong(FT_ATOMIC_LOAD_SHORT_RELAXED(*(short*)addr));
         break;
     case Py_T_USHORT:
         v = PyLong_FromUnsignedLong(*(unsigned short*)addr);
@@ -198,7 +198,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
-        *(short*)addr = (short)long_val;
+        FT_ATOMIC_STORE_SHORT_RELEASE(*(short*)addr, (short)long_val);
         if ((long_val > SHRT_MAX) || (long_val < SHRT_MIN))
             WARN("Truncation of value to short");
         break;

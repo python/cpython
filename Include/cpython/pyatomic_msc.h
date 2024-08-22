@@ -646,6 +646,12 @@ _Py_atomic_load_uchar_relaxed(const unsigned char *obj)
     return *(volatile unsigned char *)obj;
 }
 
+static inline short
+_Py_atomic_load_short_relaxed(const short *obj)
+{
+    return *(volatile short *)obj;
+}
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj)
 {
@@ -999,6 +1005,19 @@ _Py_atomic_store_uchar_release(unsigned char *obj, unsigned char value)
     __stlr8((unsigned __int8 volatile *)obj, (unsigned __int8)value);
 #else
 #  error "no implementation of _Py_atomic_store_uchar_release"
+#endif
+}
+
+static inline void
+_Py_atomic_store_short_release(short *obj, short value)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    *(short volatile *)obj = value;
+#elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int16);
+    __stlr8((unsigned __int16 volatile *)obj, (unsigned __int16)value);
+#else
+#  error "no implementation of _Py_atomic_store_short_release"
 #endif
 }
 
