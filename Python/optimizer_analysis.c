@@ -289,25 +289,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     return 0;
 }
 
-static int
-merge_const(PyObject *refs, PyObject **o_p)
-{
-    PyObject *o = *o_p;
-    PyObject *k = _PyCode_ConstantKey(o);
-    // A key of tuple[int, object] is used for "other" constants, which may
-    // include arbitrary objects. We don't want to try to hash them or check
-    // their equality, so just make the key a tuple[int] (their address):
-    if (PyTuple_CheckExact(k) && PyLong_CheckExact(PyTuple_GET_ITEM(k, 0))) {
-        Py_SETREF(k, PyTuple_Pack(1, PyTuple_GET_ITEM(k, 0)));
-        if (k == NULL) {
-            return -1;
-        }
-    }
-    int res = PyDict_SetDefaultRef(refs, k, o, o_p);
-    Py_DECREF(k);
-    Py_DECREF(o);
-    return res;
-}
+
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
 #define STACK_SIZE()      ((int)(ctx->frame->stack_len))
@@ -606,7 +588,7 @@ _Py_uop_analyze_and_optimize(
     int length,
     int curr_stacklen,
     _PyBloomFilter *dependencies,
-    PyObject *refs
+    PyObject *new_refs
 )
 {
     OPT_STAT_INC(optimizer_attempts);
@@ -618,7 +600,7 @@ _Py_uop_analyze_and_optimize(
 
     length = optimize_uops(
         _PyFrame_GetCode(frame), buffer,
-        length, curr_stacklen, dependencies, refs);
+        length, curr_stacklen, dependencies, new_refs);
 
     if (length <= 0) {
         return length;

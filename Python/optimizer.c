@@ -1133,6 +1133,47 @@ sanity_check(_PyExecutorObject *executor)
 #undef CHECK
 #endif
 
+static PyObject *
+safe_constant_key(PyObject *o)
+{
+    PyObject *k = _PyCode_ConstantKey(o);
+    // A key of tuple[int, object] is used for "other" constants, which may
+    // include arbitrary objects. We don't want to try to hash them or check
+    // their equality, so just make the key a tuple[int] (their address):
+    if (k && PyTuple_CheckExact(k) && PyLong_CheckExact(PyTuple_GET_ITEM(k, 0))) {
+        Py_SETREF(k, PyTuple_Pack(1, PyTuple_GET_ITEM(k, 0)));
+    }
+    return k;
+}
+
+static bool
+safe_contains(PyObject *refs, PyObject *o)
+{
+    assert(PyList_CheckExact(refs));
+    for (int i = 0; i < PyList_GET_SIZE(refs); i++) {
+        if (Py_Is(o, PyList_GET_ITEM(refs, i))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static int
+merge_const(PyObject *refs, PyObject **o_p)
+{
+    assert(PyDict_CheckExact(refs));
+    assert(!_Py_IsImmortal(*o_p));
+    PyObject *o = *o_p;
+    PyObject *k = safe_constant_key(o);
+    if (k == NULL) {
+        return -1;
+    }
+    int res = PyDict_SetDefaultRef(refs, k, o, o_p);
+    Py_DECREF(k);
+    Py_DECREF(o);
+    return res;
+}
+
 /* Makes an executor from a buffer of uops.
  * Account for the buffer having gaps and NOPs by computing a "used"
  * bit vector and only copying the used uops. Here "used" means reachable
@@ -1251,16 +1292,16 @@ uop_optimize(
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    PyObject *refs = PyDict_New();
-    if (refs == NULL) {
+    PyObject *new_refs = PyList_New(0);
+    if (new_refs == NULL) {
         return -1;
     }
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
-                                           curr_stackentries, &dependencies, refs);
+                                           curr_stackentries, &dependencies, new_refs);
         if (length <= 0) {
-            Py_DECREF(refs);
+            Py_DECREF(new_refs);
             return length;
         }
     }
@@ -1282,29 +1323,45 @@ uop_optimize(
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
         assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
     }
+    PyObject *used_refs = PyDict_New();
+    if (used_refs == NULL) {
+        Py_DECREF(new_refs);
+        return -1;
+    }
+    for (int i = 0; i < length; i++) {
+        if (buffer[i].opcode == _LOAD_CONST_INLINE) {
+            PyObject **o_p = (PyObject **)&buffer[i].operand;
+            if (!safe_contains(new_refs, *o_p)) {
+                continue;
+            }
+            Py_INCREF(*o_p);
+            int err = merge_const(used_refs, o_p);
+            Py_DECREF(*o_p);
+            if (err < 0) {
+                Py_DECREF(used_refs);
+                Py_DECREF(new_refs);
+                return -1;
+            }
+        }
+    }
+    Py_DECREF(new_refs);
+    Py_SETREF(used_refs, PyDict_Values(used_refs));
+    if (used_refs == NULL) {
+        return -1;
+    }
+    Py_SETREF(used_refs, PyList_AsTuple(used_refs));
+    if (used_refs == NULL) {
+        return -1;
+    }
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
     if (executor == NULL) {
-        Py_DECREF(refs);
+        Py_DECREF(used_refs);
         return -1;
     }
-    PyObject *refs_tuple = PyTuple_New(PyDict_GET_SIZE(refs));
-    if (refs_tuple == NULL) {
-        Py_DECREF(executor);
-        return -1;
-    }
-    PyObject *k, *v;
-    Py_ssize_t i = 0, p = 0;
-    Py_BEGIN_CRITICAL_SECTION(refs);
-    while (PyDict_Next(refs, &p, &k, &v)) {
-        PyTuple_SET_ITEM(refs_tuple, i++, Py_NewRef(v));
-    }
-    Py_END_CRITICAL_SECTION();
-    assert(i == Py_SIZE(refs_tuple));
-    Py_DECREF(refs);
-    executor->refs = refs_tuple;
+    executor->refs = used_refs;
     assert(length <= UOP_MAX_TRACE_LENGTH);
     *exec_ptr = executor;
     return 1;

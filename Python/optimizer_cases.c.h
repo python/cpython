@@ -260,7 +260,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -297,7 +297,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -334,7 +334,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -403,7 +403,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -441,7 +441,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -479,7 +479,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -526,7 +526,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -560,7 +560,7 @@
                 assert(this_instr[-1].opcode == _NOP);
                 REPLACE_OP(&this_instr[-3], _POP_TOP, 0, 0);
                 REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-                if (merge_const(refs, &temp) < 0) {
+                if (PyList_Append(refs, temp)) {
                     goto error;
                 }
                 int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
