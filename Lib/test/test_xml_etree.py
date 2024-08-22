@@ -2431,6 +2431,14 @@ class BugsTest(unittest.TestCase):
         # Still raises the TypeError when extending with a non-iterable
         self.assertRaises(TypeError, ET.Element('tag').extend, None)
 
+        # Preserves the TypeError message when extending with a generator
+        def f():
+            raise TypeError("mymessage")
+
+        self.assertRaisesRegex(
+            TypeError, 'mymessage',
+            ET.Element('tag').extend, (f() for i in range(2)))
+
 
 
 # --------------------------------------------------------------------
@@ -3765,6 +3773,13 @@ class ElementSlicingTest(unittest.TestCase):
         # Still raises the TypeError when assigning with a non-iterable
         with self.assertRaises(TypeError):
             e[:1] = None
+
+        # Preserve the original TypeError message when assigning.
+        def f():
+            raise TypeError("mymessage")
+
+        with self.assertRaisesRegex(TypeError, 'mymessage'):
+            e[:1] = (f() for i in range(2))
 
 class IOTest(unittest.TestCase):
     def test_encoding(self):
