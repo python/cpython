@@ -59,7 +59,8 @@ __all__ = [
     "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
     "without_optimizer",
-    "force_not_colorized"
+    "force_not_colorized",
+    "BrokenIter",
     ]
 
 
@@ -2672,3 +2673,17 @@ def initialized_with_pyrepl():
     """Detect whether PyREPL was used during Python initialization."""
     # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
     return hasattr(sys.modules["__main__"], "__file__")
+
+
+class BrokenIter:
+    def __init__(self, init_raises=False, next_raises=False):
+        if init_raises:
+            1/0
+        self.next_raises = next_raises
+
+    def __next__(self):
+        if self.next_raises:
+            1/0
+
+    def __iter__(self):
+        return self
