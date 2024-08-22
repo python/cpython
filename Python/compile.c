@@ -6311,7 +6311,7 @@ codegen_check_ann_subscr(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_deferred_annotation(struct compiler *c, stmt_ty s)
+compiler_add_deferred_annotation(struct compiler *c, stmt_ty s)
 {
     if (c->u->u_deferred_annotations == NULL) {
         c->u->u_deferred_annotations = PyList_New(0);
@@ -6360,7 +6360,7 @@ codegen_annassign(struct compiler *c, stmt_ty s)
                 ADDOP(c, loc, STORE_SUBSCR);
             }
             else {
-                RETURN_IF_ERROR(compiler_deferred_annotation(c, s));
+                RETURN_IF_ERROR(compiler_add_deferred_annotation(c, s));
             }
         }
         break;
