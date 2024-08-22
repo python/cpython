@@ -15,7 +15,7 @@ The following Python concurrency models are covered:
 * isolated threads, AKA CSP/actor model (:mod:`!interpreters`)
 * multi-processing (:mod:`multiprocessing` and :mod:`concurrent.futures`)
 * distributed, e.g. SMP (:mod:`!dask`)
-* async/await (:mod:`asycio`)
+* async/await (:mod:`asyncio`)
 
 Each of these will be explained, with some simple examples.  The later
 workload-oriented examples will be implemented using each,
