@@ -52,7 +52,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromLong(FT_ATOMIC_LOAD_INT_RELAXED(*(int*)addr));
         break;
     case Py_T_UINT:
-        v = PyLong_FromUnsignedLong(*(unsigned int*)addr);
+        v = PyLong_FromUnsignedLong(FT_ATOMIC_LOAD_UINT_RELAXED(*(unsigned int*)addr));
         break;
     case Py_T_LONG:
         v = PyLong_FromLong(*(long*)addr);
@@ -234,7 +234,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (long_val == -1 && PyErr_Occurred()) {
                 return -1;
             }
-            *(unsigned int *)addr = (unsigned int)(unsigned long)long_val;
+            FT_ATOMIC_STORE_UINT_RELEASE(*(unsigned int *)addr, (unsigned int)(unsigned long)long_val);
             WARN("Writing negative value into unsigned field");
         }
         else {
@@ -243,7 +243,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
                 return -1;
             }
-            *(unsigned int*)addr = (unsigned int)ulong_val;
+            FT_ATOMIC_STORE_UINT_RELEASE(*(unsigned int *)addr, (unsigned int)ulong_val);
             if (ulong_val > UINT_MAX) {
                 WARN("Truncation of value to unsigned int");
             }

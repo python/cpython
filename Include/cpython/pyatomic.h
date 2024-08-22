@@ -505,6 +505,9 @@ _Py_atomic_store_short_release(short *obj, short value);
 static inline void
 _Py_atomic_store_ushort_release(unsigned short *obj, unsigned short value);
 
+static inline void
+_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value);
+
 static inline int
 _Py_atomic_load_int_acquire(const int *obj);
 

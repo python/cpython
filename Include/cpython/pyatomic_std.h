@@ -960,6 +960,14 @@ _Py_atomic_store_ushort_release(unsigned short *obj, unsigned short value)
 }
 
 static inline void
+_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(unsigned int)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
 {
     _Py_USING_STD;

@@ -541,6 +541,10 @@ _Py_atomic_store_ushort_release(unsigned short *obj, unsigned short value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void
+_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
