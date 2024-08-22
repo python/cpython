@@ -280,6 +280,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyObject *main_dict = PyModule_GetDict(main_module);  // borrowed ref
 
     PyObject *res = run_mod(mod, filename, main_dict, main_dict, flags, arena, interactive_src, 1);
+    Py_INCREF(interactive_src);
     _PyArena_Free(arena);
     Py_DECREF(main_module);
     if (res == NULL) {
@@ -289,6 +290,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             /* fix "text" attribute */
             assert(interactive_src);
             PyObject *xs = PyUnicode_Splitlines(interactive_src, 1);
+            Py_DECREF(interactive_src);
             if (xs == NULL) {
                 return -1;
             }
@@ -304,15 +306,19 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             PyObject *line = PyList_GET_ITEM(xs, n - 1);
             Py_INCREF(line);
             Py_DECREF(xs);
+            Py_INCREF(exc);
+            _PyErr_Clear(tstate);
             if (PyObject_SetAttr(exc, &_Py_ID(text), line) == -1) {
-                Py_DECREF(line);
                 _PyErr_Clear(tstate);
-                return -1;
             }
             Py_DECREF(line);
+            _PyErr_SetRaisedException(tstate, exc);
+            return -1;
         }
+        Py_DECREF(interactive_src);
         return -1;
     }
+    Py_DECREF(interactive_src);
     Py_DECREF(res);
 
     flush_io();
