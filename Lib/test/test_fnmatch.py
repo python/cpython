@@ -4,6 +4,8 @@ import unittest
 import os
 import string
 import warnings
+from pathlib import Path
+from test.support.os_helper import FakePath
 
 from fnmatch import fnmatch, fnmatchcase, translate, filter
 
@@ -61,15 +63,17 @@ class FnmatchTestCase(unittest.TestCase):
 
     def test_fnmatchcase(self):
         check = self.check_match
-        check('abc', 'abc', True, fnmatchcase)
-        check('AbC', 'abc', False, fnmatchcase)
-        check('abc', 'AbC', False, fnmatchcase)
-        check('AbC', 'AbC', True, fnmatchcase)
+        for cls in (str, Path, FakePath):
+            with self.subTest(cls=cls):
+                check(cls('abc'), 'abc', True, fnmatchcase)
+                check(cls('AbC'), 'abc', False, fnmatchcase)
+                check(cls('abc'), 'AbC', False, fnmatchcase)
+                check(cls('AbC'), 'AbC', True, fnmatchcase)
 
-        check('usr/bin', 'usr/bin', True, fnmatchcase)
-        check('usr\\bin', 'usr/bin', False, fnmatchcase)
-        check('usr/bin', 'usr\\bin', False, fnmatchcase)
-        check('usr\\bin', 'usr\\bin', True, fnmatchcase)
+                check(cls('usr/bin'), 'usr/bin', True, fnmatchcase)
+                check(cls('usr\\bin'), 'usr/bin', False, fnmatchcase)
+                check(cls('usr/bin'), 'usr\\bin', False, fnmatchcase)
+                check(cls('usr\\bin'), 'usr\\bin', True, fnmatchcase)
 
     def test_bytes(self):
         self.check_match(b'test', b'te*')
