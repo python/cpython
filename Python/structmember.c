@@ -64,7 +64,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromSsize_t(FT_ATOMIC_LOAD_SSIZE_RELAXED(*(Py_ssize_t*)addr));
         break;
     case Py_T_FLOAT:
-        v = PyFloat_FromDouble((double)*(float*)addr);
+        v = PyFloat_FromDouble((double)FT_ATOMIC_LOAD_FLOAT_RELAXED(*(float*)addr));
         break;
     case Py_T_DOUBLE:
         v = PyFloat_FromDouble(*(double*)addr);
@@ -293,7 +293,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         double double_val = PyFloat_AsDouble(v);
         if ((double_val == -1) && PyErr_Occurred())
             return -1;
-        *(float*)addr = (float)double_val;
+        FT_ATOMIC_STORE_FLOAT_RELEASE(*(float*)addr, (float)double_val);
         break;
         }
     case Py_T_DOUBLE:
