@@ -48,13 +48,12 @@ Tuple Objects
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
-   or ``-1`` and set a :exc:`SystemError` exception if *op* is not a tuple.
+   or ``-1`` and set a :exc:`SystemError` exception if *p* is not a tuple.
 
 
 .. c:function:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
 
-   Return the size of the tuple *op*, which must be non-``NULL``
-   and point to a tuple; no error checking is performed.
+   Like :c:func:`PyTuple_Size`, but does no checking of its arguments.
 
 
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
@@ -146,7 +145,7 @@ type.
    Create a new struct sequence type from the data in *desc*, described below. Instances
    of the resulting type can be created with :c:func:`PyStructSequence_New`.
 
-   Returns ``NULL`` with an exception set on failure.
+   Return ``NULL`` with an exception set on failure.
 
 
 .. c:function:: void PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
@@ -156,7 +155,7 @@ type.
 
 .. c:function:: int PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
 
-   The same as ``PyStructSequence_InitType``, but returns ``0`` on success
+   Like :c:func:`PyStructSequence_InitType`, but returns ``0`` on success
    and ``-1`` with an exception set on failure.
 
    .. versionadded:: 3.4
@@ -214,7 +213,7 @@ type.
    Creates an instance of *type*, which must have been created with
    :c:func:`PyStructSequence_NewType`.
 
-   Returns ``NULL`` with an exception set on failure.
+   Return ``NULL`` with an exception set on failure.
 
 
 .. c:function:: PyObject* PyStructSequence_GetItem(PyObject *p, Py_ssize_t pos)
