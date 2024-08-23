@@ -116,20 +116,19 @@ PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
 
     packstate->align = info->align;
 
-    if (bitsize > 0) {
-        // Determine whether the bit field, if placed at the next free bit,
-        // fits within a single object of its specified type.
-        // That is: determine a "slot", sized & aligned for the specified type,
-        // which contains the bitfield's beginning:
-        Py_ssize_t slot_start_bit = round_down(packstate->bitofs, 8 * info->align);
-        Py_ssize_t slot_end_bit = slot_start_bit + 8 * info->size;
-        // And see if it also contains the bitfield's last bit:
-        Py_ssize_t field_end_bit = packstate->bitofs + bitsize;
-        if (field_end_bit > slot_end_bit) {
-            // It doesn't: add padding (bump up to the next alignment boundary)
-            packstate->bitofs = round_up(packstate->bitofs, 8*info->align);
-        }
+    // Determine whether the bit field, if placed at the next free bit,
+    // fits within a single object of its specified type.
+    // That is: determine a "slot", sized & aligned for the specified type,
+    // which contains the bitfield's beginning:
+    Py_ssize_t slot_start_bit = round_down(packstate->bitofs, 8 * info->align);
+    Py_ssize_t slot_end_bit = slot_start_bit + 8 * info->size;
+    // And see if it also contains the bitfield's last bit:
+    Py_ssize_t field_end_bit = packstate->bitofs + bitsize;
+    if (field_end_bit > slot_end_bit) {
+        // It doesn't: add padding (bump up to the next alignment boundary)
+        packstate->bitofs = round_up(packstate->bitofs, 8*info->align);
     }
+
     assert(packstate->offset == 0);
 
     self->offset = round_down(packstate->bitofs, 8*info->align) / 8;
