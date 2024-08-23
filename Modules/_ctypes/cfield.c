@@ -448,10 +448,10 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     }
 
     CHECK_FIELD(field_size, false);
-    CHECK_FIELD(bitofs, true);
-    CHECK_FIELD(offset, true);
-    CHECK_FIELD(size, true);
-    CHECK_FIELD(align, true);
+    CHECK_FIELD(bitofs, false);
+    CHECK_FIELD(offset, false);
+    CHECK_FIELD(size, false);
+    CHECK_FIELD(align, false);
 #undef CHECK_FIELD
 
     return 0;

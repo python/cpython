@@ -70,22 +70,15 @@ class _BaseLayout:
 
     def __iter__(self):
         self.gave_up = False
-        if isinstance(self, GCCSysVLayout):
-            state_field_size = 0
-            state_bitofs = 0
-            state_offset = 0
-            state_size = 0
-            state_align = 0
-            #print(self.base, self.is_struct, self.size, self.size * 8)
-            if self.base and self.is_struct:
-                state_size = state_offset = ctypes.sizeof(self.base)
-                state_align = ctypes.alignment(self.base)
-        else:
-            state_field_size = 0
-            state_bitofs = -1
-            state_offset = -1
-            state_size = -1
-            state_align = -1
+        state_field_size = 0
+        state_bitofs = 0
+        state_offset = 0
+        state_size = 0
+        state_align = 0
+        #print(self.base, self.is_struct, self.size, self.size * 8)
+        if self.base and self.is_struct:
+            state_size = state_offset = ctypes.sizeof(self.base)
+            state_align = ctypes.alignment(self.base)
 
 
         for i, field in enumerate(self.fields):
@@ -155,12 +148,50 @@ class _BaseLayout:
 
                 state_bitofs += bitsize;
                 state_size = int(round_up(state_bitofs, 8) / 8);
+            else:
+                if is_bitfield:
+                    bitsize = bit_size
+                else:
+                    bitsize = 8 * info_size;
+
+                if self._pack_:
+                    state_align = min(self._pack_, info_align);
+                else:
+                    state_align = info_align;
+
+                ## packstate->offset points to end of current bitfield.
+                ## packstate->bitofs is generally non-positive,
+                ## and 8 * packstate->offset + packstate->bitofs points just behind
+                ## the end of the last field we placed.
+                if ((0 < state_bitofs + bitsize) or (8 * info_size != state_field_size)):
+                    ## Close the previous bitfield (if any).
+                    ## and start a new bitfield:
+                    state_offset = round_up(state_offset, state_align);
+
+                    state_offset += info_size;
+
+                    state_field_size = info_size * 8;
+                    ## Reminder: 8 * (packstate->offset) + bitofs points to where we would start a
+                    ## new field.  Ie just behind where we placed the last field plus an
+                    ## allowance for alignment.
+                    state_bitofs = - state_field_size;
+
+                assert(8 * info_size == state_field_size);
+
+                offset = state_offset - int((state_field_size) // 8);
+                if is_bitfield:
+                    assert(0 <= (state_field_size + state_bitofs));
+                    assert((state_field_size + state_bitofs) < info_size * 8);
+                    size = BUILD_SIZE(bitsize, state_field_size + state_bitofs);
+                else:
+                    size = info_size;
+                assert(state_field_size + state_bitofs <= info_size * 8);
+
+                state_bitofs += bitsize;
+                state_size = state_offset;
 
 
             ################################## State check (remove this)
-            if isinstance(self, WindowsLayout):
-                state_field_size = size * 8
-
             state_to_check = struct.pack(
                 "nnnnn",
                 state_field_size, state_bitofs, state_offset, state_size, state_align
