@@ -1357,7 +1357,7 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
     }
     else {
         self = (PyDecContextObject *)type->tp_alloc(type, 0);
-        assert(PyObject_GC_IsTracked(self));
+        assert(PyObject_GC_IsTracked((PyObject *)self));
     }
 
     if (self == NULL) {
@@ -2028,7 +2028,7 @@ PyDecType_New(PyTypeObject *type)
     }
     else {
         dec = (PyDecObject *)type->tp_alloc(type, 0);
-        assert(PyObject_GC_IsTracked(dec));
+        assert(PyObject_GC_IsTracked((PyObject *)dec));
     }
     if (dec == NULL) {
         return NULL;
