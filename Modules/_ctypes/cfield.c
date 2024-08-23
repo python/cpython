@@ -103,101 +103,6 @@ to indicate a bitfield. Here, non-bitfields need bitsize set to size*8.
 PyCField_FromDesc manages the pack state struct.
 */
 
-static int
-PyCField_FromDesc_gcc(_CFieldPackState *packstate,
-                CFieldObject* self, StgInfo* info
-                )
-{
-    Py_ssize_t bitsize = _cfield_is_bitfield(self) ? self->bit_size : 8 * info->size;
-
-    // We don't use packstate->offset here, so clear it, if it has been set.
-    packstate->bitofs += packstate->offset * 8;
-    packstate->offset = 0;
-
-    assert(self->pack == 0); // TODO: This shouldn't be a C assertion
-
-    packstate->align = info->align;
-
-    // Determine whether the bit field, if placed at the next free bit,
-    // fits within a single object of its specified type.
-    // That is: determine a "slot", sized & aligned for the specified type,
-    // which contains the bitfield's beginning:
-    Py_ssize_t slot_start_bit = round_down(packstate->bitofs, 8 * info->align);
-    Py_ssize_t slot_end_bit = slot_start_bit + 8 * info->size;
-    // And see if it also contains the bitfield's last bit:
-    Py_ssize_t field_end_bit = packstate->bitofs + bitsize;
-    if (field_end_bit > slot_end_bit) {
-        // It doesn't: add padding (bump up to the next alignment boundary)
-        packstate->bitofs = round_up(packstate->bitofs, 8*info->align);
-    }
-
-    assert(packstate->offset == 0);
-
-    self->offset = round_down(packstate->bitofs, 8*info->align) / 8;
-    if(_cfield_is_bitfield(self)) {
-        Py_ssize_t effective_bitsof = packstate->bitofs - 8 * self->offset;
-        self->size = BUILD_SIZE(bitsize, effective_bitsof);
-        assert(effective_bitsof <= info->size * 8);
-    } else {
-        self->size = info->size;
-    }
-
-    packstate->bitofs += bitsize;
-    packstate->size = round_up(packstate->bitofs, 8) / 8;
-
-    return 0;
-}
-
-static int
-PyCField_FromDesc_msvc(
-                _CFieldPackState *packstate,
-                CFieldObject* self, StgInfo* info
-                )
-{
-    Py_ssize_t bitsize = _cfield_is_bitfield(self) ? self->bit_size : 8 * info->size;
-
-    if (self->pack) {
-        packstate->align = Py_MIN(self->pack, info->align);
-    } else {
-        packstate->align = info->align;
-    }
-
-    // packstate->offset points to end of current bitfield.
-    // packstate->bitofs is generally non-positive,
-    // and 8 * packstate->offset + packstate->bitofs points just behind
-    // the end of the last field we placed.
-    if (0 < packstate->bitofs + bitsize || 8 * info->size != packstate->field_size) {
-        // Close the previous bitfield (if any).
-        // and start a new bitfield:
-        packstate->offset = round_up(packstate->offset, packstate->align);
-
-        packstate->offset += info->size;
-
-        packstate->field_size = info->size * 8;
-        // Reminder: 8 * (packstate->offset) + bitofs points to where we would start a
-        // new field.  Ie just behind where we placed the last field plus an
-        // allowance for alignment.
-        packstate->bitofs = - packstate->field_size;
-    }
-
-    assert(8 * info->size == packstate->field_size);
-
-    self->offset = packstate->offset - (packstate->field_size) / 8;
-    if(_cfield_is_bitfield(self)) {
-        assert(0 <= (packstate->field_size + packstate->bitofs));
-        assert((packstate->field_size + packstate->bitofs) < info->size * 8);
-        self->size = BUILD_SIZE(bitsize, packstate->field_size + packstate->bitofs);
-    } else {
-        self->size = info->size;
-    }
-    assert(packstate->field_size + packstate->bitofs <= info->size * 8);
-
-    packstate->bitofs += bitsize;
-    packstate->size = packstate->offset;
-
-    return 0;
-}
-
 /*[clinic input]
 @classmethod
 _ctypes.CField.__new__ as PyCField_new
@@ -404,55 +309,12 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     }
     assert(bitsize <= info->size * 8);
 
-    int result;
-    if (self->_ms_layout) {
-        result = PyCField_FromDesc_msvc(packstate, self, info);
-    } else {
-        result = PyCField_FromDesc_gcc(packstate, self, info);
-    }
-    if (result < 0) {
-        return -1;
-    }
+    memcpy(packstate, &self->state_to_check, sizeof(_CFieldPackState));
+
     assert(!_cfield_is_bitfield(self) || (LOW_BIT(self->size) <= self->size * 8));
     if(self->big_endian && _cfield_is_bitfield(self)) {
         self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
     }
-
-#define CHECK_FIELD(FIELD, CAN_SKIP)                            \
-    { \
-        printf("want%4zd -- got%4zd in " #FIELD "\n", packstate->FIELD, self->state_to_check.FIELD); \
-    }
-    if (memcmp(&self->state_to_check, packstate, sizeof(*packstate)) && self->state_to_check.align >= 0) {
-        CHECK_FIELD(field_size, false);
-        CHECK_FIELD(bitofs, true);
-        CHECK_FIELD(offset, true);
-        CHECK_FIELD(size, true);
-        CHECK_FIELD(align, true);
-    }
-#undef CHECK_FIELD
-
-#define CHECK_FIELD(FIELD, CAN_SKIP)                            \
-    {                                                           \
-        Py_ssize_t got = self->state_to_check.FIELD;            \
-        if (got >= 0 || !CAN_SKIP) {                            \
-            Py_ssize_t expected = packstate->FIELD;             \
-            if (got != expected) {                              \
-                PyErr_Format(                                   \
-                    PyExc_AssertionError,                       \
-                    "state_to_check." #FIELD                    \
-                        " invalid for %R, want %zd, got %zd",   \
-                    self->name, expected, got);                 \
-                return -1;                                      \
-            }                                                   \
-        }                                                       \
-    }
-
-    CHECK_FIELD(field_size, false);
-    CHECK_FIELD(bitofs, false);
-    CHECK_FIELD(offset, false);
-    CHECK_FIELD(size, false);
-    CHECK_FIELD(align, false);
-#undef CHECK_FIELD
 
     return 0;
 }
