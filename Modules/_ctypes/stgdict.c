@@ -404,8 +404,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     if (baseinfo) {
-        packstate.size = baseinfo->size;
-        packstate.align = baseinfo->align;
         union_size = 0;
         total_align = baseinfo->align ? baseinfo->align : 1;
         total_align = max(total_align, forced_alignment);
@@ -424,8 +422,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         ffi_ofs = baseinfo->length;
     } else {
-        packstate.size = 0;
-        packstate.align = 0;
         union_size = 0;
         total_align = forced_alignment;
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
@@ -439,7 +435,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         ffi_ofs = 0;
     }
     packstate.size = total_size;
-    packstate.align = total_align;
 
     assert(stginfo->format == NULL);
     if (isStruct) {
@@ -555,18 +550,18 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     Py_CLEAR(layout_fields);
 
     if (!isStruct) {
-        packstate.size = union_size;
+        total_size = union_size;
     }
 
     /* Adjust the size according to the alignment requirements */
-    aligned_size = ((packstate.size + total_align - 1) / total_align) * total_align;
+    aligned_size = ((total_size + total_align - 1) / total_align) * total_align;
 
     if (isStruct) {
         char *ptr;
         Py_ssize_t padding;
 
         /* Pad up to the full size of the struct */
-        padding = aligned_size - packstate.size;
+        padding = aligned_size - total_size;
         if (padding > 0) {
             ptr = stginfo->format;
             stginfo->format = _ctypes_alloc_format_padding(ptr, padding);
@@ -603,7 +598,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 #  define MAX_STRUCT_SIZE 16
 #endif
 
-    if (arrays_seen && (packstate.size <= MAX_STRUCT_SIZE)) {
+    if (arrays_seen && (total_size <= MAX_STRUCT_SIZE)) {
         /*
          * See bpo-22273 and gh-110190. Arrays are normally treated as
          * pointers, which is fine when an array name is being passed as
