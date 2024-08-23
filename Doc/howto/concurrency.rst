@@ -324,10 +324,6 @@ group concurrency workloads.  Here are some:
 * how much data do logical threads share
 * size of the data shared by threads
 
-From our list of workloads above, we can observe some clustering:
-
-* ...
-
 Let's also revisit the ways concurrency can be helpful:
 
 * get work done faster
