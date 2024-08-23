@@ -97,7 +97,7 @@ in Python:
      - **medium**
      - yes
    * - distributed `(Python) <python-distributed_>`_
-     - :mod:`!dask`
+     - :pypi:`dask`
      - large
      - yes
      - no
@@ -411,7 +411,7 @@ Here's a summary:
          (e.g. file handles, PIDs)
        * API can be hard to use
    * - distributed
-     - :mod:`!dask`
+     - :pypi:`dask`
      - large
      - * isolated (no races)
        * fully parallel
@@ -776,7 +776,7 @@ Here's a very basic example::
 
     import multiprocessing
 
-    def task()
+    def task():
         # Do something.
         pass
 
@@ -800,25 +800,30 @@ shared memory.  Also note that that API can be used for threads and
 Distributed
 -----------
 
-The popular :mod:`!dask` module gives us distributed concurrency:
+When it comes to concurrency at scale, through distributed concurrency,
+one of the best examples is :pypi:`dask`.
 
-::
+Here's a very basic example::
 
     from dask.distributed import LocalCluster
 
-    def task()
+    def task(data):
         # Do something.
-        pass
+        return data
 
     client = LocalCluster().get_client()
 
-    futures = []
-    for _ in range(5):
-        fut = client.submit(task)
-        futures.append(fut)
+    # Run it once, basically synchronously.
+    fut = client.submit(task, 'spam!')
+    res = fut.result()
+    assert res == 'spam!', repr(res)
 
-    # Wait for all the tasks to finish.
-    client.gather(futures)
+    # Run it multiple times concurrently.
+    values = list(range(5))
+    res = client.gather(
+        (client.submit(task, v) for v in values),
+    )
+    assert res == values, (res, values)
 
 concurrent.futures
 ------------------
@@ -836,7 +841,7 @@ It will be implemented for multiple interpreters as
 :class:`!InterpreterPoolExecutor`.  Each implementation has some very
 minor uniqueness that we'll look at in a moment.
 
-.. note: :mod:`multiprocessing`, :mod:`asyncio`, and ``dask``
+.. note: :mod:`multiprocessing`, :mod:`asyncio`, and :pypi:`dask`
    provide similar APIs.  In the case of :mod:`!multiprocessing`,
    that API also supports thread and interpreter backends.
 
