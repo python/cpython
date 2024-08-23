@@ -95,6 +95,7 @@ static PySTEntryObject *compiler_symtable_entry(struct compiler *c);
 #define OPTIMIZATION_LEVEL(C) compiler_optimization_level(C)
 #define IS_INTERACTIVE(C) compiler_is_interactive(C)
 #define IS_NESTED_SCOPE(C) compiler_is_nested_scope(C)
+#define SCOPE_TYPE(C) compiler_scope_type(C)
 
 typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
@@ -104,6 +105,7 @@ static PyObject *compiler_maybe_mangle(struct compiler *c, PyObject *name);
 static int compiler_optimization_level(struct compiler *c);
 static int compiler_is_interactive(struct compiler *c);
 static int compiler_is_nested_scope(struct compiler *c);
+static int compiler_scope_type(struct compiler *c);
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
@@ -314,7 +316,7 @@ static int compiler_visit_stmt(struct compiler *, stmt_ty);
 static int compiler_visit_keyword(struct compiler *, keyword_ty);
 static int compiler_visit_expr(struct compiler *, expr_ty);
 static int codegen_augassign(struct compiler *, stmt_ty);
-static int compiler_annassign(struct compiler *, stmt_ty);
+static int codegen_annassign(struct compiler *, stmt_ty);
 static int codegen_subscript(struct compiler *, expr_ty);
 static int codegen_slice(struct compiler *, expr_ty);
 
@@ -1481,7 +1483,7 @@ codegen_setup_annotations_scope(struct compiler *c, location loc,
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
-    return 0;
+    return SUCCESS;
 }
 
 static int
@@ -1501,11 +1503,69 @@ codegen_leave_annotations_scope(struct compiler *c, location loc,
     return SUCCESS;
 }
 
+static PyObject *
+compiler_deferred_annotations(struct compiler *c)
+{
+    return c->u->u_deferred_annotations;
+}
+
+static int
+codegen_process_deferred_annotations(struct compiler *c, location loc)
+{
+    PyObject *deferred_anno = compiler_deferred_annotations(c);
+    if (deferred_anno == NULL) {
+        return SUCCESS;
+    }
+    Py_INCREF(deferred_anno);
+
+    // It's possible that ste_annotations_block is set but
+    // u_deferred_annotations is not, because the former is still
+    // set if there are only non-simple annotations (i.e., annotations
+    // for attributes, subscripts, or parenthesized names). However, the
+    // reverse should not be possible.
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    assert(ste->ste_annotation_block != NULL);
+    void *key = (void *)((uintptr_t)ste->ste_id + 1);
+    if (codegen_setup_annotations_scope(c, loc, key,
+                                        ste->ste_annotation_block->ste_name) < 0) {
+        Py_DECREF(deferred_anno);
+        return ERROR;
+    }
+    Py_ssize_t annotations_len = PyList_Size(deferred_anno);
+    for (Py_ssize_t i = 0; i < annotations_len; i++) {
+        PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
+        stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
+        if (st == NULL) {
+            compiler_exit_scope(c);
+            Py_DECREF(deferred_anno);
+            return ERROR;
+        }
+        PyObject *mangled = compiler_mangle(c, st->v.AnnAssign.target->v.Name.id);
+        if (!mangled) {
+            compiler_exit_scope(c);
+            Py_DECREF(deferred_anno);
+            return ERROR;
+        }
+        ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
+        VISIT(c, expr, st->v.AnnAssign.annotation);
+    }
+    Py_DECREF(deferred_anno);
+
+    RETURN_IF_ERROR(
+        codegen_leave_annotations_scope(c, loc, annotations_len)
+    );
+    RETURN_IF_ERROR(
+        compiler_nameop(c, loc, &_Py_ID(__annotate__), Store)
+    );
+
+    return SUCCESS;
+}
+
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
 
 static int
-compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
+codegen_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 {
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
@@ -1542,44 +1602,8 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     // If there are annotations and the future import is not on, we
     // collect the annotations in a separate pass and generate an
     // __annotate__ function. See PEP 649.
-    if (!(FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) &&
-         c->u->u_deferred_annotations != NULL) {
-
-        // It's possible that ste_annotations_block is set but
-        // u_deferred_annotations is not, because the former is still
-        // set if there are only non-simple annotations (i.e., annotations
-        // for attributes, subscripts, or parenthesized names). However, the
-        // reverse should not be possible.
-        PySTEntryObject *ste = SYMTABLE_ENTRY(c);
-        assert(ste->ste_annotation_block != NULL);
-        PyObject *deferred_anno = Py_NewRef(c->u->u_deferred_annotations);
-        void *key = (void *)((uintptr_t)ste->ste_id + 1);
-        if (codegen_setup_annotations_scope(c, loc, key,
-                                            ste->ste_annotation_block->ste_name) == -1) {
-            Py_DECREF(deferred_anno);
-            return ERROR;
-        }
-        Py_ssize_t annotations_len = PyList_Size(deferred_anno);
-        for (Py_ssize_t i = 0; i < annotations_len; i++) {
-            PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
-            stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
-            if (st == NULL) {
-                compiler_exit_scope(c);
-                Py_DECREF(deferred_anno);
-                return ERROR;
-            }
-            PyObject *mangled = compiler_mangle(c, st->v.AnnAssign.target->v.Name.id);
-            ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
-            VISIT(c, expr, st->v.AnnAssign.annotation);
-        }
-        Py_DECREF(deferred_anno);
-
-        RETURN_IF_ERROR(
-            codegen_leave_annotations_scope(c, loc, annotations_len)
-        );
-        RETURN_IF_ERROR(
-            compiler_nameop(c, loc, &_Py_ID(__annotate__), Store)
-        );
+    if (!(FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS)) {
+        RETURN_IF_ERROR(codegen_process_deferred_annotations(c, loc));
     }
     return SUCCESS;
 }
@@ -1606,13 +1630,13 @@ compiler_codegen(struct compiler *c, mod_ty mod)
     switch (mod->kind) {
     case Module_kind: {
         asdl_stmt_seq *stmts = mod->v.Module.body;
-        RETURN_IF_ERROR(compiler_body(c, start_location(stmts), stmts));
+        RETURN_IF_ERROR(codegen_body(c, start_location(stmts), stmts));
         break;
     }
     case Interactive_kind: {
         c->c_interactive = 1;
         asdl_stmt_seq *stmts = mod->v.Interactive.body;
-        RETURN_IF_ERROR(compiler_body(c, start_location(stmts), stmts));
+        RETURN_IF_ERROR(codegen_body(c, start_location(stmts), stmts));
         break;
     }
     case Expression_kind: {
@@ -2385,7 +2409,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     /* compile the body proper */
-    RETURN_IF_ERROR_IN_SCOPE(c, compiler_body(c, loc, s->v.ClassDef.body));
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_body(c, loc, s->v.ClassDef.body));
     assert(c->u->u_static_attributes);
     PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
     if (static_attributes == NULL) {
@@ -3847,7 +3871,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case AugAssign_kind:
         return codegen_augassign(c, s);
     case AnnAssign_kind:
-        return compiler_annassign(c, s);
+        return codegen_annassign(c, s);
     case For_kind:
         return codegen_for(c, s);
     case While_kind:
@@ -6287,7 +6311,28 @@ codegen_check_ann_subscr(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_annassign(struct compiler *c, stmt_ty s)
+compiler_add_deferred_annotation(struct compiler *c, stmt_ty s)
+{
+    if (c->u->u_deferred_annotations == NULL) {
+        c->u->u_deferred_annotations = PyList_New(0);
+        if (c->u->u_deferred_annotations == NULL) {
+            return ERROR;
+        }
+    }
+    PyObject *ptr = PyLong_FromVoidPtr((void *)s);
+    if (ptr == NULL) {
+        return ERROR;
+    }
+    if (PyList_Append(c->u->u_deferred_annotations, ptr) < 0) {
+        Py_DECREF(ptr);
+        return ERROR;
+    }
+    Py_DECREF(ptr);
+    return SUCCESS;
+}
+
+static int
+codegen_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
@@ -6305,8 +6350,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     case Name_kind:
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
-            (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
-             c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+            (SCOPE_TYPE(c) == COMPILER_SCOPE_MODULE ||
+             SCOPE_TYPE(c) == COMPILER_SCOPE_CLASS)) {
             if (future_annotations) {
                 VISIT(c, annexpr, s->v.AnnAssign.annotation);
                 ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
@@ -6315,21 +6360,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                 ADDOP(c, loc, STORE_SUBSCR);
             }
             else {
-                if (c->u->u_deferred_annotations == NULL) {
-                    c->u->u_deferred_annotations = PyList_New(0);
-                    if (c->u->u_deferred_annotations == NULL) {
-                        return ERROR;
-                    }
-                }
-                PyObject *ptr = PyLong_FromVoidPtr((void *)s);
-                if (ptr == NULL) {
-                    return ERROR;
-                }
-                if (PyList_Append(c->u->u_deferred_annotations, ptr) < 0) {
-                    Py_DECREF(ptr);
-                    return ERROR;
-                }
-                Py_DECREF(ptr);
+                RETURN_IF_ERROR(compiler_add_deferred_annotation(c, s));
             }
         }
         break;
@@ -7397,6 +7428,12 @@ compiler_is_nested_scope(struct compiler *c)
     assert(c->c_stack != NULL);
     assert(PyList_CheckExact(c->c_stack));
     return PyList_GET_SIZE(c->c_stack) > 0;
+}
+
+static int
+compiler_scope_type(struct compiler *c)
+{
+    return c->u->u_scope_type;
 }
 
 static int
