@@ -285,8 +285,10 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     Py_DECREF(main_module);
     if (res == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
-        PyObject *exc = tstate->current_exception;
-        if ((PyObject *)Py_TYPE(exc) == PyExc_SyntaxError) {
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        if (PyType_IsSubtype(Py_TYPE(exc),
+                             (PyTypeObject *) PyExc_SyntaxError))
+        {
             /* fix "text" attribute */
             assert(interactive_src != NULL);
             PyObject *xs = PyUnicode_Splitlines(interactive_src, 1);
@@ -306,8 +308,6 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             PyObject *line = PyList_GET_ITEM(xs, n - 1);
             Py_INCREF(line);
             Py_DECREF(xs);
-            Py_INCREF(exc);
-            _PyErr_Clear(tstate);
             if (PyObject_SetAttr(exc, &_Py_ID(text), line) == -1) {
                 _PyErr_Clear(tstate);
             }
@@ -315,6 +315,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             _PyErr_SetRaisedException(tstate, exc);
             return -1;
         }
+        _PyErr_SetRaisedException(tstate, exc);
         Py_DECREF(interactive_src);
         return -1;
     }
