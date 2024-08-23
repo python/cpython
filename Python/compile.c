@@ -1719,6 +1719,7 @@ dict_lookup_arg(PyObject *dict, PyObject *name)
 static int
 compiler_lookup_cellvar(struct compiler *c, PyObject *name)
 {
+    assert(c->u->u_metadata.u_cellvars);
     return dict_lookup_arg(c->u->u_metadata.u_cellvars, name);
 }
 
