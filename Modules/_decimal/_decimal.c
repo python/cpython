@@ -6153,16 +6153,16 @@ decimal_clear(PyObject *module)
 
     if (state->signal_map != NULL) {
         for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
-            Py_CLEAR(cm->ex);
+            Py_DECREF(cm->ex);
         }
         PyMem_Free(state->signal_map);
         state->signal_map = NULL;
     }
 
     if (state->cond_map != NULL) {
-        state->cond_map[0].ex = NULL;  // decref'ed at signal_map[0].ex
+        // cond_map[0].ex has borrowed a reference from signal_map[0].ex
         for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
-            Py_CLEAR(cm->ex);
+            Py_DECREF(cm->ex);
         }
         PyMem_Free(state->cond_map);
         state->cond_map = NULL;
