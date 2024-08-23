@@ -754,6 +754,14 @@ compileall
   (Contributed by Victor Stinner in :gh:`109649`.)
 
 
+configparser
+------------
+
+* The :class:`configparser.ConfigParser` now accepts unnamed sections
+  before named ones if configured to do so.
+  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
+
+
 concurrent.futures
 ------------------
 
@@ -1613,10 +1621,6 @@ PEP 594: dead batteries (and other module removals)
 
 configparser
 ------------
-
-* The :class:`configparser.ConfigParser` now accepts unnamed sections
-  before named ones if configured to do so.
-  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 * Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
   deprecated in the docstring since Python 3.2,
