@@ -185,9 +185,9 @@ class BitFieldTest(unittest.TestCase):
                 x.a, x.b = 0, -1
                 self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 7, 0))
 
-    def fail_fields(self, *fields):
+    def fail_fields(self, *fields, expected=None):
         return self.get_except(type(Structure), "X", (),
-                               {"_fields_": fields})
+                               {"_fields_": fields}, expected=expected)
 
     def test_nonint_types(self):
         # bit fields are not allowed on non-integer types.
@@ -220,7 +220,7 @@ class BitFieldTest(unittest.TestCase):
             with self.subTest(c_typ):
                 if sizeof(c_typ) != alignment(c_typ):
                      self.skipTest('assumes size=alignment')
-                result = self.fail_fields(("a", c_typ, -1))
+                result = self.fail_fields(("a", c_typ, -1), expected=ValueError)
                 self.assertEqual(result, (ValueError,
                     "number of bits invalid for bit field 'a'"))
 
@@ -267,10 +267,12 @@ class BitFieldTest(unittest.TestCase):
         self.assertEqual(X.b.offset, sizeof(c_short)*1)
         self.assertEqual(X.c.offset, sizeof(c_short)*2)
 
-    def get_except(self, func, *args, **kw):
+    def get_except(self, func, *args, expected=None, **kw):
         try:
             func(*args, **kw)
         except Exception as detail:
+            if expected and not isinstance(detail, expected):
+                raise
             return detail.__class__, str(detail)
 
     def test_mixed_1(self):

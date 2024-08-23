@@ -419,6 +419,19 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     }
 
 #define CHECK_FIELD(FIELD, CAN_SKIP)                            \
+    { \
+        printf("want%4zd -- got%4zd in " #FIELD "\n", packstate->FIELD, self->state_to_check.FIELD); \
+    }
+    if (memcmp(&self->state_to_check, packstate, sizeof(*packstate)) && self->state_to_check.align >= 0) {
+        CHECK_FIELD(field_size, false);
+        CHECK_FIELD(bitofs, true);
+        CHECK_FIELD(offset, true);
+        CHECK_FIELD(size, true);
+        CHECK_FIELD(align, true);
+    }
+#undef CHECK_FIELD
+
+#define CHECK_FIELD(FIELD, CAN_SKIP)                            \
     {                                                           \
         Py_ssize_t got = self->state_to_check.FIELD;            \
         if (got >= 0 || !CAN_SKIP) {                            \
