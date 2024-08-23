@@ -244,7 +244,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t union_size, total_align, aligned_size;
     _CFieldPackState packstate = {0};
     PyObject *tmp;
-    int pack;
     Py_ssize_t ffi_ofs;
     int arrays_seen = 0;
 
@@ -280,28 +279,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         PyErr_SetString(PyExc_AttributeError,
                         "_fields_ is final");
         goto error;
-    }
-
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
-        goto error;
-    }
-    if (tmp) {
-        pack = PyLong_AsInt(tmp);
-        Py_DECREF(tmp);
-        if (pack < 0) {
-            if (!PyErr_Occurred() ||
-                PyErr_ExceptionMatches(PyExc_TypeError) ||
-                PyErr_ExceptionMatches(PyExc_OverflowError))
-            {
-                PyErr_SetString(PyExc_ValueError,
-                                "_pack_ must be a non-negative integer");
-            }
-            goto error;
-        }
-    }
-    else {
-        /* Setting `_pack_ = 0` amounts to using the default alignment */
-        pack = 0;
     }
 
     PyObject *layout_class;

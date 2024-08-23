@@ -37,6 +37,8 @@ def BUILD_SIZE(bitsize, offset):
     assert(offset == LOW_BIT(result));
     return result;
 
+_INT_MAX = (1 << (ctypes.sizeof(ctypes.c_int) * 8) - 1) - 1
+
 class _BaseLayout:
     def __init__(self, cls, fields, is_struct, base, **kwargs):
         if kwargs:
@@ -70,7 +72,18 @@ class _BaseLayout:
 
         self.total_align = max(self.align, base_align)
 
-        self._pack_ = getattr(cls, '_pack_', None)
+        _pack_ = getattr(cls, '_pack_', None)
+        if _pack_ is not None:
+            try:
+                self._pack_ = int(_pack_)
+            except (TypeError, ValueError):
+                raise ValueError("_pack_ must be an integer")
+            if self._pack_ < 0:
+                raise ValueError("_pack_ must be a non-negative integer")
+            if self._pack_ > _INT_MAX:
+                raise ValueError("_pack_ too big")
+        else:
+            self._pack_ = None
 
     def __iter__(self):
         self.gave_up = False
