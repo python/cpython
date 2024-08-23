@@ -217,7 +217,7 @@ MakeAnonFields(PyObject *type)
 int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
-    Py_ssize_t len, i;
+    Py_ssize_t i;
     PyObject *tmp;
     Py_ssize_t ffi_ofs;
     int arrays_seen = 0;
@@ -297,6 +297,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     Py_DECREF(kwnames);
     Py_DECREF(base_arg);
     Py_DECREF(layout_class);
+    fields = NULL; // a borrowed reference we won't be using again
     if (!layout) {
         goto error;
     }
@@ -365,21 +366,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
     Py_CLEAR(layout);
 
-    len = PySequence_Size(fields);
-    if (len == -1) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "'_fields_' must be a sequence of pairs");
-        }
-        goto error;
-    }
-
-    if (len != PyTuple_GET_SIZE(layout_fields)) {
-        PyErr_Format(PyExc_ValueError,
-                        "number of '_fields_' must match result of layout... for now. want %zd, got %zd",
-                        len, PyTuple_GET_SIZE(layout_fields));
-        goto error;
-    }
+    Py_ssize_t len = PyTuple_GET_SIZE(layout_fields);
 
     if (stginfo->format) {
         PyMem_Free(stginfo->format);
