@@ -1936,6 +1936,7 @@ dummy_func(
             LOAD_ATTR_WITH_HINT,
             LOAD_ATTR_SLOT,
             LOAD_ATTR_CLASS,
+            LOAD_ATTR_CLASS_WITH_METACLASS_CHECK,
             LOAD_ATTR_PROPERTY,
             LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
             LOAD_ATTR_METHOD_WITH_VALUES,
@@ -2119,7 +2120,6 @@ dummy_func(
             EXIT_IF(!PyType_Check(owner_o));
             assert(type_version != 0);
             EXIT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version);
-
         }
 
         split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
@@ -2134,6 +2134,12 @@ dummy_func(
             unused/1 +
             _CHECK_ATTR_CLASS +
             unused/2 +
+            _LOAD_ATTR_CLASS;
+
+        macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
+            unused/1 +
+            _CHECK_ATTR_CLASS +
+            _GUARD_TYPE_VERSION +
             _LOAD_ATTR_CLASS;
 
         op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _PyInterpreterFrame *)) {
