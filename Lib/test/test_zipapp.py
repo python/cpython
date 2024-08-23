@@ -376,7 +376,7 @@ class ZipAppTest(unittest.TestCase):
             source=str(source),
             target=target,
             include_pattern=re.compile(r".*\.py"),
-            exclude_pattern=re.compile(r".*z.*")
+            exclude_pattern=re.compile(r".*zed\.py")
         )
 
         target.seek(0)
@@ -533,7 +533,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         (source / 'bin' / 'baz').touch()
         (source / '__main__.py').touch()
 
-        args = [str(source), '--include-pattern', r'.*\.py', '--exclude-pattern', r'.*z.*']
+        args = [str(source), '--include-pattern', r'.*\.py', '--exclude-pattern', r'.*zed\.py']
         zipapp.main(args)
         target = source.with_suffix('.pyz')
         self.assertTrue(target.is_file())
