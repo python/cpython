@@ -1357,6 +1357,7 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
     }
     else {
         self = (PyDecContextObject *)type->tp_alloc(type, 0);
+        assert(PyObject_GC_IsTracked(self));
     }
 
     if (self == NULL) {
@@ -2027,6 +2028,7 @@ PyDecType_New(PyTypeObject *type)
     }
     else {
         dec = (PyDecObject *)type->tp_alloc(type, 0);
+        assert(PyObject_GC_IsTracked(dec));
     }
     if (dec == NULL) {
         return NULL;
@@ -6158,7 +6160,7 @@ decimal_clear(PyObject *module)
     }
 
     if (state->cond_map != NULL) {
-        // signal_map[0] is assigned to cond_map[0]
+        state->cond_map[0].ex = NULL;  // decref'ed at signal_map[0].ex
         for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
             Py_CLEAR(cm->ex);
         }
