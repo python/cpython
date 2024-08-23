@@ -14,6 +14,7 @@ resemble pathlib's PurePath and Path respectively.
 import functools
 import operator
 import posixpath
+from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from pathlib._os import copyfileobj
@@ -564,14 +565,38 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
-    def _samefile_safe(self, other_path):
+    def _ensure_different_file(self, other_path):
         """
-        Like samefile(), but returns False rather than raising OSError.
+        Raise OSError(EINVAL) if both paths refer to the same file.
         """
         try:
-            return self.samefile(other_path)
+            if not self.samefile(other_path):
+                return
         except (OSError, ValueError):
-            return False
+            return
+        err = OSError(EINVAL, "Source and target are the same file")
+        err.filename = str(self)
+        err.filename2 = str(other_path)
+        raise err
+
+    def _ensure_distinct_path(self, other_path):
+        """
+        Raise OSError(EINVAL) if the other path is within this path.
+        """
+        # Note: there is no straightforward, foolproof algorithm to determine
+        # if one directory is within another (a particularly perverse example
+        # would be a single network share mounted in one location via NFS, and
+        # in another location via CIFS), so we simply checks whether the
+        # other path is lexically equal to, or within, this path.
+        if self == other_path:
+            err = OSError(EINVAL, "Source and target are the same path")
+        elif self in other_path.parents:
+            err = OSError(EINVAL, "Source path is a parent of target path")
+        else:
+            return
+        err.filename = str(self)
+        err.filename2 = str(other_path)
+        raise err
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -826,8 +851,7 @@ class PathBase(PurePathBase):
         """
         Copy the contents of this file to the given target.
         """
-        if self._samefile_safe(target):
-            raise OSError(f"{self!r} and {target!r} are the same file")
+        self._ensure_different_file(target)
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -847,6 +871,13 @@ class PathBase(PurePathBase):
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
+        try:
+            self._ensure_distinct_path(target)
+        except OSError as err:
+            if on_error is None:
+                raise
+            on_error(err)
+            return
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
