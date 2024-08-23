@@ -15,7 +15,7 @@ The following concurrency models are covered:
 * isolated threads, AKA CSP/actor model
 * multi-processing
 * distributed, e.g. SMP
-* async/await
+* coroutines (async/await)
 
 Each of these will be explained, with some simple examples.  The later
 workload-oriented examples will be implemented using each,
@@ -96,7 +96,7 @@ in Python:
      - no
      - **medium+**
      - no
-   * - async/await `(Python) <python-async-await_>`_
+   * - coroutines `(Python) <python-coroutines_>`_
      - :mod:`asyncio`
      - small-medium
      - **no**
@@ -198,7 +198,7 @@ isolated threads  threads, often physical, with strict isolation
                   between them (e.g. CSP and actor model)
 multiprocessing   using multiple isolated processes
 distributed       multiprocessing across multiple computers
-async/await       using coroutines (AKA "cooperative multitasking")
+coroutines        "cooperative multitasking", AKA async/await
 ================= ==========
 
 (There are certainly others, but these are the focus here.)
@@ -259,7 +259,7 @@ and worth diligently avoiding.
 
 Races are possible when the concurrency approach is subject
 to parallel execution or to non-deterministic switching.
-(This excludes "async/await", which relies on cooperative multitasking.)
+(This excludes coroutines, which rely on cooperative multitasking.)
 When all memory is possibly shared, as is the case with free-threading,
 then all memory is at risk.
 
@@ -406,7 +406,7 @@ Here's a summary:
        * facilitates massive scaling
      - * not necessarily a good fit for small-scale applications
        * often requires configuration
-   * - async/await
+   * - coroutines (async/await)
      - :mod:`asyncio`
      - small-medium
      - * not subject to races
@@ -456,7 +456,7 @@ Here's a comparison of the overhead of each model in Python:
      - medium-high
      - medium
      - low-medium
-   * - async/await
+   * - coroutines
      - low
      - low
      - none
@@ -733,29 +733,92 @@ The popular :mod:`!dask` module gives us distributed concurrency:
     # Wait for all the tasks to finish.
     client.gather(futures)
 
-.. _python-async-await:
+.. _python-coroutines:
 
-Async/Await
------------
+Coroutines (Async/Await)
+------------------------
 
 .. currentmodule:: asyncio
 
-The stdlib :mod:`asyncio` module provides an event loop you can use:
+The use of :term:`coroutines <coroutine>` for concurrency has been
+around a long time and has grown in popularity in the software world,
+particularly with the addition of ``async/await`` syntax in
+various languages.
 
-::
+Python has supported coroutines to some degree since the beginning.
+The best example is :pypi:`twisted`, which has provided this concurrency
+model for decades.  For most of that time :pypi:`!twisted` did it
+primarily through callbacks and a form of "promises"/"futures".
+
+Explicit support for coroutines in Python really started with the
+introduction of :term:`generators <generator>` in Python 2.2
+(:pep:`255`).  In Python 2.5 (:pep:`342`), :term:`!generators` were
+tweaked to explicitly support use as coroutines.  That went a step
+further in Python 3.3 with the addition of ``yield from`` (:pep:`380`)
+and the :mod:`asyncio` module (:pep:`3156`).  Finally, in Python 3.5
+(:pep:`492`), we got dedicated ``async/await`` syntax
+and :ref:`a dedicated protocol <coroutine-protocol>`
+for :term:`!coroutine` objects.
+
+There are three main pieces to using coroutines:
+
+* coroutines (non-blocking, yield control instead)
+* an event loop (schedules coroutines)
+* coroutine wrappers around blocking operations
+
+A :term:`coroutine function` looks *almost* the same as a regular
+function.  It is a non-blocking function that *cooperatively* yields
+control of the program to other coroutines, which in turn yield control
+back (eventually).  At those points of synchronization,
+coroutines often provide data to one another.
+
+The event loop is what keeps track of which coroutines have yielded
+control and which should get control next.
+
+Generally a coroutine needs to avoid doing anything that takes very long
+before yielding control back to the event loop.  Any blocking operation
+in a coroutine, like waiting on a socket, has to be implemented in a way
+that only waits a little while, yields, and then waits again, etc. until
+ready.  The alternative is to wrap the blocking operation/function
+in some sort of "future" coroutine that yields until the blocking
+operation completes.  The event loop can also fill that role
+to an extent.
+
+In addition to support for coroutines in the language, Python's stdlib
+provides the :mod:`asyncio` module, which includes:
+
+* an event loop
+* a number of useful coroutines
+* a variety of helpful APIs that build on coroutines and the event loop
+
+Here's a very basic example of using coroutines with :mod:`!asyncio`::
 
     import asyncio
 
-    async def task():
-        # Do something.
-        pass
+    async def task(data):
+        # Do something small.
+        await asyncio.sleep(0.1)
+        # Do something else small.
+        return data
 
-    coros = [task() for _ in range(5)]
+    # Run it once, basically synchronously.
+    res = asyncio.run(task('spam!')
+    assert res == 'spam!', repr(res)
 
-    # Wait for all the coroutines to finish.
-    await asyncio.gather(*coros)
+    # Run it multiple times concurrently.
+    values = list(range(5))
+    res = asyncio.run(
+        asyncio.gather(*(task(v) for v in values))
+    )
+    assert res == values, (res, values)
 
 .. currentmodule:: None
+
+One of the main challenges with using coroutines is that they do not
+normally mix well with non-coroutines.  As a result, ``async/await``
+can be contagious, requiring surrounding code to be async.  This can
+lead to having the same thing implemented twice, once normal and once
+async, with signficant code duplication.
 
 concurrent.futures
 ------------------
@@ -897,7 +960,7 @@ Workload 1
 
    * - threads
      - multiple interpreters
-     - async/await
+     - coroutines
      - multiple processes
      - SMP
    * - .. raw:: html
