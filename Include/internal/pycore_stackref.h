@@ -150,8 +150,7 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
-    // TODO (gh-117139): Add deferred objects later.
-    if (_Py_IsImmortal(obj)) {
+    if (_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj)) {
         return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
     }
     else {
@@ -220,7 +219,8 @@ PyStackRef_DUP(_PyStackRef stackref)
 {
     if (PyStackRef_IsDeferred(stackref)) {
         assert(PyStackRef_IsNull(stackref) ||
-            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)));
+            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) ||
+            _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref)));
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
