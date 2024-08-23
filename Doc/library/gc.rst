@@ -83,7 +83,7 @@ The :mod:`gc` module provides the following functions:
    returned. If *generation* is not ``None``, return only the objects as follows:
 
    * 0: All objects in the young generation
-   * 1: No objects, as there is no generation 1
+   * 1: No objects, as there is no generation 1 (as of Python 3.13)
    * 2: All objects in the old generation
 
    .. versionchanged:: 3.8
@@ -122,7 +122,7 @@ The :mod:`gc` module provides the following functions:
    survived a collection. New objects are placed in the young generation. If an
    object survives a collection it is moved into the old generation.
 
-   In order to decide when to run, the collector keeps track of the number object
+   In order to decide when to run, the collector keeps track of the number of object
    allocations and deallocations since the last collection.  When the number of
    allocations minus the number of deallocations exceeds *threshold0*, collection
    starts. For each collection, all the objects in the young generation and some

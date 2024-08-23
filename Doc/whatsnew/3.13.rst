@@ -496,7 +496,7 @@ by an order of magnitude or more for larger heaps.
 
 There are now only two generations: young and old.
 When :func:`gc.collect` is not called directly, the
-GC is invoked a little less frequency. When invoked it
+GC is invoked a little less frequently. When invoked, it
 collects the young generation and an increment of the
 old generation, instead of collecting one or more generations.
 
