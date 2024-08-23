@@ -241,7 +241,7 @@ int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
     Py_ssize_t len, i;
-    Py_ssize_t union_size, aligned_size;
+    Py_ssize_t aligned_size;
     _CFieldPackState packstate = {0};
     PyObject *tmp;
     Py_ssize_t ffi_ofs;
@@ -404,7 +404,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     if (baseinfo) {
-        union_size = 0;
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, baseinfo->length + len + 1);
         if (stginfo->ffi_type_pointer.elements == NULL) {
@@ -420,7 +419,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         ffi_ofs = baseinfo->length;
     } else {
-        union_size = 0;
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, len + 1);
         if (stginfo->ffi_type_pointer.elements == NULL) {
@@ -431,7 +429,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                sizeof(ffi_type *) * (len + 1));
         ffi_ofs = 0;
     }
-    packstate.size = total_size;
 
     assert(stginfo->format == NULL);
     if (isStruct) {
@@ -529,7 +526,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         } else /* union */ {
             assert(prop);
             memcpy(&packstate, &prop->state_to_check, sizeof(_CFieldPackState));
-            union_size = max(packstate.size, union_size);
         }
 
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
@@ -538,10 +534,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         Py_CLEAR(prop_obj);
     }
     Py_CLEAR(layout_fields);
-
-    if (!isStruct) {
-        total_size = union_size;
-    }
 
     /* Adjust the size according to the alignment requirements */
     aligned_size = ((total_size + total_align - 1) / total_align) * total_align;
