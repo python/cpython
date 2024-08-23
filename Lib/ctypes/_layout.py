@@ -43,46 +43,30 @@ class _BaseLayout:
     def __init__(self, cls, fields, is_struct, base, **kwargs):
         if kwargs:
             warnings.warn(f'Unknown keyword arguments: {list(kwargs.keys())}')
-        self.cls = cls
-        self.is_struct = is_struct
 
-        self.size = 0
-        self.offset = 0
-        base_align = 1
-        if base:
-            if is_struct:
-                self.size = self.offset = ctypes.sizeof(base)
-            base_align = ctypes.alignment(base)
-        #print(base, is_struct, self.size)
-        self.base = base
-
-        self.align = getattr(cls, '_align_', 1)
-        if self.align < 0:
+        align = getattr(cls, '_align_', 1)
+        if align < 0:
             raise ValueError('_align_ must be a non-negative integer')
-        elif self.align == 0:
+        elif align == 0:
             # Setting `_align_ = 0` amounts to using the default alignment
-            self.align == 1
+            align == 1
 
-        self.swapped_bytes = hasattr(cls, '_swappedbytes_')
-        if self.swapped_bytes:
-            self.big_endian = sys.byteorder == 'little'
+        swapped_bytes = hasattr(cls, '_swappedbytes_')
+        if swapped_bytes:
+            big_endian = sys.byteorder == 'little'
         else:
-            self.big_endian = sys.byteorder == 'big'
-
-        self.total_align = max(self.align, base_align)
+            big_endian = sys.byteorder == 'big'
 
         _pack_ = getattr(cls, '_pack_', None)
         if _pack_ is not None:
             try:
-                self._pack_ = int(_pack_)
+                _pack_ = int(_pack_)
             except (TypeError, ValueError):
                 raise ValueError("_pack_ must be an integer")
-            if self._pack_ < 0:
+            if _pack_ < 0:
                 raise ValueError("_pack_ must be a non-negative integer")
-            if self._pack_ > _INT_MAX:
+            if _pack_ > _INT_MAX:
                 raise ValueError("_pack_ too big")
-        else:
-            self._pack_ = None
 
         self.fields = []
 
@@ -93,12 +77,12 @@ class _BaseLayout:
         state_size = 0
         state_align = 0
         #print(self.base, self.is_struct, self.size, self.size * 8)
-        if self.base and self.is_struct:
-            state_size = state_offset = ctypes.sizeof(self.base)
-            state_align = ctypes.alignment(self.base)
+        if base and is_struct:
+            state_size = state_offset = ctypes.sizeof(base)
+            state_align = ctypes.alignment(base)
 
         for i, field in enumerate(fields):
-            if not self.is_struct:
+            if not is_struct:
                 if isinstance(self, GCCSysVLayout):
                     state_field_size = 0
                     state_bitofs = 0
@@ -117,7 +101,6 @@ class _BaseLayout:
                 if bit_size <= 0:
                     raise ValueError(f'number of bits invalid for bit field {name!r}')
             size = ctypes.sizeof(ftype)
-            offset = self.offset
 
             info_size = ctypes.sizeof(ftype)
             info_align = ctypes.alignment(ftype)
@@ -136,7 +119,7 @@ class _BaseLayout:
                 state_bitofs += state_offset * 8;
                 state_offset = 0;
 
-                assert(self._pack_ in (0, None)); ## TODO: This shouldn't be a C assertion
+                assert(_pack_ in (0, None)); ## TODO: This shouldn't be a C assertion
 
                 state_align = info_align;
 
@@ -170,8 +153,8 @@ class _BaseLayout:
                 else:
                     bitsize = 8 * info_size;
 
-                if self._pack_:
-                    state_align = min(self._pack_, info_align);
+                if _pack_:
+                    state_align = min(_pack_, info_align);
                 else:
                     state_align = info_align;
 
@@ -215,7 +198,7 @@ class _BaseLayout:
             ##################################
 
             assert((not is_bitfield) or (LOW_BIT(size) <= size * 8));
-            if self.big_endian and is_bitfield:
+            if big_endian and is_bitfield:
                 size = BUILD_SIZE(NUM_BITS(size), 8*info_size - LOW_BIT(size) - bit_size);
 
             self.fields.append(CField(
@@ -224,14 +207,14 @@ class _BaseLayout:
                 size=size,
                 offset=offset,
                 bit_size=bit_size if is_bitfield else None,
-                swapped_bytes=self.swapped_bytes,
-                pack=self._pack_,
+                swapped_bytes=swapped_bytes,
+                pack=_pack_,
                 index=i,
                 state_to_check=state_to_check,
                 **self._field_args(),
             ))
-            if self.is_struct:
-                self.offset += self.size
+
+        self.align = align
 
     def _field_args(self):
         return {}
