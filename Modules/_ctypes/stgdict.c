@@ -225,7 +225,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     int retval = -1;
     // The following are NULL or hold strong references.
     // They're cleared on error.
-    PyObject *prop_obj = NULL;
     PyObject *layout_fields = NULL;
     PyObject *layout = NULL;
     PyObject *format_spec_obj = NULL;
@@ -425,11 +424,8 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     for (i = 0; i < len; ++i) {
-        prop_obj = PyTuple_GET_ITEM(layout_fields, i);
-        if (!prop_obj) {
-            goto error;
-        }
-        Py_INCREF(prop_obj);
+        PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i);
+        assert(prop_obj);
         if (!PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type)) {
             PyErr_Format(PyExc_TypeError,
                         "fields must be of type CField, got %T", prop_obj);
@@ -465,9 +461,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
         }
-        Py_CLEAR(prop_obj);
     }
-    Py_CLEAR(layout_fields);
 
     stginfo->ffi_type_pointer.alignment = Py_SAFE_DOWNCAST(total_align,
                                                            Py_ssize_t,
@@ -569,6 +563,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             PyObject *pair = PySequence_GetItem(fields, i);
             int bitsize = 0;
 
+            PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i); // borrowed
+            assert(prop_obj);
+            assert(PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type));
+            CFieldObject *prop = (CFieldObject *)prop_obj; // borrowed
+
             if (pair == NULL) {
                 goto error;
             }
@@ -666,6 +665,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             PyObject *pair = PySequence_GetItem(fields, i);
             int bitsize = 0;
 
+            PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i); // borrowed
+            assert(prop_obj);
+            assert(PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type));
+            CFieldObject *prop = (CFieldObject *)prop_obj; // borrowed
+
             if (pair == NULL) {
                 PyMem_Free(type_block);
                 goto error;
@@ -761,7 +765,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     retval = MakeAnonFields(type);
 error:
-    Py_XDECREF(prop_obj);
     Py_XDECREF(layout_fields);
     Py_XDECREF(layout);
     Py_XDECREF(format_spec_obj);
