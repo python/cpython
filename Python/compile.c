@@ -5668,7 +5668,7 @@ codegen_comprehension(struct compiler *c, expr_ty e, int type,
             .u_argcount = 1,
         };
         if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                                (void *)e, e->lineno, NULL, &umd) < 0) {
+                                 (void *)e, e->lineno, NULL, &umd) < 0) {
             goto error;
         }
     }
