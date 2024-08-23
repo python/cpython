@@ -106,7 +106,7 @@ class _BaseLayout:
             try:
                 name, ftype = field
                 is_bitfield = False
-                bit_size = ctypes.sizeof(ftype)
+                bit_size = ctypes.sizeof(ftype) * 8
             except ValueError:
                 name, ftype, bit_size = field
                 is_bitfield = True
@@ -121,11 +121,6 @@ class _BaseLayout:
                 # We don't use packstate->offset here, so clear it, if it has been set.
                 state_bitofs += state_offset * 8;
                 state_offset = 0
-
-                if is_bitfield:
-                    bitsize = bit_size
-                else:
-                    bitsize = 8 * info_size;
 
                 ## We don't use packstate->offset here, so clear it, if it has been set.
                 state_bitofs += state_offset * 8;
@@ -142,7 +137,7 @@ class _BaseLayout:
                 slot_start_bit = round_down(state_bitofs, 8 * info_align);
                 slot_end_bit = slot_start_bit + 8 * info_size;
                 ## And see if it also contains the bitfield's last bit:
-                field_end_bit = state_bitofs + bitsize;
+                field_end_bit = state_bitofs + bit_size;
                 if field_end_bit > slot_end_bit:
                     ## It doesn't: add padding (bump up to the next alignment boundary)
                     state_bitofs = round_up(state_bitofs, 8 * info_align);
@@ -152,19 +147,14 @@ class _BaseLayout:
                 offset = int(round_down(state_bitofs, 8 * info_align) / 8);
                 if is_bitfield:
                     effective_bitsof = state_bitofs - 8 * offset;
-                    size = BUILD_SIZE(bitsize, effective_bitsof);
+                    size = BUILD_SIZE(bit_size, effective_bitsof);
                     assert(effective_bitsof <= info_size * 8);
                 else:
                     size = info_size;
 
-                state_bitofs += bitsize;
+                state_bitofs += bit_size;
                 state_size = int(round_up(state_bitofs, 8) / 8);
             else:
-                if is_bitfield:
-                    bitsize = bit_size
-                else:
-                    bitsize = 8 * info_size;
-
                 if _pack_:
                     state_align = min(_pack_, info_align);
                 else:
@@ -174,7 +164,7 @@ class _BaseLayout:
                 ## packstate->bitofs is generally non-positive,
                 ## and 8 * packstate->offset + packstate->bitofs points just behind
                 ## the end of the last field we placed.
-                if ((0 < state_bitofs + bitsize) or (8 * info_size != state_field_size)):
+                if ((0 < state_bitofs + bit_size) or (8 * info_size != state_field_size)):
                     ## Close the previous bitfield (if any).
                     ## and start a new bitfield:
                     state_offset = round_up(state_offset, state_align);
@@ -193,12 +183,12 @@ class _BaseLayout:
                 if is_bitfield:
                     assert(0 <= (state_field_size + state_bitofs));
                     assert((state_field_size + state_bitofs) < info_size * 8);
-                    size = BUILD_SIZE(bitsize, state_field_size + state_bitofs);
+                    size = BUILD_SIZE(bit_size, state_field_size + state_bitofs);
                 else:
                     size = info_size;
                 assert(state_field_size + state_bitofs <= info_size * 8);
 
-                state_bitofs += bitsize;
+                state_bitofs += bit_size;
                 state_size = state_offset;
 
 
