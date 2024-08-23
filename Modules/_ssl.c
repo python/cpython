@@ -2853,10 +2853,6 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
     if ((session = _ssl_session_dup(session)) == NULL) {
         return NULL;
     }
-    session = SSL_get1_session(self->ssl);
-    if (session == NULL) {
-        Py_RETURN_NONE;
-    }
     pysess = PyObject_GC_New(PySSLSession, self->ctx->state->PySSLSession_Type);
     if (pysess == NULL) {
         SSL_SESSION_free(session);
