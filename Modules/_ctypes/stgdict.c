@@ -246,6 +246,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t ffi_ofs;
     int arrays_seen = 0;
 
+    int retval = -1;
     // The following are NULL or hold strong references.
     // They're cleared on error.
     PyObject *prop_obj = NULL;
@@ -867,11 +868,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
     stginfo->flags |= DICTFLAG_FINAL;
 
-    return MakeAnonFields(type);
+    retval = MakeAnonFields(type);
 error:
     Py_XDECREF(prop_obj);
     Py_XDECREF(layout_fields);
     Py_XDECREF(layout);
     Py_XDECREF(format_spec_obj);
-    return -1;
+    return retval;
 }
