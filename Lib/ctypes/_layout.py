@@ -212,6 +212,7 @@ class _BaseLayout:
                 pack=_pack_,
                 index=i,
                 padding=offset - last_size,
+                #format="",
                 **self._field_args(),
             ))
             total_align = max(total_align, state_align)

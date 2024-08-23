@@ -518,6 +518,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             if (stginfo->format == NULL) {
                 goto error;
             }
+            if (prop->format && prop->format != Py_None) {
+                const char *buf = PyUnicode_AsUTF8(prop->format);
+                if (!buf) goto error;
+                if (strcmp(stginfo->format, buf)) {
+                    PyErr_Format(PyExc_AssertionError,
+                                "formats don't match after field %R:\nexp: \"%s\"\ngot: \"%s\"", prop->name, stginfo->format, buf);
+                    goto error;
+                }
+            }
         }
 
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {

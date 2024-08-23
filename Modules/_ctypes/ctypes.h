@@ -264,6 +264,7 @@ typedef struct CFieldObject {
     bool _ms_layout;
     Py_ssize_t pack;                /* 0 if undefined */
     Py_ssize_t padding;             /* number of bytes between the end of the last field and the start of this one */
+    PyObject *format;                 /* unicode */
 } CFieldObject;
 
 /****************************************************************
