@@ -311,11 +311,6 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
 
     memcpy(packstate, &self->state_to_check, sizeof(_CFieldPackState));
 
-    assert(!_cfield_is_bitfield(self) || (LOW_BIT(self->size) <= self->size * 8));
-    if(self->big_endian && _cfield_is_bitfield(self)) {
-        self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
-    }
-
     return 0;
 }
 

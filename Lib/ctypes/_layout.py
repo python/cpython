@@ -63,6 +63,10 @@ class _BaseLayout:
             self.align == 1
 
         self.swapped_bytes = hasattr(cls, '_swappedbytes_')
+        if self.swapped_bytes:
+            self.big_endian = sys.byteorder == 'little'
+        else:
+            self.big_endian = sys.byteorder == 'big'
 
         self.total_align = max(self.align, base_align)
 
@@ -197,6 +201,10 @@ class _BaseLayout:
                 state_field_size, state_bitofs, state_offset, state_size, state_align
             )
             ##################################
+
+            assert((not is_bitfield) or (LOW_BIT(size) <= size * 8));
+            if self.big_endian and is_bitfield:
+                size = BUILD_SIZE(NUM_BITS(size), 8*info_size - LOW_BIT(size) - bit_size);
 
             yield CField(
                 name=name,
