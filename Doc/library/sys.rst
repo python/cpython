@@ -1712,7 +1712,7 @@ always available.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,
-   pass set *depth* to zero.
+   set *depth* to zero.
 
    This setting is thread-specific.
 
