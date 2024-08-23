@@ -2971,7 +2971,12 @@ zip_next(zipobject *lz)
 
     if (tuplesize == 0)
         return NULL;
-    if (Py_REFCNT(result) == 1) {
+    #ifdef Py_GIL_DISABLED
+    int reuse_tuple = 0;
+    #else
+    int reuse_tuple = Py_REFCNT(result) == 1;
+    #endif
+    if (reuse_tuple) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
