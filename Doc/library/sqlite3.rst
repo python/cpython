@@ -1,5 +1,5 @@
-:mod:`sqlite3` --- DB-API 2.0 interface for SQLite databases
-============================================================
+:mod:`!sqlite3` --- DB-API 2.0 interface for SQLite databases
+=============================================================
 
 .. module:: sqlite3
    :synopsis: A DB-API 2.0 implementation using SQLite 3.x.
@@ -545,26 +545,6 @@ Module constants
    .. versionchanged:: 3.11
       Set *threadsafety* dynamically instead of hard-coding it to ``1``.
 
-.. data:: version
-
-   Version number of this module as a :class:`string <str>`.
-   This is not the version of the SQLite library.
-
-   .. deprecated-removed:: 3.12 3.14
-      This constant used to reflect the version number of the ``pysqlite``
-      package, a third-party library which used to upstream changes to
-      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
-
-.. data:: version_info
-
-   Version number of this module as a :class:`tuple` of :class:`integers <int>`.
-   This is not the version of the SQLite library.
-
-   .. deprecated-removed:: 3.12 3.14
-      This constant used to reflect the version number of the ``pysqlite``
-      package, a third-party library which used to upstream changes to
-      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
-
 .. _sqlite3-dbconfig-constants:
 
 .. data:: SQLITE_DBCONFIG_DEFENSIVE
@@ -597,6 +577,8 @@ Module constants
      https://www.sqlite.org/c3ref/c_dbconfig_defensive.html
         SQLite docs: Database Connection Configuration Options
 
+.. deprecated-removed:: 3.12 3.14
+   The :data:`!version` and :data:`!version_info` constants.
 
 .. _sqlite3-connection-objects:
 

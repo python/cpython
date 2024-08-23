@@ -1,5 +1,5 @@
-:mod:`pydoc` --- Documentation generator and online help system
-===============================================================
+:mod:`!pydoc` --- Documentation generator and online help system
+================================================================
 
 .. module:: pydoc
    :synopsis: Documentation generator and online help system.

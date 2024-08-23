@@ -569,10 +569,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
 
-    /* If the source parameter is set, try to get the Python implementation.
-       The Python implementation is able to log the traceback where the source
+    /* The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, source != NULL);
+    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, 1);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -705,9 +704,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     }
 
     /* Store in the registry that we've been here, *except* when the action
-       is "always". */
+       is "always" or "all". */
     rc = 0;
-    if (!_PyUnicode_EqualToASCIIString(action, "always")) {
+    if (!_PyUnicode_EqualToASCIIString(action, "always") && !_PyUnicode_EqualToASCIIString(action, "all")) {
         if (registry != NULL && registry != Py_None &&
             PyDict_SetItem(registry, key, Py_True) < 0)
         {
@@ -1498,6 +1497,7 @@ warnings_module_exec(PyObject *module)
 static PyModuleDef_Slot warnings_slots[] = {
     {Py_mod_exec, warnings_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

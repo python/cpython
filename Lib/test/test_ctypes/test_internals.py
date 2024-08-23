@@ -28,7 +28,7 @@ class ObjectsTestCase(unittest.TestCase):
         self.assertEqual(ci._objects, None)
 
     def test_c_char_p(self):
-        s = b"Hello, World"
+        s = "Hello, World".encode("ascii")
         refcnt = sys.getrefcount(s)
         cs = c_char_p(s)
         self.assertEqual(refcnt + 1, sys.getrefcount(s))

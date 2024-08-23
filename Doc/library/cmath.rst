@@ -1,5 +1,5 @@
-:mod:`cmath` --- Mathematical functions for complex numbers
-===========================================================
+:mod:`!cmath` --- Mathematical functions for complex numbers
+============================================================
 
 .. module:: cmath
    :synopsis: Mathematical functions for complex numbers.
@@ -43,10 +43,7 @@ Conversions to and from polar coordinates
 
 A Python complex number ``z`` is stored internally using *rectangular*
 or *Cartesian* coordinates.  It is completely determined by its *real
-part* ``z.real`` and its *imaginary part* ``z.imag``.  In other
-words::
-
-   z == z.real + z.imag*1j
+part* ``z.real`` and its *imaginary part* ``z.imag``.
 
 *Polar coordinates* give an alternative way to represent a complex
 number.  In polar coordinates, a complex number *z* is defined by the
@@ -90,7 +87,7 @@ rectangular coordinates to polar coordinates and back.
 .. function:: rect(r, phi)
 
    Return the complex number *x* with polar coordinates *r* and *phi*.
-   Equivalent to ``r * (math.cos(phi) + math.sin(phi)*1j)``.
+   Equivalent to ``complex(r * math.cos(phi), r * math.sin(phi))``.
 
 
 Power and logarithmic functions

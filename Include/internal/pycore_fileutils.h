@@ -326,6 +326,9 @@ extern int _PyFile_Flush(PyObject *);
 extern int _Py_GetTicksPerSecond(long *ticks_per_second);
 #endif
 
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(int) _Py_IsValidFD(int fd);
+
 #ifdef __cplusplus
 }
 #endif

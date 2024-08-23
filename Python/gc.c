@@ -1,5 +1,5 @@
 //  This implements the reference cycle garbage collector.
-//  The Python module inteface to the collector is in gcmodule.c.
+//  The Python module interface to the collector is in gcmodule.c.
 //  See https://devguide.python.org/internals/garbage-collector/
 
 #include "Python.h"
@@ -12,7 +12,6 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
@@ -531,6 +530,17 @@ visit_decref(PyObject *op, void *parent)
         if (gc_is_collecting(gc)) {
             gc_decref(gc);
         }
+    }
+    return 0;
+}
+
+int
+_PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
+{
+    _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
+    /* locals and stack */
+    for (; ref < frame->stackpointer; ref++) {
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
     }
     return 0;
 }
@@ -1261,7 +1271,7 @@ gc_list_set_space(PyGC_Head *list, int space)
  * the incremental collector must progress through the old
  * space faster than objects are added to the old space.
  *
- * Each young or incremental collection adds a numebr of
+ * Each young or incremental collection adds a number of
  * objects, S (for survivors) to the old space, and
  * incremental collectors scan I objects from the old space.
  * I > S must be true. We also want I > S * N to be where
@@ -2045,6 +2055,9 @@ _PyObject_GC_New(PyTypeObject *tp)
         return NULL;
     }
     _PyObject_Init(op, tp);
+    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        _PyObject_InitInlineValues(op, tp);
+    }
     return op;
 }
 
@@ -2084,7 +2097,7 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
-    const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
+    const size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
     if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return (PyVarObject *)PyErr_NoMemory();
@@ -2102,7 +2115,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 void
 PyObject_GC_Del(void *op)
 {
-    size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
+    size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
@@ -2110,7 +2123,7 @@ PyObject_GC_Del(void *op)
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
                                      "gc", NULL, "Object of type %s is not untracked before destruction",
-                                     ((PyObject*)op)->ob_type->tp_name)) {
+                                     Py_TYPE(op)->tp_name)) {
             PyErr_WriteUnraisable(NULL);
         }
         PyErr_SetRaisedException(exc);

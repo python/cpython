@@ -1,10 +1,11 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper, os_helper, MS_WINDOWS
+from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
 import contextlib
+import io
 import json
 import os
 import os.path
@@ -47,6 +48,8 @@ API_ISOLATED = 3
 
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
+
+ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
 
 
 # If we are running from a build dir, but the stdlib has been installed,
@@ -403,6 +406,92 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         code = "print('\\N{digit nine}')"
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
+
+    def test_datetime_reset_strptime(self):
+        code = (
+            "import datetime;"
+            "d = datetime.datetime.strptime('2000-01-01', '%Y-%m-%d');"
+            "print(d.strftime('%Y%m%d'))"
+        )
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '20000101\n' * INIT_LOOPS)
+
+    @unittest.skip('inheritance across re-init is currently broken; see gh-117482')
+    def test_static_types_inherited_slots(self):
+        script = textwrap.dedent("""
+            import test.support
+            results = []
+            for cls in test.support.iter_builtin_types():
+                for attr, _ in test.support.iter_slot_wrappers(cls):
+                    wrapper = getattr(cls, attr)
+                    res = (cls, attr, wrapper)
+                    results.append(res)
+            results = ((repr(c), a, repr(w)) for c, a, w in results)
+            """)
+        def collate_results(raw):
+            results = {}
+            for cls, attr, wrapper in raw:
+                key = cls, attr
+                assert key not in results, (results, key, wrapper)
+                results[key] = wrapper
+            return results
+
+        ns = {}
+        exec(script, ns, ns)
+        main_results = collate_results(ns['results'])
+        del ns
+
+        script += textwrap.dedent("""
+            import json
+            import sys
+            text = json.dumps(list(results))
+            print(text, file=sys.stderr)
+            """)
+        out, err = self.run_embedded_interpreter(
+                "test_repeated_init_exec", script, script)
+        _results = err.split('--- Loop #')[1:]
+        (_embedded, _reinit,
+         ) = [json.loads(res.rpartition(' ---\n')[-1]) for res in _results]
+        embedded_results = collate_results(_embedded)
+        reinit_results = collate_results(_reinit)
+
+        for key, expected in main_results.items():
+            cls, attr = key
+            for src, results in [
+                ('embedded', embedded_results),
+                ('reinit', reinit_results),
+            ]:
+                with self.subTest(src, cls=cls, slotattr=attr):
+                    actual = results.pop(key)
+                    self.assertEqual(actual, expected)
+        self.maxDiff = None
+        self.assertEqual(embedded_results, {})
+        self.assertEqual(reinit_results, {})
+
+        self.assertEqual(out, '')
+
+    def test_getargs_reset_static_parser(self):
+        # Test _PyArg_Parser initializations via _PyArg_UnpackKeywords()
+        # https://github.com/python/cpython/issues/122334
+        code = textwrap.dedent("""
+            try:
+                import _ssl
+            except ModuleNotFoundError:
+                _ssl = None
+            if _ssl is not None:
+                _ssl.txt2obj(txt='1.3')
+            print('1')
+
+            import _queue
+            _queue.SimpleQueue().put_nowait(item=None)
+            print('2')
+
+            import _zoneinfo
+            _zoneinfo.ZoneInfo.clear_cache(only_keys=['Foo/Bar'])
+            print('3')
+        """)
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
 
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
@@ -1276,11 +1365,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ver = sys.version_info
             return [
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}{ver.minor}.zip'),
+                             f'python{ver.major}{ver.minor}{ABI_THREAD}.zip'),
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}'),
                 os.path.join(exec_prefix, sys.platlibdir,
-                             f'python{ver.major}.{ver.minor}', 'lib-dynload'),
+                             f'python{ver.major}.{ver.minor}{ABI_THREAD}', 'lib-dynload'),
             ]
 
     @contextlib.contextmanager
@@ -1334,7 +1423,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1375,7 +1464,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
-            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1506,7 +1595,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 lib_dynload = os.path.join(pyvenv_home,
                                            sys.platlibdir,
-                                           f'python{ver.major}.{ver.minor}',
+                                           f'python{ver.major}.{ver.minor}{ABI_THREAD}',
                                            'lib-dynload')
                 os.makedirs(lib_dynload)
             else:
@@ -1712,6 +1801,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f'fail to decode stdout: {out!r}')
 
         self.assertEqual(out, expected)
+
+    @threading_helper.requires_working_threading()
+    def test_init_in_background_thread(self):
+        # gh-123022: Check that running Py_Initialize() in a background
+        # thread doesn't crash.
+        out, err = self.run_embedded_interpreter("test_init_in_background_thread")
+        self.assertEqual(err, "")
 
 
 class SetConfigTests(unittest.TestCase):

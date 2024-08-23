@@ -225,6 +225,10 @@ _testcppext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
+    // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
+    Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
+    assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
     return 0;
 }
 

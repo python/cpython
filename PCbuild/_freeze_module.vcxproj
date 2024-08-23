@@ -240,6 +240,7 @@
     <ClCompile Include="..\Python\parking_lot.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
+    <ClCompile Include="..\Python\perf_jit_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
@@ -266,6 +267,7 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
+    <ClCompile Include="..\Python\typeid.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PC\pyconfig.h.in" />

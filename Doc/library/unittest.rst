@@ -1,5 +1,5 @@
-:mod:`unittest` --- Unit testing framework
-==========================================
+:mod:`!unittest` --- Unit testing framework
+===========================================
 
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
@@ -2316,8 +2316,8 @@ Loading and running tests
    (see :ref:`Warning control <using-on-warnings>`),
    otherwise it will be set to ``'default'``.
 
-   Calling ``main`` actually returns an instance of the ``TestProgram`` class.
-   This stores the result of the tests run as the ``result`` attribute.
+   Calling ``main`` returns an object with the ``result`` attribute that contains
+   the result of the tests run as a :class:`unittest.TestResult`.
 
    .. versionchanged:: 3.1
       The *exit* parameter was added.

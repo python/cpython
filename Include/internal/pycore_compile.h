@@ -76,15 +76,6 @@ int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 
 // Export for '_opcode' extension module
-PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasName(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasJump(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasFree(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasLocal(int opcode);
-PyAPI_FUNC(int) _PyCompile_OpcodeHasExc(int opcode);
-
 PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
 PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
 
@@ -100,12 +91,6 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyCompilerFlags *flags,
         int optimize,
         int compile_mode);
-
-// Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
-        PyObject *instructions,
-        PyObject *consts,
-        int nlocals);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyCodeObject*)

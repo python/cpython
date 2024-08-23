@@ -556,6 +556,17 @@ def test_sys_monitoring_register_callback():
     sys.monitoring.register_callback(1, 1, None)
 
 
+def test_winapi_createnamedpipe(pipe_name):
+    import _winapi
+
+    def hook(event, args):
+        if event == "_winapi.CreateNamedPipe":
+            print(event, args)
+
+    sys.addaudithook(hook)
+    _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
