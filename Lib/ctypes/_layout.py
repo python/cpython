@@ -13,11 +13,13 @@ class _BaseLayout:
         self.fields = fields
         self.is_struct = is_struct
 
+        self.size = 0
+        self.offset = 0
         if base:
-            self.size = self.offset = ctypes.sizeof(base)
+            if is_struct:
+                self.size = self.offset = ctypes.sizeof(base)
             base_align = ctypes.alignment(base)
         else:
-            self.size = 0
             self.offset = 0
             base_align = 1
 
@@ -35,6 +37,7 @@ class _BaseLayout:
         self._pack_ = getattr(cls, '_pack_', None)
 
     def __iter__(self):
+        self.gave_up = False
         for i, field in enumerate(self.fields):
             field = tuple(field)
             try:
@@ -45,14 +48,34 @@ class _BaseLayout:
             size = ctypes.sizeof(ftype)
             offset = self.offset
 
+            if bit_size:
+                self.gave_up = True
+            if size != ctypes.alignment(ftype):
+                self.gave_up = True
+            if self._pack_:
+                self.gave_up = True
+
             ################################## State check (remove this)
             if isinstance(self, WindowsLayout):
                 state_field_size = size * 8
             else:
                 state_field_size = 0
+            state_bitofs = -1
+            state_offset = -1
+            state_size = -1
+            state_align = -1
+
+            if not self.gave_up:
+                if isinstance(self, GCCSysVLayout):
+                    # We don't use packstate->offset here, so clear it, if it has been set.
+                    state_offset = 0
+                else:
+                    state_offset = self.offset
+                state_align = ctypes.alignment(ftype)
+
             state_to_check = struct.pack(
                 "nnnnn",
-                state_field_size, -1, -1, -1, -1
+                state_field_size, state_bitofs, state_offset, state_size, state_align
             )
             ##################################
 
@@ -68,7 +91,8 @@ class _BaseLayout:
                 state_to_check=state_to_check,
                 **self._field_args(),
             )
-            self.offset += self.size
+            if self.is_struct:
+                self.offset += self.size
 
     def _field_args(self):
         return {}

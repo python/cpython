@@ -356,8 +356,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         }
         if (len != sizeof(_CFieldPackState)) {
             PyErr_Format(PyExc_ValueError,
-                            "state_to_check size invalid, want %zd, got %zd",
-                            sizeof(_CFieldPackState), len);
+                            "state_to_check size invalid for %R, want %zd, got %zd",
+                            self->name, sizeof(_CFieldPackState), len);
         }
         memcpy(&self->state_to_check, buf, sizeof(_CFieldPackState));
     }
@@ -431,8 +431,8 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
                 PyErr_Format(                                   \
                     PyExc_AssertionError,                       \
                     "state_to_check." #FIELD                    \
-                        " invalid, want %zd, got %zd",          \
-                    expected, got);                             \
+                        " invalid for %R, want %zd, got %zd",   \
+                    self->name, expected, got);                 \
                 return -1;                                      \
             }                                                   \
         }                                                       \
