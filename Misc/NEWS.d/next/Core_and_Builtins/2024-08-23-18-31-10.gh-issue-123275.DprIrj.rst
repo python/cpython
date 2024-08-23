@@ -1,0 +1,1 @@
+Support ``-Xgil=1`` and ``PYTHON_GIL=1`` on non-free-threaded builds.
