@@ -299,7 +299,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    tmp = PyObject_GetAttrString(layout, "align");
+    tmp = PyObject_GetAttr(layout, &_Py_ID(align));
     if (!tmp) {
         goto error;
     }
@@ -308,12 +308,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (total_align < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
-                            "total_align must be a non-negative integer");
+                            "align must be a non-negative integer");
         }
         goto error;
     }
 
-    tmp = PyObject_GetAttrString(layout, "size");
+    tmp = PyObject_GetAttr(layout, &_Py_ID(size));
     if (!tmp) {
         goto error;
     }
@@ -327,7 +327,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    format_spec_obj = PyObject_GetAttrString(layout, "format_spec");
+    format_spec_obj = PyObject_GetAttr(layout, &_Py_ID(format_spec));
     if (!format_spec_obj) {
         goto error;
     }
@@ -337,19 +337,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!format_spec) {
         goto error;
     }
-
-    PyObject *layout_fields_obj = PyObject_GetAttrString(layout, "fields");
-    if (!layout_fields_obj) {
-        goto error;
-    }
-    layout_fields = PySequence_Tuple(layout_fields_obj);
-    Py_DECREF(layout_fields_obj);
-    if (!layout_fields) {
-        goto error;
-    }
-    Py_CLEAR(layout);
-
-    Py_ssize_t len = PyTuple_GET_SIZE(layout_fields);
 
     if (stginfo->format) {
         PyMem_Free(stginfo->format);
@@ -361,6 +348,19 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
     memcpy(stginfo->format, format_spec, format_spec_size + 1);
+
+    PyObject *layout_fields_obj = PyObject_GetAttr(layout, &_Py_ID(fields));
+    if (!layout_fields_obj) {
+        goto error;
+    }
+    layout_fields = PySequence_Tuple(layout_fields_obj);
+    Py_DECREF(layout_fields_obj);
+    if (!layout_fields) {
+        goto error;
+    }
+    Py_CLEAR(layout);
+
+    Py_ssize_t len = PyTuple_GET_SIZE(layout_fields);
 
     if (stginfo->ffi_type_pointer.elements) {
         PyMem_Free(stginfo->ffi_type_pointer.elements);
