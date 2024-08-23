@@ -87,6 +87,7 @@ class _BaseLayout:
             state_size = state_offset = ctypes.sizeof(base)
             state_align = ctypes.alignment(base)
 
+        union_size = 0
         last_size = state_size
         for i, field in enumerate(fields):
             if not is_struct:
@@ -197,13 +198,6 @@ class _BaseLayout:
                 state_size = state_offset;
 
 
-            ################################## State check (remove this)
-            state_to_check = struct.pack(
-                "n",
-                state_size
-            )
-            ##################################
-
             assert((not is_bitfield) or (LOW_BIT(size) <= size * 8));
             if big_endian and is_bitfield:
                 size = BUILD_SIZE(NUM_BITS(size), 8*info_size - LOW_BIT(size) - bit_size);
@@ -217,14 +211,17 @@ class _BaseLayout:
                 swapped_bytes=swapped_bytes,
                 pack=_pack_,
                 index=i,
-                state_to_check=state_to_check,
                 padding=offset - last_size,
                 **self._field_args(),
             ))
             total_align = max(total_align, state_align)
             last_size = state_size
+            union_size = max(state_size, union_size);
 
-        self.size = state_size
+        if is_struct:
+            self.size = state_size
+        else:
+            self.size = union_size
         self.align = total_align
 
     def _field_args(self):

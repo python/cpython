@@ -242,7 +242,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 {
     Py_ssize_t len, i;
     Py_ssize_t aligned_size;
-    _CFieldPackState packstate = {0};
     PyObject *tmp;
     Py_ssize_t ffi_ofs;
     int arrays_seen = 0;
@@ -476,6 +475,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             stginfo->flags |= TYPEFLAG_HASPOINTER;
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
 
+        assert(prop);
         if (isStruct) {
             const char *fieldfmt = info->format ? info->format : "B";
             const char *fieldname = PyUnicode_AsUTF8(prop->name);
@@ -486,11 +486,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             if (fieldname == NULL) {
                 goto error;
             }
-
-            /* construct the field now, as `prop->offset` is `offset` with
-               corrected alignment */
-            assert(prop);
-            memcpy(&packstate, &prop->state_to_check, sizeof(_CFieldPackState));
 
             if (prop->padding > 0) {
                 ptr = stginfo->format;
@@ -523,9 +518,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             if (stginfo->format == NULL) {
                 goto error;
             }
-        } else /* union */ {
-            assert(prop);
-            memcpy(&packstate, &prop->state_to_check, sizeof(_CFieldPackState));
         }
 
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {

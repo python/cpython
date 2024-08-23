@@ -116,7 +116,6 @@ _ctypes.CField.__new__ as PyCField_new
     swapped_bytes: bool = False
     _ms: bool = False
     pack as pack_obj: object = None
-    state_to_check: object = NULL
     padding: Py_ssize_t = 0
 
 [clinic start generated code]*/
@@ -125,9 +124,8 @@ static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
                   PyObject *bit_size_obj, int swapped_bytes, int _ms,
-                  PyObject *pack_obj, PyObject *state_to_check,
-                  Py_ssize_t padding)
-/*[clinic end generated code: output=4682681495942d3c input=2bc0747656719770]*/
+                  PyObject *pack_obj, Py_ssize_t padding)
+/*[clinic end generated code: output=fd3f7577cdc18215 input=797bc6b6969d0986]*/
 {
     CFieldObject* self = NULL;
     if (size < 0) {
@@ -277,23 +275,6 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                 self->setfunc = fd->setfunc;
             }
         }
-    }
-
-    if (state_to_check) {
-        char *buf;
-        Py_ssize_t len;
-        if (PyBytes_AsStringAndSize(state_to_check, &buf, &len) < 0) {
-            goto error;
-        }
-        if (len != sizeof(_CFieldPackState)) {
-            PyErr_Format(PyExc_ValueError,
-                            "state_to_check size invalid for %R, want %zd, got %zd",
-                            self->name, sizeof(_CFieldPackState), len);
-        }
-        memcpy(&self->state_to_check, buf, sizeof(_CFieldPackState));
-    }
-    else {
-        memset(&self->state_to_check, 0xff, sizeof(_CFieldPackState));
     }
 
     return (PyObject *)self;

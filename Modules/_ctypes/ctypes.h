@@ -247,9 +247,6 @@ struct fielddesc {
     GETFUNC getfunc_swapped;
 };
 
-typedef struct _CFieldPackState {
-    Py_ssize_t size;  // the size of the structure / union so far
-} _CFieldPackState; // TODO: remove this...
 typedef struct CFieldObject {
     PyObject_HEAD
     Py_ssize_t offset;
@@ -266,9 +263,7 @@ typedef struct CFieldObject {
     bool big_endian;                 /* boolean */
     bool _ms_layout;
     Py_ssize_t pack;                /* 0 if undefined */
-    Py_ssize_t padding;
-
-    _CFieldPackState state_to_check;                // TODO: remove this.
+    Py_ssize_t padding;             /* number of bytes between the end of the last field and the start of this one */
 } CFieldObject;
 
 /****************************************************************
