@@ -104,10 +104,13 @@ PyCField_FromDesc manages the pack state struct.
 */
 
 static int
-PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
+PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize_in,
                 CFieldObject* self, StgInfo* info
                 )
 {
+    Py_ssize_t bitsize = _cfield_is_bitfield(self) ? self->bit_size : 8 * info->size;
+    assert(bitsize == bitsize_in);
+
     // We don't use packstate->offset here, so clear it, if it has been set.
     packstate->bitofs += packstate->offset * 8;
     packstate->offset = 0;
@@ -148,10 +151,13 @@ PyCField_FromDesc_gcc(_CFieldPackState *packstate, Py_ssize_t bitsize,
 
 static int
 PyCField_FromDesc_msvc(
-                _CFieldPackState *packstate, Py_ssize_t bitsize,
+                _CFieldPackState *packstate, Py_ssize_t bitsize_in,
                 CFieldObject* self, StgInfo* info
                 )
 {
+    Py_ssize_t bitsize = _cfield_is_bitfield(self) ? self->bit_size : 8 * info->size;
+    assert(bitsize == bitsize_in);
+
     if (self->pack) {
         packstate->align = Py_MIN(self->pack, info->align);
     } else {
