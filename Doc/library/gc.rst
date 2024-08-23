@@ -135,7 +135,7 @@ The :mod:`gc` module provides the following functions:
 
    *threshold2* is ignored.
 
-   See <https://devguide.python.org/garbage_collector>`_ for more information.
+   See `Garbage collector design <https://devguide.python.org/garbage_collector>`_ for more information.
 
    .. versionchanged:: 3.13
       *threshold2* is ignored
