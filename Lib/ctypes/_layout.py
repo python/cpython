@@ -6,41 +6,37 @@ from _ctypes import CField, buffer_info
 import ctypes
 
 def round_down(n, multiple):
-    assert(n >= 0);
-    assert(multiple >= 0);
-    if (multiple == 0):
-        return n;
-    return int(n / multiple) * multiple;
+    assert n >= 0
+    assert multiple > 0
+    return (n // multiple) * multiple
 
 def round_up(n, multiple):
-    assert(n >= 0);
-    assert(multiple >= 0);
-    if (multiple == 0):
-        return n;
-    return int((n + multiple - 1) / multiple) * multiple;
+    assert n >= 0
+    assert multiple > 0
+    return ((n + multiple - 1) // multiple) * multiple
 
 def LOW_BIT(offset):
-    return offset & 0xFFFF;
+    return offset & 0xFFFF
 
 def NUM_BITS(bitsize):
-    return bitsize >> 16;
+    return bitsize >> 16
 
 def BUILD_SIZE(bitsize, offset):
-    assert(0 <= offset);
-    assert(offset <= 0xFFFF);
+    assert(0 <= offset)
+    assert(offset <= 0xFFFF)
     ## We don't support zero length bitfields.
     ## And GET_BITFIELD uses NUM_BITS(size)==0,
     ## to figure out whether we are handling a bitfield.
-    assert(0 < bitsize);
-    result = (bitsize << 16) + offset;
-    assert(bitsize == NUM_BITS(result));
-    assert(offset == LOW_BIT(result));
-    return result;
+    assert(0 < bitsize)
+    result = (bitsize << 16) + offset
+    assert(bitsize == NUM_BITS(result))
+    assert(offset == LOW_BIT(result))
+    return result
 
-def build_size(bit_size, effective_bitsof, big_endian, type_size):
+def build_size(bit_size, bit_offset, big_endian, type_size):
     if big_endian:
-        return BUILD_SIZE(bit_size, 8 * type_size - effective_bitsof - bit_size)
-    return BUILD_SIZE(bit_size, effective_bitsof)
+        return BUILD_SIZE(bit_size, 8 * type_size - bit_offset - bit_size)
+    return BUILD_SIZE(bit_size, bit_offset)
 
 _INT_MAX = (1 << (ctypes.sizeof(ctypes.c_int) * 8) - 1) - 1
 
@@ -73,15 +69,15 @@ class _structunion_layout:
         else:
             big_endian = sys.byteorder == 'big'
 
-        _pack_ = getattr(cls, '_pack_', None)
-        if _pack_ is not None:
+        pack = getattr(cls, '_pack_', None)
+        if pack is not None:
             try:
-                _pack_ = int(_pack_)
+                pack = int(pack)
             except (TypeError, ValueError):
                 raise ValueError("_pack_ must be an integer")
-            if _pack_ < 0:
+            if pack < 0:
                 raise ValueError("_pack_ must be a non-negative integer")
-            if _pack_ > _INT_MAX:
+            if pack > _INT_MAX:
                 raise ValueError("_pack_ too big")
             if not _ms:
                 raise ValueError('_pack_ is not compatible with gcc-sysv layout')
@@ -93,118 +89,131 @@ class _structunion_layout:
         else:
             format_spec_parts = ["B"]
 
-        state_field_size = 0
-        # `8 * offset + bitofs` points to where the  next field would start.
-        state_bitofs = 0
-        state_offset = 0
-        struct_size = 0  # size if this was a struct
-        if base:
-            struct_size = state_offset = ctypes.sizeof(base)
+        last_field_bit_size = 0  # used in MS layout only
 
+        # `8 * next_byte_offset + next_bit_offset` points to where the
+        # next field would start.
+        next_bit_offset = 0
+        next_byte_offset = 0
+
+        # size if this was a struct (sum of field sizes, plus padding)
+        struct_size = 0
+        # max of field sizes; only meaningful for unions
         union_size = 0
+
+        if base:
+            struct_size = ctypes.sizeof(base)
+            if _ms:
+                next_byte_offset = struct_size
+            else:
+                next_bit_offset = struct_size * 8
+
         last_size = struct_size
         last_field = None
         for i, field in enumerate(fields):
             if not is_struct:
                 # Unions start fresh each time
-                state_field_size = 0
-                state_bitofs = 0
-                state_offset = 0
+                last_field_bit_size = 0
+                next_bit_offset = 0
+                next_byte_offset = 0
 
+            # Unpack the field
             field = tuple(field)
             try:
-                name, ftype = field
+                name, ctype = field
                 is_bitfield = False
-                bit_size = ctypes.sizeof(ftype) * 8
+                type_size = ctypes.sizeof(ctype)
+                bit_size = type_size * 8
             except ValueError:
-                name, ftype, bit_size = field
+                name, ctype, bit_size = field
                 is_bitfield = True
                 if bit_size <= 0:
                     raise ValueError(f'number of bits invalid for bit field {name!r}')
+                type_size = ctypes.sizeof(ctype)
 
-            type_size = ctypes.sizeof(ftype)
-            type_align = ctypes.alignment(ftype)
+            type_bit_size = type_size * 8
+            type_align = ctypes.alignment(ctype) or 1
+            type_bit_align = type_align * 8
 
             if not _ms:
-                # We don't use packstate->offset here, so clear it, if it has been set.
-                state_bitofs += state_offset * 8;
-                state_offset = 0
+                # We don't use next_byte_offset here
+                assert pack is None
+                assert next_byte_offset == 0
 
-                ## We don't use packstate->offset here, so clear it, if it has been set.
-                state_bitofs += state_offset * 8;
-                state_offset = 0;
-
-                assert(_pack_ in (0, None)); ## TODO: This shouldn't be a C assertion
-
-                ## Determine whether the bit field, if placed at the next free bit,
-                ## fits within a single object of its specified type.
-                ## That is: determine a "slot", sized & aligned for the specified type,
-                ## which contains the bitfield's beginning:
-                slot_start_bit = round_down(state_bitofs, 8 * type_align);
-                slot_end_bit = slot_start_bit + 8 * type_size;
-                ## And see if it also contains the bitfield's last bit:
-                field_end_bit = state_bitofs + bit_size;
+                # Determine whether the bit field, if placed at the next
+                # free bit, fits within a single object of its specified type.
+                # That is: determine a "slot", sized & aligned for the
+                # specified type, which contains the bitfield's beginning:
+                slot_start_bit = round_down(next_bit_offset, type_bit_align)
+                slot_end_bit = slot_start_bit + type_bit_size
+                # And see if it also contains the bitfield's last bit:
+                field_end_bit = next_bit_offset + bit_size
                 if field_end_bit > slot_end_bit:
-                    ## It doesn't: add padding (bump up to the next alignment boundary)
-                    state_bitofs = round_up(state_bitofs, 8 * type_align);
+                    # It doesn't: add padding (bump up to the next
+                    # alignment boundary)
+                    next_bit_offset = round_up(next_bit_offset, type_bit_align)
 
-                assert(state_offset == 0);
-
-                offset = int(round_down(state_bitofs, 8 * type_align) / 8);
+                offset = int(round_down(next_bit_offset, type_bit_align) / 8)
                 if is_bitfield:
-                    effective_bitsof = state_bitofs - 8 * offset;
-                    size = build_size(bit_size, effective_bitsof,
+                    effective_bit_offset = next_bit_offset - 8 * offset
+                    size = build_size(bit_size, effective_bit_offset,
                                       big_endian, type_size)
-                    assert(effective_bitsof <= type_size * 8);
+                    assert effective_bit_offset <= type_bit_size
                 else:
-                    size = type_size;
+                    assert offset == next_bit_offset / 8
+                    size = type_size
 
-                state_bitofs += bit_size;
-                struct_size = int(round_up(state_bitofs, 8) / 8);
+                next_bit_offset += bit_size
+                struct_size = int(round_up(next_bit_offset, 8) / 8)
             else:
-                if _pack_:
-                    type_align = min(_pack_, type_align);
+                if pack:
+                    type_align = min(pack, type_align)
 
-                ## packstate->offset points to end of current bitfield.
-                ## packstate->bitofs is generally non-positive,
-                ## and 8 * packstate->offset + packstate->bitofs points just behind
-                ## the end of the last field we placed.
-                if ((0 < state_bitofs + bit_size) or (8 * type_size != state_field_size)):
-                    ## Close the previous bitfield (if any).
-                    ## and start a new bitfield:
-                    state_offset = round_up(state_offset, type_align);
+                # next_byte_offset points to end of current bitfield.
+                # next_bit_offset is generally non-positive,
+                # and 8 * next_byte_offset + next_bit_offset points just behind
+                # the end of the last field we placed.
+                if (
+                    (0 < next_bit_offset + bit_size)
+                    or (type_bit_size != last_field_bit_size)
+                ):
+                    # Close the previous bitfield (if any)
+                    # and start a new bitfield
+                    next_byte_offset = round_up(next_byte_offset, type_align)
 
-                    state_offset += type_size;
+                    next_byte_offset += type_size
 
-                    state_field_size = type_size * 8;
-                    ## Reminder: 8 * (packstate->offset) + bitofs points to where we would start a
-                    ## new field.  Ie just behind where we placed the last field plus an
-                    ## allowance for alignment.
-                    state_bitofs = - state_field_size;
+                    last_field_bit_size = type_bit_size
+                    # Reminder: 8 * (next_byte_offset) + next_bit_offset
+                    # points to where we would start a
+                    # new field.  I.e. just behind where we placed the last
+                    # field plus an allowance for alignment.
+                    next_bit_offset = - last_field_bit_size
 
-                assert(8 * type_size == state_field_size);
+                assert type_bit_size == last_field_bit_size
+                assert type_bit_size > 0
 
-                offset = state_offset - int((state_field_size) // 8);
+                offset = next_byte_offset - last_field_bit_size // 8
                 if is_bitfield:
-                    assert(0 <= (state_field_size + state_bitofs));
-                    assert((state_field_size + state_bitofs) < type_size * 8);
-                    size = build_size(bit_size, state_field_size + state_bitofs,
+                    assert 0 <= (last_field_bit_size + next_bit_offset)
+                    size = build_size(bit_size,
+                                      last_field_bit_size + next_bit_offset,
                                       big_endian, type_size)
                 else:
-                    size = type_size;
-                assert(state_field_size + state_bitofs <= type_size * 8);
+                    size = type_size
+                assert (last_field_bit_size + next_bit_offset) < type_bit_size
 
-                state_bitofs += bit_size;
-                struct_size = state_offset;
+                next_bit_offset += bit_size
+                struct_size = next_byte_offset
 
+            assert((not is_bitfield) or (LOW_BIT(size) <= size * 8))
 
-            assert((not is_bitfield) or (LOW_BIT(size) <= size * 8));
-
+            # Add the format spec parts
             if is_struct:
                 padding = offset - last_size
                 format_spec_parts.append(padding_spec(padding))
 
-                fieldfmt, bf_ndim, bf_shape = buffer_info(ftype)
+                fieldfmt, bf_ndim, bf_shape = buffer_info(ctype)
 
                 if bf_shape:
                     format_spec_parts.extend((
@@ -219,7 +228,7 @@ class _structunion_layout:
 
             last_field = CField(
                 name=name,
-                type=ftype,
+                type=ctype,
                 size=size,
                 offset=offset,
                 bit_size=bit_size if is_bitfield else None,
@@ -228,7 +237,8 @@ class _structunion_layout:
             self.fields.append(last_field)
             align = max(align, type_align)
             last_size = struct_size
-            union_size = max(struct_size, union_size);
+            if not is_struct:
+                union_size = max(struct_size, union_size)
 
         if is_struct:
             total_size = struct_size
@@ -238,6 +248,7 @@ class _structunion_layout:
         # Adjust the size according to the alignment requirements
         aligned_size = round_up(total_size, align)
 
+        # Finish up the format spec
         if is_struct:
             padding = aligned_size - total_size
             format_spec_parts.append(padding_spec(padding))
@@ -246,6 +257,7 @@ class _structunion_layout:
         self.size = aligned_size
         self.align = align
         self.format_spec = "".join(format_spec_parts)
+
 
 def padding_spec(padding):
     if padding <= 0:
