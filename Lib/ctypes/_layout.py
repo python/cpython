@@ -98,22 +98,19 @@ class _structunion_layout:
         state_bitofs = 0
         state_offset = 0
         state_size = 0
-        state_align = 0
-        #print(self.base, self.is_struct, self.size, self.size * 8)
-        if base and is_struct:
+        if base:
             state_size = state_offset = ctypes.sizeof(base)
-            state_align = ctypes.alignment(base)
 
         union_size = 0
         last_size = state_size
         last_field = None
         for i, field in enumerate(fields):
             if not is_struct:
+                # Unions start fresh each time
                 state_field_size = 0
                 state_bitofs = 0
                 state_offset = 0
                 state_size = 0
-                state_align = 0
 
             field = tuple(field)
             try:
@@ -125,10 +122,9 @@ class _structunion_layout:
                 is_bitfield = True
                 if bit_size <= 0:
                     raise ValueError(f'number of bits invalid for bit field {name!r}')
-            size = ctypes.sizeof(ftype)
 
             type_size = ctypes.sizeof(ftype)
-            info_align = ctypes.alignment(ftype)
+            type_align = ctypes.alignment(ftype)
 
             if not _ms:
                 # We don't use packstate->offset here, so clear it, if it has been set.
@@ -141,23 +137,21 @@ class _structunion_layout:
 
                 assert(_pack_ in (0, None)); ## TODO: This shouldn't be a C assertion
 
-                state_align = info_align;
-
                 ## Determine whether the bit field, if placed at the next free bit,
                 ## fits within a single object of its specified type.
                 ## That is: determine a "slot", sized & aligned for the specified type,
                 ## which contains the bitfield's beginning:
-                slot_start_bit = round_down(state_bitofs, 8 * info_align);
+                slot_start_bit = round_down(state_bitofs, 8 * type_align);
                 slot_end_bit = slot_start_bit + 8 * type_size;
                 ## And see if it also contains the bitfield's last bit:
                 field_end_bit = state_bitofs + bit_size;
                 if field_end_bit > slot_end_bit:
                     ## It doesn't: add padding (bump up to the next alignment boundary)
-                    state_bitofs = round_up(state_bitofs, 8 * info_align);
+                    state_bitofs = round_up(state_bitofs, 8 * type_align);
 
                 assert(state_offset == 0);
 
-                offset = int(round_down(state_bitofs, 8 * info_align) / 8);
+                offset = int(round_down(state_bitofs, 8 * type_align) / 8);
                 if is_bitfield:
                     effective_bitsof = state_bitofs - 8 * offset;
                     size = build_size(bit_size, effective_bitsof,
@@ -170,9 +164,7 @@ class _structunion_layout:
                 state_size = int(round_up(state_bitofs, 8) / 8);
             else:
                 if _pack_:
-                    state_align = min(_pack_, info_align);
-                else:
-                    state_align = info_align;
+                    type_align = min(_pack_, type_align);
 
                 ## packstate->offset points to end of current bitfield.
                 ## packstate->bitofs is generally non-positive,
@@ -181,7 +173,7 @@ class _structunion_layout:
                 if ((0 < state_bitofs + bit_size) or (8 * type_size != state_field_size)):
                     ## Close the previous bitfield (if any).
                     ## and start a new bitfield:
-                    state_offset = round_up(state_offset, state_align);
+                    state_offset = round_up(state_offset, type_align);
 
                     state_offset += type_size;
 
@@ -231,7 +223,7 @@ class _structunion_layout:
                 index=i,
             )
             self.fields.append(last_field)
-            align = max(align, state_align)
+            align = max(align, type_align)
             last_size = state_size
             union_size = max(state_size, union_size);
 
