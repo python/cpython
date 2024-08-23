@@ -2277,9 +2277,10 @@
             _PyStackRef null = PyStackRef_NULL;
             (void)null;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            uint16_t offset = (uint16_t)CURRENT_OPERAND();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyObject *attr_o = _PyObject_InlineValues(owner_o)->values[index];
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *attr_o = *value_ptr;
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2299,9 +2300,10 @@
             _PyStackRef null = PyStackRef_NULL;
             (void)null;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            uint16_t offset = (uint16_t)CURRENT_OPERAND();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyObject *attr_o = _PyObject_InlineValues(owner_o)->values[index];
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *attr_o = *value_ptr;
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2583,14 +2585,16 @@
             _PyStackRef value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            uint16_t offset = (uint16_t)CURRENT_OPERAND();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             STAT_INC(STORE_ATTR, hit);
             assert(_PyObject_GetManagedDict(owner_o) == NULL);
-            PyDictValues *values = _PyObject_InlineValues(owner_o);
-            PyObject *old_value = values->values[index];
-            values->values[index] = PyStackRef_AsPyObjectSteal(value);
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *old_value = *value_ptr;
+            *value_ptr = PyStackRef_AsPyObjectSteal(value);
             if (old_value == NULL) {
+                PyDictValues *values = _PyObject_InlineValues(owner_o);
+                int index = value_ptr - values->values;
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
             else {
@@ -2633,18 +2637,19 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            old_value = ep->me_value;
-            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
-            new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
-            ep->me_value = PyStackRef_AsPyObjectSteal(value);
-            Py_XDECREF(old_value);
-            STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                 _PyObject_GC_TRACK(dict);
             }
-            /* PEP 509 */
-            dict->ma_version_tag = new_version;
+            old_value = ep->me_value;
+            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
+            new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            ep->me_value = PyStackRef_AsPyObjectSteal(value);
+            dict->ma_version_tag = new_version; // PEP 509
+            // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
+            // when dict only holds the strong reference to value in ep->me_value.
+            Py_XDECREF(old_value);
+            STAT_INC(STORE_ATTR, hit);
             PyStackRef_CLOSE(owner);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());

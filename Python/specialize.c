@@ -116,6 +116,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     err += add_stat_dict(stats, CALL, "call");
+    err += add_stat_dict(stats, CALL_KW, "call_kw");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
@@ -562,8 +563,6 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_INIT_NOT_PYTHON 21
 #define SPEC_FAIL_CALL_PEP_523 22
 #define SPEC_FAIL_CALL_BOUND_METHOD 23
-#define SPEC_FAIL_CALL_STR 24
-#define SPEC_FAIL_CALL_CLASS_NO_VECTORCALL 25
 #define SPEC_FAIL_CALL_CLASS_MUTABLE 26
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 28
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
@@ -849,15 +848,19 @@ specialize_dict_access(
         assert(PyUnicode_CheckExact(name));
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         assert (index != DKIX_ERROR);
-        if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(base_op,
-                                index == DKIX_EMPTY ?
-                                SPEC_FAIL_ATTR_NOT_IN_KEYS :
-                                SPEC_FAIL_OUT_OF_RANGE);
+        if (index == DKIX_EMPTY) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
+            return 0;
+        }
+        assert(index >= 0);
+        char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
+        Py_ssize_t offset = value_addr - (char *)owner;
+        if (offset != (uint16_t)offset) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
         write_u32(cache->version, type->tp_version_tag);
-        cache->index = (uint16_t)index;
+        cache->index = (uint16_t)offset;
         instr->op.code = values_op;
     }
     else {
@@ -1796,9 +1799,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             instr->op.code = CALL_BUILTIN_CLASS;
             return 0;
         }
-        SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
-            SPEC_FAIL_CALL_STR : SPEC_FAIL_CALL_CLASS_NO_VECTORCALL);
-        return -1;
+        goto generic;
     }
     if (Py_TYPE(tp) != &PyType_Type) {
         goto generic;

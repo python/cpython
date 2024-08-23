@@ -803,10 +803,11 @@ _PyObject_GetManagedDict(PyObject *obj)
 static inline PyDictValues *
 _PyObject_InlineValues(PyObject *obj)
 {
+    PyTypeObject *tp = Py_TYPE(obj);
+    assert(tp->tp_basicsize > 0 && tp->tp_basicsize % sizeof(PyObject *) == 0);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    assert(Py_TYPE(obj)->tp_basicsize == sizeof(PyObject));
-    return (PyDictValues *)((char *)obj + sizeof(PyObject));
+    return (PyDictValues *)((char *)obj + tp->tp_basicsize);
 }
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
