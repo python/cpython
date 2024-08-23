@@ -240,6 +240,10 @@ class ConcurrentFutures:
             # [end-cf-error-result-2]
 
 
+#######################################
+# workload 1: ...
+#######################################
+
 class Workload1:
 
     @example
