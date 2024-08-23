@@ -335,7 +335,7 @@ class UnixConsole(Console):
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
 
-        # If in macOS terminal we need to deactivate line wrap via ANSI escape code
+        # In macOS terminal we need to deactivate line wrap via ANSI escape code
         if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
             os.write(self.output_fd, b"\033[?7l")
 
