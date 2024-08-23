@@ -50,6 +50,12 @@ class _BaseLayout:
         elif align == 0:
             # Setting `_align_ = 0` amounts to using the default alignment
             align == 1
+        self.forced_align = align
+
+        if base:
+            total_align = max(1, ctypes.alignment(base), align)
+        else:
+            total_align = align
 
         swapped_bytes = hasattr(cls, '_swappedbytes_')
         if swapped_bytes:
@@ -192,8 +198,8 @@ class _BaseLayout:
 
             ################################## State check (remove this)
             state_to_check = struct.pack(
-                "nn",
-                state_size, state_align
+                "n",
+                state_size
             )
             ##################################
 
@@ -213,10 +219,10 @@ class _BaseLayout:
                 state_to_check=state_to_check,
                 **self._field_args(),
             ))
+            total_align = max(total_align, state_align)
 
-        self.forced_align = align
         self.size = state_size
-        self.align = state_align
+        self.align = total_align
 
     def _field_args(self):
         return {}

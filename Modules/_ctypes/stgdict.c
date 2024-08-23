@@ -405,8 +405,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     if (baseinfo) {
         union_size = 0;
-        total_align = baseinfo->align ? baseinfo->align : 1;
-        total_align = max(total_align, forced_alignment);
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, baseinfo->length + len + 1);
         if (stginfo->ffi_type_pointer.elements == NULL) {
@@ -423,7 +421,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         ffi_ofs = baseinfo->length;
     } else {
         union_size = 0;
-        total_align = forced_alignment;
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, len + 1);
         if (stginfo->ffi_type_pointer.elements == NULL) {
@@ -540,7 +537,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             memcpy(&packstate, &prop->state_to_check, sizeof(_CFieldPackState));
             union_size = max(packstate.size, union_size);
         }
-        total_align = max(packstate.align, total_align);
 
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
