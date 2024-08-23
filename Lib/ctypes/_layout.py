@@ -2,7 +2,7 @@ import sys
 import warnings
 import struct
 
-from _ctypes import CField
+from _ctypes import CField, buffer_info
 import ctypes
 
 def round_down(n, multiple):
@@ -75,6 +75,11 @@ class _BaseLayout:
                 raise ValueError("_pack_ too big")
 
         self.fields = []
+
+        if is_struct:
+            format_spec = "T{"
+        else:
+            format_spec = "B"
 
         state_field_size = 0
         # `8 * offset + bitofs` points to where the  next field would start.
@@ -202,6 +207,23 @@ class _BaseLayout:
             if big_endian and is_bitfield:
                 size = BUILD_SIZE(NUM_BITS(size), 8*info_size - LOW_BIT(size) - bit_size);
 
+            padding = offset - last_size
+            if is_struct:
+                format_spec += padding_spec(padding)
+
+                fieldfmt, bf_ndim, bf_shape = buffer_info(ftype)
+                if fieldfmt is None:
+                    fieldfmt = "B"
+                if ftype is cls:
+                    # This is wrong, but it matches behavior of the previous
+                    # C implementation. We'll error out later, anyway.
+                    fieldfmt = format_spec
+                buf = f"{fieldfmt}:{name}:"
+                if bf_shape:
+                    shape_numbers = ",".join(str(n) for n in bf_shape)
+                    buf = f"({shape_numbers}){buf}"
+                format_spec += buf
+
             self.fields.append(CField(
                 name=name,
                 type=ftype,
@@ -211,8 +233,8 @@ class _BaseLayout:
                 swapped_bytes=swapped_bytes,
                 pack=_pack_,
                 index=i,
-                padding=offset - last_size,
-                #format="",
+                padding=padding,
+                format=format_spec,
                 **self._field_args(),
             ))
             total_align = max(total_align, state_align)
@@ -220,13 +242,29 @@ class _BaseLayout:
             union_size = max(state_size, union_size);
 
         if is_struct:
-            self.size = state_size
+            total_size = state_size
         else:
-            self.size = union_size
+            total_size = union_size
+
+        aligned_size = int((total_size + total_align - 1) / total_align) * total_align
+
+        if is_struct:
+            padding = aligned_size - total_size
+            format_spec += f"{padding_spec(padding)}}}"
+
+        self.size = total_size
         self.align = total_align
+        self.format_spec = format_spec
 
     def _field_args(self):
         return {}
+
+def padding_spec(padding):
+    if padding <= 0:
+        return ""
+    if padding == 1:
+        return "x"
+    return f"{padding}x"
 
 
 class WindowsLayout(_BaseLayout):

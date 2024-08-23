@@ -251,6 +251,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     PyObject *prop_obj = NULL;
     PyObject *layout_fields = NULL;
     PyObject *layout = NULL;
+    PyObject *format_spec_obj = NULL;
 
     if (fields == NULL) {
         return 0;
@@ -363,6 +364,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             PyErr_SetString(PyExc_ValueError,
                             "size must be a non-negative integer");
         }
+        goto error;
+    }
+
+    format_spec_obj = PyObject_GetAttrString(layout, "format_spec");
+    if (!format_spec_obj) {
+        goto error;
+    }
+    const char *format_spec = PyUnicode_AsUTF8(format_spec_obj);
+    if (!format_spec) {
         goto error;
     }
 
@@ -559,6 +569,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         PyMem_Free(ptr);
         if (stginfo->format == NULL)
             goto error;
+    }
+
+    if (strcmp(stginfo->format, format_spec)) {
+        PyErr_Format(PyExc_AssertionError,
+                    "formats don't match at end:\nexp: \"%s\"\ngot: \"%s\"", stginfo->format, format_spec);
+        goto error;
     }
 
     stginfo->ffi_type_pointer.alignment = Py_SAFE_DOWNCAST(total_align,
@@ -855,5 +871,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 error:
     Py_XDECREF(prop_obj);
     Py_XDECREF(layout_fields);
+    Py_XDECREF(layout);
+    Py_XDECREF(format_spec_obj);
     return -1;
 }
