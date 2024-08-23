@@ -218,7 +218,6 @@ int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
     Py_ssize_t len, i;
-    Py_ssize_t aligned_size;
     PyObject *tmp;
     Py_ssize_t ffi_ofs;
     int arrays_seen = 0;
@@ -470,15 +469,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
     Py_CLEAR(layout_fields);
 
-    /* Adjust the size according to the alignment requirements */
-    aligned_size = ((total_size + total_align - 1) / total_align) * total_align;
-
     stginfo->ffi_type_pointer.alignment = Py_SAFE_DOWNCAST(total_align,
                                                            Py_ssize_t,
                                                            unsigned short);
-    stginfo->ffi_type_pointer.size = aligned_size;
+    stginfo->ffi_type_pointer.size = total_size;
 
-    stginfo->size = aligned_size;
+    stginfo->size = total_size;
     stginfo->align = total_align;
     stginfo->length = ffi_ofs + len;
 

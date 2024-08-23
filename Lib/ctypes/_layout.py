@@ -242,13 +242,14 @@ class _BaseLayout:
         else:
             total_size = union_size
 
+        # Adjust the size according to the alignment requirements
         aligned_size = int((total_size + total_align - 1) / total_align) * total_align
 
         if is_struct:
             padding = aligned_size - total_size
             format_spec += f"{padding_spec(padding)}}}"
 
-        self.size = total_size
+        self.size = aligned_size
         self.align = total_align
         self.format_spec = format_spec
 
