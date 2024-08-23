@@ -1,0 +1,1 @@
+Make :meth:`zip` safe under free-threading.
