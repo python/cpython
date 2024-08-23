@@ -53,7 +53,7 @@ for comparison, when possible.
        }
    </style>
 
-For convenience, here's a summary comparng the concurrency models
+For convenience, here's a summary comparing the concurrency models
 in Python:
 
 .. list-table::
@@ -116,7 +116,7 @@ from a strictly *logical* viewpoint.
 
 When a computer program runs, it executes a sequence of code
 in a given order.  If you were to trace the actual execution, you would
-still end up with a *linear* series of executed intructions that matches
+still end up with a *linear* series of executed instructions that matches
 the code.  We call this sequence of code (and instructions) a logical
 "thread" of execution.
 
@@ -183,7 +183,7 @@ Concurrency Models
 
 The concept of concurrency has been a part of the study and practice
 of computer software since very early on, in the 1950s and 1960s,
-long before the wide-spread adotion of multi-core CPUs.  Clearly
+long before the wide-spread adoption of multi-core CPUs.  Clearly
 its about more than just parallelism.
 
 Over the decades, research and use of concurrency has led to a variety
@@ -300,12 +300,14 @@ ATM network             handle multiple bank transactions at once
 hacker toolkit          decode a passwd file with brute force
 raytracer               compute RGB for each image pixel
 machine learning        apply matrices on training data set
-astrophysics            merge black hole data from multiple satelites and observatories
-investing               combine thousands of industry data sources into a concise actionable analysis
+astrophysics            merge black hole data from multiple satellites
+                        and observatories
+investing               combine thousands of industry data sources into
+                        a concise actionable analysis
 MMO game server         handle login requests, handle client updates
 game client             GUI, physics engine, handle server updates
 audio transcoder        process chunks
-engineering simultation calculate stress loads at vertices
+engineering simulation  calculate stress loads at vertices
 molecular modeling      try many permutations
 ======================= ===========
 
@@ -741,7 +743,7 @@ One of the main challenges with using coroutines is that they do not
 normally mix well with non-coroutines.  As a result, ``async/await``
 can be contagious, requiring surrounding code to be async.  This can
 lead to having the same thing implemented twice, once normal and once
-async, with signficant code duplication.
+async, with significant code duplication.
 
 .. currentmodule:: None
 
@@ -848,7 +850,7 @@ minor uniqueness that we'll look at in a moment.
 With an executor you can call a function asynchronously (in the background)
 using :meth:`Executor.submit`.  It returns a :class:`Future` object
 which tracks completion and provides the result.
-:class:`!Future` objects have a few other tricks, like cancelation
+:class:`!Future` objects have a few other tricks, like cancellation
 and completion callbacks, which we won't cover here.
 Likewise we won't cover the various uses of timeouts.
 
