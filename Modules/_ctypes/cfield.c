@@ -300,19 +300,6 @@ error:
 }
 
 
-int
-PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
-                _CFieldPackState *packstate)
-{
-    if (self == NULL) {
-        return -1;
-    }
-
-    memcpy(packstate, &self->state_to_check, sizeof(_CFieldPackState));
-
-    return 0;
-}
-
 static int
 PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
 {

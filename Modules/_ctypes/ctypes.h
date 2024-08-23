@@ -216,12 +216,6 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
-struct CFieldObject;
-struct _CFieldPackState;
-extern int
-PyCField_InitFromDesc(ctypes_state *st, struct CFieldObject* self,
-                struct _CFieldPackState *pack_state);
-
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
 
