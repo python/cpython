@@ -211,29 +211,6 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
-  Allocate a memory block for a pep3118 format string, copy prefix (if
-  non-null) into it and append `{padding}x` to the end.
-  Returns NULL on failure, with the error indicator set.
-*/
-char *
-_ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
-{
-    /* int64 decimal characters + x + null */
-    char buf[19 + 1 + 1];
-
-    assert(padding > 0);
-
-    if (padding == 1) {
-        /* Use x instead of 1x, for brevity */
-        return _ctypes_alloc_format_string(prefix, "x");
-    }
-
-    int ret = PyOS_snprintf(buf, sizeof(buf), "%zdx", padding); (void)ret;
-    assert(0 <= ret && ret < (Py_ssize_t)sizeof(buf));
-    return _ctypes_alloc_format_string(prefix, buf);
-}
-
-/*
   Retrieve the (optional) _pack_ attribute from a type, the _fields_ attribute,
   and initialize StgInfo.  Used for Structure and Union subclasses.
 */
@@ -372,7 +349,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!format_spec_obj) {
         goto error;
     }
-    const char *format_spec = PyUnicode_AsUTF8(format_spec_obj);
+    Py_ssize_t format_spec_size;
+    const char *format_spec = PyUnicode_AsUTF8AndSize(format_spec_obj,
+                                                      &format_spec_size);
     if (!format_spec) {
         goto error;
     }
@@ -408,6 +387,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         PyMem_Free(stginfo->format);
         stginfo->format = NULL;
     }
+    stginfo->format = PyMem_Malloc(format_spec_size + 1);
+    if (!stginfo->format) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    memcpy(stginfo->format, format_spec, format_spec_size + 1);
 
     if (stginfo->ffi_type_pointer.elements) {
         PyMem_Free(stginfo->ffi_type_pointer.elements);
@@ -439,16 +424,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                sizeof(ffi_type *) * (len + 1));
         ffi_ofs = 0;
     }
-
-    assert(stginfo->format == NULL);
-    if (isStruct) {
-        stginfo->format = _ctypes_alloc_format_string(NULL, "T{");
-    } else {
-        /* PEP3118 doesn't support union. Use 'B' for bytes. */
-        stginfo->format = _ctypes_alloc_format_string(NULL, "B");
-    }
-    if (stginfo->format == NULL)
-        goto error;
 
     for (i = 0; i < len; ++i) {
         prop_obj = PySequence_Fast_GET_ITEM(layout_fields, i);
@@ -487,58 +462,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
 
         assert(prop);
-        if (isStruct) {
-            const char *fieldfmt = info->format ? info->format : "B";
-            const char *fieldname = PyUnicode_AsUTF8(prop->name);
-            char *ptr;
-            Py_ssize_t len;
-            char *buf;
-
-            if (fieldname == NULL) {
-                goto error;
-            }
-
-            if (prop->padding > 0) {
-                ptr = stginfo->format;
-                stginfo->format = _ctypes_alloc_format_padding(ptr, prop->padding);
-                PyMem_Free(ptr);
-                if (stginfo->format == NULL) {
-                    goto error;
-                }
-            }
-
-            len = strlen(fieldname) + strlen(fieldfmt);
-
-            buf = PyMem_Malloc(len + 2 + 1);
-            if (buf == NULL) {
-                PyErr_NoMemory();
-                goto error;
-            }
-            sprintf(buf, "%s:%s:", fieldfmt, fieldname);
-
-            ptr = stginfo->format;
-            if (info->shape != NULL) {
-                stginfo->format = _ctypes_alloc_format_string_with_shape(
-                    info->ndim, info->shape, stginfo->format, buf);
-            } else {
-                stginfo->format = _ctypes_alloc_format_string(stginfo->format, buf);
-            }
-            PyMem_Free(ptr);
-            PyMem_Free(buf);
-
-            if (stginfo->format == NULL) {
-                goto error;
-            }
-            if (prop->format && prop->format != Py_None) {
-                const char *buf = PyUnicode_AsUTF8(prop->format);
-                if (!buf) goto error;
-                if (strcmp(stginfo->format, buf)) {
-                    PyErr_Format(PyExc_AssertionError,
-                                "formats don't match after field %R:\nexp: \"%s\"\ngot: \"%s\"", prop->name, stginfo->format, buf);
-                    goto error;
-                }
-            }
-        }
 
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
@@ -549,34 +472,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     /* Adjust the size according to the alignment requirements */
     aligned_size = ((total_size + total_align - 1) / total_align) * total_align;
-
-    if (isStruct) {
-        char *ptr;
-        Py_ssize_t padding;
-
-        /* Pad up to the full size of the struct */
-        padding = aligned_size - total_size;
-        if (padding > 0) {
-            ptr = stginfo->format;
-            stginfo->format = _ctypes_alloc_format_padding(ptr, padding);
-            PyMem_Free(ptr);
-            if (stginfo->format == NULL) {
-                goto error;
-            }
-        }
-
-        ptr = stginfo->format;
-        stginfo->format = _ctypes_alloc_format_string(stginfo->format, "}");
-        PyMem_Free(ptr);
-        if (stginfo->format == NULL)
-            goto error;
-    }
-
-    if (strcmp(stginfo->format, format_spec)) {
-        PyErr_Format(PyExc_AssertionError,
-                    "formats don't match at end:\nexp: \"%s\"\ngot: \"%s\"", stginfo->format, format_spec);
-        goto error;
-    }
 
     stginfo->ffi_type_pointer.alignment = Py_SAFE_DOWNCAST(total_align,
                                                            Py_ssize_t,

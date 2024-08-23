@@ -214,10 +214,6 @@ class _BaseLayout:
                 fieldfmt, bf_ndim, bf_shape = buffer_info(ftype)
                 if fieldfmt is None:
                     fieldfmt = "B"
-                if ftype is cls:
-                    # This is wrong, but it matches behavior of the previous
-                    # C implementation. We'll error out later, anyway.
-                    fieldfmt = format_spec
                 buf = f"{fieldfmt}:{name}:"
                 if bf_shape:
                     shape_numbers = ",".join(str(n) for n in bf_shape)

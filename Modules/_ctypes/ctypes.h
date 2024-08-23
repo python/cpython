@@ -430,10 +430,6 @@ extern void *_ctypes_alloc_closure(void);
 
 extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
                                      PyObject *base, Py_ssize_t index, char *adr);
-extern char *_ctypes_alloc_format_string(const char *prefix, const char *suffix);
-extern char *_ctypes_alloc_format_string_with_shape(int ndim,
-                                                const Py_ssize_t *shape,
-                                                const char *prefix, const char *suffix);
 
 extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 

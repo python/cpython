@@ -320,7 +320,7 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
   indicator set.  If called with a suffix of NULL the error indicator must
   already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string(const char *prefix, const char *suffix)
 {
     size_t len;
@@ -352,7 +352,7 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
   Returns NULL on failure, with the error indicator set.  If called with
   a suffix of NULL the error indicator must already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
                                        const char *prefix, const char *suffix)
 {
