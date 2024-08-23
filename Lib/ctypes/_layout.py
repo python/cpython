@@ -214,7 +214,9 @@ class _BaseLayout:
                 **self._field_args(),
             ))
 
-        self.align = align
+        self.forced_align = align
+        self.size = state_size
+        self.align = state_align
 
     def _field_args(self):
         return {}

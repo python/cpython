@@ -241,7 +241,7 @@ int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
     Py_ssize_t len, i;
-    Py_ssize_t union_size, total_align, aligned_size;
+    Py_ssize_t union_size, aligned_size;
     _CFieldPackState packstate = {0};
     PyObject *tmp;
     Py_ssize_t ffi_ofs;
@@ -251,6 +251,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     // They're cleared on error.
     PyObject *prop_obj = NULL;
     PyObject *layout_fields = NULL;
+    PyObject *layout = NULL;
 
     if (fields == NULL) {
         return 0;
@@ -304,7 +305,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
     PyObject *base_arg = Py_NewRef(baseinfo ? base : Py_None);
-    PyObject *layout = PyObject_Vectorcall(
+    layout = PyObject_Vectorcall(
         layout_class,
         1 + (PyObject*[]){
             NULL,
@@ -323,9 +324,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!layout) {
         goto error;
     }
-    tmp = PyObject_GetAttr(layout, &_Py_ID(align));
+
+    tmp = PyObject_GetAttrString(layout, "forced_align");
     if (!tmp) {
-        Py_DECREF(layout);
         goto error;
     }
     int forced_alignment = PyLong_AsInt(tmp);
@@ -335,7 +336,34 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             PyErr_SetString(PyExc_ValueError,
                             "_align_ must be a non-negative integer");
         }
-        Py_DECREF(layout);
+        goto error;
+    }
+
+    tmp = PyObject_GetAttrString(layout, "align");
+    if (!tmp) {
+        goto error;
+    }
+    Py_ssize_t total_align = PyLong_AsInt(tmp);
+    Py_DECREF(tmp);
+    if (total_align < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "total_align must be a non-negative integer");
+        }
+        goto error;
+    }
+
+    tmp = PyObject_GetAttrString(layout, "size");
+    if (!tmp) {
+        goto error;
+    }
+    Py_ssize_t total_size = PyLong_AsInt(tmp);
+    Py_DECREF(tmp);
+    if (total_size < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "size must be a non-negative integer");
+        }
         goto error;
     }
 
@@ -345,10 +373,10 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
     layout_fields = PySequence_Tuple(layout_fields_obj);
     Py_DECREF(layout_fields_obj);
-    Py_DECREF(layout);
     if (!layout_fields) {
         goto error;
     }
+    Py_CLEAR(layout);
 
     len = PySequence_Size(fields);
     if (len == -1) {
@@ -379,7 +407,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         packstate.size = baseinfo->size;
         packstate.align = baseinfo->align;
         union_size = 0;
-        total_align = packstate.align ? packstate.align : 1;
+        total_align = baseinfo->align ? baseinfo->align : 1;
         total_align = max(total_align, forced_alignment);
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, baseinfo->length + len + 1);
@@ -410,6 +438,8 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                sizeof(ffi_type *) * (len + 1));
         ffi_ofs = 0;
     }
+    packstate.size = total_size;
+    packstate.align = total_align;
 
     assert(stginfo->format == NULL);
     if (isStruct) {
