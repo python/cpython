@@ -1,0 +1,13 @@
+diff --git a/Parser/tokenizer.c b/Parser/tokenizer.c
+index 3118fb19846..9e0dee8cc38 100644
+--- a/Parser/tokenizer.c
++++ b/Parser/tokenizer.c
+@@ -65,7 +65,7 @@ static const char *type_comment_prefix = "# type: ";
+
+ static struct tok_state *tok_new(void) {
+   struct tok_state *tok =
+-      (struct tok_state *)PyMem_Malloc(sizeof(struct tok_state));
++      (struct tok_state *)PyMem_Calloc(1, sizeof(struct tok_state));
+   if (tok == NULL)
+     return NULL;
+   tok->buf = tok->cur = tok->inp = NULL;
