@@ -579,7 +579,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             }
 
             StgInfo *info;
-            if (PyStgInfo_FromType(st, desc, &info) < 0) {
+            if (PyStgInfo_FromType(st, prop->proto, &info) < 0) {
                 Py_DECREF(pair);
                 goto error;
             }
@@ -591,7 +591,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 goto error;
             }
 
-            if (!PyCArrayTypeObject_Check(st, desc)) {
+            if (!PyCArrayTypeObject_Check(st, prop->proto)) {
                 /* Not an array. Just need an ffi_type pointer. */
                 num_ffi_type_pointers++;
             }
@@ -689,7 +689,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             }
 
             StgInfo *info;
-            if (PyStgInfo_FromType(st, desc, &info) < 0) {
+            if (PyStgInfo_FromType(st, prop->proto, &info) < 0) {
                 Py_DECREF(pair);
                 PyMem_Free(type_block);
                 goto error;
@@ -706,7 +706,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             }
 
             assert(element_index < (ffi_ofs + len)); /* will be used below */
-            if (!PyCArrayTypeObject_Check(st, desc)) {
+            if (!PyCArrayTypeObject_Check(st, prop->proto)) {
                 /* Not an array. Just copy over the element ffi_type. */
                 element_types[element_index++] = &info->ffi_type_pointer;
             }
