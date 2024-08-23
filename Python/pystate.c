@@ -2384,7 +2384,6 @@ PyGILState_Release(PyGILState_STATE oldstate)
                              "thread state %p must be current when releasing",
                              tstate);
     }
-    assert(holds_gil(tstate));
     --tstate->gilstate_counter;
     assert(tstate->gilstate_counter >= 0); /* illegal counter value */
 
