@@ -280,7 +280,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!kwnames) {
         goto error;
     }
-    PyObject *base_arg = Py_NewRef(baseinfo ? base : Py_None);
     layout = PyObject_Vectorcall(
         layout_class,
         1 + (PyObject*[]){
@@ -289,13 +288,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             type,
             fields,
             /* keyword args */
-            Py_GetConstantBorrowed(
-                isStruct ? Py_CONSTANT_TRUE : Py_CONSTANT_FALSE),
-            base_arg},
+            isStruct ? Py_True : Py_False,
+            baseinfo ? base : Py_None},
         2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames);
     Py_DECREF(kwnames);
-    Py_DECREF(base_arg);
     Py_DECREF(layout_class);
     fields = NULL; // a borrowed reference we won't be using again
     if (!layout) {
