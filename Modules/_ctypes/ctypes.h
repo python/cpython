@@ -260,11 +260,6 @@ typedef struct CFieldObject {
 
     Py_ssize_t bit_size;            /* -1 if not a bitfield */
     PyObject *name;                 /* exact PyUnicode */
-    bool big_endian;                 /* boolean */
-    bool _ms_layout;
-    Py_ssize_t pack;                /* 0 if undefined */
-    Py_ssize_t padding;             /* number of bytes between the end of the last field and the start of this one */
-    PyObject *format;                 /* unicode */
 } CFieldObject;
 
 /****************************************************************

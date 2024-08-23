@@ -113,20 +113,14 @@ _ctypes.CField.__new__ as PyCField_new
     offset: Py_ssize_t
     index: Py_ssize_t
     bit_size as bit_size_obj: object = None
-    swapped_bytes: bool = False
-    _ms: bool = False
-    pack as pack_obj: object = None
-    padding: Py_ssize_t = 0
-    format: object = NULL
 
 [clinic start generated code]*/
 
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
-                  PyObject *bit_size_obj, int swapped_bytes, int _ms,
-                  PyObject *pack_obj, Py_ssize_t padding, PyObject *format)
-/*[clinic end generated code: output=f28af1d73f425818 input=42f2966d4050f232]*/
+                  PyObject *bit_size_obj)
+/*[clinic end generated code: output=43649ef9157c5f58 input=3d813f56373c4caa]*/
 {
     CFieldObject* self = NULL;
     if (size < 0) {
@@ -217,32 +211,10 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         }
     }
 
-    if (pack_obj == Py_None) {
-        self->pack = 0;
-    }
-    else {
-        self->pack = PyLong_AsSsize_t(pack_obj);
-        if (self->pack < 0) {
-            if (!PyErr_Occurred()) {
-                PyErr_Format(PyExc_ValueError,
-                             "_pack_ cannot be negative");
-            }
-            goto error;
-        }
-    }
-
     self->proto = Py_NewRef(proto);
     self->size = size;
     self->offset = offset;
-    self->padding = padding;
-    self->format = Py_XNewRef(format);
 
-    if (swapped_bytes) {
-        self->big_endian = !PY_BIG_ENDIAN;
-    } else {
-        self->big_endian = PY_BIG_ENDIAN;
-    }
-    self->_ms_layout = _ms;
     self->index = index;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
@@ -349,7 +321,6 @@ PyCField_traverse(CFieldObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->proto);
-    Py_VISIT(self->format);
     return 0;
 }
 
@@ -357,7 +328,6 @@ static int
 PyCField_clear(CFieldObject *self)
 {
     Py_CLEAR(self->proto);
-    Py_CLEAR(self->format);
     return 0;
 }
 

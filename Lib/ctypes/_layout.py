@@ -225,12 +225,7 @@ class _BaseLayout:
                 size=size,
                 offset=offset,
                 bit_size=bit_size if is_bitfield else None,
-                swapped_bytes=swapped_bytes,
-                pack=_pack_,
                 index=i,
-                padding=padding,
-                format=format_spec,
-                **self._field_args(),
             ))
             total_align = max(total_align, state_align)
             last_size = state_size
@@ -252,9 +247,6 @@ class _BaseLayout:
         self.align = total_align
         self.format_spec = format_spec
 
-    def _field_args(self):
-        return {}
-
 def padding_spec(padding):
     if padding <= 0:
         return ""
@@ -264,8 +256,7 @@ def padding_spec(padding):
 
 
 class WindowsLayout(_BaseLayout):
-    def _field_args(self):
-        return {'_ms': True}
+    pass
 
 class GCCSysVLayout(_BaseLayout):
     def __init__(self, cls, *args, **kwargs):
