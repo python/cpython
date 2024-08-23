@@ -208,6 +208,7 @@ _ctypes.CField.__new__ as PyCField_new
     swapped_bytes: bool = False
     _ms: bool = False
     pack as pack_obj: object = None
+    state_to_check: object = NULL
 
 [clinic start generated code]*/
 
@@ -215,8 +216,8 @@ static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
                   PyObject *bit_size_obj, int swapped_bytes, int _ms,
-                  PyObject *pack_obj)
-/*[clinic end generated code: output=ceac8ecaf7724c6f input=54d25dff55e27e4a]*/
+                  PyObject *pack_obj, PyObject *state_to_check)
+/*[clinic end generated code: output=cacdc95aba80f787 input=55968097dd1d41f3]*/
 {
     PyTypeObject *tp = type;
     ctypes_state *st = get_module_state_by_class(tp);
@@ -347,6 +348,23 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         }
     }
 
+    if (state_to_check) {
+        char *buf;
+        Py_ssize_t len;
+        if (PyBytes_AsStringAndSize(state_to_check, &buf, &len) < 0) {
+            goto error;
+        }
+        if (len != sizeof(_CFieldPackState)) {
+            PyErr_Format(PyExc_ValueError,
+                            "state_to_check size invalid, want %zd, got %zd",
+                            sizeof(_CFieldPackState), len);
+        }
+        memcpy(&self->state_to_check, buf, sizeof(_CFieldPackState));
+    }
+    else {
+        memset(&self->state_to_check, 0xff, sizeof(_CFieldPackState));
+    }
+
     return (PyObject *)self;
 error:
     Py_DECREF(self);
@@ -403,6 +421,30 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     if(self->big_endian && _cfield_is_bitfield(self)) {
         self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
     }
+
+#define CHECK_FIELD(FIELD, CAN_SKIP)                            \
+    {                                                           \
+        Py_ssize_t got = self->state_to_check.FIELD;            \
+        if (got >= 0 || !CAN_SKIP) {                            \
+            Py_ssize_t expected = packstate->FIELD;             \
+            if (got != expected) {                              \
+                PyErr_Format(                                   \
+                    PyExc_AssertionError,                       \
+                    "state_to_check." #FIELD                    \
+                        " invalid, want %zd, got %zd",          \
+                    expected, got);                             \
+                return -1;                                      \
+            }                                                   \
+        }                                                       \
+    }
+
+    CHECK_FIELD(field_size, false);
+    CHECK_FIELD(bitofs, true);
+    CHECK_FIELD(offset, true);
+    CHECK_FIELD(size, true);
+    CHECK_FIELD(align, true);
+#undef CHECK_FIELD
+
     return 0;
 }
 

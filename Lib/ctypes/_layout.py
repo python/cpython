@@ -1,5 +1,6 @@
 import sys
 import warnings
+import struct
 
 from _ctypes import CField
 import ctypes
@@ -43,6 +44,18 @@ class _BaseLayout:
                 bit_size = None
             size = ctypes.sizeof(ftype)
             offset = self.offset
+
+            ################################## State check (remove this)
+            if isinstance(self, WindowsLayout):
+                state_field_size = size * 8
+            else:
+                state_field_size = 0
+            state_to_check = struct.pack(
+                "nnnnn",
+                state_field_size, -1, -1, -1, -1
+            )
+            ##################################
+
             yield CField(
                 name=name,
                 type=ftype,
@@ -52,6 +65,7 @@ class _BaseLayout:
                 swapped_bytes=self.swapped_bytes,
                 pack=self._pack_,
                 index=i,
+                state_to_check=state_to_check,
                 **self._field_args(),
             )
             self.offset += self.size

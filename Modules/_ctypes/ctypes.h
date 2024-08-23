@@ -253,6 +253,16 @@ struct fielddesc {
     GETFUNC getfunc_swapped;
 };
 
+typedef struct _CFieldPackState {
+    Py_ssize_t field_size;
+
+    // `8 * offset + bitofs` points to where the  next field would start.
+    Py_ssize_t bitofs;
+    Py_ssize_t offset;
+
+    Py_ssize_t size;  // the size of the structure / union so far
+    Py_ssize_t align; // the alignment requirements of the last field placed
+} _CFieldPackState; // TODO: remove this...
 typedef struct CFieldObject {
     PyObject_HEAD
     Py_ssize_t offset;
@@ -269,17 +279,9 @@ typedef struct CFieldObject {
     bool big_endian;                 /* boolean */
     bool _ms_layout;
     Py_ssize_t pack;                /* 0 if undefined */
+
+    _CFieldPackState state_to_check;                // TODO: remove this.
 } CFieldObject;
-typedef struct _CFieldPackState {
-    Py_ssize_t field_size;
-
-    // `8 * offset + bitofs` points to where the  next field would start.
-    Py_ssize_t bitofs;
-    Py_ssize_t offset;
-
-    Py_ssize_t size;  // the size of the structure / union so far
-    Py_ssize_t align; // the alignment requirements of the last field placed
-} _CFieldPackState; // TODO: remove this...
 
 /****************************************************************
  StgInfo
