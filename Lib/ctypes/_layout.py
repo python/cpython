@@ -44,7 +44,6 @@ class _BaseLayout:
         if kwargs:
             warnings.warn(f'Unknown keyword arguments: {list(kwargs.keys())}')
         self.cls = cls
-        self.fields = fields
         self.is_struct = is_struct
 
         self.size = 0
@@ -85,8 +84,8 @@ class _BaseLayout:
         else:
             self._pack_ = None
 
-    def __iter__(self):
-        self.gave_up = False
+        self.fields = []
+
         state_field_size = 0
         # `8 * offset + bitofs` points to where the  next field would start.
         state_bitofs = 0
@@ -98,8 +97,7 @@ class _BaseLayout:
             state_size = state_offset = ctypes.sizeof(self.base)
             state_align = ctypes.alignment(self.base)
 
-
-        for i, field in enumerate(self.fields):
+        for i, field in enumerate(fields):
             if not self.is_struct:
                 if isinstance(self, GCCSysVLayout):
                     state_field_size = 0
@@ -220,7 +218,7 @@ class _BaseLayout:
             if self.big_endian and is_bitfield:
                 size = BUILD_SIZE(NUM_BITS(size), 8*info_size - LOW_BIT(size) - bit_size);
 
-            yield CField(
+            self.fields.append(CField(
                 name=name,
                 type=ftype,
                 size=size,
@@ -231,7 +229,7 @@ class _BaseLayout:
                 index=i,
                 state_to_check=state_to_check,
                 **self._field_args(),
-            )
+            ))
             if self.is_struct:
                 self.offset += self.size
 

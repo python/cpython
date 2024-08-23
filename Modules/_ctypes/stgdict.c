@@ -339,7 +339,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    layout_fields = PySequence_Fast(layout, "layout must return a sequence");
+    PyObject *layout_fields_obj = PyObject_GetAttrString(layout, "fields");
+    if (!layout_fields_obj) {
+        goto error;
+    }
+    layout_fields = PySequence_Tuple(layout_fields_obj);
+    Py_DECREF(layout_fields_obj);
     Py_DECREF(layout);
     if (!layout_fields) {
         goto error;
@@ -355,8 +360,10 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     if (len != PySequence_Fast_GET_SIZE(layout_fields)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "number of '_fields_' must match result of layout... for now.");
+        PyErr_Format(PyExc_ValueError,
+                        "number of '_fields_' must match result of layout... for now. want %zd, got %zd",
+                        len, PySequence_Fast_GET_SIZE(layout_fields));
+        goto error;
     }
 
     if (stginfo->format) {
