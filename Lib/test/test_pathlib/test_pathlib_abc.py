@@ -1772,10 +1772,8 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'copyTarget'
         source.symlink_to(base / 'fileA')
         target.symlink_to(base / 'dirC')
-        with self.assertRaises(OSError):
-            source.copy(target)
-        with self.assertRaises(OSError):
-            source.copy(target, follow_symlinks=False)
+        self.assertRaises(OSError, source.copy, target)
+        self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
 
     @needs_symlinks
     def test_copy_symlink_to_existing_directory_symlink(self):
@@ -1784,10 +1782,8 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'copyTarget'
         source.symlink_to(base / 'fileA')
         target.symlink_to(base / 'dirC')
-        with self.assertRaises(OSError):
-            source.copy(target)
-        with self.assertRaises(OSError):
-            source.copy(target, follow_symlinks=False)
+        self.assertRaises(OSError, source.copy, target)
+        self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
 
     @needs_symlinks
     def test_copy_directory_symlink_follow_symlinks_false(self):
@@ -1805,6 +1801,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'linkB'
         self.assertRaises(OSError, source.copy, source)
+        self.assertRaises(OSError, source.copy, source, follow_symlinks=False)
 
     @needs_symlinks
     def test_copy_directory_symlink_into_itself(self):
@@ -1812,6 +1809,7 @@ class DummyPathTest(DummyPurePathTest):
         source = base / 'linkB'
         target = base / 'linkB' / 'copyB'
         self.assertRaises(OSError, source.copy, target)
+        self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
         self.assertFalse(target.exists())
 
     @needs_symlinks
@@ -1821,10 +1819,8 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'copyTarget'
         source.symlink_to(base / 'dirC')
         target.symlink_to(base / 'fileA')
-        with self.assertRaises(FileExistsError):
-            source.copy(target)
-        with self.assertRaises(FileExistsError):
-            source.copy(target, follow_symlinks=False)
+        self.assertRaises(FileExistsError, source.copy, target)
+        self.assertRaises(FileExistsError, source.copy, target, follow_symlinks=False)
 
     @needs_symlinks
     def test_copy_directory_symlink_to_existing_directory_symlink(self):
@@ -1833,10 +1829,8 @@ class DummyPathTest(DummyPurePathTest):
         target = base / 'copyTarget'
         source.symlink_to(base / 'dirC' / 'dirD')
         target.symlink_to(base / 'dirC')
-        with self.assertRaises(FileExistsError):
-            source.copy(target)
-        with self.assertRaises(FileExistsError):
-            source.copy(target, follow_symlinks=False)
+        self.assertRaises(FileExistsError, source.copy, target)
+        self.assertRaises(FileExistsError, source.copy, target, follow_symlinks=False)
 
     def test_copy_file_to_existing_file(self):
         base = self.cls(self.base)
@@ -1851,8 +1845,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirA'
-        with self.assertRaises(OSError):
-            source.copy(target)
+        self.assertRaises(OSError, source.copy, target)
 
     @needs_symlinks
     def test_copy_file_to_existing_symlink(self):
@@ -1897,6 +1890,7 @@ class DummyPathTest(DummyPurePathTest):
         source = base / 'empty'
         source.write_bytes(b'')
         self.assertRaises(OSError, source.copy, source)
+        self.assertRaises(OSError, source.copy, source, follow_symlinks=False)
 
     def test_copy_dir_simple(self):
         base = self.cls(self.base)
@@ -1988,6 +1982,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'dirC'
         self.assertRaises(OSError, source.copy, source)
+        self.assertRaises(OSError, source.copy, source, follow_symlinks=False)
 
     def test_copy_dir_to_itself_on_error(self):
         base = self.cls(self.base)
@@ -2002,6 +1997,7 @@ class DummyPathTest(DummyPurePathTest):
         source = base / 'dirC'
         target = base / 'dirC' / 'dirD' / 'copyC'
         self.assertRaises(OSError, source.copy, target)
+        self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
         self.assertFalse(target.exists())
 
     def test_copy_missing_on_error(self):
