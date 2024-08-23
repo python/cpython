@@ -13,9 +13,9 @@ The following concurrency models are covered:
 
 * free-threading
 * isolated threads, AKA CSP/actor model
+* coroutines (async/await)
 * multi-processing
 * distributed, e.g. SMP
-* coroutines (async/await)
 
 Each of these will be explained, with some simple examples.  The later
 workload-oriented examples will be implemented using each,
@@ -82,6 +82,13 @@ in Python:
      - no
      - `low+ <python-interpreters-overhead_>`_
      - `yes* <python-stdlib-interpreters_>`_
+   * - coroutines `(Python) <python-coroutines_>`_
+     - :mod:`asyncio`
+     - small-medium
+     - **no**
+     - no
+     - low
+     - no
    * - multiprocessing `(Python) <python-multiprocessing_>`_
      - :mod:`multiprocessing`
      - small
@@ -95,13 +102,6 @@ in Python:
      - yes
      - no
      - **medium+**
-     - no
-   * - coroutines `(Python) <python-coroutines_>`_
-     - :mod:`asyncio`
-     - small-medium
-     - **no**
-     - no
-     - low
      - no
 
 
@@ -196,9 +196,9 @@ free threads      using multiple physical threads in the same process,
                   with no isolation between them
 isolated threads  threads, often physical, with strict isolation
                   between them (e.g. CSP and actor model)
+coroutines        "cooperative multitasking", AKA async/await
 multiprocessing   using multiple isolated processes
 distributed       multiprocessing across multiple computers
-coroutines        "cooperative multitasking", AKA async/await
 ================= ==========
 
 (There are certainly others, but these are the focus here.)
@@ -389,6 +389,18 @@ Here's a summary:
        * less efficient than threads
        * (currently) limited in what data can be shared between
          interpreters
+   * - coroutines (async/await)
+     - :mod:`asyncio`
+     - small-medium
+     - * not subject to races
+       * increasingly familiar to many; popular in newer languages
+       * has a long history in Python (e.g. ``twisted``)
+     - * async and non-async functions don't mix well,
+         potentially leading to duplication of code
+       * switching to async can require substantial cascading code churn
+       * callbacks can make it difficult to follow program logic,
+         making debugging harder
+       * does not enable multi-core parallelism
    * - multiprocessing
      - :mod:`multiprocessing`
      - small
@@ -406,18 +418,6 @@ Here's a summary:
        * facilitates massive scaling
      - * not necessarily a good fit for small-scale applications
        * often requires configuration
-   * - coroutines (async/await)
-     - :mod:`asyncio`
-     - small-medium
-     - * not subject to races
-       * increasingly familiar to many; popular in newer languages
-       * has a long history in Python (e.g. ``twisted``)
-     - * async and non-async functions don't mix well,
-         potentially leading to duplication of code
-       * switching to async can require substantial cascading code churn
-       * callbacks can make it difficult to follow program logic,
-         making debugging harder
-       * does not enable multi-core parallelism
 
 Here's a comparison of the overhead of each model in Python:
 
@@ -444,6 +444,12 @@ Here's a comparison of the overhead of each model in Python:
      - low
      - very low
      - none
+   * - coroutines
+     - low
+     - low
+     - none
+     - low
+     - none
    * - multiprocessing
      - medium
      - medium
@@ -456,12 +462,6 @@ Here's a comparison of the overhead of each model in Python:
      - medium-high
      - medium
      - low-medium
-   * - coroutines
-     - low
-     - low
-     - none
-     - low
-     - none
 
 .. _python-free-threading:
 
@@ -662,77 +662,6 @@ As the work on isolation wraps up, improvements will shift to focus
 on performance and memory usage.  Thus the overhead associated with
 using multiple interpreters will drastically decrease over time.
 
-.. _python-multiprocessing:
-
-Multi-processing
-----------------
-
-.. currentmodule:: multiprocessing
-
-The stdlib :mod:`multiprocessing` module, which has been around many
-years, provides an API for using multiple processes for concurrency.
-Furthermore, processes are always isolated, so you have many of the
-same benefits of using multiple interpreters, including multi-core
-parallelism.
-
-There are some obstacles however.  First of all, using multiple
-processes has a higher overhead than operating in a single process,
-sometimes significantly higher.  This applies in just about every
-dimension of overhead.  Secondly, the :mod:`multiprocessing` module's
-API is substantially larger and more complex that what we use for
-threads and multiple interpreters.  Finally, there are some scaling
-issues with using multiple processes, related both to the performance
-overhead and to how the operating system assigns resources like
-file handles.
-
-Here's a very basic example::
-
-    import multiprocessing
-
-    def task()
-        # Do something.
-        pass
-
-    p = multiprocessing.Process(target=task)
-    p.start()
-
-    # Do other stuff.
-
-    p.join()
-
-The similarity with :class:`threading.Thread` is intentional.
-On top of that, the :mod:`multiprocessing` module provides an extensive
-API to address a variety of needs, including machinery for inter-process
-shared memory.  Also note that that API can be used for threads and
-(eventually) interpreters using different backends.
-
-.. currentmodule:: None
-
-.. _python-distributed:
-
-Distributed
------------
-
-The popular :mod:`!dask` module gives us distributed concurrency:
-
-::
-
-    from dask.distributed import LocalCluster
-
-    def task()
-        # Do something.
-        pass
-
-    client = LocalCluster().get_client()
-
-    futures = []
-    for _ in range(5):
-        fut = client.submit(task)
-        futures.append(fut)
-
-    # Wait for all the tasks to finish.
-    client.gather(futures)
-
 .. _python-coroutines:
 
 Coroutines (Async/Await)
@@ -812,13 +741,84 @@ Here's a very basic example of using coroutines with :mod:`!asyncio`::
     )
     assert res == values, (res, values)
 
-.. currentmodule:: None
-
 One of the main challenges with using coroutines is that they do not
 normally mix well with non-coroutines.  As a result, ``async/await``
 can be contagious, requiring surrounding code to be async.  This can
 lead to having the same thing implemented twice, once normal and once
 async, with signficant code duplication.
+
+.. currentmodule:: None
+
+.. _python-multiprocessing:
+
+Multi-processing
+----------------
+
+.. currentmodule:: multiprocessing
+
+The stdlib :mod:`multiprocessing` module, which has been around many
+years, provides an API for using multiple processes for concurrency.
+Furthermore, processes are always isolated, so you have many of the
+same benefits of using multiple interpreters, including multi-core
+parallelism.
+
+There are some obstacles however.  First of all, using multiple
+processes has a higher overhead than operating in a single process,
+sometimes significantly higher.  This applies in just about every
+dimension of overhead.  Secondly, the :mod:`multiprocessing` module's
+API is substantially larger and more complex that what we use for
+threads and multiple interpreters.  Finally, there are some scaling
+issues with using multiple processes, related both to the performance
+overhead and to how the operating system assigns resources like
+file handles.
+
+Here's a very basic example::
+
+    import multiprocessing
+
+    def task()
+        # Do something.
+        pass
+
+    p = multiprocessing.Process(target=task)
+    p.start()
+
+    # Do other stuff.
+
+    p.join()
+
+The similarity with :class:`threading.Thread` is intentional.
+On top of that, the :mod:`multiprocessing` module provides an extensive
+API to address a variety of needs, including machinery for inter-process
+shared memory.  Also note that that API can be used for threads and
+(eventually) interpreters using different backends.
+
+.. currentmodule:: None
+
+.. _python-distributed:
+
+Distributed
+-----------
+
+The popular :mod:`!dask` module gives us distributed concurrency:
+
+::
+
+    from dask.distributed import LocalCluster
+
+    def task()
+        # Do something.
+        pass
+
+    client = LocalCluster().get_client()
+
+    futures = []
+    for _ in range(5):
+        fut = client.submit(task)
+        futures.append(fut)
+
+    # Wait for all the tasks to finish.
+    client.gather(futures)
 
 concurrent.futures
 ------------------
