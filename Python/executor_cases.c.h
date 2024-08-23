@@ -2596,7 +2596,7 @@
             *value_ptr = PyStackRef_AsPyObjectSteal(value);
             if (old_value == NULL) {
                 PyDictValues *values = _PyObject_InlineValues(owner_o);
-                int index = value_ptr - values->values;
+                Py_ssize_t index = value_ptr - values->values;
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
             else {
