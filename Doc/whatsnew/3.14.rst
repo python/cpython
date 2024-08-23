@@ -110,6 +110,22 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+dis
+---
+
+* Added support for rendering full source location information of
+  :class:`instructions <dis.Instruction>`, rather than only the line number.
+  This feature is added to the following interfaces via the ``show_positions``
+  keyword argument:
+
+  - :class:`dis.Bytecode`,
+  - :func:`dis.dis`, :func:`dis.distb`, and
+  - :func:`dis.disassemble`.
+
+  This feature is also exposed via :option:`dis --show-positions`.
+
+  (Contributed by Bénédikt Tran in :gh:`123165`.)
+
 fractions
 ---------
 
@@ -123,6 +139,10 @@ json
 Add notes for JSON serialization errors that allow to identify the source
 of the error.
 (Contributed by Serhiy Storchaka in :gh:`122163`.)
+
+Enable :mod:`json` module to work as a script using the :option:`-m` switch: ``python -m json``.
+See the :ref:`JSON command-line interface <json-commandline>` documentation.
+(Contributed by Trey Hunner in :gh:`122873`.)
 
 operator
 --------
@@ -414,6 +434,16 @@ New Features
 * Add :c:func:`PyIter_NextItem` to replace :c:func:`PyIter_Next`,
   which has an ambiguous return value.
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
+
+* :c:func:`Py_Finalize` now deletes all interned strings. This
+  is backwards incompatible to any C-Extension that holds onto an interned
+  string after a call to :c:func:`Py_Finalize` and is then reused after a
+  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
+  normally result in crashes during the exectuion of the subsequent call to
+  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
+  an address sanitizer to identify any use-after-free coming from
+  an interned string and deallocate it during module shutdown.
+  (Contribued by Eddie Elizondo in :gh:`113601`.)
 
 Porting to Python 3.14
 ----------------------
