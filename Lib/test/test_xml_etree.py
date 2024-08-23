@@ -2343,6 +2343,22 @@ class BugsTest(unittest.TestCase):
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
 
+    def test_issue123213_correct_extend_exception(self):
+        # Does not hide the internal exception when extending the element
+        self.assertRaises(ZeroDivisionError, ET.Element('tag').extend,
+                          (1/0 for i in range(2)))
+
+        # Still raises the TypeError when extending with a non-iterable
+        self.assertRaises(TypeError, ET.Element('tag').extend, None)
+
+        # Preserves the TypeError message when extending with a generator
+        def f():
+            raise TypeError("mymessage")
+
+        self.assertRaisesRegex(
+            TypeError, 'mymessage',
+            ET.Element('tag').extend, (f() for i in range(2)))
+
 
 
 # --------------------------------------------------------------------
@@ -3669,6 +3685,22 @@ class ElementSlicingTest(unittest.TestCase):
         e[1::-sys.maxsize<<64] = [ET.Element('d')]
         self.assertEqual(self._subelem_tags(e), ['a0', 'd', 'a2', 'a3'])
 
+    def test_issue123213_setslice_exception(self):
+        e = ET.Element('tag')
+        # Does not hide the internal exception when assigning to the element
+        with self.assertRaises(ZeroDivisionError):
+            e[:1] = (1/0 for i in range(2))
+
+        # Still raises the TypeError when assigning with a non-iterable
+        with self.assertRaises(TypeError):
+            e[:1] = None
+
+        # Preserve the original TypeError message when assigning.
+        def f():
+            raise TypeError("mymessage")
+
+        with self.assertRaisesRegex(TypeError, 'mymessage'):
+            e[:1] = (f() for i in range(2))
 
 class IOTest(unittest.TestCase):
     def test_encoding(self):

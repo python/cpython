@@ -966,7 +966,7 @@ Element Objects
 
    .. method:: extend(subelements)
 
-      Appends *subelements* from a sequence object with zero or more elements.
+      Appends *subelements* from an iterable of elements.
       Raises :exc:`TypeError` if a subelement is not an :class:`Element`.
 
       .. versionadded:: 3.2
