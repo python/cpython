@@ -23,12 +23,20 @@ class ZipThreading(unittest.TestCase):
         for _ in range(number_of_iterations):
             worker_threads = []
             for ii in range(number_of_threads):
-                worker_threads.append(Thread(target=self.work, args=[enum,]))
+                worker_threads.append(
+                    Thread(
+                        target=self.work,
+                        args=[
+                            enum,
+                        ],
+                    )
+                )
             _ = [t.start() for t in worker_threads]
             _ = [t.join() for t in worker_threads]
-        
-if __name__=='__main__':        
-    z=ZipThreading()  
+
+
+if __name__ == "__main__":
+    z = ZipThreading()
     for kk in range(10):
         print(kk)
         z.test_threading()
