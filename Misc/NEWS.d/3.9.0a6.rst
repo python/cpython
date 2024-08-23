@@ -111,7 +111,7 @@ str.decode().
 .. nonce: m15TTX
 .. section: Core and Builtins
 
-Fix possible refleaks in :mod:`_json`, memo of PyScannerObject should be
+Fix possible refleaks in :mod:`!_json`, memo of PyScannerObject should be
 traversed.
 
 ..
@@ -666,8 +666,8 @@ for _main_thread, instead of a _DummyThread instance.
 .. nonce: VTq_8s
 .. section: Library
 
-Add a private ``_at_fork_reinit()`` method to :class:`_thread.Lock`,
-:class:`_thread.RLock`, :class:`threading.RLock` and
+Add a private ``_at_fork_reinit()`` method to :class:`!_thread.Lock`,
+:class:`!_thread.RLock`, :class:`threading.RLock` and
 :class:`threading.Condition` classes: reinitialize the lock at fork in the
 child process, reset the lock to the unlocked state. Rename also the private
 ``_reset_internal_locks()`` method of :class:`threading.Event` to

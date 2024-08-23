@@ -31,6 +31,9 @@ typedef union {
     _Py_BackoffCounter counter;  // First cache entry of specializable op
 } _Py_CODEUNIT;
 
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
+
 
 /* These macros only remain defined for compatibility. */
 #define _Py_OPCODE(word) ((word).op.code)
@@ -153,6 +156,7 @@ typedef struct {
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
+#define INLINE_CACHE_ENTRIES_CALL_KW CACHE_ENTRIES(_PyCallCache)
 
 typedef struct {
     _Py_BackoffCounter counter;
@@ -332,6 +336,8 @@ extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
+extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
+                                  int nargs);
 extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
                                     int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
@@ -535,7 +541,7 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
-static_assert(COLD_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
+static_assert(SIDE_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
     "Cold exit value should be larger than adaptive cooldown value");
 
 static inline _Py_BackoffCounter
@@ -583,7 +589,7 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 
 extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
-extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
+extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 

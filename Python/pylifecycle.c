@@ -9,6 +9,7 @@
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
@@ -27,6 +28,7 @@
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_typeid.h"        // _PyType_FinalizeIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
@@ -102,7 +104,7 @@ _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
-= _PyRuntimeState_INIT(_PyRuntime);
+= _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
 static int runtime_initialized = 0;
@@ -1831,6 +1833,9 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyTypes_FiniTypes(interp);
 
     _PyTypes_Fini(interp);
+#ifdef Py_GIL_DISABLED
+    _PyType_FinalizeIdPool(interp);
+#endif
 
     _PyCode_Fini(interp);
 
@@ -1843,7 +1848,7 @@ finalize_interp_types(PyInterpreterState *interp)
 #ifndef Py_GIL_DISABLED
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
 #endif
 
@@ -3035,6 +3040,30 @@ fatal_error_exit(int status)
     }
 }
 
+static inline int
+acquire_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    if (_PyMutex_LockTimed(mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+        return 1;
+    }
+    return 0;
+#else
+    return 1;
+#endif
+}
+
+static inline void
+release_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    // We can not call PyMutex_Unlock because it's not async-signal-safe.
+    // So not to wake up other threads, we just use a simple atomic store in here.
+    _Py_atomic_store_uint8(&mutex->_bits, _Py_UNLOCKED);
+#endif
+}
 
 // Dump the list of extension modules of sys.modules, excluding stdlib modules
 // (sys.stdlib_module_names), into fd file descriptor.
@@ -3062,13 +3091,18 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     PyObject *stdlib_module_names = NULL;
     if (interp->sysdict != NULL) {
         pos = 0;
-        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+        if (!acquire_dict_lock_for_dump(interp->sysdict)) {
+            // If we cannot acquire the lock, just don't dump the list of extension modules.
+            return;
+        }
+        while (_PyDict_Next(interp->sysdict, &pos, &key, &value, NULL)) {
             if (PyUnicode_Check(key)
                && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
                 stdlib_module_names = value;
                 break;
             }
         }
+        release_dict_lock_for_dump(interp->sysdict);
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,
     // don't exclude stdlib modules.
@@ -3080,7 +3114,11 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     int header = 1;
     Py_ssize_t count = 0;
     pos = 0;
-    while (PyDict_Next(modules, &pos, &key, &value)) {
+    if (!acquire_dict_lock_for_dump(modules)) {
+        // If we cannot acquire the lock, just don't dump the list of extension modules.
+        return;
+    }
+    while (_PyDict_Next(modules, &pos, &key, &value, NULL)) {
         if (!PyUnicode_Check(key)) {
             continue;
         }
@@ -3121,6 +3159,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         _Py_DumpASCII(fd, key);
         count++;
     }
+    release_dict_lock_for_dump(modules);
 
     if (count) {
         PUTS(fd, " (total: ");

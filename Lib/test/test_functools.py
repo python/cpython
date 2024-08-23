@@ -405,9 +405,7 @@ class TestPartial:
         self.assertEqual(A.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
         self.assertEqual(A.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
         self.assertEqual(A.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
-        with self.assertWarns(FutureWarning) as w:
-            self.assertEqual(a.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
-        self.assertEqual(w.filename, __file__)
+        self.assertEqual(a.meth(3, b=4), ((1, a, 3), {'a': 2, 'b': 4}))
         self.assertEqual(a.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
         self.assertEqual(a.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
 
@@ -742,6 +740,26 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'type')
         self.assertEqual(wrapper.__annotations__, {})
         self.assertEqual(wrapper.__type_params__, ())
+
+    def test_update_wrapper_annotations(self):
+        def inner(x: int): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, inner)
+        self.assertEqual(wrapper.__annotations__, {'x': int})
+        self.assertIs(wrapper.__annotate__, inner.__annotate__)
+
+        def with_forward_ref(x: undefined): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, with_forward_ref)
+
+        self.assertIs(wrapper.__annotate__, with_forward_ref.__annotate__)
+        with self.assertRaises(NameError):
+            wrapper.__annotations__
+
+        undefined = str
+        self.assertEqual(wrapper.__annotations__, {'x': undefined})
 
 
 class TestWraps(TestUpdateWrapper):
@@ -3061,6 +3079,27 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(""), "default")
         self.assertEqual(f(b""), "default")
 
+    def test_forward_reference(self):
+        @functools.singledispatch
+        def f(arg, arg2=None):
+            return "default"
+
+        @f.register
+        def _(arg: str, arg2: undefined = None):
+            return "forward reference"
+
+        self.assertEqual(f(1), "default")
+        self.assertEqual(f(""), "forward reference")
+
+    def test_unresolved_forward_reference(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        with self.assertRaisesRegex(TypeError, "is an unresolved forward reference"):
+            @f.register
+            def _(arg: undefined):
+                return "forward reference"
 
 class CachedCostItem:
     _cost = 1

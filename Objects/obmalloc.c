@@ -386,8 +386,16 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 )
 {
 #ifdef MS_WINDOWS
+    /* Unlike free(), VirtualFree() does not special-case NULL to noop. */
+    if (ptr == NULL) {
+        return;
+    }
     VirtualFree(ptr, 0, MEM_RELEASE);
 #elif defined(ARENAS_USE_MMAP)
+    /* Unlike free(), munmap() does not special-case NULL to noop. */
+    if (ptr == NULL) {
+        return;
+    }
     munmap(ptr, size);
 #else
     free(ptr);
@@ -1101,9 +1109,12 @@ free_delayed(uintptr_t ptr)
 #ifndef Py_GIL_DISABLED
     free_work_item(ptr);
 #else
-    if (_PyRuntime.stoptheworld.world_stopped) {
-        // Free immediately if the world is stopped, including during
-        // interpreter shutdown.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL ||
+        interp->stoptheworld.world_stopped)
+    {
+        // Free immediately during interpreter shutdown or if the world is
+        // stopped.
         free_work_item(ptr);
         return;
     }
@@ -1466,6 +1477,8 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 {
 #ifdef WITH_MIMALLOC
     if (_PyMem_MimallocEnabled()) {
+        Py_ssize_t leaked = _PyInterpreterState_GetAllocatedBlocks(interp);
+        interp->runtime->obmalloc.interpreter_leaks += leaked;
         return;
     }
 #endif
