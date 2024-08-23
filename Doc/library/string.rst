@@ -594,7 +594,7 @@ The available presentation types for :class:`complex` are same as for
 formatted as floating-point numbers, accordingly specified presentaion type.
 They separated by mandatory sign of the imaginary part, terminated by ``j``
 suffix.  If presentation type is missing --- result match the output of
-:func:`str` (numbers also surrounded by round parentheses, if real part is
+:func:`str` (numbers also surrounded by parentheses, if real part is
 non-zero), altered by other format modifiers.
 
 
