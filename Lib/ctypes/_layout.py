@@ -50,7 +50,6 @@ class _BaseLayout:
         elif align == 0:
             # Setting `_align_ = 0` amounts to using the default alignment
             align == 1
-        self.forced_align = align
 
         if base:
             total_align = max(1, ctypes.alignment(base), align)

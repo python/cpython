@@ -302,20 +302,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    tmp = PyObject_GetAttrString(layout, "forced_align");
-    if (!tmp) {
-        goto error;
-    }
-    int forced_alignment = PyLong_AsInt(tmp);
-    Py_DECREF(tmp);
-    if (forced_alignment < 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "_align_ must be a non-negative integer");
-        }
-        goto error;
-    }
-
     tmp = PyObject_GetAttrString(layout, "align");
     if (!tmp) {
         goto error;
