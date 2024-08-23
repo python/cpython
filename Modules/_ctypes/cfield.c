@@ -127,9 +127,23 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   PyObject *pack_obj, PyObject *state_to_check)
 /*[clinic end generated code: output=cacdc95aba80f787 input=55968097dd1d41f3]*/
 {
+    CFieldObject* self = NULL;
+    if (size < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "size of field %R must not be negative, got %zd", name, size);
+        goto error;
+    }
+    // assert: no overflow;
+    if ((unsigned long long int) size
+            >= (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8) {
+        PyErr_Format(PyExc_ValueError,
+                     "size of field %R is too big: %zd", name, size);
+        goto error;
+    }
+
     PyTypeObject *tp = type;
     ctypes_state *st = get_module_state_by_class(tp);
-    CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
+    self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (!self) {
         return NULL;
     }
@@ -163,6 +177,12 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                              "number of bits invalid for bit field %R",
                              self->name);
             }
+            goto error;
+        }
+        if (self->bit_size > size * 8) {
+            PyErr_Format(PyExc_ValueError,
+                            "number of bits too large for bit field %R",
+                            self->name);
             goto error;
         }
         switch(info->ffi_type_pointer.type) {
@@ -275,7 +295,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
 
     return (PyObject *)self;
 error:
-    Py_DECREF(self);
+    Py_XDECREF(self);
     return NULL;
 }
 
@@ -287,27 +307,6 @@ PyCField_InitFromDesc(ctypes_state *st, CFieldObject* self,
     if (self == NULL) {
         return -1;
     }
-    assert(self->proto);
-    StgInfo *info;
-    if (PyStgInfo_FromType(st, self->proto, &info) < 0) {
-        return -1;
-    }
-    if (!info) {
-        PyErr_SetString(PyExc_TypeError,
-                        "has no _stginfo_");
-        return -1;
-    }
-
-    Py_ssize_t bitsize = self->bit_size;
-    if(!_cfield_is_bitfield(self)) {
-        assert(info->size >= 0);
-        // assert: no overflow;
-        assert((unsigned long long int) info->size
-            < (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8);
-        bitsize = 8 * info->size;
-        // Caution: bitsize might still be 0 now.
-    }
-    assert(bitsize <= info->size * 8);
 
     memcpy(packstate, &self->state_to_check, sizeof(_CFieldPackState));
 
