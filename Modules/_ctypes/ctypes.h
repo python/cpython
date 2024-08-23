@@ -248,12 +248,6 @@ struct fielddesc {
 };
 
 typedef struct _CFieldPackState {
-    Py_ssize_t field_size;
-
-    // `8 * offset + bitofs` points to where the  next field would start.
-    Py_ssize_t bitofs;
-    Py_ssize_t offset;
-
     Py_ssize_t size;  // the size of the structure / union so far
     Py_ssize_t align; // the alignment requirements of the last field placed
 } _CFieldPackState; // TODO: remove this...

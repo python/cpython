@@ -392,7 +392,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     if (baseinfo) {
-        packstate.size = packstate.offset = baseinfo->size;
+        packstate.size = baseinfo->size;
         packstate.align = baseinfo->align;
         union_size = 0;
         total_align = packstate.align ? packstate.align : 1;
@@ -412,7 +412,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         ffi_ofs = baseinfo->length;
     } else {
-        packstate.offset = 0;
         packstate.size = 0;
         packstate.align = 0;
         union_size = 0;

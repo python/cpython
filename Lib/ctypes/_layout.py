@@ -75,6 +75,7 @@ class _BaseLayout:
     def __iter__(self):
         self.gave_up = False
         state_field_size = 0
+        # `8 * offset + bitofs` points to where the  next field would start.
         state_bitofs = 0
         state_offset = 0
         state_size = 0
@@ -197,8 +198,8 @@ class _BaseLayout:
 
             ################################## State check (remove this)
             state_to_check = struct.pack(
-                "nnnnn",
-                state_field_size, state_bitofs, state_offset, state_size, state_align
+                "nn",
+                state_size, state_align
             )
             ##################################
 
