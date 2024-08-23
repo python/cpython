@@ -266,6 +266,7 @@ typedef struct CFieldObject {
     bool big_endian;                 /* boolean */
     bool _ms_layout;
     Py_ssize_t pack;                /* 0 if undefined */
+    Py_ssize_t padding;
 
     _CFieldPackState state_to_check;                // TODO: remove this.
 } CFieldObject;

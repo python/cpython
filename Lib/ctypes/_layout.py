@@ -87,6 +87,7 @@ class _BaseLayout:
             state_size = state_offset = ctypes.sizeof(base)
             state_align = ctypes.alignment(base)
 
+        last_size = state_size
         for i, field in enumerate(fields):
             if not is_struct:
                 if isinstance(self, GCCSysVLayout):
@@ -217,9 +218,11 @@ class _BaseLayout:
                 pack=_pack_,
                 index=i,
                 state_to_check=state_to_check,
+                padding=offset - last_size,
                 **self._field_args(),
             ))
             total_align = max(total_align, state_align)
+            last_size = state_size
 
         self.size = state_size
         self.align = total_align

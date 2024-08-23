@@ -485,8 +485,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             char *ptr;
             Py_ssize_t len;
             char *buf;
-            Py_ssize_t last_size = packstate.size;
-            Py_ssize_t padding;
 
             if (fieldname == NULL) {
                 goto error;
@@ -497,13 +495,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             assert(prop);
             memcpy(&packstate, &prop->state_to_check, sizeof(_CFieldPackState));
 
-            /* number of bytes between the end of the last field and the start
-               of this one */
-            padding = prop->offset - last_size;
-
-            if (padding > 0) {
+            if (prop->padding > 0) {
                 ptr = stginfo->format;
-                stginfo->format = _ctypes_alloc_format_padding(ptr, padding);
+                stginfo->format = _ctypes_alloc_format_padding(ptr, prop->padding);
                 PyMem_Free(ptr);
                 if (stginfo->format == NULL) {
                     goto error;

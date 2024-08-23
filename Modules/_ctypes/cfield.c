@@ -117,6 +117,7 @@ _ctypes.CField.__new__ as PyCField_new
     _ms: bool = False
     pack as pack_obj: object = None
     state_to_check: object = NULL
+    padding: Py_ssize_t = 0
 
 [clinic start generated code]*/
 
@@ -124,8 +125,9 @@ static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
                   PyObject *bit_size_obj, int swapped_bytes, int _ms,
-                  PyObject *pack_obj, PyObject *state_to_check)
-/*[clinic end generated code: output=cacdc95aba80f787 input=55968097dd1d41f3]*/
+                  PyObject *pack_obj, PyObject *state_to_check,
+                  Py_ssize_t padding)
+/*[clinic end generated code: output=4682681495942d3c input=2bc0747656719770]*/
 {
     CFieldObject* self = NULL;
     if (size < 0) {
@@ -233,6 +235,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     self->proto = Py_NewRef(proto);
     self->size = size;
     self->offset = offset;
+    self->padding = padding;
 
     if (swapped_bytes) {
         self->big_endian = !PY_BIG_ENDIAN;
