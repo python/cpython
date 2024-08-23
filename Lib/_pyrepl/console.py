@@ -164,8 +164,13 @@ class InteractiveColoredConsole(code.InteractiveConsole):
     def showsyntaxerror(self, filename=None, **kwargs):
         super().showsyntaxerror(filename=filename, **kwargs)
 
-    def showtraceback(self):
-        super().showtraceback(colorize=self.can_colorize)
+    def _excepthook(self, typ, value, tb):
+        import traceback
+        lines = traceback.format_exception(
+                typ, value, tb,
+                colorize=self.can_colorize,
+                limit=traceback.BUILTIN_EXCEPTION_LIMIT)
+        self.write(''.join(lines))
 
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
