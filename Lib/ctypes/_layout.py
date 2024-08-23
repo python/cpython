@@ -89,20 +89,20 @@ class _structunion_layout:
         self.fields = []
 
         if is_struct:
-            format_spec = "T{"
+            format_spec_parts = ["T{"]
         else:
-            format_spec = "B"
+            format_spec_parts = ["B"]
 
         state_field_size = 0
         # `8 * offset + bitofs` points to where the  next field would start.
         state_bitofs = 0
         state_offset = 0
-        state_size = 0
+        struct_size = 0  # size if this was a struct
         if base:
-            state_size = state_offset = ctypes.sizeof(base)
+            struct_size = state_offset = ctypes.sizeof(base)
 
         union_size = 0
-        last_size = state_size
+        last_size = struct_size
         last_field = None
         for i, field in enumerate(fields):
             if not is_struct:
@@ -110,7 +110,6 @@ class _structunion_layout:
                 state_field_size = 0
                 state_bitofs = 0
                 state_offset = 0
-                state_size = 0
 
             field = tuple(field)
             try:
@@ -161,7 +160,7 @@ class _structunion_layout:
                     size = type_size;
 
                 state_bitofs += bit_size;
-                state_size = int(round_up(state_bitofs, 8) / 8);
+                struct_size = int(round_up(state_bitofs, 8) / 8);
             else:
                 if _pack_:
                     type_align = min(_pack_, type_align);
@@ -196,23 +195,27 @@ class _structunion_layout:
                 assert(state_field_size + state_bitofs <= type_size * 8);
 
                 state_bitofs += bit_size;
-                state_size = state_offset;
+                struct_size = state_offset;
 
 
             assert((not is_bitfield) or (LOW_BIT(size) <= size * 8));
 
-            padding = offset - last_size
             if is_struct:
-                format_spec += padding_spec(padding)
+                padding = offset - last_size
+                format_spec_parts.append(padding_spec(padding))
 
                 fieldfmt, bf_ndim, bf_shape = buffer_info(ftype)
+
+                if bf_shape:
+                    format_spec_parts.extend((
+                        "(",
+                        ','.join(str(n) for n in bf_shape),
+                        ")",
+                    ))
+
                 if fieldfmt is None:
                     fieldfmt = "B"
-                buf = f"{fieldfmt}:{name}:"
-                if bf_shape:
-                    shape_numbers = ",".join(str(n) for n in bf_shape)
-                    buf = f"({shape_numbers}){buf}"
-                format_spec += buf
+                format_spec_parts.append(f"{fieldfmt}:{name}:")
 
             last_field = CField(
                 name=name,
@@ -224,24 +227,25 @@ class _structunion_layout:
             )
             self.fields.append(last_field)
             align = max(align, type_align)
-            last_size = state_size
-            union_size = max(state_size, union_size);
+            last_size = struct_size
+            union_size = max(struct_size, union_size);
 
         if is_struct:
-            total_size = state_size
+            total_size = struct_size
         else:
             total_size = union_size
 
         # Adjust the size according to the alignment requirements
-        aligned_size = int((total_size + align - 1) / align) * align
+        aligned_size = round_up(total_size, align)
 
         if is_struct:
             padding = aligned_size - total_size
-            format_spec += f"{padding_spec(padding)}}}"
+            format_spec_parts.append(padding_spec(padding))
+            format_spec_parts.append("}")
 
         self.size = aligned_size
         self.align = align
-        self.format_spec = format_spec
+        self.format_spec = "".join(format_spec_parts)
 
 def padding_spec(padding):
     if padding <= 0:
