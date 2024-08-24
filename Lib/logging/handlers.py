@@ -1026,7 +1026,8 @@ class SysLogHandler(logging.Handler):
                     self.socket.sendall(msg)
                 #create new TCP socket stream, if TCP socket broken or disconnected
                 except OSError:
-
+                    if self.socket:
+                        self.socket.close()
                     self.socket = socket.socket(socket.AF_INET, self.socktype)
                     self.socket.connect(self.address)
                     #retry sending msg after making new TCP AF_INET socket
