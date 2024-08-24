@@ -1390,6 +1390,10 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
     CtxCaps(self) = 1;
     self->tstate = NULL;
 
+    if (type == state->PyDecContext_Type) {
+        PyObject_GC_Track(self);
+    }
+    assert(PyObject_GC_IsTracked((PyObject *)self));
     return (PyObject *)self;
 }
 
@@ -2038,6 +2042,10 @@ PyDecType_New(PyTypeObject *type)
     MPD(dec)->alloc = _Py_DEC_MINALLOC;
     MPD(dec)->data = dec->data;
 
+    if (type == state->PyDec_Type) {
+        PyObject_GC_Track(dec);
+    }
+    assert(PyObject_GC_IsTracked((PyObject *)dec));
     return (PyObject *)dec;
 }
 #define dec_alloc(st) PyDecType_New((st)->PyDec_Type)
@@ -6143,8 +6151,22 @@ decimal_clear(PyObject *module)
     Py_CLEAR(state->SignalTuple);
     Py_CLEAR(state->PyDecimal);
 
-    PyMem_Free(state->signal_map);
-    PyMem_Free(state->cond_map);
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_DECREF(cm->ex);
+        }
+        PyMem_Free(state->signal_map);
+        state->signal_map = NULL;
+    }
+
+    if (state->cond_map != NULL) {
+        // cond_map[0].ex has borrowed a reference from signal_map[0].ex
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_DECREF(cm->ex);
+        }
+        PyMem_Free(state->cond_map);
+        state->cond_map = NULL;
+    }
     return 0;
 }
 
