@@ -52,13 +52,27 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS) && !defined(Py_GIL_DISABLED)
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
 // GH-89279: The MSVC compiler does not inline these static inline functions
 // in PGO build in _PyEval_EvalFrameDefault(), because this function is over
 // the limit of PGO, and that limit cannot be configured.
 // Define them as macros to make sure that they are always inlined by the
 // preprocessor.
-// TODO: implement Py_DECREF macro for Py_GIL_DISABLED
+
+#undef Py_IS_TYPE
+#define Py_IS_TYPE(ob, type) \
+    (_PyObject_CAST(ob)->ob_type == (type))
+
+#undef Py_XDECREF
+#define Py_XDECREF(arg) \
+    do { \
+        PyObject *xop = _PyObject_CAST(arg); \
+        if (xop != NULL) { \
+            Py_DECREF(xop); \
+        } \
+    } while (0)
+
+#ifndef Py_GIL_DISABLED
 
 #undef Py_DECREF
 #define Py_DECREF(arg) \
@@ -74,19 +88,6 @@
         } \
     } while (0)
 
-#undef Py_XDECREF
-#define Py_XDECREF(arg) \
-    do { \
-        PyObject *xop = _PyObject_CAST(arg); \
-        if (xop != NULL) { \
-            Py_DECREF(xop); \
-        } \
-    } while (0)
-
-#undef Py_IS_TYPE
-#define Py_IS_TYPE(ob, type) \
-    (_PyObject_CAST(ob)->ob_type == (type))
-
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
     do { \
@@ -100,6 +101,34 @@
             d(op); \
         } \
     } while (0)
+
+#else // Py_GIL_DISABLED
+
+#undef Py_DECREF
+#define Py_DECREF(arg) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local); \
+        if (local == _Py_IMMORTAL_REFCNT_LOCAL) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
+        if (_Py_IsOwnedByCurrentThread(op)) { \
+            local--; \
+            _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local); \
+            if (local == 0) { \
+                _Py_MergeZeroLocalRefcount(op); \
+            } \
+        } \
+        else { \
+            _Py_DecRefShared(op); \
+        } \
+    } while (0)
+
+#undef _Py_DECREF_SPECIALIZED
+#define _Py_DECREF_SPECIALIZED(arg, dealloc) Py_DECREF(arg)
+
+#endif
 #endif
 
 
