@@ -479,15 +479,14 @@ class _ReadlineWrapper:
     def set_startup_hook(self, function: Callback | None = None) -> None:
         self.startup_hook = function
 
-    def get_line_buffer(self) -> bytes:
-        buf_str = self.get_reader().get_unicode()
-        return buf_str.encode(ENCODING)
+    def get_line_buffer(self) -> str:
+        return self.get_reader().get_unicode()
 
     def _get_idxs(self) -> tuple[int, int]:
         start = cursor = self.get_reader().pos
         buf = self.get_line_buffer()
         for i in range(cursor - 1, -1, -1):
-            if str(buf[i]) in self.get_completer_delims():
+            if buf[i] in self.get_completer_delims():
                 break
             start = i
         return start, cursor
