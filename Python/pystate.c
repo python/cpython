@@ -2802,16 +2802,11 @@ PyGILState_Release(PyGILState_STATE oldstate)
     }
 
     /* We must hold the GIL and have our thread state current */
-    /* XXX - remove the check - the assert should be fine,
-       but while this is very new (April 2003), the extra check
-       by release-only users can't hurt.
-    */
     if (!holds_gil(tstate)) {
         _Py_FatalErrorFormat(__func__,
                              "thread state %p must be current when releasing",
                              tstate);
     }
-    assert(holds_gil(tstate));
     --tstate->gilstate_counter;
     assert(tstate->gilstate_counter >= 0); /* illegal counter value */
 
