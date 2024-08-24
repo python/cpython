@@ -364,6 +364,11 @@ class ComplexTest(unittest.TestCase):
                     except OverflowError:
                         pass
 
+        # Check that complex numbers with special components
+        # are correctly handled.
+        self.assertComplexesAreIdentical(complex(1, +0.0)**2, complex(1, +0.0))
+        self.assertComplexesAreIdentical(complex(1, -0.0)**2, complex(1, -0.0))
+
     def test_pow_with_small_integer_exponents(self):
         # Check that small integer exponents are handled identically
         # regardless of their type.
