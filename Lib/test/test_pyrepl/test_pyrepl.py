@@ -1,4 +1,3 @@
-import curses
 import io
 import itertools
 import os
