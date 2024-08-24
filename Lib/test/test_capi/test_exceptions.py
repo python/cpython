@@ -104,7 +104,7 @@ class Test_Exceptions(unittest.TestCase):
         ''')
         proc = assert_python_ok("-c", code)
         warnings = proc.err.splitlines()
-        # Due to the finalization of the interpreter, the source will be ommited
+        # Due to the finalization of the interpreter, the source will be omitted
         # because the ``warnings`` module cannot be imported at this time
         self.assertEqual(warnings, [
             b'<string>:7: RuntimeWarning: Testing PyErr_WarnEx',
