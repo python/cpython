@@ -1980,7 +1980,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                 handle._scheduled = False
 
         timeout = None
-
         if self._ready or self._stopping:
             timeout = 0
         elif self._scheduled:
