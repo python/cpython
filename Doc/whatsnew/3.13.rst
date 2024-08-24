@@ -215,7 +215,8 @@ New Features
 A better interactive interpreter
 --------------------------------
 
-Python now uses a new :term:`interactive` shell by default.
+Python now uses a new :term:`interactive` shell by default, based on code
+from the `PyPy project`_.
 When the user starts the :term:`REPL` from an interactive terminal,
 the following new features are now supported:
 
@@ -238,6 +239,8 @@ For more on interactive mode, see :ref:`tut-interac`.
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
 Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
 Windows support contributed by Dino Viehland and Anthony Shaw.)
+
+.. _`PyPy project`: https://pypy.org/
 
 
 .. _whatsnew313-improved-error-messages:
@@ -490,138 +493,123 @@ Incremental garbage collection
 The cycle garbage collector is now incremental.
 This means that maximum pause times are reduced
 by an order of magnitude or more for larger heaps.
+(Contributed by Mark Shannon in :gh:`108362`.)
 
 
 Other Language Changes
 ======================
 
-* Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
-  with a tuple of names of attributes of this class which are assigned
-  through ``self.X`` from any function in its body. (Contributed by Irit Katriel
-  in :gh:`115775`.)
+* The compiler now strips common leading whitespace
+  from every line in a docstring.
+  This reduces the size of the :term:`bytecode cache <bytecode>`
+  (such as ``.pyc`` files), with reductions in file size of around 5%,
+  for example in :mod:`!sqlalchemy.orm.session` from SQLAlchemy 2.0.
+  This change affects tools that use docstrings, such as :mod:`doctest`.
 
-* The :func:`exec` and :func:`eval` built-ins now accept their ``globals``
-  and ``locals`` namespace arguments as keywords.
+  .. doctest::
+
+     >>> def spam():
+     ...     """
+     ...         This is a docstring with
+     ...           leading whitespace.
+     ...
+     ...         It even has multiple paragraphs!
+     ...     """
+     ...
+     >>> spam.__doc__
+     '\nThis is a docstring with\n  leading whitespace.\n\nIt even has multiple paragraphs!\n'
+
+  (Contributed by Inada Naoki in :gh:`81283`.)
+
+* :ref:`Annotation scopes <annotation-scopes>` within class scopes
+  can now contain lambdas and comprehensions.
+  Comprehensions that are located within class scopes
+  are not inlined into their parent scope.
+
+  .. code-block:: python
+
+     class C[T]:
+         type Alias = lambda: T
+
+  (Contributed by Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
+
+* :ref:`Future statements <future>` are no longer triggered by
+  relative imports of the :mod:`__future__` module,
+  meaning that statements of the form  ``from .__future__ import ...``
+  are now simply standard relative imports, with no special features activated.
+  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
+
+* :keyword:`global` declarations are now permitted in :keyword:`except` blocks
+  when that global is used in the :keyword:`else` block.
+  Previously this raised an erroneous :exc:`SyntaxError`.
+  (Contributed by Irit Katriel in :gh:`111123`.)
+
+* Add :envvar:`PYTHON_FROZEN_MODULES`, a new environment variable that
+  determines whether frozen modules are ignored by the import machinery,
+  equivalent to the :option:`-X frozen_modules <-X>` command-line option.
+  (Contributed by Yilei Yang in :gh:`111374`.)
+
+* Add :ref:`support for the perf profiler <perf_profiling>` working
+  without `frame pointers <https://en.wikipedia.org/wiki/Call_stack>`_ through
+  the new environment variable :envvar:`PYTHON_PERF_JIT_SUPPORT`
+  and command-line option :option:`-X perf_jit <-X>`.
+  (Contributed by Pablo Galindo in :gh:`118518`.)
+
+* The location of a :file:`.python_history` file can be changed via the
+  new :envvar:`PYTHON_HISTORY` environment variable.
+  (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade
+  in :gh:`73965`.)
+
+* Classes have a new :attr:`~class.__static_attributes__` attribute.
+  This is populated by the compiler with a tuple of the class's attribute names
+  which are assigned through ``self.<name>`` from any function in its body.
+  (Contributed by Irit Katriel in :gh:`115775`.)
+
+* The compiler now creates a :attr:`!__firstlineno__` attribute on classes
+  with the line number of the first line of the class definition.
+  (Contributed by Serhiy Storchaka in :gh:`118465`.)
+
+* The :func:`exec` and :func:`eval` builtins now accept
+  the *globals* and *locals* arguments as keywords.
   (Contributed by Raphael Gaschignard in :gh:`105879`)
+
+* The :func:`compile` builtin now accepts a new flag,
+  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+  except that the returned AST is optimized according to
+  the value of the *optimize* argument.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
+* Add :exc:`PythonFinalizationError`, a new exception derived from
+  :exc:`RuntimeError` and used to signal when operations are blocked
+  during :term:`finalization <interpreter shutdown>`.
+  The following callables now raise :exc:`!PythonFinalizationError`,
+  instead of :exc:`RuntimeError`:
+
+  * :func:`_thread.start_new_thread`
+  * :func:`os.fork`
+  * :func:`os.forkpty`
+  * :class:`subprocess.Popen`
+
+  (Contributed by Victor Stinner in :gh:`114570`.)
 
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
-
-* Compiler now strip indents from docstrings.
-  This will reduce the size of :term:`bytecode cache <bytecode>` (e.g. ``.pyc`` file).
-  For example, cache file size for ``sqlalchemy.orm.session`` in SQLAlchemy 2.0
-  is reduced by about 5%.
-  This change will affect tools using docstrings, like :mod:`doctest`.
-  (Contributed by Inada Naoki in :gh:`81283`.)
-
-* The :func:`compile` built-in can now accept a new flag,
-  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
-  except that the returned ``AST`` is optimized according to the value
-  of the ``optimize`` argument.
-  (Contributed by Irit Katriel in :gh:`108113`).
-
-* :mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
-  Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
-  default number of worker threads and processes. Get the CPU affinity
-  if supported.
-  (Contributed by Victor Stinner in :gh:`109649`.)
-
-* :func:`os.path.realpath` now resolves MS-DOS style file names even if
-  the file is not accessible.
-  (Contributed by Moonsik Park in :gh:`82367`.)
-
-* Fixed a bug where a :keyword:`global` declaration in an :keyword:`except` block
-  is rejected when the global is used in the :keyword:`else` block.
-  (Contributed by Irit Katriel in :gh:`111123`.)
 
 * Many functions now emit a warning if a boolean value is passed as
   a file descriptor argument.
   This can help catch some errors earlier.
   (Contributed by Serhiy Storchaka in :gh:`82626`.)
 
-* Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
-  determines whether or not frozen modules are ignored by the import machinery,
-  equivalent of the :option:`-X frozen_modules <-X>` command-line option.
-  (Contributed by Yilei Yang in :gh:`111374`.)
-
-* Add :ref:`support for the perf profiler <perf_profiling>` working without
-  frame pointers through the new environment variable
-  :envvar:`PYTHON_PERF_JIT_SUPPORT` and command-line option :option:`-X perf_jit
-  <-X>` (Contributed by Pablo Galindo in :gh:`118518`.)
-
-* The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
-  the location of a ``.python_history`` file.
-  (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
-  :gh:`73965`.)
-
-* Add :exc:`PythonFinalizationError` exception. This exception derived from
-  :exc:`RuntimeError` is raised when an operation is blocked during
-  the :term:`Python finalization <interpreter shutdown>`.
-
-  The following functions now raise PythonFinalizationError, instead of
-  :exc:`RuntimeError`:
-
-  * :func:`_thread.start_new_thread`.
-  * :class:`subprocess.Popen`.
-  * :func:`os.fork`.
-  * :func:`os.forkpty`.
-
-  (Contributed by Victor Stinner in :gh:`114570`.)
-
-* Added :attr:`!name` and :attr:`!mode` attributes for compressed
-  and archived file-like objects in modules :mod:`bz2`, :mod:`lzma`,
-  :mod:`tarfile` and :mod:`zipfile`.
+* Added :attr:`!name` and :attr:`!mode` attributes
+  for compressed and archived file-like objects in
+  the :mod:`bz2`, :mod:`lzma`, :mod:`tarfile`, and :mod:`zipfile` modules.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
-
-* Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
-  by adding five new methods:
-
-  * :meth:`xml.etree.ElementTree.XMLParser.flush`
-  * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
-  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
-  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
-  * :meth:`!xml.sax.expatreader.ExpatParser.flush`
-
-  (Contributed by Sebastian Pipping in :gh:`115623`.)
-
-* The :func:`ssl.create_default_context` API now includes
-  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
-  in its default flags.
-
-  .. note::
-
-   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
-   certificates that the underlying OpenSSL implementation otherwise would
-   accept. While disabling this is not recommended, you can do so using::
-
-      ctx = ssl.create_default_context()
-      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
-
-  (Contributed by William Woodruff in :gh:`112389`.)
-
-* The :class:`configparser.ConfigParser` now accepts unnamed sections before named
-  ones if configured to do so.
-  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
-
-* :ref:`annotation scope <annotation-scopes>` within class scopes can now
-  contain lambdas and comprehensions. Comprehensions that are located within
-  class scopes are not inlined into their parent scope. (Contributed by
-  Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
-
-* Classes have a new :attr:`!__firstlineno__` attribute,
-  populated by the compiler, with the line number of the first line
-  of the class definition.
-  (Contributed by Serhiy Storchaka in :gh:`118465`.)
-
-* ``from __future__ import ...`` statements are now just normal
-  relative imports if dots are present before the module name.
-  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
 
 
 New Modules
 ===========
 
-* :mod:`dbm.sqlite3`: SQLite backend for :mod:`dbm`.
+* :mod:`dbm.sqlite3`: An SQLite backend for :mod:`dbm`.
   (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 
@@ -644,7 +632,7 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
-* Add ``clear()`` method in order to implement ``MutableSequence``.
+* Add ``clear()`` method in order to implement :class:`~collections.abc.MutableSequence`.
   (Contributed by Mike Zimin in :gh:`114894`.)
 
 ast
@@ -745,6 +733,23 @@ base64
   and decoding Z85 data.
   See the `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
   (Contributed by Matan Perelman in :gh:`75299`.)
+
+
+compileall
+----------
+
+* Select the default number of worker threads and processes using
+  :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+
+concurrent.futures
+------------------
+
+* Select the default number of worker threads and processes using
+  :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 
 copy
 ----
@@ -899,7 +904,7 @@ importlib
 io
 --
 
-* The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
+* The :class:`io.IOBase` finalizer now logs errors raised by the ``close()`` method with
   :data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
   and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
   built on debug mode <debug-build>`.
@@ -952,7 +957,7 @@ mimetypes
 mmap
 ----
 
-* The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
+* The :class:`mmap.mmap` class now has a :meth:`~mmap.mmap.seekable` method
   that can be used when a seekable file-like object is required.
   The :meth:`~mmap.mmap.seek` method now returns the new absolute position.
   (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
@@ -962,6 +967,15 @@ mmap
 * :class:`mmap.mmap` is now protected from crashing on Windows when the mapped memory
   is inaccessible due to file system errors or access violations.
   (Contributed by Jannis Weigend in :gh:`118209`.)
+
+
+multiprocessing
+---------------
+
+* Select the default number of worker threads and processes using
+  :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 
 opcode
 ------
@@ -1027,9 +1041,14 @@ os.path
 * Add :func:`os.path.isreserved` to check if a path is reserved on the current
   system. This function is only available on Windows.
   (Contributed by Barney Gale in :gh:`88569`.)
+
 * On Windows, :func:`os.path.isabs` no longer considers paths starting with
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
+
+* :func:`os.path.realpath` now resolves MS-DOS style file names even if
+  the file is not accessible.
+  (Contributed by Moonsik Park in :gh:`82367`.)
 
 * Add support of *dir_fd* and *follow_symlinks* keyword arguments in
   :func:`shutil.chown`.
@@ -1072,7 +1091,7 @@ pathlib
 pdb
 ---
 
-* Add ability to move between chained exceptions during post mortem debugging in :func:`~pdb.pm` using
+* Add ability to move between chained exceptions during post-mortem debugging in :func:`~pdb.pm` using
   the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
   Bussonnier in :gh:`106676`.)
 
@@ -1130,6 +1149,26 @@ sqlite3
   for filtering database objects to dump.
   (Contributed by Mariusz Felisiak in :gh:`91602`.)
 
+
+ssl
+---
+
+* The :func:`ssl.create_default_context` API now includes
+  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
+  in its default flags.
+
+  .. note::
+
+   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
+   certificates that the underlying OpenSSL implementation otherwise would
+   accept. While disabling this is not recommended, you can do so using::
+
+      ctx = ssl.create_default_context()
+      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+  (Contributed by William Woodruff in :gh:`112389`.)
+
+
 statistics
 ----------
 
@@ -1148,7 +1187,7 @@ subprocess
   more situations.  Notably in the default case of ``close_fds=True`` on more
   recent versions of platforms including Linux, FreeBSD, and Solaris where the
   C library provides :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
-  On Linux this should perform similar to our existing Linux :c:func:`!vfork`
+  On Linux this should perform similarly to the existing Linux :c:func:`!vfork`
   based code.  A private control knob :attr:`!subprocess._USE_POSIX_SPAWN` can
   be set to ``False`` if you need to force :mod:`subprocess` not to ever use
   :func:`os.posix_spawn`.  Please report your reason and platform details in
@@ -1159,7 +1198,7 @@ subprocess
 sys
 ---
 
-* Add the :func:`sys._is_interned` function to test if the string was interned.
+* Add the :func:`sys._is_interned` function to test if a string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
@@ -1175,7 +1214,7 @@ time
 ----
 
 * On Windows, :func:`time.monotonic()` now uses the
-  ``QueryPerformanceCounter()`` clock to have a resolution better than 1 us,
+  ``QueryPerformanceCounter()`` clock to have a resolution better than 1 μs,
   instead of the ``GetTickCount64()`` clock which has a resolution of 15.6 ms.
   (Contributed by Victor Stinner in :gh:`88494`.)
 
@@ -1206,7 +1245,7 @@ tkinter
 
 * Add new optional keyword-only parameter *return_ints* in
   the :meth:`!Text.count` method.
-  Passing ``return_ints=True`` makes it always returning the single count
+  Passing ``return_ints=True`` makes it always return the single count
   as an integer instead of a 1-tuple or ``None``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
@@ -1249,8 +1288,8 @@ traceback
 types
 -----
 
-* :class:`~types.SimpleNamespace` constructor now allows specifying initial
-  values of attributes as a positional argument which must be a mapping or
+* The :class:`~types.SimpleNamespace` constructor now allows specifying initial
+  values of attributes as a positional argument, which must be a mapping or
   an iterable of key-value pairs.
   (Contributed by Serhiy Storchaka in :gh:`108191`.)
 
@@ -1295,12 +1334,25 @@ warnings
   warning may also be emitted when a decorated function or class is used at runtime.
   See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
 
-xml.etree.ElementTree
----------------------
+
+xml
+---
+
+* Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
+  by adding five new methods:
+
+  * :meth:`xml.etree.ElementTree.XMLParser.flush`
+  * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
+  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
+  * :meth:`!xml.sax.expatreader.ExpatParser.flush`
+
+  (Contributed by Sebastian Pipping in :gh:`115623`.)
 
 * Add the :meth:`!close` method for the iterator returned by
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
 
 zipimport
 ---------
@@ -1456,6 +1508,10 @@ PEP 594: dead batteries (and other module removals)
 
 configparser
 ------------
+
+* The :class:`configparser.ConfigParser` now accepts unnamed sections
+  before named ones if configured to do so.
+  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 * Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
   deprecated in the docstring since Python 3.2,
@@ -1659,7 +1715,7 @@ New Deprecations
 
   (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
-* :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
+* :mod:`sys`: The :func:`sys._enablelegacywindowsfsencoding` function is deprecated.
   Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
   (Contributed by Inada Naoki in :gh:`73427`.)
 
@@ -1683,8 +1739,8 @@ New Deprecations
     deprecated. Passing ``None`` to the 'fields' parameter
     (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
     deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
-    class with 0 fields, use ``class NT(NamedTuple): pass`` or
-    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+    class with zero fields, use ``class NT(NamedTuple): pass`` or
+    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with zero fields, use
     ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
@@ -1701,7 +1757,7 @@ New Deprecations
 
 * :ref:`user-defined-funcs`:
   Assignment to a function's :attr:`~function.__code__` attribute where the new code
-  object's type does not match the function's type, is deprecated. The
+  object's type does not match the function's type is deprecated. The
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
@@ -1942,7 +1998,7 @@ New Features
   (Contributed by Victor Stinner in :gh:`116936`.)
 
 * Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
-  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  :c:func:`PyRefTracer_GetTracer`, that allow to track object creation and
   destruction the same way the :mod:`tracemalloc` module does. (Contributed
   by Pablo Galindo in :gh:`93502`.)
 

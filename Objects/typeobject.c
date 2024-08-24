@@ -8444,7 +8444,7 @@ type_ready_managed_dict(PyTypeObject *type)
             return -1;
         }
     }
-    if (type->tp_itemsize == 0 && type->tp_basicsize == sizeof(PyObject)) {
+    if (type->tp_itemsize == 0) {
         type->tp_flags |= Py_TPFLAGS_INLINE_VALUES;
     }
     return 0;

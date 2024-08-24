@@ -67,6 +67,13 @@
         return ERROR;       \
     }
 
+#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
+    if ((CALL) < 0) { \
+        compiler_exit_scope((C)); \
+        return ERROR; \
+    } \
+}
+
 #define IS_TOP_LEVEL_AWAIT(C) ( \
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && ((C)->u->u_ste->ste_type == ModuleBlock))
@@ -85,11 +92,22 @@ static PySTEntryObject *compiler_symtable_entry(struct compiler *c);
 #define FUTURE_FEATURES(C) compiler_future_features(C)
 #define SYMTABLE(C) compiler_symtable(C)
 #define SYMTABLE_ENTRY(C) compiler_symtable_entry(C)
+#define OPTIMIZATION_LEVEL(C) compiler_optimization_level(C)
+#define IS_INTERACTIVE(C) compiler_is_interactive(C)
+#define IS_NESTED_SCOPE(C) compiler_is_nested_scope(C)
+#define SCOPE_TYPE(C) compiler_scope_type(C)
+#define QUALNAME(C) compiler_qualname(C)
 
 typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
 
+static PyObject *compiler_mangle(struct compiler *c, PyObject *name);
 static PyObject *compiler_maybe_mangle(struct compiler *c, PyObject *name);
+static int compiler_optimization_level(struct compiler *c);
+static int compiler_is_interactive(struct compiler *c);
+static int compiler_is_nested_scope(struct compiler *c);
+static int compiler_scope_type(struct compiler *c);
+static PyObject *compiler_qualname(struct compiler *c);
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
@@ -253,7 +271,6 @@ struct compiler {
 
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
-    int c_nestlevel;
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
     struct compiler_unit *u;     /* compiler state for current block */
@@ -291,8 +308,6 @@ typedef struct {
     Py_ssize_t on_top;
 } pattern_context;
 
-static int codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc);
-
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
 static int compiler_warn(struct compiler *, location loc, const char *, ...);
@@ -302,47 +317,47 @@ static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
 static int compiler_visit_stmt(struct compiler *, stmt_ty);
 static int compiler_visit_keyword(struct compiler *, keyword_ty);
 static int compiler_visit_expr(struct compiler *, expr_ty);
-static int compiler_augassign(struct compiler *, stmt_ty);
-static int compiler_annassign(struct compiler *, stmt_ty);
-static int compiler_subscript(struct compiler *, expr_ty);
-static int compiler_slice(struct compiler *, expr_ty);
+static int codegen_augassign(struct compiler *, stmt_ty);
+static int codegen_annassign(struct compiler *, stmt_ty);
+static int codegen_subscript(struct compiler *, expr_ty);
+static int codegen_slice(struct compiler *, expr_ty);
 
 static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
 
 
-static int compiler_with(struct compiler *, stmt_ty, int);
-static int compiler_async_with(struct compiler *, stmt_ty, int);
-static int compiler_async_for(struct compiler *, stmt_ty);
-static int compiler_call_simple_kw_helper(struct compiler *c,
-                                          location loc,
-                                          asdl_keyword_seq *keywords,
-                                          Py_ssize_t nkwelts);
-static int compiler_call_helper(struct compiler *c, location loc,
-                                int n, asdl_expr_seq *args,
-                                asdl_keyword_seq *keywords);
-static int compiler_try_except(struct compiler *, stmt_ty);
-static int compiler_try_star_except(struct compiler *, stmt_ty);
+static int codegen_with(struct compiler *, stmt_ty, int);
+static int codegen_async_with(struct compiler *, stmt_ty, int);
+static int codegen_async_for(struct compiler *, stmt_ty);
+static int codegen_call_simple_kw_helper(struct compiler *c,
+                                         location loc,
+                                         asdl_keyword_seq *keywords,
+                                         Py_ssize_t nkwelts);
+static int codegen_call_helper(struct compiler *c, location loc,
+                               int n, asdl_expr_seq *args,
+                               asdl_keyword_seq *keywords);
+static int codegen_try_except(struct compiler *, stmt_ty);
+static int codegen_try_star_except(struct compiler *, stmt_ty);
 
-static int compiler_sync_comprehension_generator(
+static int codegen_sync_comprehension_generator(
                                       struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
                                       int iter_on_stack);
 
-static int compiler_async_comprehension_generator(
+static int codegen_async_comprehension_generator(
                                       struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
                                       int iter_on_stack);
 
-static int compiler_pattern(struct compiler *, pattern_ty, pattern_context *);
-static int compiler_match(struct compiler *, stmt_ty);
-static int compiler_pattern_subpattern(struct compiler *,
-                                       pattern_ty, pattern_context *);
-static int compiler_make_closure(struct compiler *c, location loc,
-                                 PyCodeObject *co, Py_ssize_t flags);
+static int codegen_pattern(struct compiler *, pattern_ty, pattern_context *);
+static int codegen_match(struct compiler *, stmt_ty);
+static int codegen_pattern_subpattern(struct compiler *,
+                                      pattern_ty, pattern_context *);
+static int codegen_make_closure(struct compiler *c, location loc,
+                                PyCodeObject *co, Py_ssize_t flags);
 
 static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
@@ -378,7 +393,6 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     flags->cf_flags = merged;
     c->c_flags = *flags;
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
-    c->c_nestlevel = 0;
     c->c_save_nested_seqs = false;
 
     if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
@@ -685,6 +699,29 @@ compiler_set_qualname(struct compiler *c)
     return SUCCESS;
 }
 
+/* Add an opcode with an integer argument */
+static int
+codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
+{
+    /* oparg value is unsigned, but a signed C int is usually used to store
+       it in the C code (like Python/ceval.c).
+
+       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
+
+       The argument of a concrete bytecode instruction is limited to 8-bit.
+       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
+
+    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
+    return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
+}
+
+#define ADDOP_I(C, LOC, OP, O) \
+    RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
+
+#define ADDOP_I_IN_SCOPE(C, LOC, OP, O) \
+    RETURN_IF_ERROR_IN_SCOPE(C, codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)));
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
@@ -692,6 +729,12 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return _PyInstructionSequence_Addop(seq, opcode, 0, loc);
 }
+
+#define ADDOP(C, LOC, OP) \
+    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
+
+#define ADDOP_IN_SCOPE(C, LOC, OP) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 static Py_ssize_t
 dict_add_o(PyObject *dict, PyObject *o)
@@ -854,24 +897,57 @@ compiler_add_const(struct compiler *c, PyObject *o)
 }
 
 static int
-compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
+codegen_addop_load_const(struct compiler *c, location loc, PyObject *o)
 {
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), LOAD_CONST, arg, loc);
+    ADDOP_I(c, loc, LOAD_CONST, arg);
+    return SUCCESS;
+}
+
+#define ADDOP_LOAD_CONST(C, LOC, O) \
+    RETURN_IF_ERROR(codegen_addop_load_const((C), (LOC), (O)))
+
+#define ADDOP_LOAD_CONST_IN_SCOPE(C, LOC, O) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_load_const((C), (LOC), (O)))
+
+/* Same as ADDOP_LOAD_CONST, but steals a reference. */
+#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
+    PyObject *__new_const = (O); \
+    if (__new_const == NULL) { \
+        return ERROR; \
+    } \
+    if (codegen_addop_load_const((C), (LOC), __new_const) < 0) { \
+        Py_DECREF(__new_const); \
+        return ERROR; \
+    } \
+    Py_DECREF(__new_const); \
 }
 
 static int
-compiler_addop_o(struct compiler *c, location loc,
-                 int opcode, PyObject *dict, PyObject *o)
+codegen_addop_o(struct compiler *c, location loc,
+                int opcode, PyObject *dict, PyObject *o)
 {
     Py_ssize_t arg = dict_add_o(dict, o);
-    if (arg < 0) {
-        return ERROR;
-    }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    RETURN_IF_ERROR(arg);
+    ADDOP_I(c, loc, opcode, arg);
+    return SUCCESS;
+}
+
+#define ADDOP_N(C, LOC, OP, O, TYPE) { \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    int ret = codegen_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)); \
+    Py_DECREF((O)); \
+    RETURN_IF_ERROR(ret); \
+}
+
+#define ADDOP_N_IN_SCOPE(C, LOC, OP, O, TYPE) { \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    int ret = codegen_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)); \
+    Py_DECREF((O)); \
+    RETURN_IF_ERROR_IN_SCOPE((C), ret); \
 }
 
 #define LOAD_METHOD -1
@@ -880,8 +956,8 @@ compiler_addop_o(struct compiler *c, location loc,
 #define LOAD_ZERO_SUPER_METHOD -4
 
 static int
-compiler_addop_name(struct compiler *c, location loc,
-                    int opcode, PyObject *dict, PyObject *o)
+codegen_addop_name(struct compiler *c, location loc,
+                   int opcode, PyObject *dict, PyObject *o)
 {
     PyObject *mangled = compiler_maybe_mangle(c, o);
     if (!mangled) {
@@ -918,25 +994,12 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 2;
         arg |= 1;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
+    ADDOP_I(c, loc, opcode, arg);
+    return SUCCESS;
 }
 
-/* Add an opcode with an integer argument */
-static int
-codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
-{
-    /* oparg value is unsigned, but a signed C int is usually used to store
-       it in the C code (like Python/ceval.c).
-
-       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
-
-       The argument of a concrete bytecode instruction is limited to 8-bit.
-       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
-
-    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
-}
+#define ADDOP_NAME(C, LOC, OP, O, TYPE) \
+    RETURN_IF_ERROR(codegen_addop_name((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
 
 static int
 codegen_addop_j(instr_sequence *seq, location loc,
@@ -948,54 +1011,11 @@ codegen_addop_j(instr_sequence *seq, location loc,
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
-#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
-    if ((CALL) < 0) { \
-        compiler_exit_scope((C)); \
-        return ERROR; \
-    } \
-}
-
-#define ADDOP(C, LOC, OP) \
-    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
-
-#define ADDOP_IN_SCOPE(C, LOC, OP) RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
-
-#define ADDOP_LOAD_CONST(C, LOC, O) \
-    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
-
-/* Same as ADDOP_LOAD_CONST, but steals a reference. */
-#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
-    PyObject *__new_const = (O); \
-    if (__new_const == NULL) { \
-        return ERROR; \
-    } \
-    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
-        Py_DECREF(__new_const); \
-        return ERROR; \
-    } \
-    Py_DECREF(__new_const); \
-}
-
-#define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
-        Py_DECREF((O)); \
-        return ERROR; \
-    } \
-    Py_DECREF((O)); \
-}
-
-#define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
-
-#define ADDOP_I(C, LOC, OP, O) \
-    RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
-
 #define ADDOP_JUMP(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_j(INSTR_SEQUENCE(C), (LOC), (OP), (O)))
 
 #define ADDOP_COMPARE(C, LOC, CMP) \
-    RETURN_IF_ERROR(compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)))
+    RETURN_IF_ERROR(codegen_addcompare((C), (LOC), (cmpop_ty)(CMP)))
 
 #define ADDOP_BINARY(C, LOC, BINOP) \
     RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), false))
@@ -1004,13 +1024,13 @@ codegen_addop_j(instr_sequence *seq, location loc,
     RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), true))
 
 #define ADD_YIELD_FROM(C, LOC, await) \
-    RETURN_IF_ERROR(compiler_add_yield_from((C), (LOC), (await)))
+    RETURN_IF_ERROR(codegen_add_yield_from((C), (LOC), (await)))
 
 #define POP_EXCEPT_AND_RERAISE(C, LOC) \
-    RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)))
+    RETURN_IF_ERROR(codegen_pop_except_and_reraise((C), (LOC)))
 
 #define ADDOP_YIELD(C, LOC) \
-    RETURN_IF_ERROR(addop_yield((C), (LOC)))
+    RETURN_IF_ERROR(codegen_addop_yield((C), (LOC)))
 
 /* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
    the ASDL name to synthesize the name of the C type and the visit function.
@@ -1046,7 +1066,8 @@ codegen_addop_j(instr_sequence *seq, location loc,
 
 static int
 compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
-                     void *key, int lineno, PyObject *private)
+                     void *key, int lineno, PyObject *private,
+                    _PyCompile_CodeUnitMetadata *umd)
 {
     location loc = LOCATION(lineno, lineno, 0, 0);
 
@@ -1058,9 +1079,14 @@ compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
         return ERROR;
     }
     u->u_scope_type = scope_type;
-    u->u_metadata.u_argcount = 0;
-    u->u_metadata.u_posonlyargcount = 0;
-    u->u_metadata.u_kwonlyargcount = 0;
+    if (umd != NULL) {
+        u->u_metadata = *umd;
+    }
+    else {
+        u->u_metadata.u_argcount = 0;
+        u->u_metadata.u_posonlyargcount = 0;
+        u->u_metadata.u_kwonlyargcount = 0;
+    }
     u->u_ste = _PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
@@ -1161,8 +1187,6 @@ compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
 
     c->u = u;
 
-    c->c_nestlevel++;
-
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = 0;
     }
@@ -1185,7 +1209,6 @@ compiler_exit_scope(struct compiler *c)
         nested_seq = c->u->u_instr_sequence;
         Py_INCREF(nested_seq);
     }
-    c->c_nestlevel--;
     compiler_unit_free(c->u);
     /* Restore c->u to the parent unit. */
     Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
@@ -1245,8 +1268,17 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label blo
     assert(SAME_LABEL(u->u_fblock[u->u_nfblocks].fb_block, block_label));
 }
 
+static struct fblockinfo *
+compiler_top_fblock(struct compiler *c)
+{
+    if (c->u->u_nfblocks == 0) {
+        return NULL;
+    }
+    return &c->u->u_fblock[c->u->u_nfblocks - 1];
+}
+
 static int
-compiler_call_exit_with_nones(struct compiler *c, location loc)
+codegen_call_exit_with_nones(struct compiler *c, location loc)
 {
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -1256,7 +1288,7 @@ compiler_call_exit_with_nones(struct compiler *c, location loc)
 }
 
 static int
-compiler_add_yield_from(struct compiler *c, location loc, int await)
+codegen_add_yield_from(struct compiler *c, location loc, int await)
 {
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, fail);
@@ -1281,7 +1313,7 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
 }
 
 static int
-compiler_pop_except_and_reraise(struct compiler *c, location loc)
+codegen_pop_except_and_reraise(struct compiler *c, location loc)
 {
     /* Stack contents
      * [exc_info, lasti, exc]            COPY        3
@@ -1302,8 +1334,8 @@ compiler_pop_except_and_reraise(struct compiler *c, location loc)
  * be popped.
  */
 static int
-compiler_unwind_fblock(struct compiler *c, location *ploc,
-                       struct fblockinfo *info, int preserve_tos)
+codegen_unwind_fblock(struct compiler *c, location *ploc,
+                      struct fblockinfo *info, int preserve_tos)
 {
     switch (info->fb_type) {
         case WHILE_LOOP:
@@ -1363,7 +1395,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
                 ADDOP_I(c, *ploc, SWAP, 3);
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
-            RETURN_IF_ERROR(compiler_call_exit_with_nones(c, *ploc));
+            RETURN_IF_ERROR(codegen_call_exit_with_nones(c, *ploc));
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
                 ADDOP_LOAD_CONST(c, *ploc, Py_None);
@@ -1405,13 +1437,13 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
 
 /** Unwind block stack. If loop is not NULL, then stop when the first loop is encountered. */
 static int
-compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
-                             int preserve_tos, struct fblockinfo **loop)
+codegen_unwind_fblock_stack(struct compiler *c, location *ploc,
+                            int preserve_tos, struct fblockinfo **loop)
 {
-    if (c->u->u_nfblocks == 0) {
+    struct fblockinfo *top = compiler_top_fblock(c);
+    if (top == NULL) {
         return SUCCESS;
     }
-    struct fblockinfo *top = &c->u->u_fblock[c->u->u_nfblocks-1];
     if (top->fb_type == EXCEPTION_GROUP_HANDLER) {
         return compiler_error(
             c, *ploc, "'break', 'continue' and 'return' cannot appear in an except* block");
@@ -1421,23 +1453,28 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
         return SUCCESS;
     }
     struct fblockinfo copy = *top;
-    c->u->u_nfblocks--;
-    RETURN_IF_ERROR(compiler_unwind_fblock(c, ploc, &copy, preserve_tos));
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, ploc, preserve_tos, loop));
-    c->u->u_fblock[c->u->u_nfblocks] = copy;
-    c->u->u_nfblocks++;
+    compiler_pop_fblock(c, top->fb_type, top->fb_block);
+    RETURN_IF_ERROR(codegen_unwind_fblock(c, ploc, &copy, preserve_tos));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, ploc, preserve_tos, loop));
+    compiler_push_fblock(c, copy.fb_loc, copy.fb_type, copy.fb_block,
+                         copy.fb_exit, copy.fb_datum);
     return SUCCESS;
 }
 
 static int
-compiler_setup_annotations_scope(struct compiler *c, location loc,
-                                 void *key, PyObject *name)
+codegen_setup_annotations_scope(struct compiler *c, location loc,
+                                void *key, PyObject *name)
 {
-    if (compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
-                             key, loc.lineno, NULL) == -1) {
-        return ERROR;
-    }
-    c->u->u_metadata.u_posonlyargcount = 1;
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_posonlyargcount = 1,
+    };
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
+                             key, loc.lineno, NULL, &umd));
+    assert(c->u->u_metadata.u_posonlyargcount == 1);
+    assert(c->u->u_metadata.u_argcount == 0);
+    assert(c->u->u_metadata.u_kwonlyargcount == 0);
+
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -1448,12 +1485,12 @@ compiler_setup_annotations_scope(struct compiler *c, location loc,
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
-    return 0;
+    return SUCCESS;
 }
 
 static int
-compiler_leave_annotations_scope(struct compiler *c, location loc,
-                                 Py_ssize_t annotations_len)
+codegen_leave_annotations_scope(struct compiler *c, location loc,
+                                Py_ssize_t annotations_len)
 {
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
@@ -1462,19 +1499,75 @@ compiler_leave_annotations_scope(struct compiler *c, location loc,
     if (co == NULL) {
         return ERROR;
     }
-    if (compiler_make_closure(c, loc, co, 0) < 0) {
-        Py_DECREF(co);
+    int ret = codegen_make_closure(c, loc, co, 0);
+    Py_DECREF(co);
+    RETURN_IF_ERROR(ret);
+    return SUCCESS;
+}
+
+static PyObject *
+compiler_deferred_annotations(struct compiler *c)
+{
+    return c->u->u_deferred_annotations;
+}
+
+static int
+codegen_process_deferred_annotations(struct compiler *c, location loc)
+{
+    PyObject *deferred_anno = compiler_deferred_annotations(c);
+    if (deferred_anno == NULL) {
+        return SUCCESS;
+    }
+    Py_INCREF(deferred_anno);
+
+    // It's possible that ste_annotations_block is set but
+    // u_deferred_annotations is not, because the former is still
+    // set if there are only non-simple annotations (i.e., annotations
+    // for attributes, subscripts, or parenthesized names). However, the
+    // reverse should not be possible.
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    assert(ste->ste_annotation_block != NULL);
+    void *key = (void *)((uintptr_t)ste->ste_id + 1);
+    if (codegen_setup_annotations_scope(c, loc, key,
+                                        ste->ste_annotation_block->ste_name) < 0) {
+        Py_DECREF(deferred_anno);
         return ERROR;
     }
-    Py_DECREF(co);
-    return 0;
+    Py_ssize_t annotations_len = PyList_Size(deferred_anno);
+    for (Py_ssize_t i = 0; i < annotations_len; i++) {
+        PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
+        stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
+        if (st == NULL) {
+            compiler_exit_scope(c);
+            Py_DECREF(deferred_anno);
+            return ERROR;
+        }
+        PyObject *mangled = compiler_mangle(c, st->v.AnnAssign.target->v.Name.id);
+        if (!mangled) {
+            compiler_exit_scope(c);
+            Py_DECREF(deferred_anno);
+            return ERROR;
+        }
+        ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
+        VISIT(c, expr, st->v.AnnAssign.annotation);
+    }
+    Py_DECREF(deferred_anno);
+
+    RETURN_IF_ERROR(
+        codegen_leave_annotations_scope(c, loc, annotations_len)
+    );
+    RETURN_IF_ERROR(
+        compiler_nameop(c, loc, &_Py_ID(__annotate__), Store)
+    );
+
+    return SUCCESS;
 }
 
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
 
 static int
-compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
+codegen_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 {
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
@@ -1486,12 +1579,12 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    if (!c->c_interactive) {
+    if (!IS_INTERACTIVE(c)) {
         PyObject *docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
             first_instr = 1;
             /* if not -OO mode, set docstring */
-            if (c->c_optimize < 2) {
+            if (OPTIMIZATION_LEVEL(c) < 2) {
                 PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
                 if (cleandoc == NULL) {
                     return ERROR;
@@ -1511,44 +1604,8 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     // If there are annotations and the future import is not on, we
     // collect the annotations in a separate pass and generate an
     // __annotate__ function. See PEP 649.
-    if (!(FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) &&
-         c->u->u_deferred_annotations != NULL) {
-
-        // It's possible that ste_annotations_block is set but
-        // u_deferred_annotations is not, because the former is still
-        // set if there are only non-simple annotations (i.e., annotations
-        // for attributes, subscripts, or parenthesized names). However, the
-        // reverse should not be possible.
-        PySTEntryObject *ste = SYMTABLE_ENTRY(c);
-        assert(ste->ste_annotation_block != NULL);
-        PyObject *deferred_anno = Py_NewRef(c->u->u_deferred_annotations);
-        void *key = (void *)((uintptr_t)ste->ste_id + 1);
-        if (compiler_setup_annotations_scope(c, loc, key,
-                                             ste->ste_annotation_block->ste_name) == -1) {
-            Py_DECREF(deferred_anno);
-            return ERROR;
-        }
-        Py_ssize_t annotations_len = PyList_Size(deferred_anno);
-        for (Py_ssize_t i = 0; i < annotations_len; i++) {
-            PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
-            stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
-            if (st == NULL) {
-                compiler_exit_scope(c);
-                Py_DECREF(deferred_anno);
-                return ERROR;
-            }
-            PyObject *mangled = _Py_Mangle(c->u->u_private, st->v.AnnAssign.target->v.Name.id);
-            ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
-            VISIT(c, expr, st->v.AnnAssign.annotation);
-        }
-        Py_DECREF(deferred_anno);
-
-        RETURN_IF_ERROR(
-            compiler_leave_annotations_scope(c, loc, annotations_len)
-        );
-        RETURN_IF_ERROR(
-            compiler_nameop(c, loc, &_Py_ID(__annotate__), Store)
-        );
+    if (!(FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS)) {
+        RETURN_IF_ERROR(codegen_process_deferred_annotations(c, loc));
     }
     return SUCCESS;
 }
@@ -1575,17 +1632,13 @@ compiler_codegen(struct compiler *c, mod_ty mod)
     switch (mod->kind) {
     case Module_kind: {
         asdl_stmt_seq *stmts = mod->v.Module.body;
-        if (compiler_body(c, start_location(stmts), stmts) < 0) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(codegen_body(c, start_location(stmts), stmts));
         break;
     }
     case Interactive_kind: {
         c->c_interactive = 1;
         asdl_stmt_seq *stmts = mod->v.Interactive.body;
-        if (compiler_body(c, start_location(stmts), stmts) < 0) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(codegen_body(c, start_location(stmts), stmts));
         break;
     }
     case Expression_kind: {
@@ -1602,12 +1655,12 @@ compiler_codegen(struct compiler *c, mod_ty mod)
 }
 
 static int
-compiler_enter_anonymous_scope(struct compiler* c, mod_ty mod)
+codegen_enter_anonymous_scope(struct compiler* c, mod_ty mod)
 {
     _Py_DECLARE_STR(anon_module, "<module>");
     RETURN_IF_ERROR(
         compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
-                             mod, 1, NULL));
+                             mod, 1, NULL, NULL));
     return SUCCESS;
 }
 
@@ -1616,7 +1669,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co = NULL;
     int addNone = mod->kind != Expression_kind;
-    if (compiler_enter_anonymous_scope(c, mod) < 0) {
+    if (codegen_enter_anonymous_scope(c, mod) < 0) {
         return NULL;
     }
     if (compiler_codegen(c, mod) < 0) {
@@ -1664,6 +1717,13 @@ dict_lookup_arg(PyObject *dict, PyObject *name)
 }
 
 static int
+compiler_lookup_cellvar(struct compiler *c, PyObject *name)
+{
+    assert(c->u->u_metadata.u_cellvars);
+    return dict_lookup_arg(c->u->u_metadata.u_cellvars, name);
+}
+
+static int
 compiler_lookup_arg(struct compiler *c, PyCodeObject *co, PyObject *name)
 {
     /* Special case: If a class contains a method with a
@@ -1703,8 +1763,8 @@ compiler_lookup_arg(struct compiler *c, PyCodeObject *co, PyObject *name)
 }
 
 static int
-compiler_make_closure(struct compiler *c, location loc,
-                      PyCodeObject *co, Py_ssize_t flags)
+codegen_make_closure(struct compiler *c, location loc,
+                     PyCodeObject *co, Py_ssize_t flags)
 {
     if (co->co_nfreevars) {
         int i = PyUnstable_Code_GetFirstFree(co);
@@ -1743,7 +1803,7 @@ compiler_make_closure(struct compiler *c, location loc,
 }
 
 static int
-compiler_decorators(struct compiler *c, asdl_expr_seq* decos)
+codegen_decorators(struct compiler *c, asdl_expr_seq* decos)
 {
     if (!decos) {
         return SUCCESS;
@@ -1756,7 +1816,7 @@ compiler_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
-compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
+codegen_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
 {
     if (!decos) {
         return SUCCESS;
@@ -1770,8 +1830,8 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
-compiler_kwonlydefaults(struct compiler *c, location loc,
-                              asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
+codegen_kwonlydefaults(struct compiler *c, location loc,
+                       asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
 {
     /* Push a dict of keyword-only default values.
 
@@ -1817,7 +1877,7 @@ compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 }
 
 static int
-compiler_argannotation(struct compiler *c, identifier id,
+codegen_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, Py_ssize_t *annotations_len, location loc)
 {
     if (!annotation) {
@@ -1851,14 +1911,14 @@ compiler_argannotation(struct compiler *c, identifier id,
 }
 
 static int
-compiler_argannotations(struct compiler *c, asdl_arg_seq* args,
-                        Py_ssize_t *annotations_len, location loc)
+codegen_argannotations(struct compiler *c, asdl_arg_seq* args,
+                       Py_ssize_t *annotations_len, location loc)
 {
     int i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
         RETURN_IF_ERROR(
-            compiler_argannotation(
+            codegen_argannotation(
                         c,
                         arg->arg,
                         arg->annotation,
@@ -1869,40 +1929,40 @@ compiler_argannotations(struct compiler *c, asdl_arg_seq* args,
 }
 
 static int
-compiler_annotations_in_scope(struct compiler *c, location loc,
-                              arguments_ty args, expr_ty returns,
-                              Py_ssize_t *annotations_len)
+codegen_annotations_in_scope(struct compiler *c, location loc,
+                             arguments_ty args, expr_ty returns,
+                             Py_ssize_t *annotations_len)
 {
     RETURN_IF_ERROR(
-        compiler_argannotations(c, args->args, annotations_len, loc));
+        codegen_argannotations(c, args->args, annotations_len, loc));
 
     RETURN_IF_ERROR(
-        compiler_argannotations(c, args->posonlyargs, annotations_len, loc));
+        codegen_argannotations(c, args->posonlyargs, annotations_len, loc));
 
     if (args->vararg && args->vararg->annotation) {
         RETURN_IF_ERROR(
-            compiler_argannotation(c, args->vararg->arg,
-                                         args->vararg->annotation, annotations_len, loc));
+            codegen_argannotation(c, args->vararg->arg,
+                                     args->vararg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_argannotations(c, args->kwonlyargs, annotations_len, loc));
+        codegen_argannotations(c, args->kwonlyargs, annotations_len, loc));
 
     if (args->kwarg && args->kwarg->annotation) {
         RETURN_IF_ERROR(
-            compiler_argannotation(c, args->kwarg->arg,
-                                         args->kwarg->annotation, annotations_len, loc));
+            codegen_argannotation(c, args->kwarg->arg,
+                                     args->kwarg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
+        codegen_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
 
     return 0;
 }
 
 static int
-compiler_annotations(struct compiler *c, location loc,
-                           arguments_ty args, expr_ty returns)
+codegen_annotations(struct compiler *c, location loc,
+                    arguments_ty args, expr_ty returns)
 {
     /* Push arg annotation names and values.
        The expressions are evaluated separately from the rest of the source code.
@@ -1912,22 +1972,16 @@ compiler_annotations(struct compiler *c, location loc,
     Py_ssize_t annotations_len = 0;
 
     PySTEntryObject *ste;
-    if (_PySymtable_LookupOptional(SYMTABLE(c), args, &ste) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(_PySymtable_LookupOptional(SYMTABLE(c), args, &ste));
     assert(ste != NULL);
     bool annotations_used = ste->ste_annotations_used;
 
-    if (annotations_used) {
-        if (compiler_setup_annotations_scope(c, loc, (void *)args,
-                                             ste->ste_name) < 0) {
-            Py_DECREF(ste);
-            return ERROR;
-        }
-    }
+    int err = annotations_used ?
+        codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name) : SUCCESS;
     Py_DECREF(ste);
+    RETURN_IF_ERROR(err);
 
-    if (compiler_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
+    if (codegen_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
         if (annotations_used) {
             compiler_exit_scope(c);
         }
@@ -1936,7 +1990,7 @@ compiler_annotations(struct compiler *c, location loc,
 
     if (annotations_used) {
         RETURN_IF_ERROR(
-            compiler_leave_annotations_scope(c, loc, annotations_len)
+            codegen_leave_annotations_scope(c, loc, annotations_len)
         );
         return MAKE_FUNCTION_ANNOTATE;
     }
@@ -1945,7 +1999,7 @@ compiler_annotations(struct compiler *c, location loc,
 }
 
 static int
-compiler_defaults(struct compiler *c, arguments_ty args,
+codegen_defaults(struct compiler *c, arguments_ty args,
                         location loc)
 {
     VISIT_SEQ(c, expr, args->defaults);
@@ -1954,18 +2008,18 @@ compiler_defaults(struct compiler *c, arguments_ty args,
 }
 
 static Py_ssize_t
-compiler_default_arguments(struct compiler *c, location loc,
-                           arguments_ty args)
+codegen_default_arguments(struct compiler *c, location loc,
+                          arguments_ty args)
 {
     Py_ssize_t funcflags = 0;
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
-        RETURN_IF_ERROR(compiler_defaults(c, args, loc));
+        RETURN_IF_ERROR(codegen_defaults(c, args, loc));
         funcflags |= MAKE_FUNCTION_DEFAULTS;
     }
     if (args->kwonlyargs) {
-        int res = compiler_kwonlydefaults(c, loc,
-                                          args->kwonlyargs,
-                                          args->kw_defaults);
+        int res = codegen_kwonlydefaults(c, loc,
+                                         args->kwonlyargs,
+                                         args->kw_defaults);
         RETURN_IF_ERROR(res);
         if (res > 0) {
             funcflags |= MAKE_FUNCTION_KWDEFAULTS;
@@ -1975,7 +2029,7 @@ compiler_default_arguments(struct compiler *c, location loc,
 }
 
 static int
-wrap_in_stopiteration_handler(struct compiler *c)
+codegen_wrap_in_stopiteration_handler(struct compiler *c)
 {
     NEW_JUMP_TARGET_LABEL(c, handler);
 
@@ -1994,15 +2048,13 @@ wrap_in_stopiteration_handler(struct compiler *c)
 }
 
 static int
-compiler_type_param_bound_or_default(struct compiler *c, expr_ty e,
-                                     identifier name, void *key,
-                                     bool allow_starred)
+codegen_type_param_bound_or_default(struct compiler *c, expr_ty e,
+                                    identifier name, void *key,
+                                    bool allow_starred)
 {
     PyObject *defaults = PyTuple_Pack(1, _PyLong_GetOne());
     ADDOP_LOAD_CONST_NEW(c, LOC(e), defaults);
-    if (compiler_setup_annotations_scope(c, LOC(e), key, name) == -1) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(codegen_setup_annotations_scope(c, LOC(e), key, name));
     if (allow_starred && e->kind == Starred_kind) {
         VISIT(c, expr, e->v.Starred.value);
         ADDOP_I(c, LOC(e), UNPACK_SEQUENCE, (Py_ssize_t)1);
@@ -2016,16 +2068,14 @@ compiler_type_param_bound_or_default(struct compiler *c, expr_ty e,
     if (co == NULL) {
         return ERROR;
     }
-    if (compiler_make_closure(c, LOC(e), co, MAKE_FUNCTION_DEFAULTS) < 0) {
-        Py_DECREF(co);
-        return ERROR;
-    }
+    int ret = codegen_make_closure(c, LOC(e), co, MAKE_FUNCTION_DEFAULTS);
     Py_DECREF(co);
+    RETURN_IF_ERROR(ret);
     return SUCCESS;
 }
 
 static int
-compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
+codegen_type_params(struct compiler *c, asdl_type_param_seq *type_params)
 {
     if (!type_params) {
         return SUCCESS;
@@ -2041,10 +2091,9 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVar.name);
             if (typeparam->v.TypeVar.bound) {
                 expr_ty bound = typeparam->v.TypeVar.bound;
-                if (compiler_type_param_bound_or_default(c, bound, typeparam->v.TypeVar.name,
-                                                         (void *)typeparam, false) < 0) {
-                    return ERROR;
-                }
+                RETURN_IF_ERROR(
+                    codegen_type_param_bound_or_default(c, bound, typeparam->v.TypeVar.name,
+                                                        (void *)typeparam, false));
 
                 int intrinsic = bound->kind == Tuple_kind
                     ? INTRINSIC_TYPEVAR_WITH_CONSTRAINTS
@@ -2057,10 +2106,9 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             if (typeparam->v.TypeVar.default_value) {
                 seen_default = true;
                 expr_ty default_ = typeparam->v.TypeVar.default_value;
-                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVar.name,
-                                                         (void *)((uintptr_t)typeparam + 1), false) < 0) {
-                    return ERROR;
-                }
+                RETURN_IF_ERROR(
+                    codegen_type_param_bound_or_default(c, default_, typeparam->v.TypeVar.name,
+                                                        (void *)((uintptr_t)typeparam + 1), false));
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
             }
             else if (seen_default) {
@@ -2076,10 +2124,9 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
             if (typeparam->v.TypeVarTuple.default_value) {
                 expr_ty default_ = typeparam->v.TypeVarTuple.default_value;
-                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVarTuple.name,
-                                                         (void *)typeparam, true) < 0) {
-                    return ERROR;
-                }
+                RETURN_IF_ERROR(
+                    codegen_type_param_bound_or_default(c, default_, typeparam->v.TypeVarTuple.name,
+                                                        (void *)typeparam, true));
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
                 seen_default = true;
             }
@@ -2096,10 +2143,9 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
             if (typeparam->v.ParamSpec.default_value) {
                 expr_ty default_ = typeparam->v.ParamSpec.default_value;
-                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.ParamSpec.name,
-                                                         (void *)typeparam, false) < 0) {
-                    return ERROR;
-                }
+                RETURN_IF_ERROR(
+                    codegen_type_param_bound_or_default(c, default_, typeparam->v.ParamSpec.name,
+                                                        (void *)typeparam, false));
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
                 seen_default = true;
             }
@@ -2118,8 +2164,8 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
 }
 
 static int
-compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags,
-                       int firstlineno)
+codegen_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags,
+                      int firstlineno)
 {
     arguments_ty args;
     identifier name;
@@ -2144,15 +2190,20 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
 
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_argcount = asdl_seq_LEN(args->args),
+        .u_posonlyargcount = asdl_seq_LEN(args->posonlyargs),
+        .u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs),
+    };
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL));
+        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
     if (docstring) {
         first_instr = 1;
         /* if not -OO mode, add docstring */
-        if (c->c_optimize < 2) {
+        if (OPTIMIZATION_LEVEL(c) < 2) {
             docstring = _PyCompile_CleanDoc(docstring);
             if (docstring == NULL) {
                 compiler_exit_scope(c);
@@ -2163,23 +2214,20 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
             docstring = NULL;
         }
     }
-    if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
-        Py_XDECREF(docstring);
-        compiler_exit_scope(c);
-        return ERROR;
-    }
-    Py_CLEAR(docstring);
+    Py_ssize_t idx = compiler_add_const(c, docstring ? docstring : Py_None);
+    Py_XDECREF(docstring);
+    RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
 
-    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    assert(c->u->u_metadata.u_argcount == asdl_seq_LEN(args->args));
+    assert(c->u->u_metadata.u_posonlyargcount == asdl_seq_LEN(args->posonlyargs));
+    assert(c->u->u_metadata.u_kwonlyargcount == asdl_seq_LEN(args->kwonlyargs));
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     bool add_stopiteration_handler = ste->ste_coroutine || ste->ste_generator;
     if (add_stopiteration_handler) {
-        /* wrap_in_stopiteration_handler will push a block, so we need to account for that */
+        /* codegen_wrap_in_stopiteration_handler will push a block, so we need to account for that */
         RETURN_IF_ERROR(
             compiler_push_fblock(c, NO_LOCATION, STOP_ITERATION,
                                  start, NO_LABEL, NULL));
@@ -2189,10 +2237,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
     if (add_stopiteration_handler) {
-        if (wrap_in_stopiteration_handler(c) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_wrap_in_stopiteration_handler(c));
         compiler_pop_fblock(c, STOP_ITERATION, start);
     }
     PyCodeObject *co = optimize_and_assemble(c, 1);
@@ -2201,17 +2246,13 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         Py_XDECREF(co);
         return ERROR;
     }
-    location loc = LOC(s);
-    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
-        Py_DECREF(co);
-        return ERROR;
-    }
+    int ret = codegen_make_closure(c, LOC(s), co, funcflags);
     Py_DECREF(co);
-    return SUCCESS;
+    return ret;
 }
 
 static int
-compiler_function(struct compiler *c, stmt_ty s, int is_async)
+codegen_function(struct compiler *c, stmt_ty s, int is_async)
 {
     arguments_ty args;
     expr_ty returns;
@@ -2239,7 +2280,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         type_params = s->v.FunctionDef.type_params;
     }
 
-    RETURN_IF_ERROR(compiler_decorators(c, decos));
+    RETURN_IF_ERROR(codegen_decorators(c, decos));
 
     firstlineno = s->lineno;
     if (asdl_seq_LEN(decos)) {
@@ -2250,10 +2291,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     int is_generic = asdl_seq_LEN(type_params) > 0;
 
-    funcflags = compiler_default_arguments(c, loc, args);
-    if (funcflags == -1) {
-        return ERROR;
-    }
+    funcflags = codegen_default_arguments(c, loc, args);
+    RETURN_IF_ERROR(funcflags);
 
     int num_typeparam_args = 0;
 
@@ -2271,19 +2310,20 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno, NULL) == -1) {
-            Py_DECREF(type_params_name);
-            return ERROR;
-        }
+        _PyCompile_CodeUnitMetadata umd = {
+            .u_argcount = num_typeparam_args,
+        };
+        int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+                                       (void *)type_params, firstlineno, NULL, &umd);
         Py_DECREF(type_params_name);
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
+        RETURN_IF_ERROR(ret);
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
         for (int i = 0; i < num_typeparam_args; i++) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, i, loc));
+            ADDOP_I_IN_SCOPE(c, loc, LOAD_FAST, i);
         }
     }
 
-    int annotations_flag = compiler_annotations(c, loc, args, returns);
+    int annotations_flag = codegen_annotations(c, loc, args, returns);
     if (annotations_flag < 0) {
         if (is_generic) {
             compiler_exit_scope(c);
@@ -2292,30 +2332,27 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
     funcflags |= annotations_flag;
 
-    if (compiler_function_body(c, s, is_async, funcflags, firstlineno) < 0) {
-        if (is_generic) {
-            compiler_exit_scope(c);
-        }
-        return ERROR;
+    int ret = codegen_function_body(c, s, is_async, funcflags, firstlineno);
+    if (is_generic) {
+        RETURN_IF_ERROR_IN_SCOPE(c, ret);
+    }
+    else {
+        RETURN_IF_ERROR(ret);
     }
 
     if (is_generic) {
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
-            INSTR_SEQUENCE(c), SWAP, 2, loc));
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
-            INSTR_SEQUENCE(c), CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS, loc));
+        ADDOP_I_IN_SCOPE(c, loc, SWAP, 2);
+        ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
-        c->u->u_metadata.u_argcount = num_typeparam_args;
+        assert(c->u->u_metadata.u_argcount == num_typeparam_args);
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
         }
-        if (compiler_make_closure(c, loc, co, 0) < 0) {
-            Py_DECREF(co);
-            return ERROR;
-        }
+        int ret = codegen_make_closure(c, loc, co, 0);
         Py_DECREF(co);
+        RETURN_IF_ERROR(ret);
         if (num_typeparam_args > 0) {
             ADDOP_I(c, loc, SWAP, num_typeparam_args + 1);
             ADDOP_I(c, loc, CALL, num_typeparam_args - 1);
@@ -2326,21 +2363,28 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
 
-    RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
+    RETURN_IF_ERROR(codegen_apply_decorators(c, decos));
     return compiler_nameop(c, loc, name, Store);
 }
 
 static int
-compiler_set_type_params_in_class(struct compiler *c, location loc)
+codegen_set_type_params_in_class(struct compiler *c, location loc)
 {
     _Py_DECLARE_STR(type_params, ".type_params");
     RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
     RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_ID(__type_params__), Store));
-    return 1;
+    return SUCCESS;
+}
+
+static PyObject *
+compiler_static_attributes_tuple(struct compiler *c)
+{
+    assert(c->u->u_static_attributes);
+    return PySequence_Tuple(c->u->u_static_attributes);
 }
 
 static int
-compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
+codegen_class_body(struct compiler *c, stmt_ty s, int firstlineno)
 {
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -2350,42 +2394,26 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
          <name> is the class name
          <bases> is the positional arguments and *varargs argument
          <keywords> is the keyword arguments and **kwds argument
-       This borrows from compiler_call.
+       This borrows from codegen_call.
     */
 
     /* 1. compile the class body into a code object */
     RETURN_IF_ERROR(
         compiler_enter_scope(c, s->v.ClassDef.name, COMPILER_SCOPE_CLASS,
-                             (void *)s, firstlineno, s->v.ClassDef.name));
+                             (void *)s, firstlineno, s->v.ClassDef.name, NULL));
 
     location loc = LOCATION(firstlineno, firstlineno, 0, 0);
     /* load (global) __name__ ... */
-    if (compiler_nameop(c, loc, &_Py_ID(__name__), Load) < 0) {
-        compiler_exit_scope(c);
-        return ERROR;
-    }
+    RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__name__), Load));
     /* ... and store it as __module__ */
-    if (compiler_nameop(c, loc, &_Py_ID(__module__), Store) < 0) {
-        compiler_exit_scope(c);
-        return ERROR;
-    }
-    assert(c->u->u_metadata.u_qualname);
-    ADDOP_LOAD_CONST(c, loc, c->u->u_metadata.u_qualname);
-    if (compiler_nameop(c, loc, &_Py_ID(__qualname__), Store) < 0) {
-        compiler_exit_scope(c);
-        return ERROR;
-    }
+    RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__module__), Store));
+    ADDOP_LOAD_CONST(c, loc, QUALNAME(c));
+    RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__qualname__), Store));
     ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromLong(c->u->u_metadata.u_firstlineno));
-    if (compiler_nameop(c, loc, &_Py_ID(__firstlineno__), Store) < 0) {
-        compiler_exit_scope(c);
-        return ERROR;
-    }
+    RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__firstlineno__), Store));
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     if (asdl_seq_LEN(type_params) > 0) {
-        if (!compiler_set_type_params_in_class(c, loc)) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_set_type_params_in_class(c, loc));
     }
     if (SYMTABLE_ENTRY(c)->ste_needs_classdict) {
         ADDOP(c, loc, LOAD_LOCALS);
@@ -2393,59 +2421,38 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         // We can't use compiler_nameop here because we need to generate a
         // STORE_DEREF in a class namespace, and compiler_nameop() won't do
         // that by default.
-        PyObject *cellvars = c->u->u_metadata.u_cellvars;
-        if (compiler_addop_o(c, loc, STORE_DEREF, cellvars,
-                             &_Py_ID(__classdict__)) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     /* compile the body proper */
-    if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
-        compiler_exit_scope(c);
-        return ERROR;
-    }
-    assert(c->u->u_static_attributes);
-    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_body(c, loc, s->v.ClassDef.body));
+    PyObject *static_attributes = compiler_static_attributes_tuple(c);
     if (static_attributes == NULL) {
         compiler_exit_scope(c);
         return ERROR;
     }
     ADDOP_LOAD_CONST(c, NO_LOCATION, static_attributes);
     Py_CLEAR(static_attributes);
-    if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__static_attributes__), Store) < 0) {
-        compiler_exit_scope(c);
-        return ERROR;
-    }
+    RETURN_IF_ERROR_IN_SCOPE(
+        c, compiler_nameop(c, NO_LOCATION, &_Py_ID(__static_attributes__), Store));
     /* The following code is artificial */
     /* Set __classdictcell__ if necessary */
     if (SYMTABLE_ENTRY(c)->ste_needs_classdict) {
         /* Store __classdictcell__ into class namespace */
-        int i = dict_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
-        if (i < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        int i = compiler_lookup_cellvar(c, &_Py_ID(__classdict__));
+        RETURN_IF_ERROR_IN_SCOPE(c, i);
         ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
-        if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classdictcell__), Store) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        RETURN_IF_ERROR_IN_SCOPE(
+            c, compiler_nameop(c, NO_LOCATION, &_Py_ID(__classdictcell__), Store));
     }
     /* Return __classcell__ if it is referenced, otherwise return None */
     if (SYMTABLE_ENTRY(c)->ste_needs_class_closure) {
         /* Store __classcell__ into class namespace & return it */
-        int i = dict_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
-        if (i < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        int i = compiler_lookup_cellvar(c, &_Py_ID(__class__));
+        RETURN_IF_ERROR_IN_SCOPE(c, i);
         ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
         ADDOP_I(c, NO_LOCATION, COPY, 1);
-        if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
+        RETURN_IF_ERROR_IN_SCOPE(
+            c, compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store));
     }
     else {
         /* No methods referenced __class__, so just return None */
@@ -2470,11 +2477,9 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     ADDOP(c, loc, PUSH_NULL);
 
     /* 3. load a function (or closure) made from the code object */
-    if (compiler_make_closure(c, loc, co, 0) < 0) {
-        Py_DECREF(co);
-        return ERROR;
-    }
+    int ret = codegen_make_closure(c, loc, co, 0);
     Py_DECREF(co);
+    RETURN_IF_ERROR(ret);
 
     /* 4. load class name */
     ADDOP_LOAD_CONST(c, loc, s->v.ClassDef.name);
@@ -2483,11 +2488,11 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
 }
 
 static int
-compiler_class(struct compiler *c, stmt_ty s)
+codegen_class(struct compiler *c, stmt_ty s)
 {
     asdl_expr_seq *decos = s->v.ClassDef.decorator_list;
 
-    RETURN_IF_ERROR(compiler_decorators(c, decos));
+    RETURN_IF_ERROR(codegen_decorators(c, decos));
 
     int firstlineno = s->lineno;
     if (asdl_seq_LEN(decos)) {
@@ -2503,22 +2508,21 @@ compiler_class(struct compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno, s->v.ClassDef.name) == -1) {
-            Py_DECREF(type_params_name);
-            return ERROR;
-        }
+        int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+                                       (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
         Py_DECREF(type_params_name);
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
+        RETURN_IF_ERROR(ret);
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
     }
 
-    if (compiler_class_body(c, s, firstlineno) < 0) {
-        if (is_generic) {
-            compiler_exit_scope(c);
-        }
-        return ERROR;
+    int ret = codegen_class_body(c, s, firstlineno);
+    if (is_generic) {
+        RETURN_IF_ERROR_IN_SCOPE(c, ret);
+    }
+    else {
+        RETURN_IF_ERROR(ret);
     }
 
     /* generate the rest of the code for the call */
@@ -2527,9 +2531,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         _Py_DECLARE_STR(type_params, ".type_params");
         _Py_DECLARE_STR(generic_base, ".generic_base");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
-        RETURN_IF_ERROR_IN_SCOPE(
-            c, codegen_addop_i(INSTR_SEQUENCE(c), CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC, loc)
-        )
+        ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(generic_base), Store));
 
         Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
@@ -2551,9 +2553,9 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         asdl_seq_SET(bases, original_len, name_node);
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_call_helper(c, loc, 2,
-                                                         bases,
-                                                         s->v.ClassDef.keywords));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_call_helper(c, loc, 2,
+                                                        bases,
+                                                        s->v.ClassDef.keywords));
 
         PyCodeObject *co = optimize_and_assemble(c, 0);
 
@@ -2561,21 +2563,19 @@ compiler_class(struct compiler *c, stmt_ty s)
         if (co == NULL) {
             return ERROR;
         }
-        if (compiler_make_closure(c, loc, co, 0) < 0) {
-            Py_DECREF(co);
-            return ERROR;
-        }
+        int ret = codegen_make_closure(c, loc, co, 0);
         Py_DECREF(co);
+        RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     } else {
-        RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
+        RETURN_IF_ERROR(codegen_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
                                             s->v.ClassDef.keywords));
     }
 
     /* 6. apply decorators */
-    RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
+    RETURN_IF_ERROR(codegen_apply_decorators(c, decos));
 
     /* 7. store into <name> */
     RETURN_IF_ERROR(compiler_nameop(c, loc, s->v.ClassDef.name, Store));
@@ -2583,14 +2583,14 @@ compiler_class(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_typealias_body(struct compiler *c, stmt_ty s)
+codegen_typealias_body(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     PyObject *name = s->v.TypeAlias.name->v.Name.id;
     PyObject *defaults = PyTuple_Pack(1, _PyLong_GetOne());
     ADDOP_LOAD_CONST_NEW(c, loc, defaults);
     RETURN_IF_ERROR(
-        compiler_setup_annotations_scope(c, LOC(s), s, name));
+        codegen_setup_annotations_scope(c, LOC(s), s, name));
     /* Make None the first constant, so the evaluate function can't have a
         docstring. */
     RETURN_IF_ERROR(compiler_add_const(c, Py_None));
@@ -2601,18 +2601,17 @@ compiler_typealias_body(struct compiler *c, stmt_ty s)
     if (co == NULL) {
         return ERROR;
     }
-    if (compiler_make_closure(c, loc, co, MAKE_FUNCTION_DEFAULTS) < 0) {
-        Py_DECREF(co);
-        return ERROR;
-    }
+    int ret = codegen_make_closure(c, loc, co, MAKE_FUNCTION_DEFAULTS);
     Py_DECREF(co);
+    RETURN_IF_ERROR(ret);
+
     ADDOP_I(c, loc, BUILD_TUPLE, 3);
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEALIAS);
     return SUCCESS;
 }
 
 static int
-compiler_typealias(struct compiler *c, stmt_ty s)
+codegen_typealias(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     asdl_type_param_seq *type_params = s->v.TypeAlias.type_params;
@@ -2624,27 +2623,24 @@ compiler_typealias(struct compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, loc.lineno, NULL) == -1) {
-            Py_DECREF(type_params_name);
-            return ERROR;
-        }
+        int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+                                       (void *)type_params, loc.lineno, NULL, NULL);
         Py_DECREF(type_params_name);
-        RETURN_IF_ERROR_IN_SCOPE(
-            c, compiler_addop_load_const(c, loc, name)
-        );
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
+        RETURN_IF_ERROR(ret);
+        ADDOP_LOAD_CONST_IN_SCOPE(c, loc, name);
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
     }
     else {
         ADDOP_LOAD_CONST(c, loc, name);
         ADDOP_LOAD_CONST(c, loc, Py_None);
     }
 
-    if (compiler_typealias_body(c, s) < 0) {
-        if (is_generic) {
-            compiler_exit_scope(c);
-        }
-        return ERROR;
+    int ret = codegen_typealias_body(c, s);
+    if (is_generic) {
+        RETURN_IF_ERROR_IN_SCOPE(c, ret);
+    }
+    else {
+        RETURN_IF_ERROR(ret);
     }
 
     if (is_generic) {
@@ -2653,11 +2649,9 @@ compiler_typealias(struct compiler *c, stmt_ty s)
         if (co == NULL) {
             return ERROR;
         }
-        if (compiler_make_closure(c, loc, co, 0) < 0) {
-            Py_DECREF(co);
-            return ERROR;
-        }
+        int ret = codegen_make_closure(c, loc, co, 0);
         Py_DECREF(co);
+        RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     }
@@ -2686,7 +2680,7 @@ static PyTypeObject * infer_type(expr_ty e);
    Emit a warning if any operand is a constant except named singletons.
  */
 static int
-check_compare(struct compiler *c, expr_ty e)
+codegen_check_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
     bool left = check_is_arg(e->v.Compare.left);
@@ -2713,8 +2707,8 @@ check_compare(struct compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int compiler_addcompare(struct compiler *c, location loc,
-                               cmpop_ty op)
+static int
+codegen_addcompare(struct compiler *c, location loc, cmpop_ty op)
 {
     int cmp;
     switch (op) {
@@ -2759,16 +2753,14 @@ static int compiler_addcompare(struct compiler *c, location loc,
     return SUCCESS;
 }
 
-
-
 static int
-compiler_jump_if(struct compiler *c, location loc,
-                 expr_ty e, jump_target_label next, int cond)
+codegen_jump_if(struct compiler *c, location loc,
+                expr_ty e, jump_target_label next, int cond)
 {
     switch (e->kind) {
     case UnaryOp_kind:
         if (e->v.UnaryOp.op == Not) {
-            return compiler_jump_if(c, loc, e->v.UnaryOp.operand, next, !cond);
+            return codegen_jump_if(c, loc, e->v.UnaryOp.operand, next, !cond);
         }
         /* fallback to general implementation */
         break;
@@ -2784,10 +2776,10 @@ compiler_jump_if(struct compiler *c, location loc,
         }
         for (i = 0; i < n; ++i) {
             RETURN_IF_ERROR(
-                compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, i), next2, cond2));
+                codegen_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, i), next2, cond2));
         }
         RETURN_IF_ERROR(
-            compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, n), next, cond));
+            codegen_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, n), next, cond));
         if (!SAME_LABEL(next2, next)) {
             USE_LABEL(c, next2);
         }
@@ -2797,14 +2789,14 @@ compiler_jump_if(struct compiler *c, location loc,
         NEW_JUMP_TARGET_LABEL(c, end);
         NEW_JUMP_TARGET_LABEL(c, next2);
         RETURN_IF_ERROR(
-            compiler_jump_if(c, loc, e->v.IfExp.test, next2, 0));
+            codegen_jump_if(c, loc, e->v.IfExp.test, next2, 0));
         RETURN_IF_ERROR(
-            compiler_jump_if(c, loc, e->v.IfExp.body, next, cond));
+            codegen_jump_if(c, loc, e->v.IfExp.body, next, cond));
         ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
 
         USE_LABEL(c, next2);
         RETURN_IF_ERROR(
-            compiler_jump_if(c, loc, e->v.IfExp.orelse, next, cond));
+            codegen_jump_if(c, loc, e->v.IfExp.orelse, next, cond));
 
         USE_LABEL(c, end);
         return SUCCESS;
@@ -2812,7 +2804,7 @@ compiler_jump_if(struct compiler *c, location loc,
     case Compare_kind: {
         Py_ssize_t n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
-            RETURN_IF_ERROR(check_compare(c, e));
+            RETURN_IF_ERROR(codegen_check_compare(c, e));
             NEW_JUMP_TARGET_LABEL(c, cleanup);
             VISIT(c, expr, e->v.Compare.left);
             for (Py_ssize_t i = 0; i < n; i++) {
@@ -2856,14 +2848,14 @@ compiler_jump_if(struct compiler *c, location loc,
 }
 
 static int
-compiler_ifexp(struct compiler *c, expr_ty e)
+codegen_ifexp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == IfExp_kind);
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, next);
 
     RETURN_IF_ERROR(
-        compiler_jump_if(c, LOC(e), e->v.IfExp.test, next, 0));
+        codegen_jump_if(c, LOC(e), e->v.IfExp.test, next, 0));
 
     VISIT(c, expr, e->v.IfExp.body);
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
@@ -2876,7 +2868,7 @@ compiler_ifexp(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_lambda(struct compiler *c, expr_ty e)
+codegen_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
     Py_ssize_t funcflags;
@@ -2884,23 +2876,26 @@ compiler_lambda(struct compiler *c, expr_ty e)
     assert(e->kind == Lambda_kind);
 
     location loc = LOC(e);
-    funcflags = compiler_default_arguments(c, loc, args);
-    if (funcflags == -1) {
-        return ERROR;
-    }
+    funcflags = codegen_default_arguments(c, loc, args);
+    RETURN_IF_ERROR(funcflags);
 
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_argcount = asdl_seq_LEN(args->args),
+        .u_posonlyargcount = asdl_seq_LEN(args->posonlyargs),
+        .u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs),
+    };
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
     RETURN_IF_ERROR(
         compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
-                             (void *)e, e->lineno, NULL));
+                             (void *)e, e->lineno, NULL, &umd));
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
     RETURN_IF_ERROR(compiler_add_const(c, Py_None));
 
-    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    assert(c->u->u_metadata.u_argcount == asdl_seq_LEN(args->args));
+    assert(c->u->u_metadata.u_posonlyargcount == asdl_seq_LEN(args->posonlyargs));
+    assert(c->u->u_metadata.u_kwonlyargcount == asdl_seq_LEN(args->kwonlyargs));
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (SYMTABLE_ENTRY(c)->ste_generator) {
         co = optimize_and_assemble(c, 0);
@@ -2915,17 +2910,14 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return ERROR;
     }
 
-    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
-        Py_DECREF(co);
-        return ERROR;
-    }
+    int ret = codegen_make_closure(c, loc, co, funcflags);
     Py_DECREF(co);
-
+    RETURN_IF_ERROR(ret);
     return SUCCESS;
 }
 
 static int
-compiler_if(struct compiler *c, stmt_ty s)
+codegen_if(struct compiler *c, stmt_ty s)
 {
     jump_target_label next;
     assert(s->kind == If_kind);
@@ -2938,7 +2930,7 @@ compiler_if(struct compiler *c, stmt_ty s)
         next = end;
     }
     RETURN_IF_ERROR(
-        compiler_jump_if(c, LOC(s), s->v.If.test, next, 0));
+        codegen_jump_if(c, LOC(s), s->v.If.test, next, 0));
 
     VISIT_SEQ(c, stmt, s->v.If.body);
     if (asdl_seq_LEN(s->v.If.orelse)) {
@@ -2953,7 +2945,7 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_for(struct compiler *c, stmt_ty s)
+codegen_for(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     NEW_JUMP_TARGET_LABEL(c, start);
@@ -3000,7 +2992,7 @@ compiler_for(struct compiler *c, stmt_ty s)
 
 
 static int
-compiler_async_for(struct compiler *c, stmt_ty s)
+codegen_async_for(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -3045,7 +3037,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_while(struct compiler *c, stmt_ty s)
+codegen_while(struct compiler *c, stmt_ty s)
 {
     NEW_JUMP_TARGET_LABEL(c, loop);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -3054,7 +3046,7 @@ compiler_while(struct compiler *c, stmt_ty s)
     USE_LABEL(c, loop);
 
     RETURN_IF_ERROR(compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
-    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
+    RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
     VISIT_SEQ(c, stmt, s->v.While.body);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
@@ -3071,7 +3063,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_return(struct compiler *c, stmt_ty s)
+codegen_return(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     int preserve_tos = ((s->v.Return.value != NULL) &&
@@ -3099,7 +3091,7 @@ compiler_return(struct compiler *c, stmt_ty s)
         ADDOP(c, loc, NOP);
     }
 
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, &loc, preserve_tos, NULL));
     if (s->v.Return.value == NULL) {
         ADDOP_LOAD_CONST(c, loc, Py_None);
     }
@@ -3112,29 +3104,29 @@ compiler_return(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_break(struct compiler *c, location loc)
+codegen_break(struct compiler *c, location loc)
 {
     struct fblockinfo *loop = NULL;
     location origin_loc = loc;
     /* Emit instruction with line number */
     ADDOP(c, loc, NOP);
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
         return compiler_error(c, origin_loc, "'break' outside loop");
     }
-    RETURN_IF_ERROR(compiler_unwind_fblock(c, &loc, loop, 0));
+    RETURN_IF_ERROR(codegen_unwind_fblock(c, &loc, loop, 0));
     ADDOP_JUMP(c, loc, JUMP, loop->fb_exit);
     return SUCCESS;
 }
 
 static int
-compiler_continue(struct compiler *c, location loc)
+codegen_continue(struct compiler *c, location loc)
 {
     struct fblockinfo *loop = NULL;
     location origin_loc = loc;
     /* Emit instruction with line number */
     ADDOP(c, loc, NOP);
-    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
+    RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
         return compiler_error(c, origin_loc, "'continue' not properly in loop");
     }
@@ -3173,7 +3165,7 @@ compiler_continue(struct compiler *c, location loc)
 */
 
 static int
-compiler_try_finally(struct compiler *c, stmt_ty s)
+codegen_try_finally(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -3191,7 +3183,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
                              s->v.Try.finalbody));
 
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
-        RETURN_IF_ERROR(compiler_try_except(c, s));
+        RETURN_IF_ERROR(codegen_try_except(c, s));
     }
     else {
         VISIT_SEQ(c, stmt, s->v.Try.body);
@@ -3224,7 +3216,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_try_star_finally(struct compiler *c, stmt_ty s)
+codegen_try_star_finally(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -3241,7 +3233,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
                              s->v.TryStar.finalbody));
 
     if (s->v.TryStar.handlers && asdl_seq_LEN(s->v.TryStar.handlers)) {
-        RETURN_IF_ERROR(compiler_try_star_except(c, s));
+        RETURN_IF_ERROR(codegen_try_star_except(c, s));
     }
     else {
         VISIT_SEQ(c, stmt, s->v.TryStar.body);
@@ -3304,7 +3296,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
    Of course, parts are not generated if Vi or Ei is not present.
 */
 static int
-compiler_try_except(struct compiler *c, stmt_ty s)
+codegen_try_except(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     Py_ssize_t i, n;
@@ -3486,7 +3478,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                               L0:       <next statement>
 */
 static int
-compiler_try_star_except(struct compiler *c, stmt_ty s)
+codegen_try_star_except(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -3653,27 +3645,27 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_try(struct compiler *c, stmt_ty s) {
+codegen_try(struct compiler *c, stmt_ty s) {
     if (s->v.Try.finalbody && asdl_seq_LEN(s->v.Try.finalbody))
-        return compiler_try_finally(c, s);
+        return codegen_try_finally(c, s);
     else
-        return compiler_try_except(c, s);
+        return codegen_try_except(c, s);
 }
 
 static int
-compiler_try_star(struct compiler *c, stmt_ty s)
+codegen_try_star(struct compiler *c, stmt_ty s)
 {
     if (s->v.TryStar.finalbody && asdl_seq_LEN(s->v.TryStar.finalbody)) {
-        return compiler_try_star_finally(c, s);
+        return codegen_try_star_finally(c, s);
     }
     else {
-        return compiler_try_star_except(c, s);
+        return codegen_try_star_except(c, s);
     }
 }
 
 static int
-compiler_import_as(struct compiler *c, location loc,
-                   identifier name, identifier asname)
+codegen_import_as(struct compiler *c, location loc,
+                  identifier name, identifier asname)
 {
     /* The IMPORT_NAME opcode was already generated.  This function
        merely needs to bind the result to a name.
@@ -3714,7 +3706,7 @@ compiler_import_as(struct compiler *c, location loc,
 }
 
 static int
-compiler_import(struct compiler *c, stmt_ty s)
+codegen_import(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     /* The Import node stores a module name like a.b.c as a single
@@ -3736,7 +3728,7 @@ compiler_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, loc, IMPORT_NAME, alias->name, names);
 
         if (alias->asname) {
-            r = compiler_import_as(c, loc, alias->name, alias->asname);
+            r = codegen_import_as(c, loc, alias->name, alias->asname);
             RETURN_IF_ERROR(r);
         }
         else {
@@ -3760,7 +3752,7 @@ compiler_import(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_from_import(struct compiler *c, stmt_ty s)
+codegen_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t n = asdl_seq_LEN(s->v.ImportFrom.names);
 
@@ -3811,7 +3803,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_assert(struct compiler *c, stmt_ty s)
+codegen_assert(struct compiler *c, stmt_ty s)
 {
     /* Always emit a warning if the test is a non-zero length tuple */
     if ((s->v.Assert.test->kind == Tuple_kind &&
@@ -3824,11 +3816,11 @@ compiler_assert(struct compiler *c, stmt_ty s)
             compiler_warn(c, LOC(s), "assertion is always true, "
                                      "perhaps remove parentheses?"));
     }
-    if (c->c_optimize) {
+    if (OPTIMIZATION_LEVEL(c)) {
         return SUCCESS;
     }
     NEW_JUMP_TARGET_LABEL(c, end);
-    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
+    RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
     ADDOP_I(c, LOC(s), LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
@@ -3841,9 +3833,9 @@ compiler_assert(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_stmt_expr(struct compiler *c, location loc, expr_ty value)
+codegen_stmt_expr(struct compiler *c, location loc, expr_ty value)
 {
-    if (c->c_interactive && c->c_nestlevel <= 1) {
+    if (IS_INTERACTIVE(c) && !IS_NESTED_SCOPE(c)) {
         VISIT(c, expr, value);
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
         ADDOP(c, NO_LOCATION, POP_TOP);
@@ -3867,13 +3859,13 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 
     switch (s->kind) {
     case FunctionDef_kind:
-        return compiler_function(c, s, 0);
+        return codegen_function(c, s, 0);
     case ClassDef_kind:
-        return compiler_class(c, s);
+        return codegen_class(c, s);
     case TypeAlias_kind:
-        return compiler_typealias(c, s);
+        return codegen_typealias(c, s);
     case Return_kind:
-        return compiler_return(c, s);
+        return codegen_return(c, s);
     case Delete_kind:
         VISIT_SEQ(c, expr, s->v.Delete.targets)
         break;
@@ -3891,17 +3883,17 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     }
     case AugAssign_kind:
-        return compiler_augassign(c, s);
+        return codegen_augassign(c, s);
     case AnnAssign_kind:
-        return compiler_annassign(c, s);
+        return codegen_annassign(c, s);
     case For_kind:
-        return compiler_for(c, s);
+        return codegen_for(c, s);
     case While_kind:
-        return compiler_while(c, s);
+        return codegen_while(c, s);
     case If_kind:
-        return compiler_if(c, s);
+        return codegen_if(c, s);
     case Match_kind:
-        return compiler_match(c, s);
+        return codegen_match(c, s);
     case Raise_kind:
     {
         Py_ssize_t n = 0;
@@ -3917,21 +3909,21 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     }
     case Try_kind:
-        return compiler_try(c, s);
+        return codegen_try(c, s);
     case TryStar_kind:
-        return compiler_try_star(c, s);
+        return codegen_try_star(c, s);
     case Assert_kind:
-        return compiler_assert(c, s);
+        return codegen_assert(c, s);
     case Import_kind:
-        return compiler_import(c, s);
+        return codegen_import(c, s);
     case ImportFrom_kind:
-        return compiler_from_import(c, s);
+        return codegen_from_import(c, s);
     case Global_kind:
     case Nonlocal_kind:
         break;
     case Expr_kind:
     {
-        return compiler_stmt_expr(c, LOC(s), s->v.Expr.value);
+        return codegen_stmt_expr(c, LOC(s), s->v.Expr.value);
     }
     case Pass_kind:
     {
@@ -3940,20 +3932,20 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     }
     case Break_kind:
     {
-        return compiler_break(c, LOC(s));
+        return codegen_break(c, LOC(s));
     }
     case Continue_kind:
     {
-        return compiler_continue(c, LOC(s));
+        return codegen_continue(c, LOC(s));
     }
     case With_kind:
-        return compiler_with(c, s, 0);
+        return codegen_with(c, s, 0);
     case AsyncFunctionDef_kind:
-        return compiler_function(c, s, 1);
+        return codegen_function(c, s, 1);
     case AsyncWith_kind:
-        return compiler_async_with(c, s, 0);
+        return codegen_async_with(c, s, 0);
     case AsyncFor_kind:
-        return compiler_async_for(c, s);
+        return codegen_async_for(c, s);
     }
 
     return SUCCESS;
@@ -4030,13 +4022,20 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
 
 
 static int
-addop_yield(struct compiler *c, location loc) {
+codegen_addop_yield(struct compiler *c, location loc) {
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     if (ste->ste_generator && ste->ste_coroutine) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
     ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
+    return SUCCESS;
+}
+
+static int
+codegen_load_classdict_freevar(struct compiler *c, location loc)
+{
+    ADDOP_N(c, loc, LOAD_DEREF, &_Py_ID(__classdict__), freevars);
     return SUCCESS;
 }
 
@@ -4119,8 +4118,7 @@ compiler_nameop(struct compiler *c, location loc,
             else if (SYMTABLE_ENTRY(c)->ste_can_see_class_scope) {
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the classdict
-                if (compiler_addop_o(c, loc, LOAD_DEREF,
-                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                if (codegen_load_classdict_freevar(c, loc) < 0) {
                     goto error;
                 }
             }
@@ -4146,8 +4144,7 @@ compiler_nameop(struct compiler *c, location loc,
             if (SYMTABLE_ENTRY(c)->ste_can_see_class_scope && scope == GLOBAL_IMPLICIT) {
                 op = LOAD_FROM_DICT_OR_GLOBALS;
                 // First load the classdict
-                if (compiler_addop_o(c, loc, LOAD_DEREF,
-                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                if (codegen_load_classdict_freevar(c, loc) < 0) {
                     goto error;
                 }
             } else {
@@ -4181,7 +4178,8 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return codegen_addop_i(INSTR_SEQUENCE(c), op, arg, loc);
+    ADDOP_I(c, loc, op, arg);
+    return SUCCESS;
 
 error:
     Py_DECREF(mangled);
@@ -4189,7 +4187,7 @@ error:
 }
 
 static int
-compiler_boolop(struct compiler *c, expr_ty e)
+codegen_boolop(struct compiler *c, expr_ty e)
 {
     int jumpi;
     Py_ssize_t i, n;
@@ -4344,7 +4342,7 @@ assignment_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
 }
 
 static int
-compiler_list(struct compiler *c, expr_ty e)
+codegen_list(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.List.elts;
@@ -4362,7 +4360,7 @@ compiler_list(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_tuple(struct compiler *c, expr_ty e)
+codegen_tuple(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.Tuple.elts;
@@ -4380,7 +4378,7 @@ compiler_tuple(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_set(struct compiler *c, expr_ty e)
+codegen_set(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
@@ -4400,7 +4398,7 @@ are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
 }
 
 static int
-compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
+codegen_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
     int big = n*2 > STACK_USE_GUIDELINE;
@@ -4422,7 +4420,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
 }
 
 static int
-compiler_dict(struct compiler *c, expr_ty e)
+codegen_dict(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t i, n, elements;
@@ -4435,7 +4433,7 @@ compiler_dict(struct compiler *c, expr_ty e)
         is_unpacking = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i) == NULL;
         if (is_unpacking) {
             if (elements) {
-                RETURN_IF_ERROR(compiler_subdict(c, e, i - elements, i));
+                RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
@@ -4451,7 +4449,7 @@ compiler_dict(struct compiler *c, expr_ty e)
         }
         else {
             if (elements*2 > STACK_USE_GUIDELINE) {
-                RETURN_IF_ERROR(compiler_subdict(c, e, i - elements, i + 1));
+                RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i + 1));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
@@ -4464,7 +4462,7 @@ compiler_dict(struct compiler *c, expr_ty e)
         }
     }
     if (elements) {
-        RETURN_IF_ERROR(compiler_subdict(c, e, n - elements, n));
+        RETURN_IF_ERROR(codegen_subdict(c, e, n - elements, n));
         if (have_dict) {
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
@@ -4477,12 +4475,12 @@ compiler_dict(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_compare(struct compiler *c, expr_ty e)
+codegen_compare(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t i, n;
 
-    RETURN_IF_ERROR(check_compare(c, e));
+    RETURN_IF_ERROR(codegen_check_compare(c, e));
     VISIT(c, expr, e->v.Compare.left);
     assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
     n = asdl_seq_LEN(e->v.Compare.ops) - 1;
@@ -4832,7 +4830,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     if (kwdsl) {
         VISIT_SEQ(c, keyword, kwds);
         RETURN_IF_ERROR(
-            compiler_call_simple_kw_helper(c, loc, kwds, kwdsl));
+            codegen_call_simple_kw_helper(c, loc, kwds, kwdsl));
         loc = update_start_location_to_match_attr(c, LOC(e), meth);
         ADDOP_I(c, loc, CALL_KW, argsl + kwdsl);
     }
@@ -4844,7 +4842,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 }
 
 static int
-validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
+codegen_validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
 {
     Py_ssize_t nkeywords = asdl_seq_LEN(keywords);
     for (Py_ssize_t i = 0; i < nkeywords; i++) {
@@ -4864,9 +4862,9 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
 }
 
 static int
-compiler_call(struct compiler *c, expr_ty e)
+codegen_call(struct compiler *c, expr_ty e)
 {
-    RETURN_IF_ERROR(validate_keywords(c, e->v.Call.keywords));
+    RETURN_IF_ERROR(codegen_validate_keywords(c, e->v.Call.keywords));
     int ret = maybe_optimize_method_call(c, e);
     if (ret < 0) {
         return ERROR;
@@ -4879,13 +4877,13 @@ compiler_call(struct compiler *c, expr_ty e)
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
     loc = LOC(e);
-    return compiler_call_helper(c, loc, 0,
-                                e->v.Call.args,
-                                e->v.Call.keywords);
+    return codegen_call_helper(c, loc, 0,
+                               e->v.Call.args,
+                               e->v.Call.keywords);
 }
 
 static int
-compiler_joined_str(struct compiler *c, expr_ty e)
+codegen_joined_str(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
@@ -4915,7 +4913,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
 
 /* Used to implement f-strings. Format a single value. */
 static int
-compiler_formatted_value(struct compiler *c, expr_ty e)
+codegen_formatted_value(struct compiler *c, expr_ty e)
 {
     /* Our oparg encodes 2 pieces of information: the conversion
        character, and whether or not a format_spec was provided.
@@ -4961,9 +4959,9 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_subkwargs(struct compiler *c, location loc,
-                   asdl_keyword_seq *keywords,
-                   Py_ssize_t begin, Py_ssize_t end)
+codegen_subkwargs(struct compiler *c, location loc,
+                  asdl_keyword_seq *keywords,
+                  Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
     keyword_ty kw;
@@ -4986,12 +4984,12 @@ compiler_subkwargs(struct compiler *c, location loc,
     return SUCCESS;
 }
 
-/* Used by compiler_call_helper and maybe_optimize_method_call to emit
+/* Used by codegen_call_helper and maybe_optimize_method_call to emit
  * a tuple of keyword names before CALL.
  */
 static int
-compiler_call_simple_kw_helper(struct compiler *c, location loc,
-                               asdl_keyword_seq *keywords, Py_ssize_t nkwelts)
+codegen_call_simple_kw_helper(struct compiler *c, location loc,
+                              asdl_keyword_seq *keywords, Py_ssize_t nkwelts)
 {
     PyObject *names;
     names = PyTuple_New(nkwelts);
@@ -5007,16 +5005,16 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
 }
 
 
-/* shared code between compiler_call and compiler_class */
+/* shared code between codegen_call and codegen_class */
 static int
-compiler_call_helper(struct compiler *c, location loc,
-                     int n, /* Args already pushed */
-                     asdl_expr_seq *args,
-                     asdl_keyword_seq *keywords)
+codegen_call_helper(struct compiler *c, location loc,
+                    int n, /* Args already pushed */
+                    asdl_expr_seq *args,
+                    asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
 
-    RETURN_IF_ERROR(validate_keywords(c, keywords));
+    RETURN_IF_ERROR(codegen_validate_keywords(c, keywords));
 
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
@@ -5046,7 +5044,7 @@ compiler_call_helper(struct compiler *c, location loc,
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
-            compiler_call_simple_kw_helper(c, loc, keywords, nkwelts));
+            codegen_call_simple_kw_helper(c, loc, keywords, nkwelts));
         ADDOP_I(c, loc, CALL_KW, n + nelts + nkwelts);
     }
     else {
@@ -5075,7 +5073,7 @@ ex_call:
             if (kw->arg == NULL) {
                 /* A keyword argument unpacking. */
                 if (nseen) {
-                    RETURN_IF_ERROR(compiler_subkwargs(c, loc, keywords, i - nseen, i));
+                    RETURN_IF_ERROR(codegen_subkwargs(c, loc, keywords, i - nseen, i));
                     if (have_dict) {
                         ADDOP_I(c, loc, DICT_MERGE, 1);
                     }
@@ -5095,7 +5093,7 @@ ex_call:
         }
         if (nseen) {
             /* Pack up any trailing keyword arguments. */
-            RETURN_IF_ERROR(compiler_subkwargs(c, loc, keywords, nkwelts - nseen, nkwelts));
+            RETURN_IF_ERROR(codegen_subkwargs(c, loc, keywords, nkwelts - nseen, nkwelts));
             if (have_dict) {
                 ADDOP_I(c, loc, DICT_MERGE, 1);
             }
@@ -5123,31 +5121,31 @@ ex_call:
 
 
 static int
-compiler_comprehension_generator(struct compiler *c, location loc,
-                                 asdl_comprehension_seq *generators, int gen_index,
-                                 int depth,
-                                 expr_ty elt, expr_ty val, int type,
-                                 int iter_on_stack)
+codegen_comprehension_generator(struct compiler *c, location loc,
+                                asdl_comprehension_seq *generators, int gen_index,
+                                int depth,
+                                expr_ty elt, expr_ty val, int type,
+                                int iter_on_stack)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
-        return compiler_async_comprehension_generator(
+        return codegen_async_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
             iter_on_stack);
     } else {
-        return compiler_sync_comprehension_generator(
+        return codegen_sync_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
             iter_on_stack);
     }
 }
 
 static int
-compiler_sync_comprehension_generator(struct compiler *c, location loc,
-                                      asdl_comprehension_seq *generators,
-                                      int gen_index, int depth,
-                                      expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack)
+codegen_sync_comprehension_generator(struct compiler *c, location loc,
+                                     asdl_comprehension_seq *generators,
+                                     int gen_index, int depth,
+                                     expr_ty elt, expr_ty val, int type,
+                                     int iter_on_stack)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -5161,8 +5159,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     if (!iter_on_stack) {
         if (gen_index == 0) {
-            /* Receive outermost iter as an implicit argument */
-            c->u->u_metadata.u_argcount = 1;
+            assert(c->u->u_metadata.u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
         }
         else {
@@ -5190,14 +5187,15 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
             }
             if (IS_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
-                ADDOP(c, loc, GET_ITER);
+                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
+
     if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
-        ADDOP_JUMP(c, loc, FOR_ITER, anchor);
+        ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
 
@@ -5205,14 +5203,14 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        RETURN_IF_ERROR(compiler_jump_if(c, loc, e, if_cleanup, 0));
+        RETURN_IF_ERROR(codegen_jump_if(c, loc, e, if_cleanup, 0));
     }
 
     if (++gen_index < asdl_seq_LEN(generators)) {
         RETURN_IF_ERROR(
-            compiler_comprehension_generator(c, loc,
-                                             generators, gen_index, depth,
-                                             elt, val, type, 0));
+            codegen_comprehension_generator(c, loc,
+                                            generators, gen_index, depth,
+                                            elt, val, type, 0));
     }
 
     location elt_loc = LOC(elt);
@@ -5267,7 +5265,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 }
 
 static int
-compiler_async_comprehension_generator(struct compiler *c, location loc,
+codegen_async_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
@@ -5282,8 +5280,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
 
     if (!iter_on_stack) {
         if (gen_index == 0) {
-            /* Receive outermost iter as an implicit argument */
-            c->u->u_metadata.u_argcount = 1;
+            assert(c->u->u_metadata.u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
         }
         else {
@@ -5309,15 +5306,15 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        RETURN_IF_ERROR(compiler_jump_if(c, loc, e, if_cleanup, 0));
+        RETURN_IF_ERROR(codegen_jump_if(c, loc, e, if_cleanup, 0));
     }
 
     depth++;
     if (++gen_index < asdl_seq_LEN(generators)) {
         RETURN_IF_ERROR(
-            compiler_comprehension_generator(c, loc,
-                                             generators, gen_index, depth,
-                                             elt, val, type, 0));
+            codegen_comprehension_generator(c, loc,
+                                            generators, gen_index, depth,
+                                            elt, val, type, 0));
     }
 
     location elt_loc = LOC(elt);
@@ -5623,8 +5620,8 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
 }
 
 static inline int
-compiler_comprehension_iter(struct compiler *c, location loc,
-                            comprehension_ty comp)
+codegen_comprehension_iter(struct compiler *c, location loc,
+                           comprehension_ty comp)
 {
     VISIT(c, expr, comp->iter);
     if (comp->is_async) {
@@ -5637,15 +5634,15 @@ compiler_comprehension_iter(struct compiler *c, location loc,
 }
 
 static int
-compiler_comprehension(struct compiler *c, expr_ty e, int type,
-                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
-                       expr_ty val)
+codegen_comprehension(struct compiler *c, expr_ty e, int type,
+                      identifier name, asdl_comprehension_seq *generators, expr_ty elt,
+                      expr_ty val)
 {
     PyCodeObject *co = NULL;
     inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
 #ifndef NDEBUG
-    int scope_type = c->u->u_scope_type;
+    int scope_type = SCOPE_TYPE(c);
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
 #endif
     PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c), (void *)e);
@@ -5659,7 +5656,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (compiler_comprehension_iter(c, loc, outermost)) {
+        if (codegen_comprehension_iter(c, loc, outermost)) {
             goto error;
         }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
@@ -5667,8 +5664,12 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         }
     }
     else {
+        /* Receive outermost iter as an implicit argument */
+        _PyCompile_CodeUnitMetadata umd = {
+            .u_argcount = 1,
+        };
         if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                                (void *)e, e->lineno, NULL) < 0) {
+                                 (void *)e, e->lineno, NULL, &umd) < 0) {
             goto error;
         }
     }
@@ -5704,8 +5705,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         }
     }
 
-    if (compiler_comprehension_generator(c, loc, generators, 0, 0,
-                                         elt, val, type, is_inlined) < 0) {
+    if (codegen_comprehension_generator(c, loc, generators, 0, 0,
+                                        elt, val, type, is_inlined) < 0) {
         goto error_in_scope;
     }
 
@@ -5720,7 +5721,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, LOC(e), RETURN_VALUE);
     }
     if (type == COMP_GENEXP) {
-        if (wrap_in_stopiteration_handler(c) < 0) {
+        if (codegen_wrap_in_stopiteration_handler(c) < 0) {
             goto error_in_scope;
         }
     }
@@ -5732,12 +5733,12 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     loc = LOC(e);
-    if (compiler_make_closure(c, loc, co, 0) < 0) {
+    if (codegen_make_closure(c, loc, co, 0) < 0) {
         goto error;
     }
     Py_CLEAR(co);
 
-    if (compiler_comprehension_iter(c, loc, outermost)) {
+    if (codegen_comprehension_iter(c, loc, outermost)) {
         goto error;
     }
 
@@ -5764,44 +5765,44 @@ error:
 }
 
 static int
-compiler_genexp(struct compiler *c, expr_ty e)
+codegen_genexp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == GeneratorExp_kind);
     _Py_DECLARE_STR(anon_genexpr, "<genexpr>");
-    return compiler_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
-                                  e->v.GeneratorExp.generators,
-                                  e->v.GeneratorExp.elt, NULL);
+    return codegen_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
+                                 e->v.GeneratorExp.generators,
+                                 e->v.GeneratorExp.elt, NULL);
 }
 
 static int
-compiler_listcomp(struct compiler *c, expr_ty e)
+codegen_listcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == ListComp_kind);
     _Py_DECLARE_STR(anon_listcomp, "<listcomp>");
-    return compiler_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
-                                  e->v.ListComp.generators,
-                                  e->v.ListComp.elt, NULL);
+    return codegen_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
+                                 e->v.ListComp.generators,
+                                 e->v.ListComp.elt, NULL);
 }
 
 static int
-compiler_setcomp(struct compiler *c, expr_ty e)
+codegen_setcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == SetComp_kind);
     _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
-    return compiler_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
-                                  e->v.SetComp.generators,
-                                  e->v.SetComp.elt, NULL);
+    return codegen_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
+                                 e->v.SetComp.generators,
+                                 e->v.SetComp.elt, NULL);
 }
 
 
 static int
-compiler_dictcomp(struct compiler *c, expr_ty e)
+codegen_dictcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == DictComp_kind);
     _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
-    return compiler_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
-                                  e->v.DictComp.generators,
-                                  e->v.DictComp.key, e->v.DictComp.value);
+    return codegen_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
+                                 e->v.DictComp.generators,
+                                 e->v.DictComp.key, e->v.DictComp.value);
 }
 
 
@@ -5814,7 +5815,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 
 
 static int
-compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
+codegen_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
     ADDOP(c, NO_LOCATION, TO_BOOL);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
@@ -5862,7 +5863,7 @@ compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
            raise
  */
 static int
-compiler_async_with(struct compiler *c, stmt_ty s, int pos)
+codegen_async_with(struct compiler *c, stmt_ty s, int pos)
 {
     location loc = LOC(s);
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
@@ -5907,7 +5908,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         VISIT_SEQ(c, stmt, s->v.AsyncWith.body)
     }
     else {
-        RETURN_IF_ERROR(compiler_async_with(c, s, pos));
+        RETURN_IF_ERROR(codegen_async_with(c, s, pos));
     }
 
     compiler_pop_fblock(c, ASYNC_WITH, block);
@@ -5918,7 +5919,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
-    RETURN_IF_ERROR(compiler_call_exit_with_nones(c, loc));
+    RETURN_IF_ERROR(codegen_call_exit_with_nones(c, loc));
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
@@ -5936,7 +5937,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
-    RETURN_IF_ERROR(compiler_with_except_finish(c, cleanup));
+    RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
 
     USE_LABEL(c, exit);
     return SUCCESS;
@@ -5965,7 +5966,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
  */
 
 static int
-compiler_with(struct compiler *c, stmt_ty s, int pos)
+codegen_with(struct compiler *c, stmt_ty s, int pos)
 {
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
@@ -6006,7 +6007,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         VISIT_SEQ(c, stmt, s->v.With.body)
     }
     else {
-        RETURN_IF_ERROR(compiler_with(c, s, pos));
+        RETURN_IF_ERROR(codegen_with(c, s, pos));
     }
 
     ADDOP(c, NO_LOCATION, POP_BLOCK);
@@ -6017,7 +6018,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
-    RETURN_IF_ERROR(compiler_call_exit_with_nones(c, loc));
+    RETURN_IF_ERROR(codegen_call_exit_with_nones(c, loc));
     ADDOP(c, loc, POP_TOP);
     ADDOP_JUMP(c, loc, JUMP, exit);
 
@@ -6027,7 +6028,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
     ADDOP(c, loc, PUSH_EXC_INFO);
     ADDOP(c, loc, WITH_EXCEPT_START);
-    RETURN_IF_ERROR(compiler_with_except_finish(c, cleanup));
+    RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
 
     USE_LABEL(c, exit);
     return SUCCESS;
@@ -6044,7 +6045,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.NamedExpr.target);
         break;
     case BoolOp_kind:
-        return compiler_boolop(c, e);
+        return codegen_boolop(c, e);
     case BinOp_kind:
         VISIT(c, expr, e->v.BinOp.left);
         VISIT(c, expr, e->v.BinOp.right);
@@ -6064,21 +6065,21 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         }
         break;
     case Lambda_kind:
-        return compiler_lambda(c, e);
+        return codegen_lambda(c, e);
     case IfExp_kind:
-        return compiler_ifexp(c, e);
+        return codegen_ifexp(c, e);
     case Dict_kind:
-        return compiler_dict(c, e);
+        return codegen_dict(c, e);
     case Set_kind:
-        return compiler_set(c, e);
+        return codegen_set(c, e);
     case GeneratorExp_kind:
-        return compiler_genexp(c, e);
+        return codegen_genexp(c, e);
     case ListComp_kind:
-        return compiler_listcomp(c, e);
+        return codegen_listcomp(c, e);
     case SetComp_kind:
-        return compiler_setcomp(c, e);
+        return codegen_setcomp(c, e);
     case DictComp_kind:
-        return compiler_dictcomp(c, e);
+        return codegen_dictcomp(c, e);
     case Yield_kind:
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
             return compiler_error(c, loc, "'yield' outside function");
@@ -6115,16 +6116,16 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         ADD_YIELD_FROM(c, loc, 1);
         break;
     case Compare_kind:
-        return compiler_compare(c, e);
+        return codegen_compare(c, e);
     case Call_kind:
-        return compiler_call(c, e);
+        return codegen_call(c, e);
     case Constant_kind:
         ADDOP_LOAD_CONST(c, loc, e->v.Constant.value);
         break;
     case JoinedStr_kind:
-        return compiler_joined_str(c, e);
+        return codegen_joined_str(c, e);
     case FormattedValue_kind:
-        return compiler_formatted_value(c, e);
+        return codegen_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx == Load) {
@@ -6157,12 +6158,12 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         }
         break;
     case Subscript_kind:
-        return compiler_subscript(c, e);
+        return codegen_subscript(c, e);
     case Starred_kind:
         switch (e->v.Starred.ctx) {
         case Store:
             /* In all legitimate cases, the Starred node was already replaced
-             * by compiler_list/compiler_tuple. XXX: is that okay? */
+             * by codegen_list/codegen_tuple. XXX: is that okay? */
             return compiler_error(c, loc,
                 "starred assignment target must be in a list or tuple");
         default:
@@ -6172,7 +6173,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         break;
     case Slice_kind:
     {
-        int n = compiler_slice(c, e);
+        int n = codegen_slice(c, e);
         RETURN_IF_ERROR(n);
         ADDOP_I(c, loc, BUILD_SLICE, n);
         break;
@@ -6181,9 +6182,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         return compiler_nameop(c, loc, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
     case List_kind:
-        return compiler_list(c, e);
+        return codegen_list(c, e);
     case Tuple_kind:
-        return compiler_tuple(c, e);
+        return codegen_tuple(c, e);
     }
     return SUCCESS;
 }
@@ -6196,7 +6197,7 @@ is_two_element_slice(expr_ty s)
 }
 
 static int
-compiler_augassign(struct compiler *c, stmt_ty s)
+codegen_augassign(struct compiler *c, stmt_ty s)
 {
     assert(s->kind == AugAssign_kind);
     expr_ty e = s->v.AugAssign.target;
@@ -6213,7 +6214,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
         if (is_two_element_slice(e->v.Subscript.slice)) {
-            RETURN_IF_ERROR(compiler_slice(c, e->v.Subscript.slice));
+            RETURN_IF_ERROR(codegen_slice(c, e->v.Subscript.slice));
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
@@ -6271,7 +6272,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 }
 
 static int
-check_ann_expr(struct compiler *c, expr_ty e)
+codegen_check_ann_expr(struct compiler *c, expr_ty e)
 {
     VISIT(c, expr, e);
     ADDOP(c, LOC(e), POP_TOP);
@@ -6279,7 +6280,7 @@ check_ann_expr(struct compiler *c, expr_ty e)
 }
 
 static int
-check_annotation(struct compiler *c, stmt_ty s)
+codegen_check_annotation(struct compiler *c, stmt_ty s)
 {
     /* Annotations of complex targets does not produce anything
        under annotations future */
@@ -6288,26 +6289,26 @@ check_annotation(struct compiler *c, stmt_ty s)
     }
 
     /* Annotations are only evaluated in a module or class. */
-    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
-        c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
-        return check_ann_expr(c, s->v.AnnAssign.annotation);
+    if (SCOPE_TYPE(c) == COMPILER_SCOPE_MODULE ||
+        SCOPE_TYPE(c) == COMPILER_SCOPE_CLASS) {
+        return codegen_check_ann_expr(c, s->v.AnnAssign.annotation);
     }
     return SUCCESS;
 }
 
 static int
-check_ann_subscr(struct compiler *c, expr_ty e)
+codegen_check_ann_subscr(struct compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
     switch (e->kind) {
     case Slice_kind:
-        if (e->v.Slice.lower && check_ann_expr(c, e->v.Slice.lower) < 0) {
+        if (e->v.Slice.lower && codegen_check_ann_expr(c, e->v.Slice.lower) < 0) {
             return ERROR;
         }
-        if (e->v.Slice.upper && check_ann_expr(c, e->v.Slice.upper) < 0) {
+        if (e->v.Slice.upper && codegen_check_ann_expr(c, e->v.Slice.upper) < 0) {
             return ERROR;
         }
-        if (e->v.Slice.step && check_ann_expr(c, e->v.Slice.step) < 0) {
+        if (e->v.Slice.step && codegen_check_ann_expr(c, e->v.Slice.step) < 0) {
             return ERROR;
         }
         return SUCCESS;
@@ -6316,17 +6317,38 @@ check_ann_subscr(struct compiler *c, expr_ty e)
         asdl_expr_seq *elts = e->v.Tuple.elts;
         Py_ssize_t i, n = asdl_seq_LEN(elts);
         for (i = 0; i < n; i++) {
-            RETURN_IF_ERROR(check_ann_subscr(c, asdl_seq_GET(elts, i)));
+            RETURN_IF_ERROR(codegen_check_ann_subscr(c, asdl_seq_GET(elts, i)));
         }
         return SUCCESS;
     }
     default:
-        return check_ann_expr(c, e);
+        return codegen_check_ann_expr(c, e);
     }
 }
 
 static int
-compiler_annassign(struct compiler *c, stmt_ty s)
+compiler_add_deferred_annotation(struct compiler *c, stmt_ty s)
+{
+    if (c->u->u_deferred_annotations == NULL) {
+        c->u->u_deferred_annotations = PyList_New(0);
+        if (c->u->u_deferred_annotations == NULL) {
+            return ERROR;
+        }
+    }
+    PyObject *ptr = PyLong_FromVoidPtr((void *)s);
+    if (ptr == NULL) {
+        return ERROR;
+    }
+    if (PyList_Append(c->u->u_deferred_annotations, ptr) < 0) {
+        Py_DECREF(ptr);
+        return ERROR;
+    }
+    Py_DECREF(ptr);
+    return SUCCESS;
+}
+
+static int
+codegen_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
@@ -6344,8 +6366,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     case Name_kind:
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
-            (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
-             c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+            (SCOPE_TYPE(c) == COMPILER_SCOPE_MODULE ||
+             SCOPE_TYPE(c) == COMPILER_SCOPE_CLASS)) {
             if (future_annotations) {
                 VISIT(c, annexpr, s->v.AnnAssign.annotation);
                 ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
@@ -6354,34 +6376,20 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                 ADDOP(c, loc, STORE_SUBSCR);
             }
             else {
-                if (c->u->u_deferred_annotations == NULL) {
-                    c->u->u_deferred_annotations = PyList_New(0);
-                    if (c->u->u_deferred_annotations == NULL) {
-                        return ERROR;
-                    }
-                }
-                PyObject *ptr = PyLong_FromVoidPtr((void *)s);
-                if (ptr == NULL) {
-                    return ERROR;
-                }
-                if (PyList_Append(c->u->u_deferred_annotations, ptr) < 0) {
-                    Py_DECREF(ptr);
-                    return ERROR;
-                }
-                Py_DECREF(ptr);
+                RETURN_IF_ERROR(compiler_add_deferred_annotation(c, s));
             }
         }
         break;
     case Attribute_kind:
         if (!s->v.AnnAssign.value &&
-            check_ann_expr(c, targ->v.Attribute.value) < 0) {
+            codegen_check_ann_expr(c, targ->v.Attribute.value) < 0) {
             return ERROR;
         }
         break;
     case Subscript_kind:
         if (!s->v.AnnAssign.value &&
-            (check_ann_expr(c, targ->v.Subscript.value) < 0 ||
-             check_ann_subscr(c, targ->v.Subscript.slice) < 0)) {
+            (codegen_check_ann_expr(c, targ->v.Subscript.value) < 0 ||
+             codegen_check_ann_subscr(c, targ->v.Subscript.slice) < 0)) {
                 return ERROR;
         }
         break;
@@ -6392,7 +6400,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     /* Annotation is evaluated last. */
-    if (future_annotations && !s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
+    if (future_annotations && !s->v.AnnAssign.simple && codegen_check_annotation(c, s) < 0) {
         return ERROR;
     }
     return SUCCESS;
@@ -6464,7 +6472,7 @@ compiler_warn(struct compiler *c, location loc,
 }
 
 static int
-compiler_subscript(struct compiler *c, expr_ty e)
+codegen_subscript(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     expr_context_ty ctx = e->v.Subscript.ctx;
@@ -6477,7 +6485,7 @@ compiler_subscript(struct compiler *c, expr_ty e)
 
     VISIT(c, expr, e->v.Subscript.value);
     if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
-        RETURN_IF_ERROR(compiler_slice(c, e->v.Subscript.slice));
+        RETURN_IF_ERROR(codegen_slice(c, e->v.Subscript.slice));
         if (ctx == Load) {
             ADDOP(c, loc, BINARY_SLICE);
         }
@@ -6502,7 +6510,7 @@ compiler_subscript(struct compiler *c, expr_ty e)
 /* Returns the number of the values emitted,
  * thus are needed to build the slice, or -1 if there is an error. */
 static int
-compiler_slice(struct compiler *c, expr_ty s)
+codegen_slice(struct compiler *c, expr_ty s)
 {
     int n = 2;
     assert(s->kind == Slice_kind);
@@ -6532,9 +6540,9 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 // PEP 634: Structural Pattern Matching
 
-// To keep things simple, all compiler_pattern_* and pattern_helper_* routines
-// follow the convention of consuming TOS (the subject for the given pattern)
-// and calling jump_to_fail_pop on failure (no match).
+// To keep things simple, all codegen_pattern_* routines follow the convention
+// of consuming TOS (the subject for the given pattern) and calling
+// jump_to_fail_pop on failure (no match).
 
 // When calling into these routines, it's important that pc->on_top be kept
 // updated to reflect the current number of items that we are using on the top
@@ -6612,7 +6620,7 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
 }
 
 static int
-compiler_error_duplicate_store(struct compiler *c, location loc, identifier n)
+codegen_error_duplicate_store(struct compiler *c, location loc, identifier n)
 {
     return compiler_error(c, loc,
         "multiple assignments to name %R in pattern", n);
@@ -6620,7 +6628,7 @@ compiler_error_duplicate_store(struct compiler *c, location loc, identifier n)
 
 // Duplicate the effect of 3.10's ROT_* instructions using SWAPs.
 static int
-pattern_helper_rotate(struct compiler *c, location loc, Py_ssize_t count)
+codegen_pattern_helper_rotate(struct compiler *c, location loc, Py_ssize_t count)
 {
     while (1 < count) {
         ADDOP_I(c, loc, SWAP, count--);
@@ -6629,8 +6637,8 @@ pattern_helper_rotate(struct compiler *c, location loc, Py_ssize_t count)
 }
 
 static int
-pattern_helper_store_name(struct compiler *c, location loc,
-                          identifier n, pattern_context *pc)
+codegen_pattern_helper_store_name(struct compiler *c, location loc,
+                                  identifier n, pattern_context *pc)
 {
     if (n == NULL) {
         ADDOP(c, loc, POP_TOP);
@@ -6640,19 +6648,19 @@ pattern_helper_store_name(struct compiler *c, location loc,
     int duplicate = PySequence_Contains(pc->stores, n);
     RETURN_IF_ERROR(duplicate);
     if (duplicate) {
-        return compiler_error_duplicate_store(c, loc, n);
+        return codegen_error_duplicate_store(c, loc, n);
     }
     // Rotate this object underneath any items we need to preserve:
     Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
-    RETURN_IF_ERROR(pattern_helper_rotate(c, loc, rotations));
+    RETURN_IF_ERROR(codegen_pattern_helper_rotate(c, loc, rotations));
     RETURN_IF_ERROR(PyList_Append(pc->stores, n));
     return SUCCESS;
 }
 
 
 static int
-pattern_unpack_helper(struct compiler *c, location loc,
-                      asdl_pattern_seq *elts)
+codegen_pattern_unpack_helper(struct compiler *c, location loc,
+                              asdl_pattern_seq *elts)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     int seen_star = 0;
@@ -6684,7 +6692,7 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
                                asdl_pattern_seq *patterns, Py_ssize_t star,
                                pattern_context *pc)
 {
-    RETURN_IF_ERROR(pattern_unpack_helper(c, loc, patterns));
+    RETURN_IF_ERROR(codegen_pattern_unpack_helper(c, loc, patterns));
     Py_ssize_t size = asdl_seq_LEN(patterns);
     // We've now got a bunch of new subjects on the stack. They need to remain
     // there after each subpattern match:
@@ -6693,7 +6701,7 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
         // One less item to keep track of each time we loop through:
         pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
+        RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
     }
     return SUCCESS;
 }
@@ -6730,7 +6738,7 @@ pattern_helper_sequence_subscr(struct compiler *c, location loc,
             ADDOP_BINARY(c, loc, Sub);
         }
         ADDOP(c, loc, BINARY_SUBSCR);
-        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
+        RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
     }
     // Pop the subject, we're done with it:
     pc->on_top--;
@@ -6738,20 +6746,20 @@ pattern_helper_sequence_subscr(struct compiler *c, location loc,
     return SUCCESS;
 }
 
-// Like compiler_pattern, but turn off checks for irrefutability.
+// Like codegen_pattern, but turn off checks for irrefutability.
 static int
-compiler_pattern_subpattern(struct compiler *c,
+codegen_pattern_subpattern(struct compiler *c,
                             pattern_ty p, pattern_context *pc)
 {
     int allow_irrefutable = pc->allow_irrefutable;
     pc->allow_irrefutable = 1;
-    RETURN_IF_ERROR(compiler_pattern(c, p, pc));
+    RETURN_IF_ERROR(codegen_pattern(c, p, pc));
     pc->allow_irrefutable = allow_irrefutable;
     return SUCCESS;
 }
 
 static int
-compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
     if (p->v.MatchAs.pattern == NULL) {
@@ -6764,24 +6772,24 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
             const char *e = "wildcard makes remaining patterns unreachable";
             return compiler_error(c, LOC(p), e);
         }
-        return pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc);
+        return codegen_pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc);
     }
     // Need to make a copy for (possibly) storing later:
     pc->on_top++;
     ADDOP_I(c, LOC(p), COPY, 1);
-    RETURN_IF_ERROR(compiler_pattern(c, p->v.MatchAs.pattern, pc));
+    RETURN_IF_ERROR(codegen_pattern(c, p->v.MatchAs.pattern, pc));
     // Success! Store it:
     pc->on_top--;
-    RETURN_IF_ERROR(pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc));
+    RETURN_IF_ERROR(codegen_pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc));
     return SUCCESS;
 }
 
 static int
-compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchStar_kind);
     RETURN_IF_ERROR(
-        pattern_helper_store_name(c, LOC(p), p->v.MatchStar.name, pc));
+        codegen_pattern_helper_store_name(c, LOC(p), p->v.MatchStar.name, pc));
     return SUCCESS;
 }
 
@@ -6806,7 +6814,7 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
 }
 
 static int
-compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchClass_kind);
     asdl_pattern_seq *patterns = p->v.MatchClass.patterns;
@@ -6863,15 +6871,15 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
             ADDOP(c, LOC(p), POP_TOP);
             continue;
         }
-        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
+        RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
     }
     // Success! Pop the tuple of attributes:
     return SUCCESS;
 }
 
 static int
-compiler_pattern_mapping(struct compiler *c, pattern_ty p,
-                         pattern_context *pc)
+codegen_pattern_mapping(struct compiler *c, pattern_ty p,
+                        pattern_context *pc)
 {
     assert(p->kind == MatchMapping_kind);
     asdl_expr_seq *keys = p->v.MatchMapping.keys;
@@ -6970,7 +6978,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
     for (Py_ssize_t i = 0; i < size; i++) {
         pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
+        RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
     }
     // If we get this far, it's a match! Whatever happens next should consume
     // the tuple of keys and the subject:
@@ -6991,7 +6999,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
             ADDOP_I(c, LOC(p), SWAP, 2);            // [copy, keys..., copy, key]
             ADDOP(c, LOC(p), DELETE_SUBSCR);        // [copy, keys...]
         }
-        RETURN_IF_ERROR(pattern_helper_store_name(c, LOC(p), star_target, pc));
+        RETURN_IF_ERROR(codegen_pattern_helper_store_name(c, LOC(p), star_target, pc));
     }
     else {
         ADDOP(c, LOC(p), POP_TOP);  // Tuple of keys.
@@ -7005,7 +7013,7 @@ error:
 }
 
 static int
-compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -7032,7 +7040,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop_size = 0;
         pc->on_top = 0;
         if (codegen_addop_i(INSTR_SEQUENCE(c), COPY, 1, LOC(alt)) < 0 ||
-            compiler_pattern(c, alt, pc) < 0) {
+            codegen_pattern(c, alt, pc) < 0) {
             goto error;
         }
         // Success!
@@ -7086,7 +7094,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // Do the same thing to the stack, using several
                     // rotations:
                     while (rotations--) {
-                        if (pattern_helper_rotate(c, LOC(alt), icontrol + 1) < 0) {
+                        if (codegen_pattern_helper_rotate(c, LOC(alt), icontrol + 1) < 0) {
                             goto error;
                         }
                     }
@@ -7122,7 +7130,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     Py_ssize_t nrots = nstores + 1 + pc->on_top + PyList_GET_SIZE(pc->stores);
     for (Py_ssize_t i = 0; i < nstores; i++) {
         // Rotate this capture to its proper place on the stack:
-        if (pattern_helper_rotate(c, LOC(p), nrots) < 0) {
+        if (codegen_pattern_helper_rotate(c, LOC(p), nrots) < 0) {
             goto error;
         }
         // Update the list of previous stores with this new name, checking for
@@ -7133,7 +7141,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             goto error;
         }
         if (dupe) {
-            compiler_error_duplicate_store(c, LOC(p), name);
+            codegen_error_duplicate_store(c, LOC(p), name);
             goto error;
         }
         if (PyList_Append(pc->stores, name)) {
@@ -7157,8 +7165,8 @@ error:
 
 
 static int
-compiler_pattern_sequence(struct compiler *c, pattern_ty p,
-                          pattern_context *pc)
+codegen_pattern_sequence(struct compiler *c, pattern_ty p,
+                         pattern_context *pc)
 {
     assert(p->kind == MatchSequence_kind);
     asdl_pattern_seq *patterns = p->v.MatchSequence.patterns;
@@ -7215,7 +7223,7 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
 }
 
 static int
-compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
     expr_ty value = p->v.MatchValue.value;
@@ -7231,7 +7239,7 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchSingleton_kind);
     ADDOP_LOAD_CONST(c, LOC(p), p->v.MatchSingleton.value);
@@ -7241,25 +7249,25 @@ compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc
 }
 
 static int
-compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     switch (p->kind) {
         case MatchValue_kind:
-            return compiler_pattern_value(c, p, pc);
+            return codegen_pattern_value(c, p, pc);
         case MatchSingleton_kind:
-            return compiler_pattern_singleton(c, p, pc);
+            return codegen_pattern_singleton(c, p, pc);
         case MatchSequence_kind:
-            return compiler_pattern_sequence(c, p, pc);
+            return codegen_pattern_sequence(c, p, pc);
         case MatchMapping_kind:
-            return compiler_pattern_mapping(c, p, pc);
+            return codegen_pattern_mapping(c, p, pc);
         case MatchClass_kind:
-            return compiler_pattern_class(c, p, pc);
+            return codegen_pattern_class(c, p, pc);
         case MatchStar_kind:
-            return compiler_pattern_star(c, p, pc);
+            return codegen_pattern_star(c, p, pc);
         case MatchAs_kind:
-            return compiler_pattern_as(c, p, pc);
+            return codegen_pattern_as(c, p, pc);
         case MatchOr_kind:
-            return compiler_pattern_or(c, p, pc);
+            return codegen_pattern_or(c, p, pc);
     }
     // AST validator shouldn't let this happen, but if it does,
     // just fail, don't crash out of the interpreter
@@ -7268,7 +7276,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
+codegen_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
     VISIT(c, expr, s->v.Match.subject);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -7292,7 +7300,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         pc->fail_pop_size = 0;
         pc->on_top = 0;
         // NOTE: Can't use returning macros here (they'll leak pc->stores)!
-        if (compiler_pattern(c, m->pattern, pc) < 0) {
+        if (codegen_pattern(c, m->pattern, pc) < 0) {
             Py_DECREF(pc->stores);
             return ERROR;
         }
@@ -7310,14 +7318,14 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         // NOTE: Returning macros are safe again.
         if (m->guard) {
             RETURN_IF_ERROR(ensure_fail_pop(c, pc, 0));
-            RETURN_IF_ERROR(compiler_jump_if(c, LOC(m->pattern), m->guard, pc->fail_pop[0], 0));
+            RETURN_IF_ERROR(codegen_jump_if(c, LOC(m->pattern), m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
             ADDOP(c, LOC(m->pattern), POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body
@@ -7336,7 +7344,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, LOC(m->pattern), NOP);
         }
         if (m->guard) {
-            RETURN_IF_ERROR(compiler_jump_if(c, LOC(m->pattern), m->guard, end, 0));
+            RETURN_IF_ERROR(codegen_jump_if(c, LOC(m->pattern), m->guard, end, 0));
         }
         VISIT_SEQ(c, stmt, m->body);
     }
@@ -7345,11 +7353,11 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 }
 
 static int
-compiler_match(struct compiler *c, stmt_ty s)
+codegen_match(struct compiler *c, stmt_ty s)
 {
     pattern_context pc;
     pc.fail_pop = NULL;
-    int result = compiler_match_inner(c, s, &pc);
+    int result = codegen_match_inner(c, s, &pc);
     PyMem_Free(pc.fail_pop);
     return result;
 }
@@ -7383,6 +7391,12 @@ consts_dict_keys_inorder(PyObject *dict)
 }
 
 static PyObject *
+compiler_mangle(struct compiler *c, PyObject *name)
+{
+    return _Py_Mangle(c->u->u_private, name);
+}
+
+static PyObject *
 compiler_maybe_mangle(struct compiler *c, PyObject *name)
 {
     return _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
@@ -7410,6 +7424,39 @@ static PySTEntryObject *
 compiler_symtable_entry(struct compiler *c)
 {
     return c->u->u_ste;
+}
+
+static int
+compiler_optimization_level(struct compiler *c)
+{
+    return c->c_optimize;
+}
+
+static int
+compiler_is_interactive(struct compiler *c)
+{
+    return c->c_interactive;
+}
+
+static int
+compiler_is_nested_scope(struct compiler *c)
+{
+    assert(c->c_stack != NULL);
+    assert(PyList_CheckExact(c->c_stack));
+    return PyList_GET_SIZE(c->c_stack) > 0;
+}
+
+static int
+compiler_scope_type(struct compiler *c)
+{
+    return c->u->u_scope_type;
+}
+
+static PyObject *
+compiler_qualname(struct compiler *c)
+{
+    assert(c->u->u_metadata.u_qualname);
+    return c->u->u_metadata.u_qualname;
 }
 
 static int
@@ -7672,7 +7719,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         return NULL;
     }
 
-    if (compiler_enter_anonymous_scope(c, mod) < 0) {
+    if (codegen_enter_anonymous_scope(c, mod) < 0) {
         return NULL;
     }
     if (compiler_codegen(c, mod) < 0) {
