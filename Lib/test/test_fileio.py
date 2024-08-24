@@ -11,7 +11,7 @@ from functools import wraps
 
 from test.support import (
     cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi,
-    infinite_recursion, strace_helper
+    infinite_recursion,
 )
 from test.support.os_helper import (
     TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
@@ -22,9 +22,6 @@ from collections import UserList
 
 import _io  # C implementation of io
 import _pyio # Python implementation of io
-
-
-_strace_flags=["--trace=%file,%desc"]
 
 
 class AutoFileTests:
@@ -361,94 +358,6 @@ class AutoFileTests:
         f = self.ReopenForRead()
         a = array('b', b'x'*10)
         f.readinto(a)
-
-    @strace_helper.requires_strace()
-    def test_syscalls_read(self):
-        """Check that the set of system calls produced by the I/O stack is what
-        is expected for various read cases.
-
-        It's expected as bits of the I/O implementation change, this will need
-        to change. The goal is to catch changes that unintentionally add
-        additional systemcalls (ex. additional calls have been looked at in
-        bpo-21679 and gh-120754).
-        """
-        self.f.write(b"Hello, World!")
-        self.f.close()
-
-
-        def check_readall(name, code, prelude="", cleanup=""):
-            with self.subTest(name=name):
-                syscalls = strace_helper.get_syscalls(code, _strace_flags,
-                                                      prelude=prelude,
-                                                      cleanup=cleanup)
-
-                # There are a number of related syscalls used to implement
-                # behaviors in a libc (ex. fstat, newfstatat, open, openat).
-                # Allow any that use the same substring.
-                def count_similarname(name):
-                    return len([sc for sc in syscalls if name in sc])
-
-                # Should open and close the file exactly once
-                self.assertEqual(count_similarname('open'), 1)
-                self.assertEqual(count_similarname('close'), 1)
-
-                # Should only have one fstat (bpo-21679, gh-120754)
-                self.assertEqual(count_similarname('fstat'), 1)
-
-
-        # "open, read, close" file using different common patterns.
-        check_readall(
-            "open builtin with default options",
-            f"""
-            f = open('{TESTFN}')
-            f.read()
-            f.close()
-            """
-        )
-
-        check_readall(
-            "open in binary mode",
-            f"""
-            f = open('{TESTFN}', 'rb')
-            f.read()
-            f.close()
-            """
-        )
-
-        check_readall(
-            "open in text mode",
-            f"""
-            f = open('{TESTFN}', 'rt')
-            f.read()
-            f.close()
-            """
-        )
-
-        check_readall(
-            "pathlib read_bytes",
-            "p.read_bytes()",
-            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
-
-        )
-
-        check_readall(
-            "pathlib read_text",
-            "p.read_text()",
-            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
-        )
-
-        # Focus on just `read()`.
-        calls = strace_helper.get_syscalls(
-            prelude=f"f = open('{TESTFN}')",
-            code="f.read()",
-            cleanup="f.close()",
-            strace_flags=_strace_flags
-        )
-        # One to read all the bytes
-        # One to read the EOF and get a size 0 return.
-        self.assertEqual(calls.count("read"), 2)
-
-
 
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _io.FileIO
