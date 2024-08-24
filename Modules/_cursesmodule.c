@@ -199,6 +199,36 @@ static char *screen_encoding = NULL;
                         "must call start_color() first");       \
         return 0; }
 
+#define CHECK_NOT_NULL_OR_ABORT(VALUE)  \
+    do {                                \
+        if ((VALUE) == NULL) {          \
+            goto abort;                 \
+        }                               \
+    } while (0)
+
+#define CHECK_RET_CODE_OR_ABORT(STATUS) \
+    do {                                \
+        if ((STATUS) < 0) {             \
+            goto abort;                 \
+        }                               \
+    } while (0)
+
+#define CHECK_RET_FLAG_OR_ABORT(STATUS) \
+    do {                                \
+        if (!(STATUS)) {                \
+            goto abort;                 \
+        }                               \
+    } while (0)
+
+#define SET_MOD_DICT_LONG_VALUE(STRING, VALUE)              \
+    do {                                                    \
+        PyObject *o = PyLong_FromLong((long) (VALUE));      \
+        CHECK_NOT_NULL_OR_ABORT(o);                         \
+        int rc = PyDict_SetItemString(ModDict, STRING, o);  \
+        Py_DECREF(o);                                       \
+        CHECK_RET_CODE_OR_ABORT(rc);                        \
+    } while (0)
+
 /* Utility Functions */
 
 /*
@@ -3284,87 +3314,83 @@ _curses_initscr_impl(PyObject *module)
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
-#define SetDictInt(string,ch)                                           \
-    do {                                                                \
-        PyObject *o = PyLong_FromLong((long) (ch));                     \
-        if (o && PyDict_SetItemString(ModDict, string, o) == 0)     {   \
-            Py_DECREF(o);                                               \
-        }                                                               \
-    } while (0)
 
     /* Here are some graphic symbols you can use */
-    SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
-    SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
-    SetDictInt("ACS_URCORNER",      (ACS_URCORNER));
-    SetDictInt("ACS_LRCORNER",      (ACS_LRCORNER));
-    SetDictInt("ACS_LTEE",          (ACS_LTEE));
-    SetDictInt("ACS_RTEE",          (ACS_RTEE));
-    SetDictInt("ACS_BTEE",          (ACS_BTEE));
-    SetDictInt("ACS_TTEE",          (ACS_TTEE));
-    SetDictInt("ACS_HLINE",         (ACS_HLINE));
-    SetDictInt("ACS_VLINE",         (ACS_VLINE));
-    SetDictInt("ACS_PLUS",          (ACS_PLUS));
+    SET_MOD_DICT_LONG_VALUE("ACS_ULCORNER",      (ACS_ULCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_LLCORNER",      (ACS_LLCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_URCORNER",      (ACS_URCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_LRCORNER",      (ACS_LRCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_LTEE",          (ACS_LTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_RTEE",          (ACS_RTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_BTEE",          (ACS_BTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_TTEE",          (ACS_TTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_HLINE",         (ACS_HLINE));
+    SET_MOD_DICT_LONG_VALUE("ACS_VLINE",         (ACS_VLINE));
+    SET_MOD_DICT_LONG_VALUE("ACS_PLUS",          (ACS_PLUS));
 #if !defined(__hpux) || defined(HAVE_NCURSES_H)
     /* On HP/UX 11, these are of type cchar_t, which is not an
        integral type. If this is a problem on more platforms, a
        configure test should be added to determine whether ACS_S1
        is of integral type. */
-    SetDictInt("ACS_S1",            (ACS_S1));
-    SetDictInt("ACS_S9",            (ACS_S9));
-    SetDictInt("ACS_DIAMOND",       (ACS_DIAMOND));
-    SetDictInt("ACS_CKBOARD",       (ACS_CKBOARD));
-    SetDictInt("ACS_DEGREE",        (ACS_DEGREE));
-    SetDictInt("ACS_PLMINUS",       (ACS_PLMINUS));
-    SetDictInt("ACS_BULLET",        (ACS_BULLET));
-    SetDictInt("ACS_LARROW",        (ACS_LARROW));
-    SetDictInt("ACS_RARROW",        (ACS_RARROW));
-    SetDictInt("ACS_DARROW",        (ACS_DARROW));
-    SetDictInt("ACS_UARROW",        (ACS_UARROW));
-    SetDictInt("ACS_BOARD",         (ACS_BOARD));
-    SetDictInt("ACS_LANTERN",       (ACS_LANTERN));
-    SetDictInt("ACS_BLOCK",         (ACS_BLOCK));
+    SET_MOD_DICT_LONG_VALUE("ACS_S1",            (ACS_S1));
+    SET_MOD_DICT_LONG_VALUE("ACS_S9",            (ACS_S9));
+    SET_MOD_DICT_LONG_VALUE("ACS_DIAMOND",       (ACS_DIAMOND));
+    SET_MOD_DICT_LONG_VALUE("ACS_CKBOARD",       (ACS_CKBOARD));
+    SET_MOD_DICT_LONG_VALUE("ACS_DEGREE",        (ACS_DEGREE));
+    SET_MOD_DICT_LONG_VALUE("ACS_PLMINUS",       (ACS_PLMINUS));
+    SET_MOD_DICT_LONG_VALUE("ACS_BULLET",        (ACS_BULLET));
+    SET_MOD_DICT_LONG_VALUE("ACS_LARROW",        (ACS_LARROW));
+    SET_MOD_DICT_LONG_VALUE("ACS_RARROW",        (ACS_RARROW));
+    SET_MOD_DICT_LONG_VALUE("ACS_DARROW",        (ACS_DARROW));
+    SET_MOD_DICT_LONG_VALUE("ACS_UARROW",        (ACS_UARROW));
+    SET_MOD_DICT_LONG_VALUE("ACS_BOARD",         (ACS_BOARD));
+    SET_MOD_DICT_LONG_VALUE("ACS_LANTERN",       (ACS_LANTERN));
+    SET_MOD_DICT_LONG_VALUE("ACS_BLOCK",         (ACS_BLOCK));
 #endif
-    SetDictInt("ACS_BSSB",          (ACS_ULCORNER));
-    SetDictInt("ACS_SSBB",          (ACS_LLCORNER));
-    SetDictInt("ACS_BBSS",          (ACS_URCORNER));
-    SetDictInt("ACS_SBBS",          (ACS_LRCORNER));
-    SetDictInt("ACS_SBSS",          (ACS_RTEE));
-    SetDictInt("ACS_SSSB",          (ACS_LTEE));
-    SetDictInt("ACS_SSBS",          (ACS_BTEE));
-    SetDictInt("ACS_BSSS",          (ACS_TTEE));
-    SetDictInt("ACS_BSBS",          (ACS_HLINE));
-    SetDictInt("ACS_SBSB",          (ACS_VLINE));
-    SetDictInt("ACS_SSSS",          (ACS_PLUS));
+    SET_MOD_DICT_LONG_VALUE("ACS_BSSB",          (ACS_ULCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_SSBB",          (ACS_LLCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_BBSS",          (ACS_URCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_SBBS",          (ACS_LRCORNER));
+    SET_MOD_DICT_LONG_VALUE("ACS_SBSS",          (ACS_RTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_SSSB",          (ACS_LTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_SSBS",          (ACS_BTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_BSSS",          (ACS_TTEE));
+    SET_MOD_DICT_LONG_VALUE("ACS_BSBS",          (ACS_HLINE));
+    SET_MOD_DICT_LONG_VALUE("ACS_SBSB",          (ACS_VLINE));
+    SET_MOD_DICT_LONG_VALUE("ACS_SSSS",          (ACS_PLUS));
 
     /* The following are never available with strict SYSV curses */
 #ifdef ACS_S3
-    SetDictInt("ACS_S3",            (ACS_S3));
+    SET_MOD_DICT_LONG_VALUE("ACS_S3",            (ACS_S3));
 #endif
 #ifdef ACS_S7
-    SetDictInt("ACS_S7",            (ACS_S7));
+    SET_MOD_DICT_LONG_VALUE("ACS_S7",            (ACS_S7));
 #endif
 #ifdef ACS_LEQUAL
-    SetDictInt("ACS_LEQUAL",        (ACS_LEQUAL));
+    SET_MOD_DICT_LONG_VALUE("ACS_LEQUAL",        (ACS_LEQUAL));
 #endif
 #ifdef ACS_GEQUAL
-    SetDictInt("ACS_GEQUAL",        (ACS_GEQUAL));
+    SET_MOD_DICT_LONG_VALUE("ACS_GEQUAL",        (ACS_GEQUAL));
 #endif
 #ifdef ACS_PI
-    SetDictInt("ACS_PI",            (ACS_PI));
+    SET_MOD_DICT_LONG_VALUE("ACS_PI",            (ACS_PI));
 #endif
 #ifdef ACS_NEQUAL
-    SetDictInt("ACS_NEQUAL",        (ACS_NEQUAL));
+    SET_MOD_DICT_LONG_VALUE("ACS_NEQUAL",        (ACS_NEQUAL));
 #endif
 #ifdef ACS_STERLING
-    SetDictInt("ACS_STERLING",      (ACS_STERLING));
+    SET_MOD_DICT_LONG_VALUE("ACS_STERLING",      (ACS_STERLING));
 #endif
 
-    SetDictInt("LINES", LINES);
-    SetDictInt("COLS", COLS);
+    SET_MOD_DICT_LONG_VALUE("LINES", LINES);
+    SET_MOD_DICT_LONG_VALUE("COLS", COLS);
 
     winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
+    CHECK_NOT_NULL_OR_ABORT(winobj);
     screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
+abort:
+    return NULL;
 }
 
 /*[clinic input]
@@ -3970,46 +3996,25 @@ _curses_qiflush_impl(PyObject *module, int flag)
 static int
 update_lines_cols(void)
 {
-    PyObject *o;
-    PyObject *m = PyImport_ImportModule("curses");
-
-    if (!m)
-        return 0;
-
+    PyObject *m = NULL, *o = NULL;
+    m = PyImport_ImportModule("curses");
+    CHECK_NOT_NULL_OR_ABORT(m);
     o = PyLong_FromLong(LINES);
-    if (!o) {
-        Py_DECREF(m);
-        return 0;
-    }
-    if (PyObject_SetAttrString(m, "LINES", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
-    if (PyDict_SetItemString(ModDict, "LINES", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
+    CHECK_NOT_NULL_OR_ABORT(o);
+    CHECK_RET_CODE_OR_ABORT(PyObject_SetAttrString(m, "LINES", o));
+    CHECK_RET_CODE_OR_ABORT(PyDict_SetItemString(ModDict, "LINES", o));
     Py_DECREF(o);
     o = PyLong_FromLong(COLS);
-    if (!o) {
-        Py_DECREF(m);
-        return 0;
-    }
-    if (PyObject_SetAttrString(m, "COLS", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
-    if (PyDict_SetItemString(ModDict, "COLS", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
+    CHECK_NOT_NULL_OR_ABORT(o);
+    CHECK_RET_CODE_OR_ABORT(PyObject_SetAttrString(m, "COLS", o));
+    CHECK_RET_CODE_OR_ABORT(PyDict_SetItemString(ModDict, "COLS", o));
     Py_DECREF(o);
     Py_DECREF(m);
     return 1;
+abort:
+    Py_XDECREF(o);
+    Py_XDECREF(m);
+    return 0;
 }
 
 /*[clinic input]
@@ -4021,10 +4026,10 @@ static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
 /*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
 {
-    if (!update_lines_cols()) {
-        return NULL;
-    }
+    CHECK_RET_FLAG_OR_ABORT(update_lines_cols());
     Py_RETURN_NONE;
+abort:
+    return NULL;
 }
 
 #endif
@@ -4101,18 +4106,15 @@ static PyObject *
 _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
 /*[clinic end generated code: output=56d6bcc5194ad055 input=0fca02ebad5ffa82]*/
 {
-    PyObject *result;
-
     PyCursesInitialised;
 
-    result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
-    if (!result)
-        return NULL;
-    if (!update_lines_cols()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    PyObject *result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
+    CHECK_NOT_NULL_OR_ABORT(result);
+    CHECK_RET_FLAG_OR_ABORT(update_lines_cols());
     return result;
+abort:
+    Py_XDECREF(result);
+    return NULL;
 }
 
 #endif
@@ -4140,18 +4142,15 @@ static PyObject *
 _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
 /*[clinic end generated code: output=9e26d8b9ea311ed2 input=2197edd05b049ed4]*/
 {
-    PyObject *result;
-
     PyCursesInitialised;
 
-    result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
-    if (!result)
-        return NULL;
-    if (!update_lines_cols()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    PyObject *result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
+    CHECK_NOT_NULL_OR_ABORT(result);
+    CHECK_RET_FLAG_OR_ABORT(update_lines_cols());
     return result;
+abort:
+    Py_XDECREF(result);
+    return NULL;
 }
 #endif /* HAVE_CURSES_RESIZE_TERM */
 
@@ -4210,35 +4209,20 @@ static PyObject *
 _curses_start_color_impl(PyObject *module)
 /*[clinic end generated code: output=8b772b41d8090ede input=0ca0ecb2b77e1a12]*/
 {
-    int code;
-    PyObject *c, *cp;
-
     PyCursesInitialised;
 
-    code = start_color();
-    if (code != ERR) {
+    if (start_color() != ERR) {
         initialisedcolors = TRUE;
-        c = PyLong_FromLong((long) COLORS);
-        if (c == NULL)
-            return NULL;
-        if (PyDict_SetItemString(ModDict, "COLORS", c) < 0) {
-            Py_DECREF(c);
-            return NULL;
-        }
-        Py_DECREF(c);
-        cp = PyLong_FromLong((long) COLOR_PAIRS);
-        if (cp == NULL)
-            return NULL;
-        if (PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp) < 0) {
-            Py_DECREF(cp);
-            return NULL;
-        }
-        Py_DECREF(cp);
+        SET_MOD_DICT_LONG_VALUE("COLORS", COLORS);
+        SET_MOD_DICT_LONG_VALUE("COLOR_PAIRS", COLOR_PAIRS);
         Py_RETURN_NONE;
-    } else {
+    }
+    else {
         PyErr_SetString(PyCursesError, "start_color() returned ERR");
         return NULL;
     }
+abort:
+    return NULL;
 }
 
 /*[clinic input]
@@ -4595,10 +4579,7 @@ static PyStructSequence_Desc ncurses_version_desc = {
 static PyObject *
 make_ncurses_version(PyTypeObject *type)
 {
-    PyObject *ncurses_version;
-    int pos = 0;
-
-    ncurses_version = PyStructSequence_New(type);
+    PyObject *ncurses_version = PyStructSequence_New(type);
     if (ncurses_version == NULL) {
         return NULL;
     }
@@ -4610,19 +4591,21 @@ make_ncurses_version(PyTypeObject *type)
         minor = NCURSES_VERSION_MINOR;
         patch = NCURSES_VERSION_PATCH;
     }
-#define SetIntItem(flag) \
-    PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
-    if (PyErr_Occurred()) { \
-        Py_CLEAR(ncurses_version); \
-        return NULL; \
-    }
+#define SET_VERSION_COMPONENT(INDEX, VALUE)                     \
+    do {                                                        \
+        PyObject *o = PyLong_FromLong(VALUE);                   \
+        CHECK_NOT_NULL_OR_ABORT(o);                             \
+        PyStructSequence_SET_ITEM(ncurses_version, INDEX, o);   \
+    } while (0)
 
-    SetIntItem(major)
-    SetIntItem(minor)
-    SetIntItem(patch)
-#undef SetIntItem
-
+    SET_VERSION_COMPONENT(0, major);
+    SET_VERSION_COMPONENT(1, minor);
+    SET_VERSION_COMPONENT(2, patch);
+#undef SET_VERSION_COMPONENT
     return ncurses_version;
+abort:
+    Py_DECREF(ncurses_version);
+    return NULL;
 }
 
 #endif /* NCURSES_VERSION */
@@ -4764,22 +4747,22 @@ PyInit__curses(void)
 
     /* Create the module and add the functions */
     m = PyModule_Create(&_cursesmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 #ifdef Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
-    if (d == NULL)
-        return NULL;
+    CHECK_NOT_NULL_OR_ABORT(d);
     ModDict = d; /* For PyCurses_InitScr to use later */
 
     void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
     if (PyCurses_API == NULL) {
         PyErr_NoMemory();
-        return NULL;
+        goto abort;
     }
     /* Initialize the C API pointer array */
     PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
@@ -4793,150 +4776,149 @@ PyInit__curses(void)
     if (c_api_object == NULL) {
         Py_DECREF(PyCurses_API[0]);
         PyMem_Free(PyCurses_API);
-        return NULL;
+        goto abort;
     }
-    if (PyDict_SetItemString(d, "_C_API", c_api_object) < 0) {
-        Py_DECREF(c_api_object);
-        return NULL;
-    }
+    int rc = PyDict_SetItemString(d, "_C_API", c_api_object);
     Py_DECREF(c_api_object);
-
+    CHECK_RET_CODE_OR_ABORT(rc);
     /* For exception curses.error */
     PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", PyCursesError);
-
+    CHECK_NOT_NULL_OR_ABORT(PyCursesError);
+    rc = PyDict_SetItemString(d, "error", PyCursesError);
+    CHECK_RET_CODE_OR_ABORT(rc);
     /* Make the version available */
     v = PyBytes_FromString(PyCursesVersion);
-    PyDict_SetItemString(d, "version", v);
-    PyDict_SetItemString(d, "__version__", v);
+    CHECK_NOT_NULL_OR_ABORT(v);
+    rc = PyDict_SetItemString(d, "version", v);
     Py_DECREF(v);
+    CHECK_RET_CODE_OR_ABORT(rc);
+    Py_INCREF(v);
+    rc = PyDict_SetItemString(d, "__version__", v);
+    Py_CLEAR(v);
+    CHECK_RET_CODE_OR_ABORT(rc);
 
 #ifdef NCURSES_VERSION
     /* ncurses_version */
     PyTypeObject *version_type;
     version_type = _PyStructSequence_NewType(&ncurses_version_desc,
                                              Py_TPFLAGS_DISALLOW_INSTANTIATION);
-    if (version_type == NULL) {
-        return NULL;
-    }
+    CHECK_NOT_NULL_OR_ABORT(version_type);
     v = make_ncurses_version(version_type);
     Py_DECREF(version_type);
-    if (v == NULL) {
-        return NULL;
-    }
-    PyDict_SetItemString(d, "ncurses_version", v);
-    Py_DECREF(v);
+    CHECK_NOT_NULL_OR_ABORT(v);
+    rc = PyDict_SetItemString(d, "ncurses_version", v);
+    Py_CLEAR(v);
+    CHECK_RET_CODE_OR_ABORT(rc);
 #endif /* NCURSES_VERSION */
 
-    SetDictInt("ERR", ERR);
-    SetDictInt("OK", OK);
+    SET_MOD_DICT_LONG_VALUE("ERR", ERR);
+    SET_MOD_DICT_LONG_VALUE("OK", OK);
 
     /* Here are some attributes you can add to chars to print */
 
-    SetDictInt("A_ATTRIBUTES",      A_ATTRIBUTES);
-    SetDictInt("A_NORMAL",              A_NORMAL);
-    SetDictInt("A_STANDOUT",            A_STANDOUT);
-    SetDictInt("A_UNDERLINE",           A_UNDERLINE);
-    SetDictInt("A_REVERSE",             A_REVERSE);
-    SetDictInt("A_BLINK",               A_BLINK);
-    SetDictInt("A_DIM",                 A_DIM);
-    SetDictInt("A_BOLD",                A_BOLD);
-    SetDictInt("A_ALTCHARSET",          A_ALTCHARSET);
-    SetDictInt("A_INVIS",           A_INVIS);
-    SetDictInt("A_PROTECT",         A_PROTECT);
-    SetDictInt("A_CHARTEXT",        A_CHARTEXT);
-    SetDictInt("A_COLOR",           A_COLOR);
+    SET_MOD_DICT_LONG_VALUE("A_ATTRIBUTES",      A_ATTRIBUTES);
+    SET_MOD_DICT_LONG_VALUE("A_NORMAL",              A_NORMAL);
+    SET_MOD_DICT_LONG_VALUE("A_STANDOUT",            A_STANDOUT);
+    SET_MOD_DICT_LONG_VALUE("A_UNDERLINE",           A_UNDERLINE);
+    SET_MOD_DICT_LONG_VALUE("A_REVERSE",             A_REVERSE);
+    SET_MOD_DICT_LONG_VALUE("A_BLINK",               A_BLINK);
+    SET_MOD_DICT_LONG_VALUE("A_DIM",                 A_DIM);
+    SET_MOD_DICT_LONG_VALUE("A_BOLD",                A_BOLD);
+    SET_MOD_DICT_LONG_VALUE("A_ALTCHARSET",          A_ALTCHARSET);
+    SET_MOD_DICT_LONG_VALUE("A_INVIS",           A_INVIS);
+    SET_MOD_DICT_LONG_VALUE("A_PROTECT",         A_PROTECT);
+    SET_MOD_DICT_LONG_VALUE("A_CHARTEXT",        A_CHARTEXT);
+    SET_MOD_DICT_LONG_VALUE("A_COLOR",           A_COLOR);
 
     /* The following are never available with strict SYSV curses */
 #ifdef A_HORIZONTAL
-    SetDictInt("A_HORIZONTAL",      A_HORIZONTAL);
+    SET_MOD_DICT_LONG_VALUE("A_HORIZONTAL",      A_HORIZONTAL);
 #endif
 #ifdef A_LEFT
-    SetDictInt("A_LEFT",            A_LEFT);
+    SET_MOD_DICT_LONG_VALUE("A_LEFT",            A_LEFT);
 #endif
 #ifdef A_LOW
-    SetDictInt("A_LOW",             A_LOW);
+    SET_MOD_DICT_LONG_VALUE("A_LOW",             A_LOW);
 #endif
 #ifdef A_RIGHT
-    SetDictInt("A_RIGHT",           A_RIGHT);
+    SET_MOD_DICT_LONG_VALUE("A_RIGHT",           A_RIGHT);
 #endif
 #ifdef A_TOP
-    SetDictInt("A_TOP",             A_TOP);
+    SET_MOD_DICT_LONG_VALUE("A_TOP",             A_TOP);
 #endif
 #ifdef A_VERTICAL
-    SetDictInt("A_VERTICAL",        A_VERTICAL);
+    SET_MOD_DICT_LONG_VALUE("A_VERTICAL",        A_VERTICAL);
 #endif
 
     /* ncurses extension */
 #ifdef A_ITALIC
-    SetDictInt("A_ITALIC",          A_ITALIC);
+    SET_MOD_DICT_LONG_VALUE("A_ITALIC",          A_ITALIC);
 #endif
 
-    SetDictInt("COLOR_BLACK",       COLOR_BLACK);
-    SetDictInt("COLOR_RED",         COLOR_RED);
-    SetDictInt("COLOR_GREEN",       COLOR_GREEN);
-    SetDictInt("COLOR_YELLOW",      COLOR_YELLOW);
-    SetDictInt("COLOR_BLUE",        COLOR_BLUE);
-    SetDictInt("COLOR_MAGENTA",     COLOR_MAGENTA);
-    SetDictInt("COLOR_CYAN",        COLOR_CYAN);
-    SetDictInt("COLOR_WHITE",       COLOR_WHITE);
+    SET_MOD_DICT_LONG_VALUE("COLOR_BLACK",       COLOR_BLACK);
+    SET_MOD_DICT_LONG_VALUE("COLOR_RED",         COLOR_RED);
+    SET_MOD_DICT_LONG_VALUE("COLOR_GREEN",       COLOR_GREEN);
+    SET_MOD_DICT_LONG_VALUE("COLOR_YELLOW",      COLOR_YELLOW);
+    SET_MOD_DICT_LONG_VALUE("COLOR_BLUE",        COLOR_BLUE);
+    SET_MOD_DICT_LONG_VALUE("COLOR_MAGENTA",     COLOR_MAGENTA);
+    SET_MOD_DICT_LONG_VALUE("COLOR_CYAN",        COLOR_CYAN);
+    SET_MOD_DICT_LONG_VALUE("COLOR_WHITE",       COLOR_WHITE);
 
 #ifdef NCURSES_MOUSE_VERSION
     /* Mouse-related constants */
-    SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
-    SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);
-    SetDictInt("BUTTON1_CLICKED",          BUTTON1_CLICKED);
-    SetDictInt("BUTTON1_DOUBLE_CLICKED",   BUTTON1_DOUBLE_CLICKED);
-    SetDictInt("BUTTON1_TRIPLE_CLICKED",   BUTTON1_TRIPLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON1_PRESSED",          BUTTON1_PRESSED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON1_RELEASED",         BUTTON1_RELEASED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON1_CLICKED",          BUTTON1_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON1_DOUBLE_CLICKED",   BUTTON1_DOUBLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON1_TRIPLE_CLICKED",   BUTTON1_TRIPLE_CLICKED);
 
-    SetDictInt("BUTTON2_PRESSED",          BUTTON2_PRESSED);
-    SetDictInt("BUTTON2_RELEASED",         BUTTON2_RELEASED);
-    SetDictInt("BUTTON2_CLICKED",          BUTTON2_CLICKED);
-    SetDictInt("BUTTON2_DOUBLE_CLICKED",   BUTTON2_DOUBLE_CLICKED);
-    SetDictInt("BUTTON2_TRIPLE_CLICKED",   BUTTON2_TRIPLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON2_PRESSED",          BUTTON2_PRESSED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON2_RELEASED",         BUTTON2_RELEASED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON2_CLICKED",          BUTTON2_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON2_DOUBLE_CLICKED",   BUTTON2_DOUBLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON2_TRIPLE_CLICKED",   BUTTON2_TRIPLE_CLICKED);
 
-    SetDictInt("BUTTON3_PRESSED",          BUTTON3_PRESSED);
-    SetDictInt("BUTTON3_RELEASED",         BUTTON3_RELEASED);
-    SetDictInt("BUTTON3_CLICKED",          BUTTON3_CLICKED);
-    SetDictInt("BUTTON3_DOUBLE_CLICKED",   BUTTON3_DOUBLE_CLICKED);
-    SetDictInt("BUTTON3_TRIPLE_CLICKED",   BUTTON3_TRIPLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON3_PRESSED",          BUTTON3_PRESSED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON3_RELEASED",         BUTTON3_RELEASED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON3_CLICKED",          BUTTON3_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON3_DOUBLE_CLICKED",   BUTTON3_DOUBLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON3_TRIPLE_CLICKED",   BUTTON3_TRIPLE_CLICKED);
 
-    SetDictInt("BUTTON4_PRESSED",          BUTTON4_PRESSED);
-    SetDictInt("BUTTON4_RELEASED",         BUTTON4_RELEASED);
-    SetDictInt("BUTTON4_CLICKED",          BUTTON4_CLICKED);
-    SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
-    SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON4_PRESSED",          BUTTON4_PRESSED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON4_RELEASED",         BUTTON4_RELEASED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON4_CLICKED",          BUTTON4_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
 
 #if NCURSES_MOUSE_VERSION > 1
-    SetDictInt("BUTTON5_PRESSED",          BUTTON5_PRESSED);
-    SetDictInt("BUTTON5_RELEASED",         BUTTON5_RELEASED);
-    SetDictInt("BUTTON5_CLICKED",          BUTTON5_CLICKED);
-    SetDictInt("BUTTON5_DOUBLE_CLICKED",   BUTTON5_DOUBLE_CLICKED);
-    SetDictInt("BUTTON5_TRIPLE_CLICKED",   BUTTON5_TRIPLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON5_PRESSED",          BUTTON5_PRESSED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON5_RELEASED",         BUTTON5_RELEASED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON5_CLICKED",          BUTTON5_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON5_DOUBLE_CLICKED",   BUTTON5_DOUBLE_CLICKED);
+    SET_MOD_DICT_LONG_VALUE("BUTTON5_TRIPLE_CLICKED",   BUTTON5_TRIPLE_CLICKED);
 #endif
 
-    SetDictInt("BUTTON_SHIFT",             BUTTON_SHIFT);
-    SetDictInt("BUTTON_CTRL",              BUTTON_CTRL);
-    SetDictInt("BUTTON_ALT",               BUTTON_ALT);
+    SET_MOD_DICT_LONG_VALUE("BUTTON_SHIFT",             BUTTON_SHIFT);
+    SET_MOD_DICT_LONG_VALUE("BUTTON_CTRL",              BUTTON_CTRL);
+    SET_MOD_DICT_LONG_VALUE("BUTTON_ALT",               BUTTON_ALT);
 
-    SetDictInt("ALL_MOUSE_EVENTS",         ALL_MOUSE_EVENTS);
-    SetDictInt("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
+    SET_MOD_DICT_LONG_VALUE("ALL_MOUSE_EVENTS",         ALL_MOUSE_EVENTS);
+    SET_MOD_DICT_LONG_VALUE("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
 #endif
     /* Now set everything up for KEY_ variables */
     {
         int key;
         char *key_n;
-        char *key_n2;
         for (key=KEY_MIN;key < KEY_MAX; key++) {
             key_n = (char *)keyname(key);
             if (key_n == NULL || strcmp(key_n,"UNKNOWN KEY")==0)
                 continue;
             if (strncmp(key_n,"KEY_F(",6)==0) {
                 char *p1, *p2;
-                key_n2 = PyMem_Malloc(strlen(key_n)+1);
+                char *key_n2 = PyMem_Malloc(strlen(key_n)+1);
                 if (!key_n2) {
                     PyErr_NoMemory();
-                    break;
+                    goto abort;
                 }
                 p1 = key_n;
                 p2 = key_n2;
@@ -4948,18 +4930,25 @@ PyInit__curses(void)
                     p1++;
                 }
                 *p2 = (char)0;
-            } else
-                key_n2 = key_n;
-            SetDictInt(key_n2,key);
-            if (key_n2 != key_n)
+                SET_MOD_DICT_LONG_VALUE(key_n2, key);
                 PyMem_Free(key_n2);
+            }
+            else {
+                SET_MOD_DICT_LONG_VALUE(key_n, key);
+            }
         }
-        SetDictInt("KEY_MIN", KEY_MIN);
-        SetDictInt("KEY_MAX", KEY_MAX);
+        SET_MOD_DICT_LONG_VALUE("KEY_MIN", KEY_MIN);
+        SET_MOD_DICT_LONG_VALUE("KEY_MAX", KEY_MAX);
     }
 
-    if (PyModule_AddType(m, &PyCursesWindow_Type) < 0) {
-        return NULL;
-    }
+    CHECK_RET_CODE_OR_ABORT(PyModule_AddType(m, &PyCursesWindow_Type));
     return m;
+abort:
+    Py_DECREF(m);
+    return NULL;
 }
+
+#undef SET_MOD_DICT_LONG_VALUE
+#undef CHECK_RET_FLAG_OR_ABORT
+#undef CHECK_RET_CODE_OR_ABORT
+#undef CHECK_NOT_NULL_OR_ABORT
