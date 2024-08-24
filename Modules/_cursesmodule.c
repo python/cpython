@@ -199,6 +199,35 @@ static char *screen_encoding = NULL;
                         "must call start_color() first");       \
         return 0; }
 
+/* Jump to the 'error' label if STATUS < 0. */
+#define CHECK_RET_CODE(STATUS) \
+    do {                                \
+        if ((STATUS) < 0) {             \
+            assert(PyErr_Occurred());   \
+            goto error;                 \
+        }                               \
+    } while (0)
+
+/*
+ * Equivalent to DICT[NAME] = VALUE; on error, jump to the 'error' label.
+ *
+ * Parameters
+ *
+ *  PyObject *      DICT    The Python dict to alter.
+ *  const char *    NAME    The constant name.
+ *  int or long     VALUE   The constant value.
+ */
+#define DICT_ADD_INT_VALUE(DICT, NAME, VALUE)                   \
+    do {                                                        \
+        PyObject *value = PyLong_FromLong((long)(VALUE));       \
+        if (value == NULL) {                                    \
+            goto error;                                         \
+        }                                                       \
+        int rc = PyDict_SetItemString((DICT), (NAME), value);   \
+        Py_DECREF(value);                                       \
+        CHECK_RET_CODE(rc);                                     \
+    } while (0)
+
 /* Utility Functions */
 
 /*
@@ -716,9 +745,14 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
 static void
 PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 {
-    if (wo->win != stdscr) delwin(wo->win);
-    if (wo->encoding != NULL)
+    if (wo->win != stdscr) {
+        // Silently ignore errors in delwin(3) (e.g., passing
+        // a NULL pointer results in delwin() returning ERR).
+        (void)delwin(wo->win);
+    }
+    if (wo->encoding != NULL) {
         PyMem_Free(wo->encoding);
+    }
     PyObject_Free(wo);
 }
 
@@ -3266,7 +3300,6 @@ _curses_initscr_impl(PyObject *module)
 /*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
 {
     WINDOW *win;
-    PyCursesWindowObject *winobj;
 
     if (initialised) {
         wrefresh(stdscr);
@@ -3284,15 +3317,10 @@ _curses_initscr_impl(PyObject *module)
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
-#define SetDictInt(string,ch)                                           \
-    do {                                                                \
-        PyObject *o = PyLong_FromLong((long) (ch));                     \
-        if (o && PyDict_SetItemString(ModDict, string, o) == 0)     {   \
-            Py_DECREF(o);                                               \
-        }                                                               \
-    } while (0)
 
     /* Here are some graphic symbols you can use */
+#define SetDictInt(NAME, VALUE) DICT_ADD_INT_VALUE(ModDict, (NAME), (VALUE))
+
     SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
     SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
     SetDictInt("ACS_URCORNER",      (ACS_URCORNER));
@@ -3361,10 +3389,17 @@ _curses_initscr_impl(PyObject *module)
 
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
+#undef SetDictInt
 
-    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
+    PyCursesWindowObject *winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
+    if (winobj == NULL) {
+        return NULL;
+    }
     screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
+
+error:
+    return NULL;
 }
 
 /*[clinic input]
@@ -3970,46 +4005,36 @@ _curses_qiflush_impl(PyObject *module, int flag)
 static int
 update_lines_cols(void)
 {
-    PyObject *o;
-    PyObject *m = PyImport_ImportModule("curses");
-
-    if (!m)
-        return 0;
-
+    PyObject *exposed_module = NULL, *o = NULL;
+    exposed_module = PyImport_ImportModule("curses");
+    if (exposed_module == NULL) {
+        goto error;
+    }
+    PyObject *exposed_module_dict = PyModule_GetDict(exposed_module); // borrowed
+    if (exposed_module_dict == NULL) {
+        goto error;
+    }
     o = PyLong_FromLong(LINES);
-    if (!o) {
-        Py_DECREF(m);
-        return 0;
+    if (o == NULL) {
+        goto error;
     }
-    if (PyObject_SetAttrString(m, "LINES", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
-    if (PyDict_SetItemString(ModDict, "LINES", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
+    CHECK_RET_CODE(PyDict_SetItemString(exposed_module_dict, "LINES", o));
+    CHECK_RET_CODE(PyDict_SetItemString(ModDict, "LINES", o));
     Py_DECREF(o);
     o = PyLong_FromLong(COLS);
-    if (!o) {
-        Py_DECREF(m);
-        return 0;
+    if (o == NULL) {
+        goto error;
     }
-    if (PyObject_SetAttrString(m, "COLS", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
-    if (PyDict_SetItemString(ModDict, "COLS", o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
-    }
+    CHECK_RET_CODE(PyDict_SetItemString(exposed_module_dict, "COLS", o));
+    CHECK_RET_CODE(PyDict_SetItemString(ModDict, "COLS", o));
     Py_DECREF(o);
-    Py_DECREF(m);
+    Py_DECREF(exposed_module);
     return 1;
+
+error:
+    Py_XDECREF(o);
+    Py_XDECREF(exposed_module);
+    return 0;
 }
 
 /*[clinic input]
@@ -4210,35 +4235,20 @@ static PyObject *
 _curses_start_color_impl(PyObject *module)
 /*[clinic end generated code: output=8b772b41d8090ede input=0ca0ecb2b77e1a12]*/
 {
-    int code;
-    PyObject *c, *cp;
-
     PyCursesInitialised;
 
-    code = start_color();
-    if (code != ERR) {
-        initialisedcolors = TRUE;
-        c = PyLong_FromLong((long) COLORS);
-        if (c == NULL)
-            return NULL;
-        if (PyDict_SetItemString(ModDict, "COLORS", c) < 0) {
-            Py_DECREF(c);
-            return NULL;
-        }
-        Py_DECREF(c);
-        cp = PyLong_FromLong((long) COLOR_PAIRS);
-        if (cp == NULL)
-            return NULL;
-        if (PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp) < 0) {
-            Py_DECREF(cp);
-            return NULL;
-        }
-        Py_DECREF(cp);
-        Py_RETURN_NONE;
-    } else {
+    if (start_color() == ERR) {
         PyErr_SetString(PyCursesError, "start_color() returned ERR");
         return NULL;
     }
+
+    initialisedcolors = TRUE;
+    DICT_ADD_INT_VALUE(ModDict, "COLORS", COLORS);
+    DICT_ADD_INT_VALUE(ModDict, "COLOR_PAIRS", COLOR_PAIRS);
+    Py_RETURN_NONE;
+
+error:
+    return NULL;
 }
 
 /*[clinic input]
@@ -4595,10 +4605,7 @@ static PyStructSequence_Desc ncurses_version_desc = {
 static PyObject *
 make_ncurses_version(PyTypeObject *type)
 {
-    PyObject *ncurses_version;
-    int pos = 0;
-
-    ncurses_version = PyStructSequence_New(type);
+    PyObject *ncurses_version = PyStructSequence_New(type);
     if (ncurses_version == NULL) {
         return NULL;
     }
@@ -4610,19 +4617,24 @@ make_ncurses_version(PyTypeObject *type)
         minor = NCURSES_VERSION_MINOR;
         patch = NCURSES_VERSION_PATCH;
     }
-#define SetIntItem(flag) \
-    PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
-    if (PyErr_Occurred()) { \
-        Py_CLEAR(ncurses_version); \
-        return NULL; \
-    }
+#define SET_VERSION_COMPONENT(INDEX, VALUE)                     \
+    do {                                                        \
+        PyObject *o = PyLong_FromLong(VALUE);                   \
+        if (o == NULL) {                                        \
+            goto error;                                         \
+        }                                                       \
+        PyStructSequence_SET_ITEM(ncurses_version, INDEX, o);   \
+    } while (0)
 
-    SetIntItem(major)
-    SetIntItem(minor)
-    SetIntItem(patch)
-#undef SetIntItem
-
+    SET_VERSION_COMPONENT(0, major);
+    SET_VERSION_COMPONENT(1, minor);
+    SET_VERSION_COMPONENT(2, patch);
+#undef SET_VERSION_COMPONENT
     return ncurses_version;
+
+error:
+    Py_DECREF(ncurses_version);
+    return NULL;
 }
 
 #endif /* NCURSES_VERSION */
@@ -4756,30 +4768,31 @@ curses_destructor(PyObject *op)
 PyMODINIT_FUNC
 PyInit__curses(void)
 {
-    PyObject *m, *d, *v, *c_api_object;
+    PyObject *mod = NULL;
 
     /* Initialize object type */
-    if (PyType_Ready(&PyCursesWindow_Type) < 0)
-        return NULL;
+    CHECK_RET_CODE(PyType_Ready(&PyCursesWindow_Type));
 
     /* Create the module and add the functions */
-    m = PyModule_Create(&_cursesmodule);
-    if (m == NULL)
+    mod = PyModule_Create(&_cursesmodule);
+    if (mod == NULL) {
         return NULL;
+    }
 #ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+    CHECK_RET_CODE(PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED));
 #endif
 
     /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
-    if (d == NULL)
-        return NULL;
+    PyObject *d = PyModule_GetDict(mod);
+    if (d == NULL) {
+        goto error;
+    }
     ModDict = d; /* For PyCurses_InitScr to use later */
 
     void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
     if (PyCurses_API == NULL) {
         PyErr_NoMemory();
-        return NULL;
+        goto error;
     }
     /* Initialize the C API pointer array */
     PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
@@ -4788,28 +4801,38 @@ PyInit__curses(void)
     PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
 
     /* Add a capsule for the C API */
-    c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
-                                 curses_destructor);
+    PyObject *c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
+                                           curses_destructor);
     if (c_api_object == NULL) {
         Py_DECREF(PyCurses_API[0]);
         PyMem_Free(PyCurses_API);
-        return NULL;
+        goto error;
     }
-    if (PyDict_SetItemString(d, "_C_API", c_api_object) < 0) {
-        Py_DECREF(c_api_object);
-        return NULL;
-    }
+    int rc = PyDict_SetItemString(d, "_C_API", c_api_object);
     Py_DECREF(c_api_object);
+    CHECK_RET_CODE(rc);
 
     /* For exception curses.error */
     PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", PyCursesError);
+    if (PyCursesError == NULL) {
+        goto error;
+    }
+    rc = PyDict_SetItemString(d, "error", PyCursesError);
+    Py_DECREF(PyCursesError);
+    CHECK_RET_CODE(rc);
 
     /* Make the version available */
-    v = PyBytes_FromString(PyCursesVersion);
-    PyDict_SetItemString(d, "version", v);
-    PyDict_SetItemString(d, "__version__", v);
-    Py_DECREF(v);
+    PyObject *curses_version = PyBytes_FromString(PyCursesVersion);
+    if (curses_version == NULL) {
+        goto error;
+    }
+    rc = PyDict_SetItemString(d, "version", curses_version);
+    Py_DECREF(curses_version);
+    CHECK_RET_CODE(rc);
+    Py_INCREF(curses_version);
+    rc = PyDict_SetItemString(d, "__version__", curses_version);
+    Py_CLEAR(curses_version);
+    CHECK_RET_CODE(rc);
 
 #ifdef NCURSES_VERSION
     /* ncurses_version */
@@ -4817,17 +4840,19 @@ PyInit__curses(void)
     version_type = _PyStructSequence_NewType(&ncurses_version_desc,
                                              Py_TPFLAGS_DISALLOW_INSTANTIATION);
     if (version_type == NULL) {
-        return NULL;
+        goto error;
     }
-    v = make_ncurses_version(version_type);
+    PyObject *ncurses_version = make_ncurses_version(version_type);
     Py_DECREF(version_type);
-    if (v == NULL) {
-        return NULL;
+    if (ncurses_version == NULL) {
+        goto error;
     }
-    PyDict_SetItemString(d, "ncurses_version", v);
-    Py_DECREF(v);
+    rc = PyDict_SetItemString(d, "ncurses_version", ncurses_version);
+    Py_CLEAR(ncurses_version);
+    CHECK_RET_CODE(rc);
 #endif /* NCURSES_VERSION */
 
+#define SetDictInt(NAME, VALUE)     DICT_ADD_INT_VALUE(d, NAME, VALUE)
     SetDictInt("ERR", ERR);
     SetDictInt("OK", OK);
 
@@ -4923,43 +4948,48 @@ PyInit__curses(void)
     SetDictInt("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
 #endif
     /* Now set everything up for KEY_ variables */
-    {
-        int key;
-        char *key_n;
-        char *key_n2;
-        for (key=KEY_MIN;key < KEY_MAX; key++) {
-            key_n = (char *)keyname(key);
-            if (key_n == NULL || strcmp(key_n,"UNKNOWN KEY")==0)
-                continue;
-            if (strncmp(key_n,"KEY_F(",6)==0) {
-                char *p1, *p2;
-                key_n2 = PyMem_Malloc(strlen(key_n)+1);
-                if (!key_n2) {
-                    PyErr_NoMemory();
-                    break;
-                }
-                p1 = key_n;
-                p2 = key_n2;
-                while (*p1) {
-                    if (*p1 != '(' && *p1 != ')') {
-                        *p2 = *p1;
-                        p2++;
-                    }
-                    p1++;
-                }
-                *p2 = (char)0;
-            } else
-                key_n2 = key_n;
-            SetDictInt(key_n2,key);
-            if (key_n2 != key_n)
-                PyMem_Free(key_n2);
+    for (int keycode = KEY_MIN; keycode < KEY_MAX; keycode++) {
+        const char *key_name = keyname(keycode);
+        if (key_name == NULL || strcmp(key_name, "UNKNOWN KEY") == 0) {
+            continue;
         }
-        SetDictInt("KEY_MIN", KEY_MIN);
-        SetDictInt("KEY_MAX", KEY_MAX);
+        if (strncmp(key_name, "KEY_F(", 6) == 0) {
+            char *fn_key_name = PyMem_Malloc(strlen(key_name) + 1);
+            if (!fn_key_name) {
+                PyErr_NoMemory();
+                goto error;
+            }
+            const char *p1 = key_name;
+            char *p2 = fn_key_name;
+            while (*p1) {
+                if (*p1 != '(' && *p1 != ')') {
+                    *p2 = *p1;
+                    p2++;
+                }
+                p1++;
+            }
+            *p2 = (char)0;
+            PyObject *p_keycode = PyLong_FromLong((long)keycode);
+            if (p_keycode == NULL) {
+                goto error;
+            }
+            int rc = PyDict_SetItemString(d, fn_key_name, p_keycode);
+            Py_DECREF(p_keycode);
+            PyMem_Free(fn_key_name);
+            CHECK_RET_CODE(rc);
+        }
+        else {
+            SetDictInt(key_name, keycode);
+        }
     }
+    SetDictInt("KEY_MIN", KEY_MIN);
+    SetDictInt("KEY_MAX", KEY_MAX);
+#undef SetDictInt
 
-    if (PyModule_AddType(m, &PyCursesWindow_Type) < 0) {
-        return NULL;
-    }
-    return m;
+    CHECK_RET_CODE(PyModule_AddType(mod, &PyCursesWindow_Type));
+    return mod;
+
+error:
+    Py_XDECREF(mod);
+    return NULL;
 }
