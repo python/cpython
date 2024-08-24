@@ -56,7 +56,7 @@ _WIN_DEFAULT_PATHEXT = ".COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC"
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
-           "ExecError", "make_archive", "get_archive_formats",
+           "make_archive", "get_archive_formats",
            "register_archive_format", "unregister_archive_format",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
@@ -74,8 +74,6 @@ class SpecialFileError(OSError):
     """Raised when trying to do a kind of operation (e.g. copying) which is
     not supported on a special file (e.g. a named pipe)"""
 
-class ExecError(OSError):
-    """Raised when a command could not be executed"""
 
 class ReadError(OSError):
     """Raised when an archive cannot be read"""
@@ -1582,3 +1580,15 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 if _access_check(name, mode):
                     return name
     return None
+
+def __getattr__(name):
+    if name == "ExecError":
+        import warnings
+        warnings._deprecated(
+            "shutil.ExecError",
+            f"{warnings._DEPRECATED_MSG}; it "
+            "isn't raised by any shutil function.",
+            remove=(3, 16)
+        )
+        return RuntimeError
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

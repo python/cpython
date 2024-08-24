@@ -14,7 +14,6 @@ class Properties:
     oparg: bool
     jumps: bool
     eval_breaker: bool
-    ends_with_eval_breaker: bool
     needs_this: bool
     always_exits: bool
     stores_sp: bool
@@ -44,7 +43,6 @@ class Properties:
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
             eval_breaker=any(p.eval_breaker for p in properties),
-            ends_with_eval_breaker=any(p.ends_with_eval_breaker for p in properties),
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
@@ -70,7 +68,6 @@ SKIP_PROPERTIES = Properties(
     oparg=False,
     jumps=False,
     eval_breaker=False,
-    ends_with_eval_breaker=False,
     needs_this=False,
     always_exits=False,
     stores_sp=False,
@@ -194,13 +191,6 @@ class Uop:
             return "has unused cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
-        if self.properties.eval_breaker:
-            if self.properties.error_with_pop or self.properties.error_without_pop:
-                return "has error handling and eval-breaker check"
-            if self.properties.side_exit:
-                return "exits and eval-breaker check"
-            if self.properties.deopts:
-                return "deopts and eval-breaker check"
         return None
 
     def is_viable(self) -> bool:
@@ -587,10 +577,6 @@ EXITS = {
 }
 
 
-def eval_breaker_at_end(op: parser.InstDef) -> bool:
-    return op.tokens[-5].text == "CHECK_EVAL_BREAKER"
-
-
 def always_exits(op: parser.InstDef) -> bool:
     depth = 0
     tkn_iter = iter(op.tokens)
@@ -678,8 +664,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         side_exit=exits_if,
         oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
-        eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
-        ends_with_eval_breaker=eval_breaker_at_end(op),
+        eval_breaker="CHECK_PERIODIC" in op.name,
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "SYNC_SP"),
@@ -882,6 +867,7 @@ def assign_opcodes(
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
     instmap["INSTRUMENTED_LINE"] = 254
+    instmap["ENTER_EXECUTOR"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
