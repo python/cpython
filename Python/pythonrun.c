@@ -307,12 +307,10 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
                 goto err;
             }
             PyObject *line = PyList_GET_ITEM(xs, n - 1);
-            Py_INCREF(line);
-            Py_DECREF(xs);
             if (PyObject_SetAttr(exc, &_Py_ID(text), line) == -1) {
                 _PyErr_Clear(tstate);
             }
-            Py_DECREF(line);
+            Py_DECREF(xs);
         }
 err:
         Py_DECREF(interactive_src);
