@@ -58,7 +58,7 @@ from .types import Callback, Completer, KeySpec, CommandName
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Mapping
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -342,10 +342,10 @@ class backspace_dedent(commands.Command):
 class _ReadlineWrapper:
     f_in: int = -1
     f_out: int = -1
-    reader: ReadlineAlikeReader | None = None
+    reader: ReadlineAlikeReader | None = field(default=None, repr=False)
     saved_history_length: int = -1
     startup_hook: Callback | None = None
-    config: ReadlineConfig = field(default_factory=ReadlineConfig)
+    config: ReadlineConfig = field(default_factory=ReadlineConfig, repr=False)
 
     def __post_init__(self) -> None:
         if self.f_in == -1:
@@ -559,7 +559,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup(namespace: dict[str, Any]) -> None:
+def _setup(namespace: Mapping[str, Any]) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice
@@ -575,7 +575,9 @@ def _setup(namespace: dict[str, Any]) -> None:
     _wrapper.f_in = f_in
     _wrapper.f_out = f_out
 
-    # set up namespace in rlcompleter
+    # set up namespace in rlcompleter, which requires it to be a bona fide dict
+    if not isinstance(namespace, dict):
+        namespace = dict(namespace)
     _wrapper.config.readline_completer = RLCompleter(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess
