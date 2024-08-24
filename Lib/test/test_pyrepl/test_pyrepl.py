@@ -516,6 +516,9 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
         self.assertEqual(clean_screen(reader.screen), "1+1")
+
+        # skip, if readline module is not available
+        import_module('readline')
         self.assertIs(type(get_line_buffer()), str)
 
     def test_multiline_edit(self):
