@@ -1,2 +1,2 @@
-Use single algorithm for complex power (case of small integer exponents was
-handled before by a special method).  Patch by Sergey B Kirpichev.
+Use a single algorithm for complex exponentiation (the case where the exponent
+is a small integer was previously handled separately).  Patch by Sergey B Kirpichev.
