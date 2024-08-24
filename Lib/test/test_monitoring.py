@@ -1446,9 +1446,27 @@ class BranchRecorder(JumpRecorder):
 
 
 
+class JumpOffsetRecorder:
+
+    event_type = E.JUMP
+    name = "jump"
+
+    def __init__(self, events, offsets=False):
+        self.events = events
+
+    def __call__(self, code, from_, to):
+        self.events.append((self.name, code.co_name, from_, to))
+
+class BranchOffsetRecorder(JumpOffsetRecorder):
+
+    event_type = E.BRANCH
+    name = "branch"
+
+
 JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
 JUMP_BRANCH_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder
 FLOW_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder, ExceptionRecorder, ReturnRecorder
+BRANCH_OFFSET_RECORDERS = BranchOffsetRecorder,
 
 class TestBranchAndJumpEvents(CheckEvents):
     maxDiff = None
@@ -1537,6 +1555,24 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', '[offset=122]', '[offset=126]'),
             ('return', 'func', None),
             ('line', 'get_events', 11)])
+
+    def test_while_offset_consistency(self):
+
+        def foo(n=0):
+            while n<4:
+                pass
+                n += 1
+            return None
+
+        in_loop = ('branch', 'foo', 10, 14)
+        exit_loop = ('branch', 'foo', 10, 30)
+        self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
+            in_loop,
+            in_loop,
+            in_loop,
+            in_loop,
+            exit_loop])
+
 
 class TestLoadSuperAttr(CheckEvents):
     RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder

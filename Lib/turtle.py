@@ -1718,7 +1718,7 @@ class TNavigator(object):
         >>> reset()
         >>> turtle.left(60)
         >>> turtle.forward(100)
-        >>> print turtle.xcor()
+        >>> print(turtle.xcor())
         50.0
         """
         return self._position[0]
@@ -1732,7 +1732,7 @@ class TNavigator(object):
         >>> reset()
         >>> turtle.left(60)
         >>> turtle.forward(100)
-        >>> print turtle.ycor()
+        >>> print(turtle.ycor())
         86.6025403784
         """
         return self._position[1]
@@ -2335,7 +2335,7 @@ class TPen(object):
 
         Example (for a Turtle instance named turtle):
         >>> turtle.hideturtle()
-        >>> print turtle.isvisible():
+        >>> print(turtle.isvisible())
         False
         """
         return self._shown

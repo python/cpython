@@ -80,7 +80,7 @@ def _try_compile(source, name):
     return compile(source, name, 'exec')
 
 def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
-        show_offsets=False):
+        show_offsets=False, show_positions=False):
     """Disassemble classes, methods, functions, and other compiled objects.
 
     With no argument, disassemble the last traceback.
@@ -91,7 +91,7 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
     """
     if x is None:
         distb(file=file, show_caches=show_caches, adaptive=adaptive,
-              show_offsets=show_offsets)
+              show_offsets=show_offsets, show_positions=show_positions)
         return
     # Extract functions from methods.
     if hasattr(x, '__func__'):
@@ -112,12 +112,12 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
             if isinstance(x1, _have_code):
                 print("Disassembly of %s:" % name, file=file)
                 try:
-                    dis(x1, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
+                    dis(x1, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
                 except TypeError as msg:
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        _disassemble_recursive(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
+        _disassemble_recursive(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         labels_map = _make_labels_map(x)
         label_width = 4 + len(str(len(labels_map)))
@@ -128,12 +128,12 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
         arg_resolver = ArgResolver(labels_map=labels_map)
         _disassemble_bytes(x, arg_resolver=arg_resolver, formatter=formatter)
     elif isinstance(x, str):    # Source code
-        _disassemble_str(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
+        _disassemble_str(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
                         type(x).__name__)
 
-def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets=False):
+def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets=False, show_positions=False):
     """Disassemble a traceback (default: last traceback)."""
     if tb is None:
         try:
@@ -144,7 +144,7 @@ def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets
         except AttributeError:
             raise RuntimeError("no last traceback to disassemble") from None
         while tb.tb_next: tb = tb.tb_next
-    disassemble(tb.tb_frame.f_code, tb.tb_lasti, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
+    disassemble(tb.tb_frame.f_code, tb.tb_lasti, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
 
 # The inspect module interrogates this dictionary to build its
 # list of CO_* constants. It is also used by pretty_flags to
@@ -427,21 +427,25 @@ class Instruction(_Instruction):
 class Formatter:
 
     def __init__(self, file=None, lineno_width=0, offset_width=0, label_width=0,
-                       line_offset=0, show_caches=False):
+                 line_offset=0, show_caches=False, *, show_positions=False):
         """Create a Formatter
 
         *file* where to write the output
-        *lineno_width* sets the width of the line number field (0 omits it)
+        *lineno_width* sets the width of the source location field (0 omits it).
+        Should be large enough for a line number or full positions (depending
+        on the value of *show_positions*).
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
         *show_caches* is a boolean indicating whether to display cache lines
-
+        *show_positions* is a boolean indicating whether full positions should
+        be reported instead of only the line numbers.
         """
         self.file = file
         self.lineno_width = lineno_width
         self.offset_width = offset_width
         self.label_width = label_width
         self.show_caches = show_caches
+        self.show_positions = show_positions
 
     def print_instruction(self, instr, mark_as_current=False):
         self.print_instruction_line(instr, mark_as_current)
@@ -474,15 +478,27 @@ class Formatter:
             print(file=self.file)
 
         fields = []
-        # Column: Source code line number
+        # Column: Source code locations information
         if lineno_width:
-            if instr.starts_line:
-                lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
-                lineno_fmt = lineno_fmt % lineno_width
-                lineno = _NO_LINENO if instr.line_number is None else instr.line_number
-                fields.append(lineno_fmt % lineno)
+            if self.show_positions:
+                # reporting positions instead of just line numbers
+                if instr_positions := instr.positions:
+                    if all(p is None for p in instr_positions):
+                        positions_str = _NO_LINENO
+                    else:
+                        ps = tuple('?' if p is None else p for p in instr_positions)
+                        positions_str = f"{ps[0]}:{ps[2]}-{ps[1]}:{ps[3]}"
+                    fields.append(f'{positions_str:{lineno_width}}')
+                else:
+                    fields.append(' ' * lineno_width)
             else:
-                fields.append(' ' * lineno_width)
+                if instr.starts_line:
+                    lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
+                    lineno_fmt = lineno_fmt % lineno_width
+                    lineno = _NO_LINENO if instr.line_number is None else instr.line_number
+                    fields.append(lineno_fmt % lineno)
+                else:
+                    fields.append(' ' * lineno_width)
         # Column: Label
         if instr.label is not None:
             lbl = f"L{instr.label}:"
@@ -769,17 +785,22 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
 
 
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
-                show_offsets=False):
+                show_offsets=False, show_positions=False):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = _parse_exception_table(co)
+    if show_positions:
+        lineno_width = _get_positions_width(co)
+    else:
+        lineno_width = _get_lineno_width(linestarts)
     labels_map = _make_labels_map(co.co_code, exception_entries=exception_entries)
     label_width = 4 + len(str(len(labels_map)))
     formatter = Formatter(file=file,
-                          lineno_width=_get_lineno_width(linestarts),
+                          lineno_width=lineno_width,
                           offset_width=len(str(max(len(co.co_code) - 2, 9999))) if show_offsets else 0,
                           label_width=label_width,
-                          show_caches=show_caches)
+                          show_caches=show_caches,
+                          show_positions=show_positions)
     arg_resolver = ArgResolver(co_consts=co.co_consts,
                                names=co.co_names,
                                varname_from_oparg=co._varname_from_oparg,
@@ -788,8 +809,8 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
                        exception_entries=exception_entries, co_positions=co.co_positions(),
                        original_code=co.co_code, arg_resolver=arg_resolver, formatter=formatter)
 
-def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False, show_offsets=False):
-    disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
+def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False, show_offsets=False, show_positions=False):
+    disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
@@ -799,7 +820,7 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
                 print("Disassembly of %r:" % (x,), file=file)
                 _disassemble_recursive(
                     x, file=file, depth=depth, show_caches=show_caches,
-                    adaptive=adaptive, show_offsets=show_offsets
+                    adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions
                 )
 
 
@@ -832,6 +853,22 @@ def _get_lineno_width(linestarts):
         lineno_width = len(_NO_LINENO)
     return lineno_width
 
+def _get_positions_width(code):
+    # Positions are formatted as 'LINE:COL-ENDLINE:ENDCOL ' (note trailing space).
+    # A missing component appears as '?', and when all components are None, we
+    # render '_NO_LINENO'. thus the minimum width is 1 + len(_NO_LINENO).
+    #
+    # If all values are missing, positions are not printed (i.e. positions_width = 0).
+    has_value = False
+    values_width = 0
+    for positions in code.co_positions():
+        has_value |= any(isinstance(p, int) for p in positions)
+        width = sum(1 if p is None else len(str(p)) for p in positions)
+        values_width = max(width, values_width)
+    if has_value:
+        # 3 = number of separators in a normal format
+        return 1 + max(len(_NO_LINENO), 3 + values_width)
+    return 0
 
 def _disassemble_bytes(code, lasti=-1, linestarts=None,
                        *, line_offset=0, exception_entries=(),
@@ -978,7 +1015,7 @@ class Bytecode:
 
     Iterating over this yields the bytecode operations as Instruction instances.
     """
-    def __init__(self, x, *, first_line=None, current_offset=None, show_caches=False, adaptive=False, show_offsets=False):
+    def __init__(self, x, *, first_line=None, current_offset=None, show_caches=False, adaptive=False, show_offsets=False, show_positions=False):
         self.codeobj = co = _get_code_object(x)
         if first_line is None:
             self.first_line = co.co_firstlineno
@@ -993,6 +1030,7 @@ class Bytecode:
         self.show_caches = show_caches
         self.adaptive = adaptive
         self.show_offsets = show_offsets
+        self.show_positions = show_positions
 
     def __iter__(self):
         co = self.codeobj
@@ -1036,16 +1074,19 @@ class Bytecode:
         with io.StringIO() as output:
             code = _get_code_array(co, self.adaptive)
             offset_width = len(str(max(len(code) - 2, 9999))) if self.show_offsets else 0
-
-
+            if self.show_positions:
+                lineno_width = _get_positions_width(co)
+            else:
+                lineno_width = _get_lineno_width(self._linestarts)
             labels_map = _make_labels_map(co.co_code, self.exception_entries)
             label_width = 4 + len(str(len(labels_map)))
             formatter = Formatter(file=output,
-                                  lineno_width=_get_lineno_width(self._linestarts),
+                                  lineno_width=lineno_width,
                                   offset_width=offset_width,
                                   label_width=label_width,
                                   line_offset=self._line_offset,
-                                  show_caches=self.show_caches)
+                                  show_caches=self.show_caches,
+                                  show_positions=self.show_positions)
 
             arg_resolver = ArgResolver(co_consts=co.co_consts,
                                        names=co.co_names,
@@ -1071,6 +1112,8 @@ def main():
                         help='show inline caches')
     parser.add_argument('-O', '--show-offsets', action='store_true',
                         help='show instruction offsets')
+    parser.add_argument('-P', '--show-positions', action='store_true',
+                        help='show instruction positions')
     parser.add_argument('infile', nargs='?', default='-')
     args = parser.parse_args()
     if args.infile == '-':
@@ -1081,7 +1124,7 @@ def main():
         with open(args.infile, 'rb') as infile:
             source = infile.read()
     code = compile(source, name, "exec")
-    dis(code, show_caches=args.show_caches, show_offsets=args.show_offsets)
+    dis(code, show_caches=args.show_caches, show_offsets=args.show_offsets, show_positions=args.show_positions)
 
 if __name__ == "__main__":
     main()

@@ -301,6 +301,14 @@ _Py_INCREF_TYPE(PyTypeObject *type)
         return;
     }
 
+    // gh-122974: GCC 11 warns about the access to PyHeapTypeObject fields when
+    // _Py_INCREF_TYPE() is called on a statically allocated type.  The
+    // _PyType_HasFeature check above ensures that the type is a heap type.
+#if defined(__GNUC__) && __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
 
@@ -319,6 +327,10 @@ _Py_INCREF_TYPE(PyTypeObject *type)
         // It handles the unique_id=-1 case to keep the inlinable function smaller.
         _PyType_IncrefSlow(ht);
     }
+
+#if defined(__GNUC__) && __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif
 }
 
 static inline void
@@ -749,7 +761,7 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
-extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
+PyAPI_FUNC(PyObject *) _PyType_NewManagedObject(PyTypeObject *type);
 
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
@@ -791,10 +803,11 @@ _PyObject_GetManagedDict(PyObject *obj)
 static inline PyDictValues *
 _PyObject_InlineValues(PyObject *obj)
 {
+    PyTypeObject *tp = Py_TYPE(obj);
+    assert(tp->tp_basicsize > 0 && tp->tp_basicsize % sizeof(PyObject *) == 0);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    assert(Py_TYPE(obj)->tp_basicsize == sizeof(PyObject));
-    return (PyDictValues *)((char *)obj + sizeof(PyObject));
+    return (PyDictValues *)((char *)obj + tp->tp_basicsize);
 }
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
