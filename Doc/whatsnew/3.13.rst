@@ -754,20 +754,21 @@ compileall
   (Contributed by Victor Stinner in :gh:`109649`.)
 
 
-configparser
-------------
-
-* The :class:`configparser.ConfigParser` now accepts unnamed sections
-  before named ones if configured to do so.
-  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
-
-
 concurrent.futures
 ------------------
 
 * The default number of worker threads and processes is now selected using
   :func:`os.process_cpu_count` instead of :func:`os.cpu_count`.
   (Contributed by Victor Stinner in :gh:`109649`.)
+
+
+configparser
+------------
+
+* :class:`~configparser.ConfigParser` now has support for unnamed sections,
+  which allows for top-level key-value pairs.
+  This can be enabled with the new *allow_unnamed_section* parameter.
+  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 
 copy
