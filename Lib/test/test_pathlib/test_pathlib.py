@@ -1,3 +1,4 @@
+import contextlib
 import io
 import os
 import sys
@@ -23,9 +24,17 @@ from test.test_pathlib import test_pathlib_abc
 from test.test_pathlib.test_pathlib_abc import needs_posix, needs_windows, needs_symlinks
 
 try:
+    import fcntl
+except ImportError:
+    fcntl = None
+try:
     import grp, pwd
 except ImportError:
     grp = pwd = None
+try:
+    import posix
+except ImportError:
+    posix = None
 
 
 root_in_posix = False
@@ -706,6 +715,45 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(source_st.st_mode, target_st.st_mode)
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
+
+    def test_copy_error_handling(self):
+        def make_raiser(err):
+            def raiser(*args, **kwargs):
+                raise OSError(err, os.strerror(err))
+            return raiser
+
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+
+        # Raise non-fatal OSError from all available fast copy functions.
+        with contextlib.ExitStack() as ctx:
+            if fcntl and hasattr(fcntl, 'FICLONE'):
+                ctx.enter_context(mock.patch('fcntl.ioctl', make_raiser(errno.EXDEV)))
+            if posix and hasattr(posix, '_fcopyfile'):
+                ctx.enter_context(mock.patch('posix._fcopyfile', make_raiser(errno.ENOTSUP)))
+            if hasattr(os, 'copy_file_range'):
+                ctx.enter_context(mock.patch('os.copy_file_range', make_raiser(errno.EXDEV)))
+            if hasattr(os, 'sendfile'):
+                ctx.enter_context(mock.patch('os.sendfile', make_raiser(errno.ENOTSOCK)))
+
+            source.copy(target)
+            self.assertTrue(target.exists())
+            self.assertEqual(source.read_text(), target.read_text())
+
+        # Raise fatal OSError from first available fast copy function.
+        if fcntl and hasattr(fcntl, 'FICLONE'):
+            patchpoint = 'fcntl.ioctl'
+        elif posix and hasattr(posix, '_fcopyfile'):
+            patchpoint = 'posix._fcopyfile'
+        elif hasattr(os, 'copy_file_range'):
+            patchpoint = 'os.copy_file_range'
+        elif hasattr(os, 'sendfile'):
+            patchpoint = 'os.sendfile'
+        else:
+            return
+        with mock.patch(patchpoint, make_raiser(errno.ENOENT)):
+            self.assertRaises(FileNotFoundError, source.copy, target)
 
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
     @unittest.skipIf(root_in_posix, "test fails with root privilege")
