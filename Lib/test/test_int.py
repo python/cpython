@@ -3,6 +3,9 @@ import sys
 import unittest
 from unittest import mock
 from test import support
+from test.support.import_helper import (CleanImport,
+                                        import_module,
+                                        isolated_modules)
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
@@ -757,6 +760,50 @@ class PyLongModuleTests(unittest.TestCase):
         self.assertEqual(s3, s)
         s4 = b'%d' % n
         self.assertEqual(s4, s.encode('ascii'))
+
+    @support.cpython_only
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    def test_pylong_context_with_pydecimal(self):
+        with isolated_modules(), CleanImport('decimal', '_pylong'):
+            sys.modules['_decimal'] = None
+            # cannot use 'import_fresh_module' since it directly
+            # restores sys.modules after importing the module
+            decimal_module = import_module('decimal')
+            with mock.patch.object(decimal_module, 'getcontext') as f:
+                _pylong_module = import_module('_pylong')
+                self._test_pylong_context(_pylong_module, decimal_module)
+            f.assert_not_called()
+
+    @support.cpython_only
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    @unittest.skipUnless(_decimal, "C _decimal module required")
+    def test_pylong_context_with_c_decimal(self):
+        with isolated_modules(), CleanImport('decimal', '_pylong'):
+            sys.modules['_pydecimal'] = None
+            # cannot use 'import_fresh_module' since it directly
+            # restores sys.modules after importing the module
+            decimal_module = import_module('decimal')
+            with mock.patch.object(decimal_module, 'getcontext') as f:
+                _pylong_module = import_module('_pylong')
+                self._test_pylong_context(_pylong_module, decimal_module)
+            f.assert_not_called()
+
+    def _test_pylong_context(self, pylong_module, decimal_module):
+        self.assertIs(pylong_module.decimal, decimal_module)
+        ctx = pylong_module._unbounded_dec_context
+        self.assertEqual(ctx.prec, decimal_module.MAX_PREC)
+        self.assertEqual(ctx.rounding, decimal_module.ROUND_HALF_EVEN)
+        self.assertEqual(ctx.Emax, decimal_module.MAX_EMAX)
+        self.assertEqual(ctx.Emin, decimal_module.MIN_EMIN)
+        self.assertEqual(ctx.capitals, 1)
+        self.assertEqual(ctx.clamp, 0)
+        ctx_traps = [trap for trap, trapped in ctx.traps.items() if trapped]
+        self.assertCountEqual(ctx_traps, [
+            decimal_module.InvalidOperation,
+            decimal_module.DivisionByZero,
+            decimal_module.Overflow,
+            decimal_module.Inexact
+       ])
 
     def test_pylong_int_to_decimal(self):
         self._test_pylong_int_to_decimal((1 << 100_000), '9883109376')

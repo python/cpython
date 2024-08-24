@@ -130,11 +130,23 @@ def compute_powers(w, base, more_than, *, need_hi=False, show=False):
             del d[n]
     return d
 
-_unbounded_dec_context = decimal.getcontext().copy()
-_unbounded_dec_context.prec = decimal.MAX_PREC
-_unbounded_dec_context.Emax = decimal.MAX_EMAX
-_unbounded_dec_context.Emin = decimal.MIN_EMIN
-_unbounded_dec_context.traps[decimal.Inexact] = 1 # sanity check
+# Do not use decimal.getcontext() since otherwise the thread's context
+# will be used if this module is reloaded but not the decimal context.
+_unbounded_dec_context = decimal.Context(
+    prec=decimal.MAX_PREC,
+    rounding=decimal.ROUND_HALF_EVEN,
+    Emax=decimal.MAX_EMAX,
+    Emin=decimal.MIN_EMIN,
+    capitals=1,
+    clamp=0,
+    flags=[],
+    traps=[
+        decimal.DivisionByZero,
+        decimal.Overflow,
+        decimal.InvalidOperation,
+        decimal.Inexact,
+    ]
+)
 
 def int_to_decimal(n):
     """Asymptotically fast conversion of an 'int' to Decimal."""
