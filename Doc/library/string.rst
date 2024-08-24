@@ -591,7 +591,7 @@ The available presentation types for :class:`float` and
 
 The available presentation types for :class:`complex` are same as for
 :class:`float`.  Both real and imaginary components of a complex number are
-formatted as floating-point numbers, accordingly specified presentaion type.
+formatted as floating-point numbers, accordingly specified presentation type.
 They separated by mandatory sign of the imaginary part, terminated by ``j``
 suffix.  If presentation type is missing --- result match the output of
 :func:`str` (numbers also surrounded by parentheses, if real part is
