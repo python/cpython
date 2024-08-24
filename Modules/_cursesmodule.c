@@ -4026,10 +4026,10 @@ static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
 /*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
 {
-    CHECK_RET_FLAG_OR_ABORT(update_lines_cols());
+    if (!update_lines_cols()) {
+        return NULL;
+    }
     Py_RETURN_NONE;
-abort:
-    return NULL;
 }
 
 #endif
