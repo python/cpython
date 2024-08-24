@@ -130,8 +130,6 @@ def compute_powers(w, base, more_than, *, need_hi=False, show=False):
             del d[n]
     return d
 
-# Do not use decimal.getcontext() since otherwise the thread's context
-# will be used if this module is reloaded but not the decimal context.
 _unbounded_dec_context = decimal.Context(
     prec=decimal.MAX_PREC,
     rounding=decimal.ROUND_HALF_EVEN,
