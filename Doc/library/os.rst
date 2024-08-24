@@ -3862,6 +3862,8 @@ features:
    .. versionadded:: 3.10
 
 
+.. _os-timerfd:
+
 Timer File Descriptors
 ~~~~~~~~~~~~~~~~~~~~~~
 
