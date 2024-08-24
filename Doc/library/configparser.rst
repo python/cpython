@@ -1314,12 +1314,18 @@ RawConfigParser Objects
 
    .. method:: add_section(section)
 
-      Add a section named *section* to the instance.  If a section by the given
-      name already exists, :exc:`DuplicateSectionError` is raised.  If the
-      *default section* name is passed, :exc:`ValueError` is raised.
+      Add a section named *section* or :const:`UNNAMED_SECTION` to the instance.
+
+      If the given section already exists, :exc:`DuplicateSectionError` is
+      raised. If the *default section* name is passed, :exc:`ValueError` is
+      raised. If :const:`UNNAMED_SECTION` is passed and support is disabled,
+      :exc:`UnnamedSectionDisabledError` is raised.
 
       Type of *section* is not checked which lets users create non-string named
       sections.  This behaviour is unsupported and may cause internal errors.
+
+   .. versionchanged:: 3.14
+      Added support for :const:`UNNAMED_SECTION`.
 
 
    .. method:: set(section, option, value)
@@ -1405,7 +1411,6 @@ Exceptions
    Exception raised when attempting to parse a file which has no section
    headers.
 
-
 .. exception:: ParsingError
 
    Exception raised when errors occur attempting to parse a file.
@@ -1420,6 +1425,13 @@ Exceptions
    an indented line.
 
    .. versionadded:: 3.13
+
+.. exception:: UnnamedSectionDisabledError
+
+   Exception raised when attempting to use the
+   :const:`UNNAMED_SECTION` without enabling it.
+
+    .. versionadded:: 3.14
 
 .. rubric:: Footnotes
 

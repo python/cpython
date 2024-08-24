@@ -26,7 +26,8 @@ from .support import (
     make_clean_env,
 )
 from _pyrepl.console import Event
-from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
+                              _ReadlineWrapper)
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
@@ -516,6 +517,11 @@ class TestPyReplOutput(TestCase):
         self.assertEqual(output, "1+1")
         self.assertEqual(clean_screen(reader.screen), "1+1")
 
+    def test_get_line_buffer_returns_str(self):
+        reader = self.prepare_reader(code_to_events("\n"))
+        wrapper = _ReadlineWrapper(reader=reader)
+        self.assertIs(type(wrapper.get_line_buffer()), str)
+
     def test_multiline_edit(self):
         events = itertools.chain(
             code_to_events("def f():\n...\n\n"),
@@ -963,7 +969,7 @@ class TestMain(TestCase):
             mod = blue / "calx.py"
             mod.write_text("FOO = 42", encoding="utf-8")
             commands = [
-                "print(f'{" + var + "=}')" for var in expectations
+                "print(f'^{" + var + "=}')" for var in expectations
             ] + ["exit()"]
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
@@ -989,10 +995,10 @@ class TestMain(TestCase):
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
             with self.subTest(var=var, expected=expected):
-                if m := re.search(rf"[\r\n]{var}=(.+?)[\r\n]", output):
+                if m := re.search(rf"\^{var}=(.+?)[\r\n]", output):
                     self._assertMatchOK(var, expected, actual=m.group(1))
                 else:
-                    self.fail(f"{var}= not found in output")
+                    self.fail(f"{var}= not found in output: {output!r}\n\n{output}")
 
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
@@ -1020,7 +1026,7 @@ class TestMain(TestCase):
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
-        self.assertIn("warning: can\'t use pyrepl", output)
+        self.assertIn("warning: can't use pyrepl", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
@@ -1049,6 +1055,30 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    @force_not_colorized
+    def test_bad_sys_excepthook_doesnt_crash_pyrepl(self):
+        env = os.environ.copy()
+        commands = ("import sys\n"
+                    "sys.excepthook = 1\n"
+                    "1/0\n"
+                    "exit()\n")
+
+        def check(output, exitcode):
+            self.assertIn("Error in sys.excepthook:", output)
+            self.assertEqual(output.count("'int' object is not callable"), 1)
+            self.assertIn("Original exception was:", output)
+            self.assertIn("division by zero", output)
+            self.assertEqual(exitcode, 0)
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        check(output, exit_code)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        check(output, exit_code)
+
     def test_not_wiping_history_file(self):
         # skip, if readline module is not available
         import_module('readline')
@@ -1075,6 +1105,52 @@ class TestMain(TestCase):
         self.assertIn("123", output)
         self.assertIn("spam", output)
         self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
+    @force_not_colorized
+    def test_correct_filename_in_syntaxerrors(self):
+        env = os.environ.copy()
+        commands = "a b c\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertIn("SyntaxError: invalid syntax", output)
+        self.assertIn("<python-input-0>", output)
+        commands = " b\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertIn("IndentationError: unexpected indent", output)
+        self.assertIn("<python-input-0>", output)
+
+    @force_not_colorized
+    def test_proper_tracebacklimit(self):
+        env = os.environ.copy()
+        for set_tracebacklimit in [True, False]:
+            commands = ("import sys\n" +
+                        ("sys.tracebacklimit = 1\n" if set_tracebacklimit else "") +
+                        "def x1(): 1/0\n\n"
+                        "def x2(): x1()\n\n"
+                        "def x3(): x2()\n\n"
+                        "x3()\n"
+                        "exit()\n")
+
+            for basic_repl in [True, False]:
+                if basic_repl:
+                    env["PYTHON_BASIC_REPL"] = "1"
+                else:
+                    env.pop("PYTHON_BASIC_REPL", None)
+                with self.subTest(set_tracebacklimit=set_tracebacklimit,
+                                  basic_repl=basic_repl):
+                    output, exit_code = self.run_repl(commands, env=env)
+                    if "can't use pyrepl" in output:
+                        self.skipTest("pyrepl not available")
+                    self.assertIn("in x1", output)
+                    if set_tracebacklimit:
+                        self.assertNotIn("in x2", output)
+                        self.assertNotIn("in x3", output)
+                        self.assertNotIn("in <module>", output)
+                    else:
+                        self.assertIn("in x2", output)
+                        self.assertIn("in x3", output)
+                        self.assertIn("in <module>", output)
 
     def run_repl(
         self,
@@ -1126,4 +1202,4 @@ class TestMain(TestCase):
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "\n".join(output), exit_code
+        return "".join(output), exit_code
