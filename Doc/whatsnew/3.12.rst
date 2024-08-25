@@ -1330,7 +1330,7 @@ Deprecated
   (Contributed by Brett Cannon in :gh:`65961`.)
 
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
-  error in Python 3.14. Use ``not`` for logical negation of bools instead.
+  error in Python 3.16. Use ``not`` for logical negation of bools instead.
   In the rare case that you really need the bitwise inversion of the underlying
   ``int``, convert to int explicitly: ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
