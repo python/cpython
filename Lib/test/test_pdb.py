@@ -2757,35 +2757,18 @@ if not SKIP_ASYNCIO_TESTS:
         ...     'return',
         ...     'next',
         ...     'return',
-        ...     'next',
-        ...     'next',
-        ...     'continue',
-        ...     'continue',
+        ...     'next',  # Tehnically all we care about are the continue
+        ...     'next',  # statements. The rest is to trigger the segfault.
+        ...     'continue',  # Can't be accurate with output
+        ...     'continue',  # due to multithreading.
         ... ]):
         ...   test_function()
         > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(3)inner()
         -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
         (Pdb) return
-        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(3)inner()
-        -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-        (Pdb) next
-        --Return--
-        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()->None
-        -> pass
-        (Pdb) return
-        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()
-        -> pass
-        (Pdb) next
-        --Return--
         ...
-        -> self.future.set_result(result)
-        (Pdb) next
-        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()->None
-        -> pass
         (Pdb) continue
-        --Return--
         ...
-        -> self.future.set_result(result)
         (Pdb) continue
         """
 
