@@ -904,6 +904,24 @@ class PathBase(PurePathBase):
                 on_error(err)
         return target
 
+    def copy_into(self, target_dir, *, follow_symlinks=True,
+                  dirs_exist_ok=False, preserve_metadata=False, ignore=None,
+                  on_error=None):
+        """
+        Copy this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.copy(target, follow_symlinks=follow_symlinks,
+                         dirs_exist_ok=dirs_exist_ok,
+                         preserve_metadata=preserve_metadata, ignore=ignore,
+                         on_error=on_error)
+
     def rename(self, target):
         """
         Rename this path to the target path.
@@ -946,6 +964,19 @@ class PathBase(PurePathBase):
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self.delete()
         return target
+
+    def move_into(self, target_dir):
+        """
+        Move this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.move(target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
