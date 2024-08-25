@@ -2753,7 +2753,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     loop.close()
         ...     asyncio.set_event_loop_policy(None)
 
-        >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+        >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
         ...     'return',
         ...     'next',
         ...     'return',
@@ -2762,7 +2762,27 @@ if not SKIP_ASYNCIO_TESTS:
         ...     'continue',
         ... ]):
         ...   test_function()
-        fillme
+        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(3)inner()
+        -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+        (Pdb) return
+        --Return--
+        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()->None
+        -> pass
+        (Pdb) next
+        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(3)inner()
+        -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+        (Pdb) return
+        --Return--
+        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()->None
+        -> pass
+        (Pdb) next
+        > ...
+        -> self.future.set_result(result)
+        (Pdb) next
+        --Return--
+        > ...
+        -> self.future.set_result(result)
+        (Pdb) continue
         """
 
 def test_pdb_issue_gh_101517():
