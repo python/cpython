@@ -519,7 +519,7 @@ class TestPyReplOutput(TestCase):
 
     def test_get_line_buffer_returns_str(self):
         reader = self.prepare_reader(code_to_events("\n"))
-        wrapper = _ReadlineWrapper(reader=reader)
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
         self.assertIs(type(wrapper.get_line_buffer()), str)
 
     def test_multiline_edit(self):
