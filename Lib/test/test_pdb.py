@@ -2767,8 +2767,7 @@ if not SKIP_ASYNCIO_TESTS:
         -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
         (Pdb) return
         ...
-        (Pdb) continue
-        ...
+        (Pdb) continue...
         (Pdb) continue
         """
 
