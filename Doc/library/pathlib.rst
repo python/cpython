@@ -1582,7 +1582,7 @@ Copying, moving and deleting
    Copy this file or directory tree into the given *target_dir*, which should
    be an existing directory. Other arguments are handled identically to
    :meth:`Path.copy`. Returns a new :class:`!Path` instance pointing to the
-   copied path.
+   copy.
 
    .. versionadded:: 3.14
 
