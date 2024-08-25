@@ -1222,7 +1222,7 @@ conflict.
 
    If this variable is set to ``1``, the global interpreter lock (GIL) will be
    forced on. Setting it to ``0`` forces the GIL off (needs Python configured with
-   the :option:`--disable-gil` build option.)
+   the :option:`--disable-gil` build option).
 
    See also the :option:`-X gil <-X>` command-line option, which takes
    precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
