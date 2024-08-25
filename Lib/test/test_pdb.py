@@ -2757,7 +2757,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     'return',
         ...     'next',
         ...     'return',
-        ...     'next',  # Tehnically all we care about are the continue
+        ...     'next',  # Technically all we care about are the continue
         ...     'next',  # statements. The rest is to trigger the segfault.
         ...     'continue',  # Can't be accurate with output
         ...     'continue',  # due to multithreading.
