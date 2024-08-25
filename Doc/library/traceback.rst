@@ -44,8 +44,8 @@ The module defines the following functions:
 
    Note that the meaning of the *limit* parameter is different than the meaning
    of :const:`sys.tracebacklimit`. Negative *limit* values correspond to
-   positive values of  :const:`sys.tracebacklimit`, whereas the behaviour of
-   positive values of *limit* cannot be achieved with
+   positive values of :const:`sys.tracebacklimit`, whereas the behaviour of
+   positive *limit* values cannot be achieved with
    :const:`sys.tracebacklimit`.
 
    .. versionchanged:: 3.5
