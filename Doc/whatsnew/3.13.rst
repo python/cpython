@@ -487,6 +487,8 @@ but the platform is not yet officially supported.
 .. seealso:: :pep:`730`, :pep:`738`
 
 
+.. _whatsnew313-incremental-gc:
+
 Incremental garbage collection
 ------------------------------
 
@@ -1465,24 +1467,33 @@ zipimport
 Optimizations
 =============
 
-* :func:`textwrap.indent` is now ~30% faster than before for large input.
+* The new :ref:`incremental garbage collector <whatsnew313-incremental-gc>`
+  means that maximum pause times are reduced
+  by an order of magnitude or more for larger heaps.
+  (Contributed by Mark Shannon in :gh:`108362`.)
+
+* Several standard library modules have had
+  their import times significantly improved.
+  For example, the import time of the :mod:`typing` module
+  has been reduced by around a third by removing dependencies
+  on :mod:`re` and :mod:`contextlib`.
+  Other modules to enjoy import-time speedups include
+  :mod:`email.utils`, :mod:`enum`, :mod:`functools`,
+  :mod:`importlib.metadata`, and :mod:`threading`.
+  (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Holla,
+  and others in :gh:`109653`.)
+
+* :func:`textwrap.indent` is now around 30% faster than before for large input.
   (Contributed by Inada Naoki in :gh:`107369`.)
 
-* The :mod:`subprocess` module uses :func:`os.posix_spawn` in more situations
-  including the default where ``close_fds=True`` on many modern platforms.  This
-  should provide a noteworthy performance increase launching processes on
-  FreeBSD and Solaris.  See the :ref:`subprocess <whatsnew313-subprocess>`
-  section above for details.
+* The :mod:`subprocess` module now uses the :func:`~os.posix_spawn` function in
+  more situations, including when *close_fds* is ``True`` (the default)
+  on many modern platforms.
+  This should provide a notable performance increase
+  when launching processes on FreeBSD and Solaris.
+  See the :ref:`subprocess <whatsnew313-subprocess>` section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
-* Several standard library modules have had their import times significantly
-  improved. For example, the import time of the :mod:`typing` module has been
-  reduced by around a third by removing dependencies on :mod:`re` and
-  :mod:`contextlib`. Other modules to enjoy import-time speedups include
-  :mod:`importlib.metadata`, :mod:`threading`, :mod:`enum`, :mod:`functools`
-  and :mod:`email.utils`.
-  (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Hollas and
-  others in :gh:`109653`.)
 
 Removed Modules And APIs
 ========================
