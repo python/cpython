@@ -42,6 +42,14 @@ The module defines the following functions:
    :term:`file <file object>` or :term:`file-like object` to
    receive the output.
 
+   .. note::
+
+      The meaning of the *limit* parameter is different than the meaning
+      of :const:`sys.tracebacklimit`. A negative *limit* value corresponds to
+      a positive value of :const:`!sys.tracebacklimit`, whereas the behaviour of
+      a positive *limit* value cannot be achieved with
+      :const:`!sys.tracebacklimit`.
+
    .. versionchanged:: 3.5
        Added negative *limit* support.
 
