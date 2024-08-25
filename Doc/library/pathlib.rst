@@ -1536,8 +1536,8 @@ Creating files and directories
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-Copying, renaming and deleting
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Copying, moving and deleting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: Path.copy(target, *, follow_symlinks=True, dirs_exist_ok=False, \
                       preserve_metadata=False, ignore=None, on_error=None)
@@ -1614,6 +1614,23 @@ Copying, renaming and deleting
 
    .. versionchanged:: 3.8
       Added return value, return the new :class:`!Path` instance.
+
+
+.. method:: Path.move(target)
+
+   Move this file or directory tree to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.
+
+   If the *target* doesn't exist it will be created. If both this path and the
+   *target* are existing files, then the target is overwritten. If both paths
+   point to the same file or directory, or the *target* is a non-empty
+   directory, then :exc:`OSError` is raised.
+
+   If both paths are on the same filesystem, the move is performed with
+   :func:`os.replace`. Otherwise, this path is copied (preserving metadata and
+   symlinks) and then deleted.
+
+   .. versionadded:: 3.14
 
 
 .. method:: Path.unlink(missing_ok=False)

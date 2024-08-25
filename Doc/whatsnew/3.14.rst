@@ -185,9 +185,12 @@ os
 pathlib
 -------
 
-* Add methods to :class:`pathlib.Path` to recursively copy or remove files:
+* Add methods to :class:`pathlib.Path` to recursively copy, move, or remove
+  files and directories:
 
   * :meth:`~pathlib.Path.copy` copies a file or directory tree to a given
+    destination.
+  * :meth:`~pathlib.Path.move` moves a file or directory tree to a given
     destination.
   * :meth:`~pathlib.Path.delete` removes a file or directory tree.
 

@@ -45,6 +45,19 @@ delete_use_fd_functions = (
     {os.open, os.stat, os.unlink, os.rmdir} <= os.supports_dir_fd and
     os.listdir in os.supports_fd and os.stat in os.supports_follow_symlinks)
 
+def patch_replace(old_test):
+    def new_replace(self, target):
+        raise OSError(errno.EXDEV, "Cross-device link", self, target)
+
+    def new_test(self):
+        old_replace = self.cls.replace
+        self.cls.replace = new_replace
+        try:
+            old_test(self)
+        finally:
+            self.cls.replace = old_replace
+    return new_test
+
 #
 # Tests for the pure classes.
 #
@@ -798,6 +811,55 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         source.copy(target, preserve_metadata=True)
         target_file = target.joinpath('dirD', 'fileD')
         self.assertEqual(os.getxattr(target_file, b'user.foo'), b'42')
+
+    @patch_replace
+    def test_move_file_other_fs(self):
+        self.test_move_file()
+
+    @patch_replace
+    def test_move_file_to_file_other_fs(self):
+        self.test_move_file_to_file()
+
+    @patch_replace
+    def test_move_file_to_dir_other_fs(self):
+        self.test_move_file_to_dir()
+
+    @patch_replace
+    def test_move_dir_other_fs(self):
+        self.test_move_dir()
+
+    @patch_replace
+    def test_move_dir_to_dir_other_fs(self):
+        self.test_move_dir_to_dir()
+
+    @patch_replace
+    def test_move_dir_into_itself_other_fs(self):
+        self.test_move_dir_into_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_file_symlink_other_fs(self):
+        self.test_move_file_symlink()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_file_symlink_to_itself_other_fs(self):
+        self.test_move_file_symlink_to_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dir_symlink_other_fs(self):
+        self.test_move_dir_symlink()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dir_symlink_to_itself_other_fs(self):
+        self.test_move_dir_symlink_to_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dangling_symlink_other_fs(self):
+        self.test_move_dangling_symlink()
 
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
