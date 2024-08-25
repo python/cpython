@@ -2732,7 +2732,6 @@ def test_pdb_issue_gh_103225():
     """
 
 if not SKIP_ASYNCIO_TESTS:
-    @unittest.skipUnless(sys.platform == 'win32', 'Windows specific test')
     def test_pdb_issue_gh_123321():
         """See GH-123321
 
@@ -2762,6 +2761,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     'next',
         ...     'continue',
         ... ]):
+        ...   test_function()
         fillme
         """
 
