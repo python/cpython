@@ -2799,7 +2799,7 @@ def test_pdb_issue_gh_108976():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(4)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) continasdue
+    (Pdb) continue
     """
 
 
