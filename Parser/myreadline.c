@@ -420,7 +420,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     else {
         rv = (*PyOS_ReadlineFunctionPointer)(sys_stdin, sys_stdout, prompt);
     }
-    
+
     _PyOS_ReadlineTState = NULL;
     PyThread_release_lock(_PyOS_ReadlineLock);
     Py_END_ALLOW_THREADS
