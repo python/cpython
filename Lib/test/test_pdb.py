@@ -2760,27 +2760,31 @@ if not SKIP_ASYNCIO_TESTS:
         ...     'next',
         ...     'next',
         ...     'continue',
+        ...     'continue',
         ... ]):
         ...   test_function()
         > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(3)inner()
         -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
         (Pdb) return
-        --Return--
-        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()->None
-        -> pass
-        (Pdb) next
         > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(3)inner()
         -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-        (Pdb) return
+        (Pdb) next
         --Return--
         > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()->None
         -> pass
-        (Pdb) next
-        > ...
-        -> self.future.set_result(result)
+        (Pdb) return
+        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()
+        -> pass
         (Pdb) next
         --Return--
-        > ...
+        ...
+        -> self.future.set_result(result)
+        (Pdb) next
+        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(4)inner()->None
+        -> pass
+        (Pdb) continue
+        --Return--
+        ...
         -> self.future.set_result(result)
         (Pdb) continue
         """
