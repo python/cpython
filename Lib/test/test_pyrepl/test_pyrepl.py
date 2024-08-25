@@ -26,7 +26,8 @@ from .support import (
     make_clean_env,
 )
 from _pyrepl.console import Event
-from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
+                              _ReadlineWrapper)
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
@@ -515,6 +516,11 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
         self.assertEqual(clean_screen(reader.screen), "1+1")
+
+    def test_get_line_buffer_returns_str(self):
+        reader = self.prepare_reader(code_to_events("\n"))
+        wrapper = _ReadlineWrapper(reader=reader)
+        self.assertIs(type(wrapper.get_line_buffer()), str)
 
     def test_multiline_edit(self):
         events = itertools.chain(

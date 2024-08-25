@@ -190,18 +190,15 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     } while (0)
 
 #ifdef Py_GIL_DISABLED
-static inline void
-PyStackRef_CLOSE(_PyStackRef stackref)
-{
-    if (PyStackRef_IsDeferred(stackref)) {
-        // No assert for being immortal or deferred here.
-        // The GC unsets deferred objects right before clearing.
-        return;
-    }
-    Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref));
-}
+#   define PyStackRef_CLOSE(REF)                                        \
+        do {                                                            \
+            _PyStackRef _close_tmp = (REF);                             \
+            if (!PyStackRef_IsDeferred(_close_tmp)) {                   \
+                Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
+            }                                                           \
+        } while (0)
 #else
-#   define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref));
+#   define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref))
 #endif
 
 #define PyStackRef_XCLOSE(stackref) \
@@ -227,7 +224,7 @@ PyStackRef_DUP(_PyStackRef stackref)
     return stackref;
 }
 #else
-#   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)));
+#   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
 #endif
 
 static inline void

@@ -377,6 +377,7 @@
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                 PyStackRef_AsPyObjectSteal(stop));
             PyObject *res_o;
+            OPCODE_DEFERRED_INC(BINARY_SLICE);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
@@ -4937,6 +4938,47 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 10;
+            INSTRUCTION_STATS(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            _PyStackRef owner;
+            _PyStackRef attr;
+            _PyStackRef null = PyStackRef_NULL;
+            /* Skip 1 cache entry */
+            // _CHECK_ATTR_CLASS
+            owner = stack_pointer[-1];
+            {
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                DEOPT_IF(!PyType_Check(owner_o), LOAD_ATTR);
+                assert(type_version != 0);
+                DEOPT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version, LOAD_ATTR);
+            }
+            // _GUARD_TYPE_VERSION
+            {
+                uint32_t type_version = read_u32(&this_instr[4].cache);
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+            }
+            // _LOAD_ATTR_CLASS
+            {
+                PyObject *descr = read_obj(&this_instr[6].cache);
+                STAT_INC(LOAD_ATTR, hit);
+                assert(descr != NULL);
+                attr = PyStackRef_FromPyObjectNew(descr);
+                stack_pointer[-1] = attr;
+                null = PyStackRef_NULL;
+                PyStackRef_CLOSE(owner);
+            }
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
@@ -6839,7 +6881,7 @@
                 *value_ptr = PyStackRef_AsPyObjectSteal(value);
                 if (old_value == NULL) {
                     PyDictValues *values = _PyObject_InlineValues(owner_o);
-                    int index = value_ptr - values->values;
+                    Py_ssize_t index = value_ptr - values->values;
                     _PyDictValues_AddToInsertionOrder(values, index);
                 }
                 else {
@@ -7049,6 +7091,7 @@
             v = stack_pointer[-4];
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                 PyStackRef_AsPyObjectSteal(stop));
+            OPCODE_DEFERRED_INC(STORE_SLICE);
             int err;
             if (slice == NULL) {
                 err = 1;

@@ -100,6 +100,7 @@ New Modules
 Improved Modules
 ================
 
+
 ast
 ---
 
@@ -109,6 +110,21 @@ ast
 * Add support for :func:`copy.replace` for AST nodes.
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
+
+
+ctypes
+------
+
+* The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>`
+  in :class:`~ctypes.Structure` and :class:`~ctypes.Union`
+  now matches platform defaults (GCC/Clang or MVSC) more closely.
+  In particular, fields no longer overlap.
+  (Contributed by Matthias Görgens in :gh:`97702`.)
+
+* The :attr:`.Structure._layout_` class attribute can now be set
+  to help match a non-default ABI.
+  (Contributed by Petr Viktorin in :gh:`97702`.)
+
 
 dis
 ---
@@ -126,12 +142,14 @@ dis
 
   (Contributed by Bénédikt Tran in :gh:`123165`.)
 
+
 fractions
 ---------
 
 Added support for converting any objects that have the
 :meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
 (Contributed by Serhiy Storchaka in :gh:`82017`.)
+
 
 json
 ----
@@ -144,6 +162,7 @@ Enable :mod:`json` module to work as a script using the :option:`-m` switch: ``p
 See the :ref:`JSON command-line interface <json-commandline>` documentation.
 (Contributed by Trey Hunner in :gh:`122873`.)
 
+
 operator
 --------
 
@@ -153,6 +172,7 @@ operator
   to ``obj is not None``.
   (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
 
+
 os
 --
 
@@ -160,6 +180,7 @@ os
   :data:`os.environ` with changes to the environment made by :func:`os.putenv`,
   by :func:`os.unsetenv`, or made outside Python in the same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
+
 
 pathlib
 -------
@@ -172,6 +193,7 @@ pathlib
 
   (Contributed by Barney Gale in :gh:`73991`.)
 
+
 pdb
 ---
 
@@ -182,11 +204,13 @@ pdb
   :pdbcmd:`commands` are preserved across hard-coded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
+
 pickle
 ------
 
 * Set the default protocol version on the :mod:`pickle` module to 5.
   For more details, please see :ref:`pickle protocols <pickle-protocols>`.
+
 
 symtable
 --------

@@ -672,6 +672,7 @@ dummy_func(
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                                                         PyStackRef_AsPyObjectSteal(stop));
             PyObject *res_o;
+            OPCODE_DEFERRED_INC(BINARY_SLICE);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
@@ -689,6 +690,7 @@ dummy_func(
         inst(STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                                                         PyStackRef_AsPyObjectSteal(stop));
+            OPCODE_DEFERRED_INC(STORE_SLICE);
             int err;
             if (slice == NULL) {
                 err = 1;
@@ -1936,6 +1938,7 @@ dummy_func(
             LOAD_ATTR_WITH_HINT,
             LOAD_ATTR_SLOT,
             LOAD_ATTR_CLASS,
+            LOAD_ATTR_CLASS_WITH_METACLASS_CHECK,
             LOAD_ATTR_PROPERTY,
             LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
             LOAD_ATTR_METHOD_WITH_VALUES,
@@ -2119,7 +2122,6 @@ dummy_func(
             EXIT_IF(!PyType_Check(owner_o));
             assert(type_version != 0);
             EXIT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version);
-
         }
 
         split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
@@ -2134,6 +2136,12 @@ dummy_func(
             unused/1 +
             _CHECK_ATTR_CLASS +
             unused/2 +
+            _LOAD_ATTR_CLASS;
+
+        macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
+            unused/1 +
+            _CHECK_ATTR_CLASS +
+            _GUARD_TYPE_VERSION +
             _LOAD_ATTR_CLASS;
 
         op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _PyInterpreterFrame *)) {
@@ -2207,7 +2215,7 @@ dummy_func(
             *value_ptr = PyStackRef_AsPyObjectSteal(value);
             if (old_value == NULL) {
                 PyDictValues *values = _PyObject_InlineValues(owner_o);
-                int index = value_ptr - values->values;
+                Py_ssize_t index = value_ptr - values->values;
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
             else {
