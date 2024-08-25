@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from sysconfig import (
@@ -13,7 +14,6 @@ from sysconfig import (
     get_python_version,
     parse_config_h,
 )
-
 
 # Regexes needed for parsing Makefile (and similar syntaxes,
 # like old-style Setup files).
@@ -125,7 +125,7 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
                         variables.remove(name)
 
                         if name.startswith('PY_') \
-                        and name[3:] in renamed_variables:
+                            and name[3:] in renamed_variables:
 
                             name = name[3:]
                             if name not in done:
@@ -151,10 +151,10 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
 
 
 def _print_config_dict(d, stream):
-    print ("{", file=stream)
+    print("{", file=stream)
     for k, v in sorted(d.items()):
         print(f"    {k!r}: {v!r},", file=stream)
-    print ("}", file=stream)
+    print("}", file=stream)
 
 
 def _generate_posix_vars():
@@ -232,13 +232,23 @@ def _main():
     if '--generate-posix-vars' in sys.argv:
         _generate_posix_vars()
         return
-    print(f'Platform: "{get_platform()}"')
-    print(f'Python version: "{get_python_version()}"')
-    print(f'Current installation scheme: "{get_default_scheme()}"')
-    print()
-    _print_dict('Paths', get_paths())
-    print()
-    _print_dict('Variables', get_config_vars())
+    if '--json' in sys.argv:
+        data = {
+            'platform': get_platform(),
+            'pyversion': get_python_version(),
+            'default_scheme': get_default_scheme(),
+            'paths': get_paths(),
+            'variables': get_config_vars()
+        }
+        print(json.dumps(data, indent=4))
+    else:
+        print(f'Platform: "{get_platform()}"')
+        print(f'Python version: "{get_python_version()}"')
+        print(f'Current installation scheme: "{get_default_scheme()}"')
+        print()
+        _print_dict('Paths', get_paths())
+        print()
+        _print_dict('Variables', get_config_vars())
 
 
 if __name__ == '__main__':
