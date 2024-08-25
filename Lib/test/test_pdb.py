@@ -2731,6 +2731,40 @@ def test_pdb_issue_gh_103225():
     (Pdb) continue
     """
 
+if not SKIP_ASYNCIO_TESTS:
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows specific test')
+    def test_pdb_issue_gh_123321():
+        """See GH-123321
+
+        Make sure pdb does not segfault on asyncio threads on Windows.
+
+        >>> import asyncio
+
+        >>> async def test_main():
+        ...   def inner():
+        ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+        ...     pass
+        ...   task1 = asyncio.create_task(asyncio.to_thread(inner))
+        ...   task2 = asyncio.create_task(asyncio.to_thread(inner))
+        ...   await asyncio.gather(task1, task2)
+
+        >>> def test_function():
+        ...     loop = asyncio.new_event_loop()
+        ...     loop.run_until_complete(test_main())
+        ...     loop.close()
+        ...     asyncio.set_event_loop_policy(None)
+
+        >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+        ...     'return',
+        ...     'next',
+        ...     'return',
+        ...     'next',
+        ...     'next',
+        ...     'continue',
+        ... ]):
+        fillme
+        """
+
 def test_pdb_issue_gh_101517():
     """See GH-101517
 
@@ -2765,7 +2799,7 @@ def test_pdb_issue_gh_108976():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(4)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) continue
+    (Pdb) continasdue
     """
 
 

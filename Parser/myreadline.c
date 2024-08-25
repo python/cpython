@@ -392,9 +392,11 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         }
     }
 
-    _PyOS_ReadlineTState = tstate;
+
     Py_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
+    _PyOS_ReadlineTState = tstate;
+
 
     /* This is needed to handle the unlikely case that the
      * interpreter is in interactive mode *and* stdin/out are not
@@ -418,11 +420,10 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     else {
         rv = (*PyOS_ReadlineFunctionPointer)(sys_stdin, sys_stdout, prompt);
     }
-    Py_END_ALLOW_THREADS
-
-    PyThread_release_lock(_PyOS_ReadlineLock);
-
+    
     _PyOS_ReadlineTState = NULL;
+    PyThread_release_lock(_PyOS_ReadlineLock);
+    Py_END_ALLOW_THREADS
 
     if (rv == NULL)
         return NULL;
