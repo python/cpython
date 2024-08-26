@@ -973,7 +973,10 @@ def findsource(object):
             firstlineno = vars(object)['__firstlineno__']
         except (TypeError, KeyError):
             raise OSError('source code not available')
-        return lines, firstlineno - 1
+        lnum = firstlineno - 1
+        if lnum >= len(lines) or lnum < 0:
+            raise OSError('lineno is out of bounds')
+        return lines, lnum
 
     if ismethod(object):
         object = object.__func__
