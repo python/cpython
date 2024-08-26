@@ -314,9 +314,9 @@ static int compiler_warn(struct compiler *, location loc, const char *, ...);
 static int compiler_nameop(struct compiler *, location, identifier, expr_context_ty);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
-static int compiler_visit_stmt(struct compiler *, stmt_ty);
-static int compiler_visit_keyword(struct compiler *, keyword_ty);
-static int compiler_visit_expr(struct compiler *, expr_ty);
+static int codegen_visit_stmt(struct compiler *, stmt_ty);
+static int codegen_visit_keyword(struct compiler *, keyword_ty);
+static int codegen_visit_expr(struct compiler *, expr_ty);
 static int codegen_augassign(struct compiler *, stmt_ty);
 static int codegen_annassign(struct compiler *, stmt_ty);
 static int codegen_subscript(struct compiler *, expr_ty);
@@ -1037,17 +1037,17 @@ codegen_addop_j(instr_sequence *seq, location loc,
 */
 
 #define VISIT(C, TYPE, V) \
-    RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), (V)));
+    RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), (V)));
 
 #define VISIT_IN_SCOPE(C, TYPE, V) \
-    RETURN_IF_ERROR_IN_SCOPE((C), compiler_visit_ ## TYPE((C), (V)))
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_visit_ ## TYPE((C), (V)))
 
 #define VISIT_SEQ(C, TYPE, SEQ) { \
     int _i; \
     asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), elt)); \
+        RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), elt)); \
     } \
 }
 
@@ -1056,7 +1056,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        if (compiler_visit_ ## TYPE((C), elt) < 0) { \
+        if (codegen_visit_ ## TYPE((C), elt) < 0) { \
             compiler_exit_scope(C); \
             return ERROR; \
         } \
@@ -1850,9 +1850,7 @@ codegen_kwonlydefaults(struct compiler *c, location loc,
                 goto error;
             }
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            if (compiler_visit_expr(c, default_) < 0) {
-                goto error;
-            }
+            RETURN_IF_ERROR(codegen_visit_expr(c, default_));
         }
     }
     if (default_count) {
@@ -1869,7 +1867,7 @@ error:
 }
 
 static int
-compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
+codegen_visit_annexpr(struct compiler *c, expr_ty annotation)
 {
     location loc = LOC(annotation);
     ADDOP_LOAD_CONST_NEW(c, loc, _PyAST_ExprAsUnicode(annotation));
@@ -3854,7 +3852,7 @@ codegen_stmt_expr(struct compiler *c, location loc, expr_ty value)
 }
 
 static int
-compiler_visit_stmt(struct compiler *c, stmt_ty s)
+codegen_visit_stmt(struct compiler *c, stmt_ty s)
 {
 
     switch (s->kind) {
@@ -5807,7 +5805,7 @@ codegen_dictcomp(struct compiler *c, expr_ty e)
 
 
 static int
-compiler_visit_keyword(struct compiler *c, keyword_ty k)
+codegen_visit_keyword(struct compiler *c, keyword_ty k)
 {
     VISIT(c, expr, k->value);
     return SUCCESS;
@@ -6035,7 +6033,7 @@ codegen_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static int
-compiler_visit_expr(struct compiler *c, expr_ty e)
+codegen_visit_expr(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     switch (e->kind) {
@@ -6955,9 +6953,7 @@ codegen_pattern_mapping(struct compiler *c, pattern_ty p,
             compiler_error(c, LOC(p), e);
             goto error;
         }
-        if (compiler_visit_expr(c, key) < 0) {
-            goto error;
-        }
+        RETURN_IF_ERROR(codegen_visit_expr(c, key));
     }
 
     // all keys have been checked; there are no duplicates
