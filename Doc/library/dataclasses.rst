@@ -195,9 +195,10 @@ Module contents
         See :gh:`90562` for full details.
 
     .. warning::
-       Having a base class with :meth:`~object.__init_subclass__` with parameters
+       Passing parameters to a base class :meth:`~object.__init_subclass__`
        when using ``slots=True`` will result in a :exc:`TypeError`.
-       Either use ``__init_subclass__`` with no parameters or use default values.
+       Either use ``__init_subclass__`` with no parameters
+       or use default values as a workaround.
        See :gh:`91126` for full details.
 
     .. versionadded:: 3.10
