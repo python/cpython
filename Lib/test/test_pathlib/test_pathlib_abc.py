@@ -2072,6 +2072,20 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target2.joinpath('link').is_symlink())
         self.assertEqual(target2.joinpath('link').readlink(), self.cls('nonexistent'))
 
+    def test_copy_into(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target_dir = base / 'dirA'
+        result = source.copy_into(target_dir)
+        self.assertEqual(result, target_dir / 'fileA')
+        self.assertTrue(result.exists())
+        self.assertEqual(source.read_text(), result.read_text())
+
+    def test_copy_into_empty_name(self):
+        source = self.cls('')
+        target_dir = self.base
+        self.assertRaises(ValueError, source.copy_into, target_dir)
+
     def test_move_file(self):
         base = self.cls(self.base)
         source = base / 'fileA'
@@ -2190,6 +2204,22 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse(source.exists())
         self.assertTrue(target.is_symlink())
         self.assertEqual(source_readlink, target.readlink())
+
+    def test_move_into(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        source_text = source.read_text()
+        target_dir = base / 'dirA'
+        result = source.move_into(target_dir)
+        self.assertEqual(result, target_dir / 'fileA')
+        self.assertFalse(source.exists())
+        self.assertTrue(result.exists())
+        self.assertEqual(source_text, result.read_text())
+
+    def test_move_into_empty_name(self):
+        source = self.cls('')
+        target_dir = self.base
+        self.assertRaises(ValueError, source.move_into, target_dir)
 
     def test_iterdir(self):
         P = self.cls
