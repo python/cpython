@@ -1,3 +1,9 @@
+"""Python implementation of computing the layout of a struct/union
+
+This code is internal and tightly coupled to the C part. The interface
+may change at any time.
+"""
+
 import sys
 import warnings
 import struct
