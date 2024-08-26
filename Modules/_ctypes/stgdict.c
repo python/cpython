@@ -258,19 +258,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    PyObject *layout_class;
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_layout_), &tmp) < 0) {
-        goto error;
-    }
-    if (!tmp || PyUnicode_Check(tmp)) {
-        layout_class = _PyImport_GetModuleAttrString("ctypes._layout",
-                                                     "default_layout");
-        Py_XDECREF(tmp);
-    }
-    else {
-        layout_class = tmp;
-    }
-    if (!layout_class) {
+    PyObject *layout_func = _PyImport_GetModuleAttrString("ctypes._layout",
+                                                          "get_layout");
+    if (!layout_func) {
         goto error;
     }
     PyObject *kwnames = PyTuple_Pack(
@@ -281,7 +271,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
     layout = PyObject_Vectorcall(
-        layout_class,
+        layout_func,
         1 + (PyObject*[]){
             NULL,
             /* positional args */
@@ -293,7 +283,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames);
     Py_DECREF(kwnames);
-    Py_DECREF(layout_class);
+    Py_DECREF(layout_func);
     fields = NULL; // a borrowed reference we won't be using again
     if (!layout) {
         goto error;
