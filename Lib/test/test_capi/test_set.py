@@ -213,3 +213,7 @@ class TestSetCAPI(unittest.TestCase):
             clear(object())
         self.assertImmutable(clear)
         # CRASHES: clear(NULL)
+
+
+if __name__ == "__main__":
+    unittest.main()

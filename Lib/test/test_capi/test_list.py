@@ -275,3 +275,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, astuple, ())
         self.assertRaises(SystemError, astuple, object())
         self.assertRaises(SystemError, astuple, NULL)
+
+
+if __name__ == "__main__":
+    unittest.main()
