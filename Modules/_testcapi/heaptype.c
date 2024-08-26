@@ -1008,6 +1008,24 @@ static PyType_Spec HeapCTypeSetattr_spec = {
     HeapCTypeSetattr_slots
 };
 
+static PyObject *heapctype_vectorcall(PyObject *self, PyObject *const *args_in,
+                                      size_t nargsf, PyObject *kwargs_in) {
+    return PyLong_FromLong(123);
+}
+
+static PyType_Slot HeapCTypeVectorcall_slots[] = {
+    {Py_tp_vectorcall, heapctype_vectorcall},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeVectorcall_spec = {
+    "_testcapi.HeapCTypeVectorcall",
+    0,
+    0,
+    Py_TPFLAGS_DEFAULT,
+    HeapCTypeVectorcall_slots
+};
+
 PyDoc_STRVAR(HeapCCollection_doc,
 "Tuple-like heap type that uses PyObject_GetItemData for items.");
 
@@ -1179,6 +1197,10 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
 
     PyObject *HeapCTypeSetattr = PyType_FromSpec(&HeapCTypeSetattr_spec);
     ADD("HeapCTypeSetattr", HeapCTypeSetattr);
+
+    PyObject *HeapCTypeVectorcall = PyType_FromSpecWithBases(
+        &HeapCTypeVectorcall_spec, (PyObject *) &PyType_Type);
+    ADD("HeapCTypeVectorcall", HeapCTypeVectorcall);
 
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {

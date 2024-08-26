@@ -729,6 +729,13 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(issubclass(sub, Base))
         self.assertIsInstance(sub, metaclass)
 
+    def test_heaptype_with_tp_vectorcall(self):
+        tp = _testcapi.HeapCTypeVectorcall
+        self.assertTrue(issubclass(tp, type))
+        value = tp()
+        self.assertIsInstance(value, int)
+        self.assertEqual(value, 123)
+
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
 
         with self.assertRaises(TypeError):
