@@ -469,8 +469,8 @@ You can also pass a ``--json`` flag to have a JSON-formatted output:
    $ python -m sysconfig --json
    {
        "platform": "macosx-14.6-arm64",
-       "pyversion": "3.14",
-       "default_scheme": "posix_prefix",
+       "python_version": "3.14",
+       "installation_scheme": "posix_prefix",
        "paths": {
            ...
        },
