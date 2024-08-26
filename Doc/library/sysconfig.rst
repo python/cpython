@@ -462,7 +462,7 @@ This call will print in the standard output the information returned by
 :func:`get_platform`, :func:`get_python_version`, :func:`get_path` and
 :func:`get_config_vars`.
 
-You can also pass a **--json** flag to have a json-formatted output
+You can also pass a ``--json`` flag to have a JSON-formatted output:
 
 .. code-block:: shell-session
 
