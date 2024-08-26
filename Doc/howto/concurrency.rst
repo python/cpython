@@ -66,7 +66,7 @@ in Python:
      - scale
      - `multi-core <What is parallelism?_>`_
      - `races <concurrency-downsides_>`_
-     - overhead
+     - `overhead <concurrency-overhead-table_>`_
      - `c.f <concurrent.futures_>`_
    * - free threading `(Python) <python-free-threading_>`_
      - :mod:`threading`
@@ -416,6 +416,8 @@ Here's a summary:
        * facilitates massive scaling
      - * not necessarily a good fit for small-scale applications
        * often requires configuration
+
+.. _concurrency-overhead-table:
 
 Here's a comparison of the overhead of each model in Python:
 
