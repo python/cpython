@@ -227,12 +227,12 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                                    foreground='blue', background='yellow')
         img3 = tkinter.BitmapImage(master=self.root, file=imgfile,
                                    foreground='white', background='black')
-        style.element_create('Button.button', 'image',
+        style.element_create('Button.button2', 'image',
                              img1, ('pressed', img2), ('active', img3),
                              border=(2, 4), sticky='we')
-        self.assertIn('Button.button', style.element_names())
+        self.assertIn('Button.button2', style.element_names())
 
-        style.layout('Button', [('Button.button', {'sticky': 'news'})])
+        style.layout('Button', [('Button.button2', {'sticky': 'news'})])
         b = ttk.Button(self.root, style='Button')
         b.pack(expand=True, fill='both')
         self.assertEqual(b.winfo_reqwidth(), 16)
