@@ -295,6 +295,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.fail_on_improvement:
         exit_code |= status
 
+    print(
+        "For information about this tool and its configuration"
+        " visit https://devguide.python.org/development-tools/warnings/"
+        )
+
     return exit_code
 
 
