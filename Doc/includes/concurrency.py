@@ -11,6 +11,7 @@ import tempfile
 
 @contextlib.contextmanager
 def dummy_files(*filenames):
+    """A context manager that creates empty files in a temp directory."""
     with tempfile.TemporaryDirectory() as tempdir:
         orig = os.getcwd()
         os.chdir(tempdir)
@@ -31,6 +32,10 @@ except TypeError:
 
 
 class example(staticmethod):
+    """A function containing example code.
+
+    The function will be called when this file is run as a script.
+    """
 
     registry = []
 
@@ -43,7 +48,19 @@ class example(staticmethod):
         type(self).registry.append((self.func, cls))
 
 
-class ConcurrentFutures:
+class Examples:
+    """Code examples for docs using "literalinclude"."""
+
+
+class WorkloadExamples(Examples):
+    """Examples of a single concurrency workload."""
+
+
+#######################################
+# concurrent.futures examples
+#######################################
+
+class ConcurrentFutures(Examples):
 
     @example
     def example_basic():
@@ -241,14 +258,14 @@ class ConcurrentFutures:
 
 
 #######################################
-# workload 1: ...
+# workload: image resizing web service
 #######################################
 
-class Workload1:
+class ImageResizingWebService(WorkloadExamples):
 
     @example
     def run_using_threads():
-        # [start-w1-threads]
+        # [start-web-image-resize-threads]
         import threading
 
         def task():
@@ -258,57 +275,57 @@ class Workload1:
         t.start()
 
         ...
-        # [end-w1-threads]
+        # [end-web-image-resize-threads]
 
     @example
     def run_using_multiprocessing():
-        # [start-w1-multiprocessing]
+        # [start-web-image-resize-multiprocessing]
         import multiprocessing
 
         def task():
             ...
 
         ...
-        # [end-w1-multiprocessing]
+        # [end-web-image-resize-multiprocessing]
 
     @example
     def run_using_async():
-        # [start-w1-async]
+        # [start-web-image-resize-async]
         # async 1
         ...
-        # [end-w1-async]
+        # [end-web-image-resize-async]
 
     @example
     def run_using_subinterpreters():
-        # [start-w1-subinterpreters]
+        # [start-web-image-resize-subinterpreters]
         # subinterpreters 1
         ...
-        # [end-w1-subinterpreters]
+        # [end-web-image-resize-subinterpreters]
 
     @example
     def run_using_smp():
-        # [start-w1-smp]
+        # [start-web-image-resize-smp]
         # smp 1
         ...
-        # [end-w1-smp]
+        # [end-web-image-resize-smp]
 
     @example
     def run_using_concurrent_futures_thread():
-        # [start-w1-concurrent-futures-thread]
+        # [start-web-image-resize-cf-thread]
         # concurrent.futures 1
         ...
-        # [end-w1-concurrent-futures-thread]
+        # [end-web-image-resize-cf-thread]
 
 
 #######################################
-# workload 2: ...
+# workload: grep
 #######################################
 
-class Workload2:
+class Grep(WorkloadExamples):
 
     @example
     def run_using_threads():
-        # [start-w2-threads]
+        # [start-grep-threads]
         import threading
 
         def task():
@@ -318,53 +335,53 @@ class Workload2:
         t.start()
 
         ...
-        # [end-w2-threads]
+        # [end-grep-threads]
 
     @example
     def run_using_multiprocessing():
-        # [start-w2-multiprocessing]
+        # [start-grep-multiprocessing]
         import multiprocessing
 
         def task():
             ...
 
         ...
-        # [end-w2-multiprocessing]
+        # [end-grep-multiprocessing]
 
     @example
     def run_using_async():
-        # [start-w2-async]
+        # [start-grep-async]
         # async 2
         ...
-        # [end-w2-async]
+        # [end-grep-async]
 
     @example
     def run_using_subinterpreters():
-        # [start-w2-subinterpreters]
+        # [start-grep-subinterpreters]
         # subinterpreters 2
         ...
-        # [end-w2-subinterpreters]
+        # [end-grep-subinterpreters]
 
     @example
     def run_using_smp():
-        # [start-w2-smp]
+        # [start-grep-smp]
         # smp 2
         ...
-        # [end-w2-smp]
+        # [end-grep-smp]
 
     @example
     def run_using_concurrent_futures_thread():
-        # [start-w2-concurrent-futures-thread]
+        # [start-grep-concurrent-futures-thread]
         # concurrent.futures 2
         ...
-        # [end-w2-concurrent-futures-thread]
+        # [end-grep-concurrent-futures-thread]
 
 
 #######################################
-# workload 3: ...
+# workload: ...
 #######################################
 
-class Workload3:
+class WorkloadX(WorkloadExamples):
 
     @example
     def run_using_threads():
@@ -419,6 +436,10 @@ class Workload3:
         ...
         # [end-w3-concurrent-futures-thread]
 
+
+#######################################
+# A script to run the examples
+#######################################
 
 if __name__ == '__main__':
     # Run all the examples.

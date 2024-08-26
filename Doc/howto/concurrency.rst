@@ -965,17 +965,71 @@ Python Concurrency Workload Examples
 
 Below we have a series of examples of how to implement the most
 common Python workloads that take advantage of concurrency.
+For each workload you will find an implementation for each of the
+concurrency models.
 
-...
+The implementations are meant to accurately demonstrate how best
+to solve the problem using the given concurrency model.  The examples
+for the workload are presented side-by-side, for easier comparison.
+The examples for threads, multiprocessing, and multiple interpreters
+will use :mod:`concurrent.futures` when that is the better approach.
+Performance comparisons are not included here.
 
-also see:
+Here's a summary of the examples, by workload:
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - workload
+     - req in
+     - req out
+     - *N* core tasks
+     - core task
+   * - `web: resize image <Workload: Image Resizer Web Service_>`_
+     - image (**net**)
+     - image (**net**)
+     - | *N* small sub-images
+       | **mem**: ~ 2x image size
+     - | **time**: short
+       | **mem**: small
+   * - `grep <Workload: grep_>`_
+     - | *N* filenames (**stdin**)
+       | file bytes x *N* (**disk**)
+     - *M* matches (**stdout**)
+     - 1+ per file
+     - | **time**: ~ file size
+       | **mem**: small
+   * - `... <Workload: ..._>`_
+     - ...
+     - ...
+     - ...
+     - ...
+
+.. other examples:
+
+   * <numeric> (scientific, finance, ML, matrices)
+   * conway's game of life
+   * raytracer
+   * mandelbrot
+   * find primes
+   * compute factorials
+   * <apply transforms>
+   * <merge-sort on a bunch of dicts>
+
+   * <backtracking>
+   * <divide-and-conquer>
+   * <map-reduce>
+
+Also see:
 
 * https://github.com/faster-cpython/ideas/wiki/Tables:-Workloads
 * https://github.com/ericsnowcurrently/concurrency-benchmarks
 
 
-Workload 1
-----------
+Workload: Image Resizer Web Service
+-----------------------------------
 
 # ...
 
@@ -995,9 +1049,8 @@ Workload 1
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :name: concurrency-workload-1-threads
-          :start-after: [start-w1-threads]
-          :end-before: [end-w1-threads]
+          :start-after: [start-web-image-resize-threads]
+          :end-before: [end-web-image-resize-threads]
           :dedent:
           :linenos:
 
@@ -1011,9 +1064,8 @@ Workload 1
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :name: concurrency-workload-1-subinterpreters
-          :start-after: [start-w1-subinterpreters]
-          :end-before: [end-w1-subinterpreters]
+          :start-after: [start-web-image-resize-subinterpreters]
+          :end-before: [end-web-image-resize-subinterpreters]
           :dedent:
           :linenos:
 
@@ -1027,9 +1079,8 @@ Workload 1
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :name: concurrency-workload-1-async
-          :start-after: [start-w1-async]
-          :end-before: [end-w1-async]
+          :start-after: [start-web-image-resize-async]
+          :end-before: [end-web-image-resize-async]
           :dedent:
           :linenos:
 
@@ -1043,9 +1094,8 @@ Workload 1
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :name: concurrency-workload-1-multiprocessing
-          :start-after: [start-w1-multiprocessing]
-          :end-before: [end-w1-multiprocessing]
+          :start-after: [start-web-image-resize-multiprocessing]
+          :end-before: [end-web-image-resize-multiprocessing]
           :dedent:
           :linenos:
 
@@ -1059,9 +1109,8 @@ Workload 1
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :name: concurrency-workload-1-smp
-          :start-after: [start-w1-smp]
-          :end-before: [end-w1-smp]
+          :start-after: [start-web-image-resize-smp]
+          :end-before: [end-web-image-resize-smp]
           :dedent:
           :linenos:
 
@@ -1069,10 +1118,186 @@ Workload 1
 
           </details>
 
-Workload 2
-----------
+Workload: grep
+--------------
 
-...
+# ...
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - threads
+     - multiple interpreters
+     - coroutines
+     - multiple processes
+     - SMP
+   * - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-grep-threads]
+          :end-before: [end-grep-threads]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-grep-subinterpreters]
+          :end-before: [end-grep-subinterpreters]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-grep-async]
+          :end-before: [end-grep-async]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-grep-multiprocessing]
+          :end-before: [end-grep-multiprocessing]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-grep-smp]
+          :end-before: [end-grep-smp]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+
+Workload: ...
+-------------
+
+# ...
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - threads
+     - multiple interpreters
+     - coroutines
+     - multiple processes
+     - SMP
+   * - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w3-threads]
+          :end-before: [end-w3-threads]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w3-subinterpreters]
+          :end-before: [end-w3-subinterpreters]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w3-async]
+          :end-before: [end-w3-async]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w3-multiprocessing]
+          :end-before: [end-w3-multiprocessing]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w3-smp]
+          :end-before: [end-w3-smp]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
 
 
 .. rubric:: Footnotes
