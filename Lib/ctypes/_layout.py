@@ -63,7 +63,35 @@ class StructUnionLayout:
         self.format_spec = format_spec
 
 
+
 def get_layout(cls, input_fields, is_struct, base):
+    """Return a StructUnionLayout for the given class
+
+    Called by PyCStructUnionType_update_stginfo when _fields_ is assigned
+    to a class.
+    """
+    # Currently there are two modes, selectable using the '_layout_' attribute:
+    #
+    # 'gcc-sysv' mode places fields one after another, bit by bit.
+    #   But "each bit field must fit within a single object of its specified
+    #   type" (GCC manual, section 15.8 "Bit Field Packing"). When it doesn't,
+    #   we insert a few bits of padding to avoid that.
+    #
+    # 'ms' mode works similar except for bitfield packing.  Adjacent
+    #   bit-fields are packed into the same 1-, 2-, or 4-byte allocation unit
+    #   if the integral types are the same size and if the next bit-field fits
+    #   into the current allocation unit without crossing the boundary imposed
+    #   by the common alignment requirements of the bit-fields.
+    #
+    #   See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#index-mms-bitfields
+    #   for details.
+
+    # We do not support zero length bitfields (we use bitsize != 0
+    # elsewhere to indicate a bitfield). Here, non-bitfields have bit_size
+    # set to size*8.
+
+    # For clarity, variables that count bits have `bit` in their names.
+
     layout = getattr(cls, '_layout_', None)
     if layout is None:
         if sys.platform == 'win32' or getattr(cls, '_pack_', None):

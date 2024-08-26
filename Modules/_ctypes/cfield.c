@@ -78,31 +78,6 @@ _cfield_is_bitfield(CFieldObject* self)
     return self->bit_size >= 0;
 }
 
-/* PyCField_FromDesc creates and returns a struct/union field descriptor.
-
-The function expects to be called repeatedly for all fields in a struct or
-union.  It uses helper functions PyCField_FromDesc_gcc and
-PyCField_FromDesc_msvc to simulate the corresponding compilers.
-
-GCC mode places fields one after another, bit by bit.  But "each bit field must
-fit within a single object of its specified type" (GCC manual, section 15.8
-"Bit Field Packing"). When it doesn't, we insert a few bits of padding to
-avoid that.
-
-MSVC mode works similar except for bitfield packing.  Adjacent bit-fields are
-packed into the same 1-, 2-, or 4-byte allocation unit if the integral types
-are the same size and if the next bit-field fits into the current allocation
-unit without crossing the boundary imposed by the common alignment requirements
-of the bit-fields.
-
-See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#index-mms-bitfields for details.
-
-We do not support zero length bitfields.  In fact we use bitsize != 0 elsewhere
-to indicate a bitfield. Here, non-bitfields need bitsize set to size*8.
-
-PyCField_FromDesc manages the pack state struct.
-*/
-
 /*[clinic input]
 @classmethod
 _ctypes.CField.__new__ as PyCField_new
