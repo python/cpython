@@ -235,7 +235,7 @@ def _main():
     if '--json' in sys.argv:
         data = {
             'platform': get_platform(),
-            'pyversion': get_python_version(),
+            'python_version': get_python_version(),
             'installation_scheme': get_default_scheme(),
             'paths': get_paths(),
             'variables': get_config_vars()
