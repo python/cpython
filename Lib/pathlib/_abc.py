@@ -865,48 +865,35 @@ class PathBase(PurePathBase):
                     raise
 
     def copy(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False, ignore=None, on_error=None):
+             preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
-        try:
-            self._ensure_distinct_path(target)
-        except OSError as err:
-            if on_error is None:
-                raise
-            on_error(err)
-            return
+        self._ensure_distinct_path(target)
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
-            try:
-                if not follow_symlinks and src.is_symlink():
-                    dst._symlink_to_target_of(src)
-                    if preserve_metadata:
-                        src._copy_metadata(dst, follow_symlinks=False)
-                elif src.is_dir():
-                    children = src.iterdir()
-                    dst.mkdir(exist_ok=dirs_exist_ok)
-                    for child in children:
-                        if not (ignore and ignore(child)):
-                            stack.append((child, dst.joinpath(child.name)))
-                    if preserve_metadata:
-                        src._copy_metadata(dst)
-                else:
-                    src._copy_file(dst)
-                    if preserve_metadata:
-                        src._copy_metadata(dst)
-            except OSError as err:
-                if on_error is None:
-                    raise
-                on_error(err)
+            if not follow_symlinks and src.is_symlink():
+                dst._symlink_to_target_of(src)
+                if preserve_metadata:
+                    src._copy_metadata(dst, follow_symlinks=False)
+            elif src.is_dir():
+                children = src.iterdir()
+                dst.mkdir(exist_ok=dirs_exist_ok)
+                stack.extend((child, dst.joinpath(child.name))
+                             for child in children)
+                if preserve_metadata:
+                    src._copy_metadata(dst)
+            else:
+                src._copy_file(dst)
+                if preserve_metadata:
+                    src._copy_metadata(dst)
         return target
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
-                  dirs_exist_ok=False, preserve_metadata=False, ignore=None,
-                  on_error=None):
+                  dirs_exist_ok=False, preserve_metadata=False):
         """
         Copy this file or directory tree into the given existing directory.
         """
@@ -919,8 +906,7 @@ class PathBase(PurePathBase):
             target = self.with_segments(target_dir, name)
         return self.copy(target, follow_symlinks=follow_symlinks,
                          dirs_exist_ok=dirs_exist_ok,
-                         preserve_metadata=preserve_metadata, ignore=ignore,
-                         on_error=on_error)
+                         preserve_metadata=preserve_metadata)
 
     def rename(self, target):
         """

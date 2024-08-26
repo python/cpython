@@ -776,11 +776,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         target = base / 'copyE'
         self.assertRaises(PermissionError, source.copy, target)
         self.assertFalse(target.exists())
-        errors = []
-        source.copy(target, on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], PermissionError)
-        self.assertFalse(target.exists())
 
     def test_copy_dir_preserve_metadata(self):
         base = self.cls(self.base)

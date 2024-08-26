@@ -1540,7 +1540,7 @@ Copying, moving and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: Path.copy(target, *, follow_symlinks=True, dirs_exist_ok=False, \
-                      preserve_metadata=False, ignore=None, on_error=None)
+                      preserve_metadata=False)
 
    Copy this file or directory tree to the given *target*, and return a new
    :class:`!Path` instance pointing to *target*.
@@ -1563,21 +1563,11 @@ Copying, moving and deleting
    This argument has no effect when copying files on Windows (where
    metadata is always preserved).
 
-   If *ignore* is given, it should be a callable accepting one argument: a
-   source file or directory path. The callable may return true to suppress
-   copying of the path.
-
-   If *on_error* is given, it should be a callable accepting one argument: an
-   instance of :exc:`OSError`. The callable may re-raise the exception or do
-   nothing, in which case the copying operation continues. If *on_error* isn't
-   given, exceptions are propagated to the caller.
-
    .. versionadded:: 3.14
 
 
 .. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
-                           dirs_exist_ok=False, preserve_metadata=False, \
-                           ignore=None, on_error=None)
+                           dirs_exist_ok=False, preserve_metadata=False)
 
    Copy this file or directory tree into the given *target_dir*, which should
    be an existing directory. Other arguments are handled identically to
