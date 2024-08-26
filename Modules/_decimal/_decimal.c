@@ -112,8 +112,6 @@ typedef struct {
     PyCFunction _py_float_as_integer_ratio;
 } decimal_state;
 
-static PyType_Spec dec_spec;
-
 static inline decimal_state *
 get_module_state(PyObject *mod)
 {
@@ -131,6 +129,30 @@ get_module_state_by_def(PyTypeObject *tp)
     assert(mod != NULL);
     return get_module_state(mod);
 }
+
+static inline PyObject *
+_left_or_right(PyObject *left, PyObject *right, void *token)
+{
+    // Prefer the `right` argument to be a static type
+    if (PyType_GetBaseByToken(Py_TYPE(right), token, NULL) == 1) {
+        return right;
+    }
+    assert(!PyErr_Occurred());
+    assert(PyType_GetBaseByToken(Py_TYPE(left), token, NULL) == 1);
+    return left;
+}
+
+static PyType_Spec dec_spec;
+static inline decimal_state *get_module_state_from_dec(PyObject *);
+
+// No conditional branch here so that MSVC can inline this on PGO builds
+static inline decimal_state *
+find_state_left_or_right(PyObject *left, PyObject *right)
+{
+    PyObject *dec = _left_or_right(left, right, &dec_spec);
+    return get_module_state_from_dec(dec);
+}
+
 
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02050000
   #error "libmpdec version >= 2.5.0 required"
@@ -166,7 +188,7 @@ typedef struct {
     Py_hash_t hash;
     mpd_t dec;
     mpd_uint_t data[_Py_DEC_MINALLOC];
-    decimal_state *mstate;
+    decimal_state *modstate;
 } PyDecObject;
 
 typedef struct {
@@ -202,38 +224,12 @@ typedef struct {
 #define CtxCaps(v) (((PyDecContextObject *)v)->capitals)
 
 static inline decimal_state *
-find_state_left_or_right(PyObject *left, PyObject *right)
-{
-    decimal_state *state;
-    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, NULL) == 1) {
-        state = ((PyDecObject *)left)->mstate;
-    }
-    else {
-        assert(!PyErr_Occurred());
-        assert(PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, NULL) == 1);
-        state = ((PyDecObject *)right)->mstate;
-    }
+get_module_state_from_dec(PyObject *v) {
+    void *state = ((PyDecObject *)v)->modstate;
     assert(state != NULL);
-    return state;
+    return (decimal_state *)state;
 }
 
-/*  Alternative ver.
-
-static inline decimal_state *
-find_state_left_or_right(PyObject *left, PyObject *right)
-{
-    // No slower than _PyType_GetModuleByDef2() on PGO, but unstable.
-    // Prefer the `right` argument to be a static type.
-    PyTypeObject *base;
-    if (PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base) == 1) {
-        void *state = _PyType_GetModuleState(base);
-        Py_DECREF(base);
-        return (decimal_state *)state;
-    }
-    assert(!PyErr_Occurred());
-    return get_module_state_by_def(Py_TYPE(left));
-}
- */
 
 Py_LOCAL_INLINE(PyObject *)
 incr_true(void)
@@ -2060,7 +2056,7 @@ PyDecType_New(PyTypeObject *type)
     }
 
     dec->hash = -1;
-    dec->mstate = state;
+    dec->modstate = state;
 
     MPD(dec)->flags = MPD_STATIC|MPD_STATIC_DATA;
     MPD(dec)->exp = 0;
