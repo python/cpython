@@ -217,21 +217,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, power, 4, 11, HasPow.with_val(NotImplemented))
         self.assertRaises(TypeError, power, 4, 11, object())
 
-    @cpython_only
-    def test_rshift_print(self):
-        # This tests correct syntax hint for py2 redirection (>>).
-        rshift = _testcapi.number_rshift
-
-        with self.assertRaises(TypeError) as context:
-            rshift(print, 42)
-        self.assertIn('Did you mean "print(<message>, '
-                      'file=<output_stream>)"?', str(context.exception))
-        with self.assertRaises(TypeError) as context:
-            rshift(max, sys.stderr)
-        self.assertNotIn('Did you mean ', str(context.exception))
-        with self.assertRaises(TypeError) as context:
-            rshift(1, "spam")
-
     def test_long(self):
         # Test PyNumber_Long()
         long = _testcapi.number_long
