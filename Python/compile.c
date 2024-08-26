@@ -96,6 +96,7 @@ static PySTEntryObject *compiler_symtable_entry(struct compiler *c);
 #define IS_INTERACTIVE(C) compiler_is_interactive(C)
 #define IS_NESTED_SCOPE(C) compiler_is_nested_scope(C)
 #define SCOPE_TYPE(C) compiler_scope_type(C)
+#define QUALNAME(C) compiler_qualname(C)
 
 typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
@@ -106,6 +107,7 @@ static int compiler_optimization_level(struct compiler *c);
 static int compiler_is_interactive(struct compiler *c);
 static int compiler_is_nested_scope(struct compiler *c);
 static int compiler_scope_type(struct compiler *c);
+static PyObject *compiler_qualname(struct compiler *c);
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
@@ -336,14 +338,14 @@ static int codegen_call_helper(struct compiler *c, location loc,
 static int codegen_try_except(struct compiler *, stmt_ty);
 static int codegen_try_star_except(struct compiler *, stmt_ty);
 
-static int compiler_sync_comprehension_generator(
+static int codegen_sync_comprehension_generator(
                                       struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
                                       int iter_on_stack);
 
-static int compiler_async_comprehension_generator(
+static int codegen_async_comprehension_generator(
                                       struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
@@ -1715,6 +1717,13 @@ dict_lookup_arg(PyObject *dict, PyObject *name)
 }
 
 static int
+compiler_lookup_cellvar(struct compiler *c, PyObject *name)
+{
+    assert(c->u->u_metadata.u_cellvars);
+    return dict_lookup_arg(c->u->u_metadata.u_cellvars, name);
+}
+
+static int
 compiler_lookup_arg(struct compiler *c, PyCodeObject *co, PyObject *name)
 {
     /* Special case: If a class contains a method with a
@@ -2367,8 +2376,15 @@ codegen_set_type_params_in_class(struct compiler *c, location loc)
     return SUCCESS;
 }
 
+static PyObject *
+compiler_static_attributes_tuple(struct compiler *c)
+{
+    assert(c->u->u_static_attributes);
+    return PySequence_Tuple(c->u->u_static_attributes);
+}
+
 static int
-compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
+codegen_class_body(struct compiler *c, stmt_ty s, int firstlineno)
 {
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -2391,8 +2407,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__name__), Load));
     /* ... and store it as __module__ */
     RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__module__), Store));
-    assert(c->u->u_metadata.u_qualname);
-    ADDOP_LOAD_CONST(c, loc, c->u->u_metadata.u_qualname);
+    ADDOP_LOAD_CONST(c, loc, QUALNAME(c));
     RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__qualname__), Store));
     ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromLong(c->u->u_metadata.u_firstlineno));
     RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_ID(__firstlineno__), Store));
@@ -2410,8 +2425,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     }
     /* compile the body proper */
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_body(c, loc, s->v.ClassDef.body));
-    assert(c->u->u_static_attributes);
-    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    PyObject *static_attributes = compiler_static_attributes_tuple(c);
     if (static_attributes == NULL) {
         compiler_exit_scope(c);
         return ERROR;
@@ -2424,7 +2438,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     /* Set __classdictcell__ if necessary */
     if (SYMTABLE_ENTRY(c)->ste_needs_classdict) {
         /* Store __classdictcell__ into class namespace */
-        int i = dict_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
+        int i = compiler_lookup_cellvar(c, &_Py_ID(__classdict__));
         RETURN_IF_ERROR_IN_SCOPE(c, i);
         ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
         RETURN_IF_ERROR_IN_SCOPE(
@@ -2433,7 +2447,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     /* Return __classcell__ if it is referenced, otherwise return None */
     if (SYMTABLE_ENTRY(c)->ste_needs_class_closure) {
         /* Store __classcell__ into class namespace & return it */
-        int i = dict_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
+        int i = compiler_lookup_cellvar(c, &_Py_ID(__class__));
         RETURN_IF_ERROR_IN_SCOPE(c, i);
         ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
         ADDOP_I(c, NO_LOCATION, COPY, 1);
@@ -2503,7 +2517,7 @@ codegen_class(struct compiler *c, stmt_ty s)
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
     }
 
-    int ret = compiler_class_body(c, s, firstlineno);
+    int ret = codegen_class_body(c, s, firstlineno);
     if (is_generic) {
         RETURN_IF_ERROR_IN_SCOPE(c, ret);
     }
@@ -5107,31 +5121,31 @@ ex_call:
 
 
 static int
-compiler_comprehension_generator(struct compiler *c, location loc,
-                                 asdl_comprehension_seq *generators, int gen_index,
-                                 int depth,
-                                 expr_ty elt, expr_ty val, int type,
-                                 int iter_on_stack)
+codegen_comprehension_generator(struct compiler *c, location loc,
+                                asdl_comprehension_seq *generators, int gen_index,
+                                int depth,
+                                expr_ty elt, expr_ty val, int type,
+                                int iter_on_stack)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
-        return compiler_async_comprehension_generator(
+        return codegen_async_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
             iter_on_stack);
     } else {
-        return compiler_sync_comprehension_generator(
+        return codegen_sync_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
             iter_on_stack);
     }
 }
 
 static int
-compiler_sync_comprehension_generator(struct compiler *c, location loc,
-                                      asdl_comprehension_seq *generators,
-                                      int gen_index, int depth,
-                                      expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack)
+codegen_sync_comprehension_generator(struct compiler *c, location loc,
+                                     asdl_comprehension_seq *generators,
+                                     int gen_index, int depth,
+                                     expr_ty elt, expr_ty val, int type,
+                                     int iter_on_stack)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -5145,8 +5159,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     if (!iter_on_stack) {
         if (gen_index == 0) {
-            /* Receive outermost iter as an implicit argument */
-            c->u->u_metadata.u_argcount = 1;
+            assert(c->u->u_metadata.u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
         }
         else {
@@ -5195,9 +5208,9 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     if (++gen_index < asdl_seq_LEN(generators)) {
         RETURN_IF_ERROR(
-            compiler_comprehension_generator(c, loc,
-                                             generators, gen_index, depth,
-                                             elt, val, type, 0));
+            codegen_comprehension_generator(c, loc,
+                                            generators, gen_index, depth,
+                                            elt, val, type, 0));
     }
 
     location elt_loc = LOC(elt);
@@ -5252,7 +5265,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 }
 
 static int
-compiler_async_comprehension_generator(struct compiler *c, location loc,
+codegen_async_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
@@ -5267,8 +5280,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
 
     if (!iter_on_stack) {
         if (gen_index == 0) {
-            /* Receive outermost iter as an implicit argument */
-            c->u->u_metadata.u_argcount = 1;
+            assert(c->u->u_metadata.u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
         }
         else {
@@ -5300,9 +5312,9 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
     depth++;
     if (++gen_index < asdl_seq_LEN(generators)) {
         RETURN_IF_ERROR(
-            compiler_comprehension_generator(c, loc,
-                                             generators, gen_index, depth,
-                                             elt, val, type, 0));
+            codegen_comprehension_generator(c, loc,
+                                            generators, gen_index, depth,
+                                            elt, val, type, 0));
     }
 
     location elt_loc = LOC(elt);
@@ -5622,15 +5634,15 @@ codegen_comprehension_iter(struct compiler *c, location loc,
 }
 
 static int
-compiler_comprehension(struct compiler *c, expr_ty e, int type,
-                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
-                       expr_ty val)
+codegen_comprehension(struct compiler *c, expr_ty e, int type,
+                      identifier name, asdl_comprehension_seq *generators, expr_ty elt,
+                      expr_ty val)
 {
     PyCodeObject *co = NULL;
     inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
 #ifndef NDEBUG
-    int scope_type = c->u->u_scope_type;
+    int scope_type = SCOPE_TYPE(c);
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
 #endif
     PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c), (void *)e);
@@ -5652,8 +5664,12 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         }
     }
     else {
+        /* Receive outermost iter as an implicit argument */
+        _PyCompile_CodeUnitMetadata umd = {
+            .u_argcount = 1,
+        };
         if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                                (void *)e, e->lineno, NULL, NULL) < 0) {
+                                 (void *)e, e->lineno, NULL, &umd) < 0) {
             goto error;
         }
     }
@@ -5689,8 +5705,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         }
     }
 
-    if (compiler_comprehension_generator(c, loc, generators, 0, 0,
-                                         elt, val, type, is_inlined) < 0) {
+    if (codegen_comprehension_generator(c, loc, generators, 0, 0,
+                                        elt, val, type, is_inlined) < 0) {
         goto error_in_scope;
     }
 
@@ -5753,9 +5769,9 @@ codegen_genexp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == GeneratorExp_kind);
     _Py_DECLARE_STR(anon_genexpr, "<genexpr>");
-    return compiler_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
-                                  e->v.GeneratorExp.generators,
-                                  e->v.GeneratorExp.elt, NULL);
+    return codegen_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
+                                 e->v.GeneratorExp.generators,
+                                 e->v.GeneratorExp.elt, NULL);
 }
 
 static int
@@ -5763,9 +5779,9 @@ codegen_listcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == ListComp_kind);
     _Py_DECLARE_STR(anon_listcomp, "<listcomp>");
-    return compiler_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
-                                  e->v.ListComp.generators,
-                                  e->v.ListComp.elt, NULL);
+    return codegen_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
+                                 e->v.ListComp.generators,
+                                 e->v.ListComp.elt, NULL);
 }
 
 static int
@@ -5773,9 +5789,9 @@ codegen_setcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == SetComp_kind);
     _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
-    return compiler_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
-                                  e->v.SetComp.generators,
-                                  e->v.SetComp.elt, NULL);
+    return codegen_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
+                                 e->v.SetComp.generators,
+                                 e->v.SetComp.elt, NULL);
 }
 
 
@@ -5784,9 +5800,9 @@ codegen_dictcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == DictComp_kind);
     _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
-    return compiler_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
-                                  e->v.DictComp.generators,
-                                  e->v.DictComp.key, e->v.DictComp.value);
+    return codegen_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
+                                 e->v.DictComp.generators,
+                                 e->v.DictComp.key, e->v.DictComp.value);
 }
 
 
@@ -6264,7 +6280,7 @@ codegen_check_ann_expr(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_check_annotation(struct compiler *c, stmt_ty s)
+codegen_check_annotation(struct compiler *c, stmt_ty s)
 {
     /* Annotations of complex targets does not produce anything
        under annotations future */
@@ -6273,8 +6289,8 @@ compiler_check_annotation(struct compiler *c, stmt_ty s)
     }
 
     /* Annotations are only evaluated in a module or class. */
-    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
-        c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
+    if (SCOPE_TYPE(c) == COMPILER_SCOPE_MODULE ||
+        SCOPE_TYPE(c) == COMPILER_SCOPE_CLASS) {
         return codegen_check_ann_expr(c, s->v.AnnAssign.annotation);
     }
     return SUCCESS;
@@ -6384,7 +6400,7 @@ codegen_annassign(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     /* Annotation is evaluated last. */
-    if (future_annotations && !s->v.AnnAssign.simple && compiler_check_annotation(c, s) < 0) {
+    if (future_annotations && !s->v.AnnAssign.simple && codegen_check_annotation(c, s) < 0) {
         return ERROR;
     }
     return SUCCESS;
@@ -6604,7 +6620,7 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
 }
 
 static int
-compiler_error_duplicate_store(struct compiler *c, location loc, identifier n)
+codegen_error_duplicate_store(struct compiler *c, location loc, identifier n)
 {
     return compiler_error(c, loc,
         "multiple assignments to name %R in pattern", n);
@@ -6632,7 +6648,7 @@ codegen_pattern_helper_store_name(struct compiler *c, location loc,
     int duplicate = PySequence_Contains(pc->stores, n);
     RETURN_IF_ERROR(duplicate);
     if (duplicate) {
-        return compiler_error_duplicate_store(c, loc, n);
+        return codegen_error_duplicate_store(c, loc, n);
     }
     // Rotate this object underneath any items we need to preserve:
     Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
@@ -7125,7 +7141,7 @@ codegen_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             goto error;
         }
         if (dupe) {
-            compiler_error_duplicate_store(c, LOC(p), name);
+            codegen_error_duplicate_store(c, LOC(p), name);
             goto error;
         }
         if (PyList_Append(pc->stores, name)) {
@@ -7434,6 +7450,13 @@ static int
 compiler_scope_type(struct compiler *c)
 {
     return c->u->u_scope_type;
+}
+
+static PyObject *
+compiler_qualname(struct compiler *c)
+{
+    assert(c->u->u_metadata.u_qualname);
+    return c->u->u_metadata.u_qualname;
 }
 
 static int
