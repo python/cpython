@@ -31,6 +31,37 @@ class TestReader(TestCase):
         reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, f"{9*"a"}\\\n{9*"a"}\\\naa")
 
+    def test_calc_screen_prompt_handling(self):
+        def prepare_reader_keep_prompts(*args, **kwargs):
+            reader = prepare_reader(*args, **kwargs)
+            del reader.get_prompt
+            reader.ps1 = ">>> "
+            reader.ps2 = ">>> "
+            reader.ps3 = "... "
+            reader.ps4 = ""
+            reader.can_colorize = False
+            reader.paste_mode = False
+            return reader
+
+        events = code_to_events("if some_condition:\nsome_function()")
+        reader, _ = handle_events_narrow_console(
+            events,
+            prepare_reader=prepare_reader_keep_prompts,
+        )
+        # fmt: off
+        self.assert_screen_equals(
+            reader,
+            (
+            ">>> if so\\\n"
+            "me_condit\\\n"
+            "ion:\n"
+            "...     s\\\n"
+            "ome_funct\\\n"
+            "ion()"
+            )
+        )
+        # fmt: on
+
     def test_calc_screen_wrap_three_lines_mixed_character(self):
         # fmt: off
         code = (
