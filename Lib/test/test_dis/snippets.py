@@ -97,7 +97,6 @@ def _prepare_test_cases():
     result = result.replace(repr(code_object_inner), "code_object_inner")
     print(result)
 
-# from test.test_dis import _prepare_test_cases; _prepare_test_cases()
 
 Instruction = dis.Instruction
 
