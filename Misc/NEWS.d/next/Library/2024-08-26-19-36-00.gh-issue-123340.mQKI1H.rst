@@ -1,1 +1,1 @@
-Show string value of IS_OP oparg in :mod:`dis` output.
+Show string value of :opcode:`IS_OP` oparg in :mod:`dis` output.
