@@ -1,2 +1,2 @@
-Fix handling of ``__firstlineno__`` in :func:`inspect.findsource` for
+Fix handling of ``__firstlineno__`` in :func:`!inspect.findsource` for
 classes. Patch by Bénédikt Tran.
