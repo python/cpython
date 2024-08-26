@@ -236,7 +236,7 @@ def _main():
         data = {
             'platform': get_platform(),
             'pyversion': get_python_version(),
-            'default_scheme': get_default_scheme(),
+            'installation_scheme': get_default_scheme(),
             'paths': get_paths(),
             'variables': get_config_vars()
         }
