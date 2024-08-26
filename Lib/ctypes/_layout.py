@@ -152,7 +152,8 @@ def get_layout(cls, input_fields, is_struct, base):
             name, ctype, bit_size = field
             is_bitfield = True
             if bit_size <= 0:
-                raise ValueError(f'number of bits invalid for bit field {name!r}')
+                raise ValueError(
+                    f'number of bits invalid for bit field {name!r}')
             type_size = ctypes.sizeof(ctype)
 
         type_bit_size = type_size * 8
