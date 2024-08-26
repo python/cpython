@@ -4643,9 +4643,14 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
 }
 
 static int
-check_immutable_bases(const char *type_name, PyObject *bases)
+check_immutable_bases(const char *type_name, PyObject *bases, int skip_first)
 {
-    for (Py_ssize_t i=0; i<PyTuple_GET_SIZE(bases); i++) {
+    Py_ssize_t i = 0;
+    if (skip_first) {
+        // When testing the MRO, skip the type itself
+        i = 1;
+    }
+    for (; i<PyTuple_GET_SIZE(bases); i++) {
         PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
         if (!b) {
             return -1;
@@ -4818,7 +4823,7 @@ _PyType_FromMetaclass_impl(
      * and only heap types can be mutable.)
      */
     if (spec->flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        if (check_immutable_bases(spec->name, bases) < 0) {
+        if (check_immutable_bases(spec->name, bases, 0) < 0) {
             goto finally;
         }
     }
@@ -11190,8 +11195,17 @@ add_operators(PyTypeObject *type, PyTypeObject *def)
 int
 PyType_Freeze(PyTypeObject *type)
 {
-    PyObject *bases = type->tp_bases;
-    if (check_immutable_bases(type->tp_name, bases) < 0) {
+    // gh-121654: Check the __mro__ instead of __bases__
+    PyObject *mro = type_get_mro(type, NULL);
+    if (!PyTuple_Check(mro)) {
+        Py_DECREF(mro);
+        PyErr_SetString(PyExc_TypeError, "unable to get the type MRO");
+        return -1;
+    }
+
+    int check = check_immutable_bases(type->tp_name, mro, 1);
+    Py_DECREF(mro);
+    if (check < 0) {
         return -1;
     }
 
