@@ -1855,7 +1855,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     /* Buffer of maximum size of formatted year permitted by long. */
     char buf[SIZEOF_LONG * 5 / 2 + 2
 #ifdef Py_STRFTIME_C99_SUPPORT
-    /* Need 6 more to accomodate dashes, 2-digit month and day for %F. */
+    /* Need 6 more to accommodate dashes, 2-digit month and day for %F. */
              + 6
 #endif
     ];
