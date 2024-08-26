@@ -72,11 +72,6 @@ Py_ssize_t LOW_BIT(Py_ssize_t offset);
 static inline
 Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
 
-static bool
-_cfield_is_bitfield(CFieldObject* self)
-{
-    return self->bit_size >= 0;
-}
 
 /*[clinic input]
 @classmethod
