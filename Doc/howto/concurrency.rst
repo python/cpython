@@ -311,22 +311,46 @@ engineering simulation  calculate stress loads at vertices
 molecular modeling      try many permutations
 ======================= ===========
 
-It can be helpful to identify common characteristics by which we could
-group concurrency workloads.  Here are some:
+For a given workload, here are some characteristics that will help you
+understand the problem and, potentially, which concurrency model would
+be the best fit:
 
-* number of logical threads
-* main + workers vs. independent
-* main + background
-* how much computation, per thread
-* how much blocking on other threads, per thread
-* how much blocking IO, per thread
-* number of external inputs
-* number of external outputs
-* how much data used, per thread
-* how much data do logical threads share
-* size of the data shared by threads
+* requests
+  * frequency
+  * expected latency for (at least partial) response
+* inputs per request
+  * how many
+  * size of each input
+* tasks (logical threads) per input
+  * how many
+  * variety vs. uniformity
+  * compute per task: how much
+  * data per task: how much and what kinds
+  * I/O per task: how much and what kinds
+  * tasks not tied to outputs
+* task interaction
+  * how much and in what ways
+  * what data is shared between tasks
+  * how much blocking while waiting
+* outputs per request
+  * how many
+  * size pf each output
+  * correlation to inputs
 
-Let's also revisit the ways concurrency can be helpful:
+To some extent the most critical factors can be compressed down to:
+
+* many inputs vs. 1 large divisible input
+* many outputs vs. combined output vs. matching large output
+* many short computations vs. fewer medium/long computations
+
+Aside from the concurrency model, the answers to the above can impact
+the following:
+
+* use of a worker pool
+* use of background tasks/threads
+
+In the context of the above characteristics, let's revisit the ways that
+concurrency can be helpful:
 
 * get work done faster
    * run more tasks at once (multi-core)
@@ -341,9 +365,6 @@ Let's also revisit the ways concurrency can be helpful:
    * task scheduling & resource usage optimization
 * scaling
 * handle asynchronous events
-
-All of these things factor in to how concurrency should be applied for
-a workload, or even if it should.
 
 
 Python Concurrency Models
