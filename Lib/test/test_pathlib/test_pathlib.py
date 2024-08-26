@@ -861,6 +861,14 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_move_dangling_symlink_other_fs(self):
         self.test_move_dangling_symlink()
 
+    @patch_replace
+    def test_move_into_other_os(self):
+        self.test_move_into()
+
+    @patch_replace
+    def test_move_into_empty_name_other_os(self):
+        self.test_move_into_empty_name()
+
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
 
