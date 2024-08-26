@@ -1,1 +1,1 @@
-Resolved SSL session memory leak in the ssl module.
+Resolved SSL session memory leak in :mod:`ssl`.
