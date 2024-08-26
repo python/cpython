@@ -3094,8 +3094,8 @@ class ASTOptimiziationTests(unittest.TestCase):
         code = "1 %s 1"
         operators = self.binop.keys()
 
-        def create_binop(operand):
-            return ast.BinOp(left=ast.Constant(1), op=self.binop[operand], right=ast.Constant(1))
+        def create_binop(operand, left=ast.Constant(1), right=ast.Constant(1)):
+            return ast.BinOp(left=left, op=self.binop[operand], right=right)
 
         for op in operators:
             result_code = code % op
@@ -3108,6 +3108,13 @@ class ASTOptimiziationTests(unittest.TestCase):
                 optimized_target=optimized_target
             ):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
+
+        # Multiplication of constant tuples must be folded
+        code = "(1,) * 3"
+        non_optimized_target = self.wrap_expr(create_binop("*", ast.Tuple(elts=[ast.Constant(value=1)]), ast.Constant(value=3)))
+        optimized_target = self.wrap_expr(ast.Constant(eval(code)))
+
+        self.assert_ast(code, non_optimized_target, optimized_target)
 
     def test_folding_unaryop(self):
         code = "%s1"
@@ -3127,6 +3134,58 @@ class ASTOptimiziationTests(unittest.TestCase):
                 optimized_target=optimized_target
             ):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
+
+    def test_folding_not(self):
+        code = "not (1 %s (1,))"
+        operators = {
+            "in": ast.In(),
+            "is": ast.Is(),
+        }
+        opt_operators = {
+            "is": ast.IsNot(),
+            "in": ast.NotIn(),
+        }
+
+        def create_notop(operand):
+            return ast.UnaryOp(op=ast.Not(), operand=ast.Compare(
+                left=ast.Constant(value=1),
+                ops=[operators[operand]],
+                comparators=[ast.Tuple(elts=[ast.Constant(value=1)])]
+            ))
+
+        for op in operators.keys():
+            result_code = code % op
+            non_optimized_target = self.wrap_expr(create_notop(op))
+            optimized_target = self.wrap_expr(
+                ast.Compare(left=ast.Constant(1), ops=[opt_operators[op]], comparators=[ast.Constant(value=(1,))])
+            )
+
+            with self.subTest(
+                result_code=result_code,
+                non_optimized_target=non_optimized_target,
+                optimized_target=optimized_target
+            ):
+                self.assert_ast(result_code, non_optimized_target, optimized_target)
+
+    def test_folding_format(self):
+        code = "'%s' % (a,)"
+
+        non_optimized_target = self.wrap_expr(
+            ast.BinOp(
+                left=ast.Constant(value="%s"),
+                op=ast.Mod(),
+                right=ast.Tuple(elts=[ast.Name(id='a')]))
+        )
+        optimized_target = self.wrap_expr(
+            ast.JoinedStr(
+                values=[
+                    ast.FormattedValue(value=ast.Name(id='a'), conversion=115)
+                ]
+            )
+        )
+
+        self.assert_ast(code, non_optimized_target, optimized_target)
+
 
     def test_folding_tuple(self):
         code = "(1,)"
