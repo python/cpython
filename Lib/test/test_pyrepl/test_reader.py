@@ -2,10 +2,9 @@ import itertools
 import functools
 import rlcompleter
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
-from test.support import import_helper
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
 
@@ -30,6 +29,37 @@ class TestReader(TestCase):
         events = code_to_events(20 * "a")
         reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, f"{9*"a"}\\\n{9*"a"}\\\naa")
+
+    def test_calc_screen_prompt_handling(self):
+        def prepare_reader_keep_prompts(*args, **kwargs):
+            reader = prepare_reader(*args, **kwargs)
+            del reader.get_prompt
+            reader.ps1 = ">>> "
+            reader.ps2 = ">>> "
+            reader.ps3 = "... "
+            reader.ps4 = ""
+            reader.can_colorize = False
+            reader.paste_mode = False
+            return reader
+
+        events = code_to_events("if some_condition:\nsome_function()")
+        reader, _ = handle_events_narrow_console(
+            events,
+            prepare_reader=prepare_reader_keep_prompts,
+        )
+        # fmt: off
+        self.assert_screen_equals(
+            reader,
+            (
+            ">>> if so\\\n"
+            "me_condit\\\n"
+            "ion:\n"
+            "...     s\\\n"
+            "ome_funct\\\n"
+            "ion()"
+            )
+        )
+        # fmt: on
 
     def test_calc_screen_wrap_three_lines_mixed_character(self):
         # fmt: off
@@ -88,6 +118,12 @@ class TestReader(TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(0, 0)
         self.assertEqual(reader.pos, 0)
+
+    def test_control_characters(self):
+        code = 'flag = "🏳️‍🌈"'
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, 'flag = "🏳️\\u200d🌈"')
 
     def test_setpos_from_xy_multiple_lines(self):
         # fmt: off

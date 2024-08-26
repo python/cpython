@@ -108,7 +108,7 @@ from urllib.response import addinfourl, addclosehook
 
 # check for SSL
 try:
-    import ssl
+    import ssl  # noqa: F401
 except ImportError:
     _have_ssl = False
 else:
@@ -1555,7 +1555,7 @@ class FTPHandler(BaseHandler):
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
         except ftplib.all_errors as exp:
-            raise URLError(exp) from exp
+            raise URLError(f"ftp error: {exp}") from exp
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,

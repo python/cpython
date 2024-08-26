@@ -1,5 +1,3 @@
-import gc
-import weakref
 import unittest
 from test.support import import_helper
 from collections import UserList
@@ -347,3 +345,7 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES list_extend(NULL, [])
         # CRASHES list_extend([], NULL)
+
+
+if __name__ == "__main__":
+    unittest.main()
