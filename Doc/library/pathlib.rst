@@ -1657,7 +1657,7 @@ Copying, moving and deleting
 .. method:: Path.unlink(missing_ok=False)
 
    Remove this file or symbolic link.  If the path points to a directory,
-   use :func:`Path.rmdir` or :func:`Path.delete` instead.
+   use :func:`Path.rmdir` instead.
 
    If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
    raised if the path does not exist.
@@ -1671,42 +1671,7 @@ Copying, moving and deleting
 
 .. method:: Path.rmdir()
 
-   Remove this directory.  The directory must be empty; use
-   :meth:`Path.delete` to remove a non-empty directory.
-
-
-.. method:: Path.delete(ignore_errors=False, on_error=None)
-
-   Delete this file or directory. If this path refers to a non-empty
-   directory, its files and sub-directories are deleted recursively.
-
-   If *ignore_errors* is true, errors resulting from failed deletions will be
-   ignored. If *ignore_errors* is false or omitted, and a callable is given as
-   the optional *on_error* argument, it will be called with one argument of
-   type :exc:`OSError` each time an exception is raised. The callable can
-   handle the error to continue the deletion process or re-raise it to stop.
-   Note that the filename is available as the :attr:`~OSError.filename`
-   attribute of the exception object. If neither *ignore_errors* nor
-   *on_error* are supplied, exceptions are propagated to the caller.
-
-   .. note::
-
-      When deleting non-empty directories on platforms that lack the necessary
-      file descriptor-based functions, the :meth:`~Path.delete` implementation
-      is susceptible to a symlink attack: given proper timing and
-      circumstances, attackers can manipulate symlinks on the filesystem to
-      delete files they would not be able to access otherwise. Applications
-      can use the :data:`~Path.delete.avoids_symlink_attacks` method attribute
-      to determine whether the implementation is immune to this attack.
-
-   .. attribute:: delete.avoids_symlink_attacks
-
-      Indicates whether the current platform and implementation provides a
-      symlink attack resistant version of :meth:`~Path.delete`.  Currently
-      this is only true for platforms supporting fd-based directory access
-      functions.
-
-   .. versionadded:: 3.14
+   Remove this directory.  The directory must be empty.
 
 
 Permissions and ownership

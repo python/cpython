@@ -962,7 +962,7 @@ class PathBase(PurePathBase):
             if err.errno != EXDEV:
                 raise
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
-        self.delete()
+        self._delete()
         return target
 
     def move_into(self, target_dir):
@@ -1004,47 +1004,29 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
 
-    def delete(self, ignore_errors=False, on_error=None):
+    def _delete(self):
         """
         Delete this file or directory (including all sub-directories).
-
-        If *ignore_errors* is true, exceptions raised from scanning the
-        filesystem and removing files and directories are ignored. Otherwise,
-        if *on_error* is set, it will be called to handle the error. If
-        neither *ignore_errors* nor *on_error* are set, exceptions are
-        propagated to the caller.
         """
-        if ignore_errors:
-            def on_error(err):
-                pass
-        elif on_error is None:
-            def on_error(err):
-                raise err
-        if self.is_dir(follow_symlinks=False):
-            results = self.walk(
-                on_error=on_error,
-                top_down=False,  # So we rmdir() empty directories.
-                follow_symlinks=False)
-            for dirpath, dirnames, filenames in results:
-                for name in filenames:
-                    try:
-                        dirpath.joinpath(name).unlink()
-                    except OSError as err:
-                        on_error(err)
-                for name in dirnames:
-                    try:
-                        dirpath.joinpath(name).rmdir()
-                    except OSError as err:
-                        on_error(err)
-            delete_self = self.rmdir
+        if self.is_symlink() or self.is_junction():
+            self.unlink()
+        elif self.is_dir():
+            self._rmtree()
         else:
-            delete_self = self.unlink
-        try:
-            delete_self()
-        except OSError as err:
-            err.filename = str(self)
-            on_error(err)
-    delete.avoids_symlink_attacks = False
+            self.unlink()
+
+    def _rmtree(self):
+        def on_error(err):
+            raise err
+        results = self.walk(
+            on_error=on_error,
+            top_down=False,  # So we rmdir() empty directories.
+            follow_symlinks=False)
+        for dirpath, _, filenames in results:
+            for filename in filenames:
+                filepath = dirpath / filename
+                filepath.unlink()
+            dirpath.rmdir()
 
     def owner(self, *, follow_symlinks=True):
         """
