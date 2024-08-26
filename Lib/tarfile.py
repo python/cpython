@@ -1440,7 +1440,7 @@ class TarInfo(object):
         # of the complete record including the length field itself and
         # the newline.
         pos = 0
-        encoding = "utf-8"
+        encoding = None
         raw_headers = []
         while len(buf) > pos and buf[pos] != 0x00:
             if not (match := _header_length_prefix_re.match(buf, pos)):
@@ -1449,18 +1449,19 @@ class TarInfo(object):
                 length = int(match.group(1))
             except ValueError:
                 raise InvalidHeaderError("invalid header")
-            # Headers must be at least 3 bytes, one for each of keyword, '=', and '\n'.
+            # Headers must be at least 5 bytes, shortest being '5 x=\n'.
             # Value is allowed to be empty.
-            if length < 3:
+            if length < 5:
                 raise InvalidHeaderError("invalid header")
             if pos + length > len(buf):
                 raise InvalidHeaderError("invalid header")
 
-            keyword_and_value = buf[match.end(1) + 1:match.start(1) + length - 1]
+            header_value_end_offset = match.start(1) + length - 1  # Last byte of the header
+            keyword_and_value = buf[match.end(1) + 1:header_value_end_offset]
             raw_keyword, equals, raw_value = keyword_and_value.partition(b"=")
 
             # Check the framing of the header. The last character must be '\n' (0x0A)
-            if not raw_keyword or equals != b"=" or buf[match.start(1) + length - 1] != 0x0A:
+            if not raw_keyword or equals != b"=" or buf[header_value_end_offset] != 0x0A:
                 raise InvalidHeaderError("invalid header")
             raw_headers.append((length, raw_keyword, raw_value))
 
@@ -1471,10 +1472,19 @@ class TarInfo(object):
             # the translation to UTF-8 fails. For the time being, we don't care about
             # anything other than "BINARY". The only other value that is currently
             # allowed by the standard is "ISO-IR 10646 2000 UTF-8" in other words UTF-8.
-            if raw_keyword == b"hdrcharset" and raw_value == b"BINARY":
-                encoding = tarfile.encoding
+            # Note that we only follow the initial 'hdrcharset' setting to preserve
+            # the initial behavior of the 'tarfile' module.
+            if raw_keyword == b"hdrcharset" and encoding is None:
+                if raw_value == b"BINARY":
+                    encoding = tarfile.encoding
+                else:  # This branch ensures only the first 'hdrcharset' header is used.
+                    encoding = "utf-8"
 
             pos += length
+
+        # If no explicit hdrcharset is set, we use UTF-8 as a default.
+        if encoding is None:
+            encoding = "utf-8"
 
         # After parsing the raw headers we can decode them to text.
         for length, raw_keyword, raw_value in raw_headers:
