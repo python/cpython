@@ -2115,14 +2115,14 @@ class TarFile(object):
                 try:
                     self._unames[tarinfo.uid] = pwd.getpwuid(tarinfo.uid)[0]
                 except KeyError:
-                    self._unames[tarinfo.uid] = None
+                    self._unames[tarinfo.uid] = ''
             tarinfo.uname = self._unames[tarinfo.uid]
         if grp:
             if tarinfo.gid not in self._gnames:
                 try:
                     self._gnames[tarinfo.gid] = grp.getgrgid(tarinfo.gid)[0]
                 except KeyError:
-                    self._gnames[tarinfo.gid] = None
+                    self._gnames[tarinfo.gid] = ''
             tarinfo.gname = self._gnames[tarinfo.gid]
 
         if type in (CHRTYPE, BLKTYPE):
