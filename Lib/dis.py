@@ -51,6 +51,7 @@ LOAD_SPECIAL = opmap['LOAD_SPECIAL']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
+IS_OP = opmap['IS_OP']
 
 CACHE = opmap["CACHE"]
 
@@ -629,6 +630,8 @@ class ArgResolver:
                     argrepr = repr(obj)
             elif deop == LOAD_SPECIAL:
                 argrepr = _special_method_names[arg]
+            elif deop == IS_OP:
+                argrepr = 'is not' if argval else 'is'
         return argval, argrepr
 
 def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):
