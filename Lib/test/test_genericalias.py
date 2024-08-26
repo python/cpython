@@ -57,6 +57,10 @@ from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
 from typing import Unpack
+try:
+    from tkinter import Event # tkinter is not always available
+except ImportError:
+    Event = None
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -133,7 +137,7 @@ class BaseTest(unittest.TestCase):
                      Future, _WorkItem,
                      Morsel,
                      DictReader, DictWriter,
-                     array]
+                     array, Event]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
