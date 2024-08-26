@@ -130,6 +130,7 @@ get_module_state_by_def(PyTypeObject *tp)
     return get_module_state(mod);
 }
 
+// MSVC inlines a branch like this on PGO builds unless the caller branches
 static inline PyObject *
 _left_or_right(PyObject *left, PyObject *right, void *token)
 {
@@ -138,14 +139,12 @@ _left_or_right(PyObject *left, PyObject *right, void *token)
         return right;
     }
     assert(!PyErr_Occurred());
-    assert(PyType_GetBaseByToken(Py_TYPE(left), token, NULL) == 1);
     return left;
 }
 
 static PyType_Spec dec_spec;
 static inline decimal_state *get_module_state_from_dec(PyObject *);
 
-// No conditional branch here so that MSVC can inline this on PGO builds
 static inline decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
@@ -225,6 +224,7 @@ typedef struct {
 
 static inline decimal_state *
 get_module_state_from_dec(PyObject *v) {
+    assert(PyType_GetBaseByToken(Py_TYPE(v), &dec_spec, NULL) == 1);
     void *state = ((PyDecObject *)v)->modstate;
     assert(state != NULL);
     return (decimal_state *)state;
