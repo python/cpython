@@ -521,7 +521,7 @@ class CAPIUnicodeTest(unittest.TestCase):
         # CRASHES asrawunicodeescapestring(NULL)
 
 
-class CAPICodecRegistration(unittest.TestCase):
+class CAPICodecs(unittest.TestCase):
 
     def setUp(self):
         self.enterContext(import_helper.isolated_modules())
