@@ -1984,14 +1984,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertRaises(OSError, source.copy, source)
         self.assertRaises(OSError, source.copy, source, follow_symlinks=False)
 
-    def test_copy_dir_to_itself_on_error(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        errors = []
-        source.copy(source, on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], OSError)
-
     def test_copy_dir_into_itself(self):
         base = self.cls(self.base)
         source = base / 'dirC'
@@ -1999,61 +1991,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
         self.assertFalse(target.exists())
-
-    def test_copy_missing_on_error(self):
-        base = self.cls(self.base)
-        source = base / 'foo'
-        target = base / 'copyA'
-        errors = []
-        result = source.copy(target, on_error=errors.append)
-        self.assertEqual(result, target)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], FileNotFoundError)
-
-    def test_copy_dir_ignore_false(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        ignores = []
-        def ignore_false(path):
-            ignores.append(path)
-            return False
-        result = source.copy(target, ignore=ignore_false)
-        self.assertEqual(result, target)
-        self.assertEqual(set(ignores), {
-            source / 'dirD',
-            source / 'dirD' / 'fileD',
-            source / 'fileC',
-            source / 'novel.txt',
-        })
-        self.assertTrue(target.is_dir())
-        self.assertTrue(target.joinpath('dirD').is_dir())
-        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
-        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
-                         "this is file D\n")
-        self.assertTrue(target.joinpath('fileC').is_file())
-        self.assertTrue(target.joinpath('fileC').read_text(),
-                        "this is file C\n")
-
-    def test_copy_dir_ignore_true(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        ignores = []
-        def ignore_true(path):
-            ignores.append(path)
-            return True
-        result = source.copy(target, ignore=ignore_true)
-        self.assertEqual(result, target)
-        self.assertEqual(set(ignores), {
-            source / 'dirD',
-            source / 'fileC',
-            source / 'novel.txt',
-        })
-        self.assertTrue(target.is_dir())
-        self.assertFalse(target.joinpath('dirD').exists())
-        self.assertFalse(target.joinpath('fileC').exists())
-        self.assertFalse(target.joinpath('novel.txt').exists())
 
     @needs_symlinks
     def test_copy_dangling_symlink(self):
