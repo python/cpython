@@ -95,7 +95,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     CFieldObject* self = NULL;
     if (size < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "size of field %R must not be negative, got %zd", name, size);
+                     "size of field %R must not be negative, got %zd",
+                     name, size);
         goto error;
     }
     // assert: no overflow;
@@ -187,7 +188,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
 
     self->index = index;
 
-    /*  Field descriptors for 'c_char * n' are be scpecial cased to
+    /*  Field descriptors for 'c_char * n' are be special cased to
         return a Python string instead of an Array object instance...
     */
     self->setfunc = NULL;

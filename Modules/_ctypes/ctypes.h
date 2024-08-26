@@ -253,13 +253,13 @@ typedef struct CFieldObject {
     Py_ssize_t size;
     Py_ssize_t index;                   /* Index into CDataObject's
                                        object array */
-    PyObject *proto;                /* underlying ctype; must have StgInfo */
+    PyObject *proto;                    /* underlying ctype; must have StgInfo */
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     int anonymous;
 
-    Py_ssize_t bit_size;            /* -1 if not a bitfield */
-    PyObject *name;                 /* exact PyUnicode */
+    Py_ssize_t bit_size;                /* -1 if not a bitfield */
+    PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
 
 /****************************************************************
