@@ -2449,6 +2449,7 @@ passed to the dict constructor, including keyword arguments.\n\
 #define DEFERRED_ADDRESS(ADDR) 0
 
 static PyType_Slot defdict_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, defdict_dealloc},
     {Py_tp_repr, defdict_repr},
     {Py_nb_or, defdict_or},
@@ -2461,7 +2462,6 @@ static PyType_Slot defdict_slots[] = {
     {Py_tp_init, defdict_init},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
-    {Py_tp_token, Py_TP_USE_SPEC},
     {0, NULL},
 };
 
