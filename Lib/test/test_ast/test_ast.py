@@ -3072,21 +3072,21 @@ class ASTOptimiziationTests(unittest.TestCase):
         # Is a non-optimized tree equal to a non-optimized target?
         self.assertTrue(
             ast.compare(non_optimized_tree, non_optimized_target),
-            f"{ast.dump(non_optimized_target)} must equal to "
+            f"{ast.dump(non_optimized_target)} must equal "
             f"{ast.dump(non_optimized_tree)}",
         )
 
         # Is a optimized tree equal to a non-optimized target?
         self.assertFalse(
             ast.compare(optimized_tree, non_optimized_target),
-            f"{ast.dump(non_optimized_target)} must not equal to "
+            f"{ast.dump(non_optimized_target)} must not equal "
             f"{ast.dump(non_optimized_tree)}"
         )
 
         # Is a optimized tree is equal to an optimized target?
         self.assertTrue(
             ast.compare(optimized_tree,  optimized_target),
-            f"{ast.dump(optimized_target)} must equal to "
+            f"{ast.dump(optimized_target)} must equal "
             f"{ast.dump(optimized_tree)}",
         )
 
@@ -3162,10 +3162,10 @@ class ASTOptimiziationTests(unittest.TestCase):
             ("{", "}", ast.Set, frozenset({1})),
         ]
 
-        for left, right, non_optimized_iter, optimized_iter in braces:
+        for left, right, ast_cls, optimized_iter in braces:
             non_optimized_target = self.wrap_for(ast.For(
                 target=ast.Name(id="_", ctx=ast.Store()),
-                iter=non_optimized_iter(elts=[ast.Constant(1)]),
+                iter=ast_cls(elts=[ast.Constant(1)]),
                 body=[ast.Pass()]
             ))
             optimized_target = self.wrap_for(ast.For(
