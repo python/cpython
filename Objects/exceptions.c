@@ -2751,7 +2751,7 @@ PyUnicodeEncodeError_GetStart(PyObject *exc, Py_ssize_t *start)
     if (*start<0)
         *start = 0; /*XXX check for values <0*/
     if (*start>=size)
-        *start = size-1;
+        *start = size ? size-1 : 0;
     Py_DECREF(obj);
     return 0;
 }
@@ -2769,7 +2769,7 @@ PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
     if (*start<0)
         *start = 0;
     if (*start>=size)
-        *start = size-1;
+        *start = size ? size-1 : 0;
     Py_DECREF(obj);
     return 0;
 }
