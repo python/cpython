@@ -3664,6 +3664,34 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(A().__dict__, {})
         A()
 
+    def test_slots_with_wrong_init_subclass(self):
+        class WrongSuper:
+            def __init_subclass__(cls, arg):
+                pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "missing 1 required positional argument: 'arg'",
+        ):
+            @dataclass(slots=True)
+            class WithWrongSuper(WrongSuper, arg=1):
+                pass
+
+    def test_slots_with_correct_init_subclass(self):
+        class CorrectSuper:
+            args = []
+            def __init_subclass__(cls, arg="default"):
+                cls.args.append(arg)
+
+        @dataclass(slots=True)
+        class WithCorrectSuper(CorrectSuper):
+            pass
+
+        # __init_subclass__ is called twice: once for `WithCorrectSuper`
+        # and once for `WithCorrectSuper__slots__` new class
+        # that we create internally.
+        self.assertEqual(CorrectSuper.args, ["default", "default"])
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
