@@ -1575,6 +1575,18 @@ Copying, moving and deleting
    .. versionadded:: 3.14
 
 
+.. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
+                           dirs_exist_ok=False, preserve_metadata=False, \
+                           ignore=None, on_error=None)
+
+   Copy this file or directory tree into the given *target_dir*, which should
+   be an existing directory. Other arguments are handled identically to
+   :meth:`Path.copy`. Returns a new :class:`!Path` instance pointing to the
+   copy.
+
+   .. versionadded:: 3.14
+
+
 .. method:: Path.rename(target)
 
    Rename this file or directory to the given *target*, and return a new
@@ -1629,6 +1641,15 @@ Copying, moving and deleting
    If both paths are on the same filesystem, the move is performed with
    :func:`os.replace`. Otherwise, this path is copied (preserving metadata and
    symlinks) and then deleted.
+
+   .. versionadded:: 3.14
+
+
+.. method:: Path.move_into(target_dir)
+
+   Move this file or directory tree into the given *target_dir*, which should
+   be an existing directory. Returns a new :class:`!Path` instance pointing to
+   the moved path.
 
    .. versionadded:: 3.14
 
