@@ -153,7 +153,7 @@ class _structunion_layout:
                     # alignment boundary)
                     next_bit_offset = round_up(next_bit_offset, type_bit_align)
 
-                offset = int(round_down(next_bit_offset, type_bit_align) / 8)
+                offset = round_down(next_bit_offset, type_bit_align) // 8
                 if is_bitfield:
                     effective_bit_offset = next_bit_offset - 8 * offset
                     size = build_size(bit_size, effective_bit_offset,
@@ -164,7 +164,7 @@ class _structunion_layout:
                     size = type_size
 
                 next_bit_offset += bit_size
-                struct_size = int(round_up(next_bit_offset, 8) / 8)
+                struct_size = round_up(next_bit_offset, 8) // 8
             else:
                 if pack:
                     type_align = min(pack, type_align)
