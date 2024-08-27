@@ -3173,6 +3173,8 @@ class ASTMainTests(unittest.TestCase):
         self.assertEqual(expected.splitlines(), res.out.decode("utf8").splitlines())
         self.assertEqual(res.rc, 0)
 
+def compare(left, right):
+    return ast.dump(left) == ast.dump(right)
 
 class ASTOptimiziationTests(unittest.TestCase):
     binop = {
@@ -3203,8 +3205,6 @@ class ASTOptimiziationTests(unittest.TestCase):
         return ast.Module(body=[for_statement])
 
     def assert_ast(self, code, non_optimized_target, optimized_target):
-        def compare(left, right):
-            return ast.dump(left) == ast.dump(right)
 
         non_optimized_tree = ast.parse(code, optimize=-1)
         optimized_tree = ast.parse(code, optimize=1)
