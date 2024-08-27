@@ -1837,22 +1837,18 @@ codegen_kwonlydefaults(struct compiler *c, location loc,
 
        Return -1 on error, 0 if no dict pushed, 1 if a dict is pushed.
        */
-    int i;
-    PyObject *keys = NULL;
     int default_count = 0;
-    for (i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
+    for (int i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
             default_count++;
             PyObject *mangled = compiler_maybe_mangle(c, arg->arg);
             if (!mangled) {
-                goto error;
+                return ERROR;
             }
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            if (codegen_visit_expr(c, default_) < 0) {
-                goto error;
-            }
+            RETURN_IF_ERROR(codegen_visit_expr(c, default_));
         }
     }
     if (default_count) {
@@ -1862,10 +1858,6 @@ codegen_kwonlydefaults(struct compiler *c, location loc,
     else {
         return 0;
     }
-
-error:
-    Py_XDECREF(keys);
-    return ERROR;
 }
 
 static int
