@@ -327,6 +327,38 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
+
+    def test_pep7_condition(self):
+        input = """
+        inst(OP, (arg1 -- out)) {
+            if (arg1)
+                out = 0;
+            else {
+                out = 1;
+            }
+        }
+        """
+        output = ""
+        with self.assertRaises(Exception):
+            self.run_cases_test(input, output)
+
+
+    def test_escapes_in_condition(self):
+        input = """
+        inst(OP, (arg1 -- out)) {
+            if (escaping_call(arg1)) {
+                out = 0;
+            }
+            else {
+                out = 1;
+            }
+        }
+        """
+        output = ""
+        with self.assertRaises(Exception):
+            self.run_cases_test(input, output)
+
+
     def test_error_if_plain(self):
         input = """
         inst(OP, (--)) {
