@@ -1480,7 +1480,7 @@ Optimizations
   Other modules to enjoy import-time speedups include
   :mod:`email.utils`, :mod:`enum`, :mod:`functools`,
   :mod:`importlib.metadata`, and :mod:`threading`.
-  (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Holla,
+  (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Hollas,
   and others in :gh:`109653`.)
 
 * :func:`textwrap.indent` is now around 30% faster than before for large input.
