@@ -8511,9 +8511,11 @@ encoding_map_lookup(Py_UCS4 c, PyObject *mapping)
     return i;
 }
 
-/* Lookup the character ch in the mapping. If the character
-   can't be found, Py_None is returned (or NULL, if another
-   error occurred). */
+/* Lookup the character in the mapping.
+   On success, return PyLong, PyBytes or None (if the character can't be found).
+   If the result is PyLong, put its value in replace.
+   On error, return NULL.
+   */
 static PyObject *
 charmapencode_lookup(Py_UCS4 c, PyObject *mapping, unsigned char *replace)
 {
@@ -8944,6 +8946,8 @@ unicode_translate_call_errorhandler(const char *errors,
 
 /* Lookup the character ch in the mapping and put the result in result,
    which must be decrefed by the caller.
+   The result can be PyLong, PyUnicode, None or NULL.
+   If the result is PyLong, put its value in replace.
    Return 0 on success, -1 on error */
 static int
 charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result, Py_UCS4 *replace)
