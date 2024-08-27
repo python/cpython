@@ -359,7 +359,7 @@ class Emitter:
         tkn = next(tkn_iter)
         reachable = True
         if tkn.kind != "LBRACE":
-            raise analysis_error(f"Expected '{{' found {tkn.text}", tkn)
+            raise analysis_error(f"PEP 7: expected '{{' found {tkn.text}", tkn)
         if emit_first_brace:
             self.emit(tkn)
         for tkn in tkn_iter:
