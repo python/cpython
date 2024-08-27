@@ -987,19 +987,19 @@ Here's a summary of the examples, by workload:
      - req out
      - *N* core tasks
      - core task
-   * - `resize image <Workload: Image Resizer_>`_
-     - image (**net**)
-     - image (**net**)
-     - | *N* small sub-images
-       | **mem**: ~ 2x image size
-     - | **time**: short
-       | **mem**: small
    * - `grep <Workload: grep_>`_
      - | *N* filenames (**stdin**)
        | file bytes x *N* (**disk**)
      - *M* matches (**stdout**)
      - 1+ per file
      - | **time**: ~ file size
+       | **mem**: small
+   * - `resize image <Workload: Image Resizer_>`_
+     - image (**net**)
+     - image (**net**)
+     - | *N* small sub-images
+       | **mem**: ~ 2x image size
+     - | **time**: short
        | **mem**: small
    * - `... <Workload: ..._>`_
      - ...
@@ -1031,97 +1031,6 @@ Also see:
 
    Each example is implemented as a basic commandline tool, but can be
    easily adapted to run as a web service.
-
-Workload: Image Resizer
------------------------
-
-This example runs a web service that takes an image and a new size
-and responds with the image at the new size.
-
-.. list-table::
-   :header-rows: 1
-   :class: borderless vert-aligned
-   :align: left
-
-   * - threads
-     - multiple interpreters
-     - coroutines
-     - multiple processes
-     - SMP
-   * - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-image-resizer-threads]
-          :end-before: [end-image-resizer-threads]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
-
-     - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-image-resizer-subinterpreters]
-          :end-before: [end-image-resizer-subinterpreters]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
-
-     - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-image-resizer-async]
-          :end-before: [end-image-resizer-async]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
-
-     - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-image-resizer-multiprocessing]
-          :end-before: [end-image-resizer-multiprocessing]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
-
-     - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-image-resizer-smp]
-          :end-before: [end-image-resizer-smp]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
 
 Workload: grep
 --------------
@@ -1213,6 +1122,96 @@ Workload: grep
 
           </details>
 
+Workload: Image Resizer
+-----------------------
+
+This example runs a web service that takes an image and a new size
+and responds with the image at the new size.
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - threads
+     - multiple interpreters
+     - coroutines
+     - multiple processes
+     - SMP
+   * - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-image-resizer-threads]
+          :end-before: [end-image-resizer-threads]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-image-resizer-subinterpreters]
+          :end-before: [end-image-resizer-subinterpreters]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-image-resizer-async]
+          :end-before: [end-image-resizer-async]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-image-resizer-multiprocessing]
+          :end-before: [end-image-resizer-multiprocessing]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-image-resizer-smp]
+          :end-before: [end-image-resizer-smp]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
 
 Workload: ...
 -------------

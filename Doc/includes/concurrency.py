@@ -258,66 +258,6 @@ class ConcurrentFutures(Examples):
 
 
 #######################################
-# workload: image resizer
-#######################################
-
-class ImageResizer(WorkloadExamples):
-
-    @example
-    def run_using_threads():
-        # [start-image-resizer-threads]
-        import threading
-
-        def task():
-            ...
-
-        t = threading.Thread(target=task)
-        t.start()
-
-        ...
-        # [end-image-resizer-threads]
-
-    @example
-    def run_using_cf_thread():
-        # [start-image-resizer-cf-thread]
-        # concurrent.futures 1
-        ...
-        # [end-image-resizer-cf-thread]
-
-    @example
-    def run_using_multiprocessing():
-        # [start-image-resizer-multiprocessing]
-        import multiprocessing
-
-        def task():
-            ...
-
-        ...
-        # [end-image-resizer-multiprocessing]
-
-    @example
-    def run_using_async():
-        # [start-image-resizer-async]
-        # async 1
-        ...
-        # [end-image-resizer-async]
-
-    @example
-    def run_using_subinterpreters():
-        # [start-image-resizer-subinterpreters]
-        # subinterpreters 1
-        ...
-        # [end-image-resizer-subinterpreters]
-
-    @example
-    def run_using_smp():
-        # [start-image-resizer-smp]
-        # smp 1
-        ...
-        # [end-image-resizer-smp]
-
-
-#######################################
 # workload: grep
 #######################################
 
@@ -375,6 +315,66 @@ class Grep(WorkloadExamples):
         # concurrent.futures 2
         ...
         # [end-grep-concurrent-futures-thread]
+
+
+#######################################
+# workload: image resizer
+#######################################
+
+class ImageResizer(WorkloadExamples):
+
+    @example
+    def run_using_threads():
+        # [start-image-resizer-threads]
+        import threading
+
+        def task():
+            ...
+
+        t = threading.Thread(target=task)
+        t.start()
+
+        ...
+        # [end-image-resizer-threads]
+
+    @example
+    def run_using_cf_thread():
+        # [start-image-resizer-cf-thread]
+        # concurrent.futures 1
+        ...
+        # [end-image-resizer-cf-thread]
+
+    @example
+    def run_using_multiprocessing():
+        # [start-image-resizer-multiprocessing]
+        import multiprocessing
+
+        def task():
+            ...
+
+        ...
+        # [end-image-resizer-multiprocessing]
+
+    @example
+    def run_using_async():
+        # [start-image-resizer-async]
+        # async 1
+        ...
+        # [end-image-resizer-async]
+
+    @example
+    def run_using_subinterpreters():
+        # [start-image-resizer-subinterpreters]
+        # subinterpreters 1
+        ...
+        # [end-image-resizer-subinterpreters]
+
+    @example
+    def run_using_smp():
+        # [start-image-resizer-smp]
+        # smp 1
+        ...
+        # [end-image-resizer-smp]
 
 
 #######################################
