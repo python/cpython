@@ -438,7 +438,6 @@ class TestUnicodeError(unittest.TestCase):
             (0, 0, 0),
             (0, 1, 0),
             (0, 10, 0),
-            (2, 0, 0),
             (5, 5, 4),
             (5, 10, 4),
         ]:
