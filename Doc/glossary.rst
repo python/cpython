@@ -590,14 +590,12 @@ Glossary
       which ships with the standard distribution of Python.
 
    immortal
-      If an object is immortal, its reference count is never modified, and
-      therefore it is never deallocated.
+      *Immortal objects* are a CPython implementation detail introduced
+      in :pep:`683`.
 
-      Built-in strings and singletons are immortal objects. For example,
-      :const:`True` and :const:`None` singletons are immmortal.
-
-      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
-      <https://peps.python.org/pep-0683/>`_ for more information.
+      If an object is immortal, its :term:`reference count` is never modified,
+      and therefore it is never deallocated while the interpreter is running.
+      For example, :const:`True` and :const:`None` are immortal in CPython.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
