@@ -1850,7 +1850,9 @@ codegen_kwonlydefaults(struct compiler *c, location loc,
                 goto error;
             }
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            RETURN_IF_ERROR(codegen_visit_expr(c, default_));
+            if (codegen_visit_expr(c, default_) < 0) {
+                goto error;
+            }
         }
     }
     if (default_count) {
@@ -6953,7 +6955,9 @@ codegen_pattern_mapping(struct compiler *c, pattern_ty p,
             compiler_error(c, LOC(p), e);
             goto error;
         }
-        RETURN_IF_ERROR(codegen_visit_expr(c, key));
+        if (codegen_visit_expr(c, key) < 0) {
+            goto error;
+        }
     }
 
     // all keys have been checked; there are no duplicates
