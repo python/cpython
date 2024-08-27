@@ -1,3 +1,12 @@
+"""
+A Path-like interface for zipfiles.
+
+This codebase is shared between zipfile.Path in the stdlib
+and zipp in PyPI. See
+https://github.com/python/importlib_metadata/wiki/Development-Methodology
+for more detail.
+"""
+
 import io
 import posixpath
 import zipfile
@@ -34,7 +43,7 @@ def _parents(path):
 def _ancestry(path):
     """
     Given a path with elements separated by
-    posixpath.sep, generate all elements of that path
+    posixpath.sep, generate all elements of that path.
 
     >>> list(_ancestry('b/d'))
     ['b/d', 'b']
@@ -46,9 +55,14 @@ def _ancestry(path):
     ['b']
     >>> list(_ancestry(''))
     []
+
+    Multiple separators are treated like a single.
+
+    >>> list(_ancestry('//b//d///f//'))
+    ['//b//d///f', '//b//d', '//b']
     """
     path = path.rstrip(posixpath.sep)
-    while path and path != posixpath.sep:
+    while path.rstrip(posixpath.sep):
         yield path
         path, tail = posixpath.split(path)
 
@@ -83,69 +97,7 @@ class InitializedState:
         super().__init__(*args, **kwargs)
 
 
-class SanitizedNames:
-    """
-    ZipFile mix-in to ensure names are sanitized.
-    """
-
-    def namelist(self):
-        return list(map(self._sanitize, super().namelist()))
-
-    @staticmethod
-    def _sanitize(name):
-        r"""
-        Ensure a relative path with posix separators and no dot names.
-
-        Modeled after
-        https://github.com/python/cpython/blob/bcc1be39cb1d04ad9fc0bd1b9193d3972835a57c/Lib/zipfile/__init__.py#L1799-L1813
-        but provides consistent cross-platform behavior.
-
-        >>> san = SanitizedNames._sanitize
-        >>> san('/foo/bar')
-        'foo/bar'
-        >>> san('//foo.txt')
-        'foo.txt'
-        >>> san('foo/.././bar.txt')
-        'foo/bar.txt'
-        >>> san('foo../.bar.txt')
-        'foo../.bar.txt'
-        >>> san('\\foo\\bar.txt')
-        'foo/bar.txt'
-        >>> san('D:\\foo.txt')
-        'D/foo.txt'
-        >>> san('\\\\server\\share\\file.txt')
-        'server/share/file.txt'
-        >>> san('\\\\?\\GLOBALROOT\\Volume3')
-        '?/GLOBALROOT/Volume3'
-        >>> san('\\\\.\\PhysicalDrive1\\root')
-        'PhysicalDrive1/root'
-
-        Retain any trailing slash.
-        >>> san('abc/')
-        'abc/'
-
-        Raises a ValueError if the result is empty.
-        >>> san('../..')
-        Traceback (most recent call last):
-        ...
-        ValueError: Empty filename
-        """
-
-        def allowed(part):
-            return part and part not in {'..', '.'}
-
-        # Remove the drive letter.
-        # Don't use ntpath.splitdrive, because that also strips UNC paths
-        bare = re.sub('^([A-Z]):', r'\1', name, flags=re.IGNORECASE)
-        clean = bare.replace('\\', '/')
-        parts = clean.split('/')
-        joined = '/'.join(filter(allowed, parts))
-        if not joined:
-            raise ValueError("Empty filename")
-        return joined + '/' * name.endswith('/')
-
-
-class CompleteDirs(InitializedState, SanitizedNames, zipfile.ZipFile):
+class CompleteDirs(InitializedState, zipfile.ZipFile):
     """
     A ZipFile subclass that ensures that implied directories
     are always included in the namelist.
