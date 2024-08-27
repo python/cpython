@@ -359,6 +359,27 @@ _testcapi_unstable_exc_prep_reraise_star_impl(PyObject *module,
     return PyUnstable_Exc_PrepReraiseStar(orig, excs);
 }
 
+/* Test PyUnicodeEncodeError_GetStart */
+static PyObject *
+unicode_encode_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeEncodeError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+/* Test PyUnicodeDecodeError_GetStart */
+static PyObject *
+unicode_decode_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeDecodeError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
 
 /*
  * Define the PyRecurdingInfinitelyError_Type
@@ -403,6 +424,8 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
     _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
+    {"unicode_encode_get_start", unicode_encode_get_start,       METH_O},
+    {"unicode_decode_get_start", unicode_decode_get_start,       METH_O},
     {NULL},
 };
 

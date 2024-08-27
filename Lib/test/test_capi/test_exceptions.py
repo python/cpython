@@ -415,6 +415,52 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         # CRASHES formatunraisable(NULL, NULL)
 
 
+class TestUnicodeError(unittest.TestCase):
+
+    def test_unicode_encode_error_get_start(self):
+        test_func = _testcapi.unicode_encode_get_start
+        self._test_unicode_error_get_start('x', UnicodeEncodeError, test_func)
+
+    def test_unicode_decode_error_get_start(self):
+        test_func = _testcapi.unicode_decode_get_start
+        self._test_unicode_error_get_start(b'x', UnicodeDecodeError, test_func)
+
+    def _test_unicode_error_get_start(self, literal, exc_type, test_func):
+        for obj_len, py_start, c_start in [
+            # normal cases
+            (5, 0, 0),
+            (5, 1, 1),
+            (5, 2, 2),
+            # negative start is clamped to 0
+            (0, -1, 0),
+            (2, -1, 0),
+            # out of range start is clamped to max(0, obj_len - 1)
+            (0, 0, 0),
+            (0, 1, 0),
+            (0, 10, 0),
+            (2, 0, 0),
+            (5, 5, 4),
+            (5, 10, 4),
+        ]:
+            c_start_computed = py_start
+            if c_start_computed < 0:
+                c_start_computed = 0
+            if c_start_computed >= obj_len:
+                if obj_len == 0:
+                    c_start_computed = 0
+                else:
+                    c_start_computed = obj_len - 1
+
+            s = literal * obj_len
+            py_end = py_start + 1
+
+            with self.subTest(s, exc_type=exc_type, py_start=py_start, c_start=c_start):
+                self.assertEqual(c_start, c_start_computed)
+                exc = exc_type('utf-8', s, py_start, py_end, 'reason')
+                c_start_actual = test_func(exc)
+                self.assertEqual(c_start_actual, c_start)
+
+
 class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCase):
 
     def setUp(self):
