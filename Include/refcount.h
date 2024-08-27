@@ -493,6 +493,26 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #  define Py_XNewRef(obj) _Py_XNewRef(obj)
 #endif
 
+#ifdef Py_GIL_DISABLED
+static inline int _Py_Reuse_Immutable_Object(PyObject *ob) {
+    /* Function to check whether an immutable object such as a tuple can be
+     * modified inplace by the owning method
+     */
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
+    if (local != 1)
+        return 0;
+    // maybe we need to check on Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT) ?
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared);
+    if (shared != 0) {
+        return 0;
+    }
+    return ob->ob_tid == _Py_ThreadId();
+}
+#else
+static inline int _Py_Reuse_Immutable_Object(PyObject *ob) {
+    return Py_REFCNT(ob) == 1;
+}
+#endif
 
 #ifdef __cplusplus
 }
