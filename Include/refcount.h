@@ -493,6 +493,7 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #  define Py_XNewRef(obj) _Py_XNewRef(obj)
 #endif
 
+
 #ifdef __cplusplus
 }
 #endif
