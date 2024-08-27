@@ -184,7 +184,7 @@ _PyOptimizer_Optimize(
         return err;
     }
 
-    if (++executors_created >= 5) {
+    if (++executors_created >= 10) {
         executors_created = 0;
         _Py_Executors_InvalidateOld(interp, 0);
     }
