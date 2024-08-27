@@ -258,14 +258,14 @@ class ConcurrentFutures(Examples):
 
 
 #######################################
-# workload: image resizing web service
+# workload: image resizer
 #######################################
 
-class ImageResizingWebService(WorkloadExamples):
+class ImageResizer(WorkloadExamples):
 
     @example
     def run_using_threads():
-        # [start-web-image-resize-threads]
+        # [start-image-resizer-threads]
         import threading
 
         def task():
@@ -275,46 +275,46 @@ class ImageResizingWebService(WorkloadExamples):
         t.start()
 
         ...
-        # [end-web-image-resize-threads]
+        # [end-image-resizer-threads]
+
+    @example
+    def run_using_cf_thread():
+        # [start-image-resizer-cf-thread]
+        # concurrent.futures 1
+        ...
+        # [end-image-resizer-cf-thread]
 
     @example
     def run_using_multiprocessing():
-        # [start-web-image-resize-multiprocessing]
+        # [start-image-resizer-multiprocessing]
         import multiprocessing
 
         def task():
             ...
 
         ...
-        # [end-web-image-resize-multiprocessing]
+        # [end-image-resizer-multiprocessing]
 
     @example
     def run_using_async():
-        # [start-web-image-resize-async]
+        # [start-image-resizer-async]
         # async 1
         ...
-        # [end-web-image-resize-async]
+        # [end-image-resizer-async]
 
     @example
     def run_using_subinterpreters():
-        # [start-web-image-resize-subinterpreters]
+        # [start-image-resizer-subinterpreters]
         # subinterpreters 1
         ...
-        # [end-web-image-resize-subinterpreters]
+        # [end-image-resizer-subinterpreters]
 
     @example
     def run_using_smp():
-        # [start-web-image-resize-smp]
+        # [start-image-resizer-smp]
         # smp 1
         ...
-        # [end-web-image-resize-smp]
-
-    @example
-    def run_using_concurrent_futures_thread():
-        # [start-web-image-resize-cf-thread]
-        # concurrent.futures 1
-        ...
-        # [end-web-image-resize-cf-thread]
+        # [end-image-resizer-smp]
 
 
 #######################################

@@ -987,7 +987,7 @@ Here's a summary of the examples, by workload:
      - req out
      - *N* core tasks
      - core task
-   * - `web: resize image <Workload: Image Resizer Web Service_>`_
+   * - `resize image <Workload: Image Resizer_>`_
      - image (**net**)
      - image (**net**)
      - | *N* small sub-images
@@ -1027,11 +1027,16 @@ Also see:
 * https://github.com/faster-cpython/ideas/wiki/Tables:-Workloads
 * https://github.com/ericsnowcurrently/concurrency-benchmarks
 
+.. note::
 
-Workload: Image Resizer Web Service
------------------------------------
+   Each example is implemented as a basic commandline tool, but can be
+   easily adapted to run as a web service.
 
-# ...
+Workload: Image Resizer
+-----------------------
+
+This example runs a web service that takes an image and a new size
+and responds with the image at the new size.
 
 .. list-table::
    :header-rows: 1
@@ -1049,8 +1054,8 @@ Workload: Image Resizer Web Service
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-web-image-resize-threads]
-          :end-before: [end-web-image-resize-threads]
+          :start-after: [start-image-resizer-threads]
+          :end-before: [end-image-resizer-threads]
           :dedent:
           :linenos:
 
@@ -1064,8 +1069,8 @@ Workload: Image Resizer Web Service
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-web-image-resize-subinterpreters]
-          :end-before: [end-web-image-resize-subinterpreters]
+          :start-after: [start-image-resizer-subinterpreters]
+          :end-before: [end-image-resizer-subinterpreters]
           :dedent:
           :linenos:
 
@@ -1079,8 +1084,8 @@ Workload: Image Resizer Web Service
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-web-image-resize-async]
-          :end-before: [end-web-image-resize-async]
+          :start-after: [start-image-resizer-async]
+          :end-before: [end-image-resizer-async]
           :dedent:
           :linenos:
 
@@ -1094,8 +1099,8 @@ Workload: Image Resizer Web Service
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-web-image-resize-multiprocessing]
-          :end-before: [end-web-image-resize-multiprocessing]
+          :start-after: [start-image-resizer-multiprocessing]
+          :end-before: [end-image-resizer-multiprocessing]
           :dedent:
           :linenos:
 
@@ -1109,8 +1114,8 @@ Workload: Image Resizer Web Service
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-web-image-resize-smp]
-          :end-before: [end-web-image-resize-smp]
+          :start-after: [start-image-resizer-smp]
+          :end-before: [end-image-resizer-smp]
           :dedent:
           :linenos:
 
