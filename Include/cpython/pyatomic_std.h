@@ -20,203 +20,61 @@ extern "C++" {
 
 // --- _Py_atomic_add --------------------------------------------------------
 
-static inline int
-_Py_atomic_add_int(int *obj, int value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(int)*)obj, value);
-}
+#define PY_GENERATE_ATOMIC_ADD(TYPENAME, SUFFIX)                    \
+    static inline TYPENAME                                          \
+    _Py_atomic_add_ ## SUFFIX (TYPENAME *obj, TYPENAME value)       \
+    {                                                               \
+        _Py_USING_STD;                                              \
+        return atomic_fetch_add((_Atomic(TYPENAME)*)obj, value);    \
+    }
 
-static inline int8_t
-_Py_atomic_add_int8(int8_t *obj, int8_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(int8_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_ADD(int,                                 int)
+PY_GENERATE_ATOMIC_ADD(int8_t,                              int8)
+PY_GENERATE_ATOMIC_ADD(int16_t,                             int16)
+PY_GENERATE_ATOMIC_ADD(int32_t,                             int32)
+PY_GENERATE_ATOMIC_ADD(int64_t,                             int64)
+PY_GENERATE_ATOMIC_ADD(intptr_t,                            intptr)
 
-static inline int16_t
-_Py_atomic_add_int16(int16_t *obj, int16_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(int16_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_ADD(unsigned int,                        uint)
+PY_GENERATE_ATOMIC_ADD(uint8_t,                             uint8)
+PY_GENERATE_ATOMIC_ADD(uint16_t,                            uint16)
+PY_GENERATE_ATOMIC_ADD(uint32_t,                            uint32)
+PY_GENERATE_ATOMIC_ADD(uint64_t,                            uint64)
+PY_GENERATE_ATOMIC_ADD(uintptr_t,                           uintptr)
+PY_GENERATE_ATOMIC_ADD(Py_ssize_t,                          ssize)
 
-static inline int32_t
-_Py_atomic_add_int32(int32_t *obj, int32_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(int32_t)*)obj, value);
-}
-
-static inline int64_t
-_Py_atomic_add_int64(int64_t *obj, int64_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(int64_t)*)obj, value);
-}
-
-static inline intptr_t
-_Py_atomic_add_intptr(intptr_t *obj, intptr_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(intptr_t)*)obj, value);
-}
-
-static inline unsigned int
-_Py_atomic_add_uint(unsigned int *obj, unsigned int value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(unsigned int)*)obj, value);
-}
-
-static inline uint8_t
-_Py_atomic_add_uint8(uint8_t *obj, uint8_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(uint8_t)*)obj, value);
-}
-
-static inline uint16_t
-_Py_atomic_add_uint16(uint16_t *obj, uint16_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(uint16_t)*)obj, value);
-}
-
-static inline uint32_t
-_Py_atomic_add_uint32(uint32_t *obj, uint32_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(uint32_t)*)obj, value);
-}
-
-static inline uint64_t
-_Py_atomic_add_uint64(uint64_t *obj, uint64_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(uint64_t)*)obj, value);
-}
-
-static inline uintptr_t
-_Py_atomic_add_uintptr(uintptr_t *obj, uintptr_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(uintptr_t)*)obj, value);
-}
-
-static inline Py_ssize_t
-_Py_atomic_add_ssize(Py_ssize_t *obj, Py_ssize_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_add((_Atomic(Py_ssize_t)*)obj, value);
-}
+#undef PY_GENERATE_ATOMIC_ADD
 
 
 // --- _Py_atomic_compare_exchange -------------------------------------------
 
-static inline int
-_Py_atomic_compare_exchange_int(int *obj, int *expected, int desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(int)*)obj,
-                                          expected, desired);
-}
+#define PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(TYPENAME, SUFFIX)           \
+    static inline int                                                   \
+    _Py_atomic_compare_exchange_ ## SUFFIX (TYPENAME *obj,              \
+                                            TYPENAME *expected,         \
+                                            TYPENAME desired)           \
+    {                                                                   \
+        _Py_USING_STD;                                                  \
+        return atomic_compare_exchange_strong((_Atomic(TYPENAME)*)obj,  \
+                                              expected, desired);       \
+    }
 
-static inline int
-_Py_atomic_compare_exchange_int8(int8_t *obj, int8_t *expected, int8_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(int8_t)*)obj,
-                                          expected, desired);
-}
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(int,                    int)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(int8_t,                 int8)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(int16_t,                int16)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(int32_t,                int32)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(int64_t,                int64)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(intptr_t,               intptr)
 
-static inline int
-_Py_atomic_compare_exchange_int16(int16_t *obj, int16_t *expected, int16_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(int16_t)*)obj,
-                                          expected, desired);
-}
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(unsigned int,           uint)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(uint8_t,                uint8)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(uint16_t,               uint16)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(uint32_t,               uint32)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(uint64_t,               uint64)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(uintptr_t,              uintptr)
+PY_GENERATE_ATOMIC_COMPARE_EXCHANGE(Py_ssize_t,             ssize)
 
-static inline int
-_Py_atomic_compare_exchange_int32(int32_t *obj, int32_t *expected, int32_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(int32_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_int64(int64_t *obj, int64_t *expected, int64_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(int64_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_intptr(intptr_t *obj, intptr_t *expected, intptr_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(intptr_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_uint(unsigned int *obj, unsigned int *expected, unsigned int desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(unsigned int)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_uint8(uint8_t *obj, uint8_t *expected, uint8_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(uint8_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_uint16(uint16_t *obj, uint16_t *expected, uint16_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(uint16_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_uint32(uint32_t *obj, uint32_t *expected, uint32_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(uint32_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_uint64(uint64_t *obj, uint64_t *expected, uint64_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(uint64_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_uintptr(uintptr_t *obj, uintptr_t *expected, uintptr_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(uintptr_t)*)obj,
-                                          expected, desired);
-}
-
-static inline int
-_Py_atomic_compare_exchange_ssize(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssize_t desired)
-{
-    _Py_USING_STD;
-    return atomic_compare_exchange_strong((_Atomic(Py_ssize_t)*)obj,
-                                          expected, desired);
-}
+#undef PY_GENERATE_ATOMIC_COMPARE_EXCHANGE
 
 static inline int
 _Py_atomic_compare_exchange_ptr(void *obj, void *expected, void *desired)
@@ -229,96 +87,30 @@ _Py_atomic_compare_exchange_ptr(void *obj, void *expected, void *desired)
 
 // --- _Py_atomic_exchange ---------------------------------------------------
 
-static inline int
-_Py_atomic_exchange_int(int *obj, int value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(int)*)obj, value);
-}
+#define PY_GENERATE_ATOMIC_EXCHANGE(TYPENAME, SUFFIX)               \
+    static inline TYPENAME                                          \
+    _Py_atomic_exchange_ ## SUFFIX (TYPENAME *obj, TYPENAME value)  \
+    {                                                               \
+        _Py_USING_STD;                                              \
+        return atomic_exchange((_Atomic(TYPENAME)*)obj,  value);    \
+    }
 
-static inline int8_t
-_Py_atomic_exchange_int8(int8_t *obj, int8_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(int8_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_EXCHANGE(int,                            int)
+PY_GENERATE_ATOMIC_EXCHANGE(int8_t,                         int8)
+PY_GENERATE_ATOMIC_EXCHANGE(int16_t,                        int16)
+PY_GENERATE_ATOMIC_EXCHANGE(int32_t,                        int32)
+PY_GENERATE_ATOMIC_EXCHANGE(int64_t,                        int64)
+PY_GENERATE_ATOMIC_EXCHANGE(intptr_t,                       intptr)
 
-static inline int16_t
-_Py_atomic_exchange_int16(int16_t *obj, int16_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(int16_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_EXCHANGE(unsigned int,                   uint)
+PY_GENERATE_ATOMIC_EXCHANGE(uint8_t,                        uint8)
+PY_GENERATE_ATOMIC_EXCHANGE(uint16_t,                       uint16)
+PY_GENERATE_ATOMIC_EXCHANGE(uint32_t,                       uint32)
+PY_GENERATE_ATOMIC_EXCHANGE(uint64_t,                       uint64)
+PY_GENERATE_ATOMIC_EXCHANGE(uintptr_t,                      uintptr)
+PY_GENERATE_ATOMIC_EXCHANGE(Py_ssize_t,                     ssize)
 
-static inline int32_t
-_Py_atomic_exchange_int32(int32_t *obj, int32_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(int32_t)*)obj, value);
-}
-
-static inline int64_t
-_Py_atomic_exchange_int64(int64_t *obj, int64_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(int64_t)*)obj, value);
-}
-
-static inline intptr_t
-_Py_atomic_exchange_intptr(intptr_t *obj, intptr_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(intptr_t)*)obj, value);
-}
-
-static inline unsigned int
-_Py_atomic_exchange_uint(unsigned int *obj, unsigned int value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(unsigned int)*)obj, value);
-}
-
-static inline uint8_t
-_Py_atomic_exchange_uint8(uint8_t *obj, uint8_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(uint8_t)*)obj, value);
-}
-
-static inline uint16_t
-_Py_atomic_exchange_uint16(uint16_t *obj, uint16_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(uint16_t)*)obj, value);
-}
-
-static inline uint32_t
-_Py_atomic_exchange_uint32(uint32_t *obj, uint32_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(uint32_t)*)obj, value);
-}
-
-static inline uint64_t
-_Py_atomic_exchange_uint64(uint64_t *obj, uint64_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(uint64_t)*)obj, value);
-}
-
-static inline uintptr_t
-_Py_atomic_exchange_uintptr(uintptr_t *obj, uintptr_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(uintptr_t)*)obj, value);
-}
-
-static inline Py_ssize_t
-_Py_atomic_exchange_ssize(Py_ssize_t *obj, Py_ssize_t value)
-{
-    _Py_USING_STD;
-    return atomic_exchange((_Atomic(Py_ssize_t)*)obj, value);
-}
+#undef PY_GENERATE_ATOMIC_EXCHANGE
 
 static inline void*
 _Py_atomic_exchange_ptr(void *obj, void *value)
@@ -330,172 +122,68 @@ _Py_atomic_exchange_ptr(void *obj, void *value)
 
 // --- _Py_atomic_and --------------------------------------------------------
 
-static inline uint8_t
-_Py_atomic_and_uint8(uint8_t *obj, uint8_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_and((_Atomic(uint8_t)*)obj, value);
-}
+#define PY_GENERATE_ATOMIC_AND(TYPENAME, SUFFIX)                    \
+    static inline TYPENAME                                          \
+    _Py_atomic_and_ ## SUFFIX (TYPENAME *obj, TYPENAME value)       \
+    {                                                               \
+        _Py_USING_STD;                                              \
+        return atomic_fetch_and((_Atomic(TYPENAME)*)obj, value);    \
+    }
 
-static inline uint16_t
-_Py_atomic_and_uint16(uint16_t *obj, uint16_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_and((_Atomic(uint16_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_AND(uint8_t,                             uint8)
+PY_GENERATE_ATOMIC_AND(uint16_t,                            uint16)
+PY_GENERATE_ATOMIC_AND(uint32_t,                            uint32)
+PY_GENERATE_ATOMIC_AND(uint64_t,                            uint64)
+PY_GENERATE_ATOMIC_AND(uintptr_t,                           uintptr)
 
-static inline uint32_t
-_Py_atomic_and_uint32(uint32_t *obj, uint32_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_and((_Atomic(uint32_t)*)obj, value);
-}
-
-static inline uint64_t
-_Py_atomic_and_uint64(uint64_t *obj, uint64_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_and((_Atomic(uint64_t)*)obj, value);
-}
-
-static inline uintptr_t
-_Py_atomic_and_uintptr(uintptr_t *obj, uintptr_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_and((_Atomic(uintptr_t)*)obj, value);
-}
+#undef PY_GENERATE_ATOMIC_AND
 
 
 // --- _Py_atomic_or ---------------------------------------------------------
 
-static inline uint8_t
-_Py_atomic_or_uint8(uint8_t *obj, uint8_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_or((_Atomic(uint8_t)*)obj, value);
-}
+#define PY_GENERATE_ATOMIC_OR(TYPENAME, SUFFIX)                     \
+    static inline TYPENAME                                          \
+    _Py_atomic_or_ ## SUFFIX (TYPENAME *obj, TYPENAME value)        \
+    {                                                               \
+        _Py_USING_STD;                                              \
+        return atomic_fetch_or((_Atomic(TYPENAME)*)obj, value);     \
+    }
 
-static inline uint16_t
-_Py_atomic_or_uint16(uint16_t *obj, uint16_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_or((_Atomic(uint16_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_OR(uint8_t,                              uint8)
+PY_GENERATE_ATOMIC_OR(uint16_t,                             uint16)
+PY_GENERATE_ATOMIC_OR(uint32_t,                             uint32)
+PY_GENERATE_ATOMIC_OR(uint64_t,                             uint64)
+PY_GENERATE_ATOMIC_OR(uintptr_t,                            uintptr)
 
-static inline uint32_t
-_Py_atomic_or_uint32(uint32_t *obj, uint32_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_or((_Atomic(uint32_t)*)obj, value);
-}
-
-static inline uint64_t
-_Py_atomic_or_uint64(uint64_t *obj, uint64_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_or((_Atomic(uint64_t)*)obj, value);
-}
-
-static inline uintptr_t
-_Py_atomic_or_uintptr(uintptr_t *obj, uintptr_t value)
-{
-    _Py_USING_STD;
-    return atomic_fetch_or((_Atomic(uintptr_t)*)obj, value);
-}
+#undef PY_GENERATE_ATOMIC_OR
 
 
 // --- _Py_atomic_load -------------------------------------------------------
 
-static inline int
-_Py_atomic_load_int(const int *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(int)*)obj);
-}
+#define PY_GENERATE_ATOMIC_LOAD(TYPENAME, SUFFIX)           \
+    static inline TYPENAME                                  \
+    _Py_atomic_load_ ## SUFFIX (const TYPENAME *obj)        \
+    {                                                       \
+        _Py_USING_STD;                                      \
+        return atomic_load((const _Atomic(TYPENAME)*)obj);  \
+    }
 
-static inline int8_t
-_Py_atomic_load_int8(const int8_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(int8_t)*)obj);
-}
+PY_GENERATE_ATOMIC_LOAD(int,                                int)
+PY_GENERATE_ATOMIC_LOAD(int8_t,                             int8)
+PY_GENERATE_ATOMIC_LOAD(int16_t,                            int16)
+PY_GENERATE_ATOMIC_LOAD(int32_t,                            int32)
+PY_GENERATE_ATOMIC_LOAD(int64_t,                            int64)
+PY_GENERATE_ATOMIC_LOAD(intptr_t,                           intptr)
 
-static inline int16_t
-_Py_atomic_load_int16(const int16_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(int16_t)*)obj);
-}
+PY_GENERATE_ATOMIC_LOAD(unsigned int,                       uint)
+PY_GENERATE_ATOMIC_LOAD(uint8_t,                            uint8)
+PY_GENERATE_ATOMIC_LOAD(uint16_t,                           uint16)
+PY_GENERATE_ATOMIC_LOAD(uint32_t,                           uint32)
+PY_GENERATE_ATOMIC_LOAD(uint64_t,                           uint64)
+PY_GENERATE_ATOMIC_LOAD(uintptr_t,                          uintptr)
+PY_GENERATE_ATOMIC_LOAD(Py_ssize_t,                         ssize)
 
-static inline int32_t
-_Py_atomic_load_int32(const int32_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(int32_t)*)obj);
-}
-
-static inline int64_t
-_Py_atomic_load_int64(const int64_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(int64_t)*)obj);
-}
-
-static inline intptr_t
-_Py_atomic_load_intptr(const intptr_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(intptr_t)*)obj);
-}
-
-static inline uint8_t
-_Py_atomic_load_uint8(const uint8_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(uint8_t)*)obj);
-}
-
-static inline uint16_t
-_Py_atomic_load_uint16(const uint16_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(uint32_t)*)obj);
-}
-
-static inline uint32_t
-_Py_atomic_load_uint32(const uint32_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(uint32_t)*)obj);
-}
-
-static inline uint64_t
-_Py_atomic_load_uint64(const uint64_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(uint64_t)*)obj);
-}
-
-static inline uintptr_t
-_Py_atomic_load_uintptr(const uintptr_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(uintptr_t)*)obj);
-}
-
-static inline unsigned int
-_Py_atomic_load_uint(const unsigned int *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(unsigned int)*)obj);
-}
-
-static inline Py_ssize_t
-_Py_atomic_load_ssize(const Py_ssize_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load((const _Atomic(Py_ssize_t)*)obj);
-}
+#undef PY_GENERATE_ATOMIC_LOAD
 
 static inline void*
 _Py_atomic_load_ptr(const void *obj)
@@ -507,109 +195,32 @@ _Py_atomic_load_ptr(const void *obj)
 
 // --- _Py_atomic_load_relaxed -----------------------------------------------
 
-static inline int
-_Py_atomic_load_int_relaxed(const int *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(int)*)obj,
-                                memory_order_relaxed);
-}
+#define PY_GENERATE_ATOMIC_LOAD_RELAXED(TYPENAME, SUFFIX)           \
+    static inline TYPENAME                                          \
+    _Py_atomic_load_ ## SUFFIX ## _relaxed(const TYPENAME *obj)     \
+    {                                                               \
+        _Py_USING_STD;                                              \
+        return atomic_load_explicit((const _Atomic(TYPENAME)*)obj,  \
+                                    memory_order_relaxed);          \
+    }
 
-static inline int8_t
-_Py_atomic_load_int8_relaxed(const int8_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(int8_t)*)obj,
-                                memory_order_relaxed);
-}
+PY_GENERATE_ATOMIC_LOAD_RELAXED(int,                        int)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(int8_t,                     int8)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(int16_t,                    int16)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(int32_t,                    int32)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(int64_t,                    int64)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(intptr_t,                   intptr)
 
-static inline int16_t
-_Py_atomic_load_int16_relaxed(const int16_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(int16_t)*)obj,
-                                memory_order_relaxed);
-}
+PY_GENERATE_ATOMIC_LOAD_RELAXED(unsigned int,               uint)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(unsigned long long,         ullong)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(uint8_t,                    uint8)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(uint16_t,                   uint16)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(uint32_t,                   uint32)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(uint64_t,                   uint64)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(uintptr_t,                  uintptr)
+PY_GENERATE_ATOMIC_LOAD_RELAXED(Py_ssize_t,                 ssize)
 
-static inline int32_t
-_Py_atomic_load_int32_relaxed(const int32_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(int32_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline int64_t
-_Py_atomic_load_int64_relaxed(const int64_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(int64_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline intptr_t
-_Py_atomic_load_intptr_relaxed(const intptr_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(intptr_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline uint8_t
-_Py_atomic_load_uint8_relaxed(const uint8_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uint8_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline uint16_t
-_Py_atomic_load_uint16_relaxed(const uint16_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uint16_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline uint32_t
-_Py_atomic_load_uint32_relaxed(const uint32_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uint32_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline uint64_t
-_Py_atomic_load_uint64_relaxed(const uint64_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uint64_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline uintptr_t
-_Py_atomic_load_uintptr_relaxed(const uintptr_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uintptr_t)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline unsigned int
-_Py_atomic_load_uint_relaxed(const unsigned int *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(unsigned int)*)obj,
-                                memory_order_relaxed);
-}
-
-static inline Py_ssize_t
-_Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(Py_ssize_t)*)obj,
-                                memory_order_relaxed);
-}
+#undef PY_GENERATE_ATOMIC_LOAD_RELAXED
 
 static inline void*
 _Py_atomic_load_ptr_relaxed(const void *obj)
@@ -619,100 +230,34 @@ _Py_atomic_load_ptr_relaxed(const void *obj)
                                 memory_order_relaxed);
 }
 
-static inline unsigned long long
-_Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(unsigned long long)*)obj,
-                                memory_order_relaxed);
-}
-
 
 // --- _Py_atomic_store ------------------------------------------------------
 
-static inline void
-_Py_atomic_store_int(int *obj, int value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(int)*)obj, value);
-}
+#define PY_GENERATE_ATOMIC_STORE(TYPENAME, SUFFIX)              \
+    static inline void                                          \
+    _Py_atomic_store_ ## SUFFIX (TYPENAME *obj, TYPENAME value) \
+    {                                                           \
+        _Py_USING_STD;                                          \
+        return atomic_store((_Atomic(TYPENAME)*)obj, value);    \
+    }
 
-static inline void
-_Py_atomic_store_int8(int8_t *obj, int8_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(int8_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_STORE(int,                               int)
+PY_GENERATE_ATOMIC_STORE(int8_t,                            int8)
+PY_GENERATE_ATOMIC_STORE(int16_t,                           int16)
+PY_GENERATE_ATOMIC_STORE(int32_t,                           int32)
+PY_GENERATE_ATOMIC_STORE(int64_t,                           int64)
+PY_GENERATE_ATOMIC_STORE(intptr_t,                          intptr)
 
-static inline void
-_Py_atomic_store_int16(int16_t *obj, int16_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(int16_t)*)obj, value);
-}
+PY_GENERATE_ATOMIC_STORE(unsigned int,                      uint)
+PY_GENERATE_ATOMIC_STORE(uint8_t,                           uint8)
+PY_GENERATE_ATOMIC_STORE(uint16_t,                          uint16)
+PY_GENERATE_ATOMIC_STORE(uint32_t,                          uint32)
+PY_GENERATE_ATOMIC_STORE(uint64_t,                          uint64)
+PY_GENERATE_ATOMIC_STORE(uintptr_t,                         uintptr)
+PY_GENERATE_ATOMIC_STORE(Py_ssize_t,                        ssize)
 
-static inline void
-_Py_atomic_store_int32(int32_t *obj, int32_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(int32_t)*)obj, value);
-}
+#undef PY_GENERATE_ATOMIC_STORE
 
-static inline void
-_Py_atomic_store_int64(int64_t *obj, int64_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(int64_t)*)obj, value);
-}
-
-static inline void
-_Py_atomic_store_intptr(intptr_t *obj, intptr_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(intptr_t)*)obj, value);
-}
-
-static inline void
-_Py_atomic_store_uint8(uint8_t *obj, uint8_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(uint8_t)*)obj, value);
-}
-
-static inline void
-_Py_atomic_store_uint16(uint16_t *obj, uint16_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(uint16_t)*)obj, value);
-}
-
-static inline void
-_Py_atomic_store_uint32(uint32_t *obj, uint32_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(uint32_t)*)obj, value);
-}
-
-static inline void
-_Py_atomic_store_uint64(uint64_t *obj, uint64_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(uint64_t)*)obj, value);
-}
-
-static inline void
-_Py_atomic_store_uintptr(uintptr_t *obj, uintptr_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(uintptr_t)*)obj, value);
-}
-
-static inline void
-_Py_atomic_store_uint(unsigned int *obj, unsigned int value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(unsigned int)*)obj, value);
-}
 
 static inline void
 _Py_atomic_store_ptr(void *obj, void *value)
@@ -721,111 +266,35 @@ _Py_atomic_store_ptr(void *obj, void *value)
     atomic_store((_Atomic(void*)*)obj, value);
 }
 
-static inline void
-_Py_atomic_store_ssize(Py_ssize_t *obj, Py_ssize_t value)
-{
-    _Py_USING_STD;
-    atomic_store((_Atomic(Py_ssize_t)*)obj, value);
-}
-
 
 // --- _Py_atomic_store_relaxed ----------------------------------------------
 
-static inline void
-_Py_atomic_store_int_relaxed(int *obj, int value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(int)*)obj, value,
-                          memory_order_relaxed);
-}
+#define PY_GENERATE_ATOMIC_STORE_RELAXED(TYPENAME, SUFFIX)                  \
+    static inline void                                                      \
+    _Py_atomic_store_ ## SUFFIX ## _relaxed(TYPENAME *obj, TYPENAME value)  \
+    {                                                                       \
+        _Py_USING_STD;                                                      \
+        return atomic_store_explicit((_Atomic(TYPENAME)*)obj, value,        \
+                                     memory_order_relaxed);                 \
+    }
 
-static inline void
-_Py_atomic_store_int8_relaxed(int8_t *obj, int8_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(int8_t)*)obj, value,
-                          memory_order_relaxed);
-}
+PY_GENERATE_ATOMIC_STORE_RELAXED(int,                       int)
+PY_GENERATE_ATOMIC_STORE_RELAXED(int8_t,                    int8)
+PY_GENERATE_ATOMIC_STORE_RELAXED(int16_t,                   int16)
+PY_GENERATE_ATOMIC_STORE_RELAXED(int32_t,                   int32)
+PY_GENERATE_ATOMIC_STORE_RELAXED(int64_t,                   int64)
+PY_GENERATE_ATOMIC_STORE_RELAXED(intptr_t,                  intptr)
 
-static inline void
-_Py_atomic_store_int16_relaxed(int16_t *obj, int16_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(int16_t)*)obj, value,
-                          memory_order_relaxed);
-}
+PY_GENERATE_ATOMIC_STORE_RELAXED(unsigned int,              uint)
+PY_GENERATE_ATOMIC_STORE_RELAXED(unsigned long long,        ullong)
+PY_GENERATE_ATOMIC_STORE_RELAXED(uint8_t,                   uint8)
+PY_GENERATE_ATOMIC_STORE_RELAXED(uint16_t,                  uint16)
+PY_GENERATE_ATOMIC_STORE_RELAXED(uint32_t,                  uint32)
+PY_GENERATE_ATOMIC_STORE_RELAXED(uint64_t,                  uint64)
+PY_GENERATE_ATOMIC_STORE_RELAXED(uintptr_t,                 uintptr)
+PY_GENERATE_ATOMIC_STORE_RELAXED(Py_ssize_t,                ssize)
 
-static inline void
-_Py_atomic_store_int32_relaxed(int32_t *obj, int32_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(int32_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_int64_relaxed(int64_t *obj, int64_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(int64_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_intptr_relaxed(intptr_t *obj, intptr_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(intptr_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_uint8_relaxed(uint8_t *obj, uint8_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uint8_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_uint16_relaxed(uint16_t *obj, uint16_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uint16_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_uint32_relaxed(uint32_t *obj, uint32_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uint32_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_uint64_relaxed(uint64_t *obj, uint64_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uint64_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_uintptr_relaxed(uintptr_t *obj, uintptr_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uintptr_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_uint_relaxed(unsigned int *obj, unsigned int value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(unsigned int)*)obj, value,
-                          memory_order_relaxed);
-}
+#undef PY_GENERATE_ATOMIC_STORE_RELAXED
 
 static inline void
 _Py_atomic_store_ptr_relaxed(void *obj, void *value)
@@ -835,25 +304,32 @@ _Py_atomic_store_ptr_relaxed(void *obj, void *value)
                           memory_order_relaxed);
 }
 
-static inline void
-_Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(Py_ssize_t)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
-_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
-                                unsigned long long value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(unsigned long long)*)obj, value,
-                          memory_order_relaxed);
-}
-
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
+
+#define PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(TYPENAME, SUFFIX)            \
+    static inline TYPENAME                                                  \
+    _Py_atomic_load_ ## SUFFIX ## _acquire(const TYPENAME* obj)             \
+    {                                                                       \
+        _Py_USING_STD;                                                      \
+        return atomic_load_explicit((const _Atomic(TYPENAME)*)obj,          \
+                                    memory_order_acquire);                  \
+    }                                                                       \
+    static inline void                                                      \
+    _Py_atomic_store_ ## SUFFIX ## _release(TYPENAME *obj, TYPENAME value)  \
+    {                                                                       \
+        _Py_USING_STD;                                                      \
+        return atomic_store_explicit((_Atomic(TYPENAME)*)obj, value,        \
+                                     memory_order_release);                 \
+    }
+
+PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(int,                 int)
+PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(uint32_t,            uint32)
+PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(uint64_t,            uint64)
+PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(uintptr_t,           uintptr)
+PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(Py_ssize_t,          ssize)
+
+#undef PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE
 
 static inline void *
 _Py_atomic_load_ptr_acquire(const void *obj)
@@ -863,92 +339,12 @@ _Py_atomic_load_ptr_acquire(const void *obj)
                                 memory_order_acquire);
 }
 
-static inline uintptr_t
-_Py_atomic_load_uintptr_acquire(const uintptr_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uintptr_t)*)obj,
-                                memory_order_acquire);
-}
-
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(void*)*)obj, value,
                           memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uintptr_t)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_int_release(int *obj, int value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(int)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(Py_ssize_t)*)obj, value,
-                          memory_order_release);
-}
-
-static inline int
-_Py_atomic_load_int_acquire(const int *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(int)*)obj,
-                                memory_order_acquire);
-}
-
-static inline void
-_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uint32_t)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(uint64_t)*)obj, value,
-                          memory_order_release);
-}
-
-static inline uint64_t
-_Py_atomic_load_uint64_acquire(const uint64_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uint64_t)*)obj,
-                                memory_order_acquire);
-}
-
-static inline uint32_t
-_Py_atomic_load_uint32_acquire(const uint32_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(uint32_t)*)obj,
-                                memory_order_acquire);
-}
-
-static inline Py_ssize_t
-_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
-{
-    _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(Py_ssize_t)*)obj,
-                                memory_order_acquire);
 }
 
 
