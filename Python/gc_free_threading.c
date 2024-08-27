@@ -1362,8 +1362,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(tstate, "stop", generation, m, n);
-        _Py_Executors_InvalidateOld(tstate->interp, 0);
-
     }
 
     assert(!_PyErr_Occurred(tstate));

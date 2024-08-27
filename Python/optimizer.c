@@ -157,6 +157,7 @@ _Py_SetTier2Optimizer(_PyOptimizerObject *optimizer)
     return old == NULL ? -1 : 0;
 }
 
+int executors_created = 0;
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
  */
@@ -182,6 +183,12 @@ _PyOptimizer_Optimize(
     if (err <= 0) {
         return err;
     }
+
+    if (++executors_created >= 5) {
+        executors_created = 0;
+        _Py_Executors_InvalidateOld(interp, 0);
+    }
+
     assert(*executor_ptr != NULL);
     if (progress_needed) {
         int index = get_index_for_executor(code, start);
