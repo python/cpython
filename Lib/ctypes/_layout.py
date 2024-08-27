@@ -277,6 +277,11 @@ def get_layout(cls, input_fields, is_struct, base):
 
             if fieldfmt is None:
                 fieldfmt = "B"
+            if isinstance(name, bytes):
+                # a bytes name would be rejected later, but we check early
+                # to avoid a BytesWarning with `python -bb`
+                raise TypeError(
+                    "field {name!r}: name must be a string, not bytes")
             format_spec_parts.append(f"{fieldfmt}:{name}:")
 
         last_field = CField(
