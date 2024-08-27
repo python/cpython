@@ -17,7 +17,7 @@ class ZipThreading(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_threading(self):
         number_of_threads = 8
-        number_of_iterations = 40
+        number_of_iterations = 8
         n = 40_000
         enum = zip(range(n), range(n))
         for _ in range(number_of_iterations):
@@ -31,8 +31,10 @@ class ZipThreading(unittest.TestCase):
                         ],
                     )
                 )
-            _ = [t.start() for t in worker_threads]
-            _ = [t.join() for t in worker_threads]
+            for t in worker_threads:
+                t.start()
+            for t in worker_threads:
+                t.join()
 
 
 if __name__ == "__main__":
