@@ -385,7 +385,7 @@ The following functions and structs are used to create
 
    Make a type immutable: set the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag.
 
-   Base classes must be immutable.
+   All base classes of *type* must be immutable.
 
    On success, return ``0``.
    On error, set an exception and return ``-1``.
