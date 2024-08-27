@@ -183,6 +183,9 @@ def get_layout(cls, input_fields, is_struct, base):
                 raise ValueError(
                     f'number of bits invalid for bit field {name!r}')
             type_size = ctypes.sizeof(ctype)
+            if bit_size > type_size * 8:
+                raise ValueError(
+                    f'number of bits invalid for bit field {name!r}')
 
         type_bit_size = type_size * 8
         type_align = ctypes.alignment(ctype) or 1

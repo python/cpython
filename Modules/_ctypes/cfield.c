@@ -132,25 +132,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         goto error;
     }
 
-    if (bit_size_obj == Py_None) {
-        self->bit_size = -1;
-    }
-    else {
-        self->bit_size = PyLong_AsSsize_t(bit_size_obj);
-        if (self->bit_size < 0) {
-            if (!PyErr_Occurred()) {
-                PyErr_Format(PyExc_ValueError,
-                             "number of bits invalid for bit field %R",
-                             self->name);
-            }
-            goto error;
-        }
-        if (self->bit_size > size * 8) {
-            PyErr_Format(PyExc_ValueError,
-                            "number of bits too large for bit field %R",
-                            self->name);
-            goto error;
-        }
+    Py_ssize_t bit_size = NUM_BITS(size);
+    if (bit_size) {
         switch(info->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
             case FFI_TYPE_UINT16:
@@ -174,7 +157,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                              ((PyTypeObject*)proto)->tp_name);
                 goto error;
             }
-            if (self->bit_size <= 0 || self->bit_size > info->size * 8) {
+            if (bit_size <= 0 || bit_size > info->size * 8) {
                 PyErr_Format(PyExc_ValueError,
                                 "number of bits invalid for bit field %R",
                                 self->name);

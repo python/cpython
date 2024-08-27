@@ -206,8 +206,14 @@ class BitFieldTest(unittest.TestCase):
         result = self.fail_fields(("a", c_char, 1))
         self.assertEqual(result, (TypeError, 'bit fields not allowed for type c_char'))
 
-        class Dummy(Structure):
+        class Empty(Structure):
             _fields_ = []
+
+        result = self.fail_fields(("a", Empty, 1))
+        self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
+
+        class Dummy(Structure):
+            _fields_ = [("x", c_int)]
 
         result = self.fail_fields(("a", Dummy, 1))
         self.assertEqual(result, (TypeError, 'bit fields not allowed for type Dummy'))
