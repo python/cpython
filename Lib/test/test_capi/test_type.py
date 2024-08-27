@@ -35,3 +35,32 @@ class TypeTests(unittest.TestCase):
         # all parent classes are now immutable, so D can be made immutable
         # as well
         type_freeze(D)
+
+
+    def test_freeze_meta(self):
+        """test PyType_Freeze() with overridden MRO"""
+        type_freeze = _testcapi.type_freeze
+
+        class Base:
+            value = 1
+
+        class Meta(type):
+            def mro(cls):
+                return (cls, Base, object)
+
+        class FreezeThis(metaclass=Meta):
+            """This has `Base` in the MRO, but not tp_bases"""
+
+        self.assertEqual(FreezeThis.value, 1)
+
+        with self.assertRaises(TypeError):
+            type_freeze(FreezeThis)
+
+        Base.value = 2
+        self.assertEqual(FreezeThis.value, 2)
+
+        type_freeze(Base)
+        with self.assertRaises(TypeError):
+            Base.value = 3
+        type_freeze(FreezeThis)
+        self.assertEqual(FreezeThis.value, 2)
