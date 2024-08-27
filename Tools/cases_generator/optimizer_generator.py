@@ -104,21 +104,27 @@ def write_uop(
 ) -> None:
     locals: dict[str, Local] = {}
     prototype = override if override else uop
-    is_override = override is not None
     try:
         out.start_line()
+        peeks: list[Local] = []
         for var in reversed(prototype.stack.inputs):
             code, local = stack.pop(var, extract_bits=True)
             if not skip_inputs:
                 out.emit(code)
+            if var.peek:
+                peeks.append(local)
             if local.defined:
                 locals[local.name] = local
+        # Push back the peeks, so that they remain on the logical
+        # stack, but their values are cached.
+        while peeks:
+            stack.push(peeks.pop())
         out.emit(stack.define_output_arrays(prototype.stack.outputs))
         storage = Storage.for_uop(stack, prototype, locals)
         if debug:
             args = []
             for var in prototype.stack.inputs:
-                if not var.peek or is_override:
+                if not var.peek or override:
                     args.append(var.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override:
@@ -137,9 +143,6 @@ def write_uop(
             emit_default(out, uop)
 
         for output in storage.outputs:
-            if output.name in uop.deferred_refs.values():
-                # We've already spilled this when emitting tokens
-                output.cached = False
             stack.push(output)
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
