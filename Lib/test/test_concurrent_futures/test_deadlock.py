@@ -236,7 +236,7 @@ class ExecutorDeadlockTest:
         executor_manager.join()
 
     def test_crash_big_data(self):
-        # Test that there is a clean exception instad of a deadlock when a
+        # Test that there is a clean exception instead of a deadlock when a
         # child process crashes while some data is being written into the
         # queue.
         # https://github.com/python/cpython/issues/94777
@@ -286,11 +286,12 @@ class ExecutorDeadlockTest:
                 super().wakeup()
 
             def clear(self):
+                super().clear()
                 try:
                     while True:
                         self._dummy_queue.get_nowait()
                 except queue.Empty:
-                    super().clear()
+                    pass
 
         with (unittest.mock.patch.object(futures.process._ExecutorManagerThread,
                                          'run', mock_run),

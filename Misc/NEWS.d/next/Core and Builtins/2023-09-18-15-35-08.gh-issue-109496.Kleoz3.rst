@@ -1,5 +1,0 @@
-On a Python built in debug mode, :c:func:`Py_DECREF()` now calls
-``_Py_NegativeRefcount()`` if the object is a dangling pointer to
-deallocated memory: memory filled with ``0xDD`` "dead byte" by the debug
-hook on memory allocators. The fix is to check the reference count *before*
-checking for ``_Py_IsImmortal()``. Patch by Victor Stinner.

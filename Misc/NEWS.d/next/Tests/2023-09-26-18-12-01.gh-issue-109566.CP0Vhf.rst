@@ -1,3 +1,0 @@
-regrtest: When ``--fast-ci`` or ``--slow-ci`` option is used, regrtest now
-replaces the current process with a new process to add ``-u -W default -bb -E``
-options to Python. Patch by Victor Stinner.

@@ -59,6 +59,12 @@ Tuple Objects
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
    negative or out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
 
+   The returned reference is borrowed from the tuple *p*
+   (that is: it is only valid as long as you hold a reference to *p*).
+   To get a :term:`strong reference`, use
+   :c:func:`Py_NewRef(PyTuple_GetItem(...)) <Py_NewRef>`
+   or :c:func:`PySequence_GetItem`.
+
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
@@ -98,6 +104,12 @@ Tuple Objects
       :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
+
+   .. warning::
+
+      This macro should *only* be used on tuples that are newly created.
+      Using this macro on a tuple that is already in use (or in other words, has
+      a refcount > 1) could lead to undefined behavior.
 
 
 .. c:function:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)

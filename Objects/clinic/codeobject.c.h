@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(code_new__doc__,
 "code(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n"
@@ -463,4 +464,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b9ccfbfabe1a5f46 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d604263a3ca72a0f input=a9049054013a1b77]*/

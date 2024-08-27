@@ -1,9 +1,10 @@
 import os
 import time
 
+from test.support import MS_WINDOWS
 from .results import TestResults
 from .runtests import RunTests
-from .utils import print_warning, MS_WINDOWS
+from .utils import print_warning
 
 if MS_WINDOWS:
     from .win_utils import WindowsLoadTracker
@@ -42,7 +43,10 @@ class Logger:
 
     def get_load_avg(self) -> float | None:
         if hasattr(os, 'getloadavg'):
-            return os.getloadavg()[0]
+            try:
+                return os.getloadavg()[0]
+            except OSError:
+                pass
         if self.win_load_tracker is not None:
             return self.win_load_tracker.getloadavg()
         return None

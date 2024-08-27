@@ -1,3 +1,0 @@
-:class:`http.server.CGIHTTPRequestHandler` has been deprecated for removal
-in 3.15.  Its design is old and the web world has long since moved beyond
-CGI.

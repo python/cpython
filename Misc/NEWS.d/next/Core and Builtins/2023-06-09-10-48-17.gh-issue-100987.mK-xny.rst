@@ -1,4 +1,0 @@
-Allow objects other than code objects as the "executable" in internal
-frames. In the long term, this can help tools like Cython and PySpy interact
-more efficiently. In the shorter term, it allows us to perform some
-optimizations more simply.

@@ -77,8 +77,8 @@ and work with streams:
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
-   .. versionadded:: 3.8
-      Added *happy_eyeballs_delay* and *interleave* parameters.
+   .. versionchanged:: 3.8
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -204,6 +204,10 @@ StreamReader
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
+   .. method:: feed_eof()
+
+      Acknowledge the EOF.
+
    .. coroutinemethod:: read(n=-1)
 
       Read up to *n* bytes from the stream.
@@ -256,7 +260,18 @@ StreamReader
       buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
       may contain a portion of the separator.
 
+      The *separator* may also be a tuple of separators. In this
+      case the return value will be the shortest possible that has any
+      separator as the suffix. For the purposes of :exc:`LimitOverrunError`,
+      the shortest possible separator is considered to be the one that
+      matched.
+
       .. versionadded:: 3.5.2
+
+      .. versionchanged:: 3.13
+
+         The *separator* parameter may now be a :class:`tuple` of
+         separators.
 
    .. method:: at_eof()
 
@@ -343,7 +358,7 @@ StreamWriter
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
-   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
+   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
                           ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
       Upgrade an existing stream-based connection to TLS.

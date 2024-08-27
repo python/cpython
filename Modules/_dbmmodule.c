@@ -2,6 +2,11 @@
 /* DBM module using dictionary interface */
 
 
+// clinic/_dbmmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include <sys/types.h>
@@ -552,11 +557,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
     }
 
     const char *name = PyBytes_AS_STRING(filenamebytes);
-    if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
-        Py_DECREF(filenamebytes);
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
     PyObject *self = newdbmobject(state, name, iflags, mode);
     Py_DECREF(filenamebytes);
     return self;
@@ -616,6 +616,7 @@ _dbm_module_free(void *module)
 static PyModuleDef_Slot _dbmmodule_slots[] = {
     {Py_mod_exec, _dbm_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

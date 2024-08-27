@@ -1,5 +1,5 @@
-:mod:`py_compile` --- Compile Python source files
-=================================================
+:mod:`!py_compile` --- Compile Python source files
+==================================================
 
 .. module:: py_compile
    :synopsis: Generate byte-code files from Python source files.
@@ -96,7 +96,7 @@ byte-code cache files in the directory containing the source code.
 
 .. class:: PycInvalidationMode
 
-   A enumeration of possible methods the interpreter can use to determine
+   An enumeration of possible methods the interpreter can use to determine
    whether a bytecode file is up to date with a source file. The ``.pyc`` file
    indicates the desired invalidation mode in its header. See
    :ref:`pyc-invalidation` for more information on how Python invalidates
@@ -139,13 +139,13 @@ not be compiled.
 
 .. program:: python -m py_compile
 
-.. cmdoption:: <file> ... <fileN>
-               -
+.. option:: <file> ... <fileN>
+            -
 
    Positional arguments are files to compile.  If ``-`` is the only
    parameter, the list of files is taken from standard input.
 
-.. cmdoption:: -q, --quiet
+.. option:: -q, --quiet
 
    Suppress errors output.
 

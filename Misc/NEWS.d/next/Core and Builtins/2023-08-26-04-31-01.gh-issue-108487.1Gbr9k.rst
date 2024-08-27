@@ -1,1 +1,0 @@
-Move an assert that would cause a spurious crash in a devious case that should only trigger deoptimization.

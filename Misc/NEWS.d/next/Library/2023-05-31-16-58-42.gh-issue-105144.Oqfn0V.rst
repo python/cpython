@@ -1,5 +1,0 @@
-Fix a recent regression in the :mod:`typing` module. The regression meant
-that doing ``class Foo(X, typing.Protocol)``, where ``X`` was a class that
-had :class:`abc.ABCMeta` as its metaclass, would then cause subsequent
-``isinstance(1, X)`` calls to erroneously raise :exc:`TypeError`. Patch by
-Alex Waygood.

@@ -193,6 +193,7 @@ def _calltip_window(parent):  # htest #
 
     text.focus_set()
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_calltip_w', verbosity=2, exit=False)

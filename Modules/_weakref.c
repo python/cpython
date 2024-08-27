@@ -1,8 +1,7 @@
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_DelItemIf()
-#include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR
-#include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
-
+#include "pycore_dict.h"              // _PyDict_DelItemIf()
+#include "pycore_object.h"            // _PyObject_GET_WEAKREFS_LISTPTR()
+#include "pycore_weakref.h"           // _PyWeakref_IS_DEAD()
 
 #define GET_WEAKREFS_LISTPTR(o) \
         ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
@@ -15,7 +14,6 @@ module _weakref
 #include "clinic/_weakref.c.h"
 
 /*[clinic input]
-
 _weakref.getweakrefcount -> Py_ssize_t
 
   object: object
@@ -26,20 +24,14 @@ Return the number of weak references to 'object'.
 
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=301806d59558ff3e input=cedb69711b6a2507]*/
+/*[clinic end generated code: output=301806d59558ff3e input=7d4d04fcaccf64d5]*/
 {
-    PyWeakReference **list;
-
-    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object)))
-        return 0;
-
-    list = GET_WEAKREFS_LISTPTR(object);
-    return _PyWeakref_GetWeakrefCount(*list);
+    return _PyWeakref_GetWeakrefCount(object);
 }
 
 
 static int
-is_dead_weakref(PyObject *value)
+is_dead_weakref(PyObject *value, void *unused)
 {
     if (!PyWeakref_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "not a weakref");
@@ -64,15 +56,8 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
                                    PyObject *key)
 /*[clinic end generated code: output=d9ff53061fcb875c input=19fc91f257f96a1d]*/
 {
-    if (_PyDict_DelItemIf(dct, key, is_dead_weakref) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError))
-            /* This function is meant to allow safe weak-value dicts
-               with GC in another thread (see issue #28427), so it's
-               ok if the key doesn't exist anymore.
-               */
-            PyErr_Clear();
-        else
-            return NULL;
+    if (_PyDict_DelItemIf(dct, key, is_dead_weakref, NULL) < 0) {
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -94,19 +79,32 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
         return PyList_New(0);
     }
 
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
-
-    PyObject *result = PyList_New(count);
+    PyObject *result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
 
-    PyWeakReference *current = *list;
-    for (Py_ssize_t i = 0; i < count; ++i) {
-        PyList_SET_ITEM(result, i, Py_NewRef(current));
+    LOCK_WEAKREFS(object);
+    PyWeakReference *current = *GET_WEAKREFS_LISTPTR(object);
+    while (current != NULL) {
+        PyObject *curobj = (PyObject *) current;
+        if (_Py_TryIncref(curobj)) {
+            if (PyList_Append(result, curobj)) {
+                UNLOCK_WEAKREFS(object);
+                Py_DECREF(curobj);
+                Py_DECREF(result);
+                return NULL;
+            }
+            else {
+                // Undo our _Py_TryIncref. This is safe to do with the lock
+                // held in free-threaded builds; the list holds a reference to
+                // curobj so we're guaranteed not to invoke the destructor.
+                Py_DECREF(curobj);
+            }
+        }
         current = current->wr_next;
     }
+    UNLOCK_WEAKREFS(object);
     return result;
 }
 
@@ -166,6 +164,7 @@ weakref_exec(PyObject *module)
 static struct PyModuleDef_Slot weakref_slots[] = {
     {Py_mod_exec, weakref_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

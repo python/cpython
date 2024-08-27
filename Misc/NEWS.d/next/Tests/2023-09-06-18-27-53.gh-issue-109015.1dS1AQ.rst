@@ -1,6 +1,0 @@
-Fix test_asyncio, test_imaplib and test_socket tests on FreeBSD if the TCP
-blackhole is enabled (``sysctl net.inet.tcp.blackhole``). Skip the few tests
-which failed with ``ETIMEDOUT`` which such non standard configuration.
-Currently, the `FreeBSD GCP image enables TCP and UDP blackhole
-<https://reviews.freebsd.org/D41751>`_ (``sysctl net.inet.tcp.blackhole=2``
-and ``sysctl net.inet.udp.blackhole=1``).  Patch by Victor Stinner.

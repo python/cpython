@@ -141,9 +141,12 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect)
+                          gc_collect, Py_GIL_DISABLED,
+                          suppress_immortalization,
+                          skip_if_suppress_immortalization)
 from test.support.script_helper import assert_python_ok
-from test.support import threading_helper
+from test.support import threading_helper, import_helper
+from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -174,7 +177,7 @@ class CodeTest(unittest.TestCase):
 
     @cpython_only
     def test_newempty(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         co = _testcapi.code_newempty("filename", "funcname", 15)
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
@@ -384,10 +387,8 @@ class CodeTest(unittest.TestCase):
         code = traceback.tb_frame.f_code
 
         artificial_instructions = []
-        for instr, positions in zip(
-            dis.get_instructions(code, show_caches=True),
-            code.co_positions(),
-            strict=True
+        for instr, positions in instructions_with_positions(
+            dis.get_instructions(code), code.co_positions()
         ):
             # If any of the positions is None, then all have to
             # be None as well for the case above. There are still
@@ -570,14 +571,35 @@ class CodeConstsTest(unittest.TestCase):
         self.assertIsInterned(f())
 
     @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test_interned_string_with_null(self):
         co = compile(r'res = "str\0value!"', '?', 'exec')
         v = self.find_const(co.co_consts, 'str\0value!')
         self.assertIsNotInterned(v)
 
+    @cpython_only
+    @unittest.skipUnless(Py_GIL_DISABLED, "does not intern all constants")
+    @skip_if_suppress_immortalization()
+    def test_interned_constants(self):
+        # compile separately to avoid compile time de-duping
+
+        globals = {}
+        exec(textwrap.dedent("""
+            def func1():
+                return (0.0, (1, 2, "hello"))
+        """), globals)
+
+        exec(textwrap.dedent("""
+            def func2():
+                return (0.0, (1, 2, "hello"))
+        """), globals)
+
+        self.assertTrue(globals["func1"]() is globals["func2"]())
+
 
 class CodeWeakRefTest(unittest.TestCase):
 
+    @suppress_immortalization()
     def test_basic(self):
         # Create a code object in a clean environment so that we know we have
         # the only reference to it left.
@@ -761,7 +783,7 @@ class CodeLocationTest(unittest.TestCase):
             co_code=bytes(
                 [
                     dis.opmap["RESUME"], 0,
-                    dis.opmap["LOAD_ASSERTION_ERROR"], 0,
+                    dis.opmap["LOAD_COMMON_CONSTANT"], 0,
                     dis.opmap["RAISE_VARARGS"], 1,
                 ]
             ),
@@ -828,6 +850,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             self.assertEqual(GetExtra(f.__code__, FREE_INDEX+100,
                               ctypes.c_voidp(100)), 0)
 
+        @suppress_immortalization()
         def test_free_called(self):
             # Verify that the provided free function gets invoked
             # when the code object is cleaned up.
@@ -835,6 +858,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(100))
             del f
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 100)
 
         def test_get_set(self):
@@ -854,6 +878,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             del f
 
         @threading_helper.requires_working_threading()
+        @suppress_immortalization()
         def test_free_different_thread(self):
             # Freeing a code object on a different thread then
             # where the co_extra was set should be safe.
@@ -865,13 +890,19 @@ if check_impl_detail(cpython=True) and ctypes is not None:
                     self.test = test
                 def run(self):
                     del self.f
-                    self.test.assertEqual(LAST_FREED, 500)
+                    gc_collect()
+                    # gh-117683: In the free-threaded build, the code object's
+                    # destructor may still be running concurrently in the main
+                    # thread.
+                    if not Py_GIL_DISABLED:
+                        self.test.assertEqual(LAST_FREED, 500)
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
             tt = ThreadTest(f, self)
             del f
             tt.start()
             tt.join()
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 500)
 
 

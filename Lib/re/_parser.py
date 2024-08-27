@@ -67,6 +67,10 @@ FLAGS = {
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
 GLOBAL_FLAGS = SRE_FLAG_DEBUG
 
+# Maximal value returned by SubPattern.getwidth().
+# Must be larger than MAXREPEAT, MAXCODE and sys.maxsize.
+MAXWIDTH = 1 << 64
+
 class State:
     # keeps track of state for parsing
     def __init__(self):
@@ -177,7 +181,7 @@ class SubPattern:
         lo = hi = 0
         for op, av in self.data:
             if op is BRANCH:
-                i = MAXREPEAT - 1
+                i = MAXWIDTH
                 j = 0
                 for av in av[1]:
                     l, h = av.getwidth()
@@ -196,7 +200,10 @@ class SubPattern:
             elif op in _REPEATCODES:
                 i, j = av[2].getwidth()
                 lo = lo + i * av[0]
-                hi = hi + j * av[1]
+                if av[1] == MAXREPEAT and j:
+                    hi = MAXWIDTH
+                else:
+                    hi = hi + j * av[1]
             elif op in _UNITCODES:
                 lo = lo + 1
                 hi = hi + 1
@@ -216,7 +223,7 @@ class SubPattern:
                 hi = hi + j
             elif op is SUCCESS:
                 break
-        self.width = min(lo, MAXREPEAT - 1), min(hi, MAXREPEAT)
+        self.width = min(lo, MAXWIDTH), min(hi, MAXWIDTH)
         return self.width
 
 class Tokenizer:
@@ -800,14 +807,6 @@ def _parse(source, state, verbose, nested, first=False):
                             state.grouprefpos[condgroup] = (
                                 source.tell() - len(condname) - 1
                             )
-                        if not (condname.isdecimal() and condname.isascii()):
-                            import warnings
-                            warnings.warn(
-                                "bad character in group name %s at position %d" %
-                                (repr(condname) if source.istext else ascii(condname),
-                                 source.tell() - len(condname) - 1),
-                                DeprecationWarning, stacklevel=nested + 6
-                            )
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
@@ -1031,14 +1030,6 @@ def parse_template(source, pattern):
                     if index >= MAXGROUPS:
                         raise s.error("invalid group reference %d" % index,
                                       len(name) + 1)
-                    if not (name.isdecimal() and name.isascii()):
-                        import warnings
-                        warnings.warn(
-                            "bad character in group name %s at position %d" %
-                            (repr(name) if s.istext else ascii(name),
-                             s.tell() - len(name) - 1),
-                            DeprecationWarning, stacklevel=5
-                        )
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:

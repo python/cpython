@@ -1,2 +1,0 @@
-Fix issue where :meth:`pathlib.Path.iterdir` did not raise :exc:`OSError`
-until iterated.

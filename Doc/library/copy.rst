@@ -1,5 +1,5 @@
-:mod:`copy` --- Shallow and deep copy operations
-================================================
+:mod:`!copy` --- Shallow and deep copy operations
+=================================================
 
 .. module:: copy
    :synopsis: Shallow and deep copy operations.
@@ -87,6 +87,8 @@ pickle functions from the :mod:`copyreg` module.
    single: __copy__() (copy protocol)
    single: __deepcopy__() (copy protocol)
 
+.. currentmodule:: None
+
 In order for a class to define its own copy implementation, it can define
 special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
 
@@ -101,7 +103,7 @@ special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
 
    Called to implement the deep copy operation; it is passed one
    argument, the *memo* dictionary.  If the ``__deepcopy__`` implementation needs
-   to make a deep copy of a component, it should call the :func:`deepcopy` function
+   to make a deep copy of a component, it should call the :func:`~copy.deepcopy` function
    with the component as first argument and the *memo* dictionary as second argument.
    The *memo* dictionary should be treated as an opaque object.
 
@@ -109,7 +111,8 @@ special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
 .. index::
    single: __replace__() (replace protocol)
 
-Function :func:`replace` is more limited than :func:`copy` and :func:`deepcopy`,
+Function :func:`!copy.replace` is more limited
+than :func:`~copy.copy` and :func:`~copy.deepcopy`,
 and only supports named tuples created by :func:`~collections.namedtuple`,
 :mod:`dataclasses`, and other classes which define method :meth:`~object.__replace__`.
 

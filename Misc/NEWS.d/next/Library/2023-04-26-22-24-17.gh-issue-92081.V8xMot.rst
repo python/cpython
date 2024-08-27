@@ -1,0 +1,1 @@
+Fix missing spaces in email headers when the spaces are mixed with encoded 8-bit characters.

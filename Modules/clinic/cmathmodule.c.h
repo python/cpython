@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(cmath_acos__doc__,
 "acos($module, z, /)\n"
@@ -907,7 +908,7 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -981,4 +982,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96a5c4ae198dd5bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=454309b21cfa9bf6 input=a9049054013a1b77]*/

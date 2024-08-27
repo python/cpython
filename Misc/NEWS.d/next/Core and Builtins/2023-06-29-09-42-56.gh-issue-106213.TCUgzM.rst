@@ -1,2 +1,0 @@
-Changed the way that Emscripten call trampolines work for compatibility with
-Wasm/JS Promise integration.

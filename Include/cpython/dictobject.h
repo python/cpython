@@ -17,6 +17,9 @@ typedef struct {
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
 #ifdef Py_BUILD_CORE
+    /* Bits 0-7 are for dict watchers.
+     * Bits 8-11 are for the watched mutation counter (used by tier2 optimization)
+     * The remaining bits (12-63) are the actual version tag. */
     uint64_t ma_version_tag;
 #else
     Py_DEPRECATED(3.12) uint64_t ma_version_tag;
@@ -32,20 +35,43 @@ typedef struct {
     PyDictValues *ma_values;
 } PyDictObject;
 
+PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
+                                                 Py_hash_t hash);
+// PyDict_GetItemStringRef() can be used instead
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyDict_GetItemStringWithError(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
+
+// Inserts `key` with a value `default_value`, if `key` is not already present
+// in the dictionary.  If `result` is not NULL, then the value associated
+// with `key` is returned in `*result` (either the existing value, or the now
+// inserted `default_value`).
+// Returns:
+//   -1 on error
+//    0 if `key` was not present and `default_value` was inserted
+//    1 if `key` was present and `default_value` was not inserted
+PyAPI_FUNC(int) PyDict_SetDefaultRef(PyObject *mp, PyObject *key, PyObject *default_value, PyObject **result);
 
 /* Get the number of items of a dictionary. */
 static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
     PyDictObject *mp;
     assert(PyDict_Check(op));
     mp = _Py_CAST(PyDictObject*, op);
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&mp->ma_used);
+#else
     return mp->ma_used;
+#endif
 }
 #define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
 
 PyAPI_FUNC(int) PyDict_ContainsString(PyObject *mp, const char *key);
 
+PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
+
+PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
+PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
+PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value);
 
 /* Dictionary watchers */
 

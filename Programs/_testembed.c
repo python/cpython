@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -16,11 +17,9 @@
 
 // These functions were removed from Python 3.13 API but are still exported
 // for the stable ABI. We want to test them in this program.
-extern void Py_SetProgramName(const wchar_t *program_name);
 extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
-extern void Py_SetPythonHome(const wchar_t *home);
 
 
 int main_argc;
@@ -172,14 +171,22 @@ PyInit_embedded_ext(void)
 static int test_repeated_init_exec(void)
 {
     if (main_argc < 3) {
-        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        fprintf(stderr,
+                "usage: %s test_repeated_init_exec CODE ...\n", PROGRAM);
         exit(1);
     }
     const char *code = main_argv[2];
+    int loops = main_argc > 3
+        ? main_argc - 2
+        : INIT_LOOPS;
 
-    for (int i=1; i <= INIT_LOOPS; i++) {
-        fprintf(stderr, "--- Loop #%d ---\n", i);
+    for (int i=0; i < loops; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i+1);
         fflush(stderr);
+
+        if (main_argc > 3) {
+            code = main_argv[i+2];
+        }
 
         _testembed_Py_InitializeFromConfig();
         int err = PyRun_SimpleString(code);
@@ -576,7 +583,11 @@ static int test_init_from_config(void)
     _PyPreConfig_InitCompatConfig(&preconfig);
 
     putenv("PYTHONMALLOC=malloc_debug");
+#ifndef Py_GIL_DISABLED
     preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
+#else
+    preconfig.allocator = PYMEM_ALLOCATOR_MIMALLOC;
+#endif
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
@@ -715,6 +726,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONINTMAXSTRDIGITS=6666");
     config.int_max_str_digits = 31337;
+    config.cpu_count = 4321;
 
     init_from_config_clear(&config);
 
@@ -764,7 +776,11 @@ static int test_init_dont_parse_argv(void)
 static void set_most_env_vars(void)
 {
     putenv("PYTHONHASHSEED=42");
+#ifndef Py_GIL_DISABLED
     putenv("PYTHONMALLOC=malloc");
+#else
+    putenv("PYTHONMALLOC=mimalloc");
+#endif
     putenv("PYTHONTRACEMALLOC=2");
     putenv("PYTHONPROFILEIMPORTTIME=1");
     putenv("PYTHONNODEBUGRANGES=1");
@@ -850,7 +866,11 @@ static int test_init_env_dev_mode_alloc(void)
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
+#ifndef Py_GIL_DISABLED
     putenv("PYTHONMALLOC=malloc");
+#else
+    putenv("PYTHONMALLOC=mimalloc");
+#endif
     _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
@@ -1278,11 +1298,16 @@ static int _test_audit(Py_ssize_t setValue)
         printf("Set event failed");
         return 4;
     }
+    if (PyErr_Occurred()) {
+        printf("Exception raised");
+        return 5;
+    }
 
     if (sawSet != 42) {
         printf("Failed to see *userData change\n");
-        return 5;
+        return 6;
     }
+
     return 0;
 }
 
@@ -1294,6 +1319,57 @@ static int test_audit(void)
         return 0x1000 | _audit_hook_clear_count;
     }
     return result;
+}
+
+static int test_audit_tuple(void)
+{
+#define ASSERT(TEST, EXITCODE) \
+    if (!(TEST)) { \
+        printf("ERROR test failed at %s:%i\n", __FILE__, __LINE__); \
+        return (EXITCODE); \
+    }
+
+    Py_ssize_t sawSet = 0;
+
+    // we need at least one hook, otherwise code checking for
+    // PySys_AuditTuple() is skipped.
+    PySys_AddAuditHook(_audit_hook, &sawSet);
+    _testembed_Py_InitializeFromConfig();
+
+    ASSERT(!PyErr_Occurred(), 0);
+
+    // pass Python tuple object
+    PyObject *tuple = Py_BuildValue("(i)", 444);
+    if (tuple == NULL) {
+        goto error;
+    }
+    ASSERT(PySys_AuditTuple("_testembed.set", tuple) == 0, 10);
+    ASSERT(!PyErr_Occurred(), 11);
+    ASSERT(sawSet == 444, 12);
+    Py_DECREF(tuple);
+
+    // pass Python int object
+    PyObject *int_arg = PyLong_FromLong(555);
+    if (int_arg == NULL) {
+        goto error;
+    }
+    ASSERT(PySys_AuditTuple("_testembed.set", int_arg) == -1, 20);
+    ASSERT(PyErr_ExceptionMatches(PyExc_TypeError), 21);
+    PyErr_Clear();
+    Py_DECREF(int_arg);
+
+    // NULL is accepted and means "no arguments"
+    ASSERT(PySys_AuditTuple("_testembed.test_audit_tuple", NULL) == 0, 30);
+    ASSERT(!PyErr_Occurred(), 31);
+
+    Py_Finalize();
+    return 0;
+
+error:
+    PyErr_Print();
+    return 1;
+
+#undef ASSERT
 }
 
 static volatile int _audit_subinterpreter_interpreter_count = 0;
@@ -1947,6 +2023,22 @@ static int test_init_main_interpreter_settings(void)
     return 0;
 }
 
+static void do_init(void *unused)
+{
+    _testembed_Py_Initialize();
+    Py_Finalize();
+}
+
+static int test_init_in_background_thread(void)
+{
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    if (PyThread_start_joinable_thread(&do_init, NULL, &ident, &handle) < 0) {
+        return -1;
+    }
+    return PyThread_join_thread(handle);
+}
+
 
 #ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
@@ -2136,10 +2228,12 @@ static struct TestCase TestCases[] = {
     {"test_get_argc_argv", test_get_argc_argv},
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
+    {"test_init_in_background_thread", test_init_in_background_thread},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
+    {"test_audit_tuple", test_audit_tuple},
     {"test_audit_subinterpreter", test_audit_subinterpreter},
     {"test_audit_run_command", test_audit_run_command},
     {"test_audit_run_file", test_audit_run_file},

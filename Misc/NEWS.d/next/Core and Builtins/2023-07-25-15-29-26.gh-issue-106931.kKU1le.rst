@@ -1,3 +1,0 @@
-Statically allocated string objects are now interned globally instead of
-per-interpreter.  This fixes a situation where such a string would only be
-interned in a single interpreter. Normal string objects are unaffected.

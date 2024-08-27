@@ -1,5 +1,0 @@
-:c:func:`PyImport_GetImporter` now sets RuntimeError if it fails to get
-:data:`sys.path_hooks` or :data:`sys.path_importer_cache` or they are not
-list and dict correspondingly. Previously it could return NULL without
-setting error in obscure cases, crash or raise SystemError if these
-attributes have wrong type.

@@ -1,2 +1,0 @@
-Restore locals shadowed by an inlined comprehension if the comprehension
-raises an exception.

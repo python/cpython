@@ -1,2 +1,0 @@
-Remove unnecessary :func:`hasattr` check during :data:`typing.TypedDict`
-creation.
