@@ -5273,11 +5273,11 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
 static PyTypeObject *
 get_base_by_token_recursive(PyTypeObject *type, void *token)
 {
-    PyObject *bases = type->tp_bases;
+    PyObject *bases = lookup_tp_bases(type);
     assert(bases != NULL);
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
         if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
             continue;
         }
