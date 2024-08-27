@@ -2514,15 +2514,15 @@
     added = '3.14'
 [function.PyLong_FromUInt32]
     added = '3.14'
-[function.PyLong_ToInt32]
+[function.PyLong_AsInt32]
     added = '3.14'
-[function.PyLong_ToUInt32]
+[function.PyLong_AsUInt32]
     added = '3.14'
 [function.PyLong_FromInt64]
     added = '3.14'
 [function.PyLong_FromUInt64]
     added = '3.14'
-[function.PyLong_ToInt64]
+[function.PyLong_AsInt64]
     added = '3.14'
-[function.PyLong_ToUInt64]
+[function.PyLong_AsUInt64]
     added = '3.14'
