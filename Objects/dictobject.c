@@ -6559,9 +6559,10 @@ dictvalues_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 /* Returns NULL if cannot allocate a new PyDictKeysObject,
    but does not set an error */
 PyDictKeysObject *
-_PyDict_NewKeysForClass(void)
+_PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+
     PyDictKeysObject *keys = new_keys_object(
             interp, NEXT_LOG2_SHARED_KEYS_MAX_SIZE, 1);
     if (keys == NULL) {
@@ -6572,6 +6573,20 @@ _PyDict_NewKeysForClass(void)
         /* Set to max size+1 as it will shrink by one before each new object */
         keys->dk_usable = SHARED_KEYS_MAX_SIZE;
         keys->dk_kind = DICT_KEYS_SPLIT;
+    }
+    if (cls->ht_type.tp_dict) {
+        PyObject *attrs = PyDict_GetItem(cls->ht_type.tp_dict, &_Py_ID(__static_attributes__));
+        if (attrs != NULL && PyTuple_Check(attrs)) {
+            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(attrs); i++) {
+                PyObject *key = PyTuple_GET_ITEM(attrs, i);
+                Py_hash_t hash;
+                if (PyUnicode_CheckExact(key) && (hash = unicode_get_hash(key)) != -1) {
+                    if (insert_split_key(keys, key, hash) == DKIX_EMPTY) {
+                        break;
+                    }
+                }
+            }
+        }
     }
     return keys;
 }

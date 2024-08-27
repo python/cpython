@@ -137,7 +137,7 @@ class BaseTest(unittest.TestCase):
                      Future, _WorkItem,
                      Morsel,
                      DictReader, DictWriter,
-                     array, Event]
+                     array]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
