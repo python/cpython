@@ -2040,11 +2040,11 @@ class InstructionTests(InstructionTestCase):
     def test_contains_op_format(self):
         output = io.StringIO()
         dis.dis("a in b", file=output, show_caches=True)
-        self.assertIn("CONTAINS_OP                    0 (in)", output.getvalue())
+        self.assertIn("CONTAINS_OP              0 (in)", output.getvalue())
 
         output = io.StringIO()
         dis.dis("a not in b", file=output, show_caches=True)
-        self.assertIn("CONTAINS_OP                    1 (not in)", output.getvalue())
+        self.assertIn("CONTAINS_OP              1 (not in)", output.getvalue())
 
     def test_baseopname_and_baseopcode(self):
         # Standard instructions
