@@ -2500,7 +2500,7 @@ class BaseCallableTests:
 
     def test_nested_paramspec(self):
         # Since Callable has some special treatment, we want to be sure
-        # that substituion works correctly, see gh-103054
+        # that substitution works correctly, see gh-103054
         Callable = self.Callable
         P = ParamSpec('P')
         P2 = ParamSpec('P2')
@@ -8877,7 +8877,7 @@ class TypedDictTests(BaseTestCase):
         class Y(TypedDict):
             a: None
             b: "int"
-        fwdref = ForwardRef('int', module='test.test_typing')
+        fwdref = ForwardRef('int', module=__name__)
         self.assertEqual(Y.__annotations__, {'a': type(None), 'b': fwdref})
         self.assertEqual(Y.__annotate__(annotationlib.Format.FORWARDREF), {'a': type(None), 'b': fwdref})
 

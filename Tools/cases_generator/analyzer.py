@@ -191,13 +191,6 @@ class Uop:
             return "has unused cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
-        if self.properties.eval_breaker:
-            if self.properties.error_with_pop or self.properties.error_without_pop:
-                return "has error handling and eval-breaker check"
-            if self.properties.side_exit:
-                return "exits and eval-breaker check"
-            if self.properties.deopts:
-                return "deopts and eval-breaker check"
         return None
 
     def is_viable(self) -> bool:
@@ -553,7 +546,7 @@ NON_ESCAPING_FUNCTIONS = (
     "STACKREFS_TO_PYOBJECTS",
     "STACKREFS_TO_PYOBJECTS_CLEANUP",
     "CONVERSION_FAILED",
-    "_PyList_FromArraySteal",
+    "_PyList_FromStackRefSteal",
     "_PyTuple_FromArraySteal",
     "_PyTuple_FromStackRefSteal",
 )
@@ -693,7 +686,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         side_exit=exits_if,
         oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
-        eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
+        eval_breaker="CHECK_PERIODIC" in op.name,
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "SYNC_SP"),
@@ -899,6 +892,7 @@ def assign_opcodes(
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
     instmap["INSTRUMENTED_LINE"] = 254
+    instmap["ENTER_EXECUTOR"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 

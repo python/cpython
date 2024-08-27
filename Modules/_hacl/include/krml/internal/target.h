@@ -69,6 +69,14 @@
 #  endif
 #endif
 
+#ifndef KRML_ATTRIBUTE_TARGET
+#  if defined(__GNUC__)
+#    define KRML_ATTRIBUTE_TARGET(x) __attribute__((target(x)))
+#  else
+#    define KRML_ATTRIBUTE_TARGET(x)
+#  endif
+#endif
+
 #ifndef KRML_NOINLINE
 #  if defined(_MSC_VER)
 #    define KRML_NOINLINE __declspec(noinline)
@@ -79,6 +87,67 @@
 #    warning "The KRML_NOINLINE macro is not defined for this toolchain!"
 #    warning "The compiler may defeat side-channel resistance with optimizations."
 #    warning "Please locate target.h and try to fill it out with a suitable definition for this compiler."
+#  endif
+#endif
+
+#ifndef KRML_MUSTINLINE
+#  if defined(_MSC_VER)
+#    define KRML_MUSTINLINE inline __forceinline
+#  elif defined (__GNUC__)
+#    define KRML_MUSTINLINE inline __attribute__((always_inline))
+#  else
+#    define KRML_MUSTINLINE inline
+#    warning "The KRML_MUSTINLINE macro defaults to plain inline for this toolchain!"
+#    warning "Please locate target.h and try to fill it out with a suitable definition for this compiler."
+#  endif
+#endif
+
+#ifndef KRML_PRE_ALIGN
+#  ifdef _MSC_VER
+#    define KRML_PRE_ALIGN(X) __declspec(align(X))
+#  else
+#    define KRML_PRE_ALIGN(X)
+#  endif
+#endif
+
+#ifndef KRML_POST_ALIGN
+#  ifdef _MSC_VER
+#    define KRML_POST_ALIGN(X)
+#  else
+#    define KRML_POST_ALIGN(X) __attribute__((aligned(X)))
+#  endif
+#endif
+
+/* MinGW-W64 does not support C11 aligned_alloc, but it supports
+ * MSVC's _aligned_malloc.
+ */
+#ifndef KRML_ALIGNED_MALLOC
+#  ifdef __MINGW32__
+#    include <_mingw.h>
+#  endif
+#  if (                                                                        \
+      defined(_MSC_VER) ||                                                     \
+      (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
+#    define KRML_ALIGNED_MALLOC(X, Y) _aligned_malloc(Y, X)
+#  else
+#    define KRML_ALIGNED_MALLOC(X, Y) aligned_alloc(X, Y)
+#  endif
+#endif
+
+/* Since aligned allocations with MinGW-W64 are done with
+ * _aligned_malloc (see above), such pointers must be freed with
+ * _aligned_free.
+ */
+#ifndef KRML_ALIGNED_FREE
+#  ifdef __MINGW32__
+#    include <_mingw.h>
+#  endif
+#  if (                                                                        \
+      defined(_MSC_VER) ||                                                     \
+      (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
+#    define KRML_ALIGNED_FREE(X) _aligned_free(X)
+#  else
+#    define KRML_ALIGNED_FREE(X) free(X)
 #  endif
 #endif
 
