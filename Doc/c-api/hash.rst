@@ -98,11 +98,12 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    that implement the :ref:`buffer protocol <bufferobjects>`.
 
    Use this function to implement hashing for immutable objects whose
-   ``tp_richcompare`` function compares to another object's buffer.
+   :c:member:`~PyTypeObject.tp_richcompare` function compares to another
+   object's buffer.
 
    *len* must be greater than or equal to ``0``.
 
-   The function cannot fail: it cannot return ``-1``.
+   This function always succeeds.
 
    .. versionadded:: 3.14
 
