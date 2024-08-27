@@ -242,14 +242,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
             buffering = -1
             line_buffering = True
         if buffering < 0:
-            buffering = DEFAULT_BUFFER_SIZE
-            try:
-                bs = os.fstat(raw.fileno()).st_blksize
-            except (OSError, AttributeError):
-                pass
-            else:
-                if bs > 1:
-                    buffering = bs
+            buffering = raw._blksize
         if buffering < 0:
             raise ValueError("invalid buffering size")
         if buffering == 0:
@@ -1565,19 +1558,15 @@ class FileIO(RawIOBase):
                     os.set_inheritable(fd, False)
 
             self._closefd = closefd
-            fdfstat = os.fstat(fd)
+            self._stat_atopen = os.fstat(fd)
             try:
-                if stat.S_ISDIR(fdfstat.st_mode):
+                if stat.S_ISDIR(self._stat_atopen.st_mode):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
                 # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
-            self._blksize = getattr(fdfstat, 'st_blksize', 0)
-            if self._blksize <= 1:
-                self._blksize = DEFAULT_BUFFER_SIZE
-            self._estimated_size = fdfstat.st_size
 
             if _setmode:
                 # don't translate newlines (\r\n <=> \n)
@@ -1623,6 +1612,14 @@ class FileIO(RawIOBase):
             return ('<%s name=%r mode=%r closefd=%r>' %
                     (class_name, name, self.mode, self._closefd))
 
+    @property
+    def _blksize(self):
+        if self._stat_atopen:
+            res = getattr(self._stat_atopen, "st_blksize", 0)
+
+        # WASI sets blksize to 0
+        return res if res > 0 else DEFAULT_BUFFER_SIZE
+
     def _checkReadable(self):
         if not self._readable:
             raise UnsupportedOperation('File not open for reading')
@@ -1655,16 +1652,16 @@ class FileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkReadable()
-        if self._estimated_size <= 0:
+        if not self._stat_atopen or self._stat_atopen.st_size <= 0:
             bufsize = DEFAULT_BUFFER_SIZE
         else:
-            bufsize = self._estimated_size + 1
+            bufsize = self._stat_atopen.st_size + 1
 
-            if self._estimated_size > 65536:
+            if self._stat_atopen.st_size > 65536:
                 try:
                     pos = os.lseek(self._fd, 0, SEEK_CUR)
-                    if self._estimated_size >= pos:
-                        bufsize = self._estimated_size - pos + 1
+                    if self._stat_atopen.st_size >= pos:
+                        bufsize = self._stat_atopen.st_size - pos + 1
                 except OSError:
                     pass
 
@@ -1742,7 +1739,7 @@ class FileIO(RawIOBase):
         if size is None:
             size = self.tell()
         os.ftruncate(self._fd, size)
-        self._estimated_size = size
+        self._stat_atopen = None
         return size
 
     def close(self):
