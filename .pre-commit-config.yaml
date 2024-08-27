@@ -57,6 +57,22 @@ repos:
         args: [--enable=default-role]
         files: ^Doc/|^Misc/NEWS.d/
 
+  - repo: local
+    hooks:
+      - id: blurb-no-space-c-api
+        name: Check C API news entries
+        language: fail
+        entry: Space found in path, move to Misc/NEWS.d/next/C_API/
+        files: Misc/NEWS.d/next/C API/20.*.rst
+
+  - repo: local
+    hooks:
+      - id: blurb-no-space-core-and-builtins
+        name: Check Core and Builtins news entries
+        language: fail
+        entry: Space found in path, move to Misc/NEWS.d/next/Core_and_Builtins/
+        files: Misc/NEWS.d/next/Core and Builtins/20.*.rst
+
   - repo: meta
     hooks:
       - id: check-hooks-apply
