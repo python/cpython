@@ -2068,7 +2068,7 @@ class AbstractPicklingErrorTests:
                     self.dumps(f, proto)
                 self.assertIn(str(cm.exception), {
                     f"Can't pickle {f!r}: it's not found as {__name__}.{f.__qualname__}",
-                    f"Can't get local object {f.__qualname__!r}"})
+                    f"Can't get local attribute {f.__qualname__!r} on {sys.modules[__name__]}"})
         # Same without a __module__ attribute (exercises a different path
         # in _pickle.c).
         del f.__module__
