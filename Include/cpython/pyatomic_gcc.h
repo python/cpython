@@ -259,10 +259,17 @@ _Py_atomic_store_ptr_relaxed(void *obj, void *value)
 PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(int,                 int)
 PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(uint32_t,            uint32)
 PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(uint64_t,            uint64)
-PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(uintptr_t,           uintptr)
 PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE(Py_ssize_t,          ssize)
 
 #undef PY_GENERATE_ATOMIC_ACQUIRE_AND_RELEASE
+
+static inline uintptr_t
+_Py_atomic_load_uintptr_acquire(const uintptr_t *obj)
+{ return (uintptr_t)__atomic_load_n(obj, __ATOMIC_ACQUIRE); }
+
+static inline void
+_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void *
 _Py_atomic_load_ptr_acquire(const void *obj)
