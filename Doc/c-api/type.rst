@@ -492,13 +492,6 @@ The following functions and structs are used to create
          See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
          for details.
 
-      .. versionchanged:: 3.14
-
-         The field :c:member:`~PyTypeObject.tp_vectorcall` can only be set
-         since Python 3.14. On older versions, use
-         :c:member:`~PyTypeObject.tp_new` and/or
-         :c:member:`~PyTypeObject.tp_init`.
-
       The following internal fields cannot be set at all when creating a heap
       type:
 
@@ -522,6 +515,12 @@ The following functions and structs are used to create
         :c:member:`~PyBufferProcs.bf_getbuffer` and
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
         under the :ref:`limited API <limited-c-api>`.
+
+      .. versionchanged:: 3.14
+
+         The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
+         using ``Py_tp_vectorcall``.  See the field's documentation
+         for details.
 
    .. c:member:: void *pfunc
 
