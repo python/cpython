@@ -241,10 +241,9 @@ def get_layout(cls, input_fields, is_struct, base):
                 # points to where we would start a
                 # new field.  I.e. just behind where we placed the last
                 # field plus an allowance for alignment.
-                next_bit_offset = - last_field_bit_size
+                next_bit_offset = -last_field_bit_size
 
             assert type_bit_size == last_field_bit_size
-            assert type_bit_size > 0
 
             offset = next_byte_offset - last_field_bit_size // 8
             if is_bitfield:
@@ -292,6 +291,9 @@ def get_layout(cls, input_fields, is_struct, base):
             bit_size=bit_size if is_bitfield else None,
             index=i,
         )
+        if not gcc_layout:
+            assert type_bit_size > 0
+
         result_fields.append(last_field)
         align = max(align, type_align)
         last_size = struct_size

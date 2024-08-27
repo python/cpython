@@ -186,8 +186,10 @@ class BitFieldTest(unittest.TestCase):
                 self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 7, 0))
 
     def fail_fields(self, *fields):
-        return self.get_except(type(Structure), "X", (),
-                               {"_fields_": fields})
+        for layout in "ms", "gcc-sysv":
+            with self.subTest(layout=layout):
+                return self.get_except(type(Structure), "X", (),
+                                    {"_fields_": fields, "layout": layout})
 
     def test_nonint_types(self):
         # bit fields are not allowed on non-integer types.
