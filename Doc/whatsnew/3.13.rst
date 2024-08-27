@@ -607,6 +607,9 @@ Other Language Changes
   the :mod:`bz2`, :mod:`lzma`, :mod:`tarfile`, and :mod:`zipfile` modules.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
+* Add a :attr:`~property.__name__` attribute on :class:`property` objects.
+  (Contributed by Eugene Toder in :gh:`101860`.)
+
 
 New Modules
 ===========
