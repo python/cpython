@@ -659,26 +659,26 @@ class LongTests(unittest.TestCase):
         # Test PyLong_AsInt32() and PyLong_FromInt32()
         to_int32 = _testlimitedcapi.pylong_asint32
         from _testcapi import INT32_MIN, INT32_MAX
-        self.check_long_asint(to_int32, INT32_MIN, INT32_MAX, use_index=False)
+        self.check_long_asint(to_int32, INT32_MIN, INT32_MAX)
 
     def test_long_asint64(self):
         # Test PyLong_AsInt64() and PyLong_FromInt64()
         as_int64 = _testlimitedcapi.pylong_asint64
         from _testcapi import INT64_MIN, INT64_MAX
-        self.check_long_asint(as_int64, INT64_MIN, INT64_MAX, use_index=False)
+        self.check_long_asint(as_int64, INT64_MIN, INT64_MAX)
 
     def test_long_asuint32(self):
         # Test PyLong_AsUInt32() and PyLong_FromUInt32()
         as_uint32 = _testlimitedcapi.pylong_asuint32
         from _testcapi import UINT32_MAX
-        self.check_long_asunsignedint(as_uint32, UINT32_MAX,
+        self.check_long_asunsignedint(as_uint32, UINT32_MAX, use_index=True,
                                       negative_value_error=True)
 
     def test_long_asuint64(self):
         # Test PyLong_AsUInt64() and PyLong_FromUInt64()
         as_uint64 = _testlimitedcapi.pylong_asuint64
         from _testcapi import UINT64_MAX
-        self.check_long_asunsignedint(as_uint64, UINT64_MAX,
+        self.check_long_asunsignedint(as_uint64, UINT64_MAX, use_index=True,
                                       negative_value_error=True)
 
 if __name__ == "__main__":

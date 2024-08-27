@@ -6743,7 +6743,8 @@ PyObject* PyLong_FromUInt64(uint64_t value)
 
 #define LONG_TO_INT(obj, value, type_name) \
     do { \
-        int flags = Py_ASNATIVEBYTES_NATIVE_ENDIAN; \
+        int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
+                     | Py_ASNATIVEBYTES_ALLOW_INDEX); \
         Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
         if (bytes < 0) { \
             return -1; \
@@ -6770,7 +6771,8 @@ int PyLong_AsInt64(PyObject *obj, int64_t *value)
     do { \
         int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
                      | Py_ASNATIVEBYTES_UNSIGNED_BUFFER \
-                     | Py_ASNATIVEBYTES_REJECT_NEGATIVE); \
+                     | Py_ASNATIVEBYTES_REJECT_NEGATIVE \
+                     | Py_ASNATIVEBYTES_ALLOW_INDEX); \
         Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
         if (bytes < 0) { \
             return -1; \
