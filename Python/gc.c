@@ -1712,20 +1712,25 @@ _PyGC_GetObjects(PyInterpreterState *interp, int generation)
     GCState *gcstate = &interp->gc;
 
     PyObject *result = PyList_New(0);
-    if (result == NULL) {
-        return NULL;
+    /* Generation:
+     * -1: Return all objects
+     * 0: All young objects
+     * 1: No objects
+     * 2: All old objects
+     */
+    if (result == NULL || generation == 1) {
+        return result;
     }
-
-    if (generation == -1) {
-        /* If generation is -1, get all objects from all generations */
-        for (int i = 0; i < NUM_GENERATIONS; i++) {
-            if (append_objects(result, GEN_HEAD(gcstate, i))) {
-                goto error;
-            }
+    if (generation <= 0) {
+        if (append_objects(result, &gcstate->young.head)) {
+            goto error;
         }
     }
-    else {
-        if (append_objects(result, GEN_HEAD(gcstate, generation))) {
+    if (generation != 0) {
+        if (append_objects(result, &gcstate->old[0].head)) {
+            goto error;
+        }
+        if (append_objects(result, &gcstate->old[1].head)) {
             goto error;
         }
     }
