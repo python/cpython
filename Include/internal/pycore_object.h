@@ -164,15 +164,12 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 static inline int
 _PyObject_IsUniquelyReferenced(PyObject *ob)
 {
-    /* Function to check whether an immutable object such as a tuple can be
-     * modified inplace by the owning method
-     */
 #if !defined(Py_GIL_DISABLED)
     return Py_REFCNT(ob) == 1;
 #else
     // NOTE: the entire ob_ref_shared field must be zero, including flags, to
     // ensure that other threads cannot concurrently create new references to
-    // this object. 
+    // this object.
     return (_Py_IsOwnedByCurrentThread(ob) &&
             _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local) == 1 &&
             _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared) == 0);

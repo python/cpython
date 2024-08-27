@@ -2972,7 +2972,7 @@ zip_next(zipobject *lz)
     if (tuplesize == 0)
         return NULL;
 
-    if (_Py_Reuse_Immutable_Object(result)) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
