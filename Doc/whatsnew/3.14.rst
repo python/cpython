@@ -305,10 +305,10 @@ New Features
   * :c:func:`PyLong_FromInt64`
   * :c:func:`PyLong_FromUInt32`
   * :c:func:`PyLong_FromUInt64`
-  * :c:func:`PyLong_ToInt32`
-  * :c:func:`PyLong_ToInt64`
-  * :c:func:`PyLong_ToUInt32`
-  * :c:func:`PyLong_ToUInt64`
+  * :c:func:`PyLong_AsInt32`
+  * :c:func:`PyLong_AsInt64`
+  * :c:func:`PyLong_AsUInt32`
+  * :c:func:`PyLong_AsUInt64`
 
   (Contributed by Victor Stinner in :gh:`120389`.)
 

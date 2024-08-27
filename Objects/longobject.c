@@ -6709,12 +6709,12 @@ PyObject* PyLong_FromUInt64(uint64_t value)
         return 0; \
     } while (0)
 
-int PyLong_ToInt32(PyObject *obj, int32_t *value)
+int PyLong_AsInt32(PyObject *obj, int32_t *value)
 {
     LONG_TO_INT(obj, value, "C int32_t");
 }
 
-int PyLong_ToInt64(PyObject *obj, int64_t *value)
+int PyLong_AsInt64(PyObject *obj, int64_t *value)
 {
     LONG_TO_INT(obj, value, "C int64_t");
 }
@@ -6736,12 +6736,12 @@ int PyLong_ToInt64(PyObject *obj, int64_t *value)
         return 0; \
     } while (0)
 
-int PyLong_ToUInt32(PyObject *obj, uint32_t *value)
+int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
 {
     LONG_TO_UINT(obj, value, "C uint32_t");
 }
 
-int PyLong_ToUInt64(PyObject *obj, uint64_t *value)
+int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
 {
     LONG_TO_UINT(obj, value, "C uint64_t");
 }

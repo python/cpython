@@ -36,10 +36,10 @@ PyAPI_FUNC(PyObject*) PyLong_FromUInt32(uint32_t value);
 PyAPI_FUNC(PyObject*) PyLong_FromInt64(int64_t value);
 PyAPI_FUNC(PyObject*) PyLong_FromUInt64(uint64_t value);
 
-PyAPI_FUNC(int) PyLong_ToInt32(PyObject *obj, int32_t *value);
-PyAPI_FUNC(int) PyLong_ToUInt32(PyObject *obj, uint32_t *value);
-PyAPI_FUNC(int) PyLong_ToInt64(PyObject *obj, int64_t *value);
-PyAPI_FUNC(int) PyLong_ToUInt64(PyObject *obj, uint64_t *value);
+PyAPI_FUNC(int) PyLong_AsInt32(PyObject *obj, int32_t *value);
+PyAPI_FUNC(int) PyLong_AsUInt32(PyObject *obj, uint32_t *value);
+PyAPI_FUNC(int) PyLong_AsInt64(PyObject *obj, int64_t *value);
+PyAPI_FUNC(int) PyLong_AsUInt64(PyObject *obj, uint64_t *value);
 #endif
 
 PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);

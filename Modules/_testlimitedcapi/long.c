@@ -759,22 +759,22 @@ pylong_aspid(PyObject *module, PyObject *arg)
 
 
 static PyObject *
-pylong_toint32(PyObject *module, PyObject *arg)
+pylong_asint32(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
     int32_t value;
-    if (PyLong_ToInt32(arg, &value) < 0) {
+    if (PyLong_AsInt32(arg, &value) < 0) {
         return NULL;
     }
     return PyLong_FromInt32(value);
 }
 
 static PyObject *
-pylong_touint32(PyObject *module, PyObject *arg)
+pylong_asuint32(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
     uint32_t value;
-    if (PyLong_ToUInt32(arg, &value) < 0) {
+    if (PyLong_AsUInt32(arg, &value) < 0) {
         return NULL;
     }
     return PyLong_FromUInt32(value);
@@ -782,22 +782,22 @@ pylong_touint32(PyObject *module, PyObject *arg)
 
 
 static PyObject *
-pylong_toint64(PyObject *module, PyObject *arg)
+pylong_asint64(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
     int64_t value;
-    if (PyLong_ToInt64(arg, &value) < 0) {
+    if (PyLong_AsInt64(arg, &value) < 0) {
         return NULL;
     }
     return PyLong_FromInt64(value);
 }
 
 static PyObject *
-pylong_touint64(PyObject *module, PyObject *arg)
+pylong_asuint64(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
     uint64_t value;
-    if (PyLong_ToUInt64(arg, &value) < 0) {
+    if (PyLong_AsUInt64(arg, &value) < 0) {
         return NULL;
     }
     return PyLong_FromUInt64(value);
@@ -831,10 +831,10 @@ static PyMethodDef test_methods[] = {
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
-    {"pylong_toint32",              pylong_toint32,             METH_O},
-    {"pylong_touint32",             pylong_touint32,            METH_O},
-    {"pylong_toint64",              pylong_toint64,             METH_O},
-    {"pylong_touint64",             pylong_touint64,            METH_O},
+    {"pylong_asint32",              pylong_asint32,             METH_O},
+    {"pylong_asuint32",             pylong_asuint32,            METH_O},
+    {"pylong_asint64",              pylong_asint64,             METH_O},
+    {"pylong_asuint64",             pylong_asuint64,            METH_O},
     {NULL},
 };
 
