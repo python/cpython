@@ -434,13 +434,12 @@ do { \
 
 // Initialize warmup counters and insert superinstructions. This cannot fail.
 void
-_PyCode_Quicken(PyCodeObject *code)
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size)
 {
     #if ENABLE_SPECIALIZATION
     int opcode = 0;
-    _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     /* The last code unit cannot have a cache, so we don't need to check it */
-    for (int i = 0; i < Py_SIZE(code)-1; i++) {
+    for (Py_ssize_t i = 0; i < size-1; i++) {
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {

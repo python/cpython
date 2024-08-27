@@ -1209,7 +1209,7 @@ dummy_func(
             if (oparg) {
                 PyObject *lasti = PyStackRef_AsPyObjectBorrow(values[0]);
                 if (PyLong_Check(lasti)) {
-                    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
+                    frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -3604,7 +3604,7 @@ dummy_func(
         op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame: _PyInterpreterFrame *)) {
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
-            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
+            assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self);
             PyFunctionObject *init_func = (PyFunctionObject *)PyStackRef_AsPyObjectSteal(init);
@@ -4525,7 +4525,7 @@ dummy_func(
             int original_opcode = 0;
             if (tstate->tracing) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                original_opcode = code->_co_monitoring->lines[(int)(this_instr - _PyCode_CODE(code))].original_opcode;
+                original_opcode = code->_co_monitoring->lines[(int)(this_instr - _PyFrame_GetBytecode(frame))].original_opcode;
                 next_instr = this_instr;
             } else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4705,7 +4705,7 @@ dummy_func(
         tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
+            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (lltrace >= 2) {
@@ -4713,7 +4713,7 @@ dummy_func(
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.as_counter,
-                    (int)(target - _PyCode_CODE(code)),
+                    (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
             }
         #endif
@@ -4801,7 +4801,7 @@ dummy_func(
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.as_counter,
-                    (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
+                    (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
             }
         #endif
@@ -4855,7 +4855,7 @@ dummy_func(
         }
 
         tier2 op(_ERROR_POP_N, (target/2, unused[oparg] --)) {
-            frame->instr_ptr = ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive) + target;
+            frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             SYNC_SP();
             GOTO_UNWIND();
         }

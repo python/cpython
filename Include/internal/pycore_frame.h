@@ -76,11 +76,15 @@ typedef struct _PyInterpreterFrame {
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(IF))))
+    ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     assert(PyCode_Check(f->f_executable));
     return (PyCodeObject *)f->f_executable;
+}
+
+static inline _Py_CODEUNIT *_PyFrame_GetBytecode(_PyInterpreterFrame *f) {
+    return _PyCode_CODE(_PyFrame_GetCode(f));
 }
 
 static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
@@ -216,7 +220,7 @@ _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
-        frame->instr_ptr < _PyCode_CODE(_PyFrame_GetCode(frame)) + _PyFrame_GetCode(frame)->_co_firsttraceable;
+        frame->instr_ptr < _PyFrame_GetBytecode(frame) + _PyFrame_GetCode(frame)->_co_firsttraceable;
 }
 
 static inline _PyInterpreterFrame *

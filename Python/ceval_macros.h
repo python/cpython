@@ -150,7 +150,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
+#define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecode(frame)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
