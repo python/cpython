@@ -527,7 +527,7 @@ Stinner.
 .. nonce: Ai2KDh
 .. section: Library
 
-Now :mod:`_pyio` is consistent with :mod:`_io` in raising ``ValueError``
+Now :mod:`!_pyio` is consistent with :mod:`!_io` in raising ``ValueError``
 when executing methods over closed buffers.
 
 ..
@@ -537,7 +537,7 @@ when executing methods over closed buffers.
 .. nonce: 0v8iyw
 .. section: Library
 
-Clean up refleak on failed module initialisation in :mod:`_zoneinfo`
+Clean up refleak on failed module initialisation in :mod:`!_zoneinfo`
 
 ..
 
@@ -546,7 +546,7 @@ Clean up refleak on failed module initialisation in :mod:`_zoneinfo`
 .. nonce: qc_KHr
 .. section: Library
 
-Clean up refleaks on failed module initialisation in :mod:`_pickle`
+Clean up refleaks on failed module initialisation in :mod:`!_pickle`
 
 ..
 
@@ -555,7 +555,7 @@ Clean up refleaks on failed module initialisation in :mod:`_pickle`
 .. nonce: LBl79O
 .. section: Library
 
-Clean up refleak on failed module initialisation in :mod:`_io`.
+Clean up refleak on failed module initialisation in :mod:`!_io`.
 
 ..
 

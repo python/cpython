@@ -101,7 +101,7 @@ The special characters are:
 ``.``
    (Dot.)  In the default mode, this matches any character except a newline.  If
    the :const:`DOTALL` flag has been specified, this matches any character
-   including a newline.
+   including a newline.  ``(?s:.)`` matches any character regardless of flags.
 
 .. index:: single: ^ (caret); in regular expressions
 

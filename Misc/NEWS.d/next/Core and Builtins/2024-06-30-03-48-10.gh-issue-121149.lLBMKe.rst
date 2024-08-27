@@ -1,0 +1,2 @@
+Added specialization for summation of complexes, this also improves accuracy
+of builtin :func:`sum` for such inputs.  Patch by Sergey B Kirpichev.
