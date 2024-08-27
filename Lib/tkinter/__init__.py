@@ -294,7 +294,7 @@ class Event:
             getattr(self.type, 'name', self.type),
             ''.join(' %s=%s' % (k, attrs[k]) for k in keys if k in attrs)
         )
-    
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
 
