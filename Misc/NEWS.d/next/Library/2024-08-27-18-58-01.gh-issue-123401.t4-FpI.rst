@@ -1,0 +1,2 @@
+The `http.cookies` module now supports parsing obsolete RFC 850 date
+formats, in accordance with RFC 9110 requirements.
