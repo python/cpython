@@ -371,25 +371,34 @@
             _PyStackRef start;
             _PyStackRef stop;
             _PyStackRef res;
+            // _SPECIALIZE_BINARY_SLICE
+            {
+                // Placeholder until we implement BINARY_SLICE specialization
+                #if ENABLE_SPECIALIZATION
+                OPCODE_DEFERRED_INC(BINARY_SLICE);
+                #endif  /* ENABLE_SPECIALIZATION */
+            }
+            // _BINARY_SLICE
             stop = stack_pointer[-1];
             start = stack_pointer[-2];
             container = stack_pointer[-3];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                PyStackRef_AsPyObjectSteal(stop));
-            PyObject *res_o;
-            OPCODE_DEFERRED_INC(BINARY_SLICE);
-            // Can't use ERROR_IF() here, because we haven't
-            // DECREF'ed container yet, and we still own slice.
-            if (slice == NULL) {
-                res_o = NULL;
+            {
+                PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
+                    PyStackRef_AsPyObjectSteal(stop));
+                PyObject *res_o;
+                // Can't use ERROR_IF() here, because we haven't
+                // DECREF'ed container yet, and we still own slice.
+                if (slice == NULL) {
+                    res_o = NULL;
+                }
+                else {
+                    res_o = PyObject_GetItem(PyStackRef_AsPyObjectBorrow(container), slice);
+                    Py_DECREF(slice);
+                }
+                PyStackRef_CLOSE(container);
+                if (res_o == NULL) goto pop_3_error;
+                res = PyStackRef_FromPyObjectSteal(res_o);
             }
-            else {
-                res_o = PyObject_GetItem(PyStackRef_AsPyObjectBorrow(container), slice);
-                Py_DECREF(slice);
-            }
-            PyStackRef_CLOSE(container);
-            if (res_o == NULL) goto pop_3_error;
-            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -7085,24 +7094,33 @@
             _PyStackRef container;
             _PyStackRef start;
             _PyStackRef stop;
+            // _SPECIALIZE_STORE_SLICE
+            {
+                // Placeholder until we implement STORE_SLICE specialization
+                #if ENABLE_SPECIALIZATION
+                OPCODE_DEFERRED_INC(STORE_SLICE);
+                #endif  /* ENABLE_SPECIALIZATION */
+            }
+            // _STORE_SLICE
             stop = stack_pointer[-1];
             start = stack_pointer[-2];
             container = stack_pointer[-3];
             v = stack_pointer[-4];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                PyStackRef_AsPyObjectSteal(stop));
-            OPCODE_DEFERRED_INC(STORE_SLICE);
-            int err;
-            if (slice == NULL) {
-                err = 1;
+            {
+                PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
+                    PyStackRef_AsPyObjectSteal(stop));
+                int err;
+                if (slice == NULL) {
+                    err = 1;
+                }
+                else {
+                    err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
+                    Py_DECREF(slice);
+                }
+                PyStackRef_CLOSE(v);
+                PyStackRef_CLOSE(container);
+                if (err) goto pop_4_error;
             }
-            else {
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
-                Py_DECREF(slice);
-            }
-            PyStackRef_CLOSE(v);
-            PyStackRef_CLOSE(container);
-            if (err) goto pop_4_error;
             stack_pointer += -4;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
