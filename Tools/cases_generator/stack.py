@@ -461,4 +461,3 @@ class Storage:
     def as_comment(self) -> str:
         stack_comment = self.stack.as_comment()
         return stack_comment[:-2] + str(self.outputs) + " */"
-
