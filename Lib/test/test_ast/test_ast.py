@@ -3203,26 +3203,29 @@ class ASTOptimiziationTests(unittest.TestCase):
         return ast.Module(body=[for_statement])
 
     def assert_ast(self, code, non_optimized_target, optimized_target):
+        def compare(left, right):
+            return ast.dump(left) == ast.dump(right)
+
         non_optimized_tree = ast.parse(code, optimize=-1)
         optimized_tree = ast.parse(code, optimize=1)
 
         # Is a non-optimized tree equal to a non-optimized target?
         self.assertTrue(
-            ast.compare(non_optimized_tree, non_optimized_target),
+            compare(non_optimized_tree, non_optimized_target),
             f"{ast.dump(non_optimized_target)} must equal "
             f"{ast.dump(non_optimized_tree)}",
         )
 
         # Is a optimized tree equal to a non-optimized target?
         self.assertFalse(
-            ast.compare(optimized_tree, non_optimized_target),
+            compare(optimized_tree, non_optimized_target),
             f"{ast.dump(non_optimized_target)} must not equal "
             f"{ast.dump(non_optimized_tree)}"
         )
 
         # Is a optimized tree is equal to an optimized target?
         self.assertTrue(
-            ast.compare(optimized_tree,  optimized_target),
+            compare(optimized_tree,  optimized_target),
             f"{ast.dump(optimized_target)} must equal "
             f"{ast.dump(optimized_tree)}",
         )
