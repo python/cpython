@@ -1,0 +1,4 @@
+Ensure that *start* is correctly set by :c:func:`PyUnicodeEncodeError_GetStart`
+and :c:func:`PyUnicodeDecodeError_GetStart` when :attr:`UnicodeError.start` is
+*0* and the underlying :attr:`UnicodeEncode.object` is empty.
+Patch by Bénédikt Tran.
