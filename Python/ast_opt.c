@@ -910,31 +910,23 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Return_kind:
         CALL_OPT(astfold_expr, expr_ty, node_->v.Return.value);
         break;
-    case Delete_kind:
-        CALL_SEQ(astfold_expr, expr, node_->v.Delete.targets);
-        break;
     case Assign_kind:
-        CALL_SEQ(astfold_expr, expr, node_->v.Assign.targets);
         CALL(astfold_expr, expr_ty, node_->v.Assign.value);
         break;
     case AugAssign_kind:
-        CALL(astfold_expr, expr_ty, node_->v.AugAssign.target);
         CALL(astfold_expr, expr_ty, node_->v.AugAssign.value);
         break;
     case AnnAssign_kind:
-        CALL(astfold_expr, expr_ty, node_->v.AnnAssign.target);
         if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
             CALL(astfold_expr, expr_ty, node_->v.AnnAssign.annotation);
         }
         CALL_OPT(astfold_expr, expr_ty, node_->v.AnnAssign.value);
         break;
     case TypeAlias_kind:
-        CALL(astfold_expr, expr_ty, node_->v.TypeAlias.name);
         CALL_SEQ(astfold_type_param, type_param, node_->v.TypeAlias.type_params);
         CALL(astfold_expr, expr_ty, node_->v.TypeAlias.value);
         break;
     case For_kind:
-        CALL(astfold_expr, expr_ty, node_->v.For.target);
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.body);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
@@ -942,7 +934,6 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(fold_iter, expr_ty, node_->v.For.iter);
         break;
     case AsyncFor_kind:
-        CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.iter);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.body);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.orelse);
@@ -1000,6 +991,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Pass_kind:
     case Break_kind:
     case Continue_kind:
+    case Delete_kind:
         break;
     // No default case, so the compiler will emit a warning if new statement
     // kinds are added without being handled here
