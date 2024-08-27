@@ -83,7 +83,7 @@ def translate(pat):
 _re_setops_sub = re.compile(r'([&~|])').sub
 _re_escape = functools.lru_cache(maxsize=32768)(re.escape)
 
-def _translate(pat, STAR, QUESTION_MARK):
+def _translate(pat, star, question_mark):
     res = []
     add = res.append
     indices = []
@@ -95,7 +95,7 @@ def _translate(pat, STAR, QUESTION_MARK):
         if c == '*':
             # store the position of the wildcard
             indices.append(len(res))
-            add(STAR)
+            add(star)
             # compress consecutive `*` into one
             while i < n and pat[i] == '*':
                 i += 1
@@ -103,7 +103,7 @@ def _translate(pat, STAR, QUESTION_MARK):
             # Handling '?' one at a time seems to more efficient
             # even if there are consecutive '?' that could have
             # been written directly.
-            add(QUESTION_MARK)
+            add(question_mark)
         elif c == '[':
             j = i
             if j < n and pat[j] == '!':
