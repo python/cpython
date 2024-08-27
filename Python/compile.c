@@ -1848,7 +1848,7 @@ codegen_kwonlydefaults(struct compiler *c, location loc,
                 return ERROR;
             }
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            RETURN_IF_ERROR(codegen_visit_expr(c, default_));
+            VISIT(c, expr, default_);
         }
     }
     if (default_count) {
