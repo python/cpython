@@ -8334,7 +8334,7 @@ type_ready_managed_dict(PyTypeObject *type)
     }
     PyHeapTypeObject* et = (PyHeapTypeObject*)type;
     if (et->ht_cached_keys == NULL) {
-        et->ht_cached_keys = _PyDict_NewKeysForClass();
+        et->ht_cached_keys = _PyDict_NewKeysForClass(et);
         if (et->ht_cached_keys == NULL) {
             PyErr_NoMemory();
             return -1;
