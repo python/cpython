@@ -492,9 +492,12 @@ The following functions and structs are used to create
          See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
          for details.
 
-      * The field :c:member:`~PyTypeObject.tp_vectorcall` can be set since
-        Python 3.14. On older versions, use :c:member:`~PyTypeObject.tp_new`
-        and/or :c:member:`~PyTypeObject.tp_init`.
+      .. versionchanged:: 3.14
+
+         The field :c:member:`~PyTypeObject.tp_vectorcall` can only be set
+         since Python 3.14. On older versions, use
+         :c:member:`~PyTypeObject.tp_new` and/or
+         :c:member:`~PyTypeObject.tp_init`.
 
       The following internal fields cannot be set at all when creating a heap
       type:
