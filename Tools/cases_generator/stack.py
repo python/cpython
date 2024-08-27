@@ -83,8 +83,6 @@ class Local:
     def is_array(self) -> bool:
         return self.item.is_array()
 
-        return Local(self.item, self.cached, self.in_memory, self.defined)
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Local):
             return NotImplemented
