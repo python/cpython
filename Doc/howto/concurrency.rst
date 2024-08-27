@@ -1035,7 +1035,9 @@ Also see:
 Workload: grep
 --------------
 
-# ...
+This a basic Python implementation of the linux ``grep`` tool.
+From a concurrency standpoint, each file is processed in its own
+logical thread.
 
 .. list-table::
    :header-rows: 1
@@ -1121,6 +1123,14 @@ Workload: grep
        .. raw:: html
 
           </details>
+
+Common code:
+
+.. literalinclude:: ../includes/concurrency.py
+   :start-after: [start-grep-common]
+   :end-before: [end-grep-common]
+   :dedent:
+   :linenos:
 
 Workload: Image Resizer
 -----------------------

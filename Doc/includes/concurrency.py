@@ -263,19 +263,278 @@ class ConcurrentFutures(Examples):
 
 class Grep(WorkloadExamples):
 
+    @staticmethod
+    def common():
+        # [start-grep-common]
+        import os
+        import os.path
+        import re
+
+        class GrepOptions:
+            # file selection
+            recursive = False      # -r --recursive
+            # matching control
+            ignorecase = False     # -i --ignore-case
+            invertmatch = False    # -v --invert-match
+            # output control
+            showfilename = None    # -H --with-filename
+                                   # -h --no-filename
+            filesonly = None       # -L --files-without-match
+                                   # -l --files-with-matches
+            showonlymatch = False  # -o --only-matching
+            quiet = False          # -q --quiet, --silent
+            hideerrors = False     # -s --no-messages
+
+        def grep(regex, opts, infile):
+            if isinstance(infile, str):
+                filename = infile
+                with open(filename) as infile:
+                    infile = (filename, infile)
+                    yield from grep(regex, opts, infile)
+                return
+
+            filename, infile = infile
+            invert = not opts.filesonly and opts.invertmatch
+            if invert:
+                for line in infile:
+                    m = regex.search(line)
+                    if m:
+                        continue
+                    if line.endswith(os.linesep):
+                        line = line[:-len(os.linesep)]
+                    yield filename, line, None
+            else:
+                for line in infile:
+                    m = regex.search(line)
+                    if not m:
+                        continue
+                    if line.endswith(os.linesep):
+                        line = line[:-len(os.linesep)]
+                    yield filename, line, m.group(0)
+
+        def grep_file(regex, opts, infile):
+            matches = grep(regex, opts, infile)
+            try:
+                if opts.filesonly == 'invert':
+                    for _ in matches:
+                        break
+                    else:
+                        if isinstance(infile, str):
+                            filename = infile
+                        else:
+                            filename, _ = infile
+                        yield filename, None, None
+                elif opts.filesonly:
+                    for filename, _, _ in matches:
+                        yield filename, None, None
+                        break
+                else:
+                    yield from matches
+            except UnicodeDecodeError:
+                # It must be a binary file.
+                return
+
+        def run_all(regex, opts, files, grep=grep_file):
+            raise NotImplementedError
+
+        def main(pat, opts, *filenames, run_all=run_all):  # -e --regexp
+            # Create the regex object.
+            regex = re.compile(pat)
+
+            # Resolve the files.
+            if not filenames:
+                raise ValueError('missing filenames')
+            if opts.recursive:
+                recursed = []
+                for filename in filenames:
+                    if os.path.isdir(filename):
+                        for d, _, files in os.walk(filename):
+                            for base in files:
+                                recursed.append(
+                                        os.path.join(d, base))
+                    else:
+                        recursed.append(filename)
+                filenames = recursed
+
+            # Process the files.
+            matches = run_all(regex, opts, filenames, grep_file)
+
+            # Handle the first match.
+            for filename, line, match in matches:
+                if opts.quiet:
+                    return 0
+                elif opts.filesonly:
+                    print(filename)
+                elif opts.showonlymatch:
+                    if opts.invertmatch:
+                        return 0
+                    elif opts.showfilename is False:
+                        print(match)
+                    elif opts.showfilename:
+                        print(f'{filename}: {match}')
+                    else:
+                        try:
+                            second = next(matches)
+                        except StopIteration:
+                            print(match)
+                        else:
+                            print(f'{filename}: {match}')
+                            filename, _, match = second
+                            print(f'{filename}: {match}')
+                else:
+                    if opts.showfilename is False:
+                        print(line)
+                    elif opts.showfilename:
+                        print(f'{filename}: {line}')
+                    else:
+                        try:
+                            second = next(matches)
+                        except StopIteration:
+                            print(line)
+                        else:
+                            print(f'{filename}: {line}')
+                            filename, line, _ = second
+                            print(f'{filename}: {line}')
+                break
+            else:
+                return 1
+
+            # Handle the remaining matches.
+            if opts.filesonly:
+                for filename, _, _ in matches:
+                    print(filename)
+            elif opts.showonlymatch:
+                if opts.showfilename is False:
+                    for filename, _, match in matches:
+                        print(match)
+                else:
+                    for filename, _, match in matches:
+                        print(f'{filename}: {match}')
+            else:
+                if opts.showfilename is False:
+                    for filename, line, _ in matches:
+                        print(line)
+                else:
+                    for filename, line, _ in matches:
+                        print(f'{filename}: {line}')
+            return 0
+        # [end-grep-common]
+
+        return main, GrepOptions
+
+    @example
+    def run_sequentially():
+        # [start-grep-sequential]
+        def run_all(regex, opts, files, grep):
+            for infile in files:
+                yield from grep(regex, opts, infile)
+        # [end-grep-sequential]
+
+        main, GrepOptions = Grep.common()
+
+        opts = GrepOptions()
+        opts.recursive = True
+        #opts.ignorecase = True
+        #opts.invertmatch = True
+        #opts.showfilename = True
+        #opts.showfilename = False
+        #opts.filesonly = 'invert'
+        #opts.filesonly = 'match'
+        #opts.showonlymatch = True
+        #opts.quiet = True
+        #opts.hideerrors = True
+        main('help', opts, 'make.bat', 'Makefile', run_all=run_all)
+        #main('help', opts, '.', run_all=run_all)
+
+
     @example
     def run_using_threads():
         # [start-grep-threads]
+        import queue
         import threading
+        import time
 
-        def task():
-            ...
+        MAX_THREADS = 10
 
-        t = threading.Thread(target=task)
-        t.start()
+        def run_all(regex, opts, files, grep):
+            FINISHED = object()
+            matches_by_file = []
 
-        ...
+            done = False
+            def start_tasks():
+                nonlocal done
+                numfiles = 0
+                active = {}
+                for infile in files:
+                    if isinstance(infile, str):
+                        filename = infile
+                    else:
+                        filename, _ = infile
+                    numfiles += 1
+                    index = numfiles
+
+                    while len(active) >= MAX_THREADS:
+                        time.sleep(0.01)
+
+                    q = queue.Queue()
+
+                    def task(index=index, q=q, infile=infile):
+                        for match in grep(regex, opts, infile):
+                            q.put(match)
+                        q.put(FINISHED)
+                        while index not in active:
+                            pass
+                        del active[index]
+                    t = threading.Thread(target=task)
+                    t.start()
+
+                    active[index] = (t, filename)
+                    matches_by_file.append((filename, q))
+                for t, _ in list(active.values()):
+                    t.join()
+                done = True
+            t = threading.Thread(target=start_tasks)
+            t.start()
+
+            # Yield the results as they are received, in order.
+            while True:
+                while matches_by_file:
+                    filename, q = matches_by_file.pop(0)
+                    while True:
+                        try:
+                            match = q.get(block=False)
+                        except queue.Empty:
+                            continue
+                        if match is FINISHED:
+                            break
+                        yield match
+                if done:
+                    break
+
+            t.join()
         # [end-grep-threads]
+
+        main, GrepOptions = Grep.common()
+
+        opts = GrepOptions()
+        opts.recursive = True
+        #opts.ignorecase = True
+        #opts.invertmatch = True
+        #opts.showfilename = True
+        #opts.showfilename = False
+        #opts.filesonly = 'invert'
+        #opts.filesonly = 'match'
+        #opts.showonlymatch = True
+        #opts.quiet = True
+        #opts.hideerrors = True
+        main('help', opts, 'make.bat', 'Makefile', run_all=run_all)
+        #main('help', opts, '.', run_all=run_all)
+
+    @example
+    def run_using_cf_threads():
+        # [startgrep-cf-threads]
+        ...
+        # [end-grep--cf-threads]
 
     @example
     def run_using_multiprocessing():
