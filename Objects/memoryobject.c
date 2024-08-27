@@ -1102,6 +1102,10 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
 static int
 _memory_release(PyMemoryViewObject *self)
 {
+    /* this could be NULL if there is a PickleBuffer in cyclic references */
+    if(self->mbuf == NULL)
+        return 0;
+
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
         return 0;
 
