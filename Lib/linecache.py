@@ -177,6 +177,7 @@ def lazycache(filename, module_globals):
         return False
     # Try for a __loader__, if available
     if module_globals and '__name__' in module_globals:
+        get_lines = lambda *_, **__: ""
         spec = module_globals.get('__spec__')
         name = getattr(spec, 'name', None) or module_globals['__name__']
         loader = getattr(spec, 'loader', None)
@@ -184,8 +185,6 @@ def lazycache(filename, module_globals):
             loader = module_globals.get('__loader__')
         mod_file = module_globals.get('__file__')
         if not mod_file or not mod_file.endswith(filename):
-            def get_lines(name=name, *args, **kwargs):
-                return ""
             cache[filename] = (get_lines,)
             return True
         get_source = getattr(loader, 'get_source', None)
