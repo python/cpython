@@ -67,7 +67,7 @@ hash_pointer(PyObject *Py_UNUSED(module), PyObject *arg)
 
 
 static PyObject *
-hash_bytes(PyObject *Py_UNUSED(module), PyObject *args)
+hash_buffer(PyObject *Py_UNUSED(module), PyObject *args)
 {
     char *ptr;
     Py_ssize_t len;
@@ -92,7 +92,7 @@ object_generichash(PyObject *Py_UNUSED(module), PyObject *arg)
 static PyMethodDef test_methods[] = {
     {"hash_getfuncdef", hash_getfuncdef, METH_NOARGS},
     {"hash_pointer", hash_pointer, METH_O},
-    {"hash_bytes", hash_bytes, METH_VARARGS},
+    {"hash_buffer", hash_buffer, METH_VARARGS},
     {"object_generichash", object_generichash, METH_O},
     {NULL},
 };
