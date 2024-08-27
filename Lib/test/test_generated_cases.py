@@ -281,17 +281,17 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
-    def test_eval_breaker(self):
+    def test_sync_sp(self):
         input = """
         inst(A, (arg -- res)) {
             SYNC_SP();
-            CHECK_EVAL_BREAKER();
+            escaping_call();
             res = Py_None;
         }
         inst(B, (arg -- res)) {
             res = Py_None;
             SYNC_SP();
-            CHECK_EVAL_BREAKER();
+            escaping_call();
         }
     """
         output = """
@@ -302,7 +302,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
+            escaping_call();
             res = Py_None;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -318,7 +318,7 @@ class TestGeneratedCases(unittest.TestCase):
             res = Py_None;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            CHECK_EVAL_BREAKER();
+            escaping_call();
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
