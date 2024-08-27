@@ -358,13 +358,15 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: int PyLong_AsInt32(PyObject *obj, int32_t *value)
                 int PyLong_AsInt64(PyObject *obj, int64_t *value)
 
-   Return a signed C :c:expr:`int32_t` or :c:expr:`int64_t` representation of
-   *obj*.
+   Set *\*value* to a signed C :c:expr:`int32_t` or :c:expr:`int64_t`
+   representation of *obj*.
 
    If the *obj* value is out of range, raise an :exc:`OverflowError`.
 
    Set *\*value* and return ``0`` on success.
    Set an exception and return ``-1`` on error.
+
+   *value* must not be ``NULL``.
 
    .. versionadded:: 3.14
 
@@ -372,8 +374,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
                 int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
 
-   Return an unsigned C :c:expr:`uint32_t` or :c:expr:`uint64_t` representation
-   of *obj*.
+   Set *\*value* to an unsigned C :c:expr:`uint32_t` or :c:expr:`uint64_t`
+   representation of *obj*.
 
    If *obj* is not an instance of :c:type:`PyLongObject`, first call its
    :meth:`~object.__index__` method (if present) to convert it to a
@@ -384,6 +386,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Set *\*value* and return ``0`` on success.
    Set an exception and return ``-1`` on error.
+
+   *value* must not be ``NULL``.
 
    .. versionadded:: 3.14
 
