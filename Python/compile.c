@@ -6398,7 +6398,7 @@ codegen_annassign(struct compiler *c, stmt_ty s)
     return SUCCESS;
 }
 
-/* Raises a SyntaxError and returns 0.
+/* Raises a SyntaxError and returns ERROR.
    If something goes wrong, a different exception may be raised.
 */
 
@@ -6870,6 +6870,36 @@ codegen_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
+codegen_pattern_mapping_key(struct compiler *c, PyObject *seen, pattern_ty p, Py_ssize_t i)
+{
+    asdl_expr_seq *keys = p->v.MatchMapping.keys;
+    asdl_pattern_seq *patterns = p->v.MatchMapping.patterns;
+    expr_ty key = asdl_seq_GET(keys, i);
+    if (key == NULL) {
+        const char *e = "can't use NULL keys in MatchMapping "
+                        "(set 'rest' parameter instead)";
+        location loc = LOC((pattern_ty) asdl_seq_GET(patterns, i));
+        return compiler_error(c, loc, e);
+    }
+
+    if (key->kind == Constant_kind) {
+        int in_seen = PySet_Contains(seen, key->v.Constant.value);
+        RETURN_IF_ERROR(in_seen);
+        if (in_seen) {
+            const char *e = "mapping pattern checks duplicate key (%R)";
+            return compiler_error(c, LOC(p), e, key->v.Constant.value);
+        }
+        RETURN_IF_ERROR(PySet_Add(seen, key->v.Constant.value));
+    }
+    else if (key->kind != Attribute_kind) {
+        const char *e = "mapping pattern keys may only match literals and attribute lookups";
+        return compiler_error(c, LOC(p), e);
+    }
+    VISIT(c, expr, key);
+    return SUCCESS;
+}
+
+static int
 codegen_pattern_mapping(struct compiler *c, pattern_ty p,
                         pattern_context *pc)
 {
@@ -6915,45 +6945,15 @@ codegen_pattern_mapping(struct compiler *c, pattern_ty p,
     if (seen == NULL) {
         return ERROR;
     }
-
-    // NOTE: goto error on failure in the loop below to avoid leaking `seen`
     for (Py_ssize_t i = 0; i < size; i++) {
-        expr_ty key = asdl_seq_GET(keys, i);
-        if (key == NULL) {
-            const char *e = "can't use NULL keys in MatchMapping "
-                            "(set 'rest' parameter instead)";
-            location loc = LOC((pattern_ty) asdl_seq_GET(patterns, i));
-            compiler_error(c, loc, e);
-            goto error;
-        }
-
-        if (key->kind == Constant_kind) {
-            int in_seen = PySet_Contains(seen, key->v.Constant.value);
-            if (in_seen < 0) {
-                goto error;
-            }
-            if (in_seen) {
-                const char *e = "mapping pattern checks duplicate key (%R)";
-                compiler_error(c, LOC(p), e, key->v.Constant.value);
-                goto error;
-            }
-            if (PySet_Add(seen, key->v.Constant.value)) {
-                goto error;
-            }
-        }
-
-        else if (key->kind != Attribute_kind) {
-            const char *e = "mapping pattern keys may only match literals and attribute lookups";
-            compiler_error(c, LOC(p), e);
-            goto error;
-        }
-        if (codegen_visit_expr(c, key) < 0) {
-            goto error;
+        if (codegen_pattern_mapping_key(c, seen, p, i) < 0) {
+            Py_DECREF(seen);
+            return ERROR;
         }
     }
+    Py_DECREF(seen);
 
     // all keys have been checked; there are no duplicates
-    Py_DECREF(seen);
 
     ADDOP_I(c, LOC(p), BUILD_TUPLE, size);
     ADDOP(c, LOC(p), MATCH_KEYS);
@@ -6998,10 +6998,6 @@ codegen_pattern_mapping(struct compiler *c, pattern_ty p,
         ADDOP(c, LOC(p), POP_TOP);  // Subject.
     }
     return SUCCESS;
-
-error:
-    Py_DECREF(seen);
-    return ERROR;
 }
 
 static int
