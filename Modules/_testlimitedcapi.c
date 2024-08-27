@@ -44,6 +44,9 @@ PyInit__testlimitedcapi(void)
     if (_PyTestLimitedCAPI_Init_Dict(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Eval(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_Float(mod) < 0) {
         return NULL;
     }
@@ -66,6 +69,9 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Sys(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Tuple(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Unicode(mod) < 0) {

@@ -1,0 +1,10 @@
+Python's hashlib now unconditionally uses the vendored HACL* library for
+Blake2. Python no longer accepts libb2 as an optional dependency for Blake2.
+
+We refreshed HACL* to the latest version, and now vendor HACL*'s 128-bit and
+256-bit wide vector implementations for Blake2, which are used on x86/x64
+toolchains when the required CPU features are available at runtime.
+
+HACL*'s 128-bit wide vector implementation of Blake2 can also run on ARM
+NEON and Power8, but lacking evidence of a performance gain, these are not
+enabled (yet).
