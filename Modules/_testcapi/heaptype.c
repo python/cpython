@@ -521,88 +521,6 @@ error:
     return NULL;
 }
 
-#define REPEAT_TEST_SETUP \
-    PyTypeObject *type, *super; \
-    PyObject *py_token, *repeat; \
-    if (!PyArg_ParseTuple(args, "OOOO", \
-                          &type, &py_token, &super, &repeat)) { \
-        return NULL; \
-    } \
-    void *token = PyLong_AsVoidPtr(py_token); \
-    if (!token && !super) { \
-        return NULL; \
-    } \
-    int n = PyLong_AsLong(repeat);
-
-static PyObject *
-repeat_getbasebytoken(PyObject *self, PyObject *args)
-{
-    REPEAT_TEST_SETUP;
-    for (int i = 0; i < n; i++) {
-        if (PyType_GetBaseByToken(type, token, NULL) != 1) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-repeat_getslot(PyObject *self, PyObject *args)
-{
-    REPEAT_TEST_SETUP;
-    for (int i = 0; i < n; i++) {
-        if (PyType_GetSlot(type, Py_tp_token) != token) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-repeat_getmodonce(PyObject *self, PyObject *args)
-{
-    REPEAT_TEST_SETUP;
-    // assume the case where a module state is passed around among functions
-    PyObject *module = PyType_GetModuleByDef(type, _testcapimodule);
-    if (module != self || !PyModule_GetState(module)) {
-        return NULL;
-    }
-    for (int i = 0; i < n; i++) {
-        if (type != super && !PyType_IsSubtype(type, super)) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-repeat_getmodeach(PyObject *self, PyObject *args)
-{
-    REPEAT_TEST_SETUP;
-    for (int i = 0; i < n; i++) {
-        // assume the case where a module state is not passed around
-        PyObject *module = PyType_GetModuleByDef(type, _testcapimodule);
-        if (module != self || !PyModule_GetState(module)) {
-            return NULL;
-        }
-        if (type != super && !PyType_IsSubtype(type, super)) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-repeat_issubtype(PyObject *self, PyObject *args)
-{
-    REPEAT_TEST_SETUP;
-    for (int i = 0; i < n; i++) {
-        if (!PyType_IsSubtype(type, super)) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -620,11 +538,6 @@ static PyMethodDef TestMethods[] = {
     {"create_type_with_token", create_type_with_token, METH_VARARGS},
     {"get_tp_token", get_tp_token, METH_O},
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
-    {"repeat_getbasebytoken", repeat_getbasebytoken, METH_VARARGS},
-    {"repeat_getslot", repeat_getslot, METH_VARARGS},
-    {"repeat_getmodonce", repeat_getmodonce, METH_VARARGS},
-    {"repeat_getmodeach", repeat_getmodeach, METH_VARARGS},
-    {"repeat_issubtype", repeat_issubtype, METH_VARARGS},
     {NULL},
 };
 
