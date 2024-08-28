@@ -460,8 +460,8 @@ class AutoFileTests:
             f.close()
             """,
             # GH-122111: read_text uses BufferedIO which requires looking up
-            # position in file. `read_bytes` disables that buffering, checked
-            # next and avoid these calls.
+            # position in file. `read_bytes` disables that buffering and avoids
+            # these calls which is tested the `pathlib read_bytes` case.
             extra_checks=[
                 ("ioctl", 1),
                 ("seek", 1)
