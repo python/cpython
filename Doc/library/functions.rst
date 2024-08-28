@@ -1693,6 +1693,13 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       The docstrings of property objects are now writeable.
 
+   .. attribute:: __name__
+
+      Attribute holding the name of the property. The name of the property
+      can be changed at runtime.
+
+      .. versionadded:: 3.13
+
 
 .. _func-range:
 .. class:: range(stop)
