@@ -100,9 +100,6 @@ def _translate(pat, star, question_mark):
             while i < n and pat[i] == '*':
                 i += 1
         elif c == '?':
-            # Handling '?' one at a time seems to more efficient
-            # even if there are consecutive '?' that could have
-            # been written directly.
             add(question_mark)
         elif c == '[':
             j = i
