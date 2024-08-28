@@ -1507,7 +1507,7 @@ dummy_func(
 
         op(_LOAD_GLOBAL, ( -- res, null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, STACK_ENTRY(res));
+            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, &STACK_ENTRY(res));
             ERROR_IF(PyStackRef_IsNull(res), error);
             null = PyStackRef_NULL;
         }

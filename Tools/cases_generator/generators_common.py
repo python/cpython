@@ -227,7 +227,7 @@ class Emitter:
             size += f" - {output.size or 1}"
         for output in uop.stack.outputs:
             if output.name == target.text:
-                self.out.emit(f" &stack_pointer[{size}]")
+                self.out.emit(f"stack_pointer[{size}]")
                 break
             size += f" + {output.size or 1}"
         else:
