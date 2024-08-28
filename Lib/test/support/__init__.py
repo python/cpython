@@ -2472,14 +2472,17 @@ def iter_slot_wrappers(cls):
 
 
 class BrokenIter:
-    def __init__(self, init_raises=False, next_raises=False):
+    def __init__(self, init_raises=False, next_raises=False, iter_raises=False):
         if init_raises:
             1/0
         self.next_raises = next_raises
+        self.iter_raises = iter_raises
 
     def __next__(self):
         if self.next_raises:
             1/0
 
     def __iter__(self):
+        if self.iter_raises:
+            1/0
         return self
