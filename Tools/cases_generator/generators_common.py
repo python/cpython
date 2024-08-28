@@ -47,10 +47,10 @@ def write_header(
     )
 
 
-def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str, *, allow_unbalanced_parens: bool = False) -> None:
+def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
     parens = 0
     for tkn in tkn_iter:
-        if tkn.kind == end and (parens == 0 or allow_unbalanced_parens):
+        if tkn.kind == end and parens == 0:
             return
         if tkn.kind == "LPAREN":
             parens += 1
@@ -234,8 +234,12 @@ class Emitter:
             raise analysis_error("STACK_ENTRY operand is not a stack output", target)
 
         next(tkn_iter)  # Consume )
-        emit_to(self.out, tkn_iter, "SEMI", allow_unbalanced_parens=True)
-        self.emit(";\n")
+        # Emit all the way to SEMI
+        for tkn in tkn_iter:
+            self.out.emit(tkn)
+            if tkn.kind == "SEMI":
+                break
+        self.emit("\n")
         # Update the variable
         self.out.emit(f"{target.text} = stack_pointer[{size}];\n")
 
