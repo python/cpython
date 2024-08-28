@@ -48,23 +48,8 @@ def all_tasks(loop=None):
     # capturing the set of eager tasks first, so if an eager task "graduates"
     # to a regular task in another thread, we don't risk missing it.
     eager_tasks = list(_eager_tasks)
-    # Looping over the WeakSet isn't safe as it can be updated from another
-    # thread, therefore we cast it to list prior to filtering. The list cast
-    # itself requires iteration, so we repeat it several times ignoring
-    # RuntimeErrors (which are not very likely to occur).
-    # See issues 34970 and 36607 for details.
-    scheduled_tasks = None
-    i = 0
-    while True:
-        try:
-            scheduled_tasks = list(_scheduled_tasks)
-        except RuntimeError:
-            i += 1
-            if i >= 1000:
-                raise
-        else:
-            break
-    return {t for t in itertools.chain(scheduled_tasks, eager_tasks)
+
+    return {t for t in itertools.chain(_scheduled_tasks, eager_tasks)
             if futures._get_loop(t) is loop and not t.done()}
 
 
