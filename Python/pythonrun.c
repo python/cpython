@@ -295,13 +295,13 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             if (xs == NULL) {
                 goto err;
             }
-            PyObject *ln = PyObject_GetAttr(exc, &_Py_ID(lineno));
-            if (ln == NULL) {
+            PyObject *exc_lineno = PyObject_GetAttr(exc, &_Py_ID(lineno));
+            if (exc_lineno == NULL) {
                 Py_DECREF(xs);
                 goto err;
             }
-            int n = PyLong_AsInt(ln);
-            Py_DECREF(ln);
+            int n = PyLong_AsInt(exc_lineno);
+            Py_DECREF(exc_lineno);
             if (n <= 0 || n > PyList_GET_SIZE(xs)) {
                 Py_DECREF(xs);
                 goto err;
