@@ -376,25 +376,62 @@ class AutoFileTests:
         self.f.close()
 
 
-        def check_readall(name, code, prelude="", cleanup=""):
+        def check_readall(name, code, prelude="", cleanup="",
+                          extra_checks=None):
             with self.subTest(name=name):
-                syscalls = strace_helper.get_syscalls(code, _strace_flags,
+                syscalls = strace_helper.get_events(code, _strace_flags,
                                                       prelude=prelude,
                                                       cleanup=cleanup)
 
+                # The first call should be an open that returns a
+                # file descriptor (fd). Afer that calls may vary. Once the file
+                # is opened, check calls refer to it by fd as the filename
+                # could be removed from the filesystem, renamed, etc. See:
+                # Time-of-check time-of-use (TOCTOU) software bug class.
+                #
+                # There are a number of related but distinct open system calls
+                # so not checking precise name here.
+                self.assertGreater(
+                    len(syscalls),
+                    1,
+                    f"Should have had at least an open call|calls={syscalls}")
+                fd_str = syscalls[0].returncode
+
+                # All other calls should contain the fd in their argument set.
+                for ev in syscalls[1:]:
+                    self.assertIn(
+                        fd_str,
+                        ev.args,
+                        f"Looking for file descriptor in arguments|ev={ev}"
+                    )
+
                 # There are a number of related syscalls used to implement
-                # behaviors in a libc (ex. fstat, newfstatat, open, openat).
+                # behaviors in a libc (ex. fstat, newfstatat, statx, open, openat).
                 # Allow any that use the same substring.
                 def count_similarname(name):
-                    return len([sc for sc in syscalls if name in sc])
+                    return len([ev for ev in syscalls if name in ev.syscall])
 
-                # Should open and close the file exactly once
-                self.assertEqual(count_similarname('open'), 1)
-                self.assertEqual(count_similarname('close'), 1)
+                checks = [
+                    # Should open and close the file exactly once
+                    ("open", 1),
+                    ("close", 1),
+                    # Should only have one fstat (bpo-21679, gh-120754)
+                    # note: It's important this uses a fd rather than filename,
+                    # That is validated by the `fd` check above.
+                    # note: fstat, newfstatat, and statx have all been observed
+                    # here in the underlying C library implementations.
+                    ("stat", 1)
+                ]
 
-                # Should only have one fstat (bpo-21679, gh-120754)
-                self.assertEqual(count_similarname('fstat'), 1)
+                if extra_checks:
+                    checks += extra_checks
 
+                for call, count in checks:
+                    self.assertEqual(
+                        count_similarname(call),
+                        count,
+                        msg=f"call={call}|count={count}|syscalls={syscalls}"
+                    )
 
         # "open, read, close" file using different common patterns.
         check_readall(
@@ -421,14 +458,25 @@ class AutoFileTests:
             f = open('{TESTFN}', 'rt')
             f.read()
             f.close()
-            """
+            """,
+            # GH-122111: read_text uses BufferedIO which requires looking up
+            # position in file. `read_bytes` disables that buffering, checked
+            # next and avoid these calls.
+            extra_checks=[
+                ("ioctl", 1),
+                ("seek", 1)
+            ]
         )
 
         check_readall(
             "pathlib read_bytes",
             "p.read_bytes()",
-            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
-
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")""",
+            # GH-122111: Buffering is disabled so these calls are avoided.
+            extra_checks=[
+                ("ioctl", 0),
+                ("seek", 0)
+            ]
         )
 
         check_readall(

@@ -121,7 +121,7 @@ def strace_python(code, strace_flags, check=True):
                         stderr=res.err)
 
 
-def _get_events(code, strace_flags, prelude, cleanup):
+def get_events(code, strace_flags, prelude, cleanup):
     # NOTE: The flush is currently required to prevent the prints from getting
     # buffered and done all at once at exit
     prelude = textwrap.dedent(prelude)
@@ -143,7 +143,7 @@ print("MARK __shutdown", flush=True)
 
 def get_syscalls(code, strace_flags, prelude="", cleanup=""):
     """Get the syscalls which a given chunk of python code generates"""
-    events = _get_events(code, strace_flags, prelude=prelude, cleanup=cleanup)
+    events = get_events(code, strace_flags, prelude=prelude, cleanup=cleanup)
     return [ev.syscall for ev in events]
 
 
