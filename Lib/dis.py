@@ -52,6 +52,7 @@ LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
 IS_OP = opmap['IS_OP']
+CONTAINS_OP = opmap['CONTAINS_OP']
 
 CACHE = opmap["CACHE"]
 
@@ -632,6 +633,8 @@ class ArgResolver:
                 argrepr = _special_method_names[arg]
             elif deop == IS_OP:
                 argrepr = 'is not' if argval else 'is'
+            elif deop == CONTAINS_OP:
+                argrepr = 'not in' if argval else 'in'
         return argval, argrepr
 
 def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):
