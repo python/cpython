@@ -134,6 +134,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
 
     Py_ssize_t bit_size = NUM_BITS(size);
     if (bit_size) {
+        assert(bit_size > 0);
+        assert(bit_size <= info->size * 8);
         switch(info->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
             case FFI_TYPE_UINT16:
@@ -155,12 +157,6 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                 PyErr_Format(PyExc_TypeError,
                              "bit fields not allowed for type %s",
                              ((PyTypeObject*)proto)->tp_name);
-                goto error;
-            }
-            if (bit_size <= 0 || bit_size > info->size * 8) {
-                PyErr_Format(PyExc_ValueError,
-                             "number of bits invalid for bit field %R",
-                             self->name);
                 goto error;
         }
     }
