@@ -84,6 +84,18 @@ The module defines the following items:
       formerly protected :attr:`!_compresslevel`.  The older protected name
       continues to work as a property for backwards compatibility.
 
+
+   .. classmethod:: for_name(filename, archive, *, date_time=None)
+
+      Construct an appropriate :class:`ZipInfo` from a *filename*,
+      a :class:`ZipFile` archive and an optional *date_time*.
+
+      If *date_time* is not specified, the current local time is used
+      instead, namely ``date_time = time.localtime(time.time())[:6]``.
+
+      .. versionadded:: 3.14
+
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
