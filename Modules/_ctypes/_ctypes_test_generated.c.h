@@ -364,32 +364,37 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "BitsfieldUnion") == 0) {
 
+            #if (!defined(__xlc__))
+
                 union BitsfieldUnion {
-                    int A :1;
-                    int B :2;
-                    int C :3;
-                    int D :4;
-                    int E :5;
-                    int F :6;
-                    int G :7;
-                    int H :8;
-                    int I :9;
+                    int8_t A :1;
+                    int8_t B :2;
+                    int8_t C :3;
+                    int8_t D :4;
+                    int8_t E :5;
+                    int8_t F :6;
+                    int8_t G :7;
+                    int8_t H :8;
                     int8_t not_a_bitfield;
                 };
                 union BitsfieldUnion value = {0};
                 APPEND(PyUnicode_FromString("BitsfieldUnion"));
                 APPEND(PyLong_FromLong(sizeof(union BitsfieldUnion)));
                 APPEND(PyLong_FromLong(_Alignof(union BitsfieldUnion)));
-                TEST_FIELD(int, value.A);
-                TEST_FIELD(int, value.B);
-                TEST_FIELD(int, value.C);
-                TEST_FIELD(int, value.D);
-                TEST_FIELD(int, value.E);
-                TEST_FIELD(int, value.F);
-                TEST_FIELD(int, value.G);
-                TEST_FIELD(int, value.H);
-                TEST_FIELD(int, value.I);
+                TEST_FIELD(int8_t, value.A);
+                TEST_FIELD(int8_t, value.B);
+                TEST_FIELD(int8_t, value.C);
+                TEST_FIELD(int8_t, value.D);
+                TEST_FIELD(int8_t, value.E);
+                TEST_FIELD(int8_t, value.F);
+                TEST_FIELD(int8_t, value.G);
+                TEST_FIELD(int8_t, value.H);
                 TEST_FIELD(int8_t, value.not_a_bitfield);
+            #else
+                APPEND(Py_NewRef(Py_None));
+                APPEND(PyUnicode_FromString("skipped on this compiler"));
+            #endif
+
                 return result;
             }
 
