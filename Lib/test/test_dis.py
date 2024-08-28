@@ -2037,6 +2037,15 @@ class InstructionTests(InstructionTestCase):
         dis.dis("a is not b", file=output, show_caches=True)
         self.assertIn("IS_OP                    1 (is not)", output.getvalue())
 
+    def test_contains_op_format(self):
+        output = io.StringIO()
+        dis.dis("a in b", file=output, show_caches=True)
+        self.assertIn("CONTAINS_OP              0 (in)", output.getvalue())
+
+        output = io.StringIO()
+        dis.dis("a not in b", file=output, show_caches=True)
+        self.assertIn("CONTAINS_OP              1 (not in)", output.getvalue())
+
     def test_baseopname_and_baseopcode(self):
         # Standard instructions
         for name, code in dis.opmap.items():
