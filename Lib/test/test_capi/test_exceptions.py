@@ -420,7 +420,7 @@ class PyUnicodeTranslateError(UnicodeTranslateError):
     # so we just make a UnicodeTranslateError class that is
     # compatible with the UnicodeError.__init__.
     def __init__(self, encoding, *args, **kwargs):
-        super().__init__(*args)
+        super().__init__(*args, **kwargs)
 
 
 class TestUnicodeError(unittest.TestCase):
