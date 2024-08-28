@@ -8208,8 +8208,12 @@ charmap_decode_mapping(const char *s,
         if (key == NULL)
             goto onError;
 
-        item = PyObject_GetItem(mapping, key);
+        int rc = PyMapping_GetOptionalItem(mapping, key, &item);
         Py_DECREF(key);
+        if (rc == 0) {
+            /* No mapping found means: mapping is undefined. */
+            goto Undefined;
+        }
         if (item == NULL) {
             if (PyErr_ExceptionMatches(PyExc_LookupError)) {
                 /* No mapping found means: mapping is undefined. */
@@ -8223,7 +8227,7 @@ charmap_decode_mapping(const char *s,
         if (item == Py_None)
             goto Undefined;
         if (PyLong_Check(item)) {
-            long value = PyLong_AS_LONG(item);
+            long value = PyLong_AsLong(item);
             if (value == 0xFFFE)
                 goto Undefined;
             if (value < 0 || value > MAX_UNICODE) {
@@ -8507,19 +8511,25 @@ encoding_map_lookup(Py_UCS4 c, PyObject *mapping)
     return i;
 }
 
-/* Lookup the character ch in the mapping. If the character
-   can't be found, Py_None is returned (or NULL, if another
-   error occurred). */
+/* Lookup the character in the mapping.
+   On success, return PyLong, PyBytes or None (if the character can't be found).
+   If the result is PyLong, put its value in replace.
+   On error, return NULL.
+   */
 static PyObject *
-charmapencode_lookup(Py_UCS4 c, PyObject *mapping)
+charmapencode_lookup(Py_UCS4 c, PyObject *mapping, unsigned char *replace)
 {
     PyObject *w = PyLong_FromLong((long)c);
     PyObject *x;
 
     if (w == NULL)
         return NULL;
-    x = PyObject_GetItem(mapping, w);
+    int rc = PyMapping_GetOptionalItem(mapping, w, &x);
     Py_DECREF(w);
+    if (rc == 0) {
+        /* No mapping found means: mapping is undefined. */
+        Py_RETURN_NONE;
+    }
     if (x == NULL) {
         if (PyErr_ExceptionMatches(PyExc_LookupError)) {
             /* No mapping found means: mapping is undefined. */
@@ -8531,13 +8541,14 @@ charmapencode_lookup(Py_UCS4 c, PyObject *mapping)
     else if (x == Py_None)
         return x;
     else if (PyLong_Check(x)) {
-        long value = PyLong_AS_LONG(x);
+        long value = PyLong_AsLong(x);
         if (value < 0 || value > 255) {
             PyErr_SetString(PyExc_TypeError,
                             "character mapping must be in range(256)");
             Py_DECREF(x);
             return NULL;
         }
+        *replace = (unsigned char)value;
         return x;
     }
     else if (PyBytes_Check(x))
@@ -8578,6 +8589,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
                      PyObject **outobj, Py_ssize_t *outpos)
 {
     PyObject *rep;
+    unsigned char replace;
     char *outstart;
     Py_ssize_t outsize = PyBytes_GET_SIZE(*outobj);
 
@@ -8594,7 +8606,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
         return enc_SUCCESS;
     }
 
-    rep = charmapencode_lookup(c, mapping);
+    rep = charmapencode_lookup(c, mapping, &replace);
     if (rep==NULL)
         return enc_EXCEPTION;
     else if (rep==Py_None) {
@@ -8609,7 +8621,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
                     return enc_EXCEPTION;
                 }
             outstart = PyBytes_AS_STRING(*outobj);
-            outstart[(*outpos)++] = (char)PyLong_AS_LONG(rep);
+            outstart[(*outpos)++] = (char)replace;
         }
         else {
             const char *repchars = PyBytes_AS_STRING(rep);
@@ -8658,6 +8670,7 @@ charmap_encoding_error(
     /* find all unencodable characters */
     while (collendpos < size) {
         PyObject *rep;
+        unsigned char replace;
         if (Py_IS_TYPE(mapping, &EncodingMapType)) {
             ch = PyUnicode_READ_CHAR(unicode, collendpos);
             val = encoding_map_lookup(ch, mapping);
@@ -8668,7 +8681,7 @@ charmap_encoding_error(
         }
 
         ch = PyUnicode_READ_CHAR(unicode, collendpos);
-        rep = charmapencode_lookup(ch, mapping);
+        rep = charmapencode_lookup(ch, mapping, &replace);
         if (rep==NULL)
             return -1;
         else if (rep!=Py_None) {
@@ -8933,17 +8946,24 @@ unicode_translate_call_errorhandler(const char *errors,
 
 /* Lookup the character ch in the mapping and put the result in result,
    which must be decrefed by the caller.
+   The result can be PyLong, PyUnicode, None or NULL.
+   If the result is PyLong, put its value in replace.
    Return 0 on success, -1 on error */
 static int
-charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
+charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result, Py_UCS4 *replace)
 {
     PyObject *w = PyLong_FromLong((long)c);
     PyObject *x;
 
     if (w == NULL)
         return -1;
-    x = PyObject_GetItem(mapping, w);
+    int rc = PyMapping_GetOptionalItem(mapping, w, &x);
     Py_DECREF(w);
+    if (rc == 0) {
+        /* No mapping found means: use 1:1 mapping. */
+        *result = NULL;
+        return 0;
+    }
     if (x == NULL) {
         if (PyErr_ExceptionMatches(PyExc_LookupError)) {
             /* No mapping found means: use 1:1 mapping. */
@@ -8958,7 +8978,7 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
         return 0;
     }
     else if (PyLong_Check(x)) {
-        long value = PyLong_AS_LONG(x);
+        long value = PyLong_AsLong(x);
         if (value < 0 || value > MAX_UNICODE) {
             PyErr_Format(PyExc_ValueError,
                          "character mapping must be in range(0x%x)",
@@ -8967,6 +8987,7 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
             return -1;
         }
         *result = x;
+        *replace = (Py_UCS4)value;
         return 0;
     }
     else if (PyUnicode_Check(x)) {
@@ -8990,8 +9011,9 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
                         _PyUnicodeWriter *writer)
 {
     PyObject *item;
+    Py_UCS4 replace;
 
-    if (charmaptranslate_lookup(ch, mapping, &item))
+    if (charmaptranslate_lookup(ch, mapping, &item, &replace))
         return -1;
 
     if (item == NULL) {
@@ -9008,10 +9030,7 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
     }
 
     if (PyLong_Check(item)) {
-        long ch = (Py_UCS4)PyLong_AS_LONG(item);
-        /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
-           used it */
-        if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0) {
+        if (_PyUnicodeWriter_WriteCharInline(writer, replace) < 0) {
             Py_DECREF(item);
             return -1;
         }
@@ -9038,9 +9057,10 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
                               Py_UCS1 *translate)
 {
     PyObject *item = NULL;
+    Py_UCS4 replace;
     int ret = 0;
 
-    if (charmaptranslate_lookup(ch, mapping, &item)) {
+    if (charmaptranslate_lookup(ch, mapping, &item, &replace)) {
         return -1;
     }
 
@@ -9054,10 +9074,7 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
         return 1;
     }
     else if (PyLong_Check(item)) {
-        long replace = PyLong_AS_LONG(item);
-        /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
-           used it */
-        if (127 < replace) {
+        if (replace > 127) {
             /* invalid character or character outside ASCII:
                skip the fast translate */
             goto exit;
@@ -9065,8 +9082,6 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
         translate[ch] = (Py_UCS1)replace;
     }
     else if (PyUnicode_Check(item)) {
-        Py_UCS4 replace;
-
         if (PyUnicode_GET_LENGTH(item) != 1)
             goto exit;
 
@@ -9219,8 +9234,9 @@ _PyUnicode_TranslateCharmap(PyObject *input,
         /* find all untranslatable characters */
         while (collend < size) {
             PyObject *x;
+            Py_UCS4 replace;
             ch = PyUnicode_READ(kind, data, collend);
-            if (charmaptranslate_lookup(ch, mapping, &x))
+            if (charmaptranslate_lookup(ch, mapping, &x, &replace))
                 goto onError;
             Py_XDECREF(x);
             if (x != Py_None)
