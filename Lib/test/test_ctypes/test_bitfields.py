@@ -5,7 +5,9 @@ from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
                     LittleEndianStructure, BigEndianStructure,
                     c_byte, c_ubyte, c_char, c_char_p, c_void_p, c_wchar,
                     c_uint8, c_uint16, c_uint32, c_uint64,
-                    c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong)
+                    c_short, c_ushort, c_int, c_uint, c_long, c_ulong,
+                    c_longlong, c_ulonglong,
+                    Union)
 from test import support
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
@@ -525,6 +527,21 @@ class BitFieldTest(unittest.TestCase):
         x.b = 1
         x.c = 2
         self.assertEqual(b, b'\xab\xcd\xef\x12')
+
+    def test_union_bitfield(self):
+        class BitfieldUnion(Union):
+            _fields_ = [("a", c_uint32, 1),
+                        ("b", c_uint32, 2),
+                        ("c", c_uint32, 3)]
+        self.assertEqual(sizeof(BitfieldUnion), 4)
+        b = bytearray(4)
+        x = BitfieldUnion.from_buffer(b)
+        x.a = 1
+        self.assertEqual(int.from_bytes(b).bit_count(), 1)
+        x.b = 3
+        self.assertEqual(int.from_bytes(b).bit_count(), 2)
+        x.c = 7
+        self.assertEqual(int.from_bytes(b).bit_count(), 3)
 
 
 if __name__ == "__main__":

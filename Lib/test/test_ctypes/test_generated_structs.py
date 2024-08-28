@@ -162,6 +162,19 @@ class MSStraddlingExample(Structure):
         ('last', c_uint, 18)]
 
 @register()
+class BitsfieldUnion(Union):
+    _fields_ = [("A", c_int, 1),
+                ("B", c_int, 2),
+                ("C", c_int, 3),
+                ("D", c_int, 4),
+                ("E", c_int, 5),
+                ("F", c_int, 6),
+                ("G", c_int, 7),
+                ("H", c_int, 8),
+                ("I", c_int, 9),
+                ("not_a_bitfield", c_int8)]
+
+@register()
 class IntBits(Structure):
     _fields_ = [("A", c_int, 1),
                 ("B", c_int, 2),
