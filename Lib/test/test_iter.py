@@ -1163,8 +1163,16 @@ class TestCase(unittest.TestCase):
             except Exception as e:
                 return e
 
+        def iter_raises():
+            try:
+                for x in BrokenIter(iter_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
         for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
                                (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
                               ]:
             with self.subTest(func):
                 exc = func()
