@@ -603,6 +603,26 @@ class ZipInfo:
 
         return zinfo
 
+    @classmethod
+    def for_name(cls, filename, archive, *, date_time=None):
+        """Construct an appropriate ZipInfo from a filename and a ZipFile.
+
+        The *filename* is expected to be the name of a file in the archive.
+
+        If *date_time* is not specified, the current local time is used.
+        """
+        if date_time is None:
+            date_time = time.localtime(time.time())[:6]
+        self = cls(filename=filename, date_time=date_time)
+        self.compress_type = archive.compression
+        self.compress_level = archive.compresslevel
+        if self.filename.endswith('/'):  # pragma: no cover
+            self.external_attr = 0o40775 << 16  # drwxrwxr-x
+            self.external_attr |= 0x10  # MS-DOS directory flag
+        else:
+            self.external_attr = 0o600 << 16  # ?rw-------
+        return self
+
     def is_dir(self):
         """Return True if this archive member is a directory."""
         if self.filename.endswith('/'):
@@ -1903,18 +1923,10 @@ class ZipFile:
         the name of the file in the archive."""
         if isinstance(data, str):
             data = data.encode("utf-8")
-        if not isinstance(zinfo_or_arcname, ZipInfo):
-            zinfo = ZipInfo(filename=zinfo_or_arcname,
-                            date_time=time.localtime(time.time())[:6])
-            zinfo.compress_type = self.compression
-            zinfo.compress_level = self.compresslevel
-            if zinfo.filename.endswith('/'):
-                zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
-                zinfo.external_attr |= 0x10           # MS-DOS directory flag
-            else:
-                zinfo.external_attr = 0o600 << 16     # ?rw-------
-        else:
+        if isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = zinfo_or_arcname
+        else:
+            zinfo = ZipInfo.for_name(zinfo_or_arcname, self)
 
         if not self.fp:
             raise ValueError(
