@@ -83,9 +83,7 @@ dummy_func(void) {
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
         if (sym_is_const(value)) {
-            PyObject *val = sym_get_const(value);
-            int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, sym_get_const(value));
         }
     }
 
@@ -199,20 +197,15 @@ dummy_func(void) {
             assert(PyLong_CheckExact(sym_get_const(right)));
             PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
                                          (PyLongObject *)sym_get_const(right));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)temp);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 1, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, temp);
             res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyLong_Type);
@@ -227,20 +220,15 @@ dummy_func(void) {
             assert(PyLong_CheckExact(sym_get_const(right)));
             PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
                                               (PyLongObject *)sym_get_const(right));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)temp);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 1, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, temp);
             res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyLong_Type);
@@ -255,20 +243,15 @@ dummy_func(void) {
             assert(PyLong_CheckExact(sym_get_const(right)));
             PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
                                               (PyLongObject *)sym_get_const(right));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)temp);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 1, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, temp);
             res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyLong_Type);
@@ -284,20 +267,15 @@ dummy_func(void) {
             PyObject *temp = PyFloat_FromDouble(
                 PyFloat_AS_DOUBLE(sym_get_const(left)) +
                 PyFloat_AS_DOUBLE(sym_get_const(right)));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)temp);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 1, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, temp);
             res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
@@ -313,20 +291,15 @@ dummy_func(void) {
             PyObject *temp = PyFloat_FromDouble(
                 PyFloat_AS_DOUBLE(sym_get_const(left)) -
                 PyFloat_AS_DOUBLE(sym_get_const(right)));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)temp);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 1, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, temp);
             res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
@@ -342,20 +315,15 @@ dummy_func(void) {
             PyObject *temp = PyFloat_FromDouble(
                 PyFloat_AS_DOUBLE(sym_get_const(left)) *
                 PyFloat_AS_DOUBLE(sym_get_const(right)));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)temp);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 1, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, temp);
             res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
@@ -366,20 +334,15 @@ dummy_func(void) {
         if (sym_is_const(left) && sym_is_const(right) &&
             sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
             PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-1], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)temp);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 1, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, temp);
             res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
@@ -391,22 +354,17 @@ dummy_func(void) {
         if (sym_is_const(left) && sym_is_const(right) &&
             sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
             PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
-            if (temp == NULL) {
+            if (temp == NULL || _PyList_AppendTakeRef((PyListObject *)new_refs, temp)) {
                 goto error;
             }
             assert(this_instr[-3].opcode == _NOP);
             assert(this_instr[-2].opcode == _NOP);
             assert(this_instr[-1].opcode == _NOP);
-            REPLACE_OP(&this_instr[-3], _POP_TOP, 0, 0);
-            REPLACE_OP(&this_instr[-2], _POP_TOP, 0, 0);
-            if (PyList_Append(new_refs, temp)) {
-                goto error;
-            }
-            int opcode = _Py_IsImmortal(temp) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(&this_instr[-1], opcode, 0, (uintptr_t)temp);
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
+            REPLACE_OP(this_instr - 3, _POP_TOP, 0, 0);
+            REPLACE_OP(this_instr - 2, _POP_TOP, 0, 0);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr - 1, temp);
             REPLACE_OP(this_instr, _STORE_FAST, this_instr->operand, 0);
+            res = sym_new_const(ctx, temp);
         }
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
@@ -505,8 +463,7 @@ dummy_func(void) {
 
     op(_LOAD_CONST, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+        REPLACE_OP_WITH_LOAD_CONST(this_instr, val);
         value = sym_new_const(ctx, val);
     }
 
@@ -530,9 +487,7 @@ dummy_func(void) {
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         if (sym_is_const(bottom)) {
-            PyObject *value = sym_get_const(bottom);
-            int opcode = _Py_IsImmortal(value) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)value);
+            REPLACE_OP_WITH_LOAD_CONST(this_instr, sym_get_const(bottom));
         }
         assert(oparg > 0);
         top = bottom;

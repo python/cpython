@@ -300,10 +300,20 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
-#define REPLACE_OP(INST, OP, ARG, OPERAND)    \
-    (INST)->opcode = OP;            \
-    (INST)->oparg = ARG;            \
-    (INST)->operand = OPERAND;
+#define REPLACE_OP(INST, OP, ARG, OPERAND)     \
+    do {                                       \
+        (INST)->opcode = (OP);                 \
+        (INST)->oparg = (ARG);                 \
+        (INST)->operand = (OPERAND);           \
+    } while (0)
+
+#define REPLACE_OP_WITH_LOAD_CONST(INST, CONST)                    \
+    do {                                                           \
+        PyObject *o = (CONST);                                     \
+        int opcode = _Py_IsImmortal(o) ? _LOAD_CONST_INLINE_BORROW \
+                                       : _LOAD_CONST_INLINE;       \
+        REPLACE_OP((INST), opcode, 0, (uintptr_t)o);               \
+    } while (0)
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
