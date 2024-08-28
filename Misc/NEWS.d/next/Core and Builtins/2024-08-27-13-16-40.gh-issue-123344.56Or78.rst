@@ -1,1 +1,1 @@
-Add ast optimizations for type parameter defaults
+Add AST optimizations for type parameter defaults.
