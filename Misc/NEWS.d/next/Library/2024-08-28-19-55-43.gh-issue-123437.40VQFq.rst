@@ -1,0 +1,3 @@
+The dictionary returned by :func:`locale.localeconv` now has :class:`bool`
+values for the fields ``p_cs_precedes``, ``n_cs_precedes``,
+``p_sep_by_space``, and ``n_sep_by_space``, instead of :class:`int` values.

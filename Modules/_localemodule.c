@@ -272,6 +272,12 @@ _locale_localeconv_impl(PyObject *module)
         RESULT(#s, x); \
     } while (0)
 
+#define RESULT_BOOL(b)\
+    do { \
+	x = PyBool_FromLong(lc->b); \
+	RESULT(#b, x); \
+    } while (0)
+
 #define RESULT_INT(i)\
     do { \
         x = PyLong_FromLong(lc->i); \
@@ -289,10 +295,10 @@ _locale_localeconv_impl(PyObject *module)
     RESULT_STRING(negative_sign);
     RESULT_INT(int_frac_digits);
     RESULT_INT(frac_digits);
-    RESULT_INT(p_cs_precedes);
-    RESULT_INT(p_sep_by_space);
-    RESULT_INT(n_cs_precedes);
-    RESULT_INT(n_sep_by_space);
+    RESULT_BOOL(p_cs_precedes);
+    RESULT_BOOL(p_sep_by_space);
+    RESULT_BOOL(n_cs_precedes);
+    RESULT_BOOL(n_sep_by_space);
     RESULT_INT(p_sign_posn);
     RESULT_INT(n_sign_posn);
 

@@ -202,6 +202,11 @@ class _LocaleTests(unittest.TestCase):
         if not tested:
             self.skipTest('no suitable locales')
 
+    def test_localeconv_booleans(self):
+        for lc in ("p_cs_precedes", "n_cs_precedes",
+                   "p_sep_by_space", "n_sep_by_space"):
+            self.assertIsInstance(localeconv()[lc], bool)
+
 
 if __name__ == '__main__':
     unittest.main()
