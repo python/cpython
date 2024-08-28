@@ -354,6 +354,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     if (stginfo->ffi_type_pointer.elements) {
         PyMem_Free(stginfo->ffi_type_pointer.elements);
+        stginfo->ffi_type_pointer.elements = NULL;
     }
 
     if (baseinfo) {
@@ -388,7 +389,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         assert(prop_obj);
         if (!PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type)) {
             PyErr_Format(PyExc_TypeError,
-                        "fields must be of type CField, got %T", prop_obj);
+                         "fields must be of type CField, got %T", prop_obj);
             goto error;
 
         }

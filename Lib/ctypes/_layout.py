@@ -28,15 +28,15 @@ def NUM_BITS(bitsize):
     return bitsize >> 16
 
 def BUILD_SIZE(bitsize, offset):
-    assert(0 <= offset)
-    assert(offset <= 0xFFFF)
-    ## We don't support zero length bitfields.
-    ## And GET_BITFIELD uses NUM_BITS(size)==0,
-    ## to figure out whether we are handling a bitfield.
-    assert(0 < bitsize)
+    assert 0 <= offset, offset
+    assert offset <= 0xFFFF, offset
+    # We don't support zero length bitfields.
+    # And GET_BITFIELD uses NUM_BITS(size) == 0,
+    # to figure out whether we are handling a bitfield.
+    assert bitsize > 0, bitsize
     result = (bitsize << 16) + offset
-    assert(bitsize == NUM_BITS(result))
-    assert(offset == LOW_BIT(result))
+    assert bitsize == NUM_BITS(result), (bitsize, result)
+    assert offset == LOW_BIT(result), (offset, result)
     return result
 
 def build_size(bit_size, bit_offset, big_endian, type_size):
@@ -65,7 +65,7 @@ class StructUnionLayout:
 
 
 def get_layout(cls, input_fields, is_struct, base):
-    """Return a StructUnionLayout for the given class
+    """Return a StructUnionLayout for the given class.
 
     Called by PyCStructUnionType_update_stginfo when _fields_ is assigned
     to a class.
@@ -213,7 +213,7 @@ def get_layout(cls, input_fields, is_struct, base):
             if is_bitfield:
                 effective_bit_offset = next_bit_offset - 8 * offset
                 size = build_size(bit_size, effective_bit_offset,
-                                    big_endian, type_size)
+                                  big_endian, type_size)
                 assert effective_bit_offset <= type_bit_size
             else:
                 assert offset == next_bit_offset / 8
@@ -252,8 +252,8 @@ def get_layout(cls, input_fields, is_struct, base):
             if is_bitfield:
                 assert 0 <= (last_field_bit_size + next_bit_offset)
                 size = build_size(bit_size,
-                                    last_field_bit_size + next_bit_offset,
-                                    big_endian, type_size)
+                                  last_field_bit_size + next_bit_offset,
+                                  big_endian, type_size)
             else:
                 size = type_size
             assert (last_field_bit_size + next_bit_offset) < type_bit_size
@@ -261,7 +261,7 @@ def get_layout(cls, input_fields, is_struct, base):
             next_bit_offset += bit_size
             struct_size = next_byte_offset
 
-        assert((not is_bitfield) or (LOW_BIT(size) <= size * 8))
+        assert (not is_bitfield) or (LOW_BIT(size) <= size * 8)
 
         # Add the format spec parts
         if is_struct:

@@ -159,8 +159,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
             }
             if (bit_size <= 0 || bit_size > info->size * 8) {
                 PyErr_Format(PyExc_ValueError,
-                                "number of bits invalid for bit field %R",
-                                self->name);
+                             "number of bits invalid for bit field %R",
+                             self->name);
                 goto error;
         }
     }
