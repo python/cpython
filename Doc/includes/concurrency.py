@@ -269,8 +269,10 @@ class Grep(WorkloadExamples):
         import os
         import os.path
         import re
+        import sys
+        import types
 
-        class GrepOptions:
+        class GrepOptions(types.SimpleNamespace):
             # file selection
             recursive = False      # -r --recursive
             # matching control
@@ -285,15 +287,34 @@ class Grep(WorkloadExamples):
             quiet = False          # -q --quiet, --silent
             hideerrors = False     # -s --no-messages
 
-        def grep(regex, opts, infile):
-            if isinstance(infile, str):
-                filename = infile
-                with open(filename) as infile:
-                    infile = (filename, infile)
-                    yield from grep(regex, opts, infile)
-                return
+        def normalize_file(unresolved, opts):
+            if not isinstance(unresolved, str):
+                infile, filename = unresolved
+                if not filename:
+                    filename = infile.name
+                    yield infile, filename
+                else:
+                    assert not os.path.isdir(filename)
+                    yield unresolved
+            elif unresolved == '-':
+                yield sys.stdin, '-'
+            else:
+                filename = unresolved
+                if not opts.recursive:
+                    assert not os.path.isdir(filename)
+                    yield None, filename
+                elif not os.path.isdir(filename):
+                    yield None, filename
+                else:
+                    for d, _, files in os.walk(filename):
+                        for base in files:
+                            yield None, os.path.join(d, base)
 
-            filename, infile = infile
+        def iter_files(files, opts):
+            for unresolved in files:
+                yield from normalize_file(unresolved, opts)
+
+        def _grep_file(regex, opts, infile, filename):
             invert = not opts.filesonly and opts.invertmatch
             if invert:
                 for line in infile:
@@ -312,17 +333,19 @@ class Grep(WorkloadExamples):
                         line = line[:-len(os.linesep)]
                     yield filename, line, m.group(0)
 
-        def grep_file(regex, opts, infile):
-            matches = grep(regex, opts, infile)
+        def _grep(regex, opts, infile):
+            infile, filename = infile
+            if infile is None:
+                with open(filename) as infile:
+                    infile = (infile, filename)
+                    yield from _grep(regex, opts, infile)
+                return
+            matches = _grep_file(regex, opts, infile, filename)
             try:
                 if opts.filesonly == 'invert':
                     for _ in matches:
                         break
                     else:
-                        if isinstance(infile, str):
-                            filename = infile
-                        else:
-                            filename, _ = infile
                         yield filename, None, None
                 elif opts.filesonly:
                     for filename, _, _ in matches:
@@ -334,30 +357,19 @@ class Grep(WorkloadExamples):
                 # It must be a binary file.
                 return
 
-        def run_all(regex, opts, files, grep=grep_file):
-            raise NotImplementedError
+        def run_all(regex, opts, files, grep=_grep):
+            for infile in files:
+                yield from grep(regex, opts, infile)
 
         def main(pat, opts, *filenames, run_all=run_all):  # -e --regexp
             # Create the regex object.
             regex = re.compile(pat)
 
             # Resolve the files.
-            if not filenames:
-                raise ValueError('missing filenames')
-            if opts.recursive:
-                recursed = []
-                for filename in filenames:
-                    if os.path.isdir(filename):
-                        for d, _, files in os.walk(filename):
-                            for base in files:
-                                recursed.append(
-                                        os.path.join(d, base))
-                    else:
-                        recursed.append(filename)
-                filenames = recursed
+            files = iter_files(filenames, opts)
 
             # Process the files.
-            matches = run_all(regex, opts, filenames, grep_file)
+            matches = run_all(regex, opts, files, _grep)
 
             # Handle the first match.
             for filename, line, match in matches:
@@ -422,6 +434,25 @@ class Grep(WorkloadExamples):
 
         return main, GrepOptions
 
+    @staticmethod
+    def app(run_all):
+        main, GrepOptions = Grep.common()
+        opts = GrepOptions(
+            #recursive=True,
+            #ignorecase = True,
+            #invertmatch = True,
+            #showfilename = True,
+            #showfilename = False,
+            #filesonly = 'invert',
+            #filesonly = 'match',
+            #showonlymatch = True,
+            #quiet = True,
+            #hideerrors = True,
+        )
+        #main('help', opts, 'make.bat', 'Makefile', run_all=run_all)
+        opts = GrepOptions(recursive=True, filesonly='match')
+        main('help', opts, '.', run_all=run_all)
+
     @example
     def run_sequentially():
         # [start-grep-sequential]
@@ -429,22 +460,7 @@ class Grep(WorkloadExamples):
             for infile in files:
                 yield from grep(regex, opts, infile)
         # [end-grep-sequential]
-
-        main, GrepOptions = Grep.common()
-
-        opts = GrepOptions()
-        opts.recursive = True
-        #opts.ignorecase = True
-        #opts.invertmatch = True
-        #opts.showfilename = True
-        #opts.showfilename = False
-        #opts.filesonly = 'invert'
-        #opts.filesonly = 'match'
-        #opts.showonlymatch = True
-        #opts.quiet = True
-        #opts.hideerrors = True
-        main('help', opts, 'make.bat', 'Makefile', run_all=run_all)
-        #main('help', opts, '.', run_all=run_all)
+        Grep.app(run_all)
 
 
     @example
@@ -452,89 +468,106 @@ class Grep(WorkloadExamples):
         # [start-grep-threads]
         import queue
         import threading
-        import time
 
-        MAX_THREADS = 10
+        MAX_FILES = 10
+        MAX_QUEUE = 100
 
         def run_all(regex, opts, files, grep):
             FINISHED = object()
-            matches_by_file = []
+            matches_by_file = queue.Queue()
 
-            done = False
-            def start_tasks():
-                nonlocal done
-                numfiles = 0
-                active = {}
+            def manage_tasks():
+                counter = queue.Queue(MAX_FILES)
+
+                def task(infile, matches):
+                    for match in grep(regex, opts, infile):
+                        matches.put(match)
+                    matches.put(FINISHED)
+                    # Let a new thread start.
+                    counter.get()
+
                 for infile in files:
-                    if isinstance(infile, str):
-                        filename = infile
-                    else:
-                        filename, _ = infile
-                    numfiles += 1
-                    index = numfiles
+                    _, filename = infile
 
-                    while len(active) >= MAX_THREADS:
-                        time.sleep(0.01)
+                    # Prepare for the file.
+                    matches = queue.Queue(MAX_QUEUE)
+                    matches_by_file.put((filename, matches))
 
-                    q = queue.Queue()
-
-                    def task(index=index, q=q, infile=infile):
-                        for match in grep(regex, opts, infile):
-                            q.put(match)
-                        q.put(FINISHED)
-                        while index not in active:
-                            pass
-                        del active[index]
-                    t = threading.Thread(target=task)
+                    # Start a thread to process the file.
+                    t = threading.Thread(
+                        target=task,
+                        args=(infile, matches),
+                    )
+                    counter.put(t, block=True)
                     t.start()
-
-                    active[index] = (t, filename)
-                    matches_by_file.append((filename, q))
-                for t, _ in list(active.values()):
-                    t.join()
-                done = True
-            t = threading.Thread(target=start_tasks)
+                matches_by_file.put(FINISHED)
+            t = threading.Thread(target=manage_tasks)
             t.start()
 
             # Yield the results as they are received, in order.
-            while True:
-                while matches_by_file:
-                    filename, q = matches_by_file.pop(0)
-                    while True:
-                        try:
-                            match = q.get(block=False)
-                        except queue.Empty:
-                            continue
-                        if match is FINISHED:
-                            break
-                        yield match
-                if done:
-                    break
+            next_matches = matches_by_file.get(block=True)
+            while next_matches is not FINISHED:
+                filename, matches = next_matches
+                match = matches.get(block=True)
+                while match is not FINISHED:
+                    yield match
+                    match = matches.get(block=True)
+                next_matches = matches_by_file.get(block=True)
 
             t.join()
         # [end-grep-threads]
-
-        main, GrepOptions = Grep.common()
-
-        opts = GrepOptions()
-        opts.recursive = True
-        #opts.ignorecase = True
-        #opts.invertmatch = True
-        #opts.showfilename = True
-        #opts.showfilename = False
-        #opts.filesonly = 'invert'
-        #opts.filesonly = 'match'
-        #opts.showonlymatch = True
-        #opts.quiet = True
-        #opts.hideerrors = True
-        main('help', opts, 'make.bat', 'Makefile', run_all=run_all)
-        #main('help', opts, '.', run_all=run_all)
+        Grep.app(run_all)
 
     @example
     def run_using_cf_threads():
         # [startgrep-cf-threads]
-        ...
+        import concurrent.futures
+        import queue
+        import threading
+
+        MAX_FILES = 10
+        MAX_QUEUE = 100
+
+        def run_all(regex, opts, files, grep):
+            FINISHED = object()
+            matches_by_file = queue.Queue()
+
+            def manage_tasks():
+                threads = concurrent.futures.ThreadPoolExecutor(MAX_FILES)
+
+                def task(infile, matches):
+                    for match in grep(regex, opts, infile):
+                        matches.put(match)
+                    matches.put(FINISHED)
+                    # Let a new thread start.
+                    counter.get()
+
+                for infile in files:
+                    _, filename = infile
+
+                    # Prepare for the file.
+                    matches = queue.Queue(MAX_QUEUE)
+                    matches_by_file.put((filename, matches))
+
+                    # Start a thread to process the file.
+                    threads.submit(task, infile, matches)
+                matches_by_file.put(FINISHED)
+            t = threading.Thread(target=manage_tasks)
+            t.start()
+
+            # Yield the results as they are received, in order.
+            next_matches = matches_by_file.get(block=True)
+            while next_matches is not FINISHED:
+                filename, matches = next_matches
+                match = matches.get(block=True)
+                while match is not FINISHED:
+                    yield match
+                    match = matches.get(block=True)
+                next_matches = matches_by_file.get(block=True)
+
+            t.join()
         # [end-grep--cf-threads]
+        Grep.app(run_all)
 
     @example
     def run_using_multiprocessing():

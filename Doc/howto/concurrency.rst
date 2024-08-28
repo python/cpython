@@ -1126,11 +1126,20 @@ logical thread.
 
 Common code:
 
+.. raw:: html
+
+   <details>
+   <summary>(expand)</summary>
+
 .. literalinclude:: ../includes/concurrency.py
    :start-after: [start-grep-common]
    :end-before: [end-grep-common]
    :dedent:
    :linenos:
+
+.. raw:: html
+
+   </details>
 
 Workload: Image Resizer
 -----------------------
