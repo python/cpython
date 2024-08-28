@@ -2122,7 +2122,8 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
         }
         Py_DECREF(w);
 
-        if (PyList_CheckExact(v) || PyTuple_CheckExact(v) || PyDict_CheckExact(v)) {
+        if (PyList_CheckExact(v) || PyTuple_CheckExact(v)
+              || PyDict_CheckExact(v)) {
             ll = Py_SIZE(v);
             if (ll <= argcnt) {
                 _PyErr_Format(tstate, PyExc_ValueError,
