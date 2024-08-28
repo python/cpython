@@ -262,7 +262,8 @@ def get_layout(cls, input_fields, is_struct, base):
                                   big_endian, type_size)
             else:
                 size = type_size
-            assert (last_field_bit_size + next_bit_offset) < type_bit_size
+            if type_bit_size:
+                assert (last_field_bit_size + next_bit_offset) < type_bit_size
 
             next_bit_offset += bit_size
             struct_size = next_byte_offset
@@ -300,7 +301,7 @@ def get_layout(cls, input_fields, is_struct, base):
             bit_size=bit_size if is_bitfield else None,
             index=i,
         )
-        if not gcc_layout:
+        if is_bitfield and not gcc_layout:
             assert type_bit_size > 0
 
         result_fields.append(last_field)
