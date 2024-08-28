@@ -1719,7 +1719,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         bytes_len = PyBytes_GET_SIZE(b);
     }
 
-    // We should avoid concatinating huge data.
+    // We should avoid concatenating huge data.
     // Flush the buffer before adding b to the buffer if b is not small.
     // https://github.com/python/cpython/issues/87426
     if (bytes_len >= self->chunk_size) {

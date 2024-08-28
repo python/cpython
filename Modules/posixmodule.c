@@ -9025,7 +9025,7 @@ os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid)
 
     /*
      * NGROUPS_MAX is defined by POSIX.1 as the maximum
-     * number of supplimental groups a users can belong to.
+     * number of supplemental groups a users can belong to.
      * We have to increment it by one because
      * getgrouplist() returns both the supplemental groups
      * and the primary group, i.e. all of the groups the

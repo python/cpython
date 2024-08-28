@@ -221,7 +221,7 @@ returns an invalid file descriptor.
 
 Also \ escape \s in the http.server BaseHTTPRequestHandler.log_message so
 that it is technically possible to parse the line and reconstruct what the
-original data was.  Without this a \xHH is ambiguious as to if it is a hex
+original data was.  Without this a \xHH is ambiguous as to if it is a hex
 replacement we put in or the characters r"\x" came through in the original
 request line.
 

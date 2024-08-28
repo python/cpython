@@ -817,7 +817,7 @@ static int devpoll_flush(devpollObject *self)
 
     if (n < size) {
         /*
-        ** Data writed to /dev/poll is a binary data structure. It is not
+        ** Data written to /dev/poll is a binary data structure. It is not
         ** clear what to do if a partial write occurred. For now, raise
         ** an exception and see if we actually found this problem in
         ** the wild.
