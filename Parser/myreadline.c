@@ -393,8 +393,8 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     }
 
 
-    Py_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
+    Py_BEGIN_ALLOW_THREADS
     _PyOS_ReadlineTState = tstate;
 
 
@@ -422,8 +422,8 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     }
 
     _PyOS_ReadlineTState = NULL;
-    PyThread_release_lock(_PyOS_ReadlineLock);
     Py_END_ALLOW_THREADS
+    PyThread_release_lock(_PyOS_ReadlineLock);
 
     if (rv == NULL)
         return NULL;
