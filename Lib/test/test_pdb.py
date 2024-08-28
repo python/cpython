@@ -1263,7 +1263,7 @@ def test_post_mortem_context_of_the_cause():
 def test_post_mortem_from_none():
     """Test post mortem traceback debugging of chained exception
 
-    In particular that cause from None (which sets __supress_context__ to True)
+    In particular that cause from None (which sets __suppress_context__ to True)
     does not show context.
 
 

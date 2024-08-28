@@ -164,15 +164,31 @@ gc_decref(PyObject *op)
 static void
 disable_deferred_refcounting(PyObject *op)
 {
-    if (_PyObject_HasDeferredRefcount(op)) {
-        op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
-        op->ob_ref_shared -= _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
+    if (!_PyObject_HasDeferredRefcount(op)) {
+        return;
+    }
 
-        if (PyType_Check(op)) {
-            // Disable thread-local refcounting for heap types
-            PyTypeObject *type = (PyTypeObject *)op;
-            if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-                _PyType_ReleaseId((PyHeapTypeObject *)op);
+    op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
+    op->ob_ref_shared -= _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
+
+    if (PyType_Check(op)) {
+        // Disable thread-local refcounting for heap types
+        PyTypeObject *type = (PyTypeObject *)op;
+        if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            _PyType_ReleaseId((PyHeapTypeObject *)op);
+        }
+    }
+    else if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
+        // Ensure any non-refcounted pointers in locals are converted to
+        // strong references.  This ensures that the generator/coroutine is not
+        // freed before its locals.
+        PyGenObject *gen = (PyGenObject *)op;
+        struct _PyInterpreterFrame *frame = &gen->gi_iframe;
+        assert(frame->stackpointer != NULL);
+        for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
+            if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
+                // Convert a deferred reference to a strong reference.
+                *ref = PyStackRef_FromPyObjectSteal(PyStackRef_AsPyObjectSteal(*ref));
             }
         }
     }
@@ -311,6 +327,41 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     err = gc_visit_heaps_lock_held(interp, visitor, arg);
     HEAD_UNLOCK(&_PyRuntime);
     return err;
+}
+
+static inline void
+gc_visit_stackref(_PyStackRef stackref)
+{
+    // Note: we MUST check that it is deferred before checking the rest.
+    // Otherwise we might read into invalid memory due to non-deferred references
+    // being dead already.
+    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+        if (_PyObject_GC_IS_TRACKED(obj)) {
+            gc_add_refs(obj, 1);
+        }
+    }
+}
+
+// Add 1 to the gc_refs for every deferred reference on each thread's stack.
+static void
+gc_visit_thread_stacks(PyInterpreterState *interp)
+{
+    HEAD_LOCK(&_PyRuntime);
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        _PyInterpreterFrame *f = p->current_frame;
+        while (f != NULL) {
+            if (f->f_executable != NULL && PyCode_Check(f->f_executable)) {
+                PyCodeObject *co = (PyCodeObject *)f->f_executable;
+                int max_stack = co->co_nlocalsplus + co->co_stacksize;
+                for (int i = 0; i < max_stack; i++) {
+                    gc_visit_stackref(f->localsplus[i]);
+                }
+            }
+            f = f->previous;
+        }
+    }
+    HEAD_UNLOCK(&_PyRuntime);
 }
 
 static void
@@ -617,6 +668,9 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     gc_visit_heaps(interp, &validate_gc_objects, &state->base);
 #endif
 
+    // Visit the thread stacks to account for any deferred references.
+    gc_visit_thread_stacks(interp);
+
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.
     if (gc_visit_heaps(interp, &mark_heap_visitor, &state->base) < 0) {
@@ -893,6 +947,24 @@ visit_decref_unreachable(PyObject *op, void *data)
 {
     if (gc_is_unreachable(op) && _PyObject_GC_IS_TRACKED(op)) {
         op->ob_ref_local -= 1;
+    }
+    return 0;
+}
+
+int
+_PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
+{
+    _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
+    /* locals and stack */
+    for (; ref < frame->stackpointer; ref++) {
+        // This is a bit tricky! We want to ignore deferred references when
+        // computing the incoming references, but otherwise treat them like
+        // regular references.
+        if (PyStackRef_IsDeferred(*ref) &&
+            (visit == visit_decref || visit == visit_decref_unreachable)) {
+            continue;
+        }
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
     }
     return 0;
 }
@@ -1738,6 +1810,9 @@ _PyObject_GC_New(PyTypeObject *tp)
         return NULL;
     }
     _PyObject_Init(op, tp);
+    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        _PyObject_InitInlineValues(op, tp);
+    }
     return op;
 }
 
