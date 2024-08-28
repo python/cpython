@@ -293,18 +293,18 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             assert(interactive_src != NULL);
             PyObject *xs = PyUnicode_Splitlines(interactive_src, 1);
             if (xs == NULL) {
-                goto err;
+                goto error;
             }
             PyObject *exc_lineno = PyObject_GetAttr(exc, &_Py_ID(lineno));
             if (exc_lineno == NULL) {
                 Py_DECREF(xs);
-                goto err;
+                goto error;
             }
             int n = PyLong_AsInt(exc_lineno);
             Py_DECREF(exc_lineno);
             if (n <= 0 || n > PyList_GET_SIZE(xs)) {
                 Py_DECREF(xs);
-                goto err;
+                goto error;
             }
             PyObject *line = PyList_GET_ITEM(xs, n - 1);
             if (PyObject_SetAttr(exc, &_Py_ID(text), line) == -1) {
@@ -312,7 +312,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             }
             Py_DECREF(xs);
         }
-err:
+error:
         Py_DECREF(interactive_src);
         _PyErr_SetRaisedException(tstate, exc);
         return -1;
