@@ -304,6 +304,9 @@ class _Unframer:
         else:
             return self.file_readline()
 
+    def tickle():
+        print("Pickle tickled")
+
     def load_frame(self, frame_size):
         if self.current_frame and self.current_frame.read() != b'':
             raise UnpicklingError(
