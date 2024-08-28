@@ -89,7 +89,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
                 PyObject* PyLong_FromUInt64(uint64_t value)
 
    Return a new :c:type:`PyLongObject` object from an unsigned C
-   :c:expr:`uint32_t` or :c:expr:`uint64_t`, or ``NULL`` on failure.
+   :c:expr:`uint32_t` or :c:expr:`uint64_t`, or ``NULL``
+   with an exception set on failure.
 
    .. versionadded:: 3.14
 
