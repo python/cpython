@@ -1359,6 +1359,36 @@ Custom error message for try block mixing except and except*
    Traceback (most recent call last):
    SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
+Better error message for using `except as` with not a name:
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj.attr:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with attribute
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj[1]:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with subscript
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as (obj, name):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with tuple
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as 1:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with literal
+
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
    Traceback (most recent call last):
