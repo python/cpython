@@ -26,7 +26,8 @@ from .support import (
     make_clean_env,
 )
 from _pyrepl.console import Event
-from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
+                              _ReadlineWrapper)
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
@@ -515,6 +516,11 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
         self.assertEqual(clean_screen(reader.screen), "1+1")
+
+    def test_get_line_buffer_returns_str(self):
+        reader = self.prepare_reader(code_to_events("\n"))
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+        self.assertIs(type(wrapper.get_line_buffer()), str)
 
     def test_multiline_edit(self):
         events = itertools.chain(
@@ -1099,6 +1105,20 @@ class TestMain(TestCase):
         self.assertIn("123", output)
         self.assertIn("spam", output)
         self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
+    @force_not_colorized
+    def test_correct_filename_in_syntaxerrors(self):
+        env = os.environ.copy()
+        commands = "a b c\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertIn("SyntaxError: invalid syntax", output)
+        self.assertIn("<python-input-0>", output)
+        commands = " b\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertIn("IndentationError: unexpected indent", output)
+        self.assertIn("<python-input-0>", output)
 
     @force_not_colorized
     def test_proper_tracebacklimit(self):

@@ -59,7 +59,8 @@ __all__ = [
     "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
     "without_optimizer",
-    "force_not_colorized"
+    "force_not_colorized",
+    "BrokenIter",
     ]
 
 
@@ -2847,3 +2848,19 @@ def get_signal_name(exitcode):
         pass
 
     return None
+
+class BrokenIter:
+    def __init__(self, init_raises=False, next_raises=False, iter_raises=False):
+        if init_raises:
+            1/0
+        self.next_raises = next_raises
+        self.iter_raises = iter_raises
+
+    def __next__(self):
+        if self.next_raises:
+            1/0
+
+    def __iter__(self):
+        if self.iter_raises:
+            1/0
+        return self

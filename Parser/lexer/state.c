@@ -12,7 +12,8 @@
 struct tok_state *
 _PyTokenizer_tok_new(void)
 {
-    struct tok_state *tok = (struct tok_state *)PyMem_Malloc(
+    struct tok_state *tok = (struct tok_state *)PyMem_Calloc(
+                                            1,
                                             sizeof(struct tok_state));
     if (tok == NULL)
         return NULL;

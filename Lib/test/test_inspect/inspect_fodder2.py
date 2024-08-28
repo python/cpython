@@ -315,3 +315,45 @@ else:
 class ClassWithCodeObject:
     import sys
     code = sys._getframe(0).f_code
+
+import enum
+
+# line 321
+class enum322(enum.Enum):
+    A = 'a'
+
+# line 325
+class enum326(enum.IntEnum):
+    A = 1
+
+# line 329
+class flag330(enum.Flag):
+    A = 1
+
+# line 333
+class flag334(enum.IntFlag):
+    A = 1
+
+# line 337
+simple_enum338 = enum.Enum('simple_enum338', 'A')
+simple_enum339 = enum.IntEnum('simple_enum339', 'A')
+simple_flag340 = enum.Flag('simple_flag340', 'A')
+simple_flag341 = enum.IntFlag('simple_flag341', 'A')
+
+import typing
+
+# line 345
+class nt346(typing.NamedTuple):
+    x: int
+    y: int
+
+# line 350
+nt351 = typing.NamedTuple('nt351', (('x', int), ('y', int)))
+
+# line 353
+class td354(typing.TypedDict):
+    x: int
+    y: int
+
+# line 358
+td359 = typing.TypedDict('td359', (('x', int), ('y', int)))

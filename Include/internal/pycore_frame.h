@@ -144,8 +144,9 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
 static inline void
 _PyFrame_Initialize(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
-    PyObject *locals, PyCodeObject *code, int null_locals_from)
+    PyObject *locals, PyCodeObject *code, int null_locals_from, _PyInterpreterFrame *previous)
 {
+    frame->previous = previous;
     frame->f_funcobj = (PyObject *)func;
     frame->f_executable = Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
@@ -298,26 +299,27 @@ PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFr
  * Must be guarded by _PyThreadState_HasStackSpace()
  * Consumes reference to func. */
 static inline _PyInterpreterFrame *
-_PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_locals_from)
+_PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_locals_from, _PyInterpreterFrame * previous)
 {
     CALL_STAT_INC(frames_pushed);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
-    _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from);
+    _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from, previous);
     return new_frame;
 }
 
 /* Pushes a trampoline frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace() */
 static inline _PyInterpreterFrame *
-_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth)
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, _PyInterpreterFrame * previous)
 {
     CALL_STAT_INC(frames_pushed);
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
+    frame->previous = previous;
     frame->f_funcobj = Py_None;
     frame->f_executable = Py_NewRef(code);
 #ifdef Py_DEBUG
@@ -344,7 +346,8 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, _PyStackRef const* args,
-                        size_t argcount, PyObject *kwnames);
+                        size_t argcount, PyObject *kwnames,
+                        _PyInterpreterFrame *previous);
 
 #ifdef __cplusplus
 }
