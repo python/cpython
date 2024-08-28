@@ -393,7 +393,7 @@ optimize_uops(
     int trace_len,
     int curr_stacklen,
     _PyBloomFilter *dependencies,
-    PyObject *refs
+    PyObject *new_refs
 )
 {
 
