@@ -381,6 +381,18 @@ unicode_decode_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
     RETURN_SIZE(start);
 }
 
+/* Test PyUnicodeTranslateError_GetStart */
+static PyObject *
+unicode_translate_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeTranslateError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+
 /*
  * Define the PyRecurdingInfinitelyError_Type
  */
@@ -426,6 +438,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
     {"unicode_encode_get_start", unicode_encode_get_start,       METH_O},
     {"unicode_decode_get_start", unicode_decode_get_start,       METH_O},
+    {"unicode_translate_get_start", unicode_translate_get_start, METH_O},
     {NULL},
 };
 
