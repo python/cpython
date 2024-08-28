@@ -81,7 +81,7 @@ def translate(pat):
     return _join_translated_parts(parts, indices)
 
 _re_setops_sub = re.compile(r'([&~|])').sub
-_re_escape = functools.lru_cache(maxsize=32768)(re.escape)
+_re_escape = functools.lru_cache(maxsize=512)(re.escape)
 
 def _translate(pat, star, question_mark):
     res = []
