@@ -225,6 +225,16 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+
+zipinfo
+-------
+
+* Added :func:`ZipInfo.for_name <zipfile.ZipInfo.for_name>` for
+  constructing a :class:`~zipfile.ZipInfo` object from a filename
+  and an archive.
+
+  (Contributed by Bénédikt Tran in :gh:`123424`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
