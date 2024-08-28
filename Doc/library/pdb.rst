@@ -290,6 +290,8 @@ There are three preset *convenience variables*:
 
 .. versionadded:: 3.12
 
+   Added the *convenience variable* feature.
+
 .. index::
    pair: .pdbrc; file
    triple: debugger; configuration; file
@@ -319,10 +321,16 @@ can be overridden by the local file.
    argument must be an identifier, ``help exec`` must be entered to get help on
    the ``!`` command.
 
-.. pdbcommand:: w(here)
+.. pdbcommand:: w(here) [count]
 
-   Print a stack trace, with the most recent frame at the bottom.  An arrow (``>``)
+   Print a stack trace, with the most recent frame at the bottom.  if *count*
+   is 0, print the current frame entry. If *count* is negative, print the least
+   recent - *count* frames. If *count* is positive, print the most recent
+   *count* frames.  An arrow (``>``)
    indicates the current frame, which determines the context of most commands.
+
+   .. versionchanged:: 3.14
+      *count* argument is added.
 
 .. pdbcommand:: d(own) [count]
 
@@ -339,7 +347,7 @@ can be overridden by the local file.
    With a *lineno* argument, set a break at line *lineno* in the current file.
    The line number may be prefixed with a *filename* and a colon,
    to specify a breakpoint in another file (possibly one that hasn't been loaded
-   yet).  The file is searched on :data:`sys.path`.  Accepatable forms of *filename*
+   yet).  The file is searched on :data:`sys.path`.  Acceptable forms of *filename*
    are ``/abspath/to/file.py``, ``relpath/file.py``, ``module`` and
    ``package.module``.
 

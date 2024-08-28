@@ -25,7 +25,6 @@
     :license: Python License.
 """
 import sys
-import re
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
@@ -325,12 +324,18 @@ def get_docstring(node, clean=True):
     return text
 
 
-_line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+_line_pattern = None
 def _splitlines_no_ff(source, maxlines=None):
     """Split a string into lines ignoring form feed and other chars.
 
     This mimics how the Python parser splits source code.
     """
+    global _line_pattern
+    if _line_pattern is None:
+        # lazily computed to speedup import time of `ast`
+        import re
+        _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+
     lines = []
     for lineno, match in enumerate(_line_pattern.finditer(source), 1):
         if maxlines is not None and lineno > maxlines:
@@ -417,6 +422,8 @@ def compare(
     might differ in whitespace or similar details.
     """
 
+    sentinel = object()  # handle the possibility of a missing attribute/field
+
     def _compare(a, b):
         # Compare two fields on an AST object, which may themselves be
         # AST objects, lists of AST objects, or primitive ASDL types
@@ -444,8 +451,14 @@ def compare(
         if a._fields != b._fields:
             return False
         for field in a._fields:
-            a_field = getattr(a, field)
-            b_field = getattr(b, field)
+            a_field = getattr(a, field, sentinel)
+            b_field = getattr(b, field, sentinel)
+            if a_field is sentinel and b_field is sentinel:
+                # both nodes are missing a field at runtime
+                continue
+            if a_field is sentinel or b_field is sentinel:
+                # one of the node is missing a field
+                return False
             if not _compare(a_field, b_field):
                 return False
         else:
@@ -456,8 +469,11 @@ def compare(
             return False
         # Attributes are always ints.
         for attr in a._attributes:
-            a_attr = getattr(a, attr)
-            b_attr = getattr(b, attr)
+            a_attr = getattr(a, attr, sentinel)
+            b_attr = getattr(b, attr, sentinel)
+            if a_attr is sentinel and b_attr is sentinel:
+                # both nodes are missing an attribute at runtime
+                continue
             if a_attr != b_attr:
                 return False
         else:
@@ -507,27 +523,6 @@ class NodeVisitor(object):
                         self.visit(item)
             elif isinstance(value, AST):
                 self.visit(value)
-
-    def visit_Constant(self, node):
-        value = node.value
-        type_name = _const_node_type_names.get(type(value))
-        if type_name is None:
-            for cls, name in _const_node_type_names.items():
-                if isinstance(value, cls):
-                    type_name = name
-                    break
-        if type_name is not None:
-            method = 'visit_' + type_name
-            try:
-                visitor = getattr(self, method)
-            except AttributeError:
-                pass
-            else:
-                import warnings
-                warnings.warn(f"{method} is deprecated; add visit_Constant",
-                              DeprecationWarning, 2)
-                return visitor(node)
-        return self.generic_visit(node)
 
 
 class NodeTransformer(NodeVisitor):
@@ -587,151 +582,6 @@ class NodeTransformer(NodeVisitor):
                 else:
                     setattr(node, field, new_node)
         return node
-
-
-_DEPRECATED_VALUE_ALIAS_MESSAGE = (
-    "{name} is deprecated and will be removed in Python {remove}; use value instead"
-)
-_DEPRECATED_CLASS_MESSAGE = (
-    "{name} is deprecated and will be removed in Python {remove}; "
-    "use ast.Constant instead"
-)
-
-
-# If the ast module is loaded more than once, only add deprecated methods once
-if not hasattr(Constant, 'n'):
-    # The following code is for backward compatibility.
-    # It will be removed in future.
-
-    def _n_getter(self):
-        """Deprecated. Use value instead."""
-        import warnings
-        warnings._deprecated(
-            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        return self.value
-
-    def _n_setter(self, value):
-        import warnings
-        warnings._deprecated(
-            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        self.value = value
-
-    def _s_getter(self):
-        """Deprecated. Use value instead."""
-        import warnings
-        warnings._deprecated(
-            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        return self.value
-
-    def _s_setter(self, value):
-        import warnings
-        warnings._deprecated(
-            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        self.value = value
-
-    Constant.n = property(_n_getter, _n_setter)
-    Constant.s = property(_s_getter, _s_setter)
-
-class _ABC(type):
-
-    def __init__(cls, *args):
-        cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
-
-    def __instancecheck__(cls, inst):
-        if cls in _const_types:
-            import warnings
-            warnings._deprecated(
-                f"ast.{cls.__qualname__}",
-                message=_DEPRECATED_CLASS_MESSAGE,
-                remove=(3, 14)
-            )
-        if not isinstance(inst, Constant):
-            return False
-        if cls in _const_types:
-            try:
-                value = inst.value
-            except AttributeError:
-                return False
-            else:
-                return (
-                    isinstance(value, _const_types[cls]) and
-                    not isinstance(value, _const_types_not.get(cls, ()))
-                )
-        return type.__instancecheck__(cls, inst)
-
-def _new(cls, *args, **kwargs):
-    for key in kwargs:
-        if key not in cls._fields:
-            # arbitrary keyword arguments are accepted
-            continue
-        pos = cls._fields.index(key)
-        if pos < len(args):
-            raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
-    if cls in _const_types:
-        import warnings
-        warnings._deprecated(
-            f"ast.{cls.__qualname__}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
-        )
-        return Constant(*args, **kwargs)
-    return Constant.__new__(cls, *args, **kwargs)
-
-class Num(Constant, metaclass=_ABC):
-    _fields = ('n',)
-    __new__ = _new
-
-class Str(Constant, metaclass=_ABC):
-    _fields = ('s',)
-    __new__ = _new
-
-class Bytes(Constant, metaclass=_ABC):
-    _fields = ('s',)
-    __new__ = _new
-
-class NameConstant(Constant, metaclass=_ABC):
-    __new__ = _new
-
-class Ellipsis(Constant, metaclass=_ABC):
-    _fields = ()
-
-    def __new__(cls, *args, **kwargs):
-        if cls is _ast_Ellipsis:
-            import warnings
-            warnings._deprecated(
-                "ast.Ellipsis", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
-            )
-            return Constant(..., *args, **kwargs)
-        return Constant.__new__(cls, *args, **kwargs)
-
-# Keep another reference to Ellipsis in the global namespace
-# so it can be referenced in Ellipsis.__new__
-# (The original "Ellipsis" name is removed from the global namespace later on)
-_ast_Ellipsis = Ellipsis
-
-_const_types = {
-    Num: (int, float, complex),
-    Str: (str,),
-    Bytes: (bytes,),
-    NameConstant: (type(None), bool),
-    Ellipsis: (type(...),),
-}
-_const_types_not = {
-    Num: (bool,),
-}
-
-_const_node_type_names = {
-    bool: 'NameConstant',  # should be before int
-    type(None): 'NameConstant',
-    int: 'Num',
-    float: 'Num',
-    complex: 'Num',
-    str: 'Str',
-    bytes: 'Bytes',
-    type(...): 'Ellipsis',
-}
 
 class slice(AST):
     """Deprecated AST node class."""
@@ -1884,25 +1734,10 @@ class _Unparser(NodeVisitor):
             self.set_precedence(_Precedence.BOR.next(), *node.patterns)
             self.interleave(lambda: self.write(" | "), self.traverse, node.patterns)
 
+
 def unparse(ast_obj):
     unparser = _Unparser()
     return unparser.visit(ast_obj)
-
-
-_deprecated_globals = {
-    name: globals().pop(name)
-    for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
-}
-
-def __getattr__(name):
-    if name in _deprecated_globals:
-        globals()[name] = value = _deprecated_globals[name]
-        import warnings
-        warnings._deprecated(
-            f"ast.{name}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
-        )
-        return value
-    raise AttributeError(f"module 'ast' has no attribute '{name}'")
 
 
 def main():
