@@ -642,7 +642,8 @@ The following exceptions are the exceptions that are usually raised.
 
    .. attribute:: start
 
-       The first index of invalid data in :attr:`object`.
+       The first index of invalid data in :attr:`object`. This value
+       must be non-negative.
 
    .. attribute:: end
 

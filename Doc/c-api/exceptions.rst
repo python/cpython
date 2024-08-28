@@ -857,8 +857,8 @@ The following functions are used to create and modify Unicode exceptions from C.
                 int PyUnicodeEncodeError_SetStart(PyObject *exc, Py_ssize_t start)
                 int PyUnicodeTranslateError_SetStart(PyObject *exc, Py_ssize_t start)
 
-   Set the *start* attribute of the given exception object to *start*.  Return
-   ``0`` on success, ``-1`` on failure.
+   Set the *start* attribute of the given exception object to *start*.  *start*
+   must be non-negative. Return ``0`` on success, ``-1`` on failure.
 
 .. c:function:: int PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
                 int PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
