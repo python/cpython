@@ -1164,8 +1164,12 @@ static int
 memory_clear(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    if(_memory_release(self) == 0)
+    if(_memory_release(self) == 0) {
         Py_CLEAR(self->mbuf);
+    }
+    else {
+        PyErr_FormatUnraisable("Exception ignored in memoryview clear");
+    }
     return 0;
 }
 
