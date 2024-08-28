@@ -370,7 +370,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             import dis
             import importlib._bootstrap
             import opcode
-            import test.test_dis
+            from test.test_dis import test_dis
 
             def is_specialized(f):
                 for instruction in dis.get_instructions(f, adaptive=True):
@@ -390,7 +390,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
             assert not is_specialized(func), "specialized instructions found"
 
-            for i in range(test.test_dis.ADAPTIVE_WARMUP_DELAY):
+            for i in range(test_dis.ADAPTIVE_WARMUP_DELAY):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
             assert is_specialized(func), "no specialized instructions found"
