@@ -160,7 +160,6 @@ def get_layout(cls, input_fields, is_struct, base):
             next_byte_offset = struct_size
 
     last_size = struct_size
-    last_field = None
     for i, field in enumerate(input_fields):
         if not is_struct:
             # Unions start fresh each time
@@ -292,18 +291,17 @@ def get_layout(cls, input_fields, is_struct, base):
                     "field {name!r}: name must be a string, not bytes")
             format_spec_parts.append(f"{fieldfmt}:{name}:")
 
-        last_field = CField(
+        result_fields.append(CField(
             name=name,
             type=ctype,
             size=size,
             offset=offset,
             bit_size=bit_size if is_bitfield else None,
             index=i,
-        )
+        ))
         if is_bitfield and not gcc_layout:
             assert type_bit_size > 0
 
-        result_fields.append(last_field)
         align = max(align, type_align)
         last_size = struct_size
         if not is_struct:
