@@ -2210,11 +2210,11 @@ class OtherTests(unittest.TestCase):
         base_filename = TESTFN2.rstrip('/')
 
         with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
-                             compression=zipfile.ZIP_DEFLATED) as zf:
+                             compression=zipfile.ZIP_STORED) as zf:
             # no trailing forward slash
             zi = zipfile.ZipInfo.for_name(base_filename, zf)
             self.assertEqual(zi.compress_level, 1)
-            self.assertEqual(zi.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
             # ?rw- --- ---
             filemode = stat.S_IRUSR | stat.S_IWUSR
             # filemode is stored as the highest 16 bits of external_attr
@@ -2222,11 +2222,11 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zi.external_attr & 0xFF, 0)  # no MS-DOS flag
 
         with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
-                             compression=zipfile.ZIP_DEFLATED) as zf:
+                             compression=zipfile.ZIP_STORED) as zf:
             # with a trailing slash
             zi = zipfile.ZipInfo.for_name(f'{base_filename}/', zf)
             self.assertEqual(zi.compress_level, 1)
-            self.assertEqual(zi.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
             # d rwx rwx r-x
             filemode = stat.S_IFDIR
             filemode |= stat.S_IRWXU | stat.S_IRWXG
