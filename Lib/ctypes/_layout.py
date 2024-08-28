@@ -173,11 +173,13 @@ def get_layout(cls, input_fields, is_struct, base):
         field = tuple(field)
         try:
             name, ctype = field
-            is_bitfield = False
-            type_size = ctypes.sizeof(ctype)
-            bit_size = type_size * 8
-        except ValueError:
-            name, ctype, bit_size = field
+        except (ValueError, TypeError):
+            try:
+                name, ctype, bit_size = field
+            except (ValueError, TypeError) as exc:
+                raise ValueError(
+                    '_fields_ must be a sequence of (name, C type) pairs '
+                    + 'or (name, C type, bit size) triples') from exc
             is_bitfield = True
             if bit_size <= 0:
                 raise ValueError(
@@ -186,6 +188,10 @@ def get_layout(cls, input_fields, is_struct, base):
             if bit_size > type_size * 8:
                 raise ValueError(
                     f'number of bits invalid for bit field {name!r}')
+        else:
+            is_bitfield = False
+            type_size = ctypes.sizeof(ctype)
+            bit_size = type_size * 8
 
         type_bit_size = type_size * 8
         type_align = ctypes.alignment(ctype) or 1
