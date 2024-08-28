@@ -48,12 +48,12 @@ Tuple Objects
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
-   or ``-1`` and set a :exc:`SystemError` exception if *p* is not a tuple.
+   On error, return ``-1`` and with an exception set.
 
 
 .. c:function:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
 
-   Like :c:func:`PyTuple_Size`, but does no checking of its arguments.
+   Like :c:func:`PyTuple_Size`, but without error checking.
 
 
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
