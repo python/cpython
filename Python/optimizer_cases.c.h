@@ -1268,7 +1268,7 @@
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
-            attr = sym_new_const(ctx, descr);
+            attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)descr;
             (void)owner;
@@ -1664,7 +1664,7 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
-            attr = sym_new_const(ctx, descr);
+            attr = sym_new_not_null(ctx);
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1680,7 +1680,7 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
-            attr = sym_new_const(ctx, descr);
+            attr = sym_new_not_null(ctx);
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1714,7 +1714,7 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
-            attr = sym_new_const(ctx, descr);
+            attr = sym_new_not_null(ctx);
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;

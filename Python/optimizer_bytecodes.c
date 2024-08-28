@@ -611,7 +611,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
-        attr = sym_new_const(ctx, descr);
+        attr = sym_new_not_null(ctx);
         null = sym_new_null(ctx);
         (void)descr;
         (void)owner;
@@ -619,19 +619,19 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
-        attr = sym_new_const(ctx, descr);
+        attr = sym_new_not_null(ctx);
         self = owner;
     }
 
     op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
-        attr = sym_new_const(ctx, descr);
+        attr = sym_new_not_null(ctx);
         self = owner;
     }
 
     op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
-        attr = sym_new_const(ctx, descr);
+        attr = sym_new_not_null(ctx);
         self = owner;
     }
 
