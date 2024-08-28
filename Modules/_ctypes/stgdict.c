@@ -396,7 +396,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
         if (prop->index != i) {
             PyErr_Format(PyExc_ValueError,
-                        "field %R index mismatch (expected %d, got %d)",
+                         "field %R index mismatch (expected %zd, got %zd)",
                          prop->name, i, prop->index);
             goto error;
         }
