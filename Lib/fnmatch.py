@@ -86,7 +86,7 @@ _re_escape = functools.lru_cache(maxsize=32768)(re.escape)
 def _translate(pat, star, question_mark):
     res = []
     add = res.append
-    indices = []
+    star_indices = []
 
     i, n = 0, len(pat)
     while i < n:
@@ -94,7 +94,7 @@ def _translate(pat, star, question_mark):
         i = i+1
         if c == '*':
             # store the position of the wildcard
-            indices.append(len(res))
+            star_indices.append(len(res))
             add(star)
             # compress consecutive `*` into one
             while i < n and pat[i] == '*':
@@ -160,18 +160,18 @@ def _translate(pat, star, question_mark):
         else:
             add(_re_escape(c))
     assert i == n
-    return res, indices
+    return res, star_indices
 
 
-def _join_translated_parts(parts, indices):
-    if not indices:
+def _join_translated_parts(parts, star_indices):
+    if not star_indices:
         return fr'(?s:{"".join(parts)})\Z'
-    iter_indices = iter(indices)
-    j = next(iter_indices)
+    iter_star_indices = iter(star_indices)
+    j = next(iter_star_indices)
     buffer = parts[:j]  # fixed pieces at the start
     append, extend = buffer.append, buffer.extend
     i = j + 1
-    for j in iter_indices:
+    for j in iter_star_indices:
         # Now deal with STAR fixed STAR fixed ...
         # For an interior `STAR fixed` pairing, we want to do a minimal
         # .*? match followed by `fixed`, with no possibility of backtracking.
