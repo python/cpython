@@ -217,7 +217,6 @@ MakeAnonFields(PyObject *type)
 int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
-    Py_ssize_t i;
     PyObject *tmp;
     Py_ssize_t ffi_ofs;
     int arrays_seen = 0;
@@ -384,7 +383,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         ffi_ofs = 0;
     }
 
-    for (i = 0; i < len; ++i) {
+    for (Py_ssize_t i = 0; i < len; ++i) {
         PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i);
         assert(prop_obj);
         if (!PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type)) {
@@ -519,7 +518,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         Py_ssize_t struct_index = 0; /* index into dummy structs */
 
         /* first pass to see how much memory to allocate */
-        for (i = 0; i < len; ++i) {
+        for (Py_ssize_t i = 0; i < len; ++i) {
             PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i); // borrowed
             assert(prop_obj);
             assert(PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type));
@@ -597,7 +596,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         element_index = ffi_ofs;
 
         /* second pass to actually set the type pointers */
-        for (i = 0; i < len; ++i) {
+        for (Py_ssize_t i = 0; i < len; ++i) {
             PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i); // borrowed
             assert(prop_obj);
             assert(PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type));
