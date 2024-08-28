@@ -1,5 +1,4 @@
 import doctest
-import textwrap
 import unittest
 
 
@@ -150,8 +149,8 @@ Unpacking to an empty iterable should raise ValueError
       ...
     ValueError: too many values to unpack (expected 0, got 1)
 
-Unpacking to an empty iterable should raise ValueError, but it won't consume the
-iterable if it doesn't have a pre-determined length
+Unpacking a larger iterable should raise UnpackError, but it shouldn't consume the
+iterable entirely
 
     >>> it = iter(range(100))
     >>> x, y, z = it
@@ -169,7 +168,7 @@ Unpacking unbalanced dict
       ...
     ValueError: too many values to unpack (expected 3, got 4)
 
-Ensure that `__len__()` is respected when showing the error message
+Ensure that custom `__len__()` is NOT called when showing the error message
 
     >>> class LengthTooLong:
     ...     def __len__(self):
@@ -180,9 +179,9 @@ Ensure that `__len__()` is respected when showing the error message
     >>> x, y, z = LengthTooLong()
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 3, got 5)
+    ValueError: too many values to unpack (expected 3)
 
-If `__len__()` is too low, fallback to not showing the got count
+For evil cases like these as well, no actual count to be shown
 
     >>> class BadLength:
     ...     def __len__(self):
@@ -218,48 +217,6 @@ class TestCornerCases(unittest.TestCase):
         for _ in range(30):
             y = unpack_400(range(400))
             self.assertEqual(y, 399)
-
-    def test_exception_context_when_len_fails(self):
-        """When `__len__()` raises an Exception, preserve exception context"""
-        code = textwrap.dedent(
-            f"""
-            class CustomSeq:
-                def __len__(self):
-                    raise RuntimeError
-
-                def __getitem__(self, i):
-                    return i*2
-
-            x, y, z = CustomSeq()
-            """
-        )
-        try:
-            exec(code)
-        except ValueError as exc:
-            self.assertEqual(exc.args, ('too many values to unpack (expected 3)',))
-            self.assertIsInstance(exc.__context__, RuntimeError)
-
-    def test_baseexception_propagation_when_len_fails(self):
-        """if `__len__()` raises a `BaseException`, propagate that as-is"""
-        code = textwrap.dedent(
-            """
-            class C:
-                def __len__(self):
-                    raise KeyboardInterrupt
-                def __getitem__(self, i):
-                    return i
-
-            x, y, z = C()
-            """
-        )
-        try:
-            exec(code)
-        except KeyboardInterrupt:
-            pass
-        except Exception as exc:
-            self.fail(f"Expected KeyboardInterrupt, found {type(exc).__name__}: {exc}")
-        else:
-            self.fail("KeyboardInterrupt not raised")
 
 if __name__ == "__main__":
     unittest.main()
