@@ -1,0 +1,3 @@
+Add :meth:`zipfile.ZipInfo.for_name` factory for constructing
+:class:`~zipfile.ZipInfo` objects from a filename and an archive. Patch by
+Bénédikt Tran.
