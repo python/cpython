@@ -1509,40 +1509,89 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
     kind = dk->dk_kind;
 
     if (kind != DICT_KEYS_GENERAL) {
-        PyObject *value;
-        ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
-        assert (ix >= 0 || value == NULL);
-        *value_addr = PyStackRef_FromPyObjectSteal(value);
-    }
-    else {
-        ix = dictkeys_generic_lookup_threadsafe(mp, dk, key, hash);
+        if (PyUnicode_CheckExact(key)) {
+            ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+        }
+        else {
+            ix = unicodekeys_lookup_generic_threadsafe(mp, dk, key, hash);
+        }
         if (ix == DKIX_KEY_CHANGED) {
             goto read_failed;
         }
+
         if (ix >= 0) {
-            PyObject **addr_of_value = &(DK_ENTRIES(dk)[ix].me_value);
-            PyObject *value = _Py_atomic_load_ptr(addr_of_value);
-            if (value == NULL) {
-                *value_addr = PyStackRef_NULL;
-            }
-            else if (_Py_IsImmortal(value) ||
-                     _PyObject_HasDeferredRefcount(value)) {
-                *value_addr = PyStackRef_FromPyObjectNew(value);
+            if (kind == DICT_KEYS_SPLIT) {
+                PyDictValues *values = _Py_atomic_load_ptr(&mp->ma_values);
+                if (values == NULL) {
+                    goto read_failed;
+                }
+
+                uint8_t capacity = _Py_atomic_load_uint8_relaxed(&values->capacity);
+                if (ix >= (Py_ssize_t)capacity) {
+                    goto read_failed;
+                }
+
+                PyObject **addr_of_value = &values->values[ix];
+                PyObject *value = _Py_atomic_load_ptr(addr_of_value);
+                if (value == NULL) {
+                    *value_addr = PyStackRef_NULL;
+                }
+                else if (_Py_IsImmortal(value) ||
+                         _PyObject_HasDeferredRefcount(value)) {
+                    *value_addr = PyStackRef_FromPyObjectNew(value);
+                }
+                else {
+                    PyObject *res = _Py_TryXGetRef(addr_of_value);
+                    if (res == NULL) {
+                        *value_addr = PyStackRef_NULL;
+                    }
+                    else {
+                        *value_addr = PyStackRef_FromPyObjectSteal(res);
+                    }
+                }
+                if (PyStackRef_IsNull(*value_addr)) {
+                    goto read_failed;
+                }
+                if (values != _Py_atomic_load_ptr(&mp->ma_values)) {
+                    goto read_failed;
+                }
             }
             else {
-                *value_addr = PyStackRef_FromPyObjectSteal(
-                    _Py_TryXGetRef(addr_of_value));
-            }
-            if (PyStackRef_IsNull(*value_addr)) {
-                goto read_failed;
-            }
-            if (dk != _Py_atomic_load_ptr(&mp->ma_keys)) {
-                goto read_failed;
+                PyObject **addr_of_value = &DK_UNICODE_ENTRIES(dk)[ix].me_value;
+                PyObject *value = _Py_atomic_load_ptr(addr_of_value);
+                if (value == NULL) {
+                    *value_addr = PyStackRef_NULL;
+                }
+                else if (_Py_IsImmortal(value) ||
+                         _PyObject_HasDeferredRefcount(value)) {
+                    *value_addr = PyStackRef_FromPyObjectNew(value);
+                }
+                else {
+                    PyObject *res = _Py_TryXGetRef(addr_of_value);
+                    if (res == NULL) {
+                        *value_addr = PyStackRef_NULL;
+                    }
+                    else {
+                        *value_addr = PyStackRef_FromPyObjectSteal(res);
+                    }
+                }
+                if (PyStackRef_IsNull(*value_addr)) {
+                    goto read_failed;
+                }
+                if (dk != _Py_atomic_load_ptr(&mp->ma_keys)) {
+                    goto read_failed;
+                }
             }
         }
         else {
             *value_addr = PyStackRef_NULL;
         }
+    }
+    else {
+        PyObject *value;
+        ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
+        assert (ix >= 0 || value == NULL);
+        *value_addr = PyStackRef_FromPyObjectSteal(value);
     }
 
     return ix;
