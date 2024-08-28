@@ -416,8 +416,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             stginfo->flags |= TYPEFLAG_HASPOINTER;
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
 
-        assert(prop);
-
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
         }
