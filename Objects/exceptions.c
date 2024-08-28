@@ -2741,17 +2741,17 @@ PyUnicodeTranslateError_GetObject(PyObject *exc)
 int
 PyUnicodeEncodeError_GetStart(PyObject *exc, Py_ssize_t *start)
 {
-    Py_ssize_t size;
     PyObject *obj = get_unicode(((PyUnicodeErrorObject *)exc)->object,
                                 "object");
-    if (!obj)
+    if (!obj) {
         return -1;
+    }
+    Py_ssize_t size = PyUnicode_GET_LENGTH(obj);
     *start = ((PyUnicodeErrorObject *)exc)->start;
-    size = PyUnicode_GET_LENGTH(obj);
-    if (*start<0)
-        *start = 0; /*XXX check for values <0*/
-    if (*start>=size)
-        *start = size ? size-1 : 0;
+    assert(*start >= 0);
+    if (*start >= size) {
+        *start = size ? size - 1 : 0;
+    }
     Py_DECREF(obj);
     return 0;
 }
@@ -2760,16 +2760,16 @@ PyUnicodeEncodeError_GetStart(PyObject *exc, Py_ssize_t *start)
 int
 PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
 {
-    Py_ssize_t size;
     PyObject *obj = get_string(((PyUnicodeErrorObject *)exc)->object, "object");
-    if (!obj)
+    if (!obj) {
         return -1;
-    size = PyBytes_GET_SIZE(obj);
+    }
+    Py_ssize_t size = PyBytes_GET_SIZE(obj);
     *start = ((PyUnicodeErrorObject *)exc)->start;
-    if (*start<0)
-        *start = 0;
-    if (*start>=size)
-        *start = size ? size-1 : 0;
+    assert(*start >= 0);
+    if (*start >= size) {
+        *start = size ? size - 1 : 0;
+    }
     Py_DECREF(obj);
     return 0;
 }
@@ -2785,6 +2785,10 @@ PyUnicodeTranslateError_GetStart(PyObject *exc, Py_ssize_t *start)
 int
 PyUnicodeEncodeError_SetStart(PyObject *exc, Py_ssize_t start)
 {
+    if (start < 0) {
+        PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
+        return -1;
+    }
     ((PyUnicodeErrorObject *)exc)->start = start;
     return 0;
 }
@@ -2793,6 +2797,10 @@ PyUnicodeEncodeError_SetStart(PyObject *exc, Py_ssize_t start)
 int
 PyUnicodeDecodeError_SetStart(PyObject *exc, Py_ssize_t start)
 {
+    if (start < 0) {
+        PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
+        return -1;
+    }
     ((PyUnicodeErrorObject *)exc)->start = start;
     return 0;
 }
@@ -2801,6 +2809,10 @@ PyUnicodeDecodeError_SetStart(PyObject *exc, Py_ssize_t start)
 int
 PyUnicodeTranslateError_SetStart(PyObject *exc, Py_ssize_t start)
 {
+    if (start < 0) {
+        PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
+        return -1;
+    }
     ((PyUnicodeErrorObject *)exc)->start = start;
     return 0;
 }
@@ -2980,8 +2992,12 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "UUnnU",
                           &err->encoding, &err->object,
                           &err->start, &err->end, &err->reason)) {
-        err->encoding = err->object = err->reason = NULL;
-        return -1;
+        goto error;
+    }
+
+    if (err->start < 0) {
+        PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
+        goto error;
     }
 
     Py_INCREF(err->encoding);
@@ -2989,6 +3005,9 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(err->reason);
 
     return 0;
+error:
+    err->encoding = err->object = err->reason = NULL;
+    return -1;
 }
 
 static PyObject *
@@ -3085,6 +3104,11 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(ude->encoding);
     Py_INCREF(ude->object);
     Py_INCREF(ude->reason);
+
+    if (ude->start < 0) {
+        PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
+        goto error;
+    }
 
     if (!PyBytes_Check(ude->object)) {
         Py_buffer view;
@@ -3190,14 +3214,21 @@ UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
     if (!PyArg_ParseTuple(args, "UnnU",
                           &self->object,
                           &self->start, &self->end, &self->reason)) {
-        self->object = self->reason = NULL;
-        return -1;
+        goto error;
+    }
+
+    if (self->start < 0) {
+        PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
+        goto error;
     }
 
     Py_INCREF(self->object);
     Py_INCREF(self->reason);
 
     return 0;
+error:
+    self->object = self->reason = NULL;
+    return -1;
 }
 
 

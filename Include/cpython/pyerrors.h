@@ -44,7 +44,7 @@ typedef struct {
     PyException_HEAD
     PyObject *encoding;
     PyObject *object;
-    Py_ssize_t start;
+    Py_ssize_t start;  // should be >= 0
     Py_ssize_t end;
     PyObject *reason;
 } PyUnicodeErrorObject;
