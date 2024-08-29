@@ -534,42 +534,41 @@ class ExceptionTests(unittest.TestCase):
             pass
 
         for exc, args, kwargs, expected in exceptionList:
-            with self.subTest(exc=exc, args=args, kwargs=kwargs):
-                try:
-                    e = exc(*args, **kwargs)
-                except:
-                    print(f"\nexc={exc!r}, args={args!r}", file=sys.stderr)
-                    # raise
-                else:
-                    # Verify module name
-                    if not type(e).__name__.endswith('NaiveException'):
-                        self.assertEqual(type(e).__module__, 'builtins')
-                    # Verify no ref leaks in Exc_str()
-                    s = str(e)
-                    for checkArgName in expected:
-                        value = getattr(e, checkArgName)
-                        self.assertEqual(repr(value),
-                                         repr(expected[checkArgName]),
-                                         '%r.%s == %r, expected %r' % (
-                                         e, checkArgName,
-                                         value, expected[checkArgName]))
+            try:
+                e = exc(*args, **kwargs)
+            except:
+                print(f"\nexc={exc!r}, args={args!r}", file=sys.stderr)
+                # raise
+            else:
+                # Verify module name
+                if not type(e).__name__.endswith('NaiveException'):
+                    self.assertEqual(type(e).__module__, 'builtins')
+                # Verify no ref leaks in Exc_str()
+                s = str(e)
+                for checkArgName in expected:
+                    value = getattr(e, checkArgName)
+                    self.assertEqual(repr(value),
+                                     repr(expected[checkArgName]),
+                                     '%r.%s == %r, expected %r' % (
+                                     e, checkArgName,
+                                     value, expected[checkArgName]))
 
-                    # test for pickling support
-                    for p in [pickle]:
-                        for protocol in range(p.HIGHEST_PROTOCOL + 1):
-                            s = p.dumps(e, protocol)
-                            new = p.loads(s)
-                            for checkArgName in expected:
-                                got = repr(getattr(new, checkArgName))
-                                if exc == AttributeError and checkArgName == 'obj':
-                                    # See GH-103352, we're not pickling
-                                    # obj at this point. So verify it's None.
-                                    want = repr(None)
-                                else:
-                                    want = repr(expected[checkArgName])
-                                self.assertEqual(got, want,
-                                                 'pickled "%r", attribute "%s' %
-                                                 (e, checkArgName))
+                # test for pickling support
+                for p in [pickle]:
+                    for protocol in range(p.HIGHEST_PROTOCOL + 1):
+                        s = p.dumps(e, protocol)
+                        new = p.loads(s)
+                        for checkArgName in expected:
+                            got = repr(getattr(new, checkArgName))
+                            if exc == AttributeError and checkArgName == 'obj':
+                                # See GH-103352, we're not pickling
+                                # obj at this point. So verify it's None.
+                                want = repr(None)
+                            else:
+                                want = repr(expected[checkArgName])
+                            self.assertEqual(got, want,
+                                             'pickled "%r", attribute "%s' %
+                                             (e, checkArgName))
 
     def test_setstate(self):
         e = Exception(42)
