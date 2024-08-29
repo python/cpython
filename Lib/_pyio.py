@@ -1655,6 +1655,10 @@ class FileIO(RawIOBase):
         if self._stat_atopen is None or self._stat_atopen.st_size <= 0:
             bufsize = DEFAULT_BUFFER_SIZE
         else:
+            # In order to detect end of file, need a read() of at least 1
+            # byte which returns size 0. Oversize the buffer by 1 byte so the
+            # I/O can be completed with two read() calls (one for all data, one
+            # for EOF) without needing to resize the buffer.
             bufsize = self._stat_atopen.st_size + 1
 
             if self._stat_atopen.st_size > 65536:

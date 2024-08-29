@@ -74,6 +74,11 @@ typedef struct {
     signed int seekable : 2; /* -1 means unknown */
     unsigned int closefd : 1;
     char finalizing;
+    /* Stat result which was grabbed at file open, useful for optimizing common
+    File I/O patterns to be more efficient. This is only guidance / an estimate,
+    as it is subject to Time-Of-Check to Time-Of-Use (TOCTOU) issues / bugs.
+    Both the underlying file descriptor and file may be modified outside of the
+    fileio object / Python (ex. gh-90102, GH-121941, gh-109523). */
     struct _Py_stat_struct *stat_atopen;
     PyObject *weakreflist;
     PyObject *dict;
