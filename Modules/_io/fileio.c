@@ -747,14 +747,16 @@ _io_FileIO_readall_impl(fileio *self)
         bufsize = SMALLCHUNK;
     }
     else {
-        /* This is probably a real file, so we try to allocate a
-           buffer one byte larger than the rest of the file.  If the
-           calculation is right then we should get EOF without having
-           to enlarge the buffer. */
+        /* This is probably a real file. */
         if (end > _PY_READ_MAX - 1) {
             bufsize = _PY_READ_MAX;
         }
         else {
+            /* In order to detect end of file, need a read() of at
+               least 1 byte which returns size 0. Oversize the buffer
+               by 1 byte so the I/O can be completed with two read()
+               calls (one for all data, one for EOF) without needing
+               to resize the buffer. */
             bufsize = (size_t)end + 1;
         }
 
