@@ -3173,15 +3173,11 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
                            sizeof(flag), NULL, 0, &dummy, NULL, NULL);
             if (res >= 0)
                 s->quickack = flag;
+            goto done;
         }
-        else {
-            res = setsockopt(s->sock_fd, level, optname,
-                (char*)&flag, sizeof flag);
-        }
-#else
+#endif
         res = setsockopt(s->sock_fd, level, optname,
             (char*)&flag, sizeof flag);
-#endif
         goto done;
     }
 
@@ -3269,14 +3265,6 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
 #ifdef MS_WINDOWS
         if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
             return PyLong_FromLong(s->quickack);
-        }
-        else {
-            flagsize = sizeof flag;
-            res = getsockopt(s->sock_fd, level, optname,
-                             (void *)&flag, &flagsize);
-            if (res < 0)
-                return s->errorhandler();
-            return PyLong_FromLong(flag);
         }
 #endif
         flagsize = sizeof flag;
