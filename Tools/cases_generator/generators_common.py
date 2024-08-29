@@ -139,7 +139,7 @@ class Emitter:
         self.out.emit_at("DEOPT_IF", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
-        assert(lparen.kind == "LPAREN")
+        assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
@@ -163,7 +163,7 @@ class Emitter:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
-        assert(lparen.kind == "LPAREN")
+        assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "COMMA")
         label = next(tkn_iter).text

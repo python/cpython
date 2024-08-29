@@ -79,7 +79,7 @@ class Tier2Emitter(Emitter):
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
-        assert(lparen.kind == "LPAREN")
+        assert lparen.kind == "LPAREN"
         first_tkn = next(tkn_iter)
         self.out.emit(first_tkn)
         emit_to(self.out, tkn_iter, "COMMA")
@@ -115,7 +115,7 @@ class Tier2Emitter(Emitter):
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
-        assert(lparen.kind == "LPAREN")
+        assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
