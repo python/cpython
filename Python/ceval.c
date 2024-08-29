@@ -391,6 +391,13 @@ const _Py_SpecialMethod _Py_SpecialMethods[] = {
     }
 };
 
+const size_t _Py_FunctionAttributeOffsets[] = {
+    [MAKE_FUNCTION_CLOSURE] = offsetof(PyFunctionObject, func_closure),
+    [MAKE_FUNCTION_ANNOTATIONS] = offsetof(PyFunctionObject, func_annotations),
+    [MAKE_FUNCTION_KWDEFAULTS] = offsetof(PyFunctionObject, func_kwdefaults),
+    [MAKE_FUNCTION_DEFAULTS] = offsetof(PyFunctionObject, func_defaults),
+    [MAKE_FUNCTION_ANNOTATE] = offsetof(PyFunctionObject, func_annotate),
+};
 
 // PEP 634: Structural Pattern Matching
 

@@ -4981,34 +4981,11 @@
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             PyObject *attr = PyStackRef_AsPyObjectBorrow(attr_st);
             assert(PyFunction_Check(func));
-            PyFunctionObject *func_obj = (PyFunctionObject *)func;
-            switch(oparg) {
-                case MAKE_FUNCTION_CLOSURE:
-                assert(func_obj->func_closure == NULL);
-                func_obj->func_closure = attr;
-                break;
-                case MAKE_FUNCTION_ANNOTATIONS:
-                assert(func_obj->func_annotations == NULL);
-                func_obj->func_annotations = attr;
-                break;
-                case MAKE_FUNCTION_KWDEFAULTS:
-                assert(PyDict_CheckExact(attr));
-                assert(func_obj->func_kwdefaults == NULL);
-                func_obj->func_kwdefaults = attr;
-                break;
-                case MAKE_FUNCTION_DEFAULTS:
-                assert(PyTuple_CheckExact(attr));
-                assert(func_obj->func_defaults == NULL);
-                func_obj->func_defaults = attr;
-                break;
-                case MAKE_FUNCTION_ANNOTATE:
-                assert(PyCallable_Check(attr));
-                assert(func_obj->func_annotate == NULL);
-                func_obj->func_annotate = attr;
-                break;
-                default:
-                Py_UNREACHABLE();
-            }
+            size_t offset = _Py_FunctionAttributeOffsets[oparg];
+            assert(offset != 0);
+            PyObject **ptr = (PyObject **)(((char *)func) + offset);
+            assert(*ptr == NULL);
+            *ptr = attr;
             stack_pointer[-2] = func_st;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());

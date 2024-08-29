@@ -251,6 +251,7 @@ typedef struct _special_method {
 } _Py_SpecialMethod;
 
 PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
+PyAPI_DATA(const size_t) _Py_FunctionAttributeOffsets[];
 
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);

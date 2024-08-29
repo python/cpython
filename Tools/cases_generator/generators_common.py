@@ -329,6 +329,10 @@ class Emitter:
                     self.emit(storage.as_comment())
                     self.out.start_line()
                     line = tkn.line
+                #if tkn in escaping_calls:
+                #    self.out.emit(f"/* ESCAPING CALL {escaping_calls[tkn].text} starting at {tkn.text} */\n")
+                #    storage.flush(self.out)
+                #    self._print_storage(storage)
                 if tkn.kind == "LBRACE":
                     self.out.emit(tkn)
                     braces += 1
@@ -356,11 +360,6 @@ class Emitter:
                             self._print_storage(storage)
                             reachable = False
                         self.out.emit(tkn)
-                #elif tkn in escaping_calls:
-                    #self.out.emit(f"/* ESCAPING CALL {escaping_calls[tkn].text} */\n")
-                    #storage.flush(self.out)
-                    #self._print_storage(storage)
-                    #self.out.emit(tkn)
                 elif tkn.kind == "IF":
                     self.out.emit(tkn)
                     if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, storage, inst)

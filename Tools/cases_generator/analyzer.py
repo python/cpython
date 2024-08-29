@@ -557,17 +557,21 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyTuple_FromStackRefSteal",
     "PyFunction_GET_CODE",
     "_PyErr_Occurred",
+    "PyCFunction_GET_FUNCTION",
 )
-
 
 def find_start_stmt(node: parser.InstDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         tkn = node.block.tokens[idx-1]
         if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
-            return node.block.tokens[idx]
+            break
         idx -= 1
         assert idx > 0
+    while node.block.tokens[idx].kind == "COMMENT":
+        idx += 1
+    return node.block.tokens[idx]
+
 
 def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, lexer.Token]:
     result: dict[lexer.Token, lexer.Token] = {}
