@@ -2978,36 +2978,35 @@ static PyMemberDef UnicodeError_members[] = {
 static int
 UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyUnicodeErrorObject *err;
-
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
         return -1;
+    }
 
-    err = (PyUnicodeErrorObject *)self;
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
+    Py_CLEAR(exc->encoding);
+    Py_CLEAR(exc->object);
+    Py_CLEAR(exc->reason);
 
-    Py_CLEAR(err->encoding);
-    Py_CLEAR(err->object);
-    Py_CLEAR(err->reason);
+    PyObject *encoding = NULL, *object = NULL, *reason = NULL;  // borrowed
+    Py_ssize_t start = -1, end = -1;
 
     if (!PyArg_ParseTuple(args, "UUnnU",
-                          &err->encoding, &err->object,
-                          &err->start, &err->end, &err->reason)) {
-        goto error;
+                          &encoding, &object, &start, &end, &reason))
+    {
+        return -1;
     }
 
-    if (err->start < 0) {
+    if (start < 0) {
         PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
-        goto error;
+        return -1;
     }
 
-    Py_INCREF(err->encoding);
-    Py_INCREF(err->object);
-    Py_INCREF(err->reason);
-
+    exc->encoding = Py_NewRef(encoding);
+    exc->object = Py_NewRef(object);
+    exc->start = start;
+    exc->end = end;
+    exc->reason = Py_NewRef(reason);
     return 0;
-error:
-    err->encoding = err->object = err->reason = NULL;
-    return -1;
 }
 
 static PyObject *
@@ -3083,49 +3082,48 @@ PyObject *PyExc_UnicodeEncodeError = (PyObject *)&_PyExc_UnicodeEncodeError;
 static int
 UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyUnicodeErrorObject *ude;
-
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
         return -1;
+    }
 
-    ude = (PyUnicodeErrorObject *)self;
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
 
-    Py_CLEAR(ude->encoding);
-    Py_CLEAR(ude->object);
-    Py_CLEAR(ude->reason);
+    Py_CLEAR(exc->encoding);
+    Py_CLEAR(exc->object);
+    Py_CLEAR(exc->reason);
+
+    PyObject *encoding = NULL, *object = NULL, *reason = NULL;  // borrowed
+    Py_ssize_t start = -1, end = -1;
 
     if (!PyArg_ParseTuple(args, "UOnnU",
-                          &ude->encoding, &ude->object,
-                          &ude->start, &ude->end, &ude->reason)) {
-             ude->encoding = ude->object = ude->reason = NULL;
-             return -1;
+                          &encoding, &object, &start, &end, &reason))
+    {
+        return -1;
     }
 
-    Py_INCREF(ude->encoding);
-    Py_INCREF(ude->object);
-    Py_INCREF(ude->reason);
-
-    if (ude->start < 0) {
+    if (start < 0) {
         PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
-        goto error;
+        return -1;
     }
 
-    if (!PyBytes_Check(ude->object)) {
+    if (!PyBytes_Check(object)) {
         Py_buffer view;
-        if (PyObject_GetBuffer(ude->object, &view, PyBUF_SIMPLE) != 0)
-            goto error;
-        Py_XSETREF(ude->object, PyBytes_FromStringAndSize(view.buf, view.len));
+        if (PyObject_GetBuffer(object, &view, PyBUF_SIMPLE) != 0) {
+            return -1;
+        }
+        Py_XSETREF(object, PyBytes_FromStringAndSize(view.buf, view.len));
         PyBuffer_Release(&view);
-        if (!ude->object)
-            goto error;
+        if (object == NULL) {
+            return -1;
+        }
     }
-    return 0;
 
-error:
-    Py_CLEAR(ude->encoding);
-    Py_CLEAR(ude->object);
-    Py_CLEAR(ude->reason);
-    return -1;
+    exc->encoding = Py_NewRef(encoding);
+    exc->object = Py_NewRef(object);
+    exc->start = start;
+    exc->end = end;
+    exc->reason = Py_NewRef(reason);
+    return 0;
 }
 
 static PyObject *
@@ -3202,33 +3200,34 @@ PyUnicodeDecodeError_Create(
  */
 
 static int
-UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
-                           PyObject *kwds)
+UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
         return -1;
-
-    Py_CLEAR(self->object);
-    Py_CLEAR(self->reason);
-
-    if (!PyArg_ParseTuple(args, "UnnU",
-                          &self->object,
-                          &self->start, &self->end, &self->reason)) {
-        goto error;
     }
 
-    if (self->start < 0) {
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
+
+    Py_CLEAR(exc->object);
+    Py_CLEAR(exc->reason);
+
+    PyObject *object = NULL, *reason = NULL;  // borrowed
+    Py_ssize_t start = -1, end = -1;
+
+    if (!PyArg_ParseTuple(args, "UnnU", &object, &start, &end, &reason)) {
+        return -1;
+    }
+
+    if (start < 0) {
         PyErr_SetString(PyExc_ValueError, "'start' must be >= 0");
-        goto error;
+        return -1;
     }
 
-    Py_INCREF(self->object);
-    Py_INCREF(self->reason);
-
+    exc->object = Py_NewRef(object);
+    exc->start = start;
+    exc->end = end;
+    exc->reason = Py_NewRef(reason);
     return 0;
-error:
-    self->object = self->reason = NULL;
-    return -1;
 }
 
 

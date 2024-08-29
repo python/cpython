@@ -5,6 +5,7 @@ import sys
 import unittest
 import textwrap
 
+from itertools import product
 from test import support
 from test.support import import_helper
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE
@@ -425,31 +426,31 @@ class PyUnicodeTranslateError(UnicodeTranslateError):
 
 class TestUnicodeError(unittest.TestCase):
 
-    def test_unicode_error_start_value(self):
+    def test_unicode_error_init_start_value(self):
         # negative start is not allowed
-        for exc_type, literal in [
+        for (exc_type, literal), obj_len, start in product([
             (UnicodeEncodeError, 'x'),
             (UnicodeDecodeError, b'x'),
             (PyUnicodeTranslateError, 'x'),
-        ]:
-            for obj_len in [0, 1, 2]:
-                s = literal * obj_len
-                with self.subTest(exc_type=exc_type, obj_len=obj_len):
-                    self.assertRaises(ValueError, exc_type, 'utf-8', s, -1, 0, '?')
+        ], range(3), [-2, -1]):
+            obj = literal * obj_len
+            for end in [0, start + 1]:
+                with self.subTest(start=start, end=end, exc_type=exc_type, obj_len=obj_len):
+                    self.assertRaises(ValueError, exc_type, 'utf-8', obj, start, end, 'reason')
 
     def test_unicode_encode_error_get_start(self):
-        test_func = _testcapi.unicode_encode_get_start
-        self._test_unicode_error_get_start('x', UnicodeEncodeError, test_func)
+        get_start = _testcapi.unicode_encode_get_start
+        self._test_unicode_error_get_start('x', UnicodeEncodeError, get_start)
 
     def test_unicode_decode_error_get_start(self):
-        test_func = _testcapi.unicode_decode_get_start
-        self._test_unicode_error_get_start(b'x', UnicodeDecodeError, test_func)
+        get_start = _testcapi.unicode_decode_get_start
+        self._test_unicode_error_get_start(b'x', UnicodeDecodeError, get_start)
 
     def test_unicode_translate_error_get_start(self):
-        test_func = _testcapi.unicode_translate_get_start
-        self._test_unicode_error_get_start('x', PyUnicodeTranslateError, test_func)
+        get_start = _testcapi.unicode_translate_get_start
+        self._test_unicode_error_get_start('x', PyUnicodeTranslateError, get_start)
 
-    def _test_unicode_error_get_start(self, literal, exc_type, test_func):
+    def _test_unicode_error_get_start(self, literal, exc_type, get_start):
         for obj_len, py_start, c_start in [
             # normal cases
             (5, 0, 0),
@@ -462,21 +463,12 @@ class TestUnicodeError(unittest.TestCase):
             (5, 5, 4),
             (5, 10, 4),
         ]:
-            c_start_computed = py_start
-            if c_start_computed >= obj_len:
-                if obj_len == 0:
-                    c_start_computed = 0
-                else:
-                    c_start_computed = obj_len - 1
-
             s = literal * obj_len
             py_end = py_start + 1
 
             with self.subTest(s, exc_type=exc_type, py_start=py_start, c_start=c_start):
-                self.assertEqual(c_start, c_start_computed)
-                exc = exc_type('utf-8', s, py_start, py_end, 'why')
-                c_start_actual = test_func(exc)
-                self.assertEqual(c_start_actual, c_start)
+                exc = exc_type('utf-8', s, py_start, py_end, 'reason')
+                self.assertEqual(get_start(exc), c_start)
 
 class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCase):
 
