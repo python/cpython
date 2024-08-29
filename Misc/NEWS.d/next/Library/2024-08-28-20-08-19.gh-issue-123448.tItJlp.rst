@@ -1,0 +1,2 @@
+Fixed memory leak of :class:`typing.NoDefault` by moving it to the static types
+array.
