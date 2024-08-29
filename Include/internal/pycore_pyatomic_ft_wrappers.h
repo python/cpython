@@ -133,29 +133,29 @@ extern "C" {
 #define FT_ATOMIC_STORE_UINT16_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT32_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_CHAR_RELAXED(value) value
-#define FT_ATOMIC_STORE_CHAR_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_CHAR_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_UCHAR_RELAXED(value) value
-#define FT_ATOMIC_STORE_UCHAR_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_UCHAR_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_SHORT_RELAXED(value) value
-#define FT_ATOMIC_STORE_SHORT_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_SHORT_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_USHORT_RELAXED(value) value
-#define FT_ATOMIC_STORE_USHORT_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_USHORT_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_INT_RELAXED(value) value
-#define FT_ATOMIC_STORE_INT_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_INT_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_UINT_RELAXED(value) value
-#define FT_ATOMIC_STORE_UINT_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_UINT_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_LONG_RELAXED(value) value
-#define FT_ATOMIC_STORE_LONG_RELEASE(value, new_value) value = new_value
-#define FT_ATOMIC_STORE_ULONG(value, new_value) value = new_value
-#define FT_ATOMIC_STORE_SSIZE_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_LONG_RELAXED(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_ULONG_RELAXED(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_SSIZE_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_FLOAT_RELAXED(value) value
-#define FT_ATOMIC_STORE_FLOAT_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_FLOAT_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_DOUBLE_RELAXED(value) value
-#define FT_ATOMIC_STORE_DOUBLE_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_DOUBLE_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_LLONG_RELAXED(value) value
-#define FT_ATOMIC_STORE_LLONG_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_LLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
-#define FT_ATOMIC_STORE_ULLONG_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
 
 #endif
 
