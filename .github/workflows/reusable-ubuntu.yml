@@ -67,7 +67,6 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: >-
         ../cpython-ro-srcdir/configure
-        CFLAGS="-fdiagnostics-format=json"
         --config-cache
         --with-pydebug
         --enable-slower-safety

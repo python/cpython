@@ -8,7 +8,7 @@ Include/internal/mimalloc/mimalloc/internal.h 4
  Include/internal/pycore_dict.h 2
  Include/internal/pycore_gc.h 1
  Include/internal/pycore_long.h 2
- Include/internal/pycore_object.h 3
+ Include/internal/pycore_object.h 4
  Modules/_asynciomodule.c 3
  Modules/_bisectmodule.c 2
  Modules/_bz2module.c 5
@@ -171,7 +171,7 @@ Include/internal/mimalloc/mimalloc/internal.h 4
  Objects/tupleobject.c 10
  Objects/typeobject.c 17
  Objects/unicodectype.c 7
- Objects/unicodeobject.c 114
+ Objects/unicodeobject.c 113
  Parser/action_helpers.c 4
  Parser/lexer/buffer.c 1
  Parser/lexer/lexer.c 12
@@ -201,8 +201,8 @@ Include/internal/mimalloc/mimalloc/internal.h 4
  Python/flowgraph.c 8
  Python/formatter_unicode.c 7
  Python/frame.c 4
- Python/gc.c 7
- Python/generated_cases.c.h 34
+ Python/gc.c 8
+ Python/generated_cases.c.h 35
  Python/getargs.c 11
  Python/import.c 5
  Python/initconfig.c 3
