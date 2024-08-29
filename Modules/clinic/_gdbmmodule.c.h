@@ -5,7 +5,7 @@ preserve
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "internal/pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
