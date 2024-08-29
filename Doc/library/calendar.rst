@@ -393,12 +393,12 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: day_name
 
-   An array that represents the days of the week in the current locale.
+   A sequence that represents the days of the week in the current locale.
 
 
 .. data:: day_abbr
 
-   An array that represents the abbreviated days of the week in the current locale.
+   A sequence that represents the abbreviated days of the week in the current locale.
 
 
 .. data:: MONDAY
@@ -426,14 +426,14 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: month_name
 
-   An array that represents the months of the year in the current locale.  This
+   A sequence that represents the months of the year in the current locale.  This
    follows normal convention of January being month number 1, so it has a length of
    13 and  ``month_name[0]`` is the empty string.
 
 
 .. data:: month_abbr
 
-   An array that represents the abbreviated months of the year in the current
+   A sequence that represents the abbreviated months of the year in the current
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
