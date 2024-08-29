@@ -1061,8 +1061,6 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer += 2;
             assert(WITHIN_STACK_BOUNDS());
             // SECOND
-            b = stack_pointer[-1];
-            a = stack_pointer[-2];
             {
                 use(a, b);
             }
