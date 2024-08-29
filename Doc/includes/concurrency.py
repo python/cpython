@@ -7,6 +7,7 @@ The examples take advantage of the literalinclude directive's
 import contextlib
 import os
 import tempfile
+import sys
 
 
 @contextlib.contextmanager
@@ -456,7 +457,51 @@ class Grep(WorkloadExamples):
     @example
     def run_sequentially():
         # [start-grep-sequential]
+        #
+        #
+        #
+
+        #
+        #
+
+        #
+        #
+        #
+
         def run_all(regex, opts, files, grep):
+            #
+
+            #def manage_tasks():
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+
+                #
+                #
+                #
+                #
+                #
+                #
+
             for infile in files:
                 yield from grep(regex, opts, infile)
         # [end-grep-sequential]
@@ -468,29 +513,54 @@ class Grep(WorkloadExamples):
         # [start-grep-threads]
         import queue
         import threading
+        #
 
         MAX_FILES = 10
-        MAX_QUEUE = 100
+        MAX_MATCHES = 100
+
+        #
+        #
+        #
 
         def run_all(regex, opts, files, grep):
-            FINISHED = object()
             matches_by_file = queue.Queue()
 
             def manage_tasks():
-                counter = queue.Queue(MAX_FILES)
+                #
+                counter = threading.Semaphore(MAX_FILES)
+                #
+                #
+                #
+
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
 
                 def task(infile, matches):
                     for match in grep(regex, opts, infile):
                         matches.put(match)
-                    matches.put(FINISHED)
+                    matches.put(None)
                     # Let a new thread start.
-                    counter.get()
+                    counter.release()
 
                 for infile in files:
                     _, filename = infile
 
                     # Prepare for the file.
-                    matches = queue.Queue(MAX_QUEUE)
+                    matches = queue.Queue(MAX_MATCHES)
                     matches_by_file.put((filename, matches))
 
                     # Start a thread to process the file.
@@ -498,18 +568,24 @@ class Grep(WorkloadExamples):
                         target=task,
                         args=(infile, matches),
                     )
-                    counter.put(t, block=True)
+                    counter.acquire(blocking=True)
+                    #
                     t.start()
-                matches_by_file.put(FINISHED)
+                matches_by_file.put(None)
+                #
+                #
+                #
+                #
+                #
             t = threading.Thread(target=manage_tasks)
             t.start()
 
             # Yield the results as they are received, in order.
             next_matches = matches_by_file.get(block=True)
-            while next_matches is not FINISHED:
+            while next_matches is not None:
                 filename, matches = next_matches
                 match = matches.get(block=True)
-                while match is not FINISHED:
+                while match is not None:
                     yield match
                     match = matches.get(block=True)
                 next_matches = matches_by_file.get(block=True)
@@ -520,93 +596,289 @@ class Grep(WorkloadExamples):
 
     @example
     def run_using_cf_threads():
-        # [startgrep-cf-threads]
+        # [start-grep-cf-threads]
         import concurrent.futures
         import queue
         import threading
 
         MAX_FILES = 10
-        MAX_QUEUE = 100
+        MAX_MATCHES = 100
+
+        # Alternately, swap in ProcessPoolExecutor
+        # or InterpreterPoolExecutor.
+        c_f_Executor = concurrent.futures.ThreadPoolExecutor
 
         def run_all(regex, opts, files, grep):
-            FINISHED = object()
             matches_by_file = queue.Queue()
 
             def manage_tasks():
-                threads = concurrent.futures.ThreadPoolExecutor(MAX_FILES)
+                threads = c_f_Executor(MAX_FILES)
+                #
+                #
+                #
+                #
+
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
 
                 def task(infile, matches):
                     for match in grep(regex, opts, infile):
                         matches.put(match)
-                    matches.put(FINISHED)
-                    # Let a new thread start.
-                    counter.get()
+                    matches.put(None)
+                    #
+                    #
 
                 for infile in files:
                     _, filename = infile
 
                     # Prepare for the file.
-                    matches = queue.Queue(MAX_QUEUE)
+                    matches = queue.Queue(MAX_MATCHES)
                     matches_by_file.put((filename, matches))
 
                     # Start a thread to process the file.
                     threads.submit(task, infile, matches)
-                matches_by_file.put(FINISHED)
+                    #
+                    #
+                    #
+                    #
+                    #
+                    #
+                matches_by_file.put(None)
+                #
+                #
+                #
+                #
+                #
             t = threading.Thread(target=manage_tasks)
             t.start()
 
             # Yield the results as they are received, in order.
             next_matches = matches_by_file.get(block=True)
-            while next_matches is not FINISHED:
+            while next_matches is not None:
                 filename, matches = next_matches
                 match = matches.get(block=True)
-                while match is not FINISHED:
+                while match is not None:
                     yield match
                     match = matches.get(block=True)
                 next_matches = matches_by_file.get(block=True)
 
             t.join()
-        # [end-grep--cf-threads]
+        # [end-grep-cf-threads]
         Grep.app(run_all)
+
+    @example
+    def run_using_subinterpreters():
+        # [start-grep-subinterpreters]
+        # subinterpreters 1
+        ...
+        # [end-grep-subinterpreters]
+
+    @example
+    def run_using_cf_subinterpreters():
+        # [start-grep-cf-subinterpreters]
+        # concurrent.futures 1
+        ...
+        # [end-grep-cf-subinterpreters]
+
+    @example
+    def run_using_async():
+        # [start-grep-async]
+        # async 1
+        ...
+        # [end-grep-async]
 
     @example
     def run_using_multiprocessing():
         # [start-grep-multiprocessing]
         import multiprocessing
+        import queue
+        import threading
 
-        def task():
-            ...
+        MAX_FILES = 10
+        MAX_MATCHES = 100
 
-        ...
+        #
+        #
+        #
+
+        def run_all(regex, opts, files, grep):
+            matches_by_file = queue.Queue()
+
+            def manage_tasks():
+                #
+                counter = threading.Semaphore(MAX_FILES)
+                finished = multiprocessing.Queue()
+                active = {}
+                done = False
+
+                def monitor_tasks():
+                    while not done:
+                        try:
+                            index = finished.get(timeout=0.1)
+                        except queue.Empty:
+                            continue
+                        proc = active.pop(index)
+                        proc.join(0.1)
+                        if proc.is_alive():
+                            # It's taking too long to terminate.
+                            # We can wait for it at the end.
+                            active[index] = proc
+                        # Let a new thread start.
+                        counter.release()
+                monitor = threading.Thread(target=monitor_tasks)
+                monitor.start()
+
+                def task(infile, index, matches, finished):
+                    for match in grep(regex, opts, infile):
+                        matches.put(match)
+                    matches.put(None)
+                    #
+                    finished.put(index)
+
+                for index, infile in enumerate(files):
+                    _, filename = infile
+
+                    # Prepare for the file.
+                    matches = multiprocessing.Queue(MAX_MATCHES)
+                    matches_by_file.put((filename, matches))
+
+                    # Start a subprocess to process the file.
+                    proc = multiprocessing.Process(
+                        target=task,
+                        args=(infile, index, matches, finished),
+                    )
+                    counter.acquire(blocking=True)
+                    active[index] = proc
+                    proc.start()
+                matches_by_file.put(None)
+                # Wait for all remaining tasks to finish.
+                done = True
+                monitor.join()
+                for proc in active.values():
+                    proc.join()
+            t = threading.Thread(target=manage_tasks)
+            t.start()
+
+            # Yield the results as they are received, in order.
+            next_matches = matches_by_file.get(block=True)
+            while next_matches is not None:
+                filename, matches = next_matches
+                match = matches.get(block=True)
+                while match is not None:
+                    yield match
+                    match = matches.get(block=True)
+                next_matches = matches_by_file.get(block=True)
+
+            t.join()
         # [end-grep-multiprocessing]
+        Grep.app(run_all)
 
     @example
-    def run_using_async():
-        # [start-grep-async]
-        # async 2
-        ...
-        # [end-grep-async]
+    def run_using_cf_multiprocessing():
+        # [start-grep-cf-multiprocessing]
+        import concurrent.futures
+        import queue, multiprocessing
+        import threading
+
+        MAX_FILES = 10
+        MAX_MATCHES = 100
+
+        # Alternately, swap in ThreadPoolExecutor
+        # or InterpreterPoolExecutor.
+        c_f_Executor = concurrent.futures.ThreadPoolExecutor
+
+        def run_all(regex, opts, files, grep):
+            matches_by_file = queue.Queue()
+
+            def manage_tasks():
+                threads = c_f_Executor(MAX_FILES)
+                #
+                #
+                #
+                #
+
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+                #
+
+                def task(infile, matches):
+                    for match in grep(regex, opts, infile):
+                        matches.put(match)
+                    matches.put(None)
+                    #
+                    #
+
+                for infile in files:
+                    _, filename = infile
+
+                    # Prepare for the file.
+                    matches = multiprocessing.Queue(MAX_MATCHES)
+                    matches_by_file.put((filename, matches))
+
+                    # Start a thread to process the file.
+                    threads.submit(task, infile, matches)
+                    #
+                    #
+                    #
+                    #
+                    #
+                    #
+                matches_by_file.put(None)
+                #
+                #
+                #
+                #
+                #
+            t = threading.Thread(target=manage_tasks)
+            t.start()
+
+            # Yield the results as they are received, in order.
+            next_matches = matches_by_file.get(block=True)
+            while next_matches is not None:
+                filename, matches = next_matches
+                match = matches.get(block=True)
+                while match is not None:
+                    yield match
+                    match = matches.get(block=True)
+                next_matches = matches_by_file.get(block=True)
+
+            t.join()
+        # [end-grep-cf-multiprocessing]
+        Grep.app(run_all)
 
     @example
-    def run_using_subinterpreters():
-        # [start-grep-subinterpreters]
-        # subinterpreters 2
+    def run_using_dask():
+        # [start-grep-dask]
+        # dask 1
         ...
-        # [end-grep-subinterpreters]
-
-    @example
-    def run_using_smp():
-        # [start-grep-smp]
-        # smp 2
-        ...
-        # [end-grep-smp]
-
-    @example
-    def run_using_concurrent_futures_thread():
-        # [start-grep-concurrent-futures-thread]
-        # concurrent.futures 2
-        ...
-        # [end-grep-concurrent-futures-thread]
+        # [end-grep-dask]
 
 
 #######################################
@@ -614,6 +886,13 @@ class Grep(WorkloadExamples):
 #######################################
 
 class ImageResizer(WorkloadExamples):
+
+    @example
+    def run_sequentially():
+        # [start-image-resizer-sequential]
+        # sequential 2
+        ...
+        # [end-image-resizer-sequential]
 
     @example
     def run_using_threads():
@@ -632,9 +911,30 @@ class ImageResizer(WorkloadExamples):
     @example
     def run_using_cf_thread():
         # [start-image-resizer-cf-thread]
-        # concurrent.futures 1
+        # concurrent.futures 2
         ...
         # [end-image-resizer-cf-thread]
+
+    @example
+    def run_using_subinterpreters():
+        # [start-image-resizer-subinterpreters]
+        # subinterpreters 2
+        ...
+        # [end-image-resizer-subinterpreters]
+
+    @example
+    def run_using_cf_subinterpreters():
+        # [start-image-resizer-cf-subinterpreters]
+        # concurrent.futures 2
+        ...
+        # [end-image-resizer-cf-subinterpreters]
+
+    @example
+    def run_using_async():
+        # [start-image-resizer-async]
+        # async 2
+        ...
+        # [end-image-resizer-async]
 
     @example
     def run_using_multiprocessing():
@@ -648,25 +948,18 @@ class ImageResizer(WorkloadExamples):
         # [end-image-resizer-multiprocessing]
 
     @example
-    def run_using_async():
-        # [start-image-resizer-async]
-        # async 1
+    def run_using_cf_multiprocessing():
+        # [start-image-resizer-cf-multiprocessing]
+        # concurrent.futures 2
         ...
-        # [end-image-resizer-async]
+        # [end-image-resizer-cf-multiprocessing]
 
     @example
-    def run_using_subinterpreters():
-        # [start-image-resizer-subinterpreters]
-        # subinterpreters 1
+    def run_using_dask():
+        # [start-image-resizer-dask]
+        # dask 2
         ...
-        # [end-image-resizer-subinterpreters]
-
-    @example
-    def run_using_smp():
-        # [start-image-resizer-smp]
-        # smp 1
-        ...
-        # [end-image-resizer-smp]
+        # [end-image-resizer-dask]
 
 
 #######################################
@@ -674,6 +967,13 @@ class ImageResizer(WorkloadExamples):
 #######################################
 
 class WorkloadX(WorkloadExamples):
+
+    @example
+    def run_sequentially():
+        # [start-w3-sequential]
+        # sequential 3
+        ...
+        # [end-w3-sequential]
 
     @example
     def run_using_threads():
@@ -690,6 +990,34 @@ class WorkloadX(WorkloadExamples):
         # [end-w3-threads]
 
     @example
+    def run_using_cf_thread():
+        # [start-w3-cf-thread]
+        # concurrent.futures 3
+        ...
+        # [end-w3-cf-thread]
+
+    @example
+    def run_using_subinterpreters():
+        # [start-w3-subinterpreters]
+        # subinterpreters 3
+        ...
+        # [end-w3-subinterpreters]
+
+    @example
+    def run_using_cf_subinterpreters():
+        # [start-w3-cf-subinterpreters]
+        # concurrent.futures 3
+        ...
+        # [end-w3-cf-subinterpreters]
+
+    @example
+    def run_using_async():
+        # [start-w3-async]
+        # async 3
+        ...
+        # [end-w3-async]
+
+    @example
     def run_using_multiprocessing():
         # [start-w3-multiprocessing]
         import multiprocessing
@@ -701,32 +1029,18 @@ class WorkloadX(WorkloadExamples):
         # [end-w3-multiprocessing]
 
     @example
-    def run_using_async():
-        # [start-w3-async]
-        # async 3
-        ...
-        # [end-w3-async]
-
-    @example
-    def run_using_subinterpreters():
-        # [start-w3-subinterpreters]
-        # subinterpreters 3
-        ...
-        # [end-w3-subinterpreters]
-
-    @example
-    def run_using_smp():
-        # [start-w3-smp]
-        # smp 3
-        ...
-        # [end-w3-smp]
-
-    @example
-    def run_using_concurrent_futures_thread():
-        # [start-w3-concurrent-futures-thread]
+    def run_using_cf_multiprocessing():
+        # [start-w3-cf-multiprocessing]
         # concurrent.futures 3
         ...
-        # [end-w3-concurrent-futures-thread]
+        # [end-w3-cf-multiprocessing]
+
+    @example
+    def run_using_dask():
+        # [start-w3-dask]
+        # dask 3
+        ...
+        # [end-w3-dask]
 
 
 #######################################
@@ -734,11 +1048,29 @@ class WorkloadX(WorkloadExamples):
 #######################################
 
 if __name__ == '__main__':
-    # Run all the examples.
+    # Run (all) the examples.
+    argv = sys.argv[1:]
+    if argv:
+        classname, _, funcname = argv[0].rpartition('.')
+        requested = (classname, funcname)
+    else:
+        requested = None
+
     div1 = '#' * 40
     div2 = '#' + '-' * 39
     last = None
     for func, cls in example.registry:
+        if requested:
+            classname, funcname = requested
+            if classname:
+                if cls.__name__ != classname:
+                    continue
+                if func.__name__ != funcname:
+                    continue
+            else:
+                if func.__name__ != funcname:
+                    if cls.__name__ != funcname:
+                        continue
         print()
         if cls is not last:
             last = cls

@@ -1077,17 +1077,53 @@ This a basic Python implementation of the linux ``grep`` tool.
 From a concurrency standpoint, each file is processed in its own
 logical thread.
 
+Here's the non-concurrent app code that all the implementations share:
+
+.. raw:: html
+
+   <details>
+   <summary>(expand)</summary>
+
+.. literalinclude:: ../includes/concurrency.py
+   :start-after: [start-grep-common]
+   :end-before: [end-grep-common]
+   :dedent:
+   :linenos:
+
+.. raw:: html
+
+   </details>
+
+Here's the implementations for the different concurrency models,
+side-by-side for easy comparison:
+
 .. list-table::
    :header-rows: 1
    :class: borderless vert-aligned
    :align: left
 
-   * - threads
+   * - sequential
+     - threads
      - multiple interpreters
      - coroutines
      - multiple processes
      - SMP
    * - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-grep-sequential]
+          :end-before: [end-grep-sequential]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
 
           <details>
           <summary>(expand)</summary>
@@ -1153,8 +1189,8 @@ logical thread.
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-grep-smp]
-          :end-before: [end-grep-smp]
+          :start-after: [start-grep-dask]
+          :end-before: [end-grep-dask]
           :dedent:
           :linenos:
 
@@ -1162,7 +1198,9 @@ logical thread.
 
           </details>
 
-Common code:
+For threads, multiprocessing, and
+`multiple interpreters * <python-stdlib-interpreters_>`_,
+you can also use :mod:`concurrent.futures`:
 
 .. raw:: html
 
@@ -1170,8 +1208,8 @@ Common code:
    <summary>(expand)</summary>
 
 .. literalinclude:: ../includes/concurrency.py
-   :start-after: [start-grep-common]
-   :end-before: [end-grep-common]
+   :start-after: [start-grep-cf-threads]
+   :end-before: [end-grep-cf-threads]
    :dedent:
    :linenos:
 
@@ -1179,23 +1217,46 @@ Common code:
 
    </details>
 
+.. raw:: html
+
+   <br/>
+
 Workload: Image Resizer
 -----------------------
 
 This example runs a web service that takes an image and a new size
 and responds with the image at the new size.
 
+Here's the implementations for the different concurrency models,
+side-by-side for easy comparison:
+
 .. list-table::
    :header-rows: 1
    :class: borderless vert-aligned
    :align: left
 
-   * - threads
+   * - sequential
+     - threads
      - multiple interpreters
      - coroutines
      - multiple processes
      - SMP
    * - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-image-resizer-sequential]
+          :end-before: [end-image-resizer-sequential]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
 
           <details>
           <summary>(expand)</summary>
@@ -1261,8 +1322,8 @@ and responds with the image at the new size.
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-image-resizer-smp]
-          :end-before: [end-image-resizer-smp]
+          :start-after: [start-image-resizer-dask]
+          :end-before: [end-image-resizer-dask]
           :dedent:
           :linenos:
 
@@ -1270,22 +1331,45 @@ and responds with the image at the new size.
 
           </details>
 
+.. raw:: html
+
+   <br/>
+
 Workload: ...
 -------------
 
 # ...
+
+Here's the implementations for the different concurrency models,
+side-by-side for easy comparison:
 
 .. list-table::
    :header-rows: 1
    :class: borderless vert-aligned
    :align: left
 
-   * - threads
+   * - sequential
+     - threads
      - multiple interpreters
      - coroutines
      - multiple processes
      - SMP
    * - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w3-sequential]
+          :end-before: [end-w3-sequential]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
 
           <details>
           <summary>(expand)</summary>
@@ -1351,8 +1435,8 @@ Workload: ...
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-w3-smp]
-          :end-before: [end-w3-smp]
+          :start-after: [start-w3-dask]
+          :end-before: [end-w3-dask]
           :dedent:
           :linenos:
 
