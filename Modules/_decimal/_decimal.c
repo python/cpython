@@ -134,22 +134,21 @@ get_module_state_by_def(PyTypeObject *tp)
 static inline PyObject *
 _left_or_right(PyObject *left, PyObject *right, void *token)
 {
-    // Prefer the `right` argument to be a static type
-    if (PyType_GetBaseByToken(Py_TYPE(right), token, NULL) == 1) {
-        return right;
+    if (PyType_GetBaseByToken(Py_TYPE(left), token, NULL) == 1) {
+        return left;
     }
     assert(!PyErr_Occurred());
-    return left;
+    assert(PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, NULL) == 1);
+    return right;
 }
 
 static PyType_Spec dec_spec;
-static inline decimal_state *get_module_state_from_dec(PyObject *);
 
 static inline decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
     PyObject *dec = _left_or_right(left, right, &dec_spec);
-    return get_module_state_from_dec(dec);
+    return get_module_state_by_def(Py_TYPE(dec));
 }
 
 
@@ -187,7 +186,6 @@ typedef struct {
     Py_hash_t hash;
     mpd_t dec;
     mpd_uint_t data[_Py_DEC_MINALLOC];
-    decimal_state *modstate;
 } PyDecObject;
 
 typedef struct {
@@ -221,14 +219,6 @@ typedef struct {
 #define SdFlags(v) (*((PyDecSignalDictObject *)v)->flags)
 #define CTX(v) (&((PyDecContextObject *)v)->ctx)
 #define CtxCaps(v) (((PyDecContextObject *)v)->capitals)
-
-static inline decimal_state *
-get_module_state_from_dec(PyObject *v) {
-    assert(PyType_GetBaseByToken(Py_TYPE(v), &dec_spec, NULL) == 1);
-    void *state = ((PyDecObject *)v)->modstate;
-    assert(state != NULL);
-    return (decimal_state *)state;
-}
 
 
 Py_LOCAL_INLINE(PyObject *)
@@ -2056,7 +2046,6 @@ PyDecType_New(PyTypeObject *type)
     }
 
     dec->hash = -1;
-    dec->modstate = state;
 
     MPD(dec)->flags = MPD_STATIC|MPD_STATIC_DATA;
     MPD(dec)->exp = 0;
@@ -4679,8 +4668,11 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     uint32_t status = 0;
     int a_issnan, b_issnan;
     int r;
-    decimal_state *state = get_module_state_from_dec(v);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
 
+#ifdef Py_DEBUG
+    assert(PyDec_Check(state, v));
+#endif
     CURRENT_CONTEXT(state, context);
     CONVERT_BINOP_CMP(&a, &b, v, w, op, context);
 
