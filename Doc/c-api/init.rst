@@ -426,7 +426,7 @@ Initializing and finalizing the interpreter
    loaded extension modules loaded by Python are not unloaded.  Small amounts of
    memory allocated by the Python interpreter may not be freed (if you find a leak,
    please report it).  Memory tied up in circular references between objects is not
-   freed.  Interned strings will all be deallocated regarldess of their reference count.
+   freed.  Interned strings will all be deallocated regardless of their reference count.
    Some memory allocated by extension modules may not be freed.  Some extensions may not
    work properly if their initialization routine is called more than once; this can
    happen if an application calls :c:func:`Py_Initialize` and :c:func:`Py_FinalizeEx`

@@ -1,0 +1,2 @@
+Show string value of :opcode:`CONTAINS_OP` oparg in :mod:`dis` output.
+Patch by Alexandr153.
