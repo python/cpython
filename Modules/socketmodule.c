@@ -3177,7 +3177,7 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
         }
 #endif
         res = setsockopt(s->sock_fd, level, optname,
-            (char*)&flag, sizeof flag);
+                         (char*)&flag, sizeof flag);
         goto done;
     }
 
