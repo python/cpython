@@ -374,7 +374,7 @@ class TestCase(object):
     If the fixture will be used for several distinct test cases, create as
     many test methods as needed in the TestCase subclass, then specify a
     method to execute by providing the method name in the 'methodName'
-    kwarg of the instance constructor.
+    parameter of the instance constructor.
 
     If it is necessary to override the __init__ method, the base class
     __init__ method must always be called. It is important that subclasses
