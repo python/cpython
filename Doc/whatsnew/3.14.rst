@@ -381,6 +381,12 @@ asyncio
 Deprecated
 ==========
 
+* :mod:`asyncio`:
+  :func:`!asyncio.iscoroutinefunction` is deprecated
+  and will be removed in Python 3.16,
+  use :func:`inspect.iscoroutinefunction` instead.
+  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
 * :mod:`builtins`:
   Passing a complex number as the *real* or *imag* argument in the
   :func:`complex` constructor is now deprecated; it should only be passed
@@ -693,12 +699,7 @@ Deprecated
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
-* :func:`!asyncio.iscoroutinefunction` is deprecated
-  and will be removed in Python 3.16,
-  use :func:`inspect.iscoroutinefunction` instead.
-  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
-
-.. Add deprecations above alphabetically, not here at the end.
+.. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
