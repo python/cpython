@@ -416,7 +416,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         # CRASHES formatunraisable(NULL, NULL)
 
 
-class PyUnicodeTranslateError(UnicodeTranslateError):
+class TestUnicodeTranslateError(UnicodeTranslateError):
     # UnicodeTranslateError takes 4 arguments instead of 5,
     # so we just make a UnicodeTranslateError class that is
     # compatible with the UnicodeError.__init__.
@@ -431,7 +431,7 @@ class TestUnicodeError(unittest.TestCase):
         for (exc_type, literal), obj_len, start in product([
             (UnicodeEncodeError, 'x'),
             (UnicodeDecodeError, b'x'),
-            (PyUnicodeTranslateError, 'x'),
+            (TestUnicodeTranslateError, 'x'),
         ], range(3), [-2, -1]):
             obj = literal * obj_len
             for end in [0, start + 1]:
@@ -448,7 +448,7 @@ class TestUnicodeError(unittest.TestCase):
 
     def test_unicode_translate_error_get_start(self):
         get_start = _testcapi.unicode_translate_get_start
-        self._test_unicode_error_get_start('x', PyUnicodeTranslateError, get_start)
+        self._test_unicode_error_get_start('x', TestUnicodeTranslateError, get_start)
 
     def _test_unicode_error_get_start(self, literal, exc_type, get_start):
         for obj_len, py_start, c_start in [

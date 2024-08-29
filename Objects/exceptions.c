@@ -2982,11 +2982,6 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
-    Py_CLEAR(exc->encoding);
-    Py_CLEAR(exc->object);
-    Py_CLEAR(exc->reason);
-
     PyObject *encoding = NULL, *object = NULL, *reason = NULL;  // borrowed
     Py_ssize_t start = -1, end = -1;
 
@@ -3001,11 +2996,12 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    exc->encoding = Py_NewRef(encoding);
-    exc->object = Py_NewRef(object);
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
+    Py_XSETREF(exc->encoding, Py_NewRef(encoding));
+    Py_XSETREF(exc->object, Py_NewRef(object));
     exc->start = start;
     exc->end = end;
-    exc->reason = Py_NewRef(reason);
+    Py_XSETREF(exc->reason, Py_NewRef(reason));
     return 0;
 }
 
@@ -3086,12 +3082,6 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
-
-    Py_CLEAR(exc->encoding);
-    Py_CLEAR(exc->object);
-    Py_CLEAR(exc->reason);
-
     PyObject *encoding = NULL, *object = NULL, *reason = NULL;  // borrowed
     Py_ssize_t start = -1, end = -1;
 
@@ -3106,25 +3096,28 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if (!PyBytes_Check(object)) {
+    if (PyBytes_Check(object)) {
+        Py_INCREF(object);  // make 'object' a strong reference
+    }
+    else {
         Py_buffer view;
         if (PyObject_GetBuffer(object, &view, PyBUF_SIMPLE) != 0) {
             return -1;
         }
-        PyObject *content = PyBytes_FromStringAndSize(view.buf, view.len);
+        // 'object' is borrowed, so we can re-use the variable
+        object = PyBytes_FromStringAndSize(view.buf, view.len);
         PyBuffer_Release(&view);
-        if (content == NULL) {
+        if (object == NULL) {
             return -1;
         }
-        Py_INCREF(object);          // make 'object' a strong reference
-        Py_SETREF(object, content);
     }
 
-    exc->encoding = Py_NewRef(encoding);
-    exc->object = Py_NewRef(object);
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
+    Py_XSETREF(exc->encoding, Py_NewRef(encoding));
+    Py_XSETREF(exc->object, object /* object is already a strong reference */);
     exc->start = start;
     exc->end = end;
-    exc->reason = Py_NewRef(reason);
+    Py_XSETREF(exc->reason, Py_NewRef(reason));
     return 0;
 }
 
@@ -3208,11 +3201,6 @@ UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
-
-    Py_CLEAR(exc->object);
-    Py_CLEAR(exc->reason);
-
     PyObject *object = NULL, *reason = NULL;  // borrowed
     Py_ssize_t start = -1, end = -1;
 
@@ -3225,10 +3213,11 @@ UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    exc->object = Py_NewRef(object);
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
+    Py_XSETREF(exc->object, Py_NewRef(object));
     exc->start = start;
     exc->end = end;
-    exc->reason = Py_NewRef(reason);
+    Py_XSETREF(exc->reason, Py_NewRef(reason));
     return 0;
 }
 
