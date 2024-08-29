@@ -521,6 +521,34 @@ static inline void
 _Py_atomic_store_char_relaxed(char *obj, char value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
+static inline void
+_Py_atomic_store_uchar_relaxed(unsigned char *obj, unsigned char value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_short_relaxed(short *obj, short value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_ushort_relaxed(unsigned short *obj, unsigned short value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_long_relaxed(long *obj, long value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_float_relaxed(float *obj, float value)
+{ __atomic_store(obj, &value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_double_relaxed(double *obj, double value)
+{ __atomic_store(obj, &value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_llong_relaxed(long long *obj, long long value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
@@ -542,43 +570,6 @@ _Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value)
 
 static inline void
 _Py_atomic_store_int_release(int *obj, int value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_uchar_release(unsigned char *obj, unsigned char value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_short_release(short *obj, short value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_ushort_release(unsigned short *obj, unsigned short value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_long_release(long *obj, long value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_float_release(float *obj, float value)
-{ __atomic_store(obj, &value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_double_release(double *obj, double value)
-{ __atomic_store(obj, &value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_llong_release(long long *obj, long long value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
-
-static inline void
-_Py_atomic_store_ullong_release(unsigned long long *obj,
-                                unsigned long long value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void

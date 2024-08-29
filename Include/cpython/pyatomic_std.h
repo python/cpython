@@ -924,6 +924,70 @@ _Py_atomic_store_char_relaxed(char *obj, char value)
                           memory_order_relaxed);
 }
 
+static inline void
+_Py_atomic_store_uchar_relaxed(unsigned char *obj, unsigned char value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(unsigned char)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_short_relaxed(short *obj, short value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(short)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_ushort_relaxed(unsigned short *obj, unsigned short value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(unsigned short)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(unsigned int)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_long_relaxed(long *obj, long value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(long)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_float_relaxed(float *obj, float value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(float)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_double_relaxed(double *obj, double value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(double)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_llong_relaxed(long long *obj, long long value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(long long)*)obj, value,
+                          memory_order_relaxed);
+}
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
@@ -964,79 +1028,6 @@ _Py_atomic_store_int_release(int *obj, int value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(int)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_uchar_release(unsigned char *obj, unsigned char value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(unsigned char)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_short_release(short *obj, short value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(short)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_ushort_release(unsigned short *obj, unsigned short value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(unsigned short)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(unsigned int)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_long_release(long *obj, long value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(long)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_float_release(float *obj, float value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(float)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_double_release(double *obj, double value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(double)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_llong_release(long long *obj, long long value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(long long)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_ullong_release(unsigned long long *obj,
-                                unsigned long long value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(unsigned long long)*)obj, value,
                           memory_order_release);
 }
 

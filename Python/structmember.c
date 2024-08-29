@@ -191,7 +191,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
-        FT_ATOMIC_STORE_UCHAR_RELEASE(*(unsigned char*)addr, (unsigned char)long_val);
+        FT_ATOMIC_STORE_UCHAR_RELAXED(*(unsigned char*)addr, (unsigned char)long_val);
         if ((long_val > UCHAR_MAX) || (long_val < 0))
             WARN("Truncation of value to unsigned char");
         break;
@@ -200,7 +200,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
-        FT_ATOMIC_STORE_SHORT_RELEASE(*(short*)addr, (short)long_val);
+        FT_ATOMIC_STORE_SHORT_RELAXED(*(short*)addr, (short)long_val);
         if ((long_val > SHRT_MAX) || (long_val < SHRT_MIN))
             WARN("Truncation of value to short");
         break;
@@ -209,7 +209,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
-        FT_ATOMIC_STORE_USHORT_RELEASE(*(unsigned short*)addr, (unsigned short)long_val);
+        FT_ATOMIC_STORE_USHORT_RELAXED(*(unsigned short*)addr, (unsigned short)long_val);
         if ((long_val > USHRT_MAX) || (long_val < 0))
             WARN("Truncation of value to unsigned short");
         break;
@@ -218,7 +218,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
-        FT_ATOMIC_STORE_INT_RELEASE(*(int *)addr, (int)long_val);
+        FT_ATOMIC_STORE_INT_RELAXED(*(int *)addr, (int)long_val);
         if ((long_val > INT_MAX) || (long_val < INT_MIN))
             WARN("Truncation of value to int");
         break;
@@ -236,7 +236,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (long_val == -1 && PyErr_Occurred()) {
                 return -1;
             }
-            FT_ATOMIC_STORE_UINT_RELEASE(*(unsigned int *)addr, (unsigned int)(unsigned long)long_val);
+            FT_ATOMIC_STORE_UINT_RELAXED(*(unsigned int *)addr, (unsigned int)(unsigned long)long_val);
             WARN("Writing negative value into unsigned field");
         }
         else {
@@ -245,7 +245,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
                 return -1;
             }
-            FT_ATOMIC_STORE_UINT_RELEASE(*(unsigned int *)addr, (unsigned int)ulong_val);
+            FT_ATOMIC_STORE_UINT_RELAXED(*(unsigned int *)addr, (unsigned int)ulong_val);
             if (ulong_val > UINT_MAX) {
                 WARN("Truncation of value to unsigned int");
             }
@@ -253,7 +253,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     }
     case Py_T_LONG:{
-        FT_ATOMIC_STORE_LONG_RELEASE(*(long*)addr, PyLong_AsLong(v));
+        FT_ATOMIC_STORE_LONG_RELAXED(*(long*)addr, PyLong_AsLong(v));
         if ((*(long*)addr == -1) && PyErr_Occurred())
             return -1;
         break;
@@ -271,7 +271,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (long_val == -1 && PyErr_Occurred()) {
                 return -1;
             }
-            FT_ATOMIC_STORE_ULONG(*(unsigned long *)addr, (unsigned long)long_val);
+            FT_ATOMIC_STORE_ULONG_RELAXED(*(unsigned long *)addr, (unsigned long)long_val);
             WARN("Writing negative value into unsigned field");
         }
         else {
@@ -280,12 +280,12 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
                 return -1;
             }
-            FT_ATOMIC_STORE_ULONG(*(unsigned long *)addr, ulong_val);
+            FT_ATOMIC_STORE_ULONG_RELAXED(*(unsigned long *)addr, ulong_val);
         }
         break;
     }
     case Py_T_PYSSIZET:{
-        FT_ATOMIC_STORE_SSIZE_RELEASE(*(Py_ssize_t*)addr, PyLong_AsSsize_t(v));
+        FT_ATOMIC_STORE_SSIZE_RELAXED(*(Py_ssize_t*)addr, PyLong_AsSsize_t(v));
         if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
             && PyErr_Occurred())
                         return -1;
@@ -295,11 +295,11 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         double double_val = PyFloat_AsDouble(v);
         if ((double_val == -1) && PyErr_Occurred())
             return -1;
-        FT_ATOMIC_STORE_FLOAT_RELEASE(*(float*)addr, (float)double_val);
+        FT_ATOMIC_STORE_FLOAT_RELAXED(*(float*)addr, (float)double_val);
         break;
         }
     case Py_T_DOUBLE:
-        FT_ATOMIC_STORE_DOUBLE_RELEASE(*(double*)addr, PyFloat_AsDouble(v));
+        FT_ATOMIC_STORE_DOUBLE_RELAXED(*(double*)addr, PyFloat_AsDouble(v));
         if ((*(double*)addr == -1) && PyErr_Occurred())
             return -1;
         break;
@@ -329,7 +329,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         return -1;
     case Py_T_LONGLONG:{
         long long value = PyLong_AsLongLong(v);
-        FT_ATOMIC_STORE_LLONG_RELEASE(*(long long*)addr, value);
+        FT_ATOMIC_STORE_LLONG_RELAXED(*(long long*)addr, value);
         if ((value == -1) && PyErr_Occurred())
             return -1;
         break;
@@ -345,7 +345,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (long_val == -1 && PyErr_Occurred()) {
                 return -1;
             }
-            FT_ATOMIC_STORE_ULLONG_RELEASE(*(unsigned long long *)addr, (unsigned long long)(long long)long_val);
+            FT_ATOMIC_STORE_ULLONG_RELAXED(*(unsigned long long *)addr, (unsigned long long)(long long)long_val);
             WARN("Writing negative value into unsigned field");
         }
         else {
@@ -354,7 +354,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             if (ulonglong_val == (unsigned long long)-1 && PyErr_Occurred()) {
                 return -1;
             }
-            FT_ATOMIC_STORE_ULLONG_RELEASE(*(unsigned long long *)addr, ulonglong_val);
+            FT_ATOMIC_STORE_ULLONG_RELAXED(*(unsigned long long *)addr, ulonglong_val);
         }
         break;
     }
