@@ -138,7 +138,7 @@ _left_or_right(PyObject *left, PyObject *right, void *token)
         return left;
     }
     assert(!PyErr_Occurred());
-    assert(PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, NULL) == 1);
+    assert(PyType_GetBaseByToken(Py_TYPE(right), token, NULL) == 1);
     return right;
 }
 
