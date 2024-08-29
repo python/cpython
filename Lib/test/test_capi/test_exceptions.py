@@ -463,11 +463,11 @@ class TestUnicodeError(unittest.TestCase):
             (5, 5, 4),
             (5, 10, 4),
         ]:
-            s = literal * obj_len
+            obj = literal * obj_len
             py_end = py_start + 1
 
-            with self.subTest(s, exc_type=exc_type, py_start=py_start, c_start=c_start):
-                exc = exc_type('utf-8', s, py_start, py_end, 'reason')
+            with self.subTest(obj, exc_type=exc_type, py_start=py_start, c_start=c_start):
+                exc = exc_type('utf-8', obj, py_start, py_end, 'reason')
                 self.assertEqual(get_start(exc), c_start)
 
 class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCase):
