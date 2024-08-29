@@ -6841,7 +6841,7 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
                        'TCP_KEEPIDLE',
                        'TCP_KEEPINTVL',
                        # available starting with Windows 7 / Server 2008 R2
-                       'TCP_QUICKACK'
+                       'TCP_QUICKACK',
                        }
 
     def test_new_tcp_flags(self):
