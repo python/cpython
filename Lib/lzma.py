@@ -25,7 +25,7 @@ import builtins
 import io
 import os
 from _lzma import *
-from _lzma import _encode_filter_properties, _decode_filter_properties
+from _lzma import _encode_filter_properties, _decode_filter_properties  # noqa: F401
 import _compression
 
 

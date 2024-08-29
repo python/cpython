@@ -7873,6 +7873,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 }
 #endif /* HAVE_FORK */
 
+#if defined(HAVE_FORK1) || defined(HAVE_FORKPTY) || defined(HAVE_FORK)
 // Common code to raise a warning if we detect there is more than one thread
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
@@ -7976,6 +7977,7 @@ warn_about_fork_with_threads(const char* name)
         PyErr_Clear();
     }
 }
+#endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
 /*[clinic input]
@@ -9023,7 +9025,7 @@ os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid)
 
     /*
      * NGROUPS_MAX is defined by POSIX.1 as the maximum
-     * number of supplimental groups a users can belong to.
+     * number of supplemental groups a users can belong to.
      * We have to increment it by one because
      * getgrouplist() returns both the supplemental groups
      * and the primary group, i.e. all of the groups the
@@ -10583,12 +10585,12 @@ Return a collection containing process timing information.
 
 The object returned behaves like a named tuple with these fields:
   (utime, stime, cutime, cstime, elapsed_time)
-All fields are floating point numbers.
+All fields are floating-point numbers.
 [clinic start generated code]*/
 
 static PyObject *
 os_times_impl(PyObject *module)
-/*[clinic end generated code: output=35f640503557d32a input=2bf9df3d6ab2e48b]*/
+/*[clinic end generated code: output=35f640503557d32a input=8dbfe33a2dcc3df3]*/
 {
 #ifdef MS_WINDOWS
     FILETIME create, exit, kernel, user;
@@ -12541,6 +12543,7 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 #endif /* defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV) */
 
 
+#ifdef HAVE_DEVICE_MACROS
 static PyObject *
 major_minor_conv(unsigned int value)
 {
@@ -12563,7 +12566,6 @@ major_minor_check(dev_t value)
     return (dev_t)(unsigned int)value == value;
 }
 
-#ifdef HAVE_DEVICE_MACROS
 /*[clinic input]
 os.major
 
@@ -16809,6 +16811,20 @@ os__is_inputhook_installed_impl(PyObject *module)
     return PyBool_FromLong(PyOS_InputHook != NULL);
 }
 
+/*[clinic input]
+os._create_environ
+
+Create the environment dictionary.
+[clinic start generated code]*/
+
+static PyObject *
+os__create_environ_impl(PyObject *module)
+/*[clinic end generated code: output=19d9039ab14f8ad4 input=a4c05686b34635e8]*/
+{
+    return convertenviron();
+}
+
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -17023,6 +17039,7 @@ static PyMethodDef posix_methods[] = {
     OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     OS__INPUTHOOK_METHODDEF
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
+    OS__CREATE_ENVIRON_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

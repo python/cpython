@@ -129,7 +129,8 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 class HTTPServer(socketserver.TCPServer):
 
-    allow_reuse_address = 1    # Seems to make sense in testing environment
+    allow_reuse_address = True    # Seems to make sense in testing environment
+    allow_reuse_port = True
 
     def server_bind(self):
         """Override server_bind to store the server name."""

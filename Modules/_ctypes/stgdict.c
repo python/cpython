@@ -485,10 +485,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             case FFI_TYPE_SINT16:
             case FFI_TYPE_SINT32:
                 if (info->getfunc != _ctypes_get_fielddesc("c")->getfunc
-                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc
-                    )
+                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc)
+                {
                     break;
-                /* else fall through */
+                }
+                _Py_FALLTHROUGH;  /* else fall through */
             default:
                 PyErr_Format(PyExc_TypeError,
                              "bit fields not allowed for type %s",
