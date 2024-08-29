@@ -1,2 +1,2 @@
-Correctly show error locations, when :exc:`SyntaxError` raised in basic
-repl. Patch by Sergey B Kirpichev.
+Correctly show error locations when a :exc:`SyntaxError` is raised
+in the basic REPL. Patch by Sergey B Kirpichev.
