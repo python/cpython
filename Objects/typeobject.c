@@ -8678,6 +8678,27 @@ check_num_args(PyObject *ob, int n)
     return 0;
 }
 
+static Py_ssize_t
+check_num_varargs(PyObject *ob, int min, int max)
+{
+    // Returns the argument count on success or `-1` on error.
+    assert(min >= 0);
+    assert(min < max);
+    if (!PyTuple_CheckExact(ob)) {
+        PyErr_SetString(PyExc_SystemError,
+            "PyArg_UnpackTuple() argument list is not a tuple");
+        return -1;
+    }
+    Py_ssize_t size = PyTuple_GET_SIZE(ob);
+    if (size >= min && size <= max) {
+        return size;
+    }
+    PyErr_Format(
+        PyExc_TypeError,
+        "expected %d or %d arguments, got %zd", min, max, PyTuple_GET_SIZE(ob));
+    return -1;
+}
+
 /* Generic wrappers for overloadable 'operators' such as __getitem__ */
 
 /* There's a wrapper *function* for each distinct function typedef used
@@ -8759,8 +8780,15 @@ wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
 
     /* Note: This wrapper only works for __pow__() */
 
-    if (!PyArg_UnpackTuple(args, "__pow__", 1, 2, &other, &third))
+    Py_ssize_t size = check_num_varargs(args, 1, 2);
+    if (size == -1) {
         return NULL;
+    }
+    other = PyTuple_GET_ITEM(args, 0);
+    if (size == 2) {
+       third = PyTuple_GET_ITEM(args, 1);
+    }
+
     return (*func)(self, other, third);
 }
 
@@ -8771,7 +8799,7 @@ wrap_ternaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
     PyObject *other;
     PyObject *third = Py_None;
 
-    /* Note: This wrapper only works for __pow__() */
+    /* Note: This wrapper only works for __rpow__() */
 
     if (!PyArg_UnpackTuple(args, "__rpow__", 1, 2, &other, &third))
         return NULL;
@@ -8795,8 +8823,9 @@ wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
     PyObject* o;
     Py_ssize_t i;
 
-    if (!PyArg_UnpackTuple(args, "__mul__", 1, 1, &o))
+    if (!check_num_args(args, 1))
         return NULL;
+    o = PyTuple_GET_ITEM(args, 0);
     i = PyNumber_AsSsize_t(o, PyExc_OverflowError);
     if (i == -1 && PyErr_Occurred())
         return NULL;
