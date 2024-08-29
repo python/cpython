@@ -114,7 +114,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_lookup_nonexistant(self):
         # just make sure that lookup can fail
-        for nonexistent in [
+        for nonexistant in [
             "LATIN SMLL LETR A",
             "OPEN HANDS SIGHS",
             "DREGS",
@@ -122,7 +122,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
             "???",
         ]:
-            self.assertRaises(KeyError, self.db.lookup, nonexistent)
+            self.assertRaises(KeyError, self.db.lookup, nonexistant)
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
