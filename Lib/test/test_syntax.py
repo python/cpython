@@ -2800,6 +2800,23 @@ while 1:
         with self.assertRaises(SyntaxError):
             compile(source, "<string>", "exec")
 
+    def test_except_stmt_invalid_as_expr(self):
+        self._check_error(
+            textwrap.dedent(
+                """
+                try:
+                    pass
+                except ValueError as obj.attr:
+                    pass
+                """
+            ),
+            errtext="cannot use except statement with attribute",
+            lineno=4,
+            end_lineno=4,
+            offset=22,
+            end_offset=22 + len("obj.attr"),
+        )
+
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
