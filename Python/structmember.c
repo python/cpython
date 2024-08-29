@@ -24,7 +24,6 @@ PyObject *
 PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
 {
     PyObject *v;
-    char value;
     if (l->flags & Py_RELATIVE_OFFSET) {
         PyErr_SetString(
             PyExc_SystemError,
@@ -80,11 +79,11 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
     case Py_T_STRING_INPLACE:
         v = PyUnicode_FromString((char*)addr);
         break;
-    case Py_T_CHAR:
-        // case ...: char value = ... requires a C23-compatible compiler
-        value = FT_ATOMIC_LOAD_CHAR_RELAXED(*(char *) addr);
+    case Py_T_CHAR: {
+        char value;
         v = PyUnicode_FromStringAndSize(&value, 1);
         break;
+    }
     case _Py_T_OBJECT:
         v = *(PyObject **)addr;
         if (v == NULL)
