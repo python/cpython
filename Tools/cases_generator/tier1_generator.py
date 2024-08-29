@@ -48,7 +48,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
     try:
         stack = get_stack_effect(inst)
     except StackError as ex:
-        raise analysis_error(ex.args[0], inst.where)
+        raise analysis_error(ex.args[0], inst.where) from None
     required = set(stack.defined)
     required.discard("unused")
     for part in inst.parts:
@@ -119,11 +119,6 @@ def write_uop(
             offset += cache.size
 
         emitter.emit_tokens(uop, storage, inst)
-        for output in storage.outputs:
-            if output.name in uop.deferred_refs.values():
-                # We've already spilled this when emitting tokens
-                output.cached = False
-            stack.push(output)
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")

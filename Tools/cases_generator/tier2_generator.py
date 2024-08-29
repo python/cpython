@@ -87,7 +87,7 @@ class Tier2Emitter(Emitter):
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.emit(") JUMP_TO_ERROR();\n")
-        return first_tkn.text != "true" and first_tkn.text != "1"
+        return not always_true(first_tkn)
 
 
     def error_no_pop(
@@ -200,11 +200,6 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
         emitter.emit_tokens(uop, storage, None)
-        for output in storage.outputs:
-            if output.name in uop.deferred_refs.values():
-                # We've already spilled this when emitting tokens
-                output.cached = False
-            stack.push(output)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
 

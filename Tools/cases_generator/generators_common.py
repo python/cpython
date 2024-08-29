@@ -11,8 +11,10 @@ from analyzer import (
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Stack, Local, Storage
+from stack import Stack, Local, Storage, StackError
 
+# Set this to true for voluminous output showing state of stack and locals
+PRINT_STACKS = False
 
 class TokenIterator:
 
@@ -97,25 +99,6 @@ def always_true(tkn: Token | None) -> bool:
         return False
     return tkn.text == "true" or tkn.text == "1"
 
-def push_defined_locals(outputs: list[Local], stack:Stack, tkn: Token) -> None:
-    while outputs:
-        out = outputs[0]
-        if out.defined:
-            stack.push(out)
-            outputs.pop(0)
-        else:
-            break
-    undefined = ""
-    for out in outputs:
-        if out.defined:
-            raise analysis_error(
-                f"Locals not defined in stack order. "
-                f"Expected  '{out.name}' is defined before '{undefined}'",
-                tkn
-            )
-        else:
-            undefined = out.name
-
 
 class Emitter:
     out: CWriter
@@ -129,7 +112,7 @@ class Emitter:
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
             "SYNC_SP": self.sync_sp,
-            "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
+            # "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
             "DISPATCH": self.dispatch
         }
         self.out = out
@@ -263,30 +246,14 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         storage.stack.flush(self.out)
+        self._print_storage(storage)
         return True
 
-    def py_stack_ref_from_py_object_new(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.emit(tkn)
-        emit_to(self.out, tkn_iter, "SEMI")
-        self.out.emit(";\n")
-
-        target = uop.deferred_refs[tkn]
-        if target is None:
-            # An assignment we don't handle, such as to a pointer or array.
-            return True
-
-        # Flush the assignment to the stack.  Note that we don't flush the
-        # stack pointer here, and instead are currently relying on initializing
-        # unused portions of the stack to NULL.
-        storage.stack.flush_single_var(self.out, target, uop.stack.outputs)
-        return True
+    def _print_storage(self, storage: Storage):
+        if PRINT_STACKS:
+            self.out.start_line()
+            self.emit(storage.as_comment())
+            self.out.start_line()
 
     def _emit_if(
         self,
@@ -302,31 +269,50 @@ class Emitter:
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
         if_storage = storage.copy()
-        reachable, rbrace, if_stack = self._emit_block(tkn_iter, uop, if_storage, inst, True)
-        maybe_else = tkn_iter.peek()
-        if maybe_else and maybe_else.kind == "ELSE":
-            self.emit(rbrace)
-            self.emit(next(tkn_iter))
-            maybe_if = tkn_iter.peek()
-            if maybe_if and maybe_if.kind == "IF":
+        reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, True)
+        try:
+            maybe_else = tkn_iter.peek()
+            if maybe_else and maybe_else.kind == "ELSE":
+                self._print_storage(storage)
+                self.emit(rbrace)
                 self.emit(next(tkn_iter))
-                else_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, storage, inst)
+                maybe_if = tkn_iter.peek()
+                if maybe_if and maybe_if.kind == "IF":
+                    self.emit(next(tkn_iter))
+                    else_reachable, rbrace, storage = self._emit_if(tkn_iter, uop, storage, inst)
+                else:
+                    else_reachable, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, True)
+                if not reachable:
+                    # Discard the if storage
+                    reachable = else_reachable
+                elif not else_reachable:
+                    # Discard the else storage
+                    storage = if_storage
+                else:
+                    if PRINT_STACKS:
+                        self.emit("Converting storage:\n")
+                        self._print_storage(if_storage)
+                        self._print_storage(storage)
+                    storage.merge(if_storage, self.out)
+                    if PRINT_STACKS:
+                        self.emit("Converted:\n")
+                        self._print_storage(storage)
             else:
-                else_reachable, rbrace, stack = self._emit_block(tkn_iter, uop, storage, inst, True)
-            if not reachable:
-                # Discard the if storage
-                reachable = else_reachable
-            elif not else_reachable:
-                # Discard the else storage
-                storage = if_storage
-            else:
-                storage = storage.merge(if_storage, self.out)
-        else:
-            if reachable:
-                storage = storage.merge(if_storage, self.out)
-            else:
-                # Discard the if stack
-                reachable = True
+                if reachable:
+                    if PRINT_STACKS:
+                        self.emit("Converting storage:\n")
+                        self._print_storage(if_storage)
+                        self._print_storage(storage)
+                    if_storage.merge(storage, self.out)
+                    self._print_storage(storage)
+                    if PRINT_STACKS:
+                        self.emit("Converted:\n")
+                        self._print_storage(storage)
+                else:
+                    # Discard the if storage
+                    reachable = True
+        except StackError as ex:
+            raise analysis_error(ex.args[0], rbrace) from None
         return reachable, rbrace, storage
 
     def _emit_block(
@@ -341,43 +327,63 @@ class Emitter:
         braces = 1
         out_stores = set(uop.output_stores)
         tkn = next(tkn_iter)
-        reachable = True
-        if tkn.kind != "LBRACE":
-            raise analysis_error(f"PEP 7: expected '{{' found {tkn.text}", tkn)
-        if emit_first_brace:
-            self.emit(tkn)
-        for tkn in tkn_iter:
-            if tkn.kind == "LBRACE":
-                self.out.emit(tkn)
-                braces += 1
-            elif tkn.kind == "RBRACE":
-                braces -= 1
-                if braces == 0:
-                    return reachable, tkn, storage
-                self.out.emit(tkn)
-            elif tkn.kind == "GOTO":
-                reachable = False;
-                self.out.emit(tkn)
-            elif tkn.kind == "IDENTIFIER":
-                if tkn.text in self._replacers:
-                    if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
-                        reachable = False
-                else:
-                    if tkn in out_stores:
-                        for out in storage.outputs:
-                            if out.name == tkn.text:
-                                out.defined = True
-                                out.in_memory = False
-                                break
+        try:
+            reachable = True
+            line : int = -1
+            if tkn.kind != "LBRACE":
+                raise analysis_error(f"PEP 7: expected '{{' found {tkn.text}", tkn)
+            escaping_calls = uop.properties.escaping_calls
+            if emit_first_brace:
+                self.emit(tkn)
+            self._print_storage(storage)
+            for tkn in tkn_iter:
+                if PRINT_STACKS and tkn.line != line:
+                    self.out.start_line()
+                    self.emit(storage.as_comment())
+                    self.out.start_line()
+                    line = tkn.line
+                if tkn.kind == "LBRACE":
                     self.out.emit(tkn)
-            elif tkn.kind == "IF":
-                self.out.emit(tkn)
-                if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, storage, inst)
-                if reachable:
-                    reachable = if_reachable
-                self.out.emit(rbrace)
-            else:
-                self.out.emit(tkn)
+                    braces += 1
+                elif tkn.kind == "RBRACE":
+                    self._print_storage(storage)
+                    braces -= 1
+                    if braces == 0:
+                        return reachable, tkn, storage
+                    self.out.emit(tkn)
+                elif tkn.kind == "GOTO":
+                    reachable = False;
+                    self.out.emit(tkn)
+                elif tkn.kind == "IDENTIFIER":
+                    if tkn.text in self._replacers:
+                        if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
+                            reachable = False
+                    else:
+                        if tkn in out_stores:
+                            for out in storage.outputs:
+                                if out.name == tkn.text:
+                                    out.defined = True
+                                    out.in_memory = False
+                                    break
+                        if tkn.text.startswith("DISPATCH"):
+                            self._print_storage(storage)
+                            reachable = False
+                        self.out.emit(tkn)
+                #elif tkn in escaping_calls:
+                    #self.out.emit(f"/* ESCAPING CALL {escaping_calls[tkn].text} */\n")
+                    #storage.flush(self.out)
+                    #self._print_storage(storage)
+                    #self.out.emit(tkn)
+                elif tkn.kind == "IF":
+                    self.out.emit(tkn)
+                    if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, storage, inst)
+                    if reachable:
+                        reachable = if_reachable
+                    self.out.emit(rbrace)
+                else:
+                    self.out.emit(tkn)
+        except StackError as ex:
+            raise analysis_error(ex.args[0], tkn) from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
 
 
@@ -390,6 +396,9 @@ class Emitter:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
         self._emit_block(tkn_iter, uop, storage, inst, False)
+        for output in storage.outputs:
+            storage.stack.push(output)
+        storage.outputs = []
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)

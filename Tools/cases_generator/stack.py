@@ -46,6 +46,9 @@ class Local:
     in_memory: bool
     defined: bool
 
+    def __repr__(self):
+        return f"Local('{self.item.name}', in_memory={self.in_memory}, defined={self.defined})"
+
     @staticmethod
     def unused(defn: StackItem) -> "Local":
         return Local(defn, False, defn.is_array(), False)
@@ -174,9 +177,28 @@ class StackOffset:
             res = "-" + res[3:]
         return res
 
+    def as_int(self) -> int | None:
+        self.simplify()
+        int_offset = 0
+        for item in self.popped:
+            try:
+                int_offset -= int(item)
+            except ValueError:
+                return None
+        for item in self.pushed:
+            try:
+                int_offset += int(item)
+            except ValueError:
+                return None
+        return int_offset
+
     def clear(self) -> None:
         self.popped = []
         self.pushed = []
+
+    def __bool__(self):
+        self.simplify()
+        return bool(self.popped) or bool(self.pushed)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StackOffset):
@@ -280,80 +302,42 @@ class Stack:
             out.emit(f"if ({var.condition}) ")
         out.emit(f"stack_pointer[{base_offset.to_c()}]{bits} = {cast}{var.name};\n")
 
-    @staticmethod
-    def _do_flush(
-        out: CWriter,
-        variables: list[Local],
-        base_offset: StackOffset,
-        top_offset: StackOffset,
-        cast_type: str = "uintptr_t",
-        extract_bits: bool = False,
-    ) -> None:
-        out.start_line()
-        for var in variables:
-            if (
-                var.cached
-                and not var.in_memory
-                and not var.item.peek
-                and not var.name in UNUSED
-            ):
-                Stack._do_emit(out, var.item, base_offset, cast_type, extract_bits)
-            base_offset.push(var.item)
-        if base_offset.to_c() != top_offset.to_c():
-            print("base", base_offset, "top", top_offset)
-            assert False
-        number = base_offset.to_c()
+    def _adjust_stack_pointer(self, out: CWriter, number: str):
         if number != "0":
             out.emit(f"stack_pointer += {number};\n")
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
-        out.start_line()
 
     def flush(
         self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False
     ) -> None:
-        self._do_flush(
-            out,
-            self.variables,
-            self.base_offset,
-            self.top_offset,
-            cast_type,
-            extract_bits,
-        )
-        self.variables = []
-        self.base_offset.clear()
-        self.top_offset.clear()
-
-    def flush_single_var(
-        self,
-        out: CWriter,
-        var_name: str,
-        outputs: list[StackItem],
-        cast_type: str = "uintptr_t",
-        extract_bits: bool = False,
-    ) -> None:
-        assert any(var.name == var_name for var in outputs)
-        base_offset = self.base_offset.copy()
-        top_offset = self.top_offset.copy()
+        out.start_line()
+        var_offset = self.base_offset.copy()
         for var in self.variables:
-            base_offset.push(var.item)
-        for output in outputs:
-            if any(output == v.item for v in self.variables):
-                # The variable is already on the stack, such as a peeked value
-                # in the tier1 generator
-                continue
-            if output.name == var_name:
-                Stack._do_emit(out, output, base_offset, cast_type, extract_bits)
-            base_offset.push(output)
-            top_offset.push(output)
-        if base_offset.to_c() != top_offset.to_c():
-            print("base", base_offset, "top", top_offset)
-            assert False
+            if (
+                not var.in_memory
+                and not var.item.peek
+                and not var.name in UNUSED
+            ):
+                Stack._do_emit(out, var.item, var_offset, cast_type, extract_bits)
+                var.in_memory = True
+            var_offset.push(var.item)
+        number = self.top_offset.to_c()
+        self._adjust_stack_pointer(out, number)
+        self.base_offset -= self.top_offset
+        self.top_offset.clear()
+        out.start_line()
+
+    def is_flushed(self):
+        return not self.variables and not self.base_offset and not self.top_offset
 
     def peek_offset(self) -> str:
         return self.top_offset.to_c()
 
     def as_comment(self) -> str:
-        return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
+        return (
+            f"/* Variables: {[v.name for v in self.variables]}. "
+            f"Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
+        )
 
     def copy(self) -> "Stack":
         other = Stack()
@@ -370,14 +354,20 @@ class Stack:
             self.top_offset == other.top_offset
             and self.base_offset == other.base_offset
             and self.variables == other.variables
-            and self.defined == other.defined
         )
 
-
-    def merge(self, other:"Stack") -> "Stack":
-        if self != other:
-            raise StackError("unequal stacks")
-        return self
+    def align(self, other: "Stack", out: CWriter) -> None:
+        if len(self.variables) != len(other.variables):
+            raise StackError("Cannot align stacks: differing variables")
+        if self.top_offset == other.top_offset:
+            return
+        diff = self.top_offset - other.top_offset
+        try:
+            self.top_offset -= diff
+            self.base_offset -= diff
+            self._adjust_stack_pointer(out, diff.to_c())
+        except ValueError:
+            raise StackError("Cannot align stacks: cannot adjust stack pointer")
 
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
@@ -413,14 +403,14 @@ class Storage:
 
     def _push_defined_locals(self) -> None:
         while self.outputs:
-            out = self.outputs[0]
-            if out.defined:
-                self.stack.push(out)
-                self.outputs.pop(0)
-            else:
+            if not self.outputs[0].defined:
                 break
+            out = self.outputs.pop(0)
+            self.stack.push(out)
         undefined = ""
         for out in self.outputs:
+            if out.is_array():
+                continue
             if out.defined:
                 raise StackError(
                     f"Locals not defined in stack order. "
@@ -450,12 +440,83 @@ class Storage:
     def copy(self) -> "Storage":
         return Storage(self.stack.copy(), [ l.copy() for l in self.outputs])
 
-    def merge(self, other: "Storage", out: CWriter) -> "Storage":
-        self.stack.merge(other.stack)
-        if self.outputs != other.outputs:
-            raise StackError("unequal locals")
-        return self
+    def sanity_check(self):
+        names: set[str] = set()
+        for var in self.stack.variables:
+            if var.name in names:
+                raise StackError(f"Duplicate name {var.name}")
+            names.add(var.name)
+        for var in self.outputs:
+            if var.name in names:
+                raise StackError(f"Duplicate name {var.name}")
+            names.add(var.name)
+
+    def is_flushed(self):
+        for var in self.outputs:
+            if var.defined and not var.in_memory:
+                return False
+        return self.stack.is_flushed()
+
+    def merge(self, other: "Storage", out: CWriter) -> None:
+        self.sanity_check()
+        locally_defined_set: set[str] = set()
+        for var in self.outputs:
+            if var.defined and not var.in_memory:
+                locally_defined_set.add(var.name)
+        for var in other.outputs:
+            if var.defined and not var.in_memory:
+                locally_defined_set.add(var.name)
+        while self.stack.variables and self.stack.variables[0].item.name in locally_defined_set:
+            code, var = self.stack.pop(self.stack.variables[0].item)
+            out.emit(code)
+            self.outputs.append(var)
+        while other.stack.variables and other.stack.variables[0].item.name in locally_defined_set:
+            code, var = other.stack.pop(other.stack.variables[0].item)
+            assert code == ""
+            other.outputs.append(var)
+        s1, s2 = self.stack, other.stack
+        l1, l2 = self.outputs, other.outputs
+        if len(s1.variables) != len(s2.variables):
+            # Make sure s2 is the larger stack.
+            if len(s1.variables) > len(s2.variables):
+                s1, s2 = s2, s1
+                l1, l2 = l2, l1
+            while len(s2.variables) > len(s1.variables):
+                top = s2.variables[-1]
+                if top.defined:
+                    code, var = s2.pop(top.item)
+                    assert code == "" and var == top
+                    l2.insert(0, top)
+                else:
+                    for l in l1:
+                        if l.name == top.name:
+                            break
+                    else:
+                        raise StackError(f"Missing local {top.name} when attempting to merge storage")
+                    if l.in_memory:
+                        s1.push(l)
+                        l1.remove(l)
+                    else:
+                        raise StackError(f"Local {top.name} is not in memory, so cannot be merged")
+        # Now merge locals:
+        self_live = [var for var in self.outputs if not var.item.peek and var.defined]
+        other_live = [var for var in other.outputs if not var.item.peek and var.defined]
+        self.stack.align(other.stack, out)
+        if len(self_live) != len(other_live):
+            if other.stack.is_flushed():
+                self.stack.flush(out)
+                return self
+            else:
+                raise StackError(f"Mismatched locals: {self_live} and {other_live}")
+        for self_out, other_out in zip(self_live, other_live):
+            if self_out.name != other_out.name:
+                raise StackError(f"Mismatched local: {self_out.name} and {other_out.name}")
+            if self_out.defined ^ other_out.defined:
+                raise StackError(f"Local {self_out.name} defined on only one path")
+            self_out.in_memory = other_out.in_memory = self_out.in_memory and other_out.in_memory
+            self_out.cached = other_out.cached = self_out.cached and other_out.cached
+        self.sanity_check()
 
     def as_comment(self) -> str:
         stack_comment = self.stack.as_comment()
-        return stack_comment[:-2] + str(self.outputs) + " */"
+        return stack_comment[:-2] + "\n    LOCALS: " + str(self.outputs) + " */"
