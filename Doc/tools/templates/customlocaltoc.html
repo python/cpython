@@ -1,0 +1,24 @@
+{#
+	Customization of sphinx's basic/localtoc.html
+
+	- Always display links to the parent pages within sections,
+	  rather than link to the global contents
+	- 
+#}
+	<div>
+  	<div>
+{%- if parents %}
+{%- for parent in parents %}
+  		<h{{ loop.index0 + 3 }}>
+  			<a href="{{ parent.link|e }}" 
+  			   title="{{ parent.title }}">
+  			   {{ parent.title }}
+			  </a>
+			</h{{ loop.index0 + 3 }}>
+{%- endfor %}
+{%- else %}
+			<h3><a href="{{ pathto(root_doc)|e }}">{{ docstitle|e }}</a></h3>
+{%- endif %}
+  	</div>
+		{{ toc }}
+	</div>
