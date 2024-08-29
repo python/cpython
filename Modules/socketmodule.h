@@ -325,6 +325,9 @@ typedef struct {
     PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
     struct _socket_state *state;
+#ifdef MS_WINDOWS
+    int quickack;
+#endif
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/

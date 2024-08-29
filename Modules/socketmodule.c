@@ -3166,8 +3166,22 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     /* setsockopt(level, opt, flag) */
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            int dummy;
+            res = WSAIoctl(s->sock_fd, SIO_TCP_SET_ACK_FREQUENCY, &flag,
+                           sizeof(flag), NULL, 0, &dummy, NULL, NULL);
+            if (res >= 0)
+                s->quickack = flag;
+        }
+        else {
+            res = setsockopt(s->sock_fd, level, optname,
+                (char*)&flag, sizeof flag);
+        }
+#else
         res = setsockopt(s->sock_fd, level, optname,
-                         (char*)&flag, sizeof flag);
+            (char*)&flag, sizeof flag);
+#endif
         goto done;
     }
 
@@ -3250,6 +3264,19 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
             if (res < 0)
                 return s->errorhandler();
             return PyLong_FromUnsignedLong(vflag);
+        }
+#endif
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            return PyLong_FromLong(s->quickack);
+        }
+        else {
+            flagsize = sizeof flag;
+            res = getsockopt(s->sock_fd, level, optname,
+                             (void *)&flag, &flagsize);
+            if (res < 0)
+                return s->errorhandler();
+            return PyLong_FromLong(flag);
         }
 #endif
         flagsize = sizeof flag;
@@ -5315,7 +5342,10 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (new != NULL) {
         ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
-        ((PySocketSockObject *)new)->errorhandler = &set_error;
+        ((PySocketSockObject*)new)->errorhandler = &set_error;
+#ifdef MS_WINDOWS
+        ((PySocketSockObject*)new)->quickack = false;
+#endif
     }
     return new;
 }
@@ -8615,6 +8645,10 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  TCP_CONNECTION_INFO
     ADD_INT_MACRO(m, TCP_CONNECTION_INFO);
+#endif
+#ifdef  SIO_TCP_SET_ACK_FREQUENCY
+#define TCP_QUICKACK SIO_TCP_SET_ACK_FREQUENCY
+    ADD_INT_MACRO(m, TCP_QUICKACK);
 #endif
 #ifdef  TCP_QUICKACK
     ADD_INT_MACRO(m, TCP_QUICKACK);

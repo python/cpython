@@ -6839,7 +6839,9 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
                        'TCP_KEEPCNT',
                        # available starting with Windows 10 1709
                        'TCP_KEEPIDLE',
-                       'TCP_KEEPINTVL'
+                       'TCP_KEEPINTVL',
+                       # available starting with Windows 7 / Server 2008 R2
+                       'TCP_QUICKACK'
                        }
 
     def test_new_tcp_flags(self):

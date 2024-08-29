@@ -199,6 +199,16 @@ else:
     def _set_nodelay(sock):
         pass
 
+if hasattr(socket, 'TCP_QUICKACK'):
+    def _set_quickack(sock):
+        if (sock.family in {socket.AF_INET, socket.AF_INET6} and
+                sock.type == socket.SOCK_STREAM and
+                sock.proto == socket.IPPROTO_TCP):
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, 1)
+else:
+    def _set_quickack(sock):
+        pass
+
 
 def _check_ssl_socket(sock):
     if ssl is not None and isinstance(sock, ssl.SSLSocket):

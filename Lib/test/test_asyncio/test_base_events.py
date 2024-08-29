@@ -2225,6 +2225,29 @@ class TestSelectorUtils(test_utils.TestCase):
             sock.setblocking(False)
             self.check_set_nodelay(sock)
 
+    def check_set_quickack(self, sock):
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
+        self.assertFalse(opt)
+
+        base_events._set_quickack(sock)
+
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
+        self.assertTrue(opt)
+
+    @unittest.skipUnless(hasattr(socket, 'TCP_QUICKACK'),
+                         'need socket.TCP_QUICKACK')
+    def test_set_quickack(self):
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                             proto=socket.IPPROTO_TCP)
+        with sock:
+            self.check_set_quickack(sock)
+
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                             proto=socket.IPPROTO_TCP)
+        with sock:
+            sock.setblocking(False)
+            self.check_set_quickack(sock)
+
 
 
 if __name__ == '__main__':
