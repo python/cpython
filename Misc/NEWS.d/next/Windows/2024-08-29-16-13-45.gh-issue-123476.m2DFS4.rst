@@ -1,3 +1,1 @@
 Setting socket option TCP_QUICKACK is now also possible on Windows, in addition to Linux.
-
-example: sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, 1)
