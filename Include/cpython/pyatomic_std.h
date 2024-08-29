@@ -916,6 +916,14 @@ _Py_atomic_store_ullong_relaxed(unsigned long long *obj,
                           memory_order_relaxed);
 }
 
+static inline void
+_Py_atomic_store_char_relaxed(char *obj, char value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(char)*)obj, value,
+                          memory_order_relaxed);
+}
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
@@ -956,14 +964,6 @@ _Py_atomic_store_int_release(int *obj, int value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(int)*)obj, value,
-                          memory_order_release);
-}
-
-static inline void
-_Py_atomic_store_char_release(char *obj, char value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(char)*)obj, value,
                           memory_order_release);
 }
 

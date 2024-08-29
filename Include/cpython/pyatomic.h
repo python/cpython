@@ -479,6 +479,9 @@ static inline void
 _Py_atomic_store_ullong_relaxed(unsigned long long *obj,
                                 unsigned long long value);
 
+static inline void
+_Py_atomic_store_char_relaxed(char *obj, char value);
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
@@ -501,9 +504,6 @@ _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
 
 static inline void
 _Py_atomic_store_int_release(int *obj, int value);
-
-static inline void
-_Py_atomic_store_char_release(char *obj, char value);
 
 static inline void
 _Py_atomic_store_uchar_release(unsigned char *obj, unsigned char value);

@@ -61,8 +61,8 @@ extern "C" {
     _Py_atomic_store_uint16_relaxed(&value, new_value)
 #define FT_ATOMIC_STORE_UINT32_RELAXED(value, new_value) \
     _Py_atomic_store_uint32_relaxed(&value, new_value)
-#define FT_ATOMIC_STORE_CHAR_RELEASE(value, new_value) \
-    _Py_atomic_store_char_release(&value, new_value)
+#define FT_ATOMIC_STORE_CHAR_RELAXED(value, new_value) \
+    _Py_atomic_store_char_relaxed(&value, new_value)
 #define FT_ATOMIC_LOAD_CHAR_RELAXED(value) \
     _Py_atomic_load_char_relaxed(&value)
 #define FT_ATOMIC_STORE_UCHAR_RELEASE(value, new_value) \
