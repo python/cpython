@@ -1,11 +1,10 @@
 """
-Parses compiler output with -fdiagnostics-format=json and checks that warnings
+Parses compiler output from Clang or GCC and checks that warnings
 exist only in files that are expected to have warnings.
 """
 
 import argparse
 from collections import defaultdict
-import json
 import re
 import sys
 from pathlib import Path
@@ -17,21 +16,31 @@ class FileWarnings(NamedTuple):
     count: int
 
 
-def extract_warnings_from_compiler_output_clang(
+def extract_warnings_from_compiler_output(
     compiler_output: str,
+    compiler_output_type: str,
     path_prefix: str = "",
 ) -> list[dict]:
     """
-    Extracts warnings from the compiler output when using clang
+    Extracts warnings from the compiler output based on compiler
+    output type. Removes path prefix from file paths if provided.
+    Compatible with GCC and Clang compiler output.
     """
-    # Regex to find warnings in the compiler output
-    clang_warning_regex = re.compile(
-        r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: "
-        r"(?P<message>.*) (?P<option>\[-[^\]]+\])$"
-    )
+    # Choose pattern and compile regex for particular compiler output
+    if compiler_output_type == "gcc":
+        regex_pattern = (
+            r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: "
+            r"(?P<message>.*?)(?: (?P<option>\[-[^\]]+\]))?$"
+        )
+    elif compiler_output_type == "clang":
+        regex_pattern = (
+            r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: "
+            r"(?P<message>.*) (?P<option>\[-[^\]]+\])$"
+        )
+    compiled_regex = re.compile(regex_pattern)
     compiler_warnings = []
     for line in compiler_output.splitlines():
-        if match := clang_warning_regex.match(line):
+        if match := compiled_regex.match(line):
             compiler_warnings.append(
                 {
                     "file": match.group("file").removeprefix(path_prefix),
@@ -41,62 +50,6 @@ def extract_warnings_from_compiler_output_clang(
                     "option": match.group("option").lstrip("[").rstrip("]"),
                 }
             )
-
-    return compiler_warnings
-
-
-def extract_warnings_from_compiler_output_json(
-    compiler_output: str,
-    path_prefix: str = "",
-) -> list[dict]:
-    """
-    Extracts warnings from the compiler output when using
-    -fdiagnostics-format=json.
-
-    Compiler output as a whole is not a valid json document,
-    but includes many json objects and may include other output
-    that is not json.
-    """
-    # Regex to find json arrays at the top level of the file
-    # in the compiler output
-    json_arrays = re.findall(r"\[(?:[^[\]]|\[[^]]*])*]", compiler_output)
-    compiler_warnings = []
-    for array in json_arrays:
-        try:
-            json_data = json.loads(array)
-            json_objects_in_array = [entry for entry in json_data]
-            warning_list = [
-                entry
-                for entry in json_objects_in_array
-                if entry.get("kind") == "warning"
-            ]
-            for warning in warning_list:
-                locations = warning["locations"]
-                for location in locations:
-                    for key in ["caret", "start", "end"]:
-                        if key in location:
-                            compiler_warnings.append(
-                                {
-                                    # Remove leading current
-                                    # directory if present
-                                    "file": location[key]["file"].removeprefix(
-                                        path_prefix
-                                    ),
-                                    "line": location[key]["line"],
-                                    "column": location[key]["column"],
-                                    "message": warning["message"],
-                                    "option": warning["option"],
-                                }
-                            )
-                            # Found a caret, start, or end in location so
-                            # break out completely to address next warning
-                            break
-                    else:
-                        continue
-                    break
-
-        except json.JSONDecodeError:
-            continue  # Skip malformed JSON
 
     return compiler_warnings
 
@@ -216,8 +169,8 @@ def main(argv: list[str] | None = None) -> int:
         "--compiler-output-type",
         type=str,
         required=True,
-        choices=["json", "clang"],
-        help="Type of compiler output file (json or clang)",
+        choices=["gcc", "clang"],
+        help="Type of compiler output file (GCC or Clang)",
     )
     parser.add_argument(
         "-p",
@@ -270,16 +223,11 @@ def main(argv: list[str] | None = None) -> int:
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
 
-    if args.compiler_output_type == "json":
-        warnings = extract_warnings_from_compiler_output_json(
-            compiler_output_file_contents,
-            args.path_prefix
-        )
-    elif args.compiler_output_type == "clang":
-        warnings = extract_warnings_from_compiler_output_clang(
-            compiler_output_file_contents,
-            args.path_prefix
-        )
+    warnings = extract_warnings_from_compiler_output(
+        compiler_output_file_contents,
+        args.compiler_output_type,
+        args.path_prefix
+    )
 
     files_with_warnings = get_warnings_by_file(warnings)
 

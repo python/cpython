@@ -90,7 +90,7 @@ jobs:
         python Tools/build/check_warnings.py
         --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output_ubuntu.txt
         --warning-ignore-file-path ${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu
-        --compiler-output-type=json
+        --compiler-output-type=gcc
         --fail-on-regression
         --fail-on-improvement
         --path-prefix="../cpython-ro-srcdir/"
