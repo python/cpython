@@ -316,23 +316,32 @@ understand the problem and, potentially, which concurrency model would
 be the best fit:
 
 * requests
+
   * frequency
   * expected latency for (at least partial) response
+
 * inputs per request
+
   * how many
   * size of each input
+
 * tasks (logical threads) per input
+
   * how many
   * variety vs. uniformity
   * compute per task: how much
   * data per task: how much and what kinds
   * I/O per task: how much and what kinds
   * tasks not tied to outputs
+
 * task interaction
+
   * how much and in what ways
   * what data is shared between tasks
   * how much blocking while waiting
+
 * outputs per request
+
   * how many
   * size pf each output
   * correlation to inputs
@@ -342,6 +351,29 @@ To some extent the most critical factors can be compressed down to:
 * many inputs vs. 1 large divisible input
 * many outputs vs. combined output vs. matching large output
 * many short computations vs. fewer medium/long computations
+
+We could also break it down into quadrants::
+
+   .     stream of tasks       queue of tasks
+   C                       |
+   P                       |
+   U                       |
+   -                       |
+   b                       |
+   o                       |
+   u                       |
+   n                       |
+   d                       |
+    -----------------------|-----------------------
+   I                       |
+   O                       |
+   -                       |
+   b                       |
+   o                       |
+   u                       |
+   n                       |
+   d                       |
+
 
 Aside from the concurrency model, the answers to the above can impact
 the following:
@@ -353,16 +385,22 @@ In the context of the above characteristics, let's revisit the ways that
 concurrency can be helpful:
 
 * get work done faster
+
    * run more tasks at once (multi-core)
+
 * make the app feel more responsive
+
    * make sure critical tasks have priority
    * process results as they come, instead of waiting for them all
    * send payload to multiple targets before starting next task
+
 * use system resources more efficiently
+
    * keep slow parts from blocking fast parts
    * keep blocking resources from blocking the whole program
    * make sure other tasks have a fair share of time
    * task scheduling & resource usage optimization
+
 * scaling
 * handle asynchronous events
 
