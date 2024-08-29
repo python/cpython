@@ -17,7 +17,12 @@
       </h{{ loop.index0 + 3 }}>
 {%- endfor %}
 {%- else %}
-      <h3><a href="{{ pathto(root_doc)|e }}">{{ docstitle|e }}</a></h3>
+      <h3>
+        <a href="{{ pathto(root_doc)|e }}"
+           title="{{ docstitle|e }}">
+           {{ docstitle|e }}
+        </a>
+      </h3>
 {%- endif %}
     </div>
     {{ toc }}
