@@ -668,11 +668,17 @@ dummy_func(
 
         macro(BINARY_SUBSCR) = _SPECIALIZE_BINARY_SUBSCR + _BINARY_SUBSCR;
 
-        inst(BINARY_SLICE, (container, start, stop -- res)) {
+        specializing op(_SPECIALIZE_BINARY_SLICE, (container, start, stop -- container, start, stop)) {
+            // Placeholder until we implement BINARY_SLICE specialization
+            #if ENABLE_SPECIALIZATION
+            OPCODE_DEFERRED_INC(BINARY_SLICE);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_BINARY_SLICE, (container, start, stop -- res)) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                                                         PyStackRef_AsPyObjectSteal(stop));
             PyObject *res_o;
-            OPCODE_DEFERRED_INC(BINARY_SLICE);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
@@ -687,10 +693,18 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        inst(STORE_SLICE, (v, container, start, stop -- )) {
+        macro(BINARY_SLICE) = _SPECIALIZE_BINARY_SLICE + _BINARY_SLICE;
+
+        specializing op(_SPECIALIZE_STORE_SLICE, (v, container, start, stop -- v, container, start, stop)) {
+            // Placeholder until we implement STORE_SLICE specialization
+            #if ENABLE_SPECIALIZATION
+            OPCODE_DEFERRED_INC(STORE_SLICE);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
                                                         PyStackRef_AsPyObjectSteal(stop));
-            OPCODE_DEFERRED_INC(STORE_SLICE);
             int err;
             if (slice == NULL) {
                 err = 1;
@@ -703,6 +717,8 @@ dummy_func(
             PyStackRef_CLOSE(container);
             ERROR_IF(err, error);
         }
+
+        macro(STORE_SLICE) = _SPECIALIZE_STORE_SLICE + _STORE_SLICE;
 
         inst(BINARY_SUBSCR_LIST_INT, (unused/1, list_st, sub_st -- res)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
