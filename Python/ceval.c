@@ -2124,7 +2124,7 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
 
         if (PyList_CheckExact(v) || PyTuple_CheckExact(v)
               || PyDict_CheckExact(v)) {
-            ll = Py_SIZE(v);
+            ll = PyDict_CheckExact(v) ? PyDict_Size(v) : Py_SIZE(v);
             if (ll <= argcnt) {
                 _PyErr_Format(tstate, PyExc_ValueError,
                             "too many values to unpack (expected %d)",
