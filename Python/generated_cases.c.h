@@ -1631,7 +1631,8 @@
                 PyStackRef_XCLOSE(kwargs_st);
                 assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
                 if (PyStackRef_IsNull(result)) {
-                    stack_pointer += -3 - (oparg & 1);
+                    stack_pointer[-3 - (oparg & 1)] = result;
+                    stack_pointer += -2 - (oparg & 1);
                     assert(WITHIN_STACK_BOUNDS());
                     goto error;
                 }
@@ -7744,7 +7745,8 @@
             PyStackRef_XCLOSE(kwargs_st);
             assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
             if (PyStackRef_IsNull(result)) {
-                stack_pointer += -3 - (oparg & 1);
+                stack_pointer[-3 - (oparg & 1)] = result;
+                stack_pointer += -2 - (oparg & 1);
                 assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }

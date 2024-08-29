@@ -185,7 +185,7 @@ class Emitter:
             self.out.emit(";\n")
         else:
             self.out.emit("{\n")
-            storage.stack.copy().flush(self.out)
+            storage.copy().flush(self.out)
             self.out.emit("goto ")
             self.out.emit(label)
             self.out.emit(";\n")
@@ -289,25 +289,12 @@ class Emitter:
                     # Discard the else storage
                     storage = if_storage
                 else:
-                    if PRINT_STACKS:
-                        self.emit("Converting storage:\n")
-                        self._print_storage(if_storage)
-                        self._print_storage(storage)
                     storage.merge(if_storage, self.out)
-                    if PRINT_STACKS:
-                        self.emit("Converted:\n")
-                        self._print_storage(storage)
+                    self._print_storage(storage)
             else:
                 if reachable:
-                    if PRINT_STACKS:
-                        self.emit("Converting storage:\n")
-                        self._print_storage(if_storage)
-                        self._print_storage(storage)
                     if_storage.merge(storage, self.out)
                     self._print_storage(storage)
-                    if PRINT_STACKS:
-                        self.emit("Converted:\n")
-                        self._print_storage(storage)
                 else:
                     # Discard the if storage
                     reachable = True
