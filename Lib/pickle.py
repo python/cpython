@@ -397,6 +397,8 @@ def decode_long(data):
     return int.from_bytes(data, byteorder='little', signed=True)
 
 
+_NoValue = object()
+
 # Pickling machinery
 
 class _Pickler:

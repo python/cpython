@@ -3722,17 +3722,19 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         if (extension_key == NULL) {
             goto error;
         }
-        if (PyDict_GetItemRef(st->extension_registry, extension_key, &code_obj) < 0) {
-            Py_DECREF(extension_key);
-            goto error;
-        }
+        code_obj = PyDict_GetItemWithError(st->extension_registry,
+                                           extension_key);
         Py_DECREF(extension_key);
         if (code_obj == NULL) {
+            if (PyErr_Occurred()) {
+                goto error;
+            }
             /* The object is not registered in the extension registry.
                This is the most likely code path. */
             goto gen_global;
         }
 
+        Py_INCREF(code_obj);
         code = PyLong_AsLong(code_obj);
         Py_DECREF(code_obj);
         if (code <= 0 || code > 0x7fffffffL) {
