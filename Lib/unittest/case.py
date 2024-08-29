@@ -387,8 +387,8 @@ class TestCase(object):
         the instance's assertion methods fail; test methods raising this
         exception will be deemed to have 'failed' rather than 'errored'.
     * longMessage: determines whether long messages (including repr of
-        objects used in assert methods) will be printed on failure in
-        *addition* to any explicit message passed.
+        objects used in assert methods) will be printed on failure in *addition*
+        to any explicit message passed.
     * maxDiff: sets the maximum length of a diff in failure messages
         by assert methods using difflib. It is looked up as an instance
         attribute so can be configured by individual tests if required.
