@@ -1057,7 +1057,7 @@ errors.
 .. nonce: 4Xe0id
 .. section: Windows
 
-``hasattr(ctypes.windll, 'nonexistant')`` now returns ``False`` instead of
+``hasattr(ctypes.windll, 'nonexistent')`` now returns ``False`` instead of
 raising :exc:`OSError`.
 
 ..

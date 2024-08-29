@@ -40,7 +40,7 @@
 # - struct_abi_kind: for `struct`, defines how much of the struct is exposed:
 #   - 'full-abi': All of the struct is part of the ABI, including the size
 #     (users may define arrays of these structs).
-#     Typically used for initalization, rather than at runtime.
+#     Typically used for initialization, rather than at runtime.
 #   - 'opaque': No members are part of the ABI, nor is the size. The Limited
 #     API only handles these via pointers. The C definition should be
 #     incomplete (opaque).

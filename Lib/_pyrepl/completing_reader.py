@@ -169,7 +169,7 @@ class complete(commands.Command):
         r = self.reader  # type: ignore[assignment]
         last_is_completer = r.last_command_is(self.__class__)
         immutable_completions = r.assume_immutable_completions
-        completions_unchangable = last_is_completer and immutable_completions
+        completions_unchangeable = last_is_completer and immutable_completions
         stem = r.get_stem()
         if not completions_unchangable:
             r.cmpltn_menu_choices = r.get_completions(stem)
@@ -178,7 +178,7 @@ class complete(commands.Command):
         if not completions:
             r.error("no matches")
         elif len(completions) == 1:
-            if completions_unchangable and len(completions[0]) == len(stem):
+            if completions_unchangeable and len(completions[0]) == len(stem):
                 r.msg = "[ sole completion ]"
                 r.dirty = True
             r.insert(completions[0][len(stem):])

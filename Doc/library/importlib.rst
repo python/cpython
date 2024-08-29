@@ -1252,7 +1252,7 @@ find and load modules.
    be only a single binary per framework, and there can be no executable binary
    material outside the Frameworks folder.
 
-   To accomodate this requirement, when running on iOS, extension module
+   To accommodate this requirement, when running on iOS, extension module
    binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
    individual standalone frameworks. To discover those frameworks, this loader
    is be registered against the ``.fwork`` file extension, with a ``.fwork``
