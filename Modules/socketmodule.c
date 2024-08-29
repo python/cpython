@@ -8648,7 +8648,6 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  SIO_TCP_SET_ACK_FREQUENCY
 #define TCP_QUICKACK SIO_TCP_SET_ACK_FREQUENCY
-    ADD_INT_MACRO(m, TCP_QUICKACK);
 #endif
 #ifdef  TCP_QUICKACK
     ADD_INT_MACRO(m, TCP_QUICKACK);
