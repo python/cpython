@@ -1652,7 +1652,7 @@ class FileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkReadable()
-        if not self._stat_atopen or self._stat_atopen.st_size <= 0:
+        if self._stat_atopen is None or self._stat_atopen.st_size <= 0:
             bufsize = DEFAULT_BUFFER_SIZE
         else:
             bufsize = self._stat_atopen.st_size + 1

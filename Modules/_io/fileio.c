@@ -453,7 +453,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
     self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
     if (self->stat_atopen == NULL) {
-        PyErr_Format(PyExc_MemoryError, "Unable to allocate space for stat result");
+        PyErr_NoMemory();
         goto error;
     }
     Py_BEGIN_ALLOW_THREADS
