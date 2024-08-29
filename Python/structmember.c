@@ -80,7 +80,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyUnicode_FromString((char*)addr);
         break;
     case Py_T_CHAR: {
-        char value;
+        char value = 0;
         v = PyUnicode_FromStringAndSize(&value, 1);
         break;
     }
