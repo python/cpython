@@ -1640,6 +1640,9 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    Similar to :c:func:`PyConfig_Get`, but get the value as a C int.
 
+   * Return ``0`` on success.
+   * Set an exception and return ``-1`` on error.
+
    .. versionadded:: 3.14
 
 
@@ -1650,7 +1653,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Return a new reference on success.
    * Set an exception and return ``NULL`` on error.
 
-   The caller must hold the GIL.
+   The caller must hold the GIL. The function cannot be called before
+   Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 

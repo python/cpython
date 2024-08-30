@@ -1,6 +1,3 @@
-// Argument Clinic needs the internal C API
-#define PYTESTCAPI_NEED_INTERNAL_API
-
 #include "parts.h"
 
 
