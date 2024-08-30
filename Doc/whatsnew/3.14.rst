@@ -199,7 +199,7 @@ pathlib
 pdb
 ---
 
-* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace()`) now
+* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace`) now
   reuse the most recent :class:`~pdb.Pdb` instance that calls
   :meth:`~pdb.Pdb.set_trace()`, instead of creating a new one each time.
   As a result, all the instance specific data like :pdbcmd:`display` and
@@ -484,6 +484,14 @@ New Features
   * :c:func:`PyLong_AsUInt64`
 
   (Contributed by Victor Stinner in :gh:`120389`.)
+
+* Add :c:func:`PyBytes_Join(sep, iterable) <PyBytes_Join>` function,
+  similar to ``sep.join(iterable)`` in Python.
+  (Contributed by Victor Stinner in :gh:`121645`.)
+
+* Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
+  (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
+
 
 Porting to Python 3.14
 ----------------------

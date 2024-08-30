@@ -1598,7 +1598,7 @@ _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (a->ob_shash == -1) {
         /* Can't fail */
-        a->ob_shash = _Py_HashBytes(a->ob_sval, Py_SIZE(a));
+        a->ob_shash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
     }
     return a->ob_shash;
 _Py_COMP_DIAG_POP
@@ -1867,11 +1867,19 @@ bytes_join(PyBytesObject *self, PyObject *iterable_of_bytes)
 }
 
 PyObject *
-_PyBytes_Join(PyObject *sep, PyObject *x)
+PyBytes_Join(PyObject *sep, PyObject *iterable)
 {
-    assert(sep != NULL && PyBytes_Check(sep));
-    assert(x != NULL);
-    return bytes_join((PyBytesObject*)sep, x);
+    if (sep == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (!PyBytes_Check(sep)) {
+        PyErr_Format(PyExc_TypeError,
+                     "sep: expected bytes, got %T", sep);
+        return NULL;
+    }
+
+    return stringlib_bytes_join(sep, iterable);
 }
 
 /*[clinic input]
