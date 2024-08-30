@@ -1647,8 +1647,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    Get all configuration option names as a ``frozenset``.
 
-   Return a new reference on success.
-   Set an exception and return ``NULL`` on error.
+   * Return a new reference on success.
+   * Set an exception and return ``NULL`` on error.
 
    The caller must hold the GIL.
 
