@@ -650,17 +650,17 @@ de_instrument(_PyCoMonitoringData *monitoring, _Py_CODEUNIT *bytecode, int i, in
 }
 
 static void
-de_instrument_line(PyCodeObject *code, int i)
+de_instrument_line(_PyCoMonitoringData *monitoring, _Py_CODEUNIT *bytecode, int i)
 {
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+    _Py_CODEUNIT *instr = &bytecode[i];
     int opcode = instr->op.code;
     if (opcode != INSTRUMENTED_LINE) {
         return;
     }
-    _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
+    _PyCoLineInstrumentationData *lines = &monitoring->lines[i];
     int original_opcode = lines->original_opcode;
     if (original_opcode == INSTRUMENTED_INSTRUCTION) {
-        lines->original_opcode = code->_co_monitoring->per_instruction_opcodes[i];
+        lines->original_opcode = monitoring->per_instruction_opcodes[i];
     }
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
@@ -810,22 +810,23 @@ remove_line_tools(PyCodeObject * code, int offset, int tools)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
-    assert(code->_co_monitoring);
-    if (code->_co_monitoring->line_tools)
+    _PyCoMonitoringData *monitoring = code->_co_monitoring;
+    assert(monitoring);
+    bool should_deinstrument;
+    if (monitoring->line_tools)
     {
-        uint8_t *toolsptr = &code->_co_monitoring->line_tools[offset];
+        uint8_t *toolsptr = &monitoring->line_tools[offset];
         *toolsptr &= ~tools;
-        if (*toolsptr == 0 ) {
-            de_instrument_line(code, offset);
-        }
+        should_deinstrument = (*toolsptr == 0);
     }
     else {
         /* Single tool */
-        uint8_t single_tool = code->_co_monitoring->active_monitors.tools[PY_MONITORING_EVENT_LINE];
+        uint8_t single_tool = monitoring->active_monitors.tools[PY_MONITORING_EVENT_LINE];
         assert(_Py_popcount32(single_tool) <= 1);
-        if (((single_tool & tools) == single_tool)) {
-            de_instrument_line(code, offset);
-        }
+        should_deinstrument = ((single_tool & tools) == single_tool);
+    }
+    if (should_deinstrument) {
+        de_instrument_line(monitoring, _PyCode_CODE(code), offset);
     }
 }
 
