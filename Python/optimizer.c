@@ -571,7 +571,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
-    ADD_TO_TRACE(_SET_RUN_STATE, 0, 0, 0);
+    ADD_TO_TRACE(_SET_EXECUTOR_RUN_STATE, 0, 0, 0);
     uint32_t target = 0;
 
     for (;;) {
