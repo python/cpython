@@ -3812,14 +3812,14 @@ PyConfig_Set(const char *name, PyObject *value)
 
     case PyConfig_MEMBER_WSTR:
         if (!PyUnicode_CheckExact(value)) {
-            PyErr_Format(PyExc_TypeError, "expect str, got %T", value);
+            PyErr_Format(PyExc_TypeError, "expected str, got %T", value);
             return -1;
         }
         break;
 
     case PyConfig_MEMBER_WSTR_OPT:
         if (value != Py_None && !PyUnicode_CheckExact(value)) {
-            PyErr_Format(PyExc_TypeError, "expect str or None, got %T", value);
+            PyErr_Format(PyExc_TypeError, "expected str or None, got %T", value);
             return -1;
         }
         break;
@@ -3827,7 +3827,7 @@ PyConfig_Set(const char *name, PyObject *value)
     case PyConfig_MEMBER_WSTR_LIST:
         if (strcmp(spec->name, "xoptions") != 0) {
             if (!PyList_Check(value)) {
-                PyErr_Format(PyExc_TypeError, "expect list[str], got %T",
+                PyErr_Format(PyExc_TypeError, "expected list[str], got %T",
                              value);
                 return -1;
             }
@@ -3835,7 +3835,7 @@ PyConfig_Set(const char *name, PyObject *value)
                 PyObject *item = PyList_GET_ITEM(value, i);
                 if (!PyUnicode_Check(item)) {
                     PyErr_Format(PyExc_TypeError,
-                                 "expect list[str], list item %zd has type %T",
+                                 "expected str, list item %zd has type %T",
                                  i, item);
                     return -1;
                 }
@@ -3845,7 +3845,7 @@ PyConfig_Set(const char *name, PyObject *value)
             // xoptions type is dict[str, str]
             if (!PyDict_Check(value)) {
                 PyErr_Format(PyExc_TypeError,
-                             "expect dict[str, str | bool], got %T",
+                             "expected dict[str, str | bool], got %T",
                              value);
                 return -1;
             }
@@ -3855,13 +3855,13 @@ PyConfig_Set(const char *name, PyObject *value)
             while (PyDict_Next(value, &pos, &key, &item)) {
                 if (!PyUnicode_Check(key)) {
                     PyErr_Format(PyExc_TypeError,
-                                 "expect dict[str, str | bool], "
+                                 "expected str, "
                                  "got dict key type %T", key);
                     return -1;
                 }
                 if (!PyUnicode_Check(item) && !PyBool_Check(item)) {
                     PyErr_Format(PyExc_TypeError,
-                                 "expect dict[str, str | bool], "
+                                 "expected str or bool, "
                                  "got dict value type %T", key);
                     return -1;
                 }
