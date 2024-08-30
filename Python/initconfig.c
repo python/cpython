@@ -3792,7 +3792,7 @@ PyConfig_Set(const char *name, PyObject *value)
     case PyConfig_MEMBER_UINT:
     case PyConfig_MEMBER_BOOL:
         if (!PyLong_Check(value)) {
-            PyErr_Format(PyExc_TypeError, "expect int or bool, got %T", value);
+            PyErr_Format(PyExc_TypeError, "expected int or bool, got %T", value);
             return -1;
         }
         int_value = PyLong_AsInt(value);
