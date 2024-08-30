@@ -2439,7 +2439,7 @@ class AsyncMockMixin(Base):
 
     def reset_mock(self, /, *args, **kwargs):
         """
-        See :func:`.Mock.reset_mock()`
+        See :func:`.Mock.reset_mock`
         """
         super().reset_mock(*args, **kwargs)
         self.await_count = 0
@@ -3050,7 +3050,7 @@ class ThreadingMixin(Base):
 
     def reset_mock(self, /, *args, **kwargs):
         """
-        See :func:`.Mock.reset_mock()`
+        See :func:`.Mock.reset_mock`
         """
         super().reset_mock(*args, **kwargs)
         self.__dict__["_mock_event"] = threading.Event()
