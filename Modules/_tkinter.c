@@ -3392,10 +3392,10 @@ DisableEventHook(void)
 static void
 module_free(void *mod)
 {
-    Py_DECREF(Tkinter_TclError);
-    Py_DECREF(Tkapp_Type);
-    Py_DECREF(Tktt_Type);
-    Py_DECREF(PyTclObject_Type);
+    Py_CLEAR(Tkinter_TclError);
+    Py_CLEAR(Tkapp_Type);
+    Py_CLEAR(Tktt_Type);
+    Py_CLEAR(PyTclObject_Type);
 }
 
 static struct PyModuleDef _tkintermodule = {
