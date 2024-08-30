@@ -958,7 +958,7 @@ Patch by Jelle Zijlstra.
 .. nonce: nnVd3h
 .. section: Library
 
-Add an ``encoding`` parameter :func:`logging.fileConfig()`.
+Add an ``encoding`` parameter :func:`logging.fileConfig`.
 
 ..
 
@@ -1270,7 +1270,7 @@ Fix thread locks in zlib module may go wrong in rare case. Patch by Ma Lin.
 .. nonce: oi6Kdb
 .. section: Library
 
-Fix dataclasses with ``InitVar``\s and :func:`~dataclasses.replace()`. Patch
+Fix dataclasses with ``InitVar``\s and :func:`~dataclasses.replace`. Patch
 by Claudiu Popa.
 
 ..
@@ -1310,7 +1310,7 @@ functions in the :mod:`os` module.
 .. nonce: 9adF3E
 .. section: Library
 
-:func:`os.path.expanduser()` now refuses to guess Windows home directories
+:func:`os.path.expanduser` now refuses to guess Windows home directories
 if the basename of current user's home directory does not match their
 username.
 
