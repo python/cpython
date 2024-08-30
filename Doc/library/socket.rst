@@ -408,7 +408,7 @@ Constants
    in the Unix header files are defined; for a few symbols, default values are
    provided.
 
-   .. versionchanged:: ?.? On Windows, ``TCP_QUICKACK`` appear if run-time Windows
+   .. versionchanged:: 3.13 On Windows, ``TCP_QUICKACK`` appear if run-time Windows
       supports.
 
    .. versionchanged:: 3.6
