@@ -64,7 +64,8 @@ static PyMethodDef test_methods[] = {
     {NULL}
 };
 
-int _PyTestCapi_Init_Config(PyObject *mod)
+int
+_PyTestCapi_Init_Config(PyObject *mod)
 {
     return PyModule_AddFunctions(mod, test_methods);
 }
