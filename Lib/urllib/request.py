@@ -1788,14 +1788,14 @@ class URLopener:
         if filename is None and (not type or type == 'file'):
             try:
                 fp = self.open_local_file(url1)
-                hdrs = fp.status
+                hdrs = fp.headers
                 fp.close()
                 return url2pathname(_splithost(url1)[1]), hdrs
             except OSError:
                 pass
         fp = self.open(url, data)
         try:
-            headers = fp.status
+            headers = fp.headers
             if filename:
                 tfp = open(filename, 'wb')
             else:
