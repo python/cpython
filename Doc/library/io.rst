@@ -950,7 +950,7 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to :func:`locale.getencoding()`.
+   encoded with.  It defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
@@ -1182,7 +1182,7 @@ re-enter a buffered object which it is already accessing, a :exc:`RuntimeError`
 is raised.  Note this doesn't prohibit a different thread from entering the
 buffered object.
 
-The above implicitly extends to text files, since the :func:`open()` function
+The above implicitly extends to text files, since the :func:`open` function
 will wrap a buffered object inside a :class:`TextIOWrapper`.  This includes
-standard streams and therefore affects the built-in :func:`print()` function as
+standard streams and therefore affects the built-in :func:`print` function as
 well.
