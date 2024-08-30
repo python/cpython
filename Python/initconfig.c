@@ -82,18 +82,14 @@ typedef struct {
     PyConfigSysSpec sys;
 } PyConfigSpec;
 
-#define SPEC(MEMBER, TYPE, visibility, sys) \
+#define SPEC(MEMBER, TYPE, VISIBILITY, sys) \
     {#MEMBER, offsetof(PyConfig, MEMBER), \
-     PyConfig_MEMBER_##TYPE, (visibility), sys}
+     PyConfig_MEMBER_##TYPE, PyConfig_MEMBER_##VISIBILITY, sys}
 
 #define SYS_ATTR(name) {name, -1, NULL}
 #define SYS_FLAG_SETTER(index, setter) {NULL, index, setter}
 #define SYS_FLAG(index) SYS_FLAG_SETTER(index, NULL)
 #define NO_SYS SYS_ATTR(NULL)
-
-#define INIT_ONLY PyConfig_MEMBER_INIT_ONLY
-#define READ_ONLY PyConfig_MEMBER_READ_ONLY
-#define PUBLIC PyConfig_MEMBER_PUBLIC
 
 // Update _test_embed_set_config when adding new members
 static const PyConfigSpec PYCONFIG_SPEC[] = {
@@ -189,9 +185,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
 };
 
 #undef SPEC
-#define SPEC(MEMBER, TYPE, visibility) \
+#define SPEC(MEMBER, TYPE, VISIBILITY) \
     {#MEMBER, offsetof(PyPreConfig, MEMBER), PyConfig_MEMBER_##TYPE, \
-     visibility, NO_SYS}
+     PyConfig_MEMBER_##VISIBILITY, NO_SYS}
 
 static const PyConfigSpec PYPRECONFIG_SPEC[] = {
     // --- Read-only options -----------
@@ -223,9 +219,6 @@ static const PyConfigSpec PYPRECONFIG_SPEC[] = {
 #undef SYS_FLAG_SETTER
 #undef SYS_FLAG
 #undef NO_SYS
-#undef INIT_ONLY
-#undef READ_ONLY
-#undef PUBLIC
 
 
 // Forward declarations
