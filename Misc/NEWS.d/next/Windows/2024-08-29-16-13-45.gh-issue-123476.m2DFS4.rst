@@ -1,1 +1,1 @@
-Setting socket option TCP_QUICKACK is now also possible on Windows, in addition to Linux.
+Add support for ``socket.TCP_QUICKACK`` on Windows platforms.
