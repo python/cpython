@@ -174,6 +174,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
             else if (entry->hash == -1) {
                 assert (entry->key == dummy);
                 freeslot = entry;
+                goto found_unused_or_dummy;
             }
             entry++;
         } while (probes--);
