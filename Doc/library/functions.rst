@@ -161,7 +161,7 @@ are always available.  They are listed here in alphabetical order.
    This function drops you into the debugger at the call site.  Specifically,
    it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
    through.  By default, ``sys.breakpointhook()`` calls
-   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
+   :func:`pdb.set_trace` expecting no arguments.  In this case, it is
    purely a convenience function so you don't have to explicitly import
    :mod:`pdb` or type as much code to enter the debugger.  However,
    :func:`sys.breakpointhook` can be set to some other function and
@@ -1267,7 +1267,7 @@ are always available.  They are listed here in alphabetical order.
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
    *encoding* is not specified the encoding used is platform-dependent:
-   :func:`locale.getencoding()` is called to get the current locale encoding.
+   :func:`locale.getencoding` is called to get the current locale encoding.
    (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 

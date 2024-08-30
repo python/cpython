@@ -1204,7 +1204,7 @@ Classes and functions
    This function handles several details for you:
 
    * If ``eval_str`` is true, values of type ``str`` will
-     be un-stringized using :func:`eval()`.  This is intended
+     be un-stringized using :func:`eval`.  This is intended
      for use with stringized annotations
      (``from __future__ import annotations``).
    * If ``obj`` doesn't have an annotations dict, returns an
@@ -1218,16 +1218,16 @@ Classes and functions
    * Always, always, always returns a freshly created dict.
 
    ``eval_str`` controls whether or not values of type ``str`` are replaced
-   with the result of calling :func:`eval()` on those values:
+   with the result of calling :func:`eval` on those values:
 
-   * If eval_str is true, :func:`eval()` is called on values of type ``str``.
-     (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval()`
+   * If eval_str is true, :func:`eval` is called on values of type ``str``.
+     (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval`
      raises an exception, it will unwind the stack past the ``get_annotations``
      call.)
    * If eval_str is false (the default), values of type ``str`` are unchanged.
 
-   ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
-   for :func:`eval()` for more information.  If ``globals`` or ``locals``
+   ``globals`` and ``locals`` are passed in to :func:`eval`; see the documentation
+   for :func:`eval` for more information.  If ``globals`` or ``locals``
    is ``None``, this function may replace that value with a context-specific
    default, contingent on ``type(obj)``:
 

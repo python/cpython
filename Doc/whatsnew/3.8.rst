@@ -936,7 +936,7 @@ Add option ``--json-lines`` to parse every input line as a separate JSON object.
 logging
 -------
 
-Added a *force* keyword argument to :func:`logging.basicConfig()`
+Added a *force* keyword argument to :func:`logging.basicConfig`
 When set to true, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.
@@ -1175,8 +1175,8 @@ convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
 
-The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
-:func:`socket.if_indextoname()` functions have been implemented on Windows.
+The :func:`socket.if_nameindex`, :func:`socket.if_nametoindex`, and
+:func:`socket.if_indextoname` functions have been implemented on Windows.
 (Contributed by Zackery Spytz in :issue:`37007`.)
 
 
@@ -1193,10 +1193,10 @@ statistics
 ----------
 
 Added :func:`statistics.fmean` as a faster, floating-point variant of
-:func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
+:func:`statistics.mean`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 
-Added :func:`statistics.geometric_mean()`
+Added :func:`statistics.geometric_mean`
 (Contributed by Raymond Hettinger in :issue:`27181`.)
 
 Added :func:`statistics.multimode` that returns a list of the most
@@ -1367,9 +1367,9 @@ Added :class:`~unittest.mock.AsyncMock` to support an asynchronous version of
 have been added as well.
 (Contributed by Lisa Roach in :issue:`26467`).
 
-Added :func:`~unittest.addModuleCleanup()` and
+Added :func:`~unittest.addModuleCleanup` and
 :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
-cleanups for :func:`~unittest.setUpModule()` and
+cleanups for :func:`~unittest.setUpModule` and
 :meth:`~unittest.TestCase.setUpClass()`.
 (Contributed by Lisa Roach in :issue:`24412`.)
 
@@ -1432,7 +1432,7 @@ and ``{namespace}*`` which returns all tags in the given namespace.
 (Contributed by Stefan Behnel in :issue:`28238`.)
 
 The :mod:`xml.etree.ElementTree` module provides a new function
-:func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
+:func:`–xml.etree.ElementTree.canonicalize` that implements C14N 2.0.
 (Contributed by Stefan Behnel in :issue:`13611`.)
 
 The target object of :class:`xml.etree.ElementTree.XMLParser` can

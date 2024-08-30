@@ -1433,9 +1433,9 @@ hashlib
 -------
 
 * Remove the pure Python implementation of :mod:`hashlib`'s
-  :func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
+  :func:`hashlib.pbkdf2_hmac`, deprecated in Python 3.10. Python 3.10 and
   newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides
-  a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
+  a C implementation of :func:`~hashlib.pbkdf2_hmac` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
 importlib

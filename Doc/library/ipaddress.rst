@@ -1003,7 +1003,7 @@ The module also provides the following module level functions:
 
    doesn't make sense.  There are some times however, where you may wish to
    have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
-   this function as the *key* argument to :func:`sorted()`.
+   this function as the *key* argument to :func:`sorted`.
 
    *obj* is either a network or address object.
 

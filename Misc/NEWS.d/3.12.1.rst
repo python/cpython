@@ -605,7 +605,7 @@ Fix reference leaks in ``bind_class()`` and ``bind_all()`` methods of
 .. nonce: Bc8LvA
 .. section: Library
 
-Added :func:`io.text_encoding()`, :data:`io.DEFAULT_BUFFER_SIZE`, and
+Added :func:`io.text_encoding`, :data:`io.DEFAULT_BUFFER_SIZE`, and
 :class:`io.IncrementalNewlineDecoder` to ``io.__all__``.
 
 ..
@@ -650,7 +650,7 @@ leaves *sequence* unbound only if *funcid* was the last bound command.
 .. nonce: 5ePgFl
 .. section: Library
 
-Another attempt at fixing :func:`asyncio.Server.wait_closed()`. It now
+Another attempt at fixing :func:`asyncio.Server.wait_closed`. It now
 blocks until both conditions are true: the server is closed, *and* there are
 no more active connections. (This means that in some cases where in 3.12.0
 this function would *incorrectly* have returned immediately, it will now

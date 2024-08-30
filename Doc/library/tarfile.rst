@@ -608,7 +608,7 @@ be finalized; only the internally used file object will be closed. See the
    it is best practice to only do so in top-level applications or
    :mod:`site configuration <site>`.
    To set a global default this way, a filter function needs to be wrapped in
-   :func:`staticmethod()` to prevent injection of a ``self`` argument.
+   :func:`staticmethod` to prevent injection of a ``self`` argument.
 
 .. method:: TarFile.add(name, arcname=None, recursive=True, *, filter=None)
 

@@ -2366,7 +2366,7 @@ Changes in the Python API
   positions 2--3.  To match only blank lines, the pattern should be rewritten
   as ``r'(?m)^[^\S\n]*$'``.
 
-  :func:`re.sub()` now replaces empty matches adjacent to a previous
+  :func:`re.sub` now replaces empty matches adjacent to a previous
   non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
   ``'-a-b--d-'`` instead of ``'-a-b-d-'`` (the first minus between 'b' and
   'd' replaces 'x', and the second minus replaces an empty string between

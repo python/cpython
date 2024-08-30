@@ -376,7 +376,7 @@ to achieve consistency with C-extension implementation.
 .. nonce: 8o9Dzr
 .. section: Library
 
-Fix memory leak in :func:`re.sub()` when the replacement string contains
+Fix memory leak in :func:`re.sub` when the replacement string contains
 backreferences.
 
 ..
