@@ -596,7 +596,7 @@ class HTTPErrorProcessor(BaseHandler):
     handler_order = 1000  # after all other processing
 
     def http_response(self, request, response):
-        code, msg, hdrs = response.code, response.msg, response.info()
+        code, msg, hdrs = response.status, response.msg, response.headers
 
         # According to RFC 2616, "2xx" code indicates that the client's
         # request was successfully received, understood, and accepted.
@@ -1336,8 +1336,7 @@ class AbstractHTTPHandler(BaseHandler):
         # This line replaces the .msg attribute of the HTTPResponse
         # with .headers, because urllib clients expect the response to
         # have the reason in .msg.  It would be good to mark this
-        # attribute is deprecated and get then to use info() or
-        # .headers.
+        # attribute is deprecated and get then to use .headers.
         r.msg = r.reason
         return r
 
