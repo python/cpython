@@ -157,7 +157,6 @@ _Py_SetTier2Optimizer(_PyOptimizerObject *optimizer)
     return old == NULL ? -1 : 0;
 }
 
-int executors_created = 0;
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
  */
@@ -184,8 +183,8 @@ _PyOptimizer_Optimize(
         return err;
     }
 
-    if (++executors_created >= 10) {
-        executors_created = 0;
+    if (++interp->executors_created >= JIT_CLEANUP_THRESHOLD) {
+        interp->executors_created = 0;
         _Py_Executors_InvalidateOld(interp, 0);
     }
 
@@ -1668,14 +1667,6 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
     }
 }
 
-void _Py_Executor_Invalidate(_PyExecutorObject *executor)
-{
-   if (executor->vm_data.valid) {
-    unlink_executor(executor);
-    executor_clear(executor);
-   }
-}
-
 void
 _Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
 {
@@ -1722,7 +1713,6 @@ _Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
         }
         Py_DECREF(invalidate);
     }
-    return;
 }
 
 #endif /* _Py_TIER2 */
