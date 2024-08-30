@@ -78,14 +78,14 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
     result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
 
     if (closeit && result && _Py_IsValidFD(fd)) {
-        PyErr_SetString(PyExc_AssertionError, "File was not closed after execution");
+        PyErr_SetString(PyExc_AssertionError, "File was not closed after excution");
         Py_DECREF(result);
         fclose(fp);
         return NULL;
     }
 
     if (!closeit && !_Py_IsValidFD(fd)) {
-        PyErr_SetString(PyExc_AssertionError, "Bad file descriptor after execution");
+        PyErr_SetString(PyExc_AssertionError, "Bad file descriptor after excution");
         Py_XDECREF(result);
         return NULL;
     }
