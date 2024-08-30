@@ -117,8 +117,8 @@ extern PyTypeObject _PyExc_MemoryError;
             }, \
             .long_object = { \
                 .size = sizeof(PyLongObject), \
-                .lv_tag = offsetof(_PyLongValue, lv_tag), \
-                .ob_digit = offsetof(_PyLongValue, ob_digit), \
+                .lv_tag = offsetof(PyLongObject, long_value.lv_tag), \
+                .ob_digit = offsetof(PyLongObject, long_value.ob_digit), \
             }, \
             .bytes_object = { \
                 .size = sizeof(PyBytesObject), \
