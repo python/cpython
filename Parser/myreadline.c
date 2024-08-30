@@ -392,10 +392,16 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         }
     }
 
-
-    PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
     Py_BEGIN_ALLOW_THREADS
+    
+    // GH-123321: We need to acquire the lock before setting
+    // _PyOS_ReadlineTState and after the release of the GIL, otherwise
+    // the variable may be nullified by a different thread or a deadlock
+    // may occur if the GIL is taken in any sub-function.
+    PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
     _PyOS_ReadlineTState = tstate;
+    
+    
 
 
     /* This is needed to handle the unlikely case that the
@@ -421,9 +427,12 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         rv = (*PyOS_ReadlineFunctionPointer)(sys_stdin, sys_stdout, prompt);
     }
 
+    // gh-123321: Must set the variable and then release the lock before
+    // taking the GIL. Otherwise a deadlock or segfault may occur.
     _PyOS_ReadlineTState = NULL;
-    Py_END_ALLOW_THREADS
     PyThread_release_lock(_PyOS_ReadlineLock);
+    
+    Py_END_ALLOW_THREADS
 
     if (rv == NULL)
         return NULL;
