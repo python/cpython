@@ -185,7 +185,7 @@ _PyOptimizer_Optimize(
 
     if (++interp->executors_created >= JIT_CLEANUP_THRESHOLD) {
         interp->executors_created = 0;
-        _Py_Executors_InvalidateOld(interp, 0);
+        _Py_Executors_InvalidateCold(interp);
     }
 
     assert(*executor_ptr != NULL);
@@ -1668,16 +1668,15 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 }
 
 void
-_Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
+_Py_Executors_InvalidateCold(PyInterpreterState *interp)
 {
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
-    bool no_memory = false;
     PyObject *invalidate = PyList_New(0);
     if (invalidate == NULL) {
-        PyErr_Clear();
-        no_memory = true;
+        goto error;
     }
+
     int total_executors = 0;
     int invalidated_executors = 0;
     /* Clearing an executor can deallocate others, so we need to make a list of
@@ -1685,34 +1684,33 @@ _Py_Executors_InvalidateOld(PyInterpreterState *interp, int is_invalidation)
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
+
         total_executors++;
         if (exec->run_count < 1) {
             invalidated_executors++;
             unlink_executor(exec);
-            if (no_memory) {
-                exec->vm_data.valid = 0;
-            } else {
-                if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
-                    PyErr_Clear();
-                    no_memory = true;
-                    exec->vm_data.valid = 0;
-                }
+            if (PyList_Append(invalidate, (PyObject *)exec) < 0)
+            {
+                goto error;
             }
-            if (is_invalidation) {
-                OPT_STAT_INC(executors_invalidated);
-            }
+
         } else {
             exec->run_count = 0;
         }
+
         exec = next;
     }
-    if (invalidate != NULL) {
-        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
-            _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
-            executor_clear(exec);
-        }
-        Py_DECREF(invalidate);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
+        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+        executor_clear(exec);
     }
+        Py_DECREF(invalidate);
+        return;
+error:
+    PyErr_Clear();
+    Py_XDECREF(invalidate);
+    // If we're truly out of memory, wiping out everything is a fine fallback:
+    _Py_Executors_InvalidateAll(interp, 0);
 }
 
 #endif /* _Py_TIER2 */
