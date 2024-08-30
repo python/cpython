@@ -335,8 +335,7 @@ random_seed(RandomObject *self, PyObject *arg)
 
     /* Now split n into 32-bit chunks, from the right. */
     bits = _PyLong_NumBits(n);
-    if (bits == (uint64_t)-1 && PyErr_Occurred())
-        goto Done;
+    assert(!PyErr_Occurred());
 
     /* Figure out how many 32-bit chunks this gives us. */
     keyused = bits == 0 ? 1 : (size_t)((bits - 1) / 32 + 1);

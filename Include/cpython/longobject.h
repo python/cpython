@@ -71,8 +71,7 @@ PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
    absolute value of a long.  For example, this returns 1 for 1 and -1, 2
    for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
    v must not be NULL, and must be a normalized long.
-   (uint64_t)-1 is returned and OverflowError set if the true result doesn't
-   fit in a size_t.
+   Always successful.
 */
 PyAPI_FUNC(uint64_t) _PyLong_NumBits(PyObject *v);
 
