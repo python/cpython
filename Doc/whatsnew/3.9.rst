@@ -983,7 +983,7 @@ Removed
   (Contributed by Victor Stinner in :issue:`37312`.)
 
 * ``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
-  ``sunau.open()``, and ``wave.openfp()`` alias to :func:`wave.open()` have been
+  ``sunau.open()``, and ``wave.openfp()`` alias to :func:`wave.open` have been
   removed. They were deprecated since Python 3.7.
   (Contributed by Victor Stinner in :issue:`37320`.)
 

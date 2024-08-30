@@ -1967,7 +1967,7 @@ Other Improvements
 
 * The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
   also checks for memory allocation leaks, using
-  :func:`sys.getallocatedblocks()`.  (Contributed by Antoine Pitrou in
+  :func:`sys.getallocatedblocks`.  (Contributed by Antoine Pitrou in
   :issue:`13390`.)
 
 * ``python -m`` now works with namespace packages.

@@ -149,7 +149,7 @@ exception in :meth:`float.__getformat__`.
 .. nonce: 9-vKtO
 .. section: Core and Builtins
 
-Optimized :func:`math.floor()`, :func:`math.ceil()` and :func:`math.trunc()`
+Optimized :func:`math.floor`, :func:`math.ceil` and :func:`math.trunc`
 for floats.
 
 ..
@@ -2990,7 +2990,7 @@ mode.
 .. nonce: FRGH4I
 .. section: Library
 
-:func:`ctypes.create_unicode_buffer()` now also supports non-BMP characters
+:func:`ctypes.create_unicode_buffer` now also supports non-BMP characters
 on platforms with 16-bit :c:type:`wchar_t` (for example, Windows and AIX).
 
 ..
@@ -3054,7 +3054,7 @@ Change the format of feature_version to be a (major, minor) tuple.
 .. nonce: 5_mJkQ
 .. section: Library
 
-Eliminate :exc:`RuntimeError` raised by :func:`asyncio.all_tasks()` if
+Eliminate :exc:`RuntimeError` raised by :func:`asyncio.all_tasks` if
 internal tasks weak set is changed by another thread during iteration.
 
 ..
@@ -3536,7 +3536,7 @@ Add :meth:`~pathlib.Path.readlink`. Patch by Girts Folkmanis.
 .. nonce: La3TZz
 .. section: Library
 
-Made :func:`urllib.parse.unquote()` accept bytes in addition to strings.
+Made :func:`urllib.parse.unquote` accept bytes in addition to strings.
 Patch by Stein Karlsen.
 
 ..

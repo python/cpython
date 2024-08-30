@@ -176,8 +176,8 @@ Added new ``replace()`` method to the code type (:class:`types.CodeType`).
 .. nonce: d1SOtF
 .. section: Core and Builtins
 
-Implement :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`,
-and :func:`socket.if_indextoname()` on Windows.
+Implement :func:`socket.if_nameindex`, :func:`socket.if_nametoindex`,
+and :func:`socket.if_indextoname` on Windows.
 
 ..
 

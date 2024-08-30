@@ -5148,7 +5148,7 @@ frame did not save the PC`` is found. Patch by Victor Stinner.
 .. nonce: qxI4OG
 .. section: Tests
 
-libregrtest now calls :func:`random.seed()` before running each test file
+libregrtest now calls :func:`random.seed` before running each test file
 when ``-r/--randomize`` command line option is used. Moreover, it's also
 called in worker processes.  It should help to make tests more
 deterministic. Previously, it was only called once in the main process

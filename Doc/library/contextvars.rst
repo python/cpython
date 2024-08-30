@@ -15,7 +15,7 @@ function and the :class:`~contextvars.Context` class should be used to
 manage the current context in asynchronous frameworks.
 
 Context managers that have state should use Context Variables
-instead of :func:`threading.local()` to prevent their state from
+instead of :func:`threading.local` to prevent their state from
 bleeding to other code unexpectedly, when used in concurrent code.
 
 See also :pep:`567` for additional details.
@@ -146,7 +146,7 @@ Manual Context Management
 
    Every thread will have a different top-level :class:`~contextvars.Context`
    object. This means that a :class:`ContextVar` object behaves in a similar
-   fashion to :func:`threading.local()` when values are assigned in different
+   fashion to :func:`threading.local` when values are assigned in different
    threads.
 
    Context implements the :class:`collections.abc.Mapping` interface.

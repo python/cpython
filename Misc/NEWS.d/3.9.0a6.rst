@@ -866,7 +866,7 @@ of source of the class. Patch by Karthikeyan Singaravelan.
 .. nonce: vHC7YQ
 .. section: Library
 
-Deprecate passing None as an argument for :func:`shlex.split()`'s ``s``
+Deprecate passing None as an argument for :func:`shlex.split`'s ``s``
 parameter.  Patch by Zackery Spytz.
 
 ..

@@ -513,7 +513,7 @@ were defined.
 
 Descriptors are a powerful, general purpose protocol.  They are the mechanism
 behind properties, methods, static methods, class methods, and
-:func:`super()`.  They are used throughout Python itself.  Descriptors
+:func:`super`.  They are used throughout Python itself.  Descriptors
 simplify the underlying C code and offer a flexible set of new tools for
 everyday Python programs.
 

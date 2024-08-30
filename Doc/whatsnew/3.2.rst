@@ -2321,7 +2321,7 @@ Multi-threading
   intervals and reduced overhead due to lock contention and the number of
   ensuing system calls.  The notion of a "check interval" to allow thread
   switches has been abandoned and replaced by an absolute duration expressed in
-  seconds.  This parameter is tunable through :func:`sys.setswitchinterval()`.
+  seconds.  This parameter is tunable through :func:`sys.setswitchinterval`.
   It currently defaults to 5 milliseconds.
 
   Additional details about the implementation can be read from a `python-dev
