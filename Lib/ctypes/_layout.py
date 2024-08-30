@@ -63,7 +63,6 @@ class StructUnionLayout:
         self.format_spec = format_spec
 
 
-
 def get_layout(cls, input_fields, is_struct, base):
     """Return a StructUnionLayout for the given class.
 
@@ -247,9 +246,9 @@ def get_layout(cls, input_fields, is_struct, base):
 
                 last_field_bit_size = type_bit_size
                 # Reminder: 8 * (next_byte_offset) + next_bit_offset
-                # points to where we would start a
-                # new field.  I.e. just behind where we placed the last
-                # field plus an allowance for alignment.
+                # points to where we would start a new field, namely
+                # just behind where we placed the last field plus an
+                # allowance for alignment.
                 next_bit_offset = -last_field_bit_size
 
             assert type_bit_size == last_field_bit_size
