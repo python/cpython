@@ -914,24 +914,13 @@ dummy_func(
 
         tier1 inst(RAISE_VARARGS, (args[oparg] -- )) {
             PyObject *cause = NULL, *exc = NULL;
-            switch (oparg) {
-            case 2:
-                cause = PyStackRef_AsPyObjectSteal(args[1]);
-                _Py_FALLTHROUGH;
-            case 1:
-                exc = PyStackRef_AsPyObjectSteal(args[0]);
-                _Py_FALLTHROUGH;
-            case 0:
-                if (do_raise(tstate, exc, cause)) {
-                    assert(oparg == 0);
-                    monitor_reraise(tstate, frame, this_instr);
-                    goto exception_unwind;
-                }
-                break;
-            default:
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "bad RAISE_VARARGS oparg");
-                break;
+            assert(oparg < 3);
+            PyObject *cause = oparg == 2 ? PyStackRef_AsPyObjectSteal(args[1]) : NULL;
+            PyObject *exc = oparg > 0 ? PyStackRef_AsPyObjectSteal(args[0]) : NULL;
+            if (do_raise(tstate, exc, cause)) {
+                assert(oparg == 0);
+                monitor_reraise(tstate, frame, this_instr);
+                goto exception_unwind;
             }
             ERROR_IF(true, error);
         }
@@ -3251,7 +3240,7 @@ dummy_func(
                     args, total_args, NULL, frame
                 );
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                STACK_SHRINK(oparg + 2);
+                SYNC_SP();
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
@@ -4083,8 +4072,8 @@ dummy_func(
                     args, positional_args, kwnames_o, frame
                 );
                 PyStackRef_CLOSE(kwnames);
-                // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                STACK_SHRINK(oparg + 3);
+                // Sync stack explicitly since we leave using DISPATCH_INLINED().
+                SYNC_SP();
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
@@ -4338,8 +4327,8 @@ dummy_func(
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
                                                                                 (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
                                                                                 nargs, callargs, kwargs, frame);
-                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
-                    STACK_SHRINK(oparg + 3);
+                    // Need to sync the stack since we exit with DISPATCH_INLINED.
+                    SYNC_SP();
                     if (new_frame == NULL) {
                         ERROR_NO_POP();
                     }
@@ -4350,7 +4339,6 @@ dummy_func(
                 result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
             }
             DECREF_INPUTS();
-            assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
             ERROR_IF(PyStackRef_IsNull(result), error);
         }
 
@@ -4403,12 +4391,12 @@ dummy_func(
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            res = PyStackRef_FromPyObjectSteal((PyObject *)gen);
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             LOAD_IP(frame->return_offset);
             LOAD_SP();
+            res = PyStackRef_FromPyObjectSteal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
         }
 

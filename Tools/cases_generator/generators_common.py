@@ -329,10 +329,9 @@ class Emitter:
                     self.emit(storage.as_comment())
                     self.out.start_line()
                     line = tkn.line
-                #if tkn in escaping_calls:
-                #    self.out.emit(f"/* ESCAPING CALL {escaping_calls[tkn].text} starting at {tkn.text} */\n")
-                #    storage.flush(self.out)
-                #    self._print_storage(storage)
+                if tkn in escaping_calls:
+                    storage.flush(self.out)
+                    self._print_storage(storage)
                 if tkn.kind == "LBRACE":
                     self.out.emit(tkn)
                     braces += 1

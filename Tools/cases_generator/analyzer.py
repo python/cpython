@@ -505,6 +505,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsZero",
     "Py_SIZE",
     "Py_TYPE",
+    "Py_IS_TYPE",
     "PyList_GET_ITEM",
     "PyList_SET_ITEM",
     "PyTuple_GET_ITEM",
@@ -556,8 +557,13 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyTuple_FromArraySteal",
     "_PyTuple_FromStackRefSteal",
     "PyFunction_GET_CODE",
+    "PyFunction_GET_GLOBALS",
     "_PyErr_Occurred",
     "PyCFunction_GET_FUNCTION",
+    "PyCFunction_GET_FLAGS",
+    "PyCFunction_GET_SELF",
+    "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
+    "PyCell_GetRef",
 )
 
 def find_start_stmt(node: parser.InstDef, idx: int) -> lexer.Token:
