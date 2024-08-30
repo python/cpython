@@ -1984,14 +1984,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertRaises(OSError, source.copy, source)
         self.assertRaises(OSError, source.copy, source, follow_symlinks=False)
 
-    def test_copy_dir_to_itself_on_error(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        errors = []
-        source.copy(source, on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], OSError)
-
     def test_copy_dir_into_itself(self):
         base = self.cls(self.base)
         source = base / 'dirC'
@@ -1999,61 +1991,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
         self.assertFalse(target.exists())
-
-    def test_copy_missing_on_error(self):
-        base = self.cls(self.base)
-        source = base / 'foo'
-        target = base / 'copyA'
-        errors = []
-        result = source.copy(target, on_error=errors.append)
-        self.assertEqual(result, target)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], FileNotFoundError)
-
-    def test_copy_dir_ignore_false(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        ignores = []
-        def ignore_false(path):
-            ignores.append(path)
-            return False
-        result = source.copy(target, ignore=ignore_false)
-        self.assertEqual(result, target)
-        self.assertEqual(set(ignores), {
-            source / 'dirD',
-            source / 'dirD' / 'fileD',
-            source / 'fileC',
-            source / 'novel.txt',
-        })
-        self.assertTrue(target.is_dir())
-        self.assertTrue(target.joinpath('dirD').is_dir())
-        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
-        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
-                         "this is file D\n")
-        self.assertTrue(target.joinpath('fileC').is_file())
-        self.assertTrue(target.joinpath('fileC').read_text(),
-                        "this is file C\n")
-
-    def test_copy_dir_ignore_true(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        ignores = []
-        def ignore_true(path):
-            ignores.append(path)
-            return True
-        result = source.copy(target, ignore=ignore_true)
-        self.assertEqual(result, target)
-        self.assertEqual(set(ignores), {
-            source / 'dirD',
-            source / 'fileC',
-            source / 'novel.txt',
-        })
-        self.assertTrue(target.is_dir())
-        self.assertFalse(target.joinpath('dirD').exists())
-        self.assertFalse(target.joinpath('fileC').exists())
-        self.assertFalse(target.joinpath('novel.txt').exists())
 
     @needs_symlinks
     def test_copy_dangling_symlink(self):
@@ -2071,6 +2008,20 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(result, target2)
         self.assertTrue(target2.joinpath('link').is_symlink())
         self.assertEqual(target2.joinpath('link').readlink(), self.cls('nonexistent'))
+
+    def test_copy_into(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target_dir = base / 'dirA'
+        result = source.copy_into(target_dir)
+        self.assertEqual(result, target_dir / 'fileA')
+        self.assertTrue(result.exists())
+        self.assertEqual(source.read_text(), result.read_text())
+
+    def test_copy_into_empty_name(self):
+        source = self.cls('')
+        target_dir = self.base
+        self.assertRaises(ValueError, source.copy_into, target_dir)
 
     def test_move_file(self):
         base = self.cls(self.base)
@@ -2190,6 +2141,22 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse(source.exists())
         self.assertTrue(target.is_symlink())
         self.assertEqual(source_readlink, target.readlink())
+
+    def test_move_into(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        source_text = source.read_text()
+        target_dir = base / 'dirA'
+        result = source.move_into(target_dir)
+        self.assertEqual(result, target_dir / 'fileA')
+        self.assertFalse(source.exists())
+        self.assertTrue(result.exists())
+        self.assertEqual(source_text, result.read_text())
+
+    def test_move_into_empty_name(self):
+        source = self.cls('')
+        target_dir = self.base
+        self.assertRaises(ValueError, source.move_into, target_dir)
 
     def test_iterdir(self):
         P = self.cls
@@ -2854,20 +2821,20 @@ class DummyPathTest(DummyPurePathTest):
 
     def test_delete_file(self):
         p = self.cls(self.base) / 'fileA'
-        p.delete()
+        p._delete()
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
     def test_delete_dir(self):
         base = self.cls(self.base)
-        base.joinpath('dirA').delete()
+        base.joinpath('dirA')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirA').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').lstat)
-        base.joinpath('dirB').delete()
+        base.joinpath('dirB')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirB').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'fileB').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').lstat)
-        base.joinpath('dirC').delete()
+        base.joinpath('dirC')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirC').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD', 'fileD').stat)
@@ -2882,7 +2849,7 @@ class DummyPathTest(DummyPurePathTest):
         dir_.mkdir()
         link = tmp / 'link'
         link.symlink_to(dir_)
-        link.delete()
+        link._delete()
         self.assertTrue(dir_.exists())
         self.assertFalse(link.exists(follow_symlinks=False))
 
@@ -2904,7 +2871,7 @@ class DummyPathTest(DummyPurePathTest):
         link3 = dir1 / 'link3'
         link3.symlink_to(file1)
         # make sure symlinks are removed but not followed
-        dir1.delete()
+        dir1._delete()
         self.assertFalse(dir1.exists())
         self.assertTrue(dir3.exists())
         self.assertTrue(file1.exists())
@@ -2914,15 +2881,7 @@ class DummyPathTest(DummyPurePathTest):
         tmp.mkdir()
         # filename is guaranteed not to exist
         filename = tmp / 'foo'
-        self.assertRaises(FileNotFoundError, filename.delete)
-        # test that ignore_errors option is honored
-        filename.delete(ignore_errors=True)
-        # test on_error
-        errors = []
-        filename.delete(on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], FileNotFoundError)
-        self.assertEqual(errors[0].filename, str(filename))
+        self.assertRaises(FileNotFoundError, filename._delete)
 
     def setUpWalk(self):
         # Build:

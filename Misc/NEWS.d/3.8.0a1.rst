@@ -625,7 +625,7 @@ Spytz.
 
 The C function ``property_descr_get()`` uses a "cached" tuple to optimize
 function calls. But this tuple can be discovered in debug mode with
-:func:`sys.getobjects()`. Remove the optimization, it's not really worth it
+:func:`sys.getobjects`. Remove the optimization, it's not really worth it
 and it causes 3 different crashes last years.
 
 ..
@@ -3211,9 +3211,9 @@ bytes objects. (microoptimization)
 .. nonce: i-F_E5
 .. section: Library
 
-Add :func:`~unittest.addModuleCleanup()` and
+Add :func:`~unittest.addModuleCleanup` and
 :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support cleanups
-for :func:`~unittest.setUpModule()` and
+for :func:`~unittest.setUpModule` and
 :meth:`~unittest.TestCase.setUpClass()`. Patch by Lisa Roach.
 
 ..
@@ -3458,7 +3458,7 @@ Running the :mod:`trace` module no longer creates the ``trace.cover`` file.
 .. section: Library
 
 Fix crash when an ``ABC``-derived class with invalid ``__subclasses__`` is
-passed as the second argument to :func:`issubclass()`. Patch by Alexey
+passed as the second argument to :func:`issubclass`. Patch by Alexey
 Izbyshev.
 
 ..
@@ -5269,7 +5269,7 @@ performance and smaller size compared to protocol 3 introduced in Python
 .. section: Library
 
 Improved error handling and fixed a reference leak in
-:func:`os.posix_spawn()`.
+:func:`os.posix_spawn`.
 
 ..
 
@@ -5857,7 +5857,7 @@ collections.ChainMap() preserves the order of the underlying mappings.
 .. nonce: -T77_c
 .. section: Library
 
-:func:`fnmatch.translate()` no longer produces patterns which contain set
+:func:`fnmatch.translate` no longer produces patterns which contain set
 operations. Sets starting with '[' or containing '--', '&&', '~~' or '||'
 will be interpreted differently in regular expressions in future versions.
 Currently they emit warnings. fnmatch.translate() now avoids producing
