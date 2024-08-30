@@ -706,7 +706,7 @@ Remove modules :mod:`!asyncore` and :mod:`!asynchat`, which were deprecated by
 .. section: Library
 
 Fix handling of ``bytes`` :term:`path-like objects <path-like object>` in
-:func:`os.ismount()`.
+:func:`os.ismount`.
 
 ..
 

@@ -4046,6 +4046,12 @@ PyInit__testcapi(void)
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
     PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
+    PyModule_AddObject(m, "INT32_MIN", PyLong_FromInt32(INT32_MIN));
+    PyModule_AddObject(m, "INT32_MAX", PyLong_FromInt32(INT32_MAX));
+    PyModule_AddObject(m, "UINT32_MAX", PyLong_FromUInt32(UINT32_MAX));
+    PyModule_AddObject(m, "INT64_MIN", PyLong_FromInt64(INT64_MIN));
+    PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
+    PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return NULL;
