@@ -399,7 +399,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
     else if (PyLong_Check(w)) {
         int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
         int wsign = _PyLong_Sign(w);
-        size_t nbits;
         int exponent;
 
         if (vsign != wsign) {
@@ -412,20 +411,25 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         }
         /* The signs are the same. */
         /* Convert w to a double if it fits.  In particular, 0 fits. */
-        nbits = _PyLong_NumBits(w);
-        if (nbits == (size_t)-1 && PyErr_Occurred()) {
-            /* This long is so large that size_t isn't big enough
-             * to hold the # of bits.  Replace with little doubles
+        uint64_t nbits64 = _PyLong_NumBits(w);
+        if (nbits64 > (unsigned int)DBL_MAX_EXP) {
+            /* This Python integer is larger than any finite C double.
+             * Replace with little doubles
              * that give the same outcome -- w is so large that
              * its magnitude must exceed the magnitude of any
              * finite float.
              */
-            PyErr_Clear();
+            if (nbits64 == (uint64_t)-1 && PyErr_Occurred()) {
+                /* This Python integer is so large that uint64_t isn't
+                 * big enough to hold the # of bits. */
+                PyErr_Clear();
+            }
             i = (double)vsign;
             assert(wsign != 0);
             j = wsign * 2.0;
             goto Compare;
         }
+        int nbits = (int)nbits64;
         if (nbits <= 48) {
             j = PyLong_AsDouble(w);
             /* It's impossible that <= 48 bits overflowed. */
@@ -449,12 +453,12 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         /* exponent is the # of bits in v before the radix point;
          * we know that nbits (the # of bits in w) > 48 at this point
          */
-        if (exponent < 0 || (size_t)exponent < nbits) {
+        if (exponent < nbits) {
             i = 1.0;
             j = 2.0;
             goto Compare;
         }
-        if ((size_t)exponent > nbits) {
+        if (exponent > nbits) {
             i = 2.0;
             j = 1.0;
             goto Compare;
