@@ -446,7 +446,8 @@ The :mod:`calendar` module exports the following data attributes:
    a length of 13 and  ``month_abbr[0]`` is the empty string.
 
       >>> list(calendar.month_abbr)
-      ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']   
+      ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 
+      'Sep', 'Oct', 'Nov', 'Dec']   
 
    .. versionadded:: 3.12
 
