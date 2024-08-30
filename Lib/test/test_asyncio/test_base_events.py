@@ -2226,7 +2226,6 @@ class TestSelectorUtils(test_utils.TestCase):
             self.check_set_nodelay(sock)
 
 
-class TestSelectorUtils(test_utils.TestCase):
     def check_set_quickack(self, sock):
         # quickack already true by default on some OSes
         opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
