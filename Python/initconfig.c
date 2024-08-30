@@ -3658,7 +3658,7 @@ PyConfig_GetInt(const char *name, int *value)
     Py_DECREF(obj);
     if (as_int == -1 && PyErr_Occurred()) {
         PyErr_Format(PyExc_OverflowError,
-                     "config option %s value doesn't fit into int", name);
+                     "config option %s value does not fit into an int", name);
         return -1;
     }
 
