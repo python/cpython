@@ -4021,6 +4021,20 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             y = x ** 2
         self.assertIn('unsupported operand type(s) for **', str(cm.exception))
 
+    def test_pow_wrapper_error_messages(self):
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 0',
+                               int().__pow__)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 3',
+                               int().__pow__, 1, 2, 3)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 0',
+                               int().__rpow__)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 3',
+                               int().__rpow__, 1, 2, 3)
+
     def test_mutable_bases(self):
         # Testing mutable bases...
 

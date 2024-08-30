@@ -511,10 +511,10 @@ correct.
 Prior to Python 3.6, data loss could result when using bytes paths on Windows.
 With this change, using bytes to represent paths is now supported on Windows,
 provided those bytes are encoded with the encoding returned by
-:func:`sys.getfilesystemencoding()`, which now defaults to ``'utf-8'``.
+:func:`sys.getfilesystemencoding`, which now defaults to ``'utf-8'``.
 
 Applications that do not use str to represent paths should use
-:func:`os.fsencode()` and :func:`os.fsdecode()` to ensure their bytes are
+:func:`os.fsencode` and :func:`os.fsdecode` to ensure their bytes are
 correctly encoded. To revert to the previous behaviour, set
 :envvar:`PYTHONLEGACYWINDOWSFSENCODING` or call
 :func:`sys._enablelegacywindowsfsencoding`.
@@ -780,7 +780,7 @@ for managing secrets, such as account authentication, tokens, and similar.
 
   Note that the pseudo-random generators in the :mod:`random` module
   should *NOT* be used for security purposes.  Use :mod:`secrets`
-  on Python 3.6+ and :func:`os.urandom()` on Python 3.5 and earlier.
+  on Python 3.6+ and :func:`os.urandom` on Python 3.5 and earlier.
 
 .. seealso::
 
@@ -1316,7 +1316,7 @@ Storchaka in :issue:`24164`.)
 pickletools
 -----------
 
-:func:`pickletools.dis()` now outputs the implicit memo index for the
+:func:`pickletools.dis` now outputs the implicit memo index for the
 ``MEMOIZE`` opcode.
 (Contributed by Serhiy Storchaka in :issue:`25382`.)
 
