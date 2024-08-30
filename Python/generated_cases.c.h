@@ -6457,7 +6457,6 @@
             INSTRUCTION_STATS(RAISE_VARARGS);
             _PyStackRef *args;
             args = &stack_pointer[-oparg];
-            PyObject *cause = NULL, *exc = NULL;
             assert(oparg < 3);
             PyObject *cause = oparg == 2 ? PyStackRef_AsPyObjectSteal(args[1]) : NULL;
             PyObject *exc = oparg > 0 ? PyStackRef_AsPyObjectSteal(args[0]) : NULL;

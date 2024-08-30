@@ -913,7 +913,6 @@ dummy_func(
         }
 
         tier1 inst(RAISE_VARARGS, (args[oparg] -- )) {
-            PyObject *cause = NULL, *exc = NULL;
             assert(oparg < 3);
             PyObject *cause = oparg == 2 ? PyStackRef_AsPyObjectSteal(args[1]) : NULL;
             PyObject *exc = oparg > 0 ? PyStackRef_AsPyObjectSteal(args[0]) : NULL;

@@ -566,7 +566,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyCell_GetRef",
 )
 
-def find_start_stmt(node: parser.InstDef, idx: int) -> lexer.Token:
+def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         tkn = node.block.tokens[idx-1]
@@ -576,6 +576,17 @@ def find_start_stmt(node: parser.InstDef, idx: int) -> lexer.Token:
         assert idx > 0
     while node.block.tokens[idx].kind == "COMMENT":
         idx += 1
+    return node.block.tokens[idx]
+
+def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
+    assert idx < len(node.block.tokens)
+    while True:
+        idx += 1
+        tkn = node.block.tokens[idx]
+        if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+            break
+    while node.block.tokens[idx].kind == "COMMENT":
+        idx -= 1
     return node.block.tokens[idx]
 
 
@@ -601,8 +612,9 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, lexer.To
             continue
         if tkn.text in NON_ESCAPING_FUNCTIONS:
             continue
-        start = find_start_stmt(instr, idx)
-        result[start] = tkn
+        start = find_stmt_start(instr, idx)
+        end = find_stmt_end(instr, idx)
+        result[start] = tkn, end
     return result
 
 
