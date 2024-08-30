@@ -266,7 +266,7 @@ heapctypewithrelativedict_dealloc(PyObject* self)
 
 static PyType_Spec HeapCTypeWithRelativeDict_spec = {
     .name = "_testcapi.HeapCTypeWithRelativeDict",
-    .basicsize = (int) -sizeof(HeapCTypeWithDictStruct),
+    .basicsize = -(int)sizeof(HeapCTypeWithDictStruct),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = (PyType_Slot[]) {
         {Py_tp_dealloc, heapctypewithrelativedict_dealloc},
@@ -307,7 +307,7 @@ heapctypewithrelativeweakref_dealloc(PyObject* self)
 
 static PyType_Spec HeapCTypeWithRelativeWeakref_spec = {
     .name = "_testcapi.HeapCTypeWithRelativeWeakref",
-    .basicsize = (int) -sizeof(HeapCTypeWithWeakrefStruct),
+    .basicsize = -(int)sizeof(HeapCTypeWithWeakrefStruct),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = (PyType_Slot[]) {
         {Py_tp_dealloc, heapctypewithrelativeweakref_dealloc},

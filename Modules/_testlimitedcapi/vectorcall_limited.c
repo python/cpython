@@ -196,7 +196,7 @@ LimitedRelativeVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObje
 
 static PyType_Spec LimitedRelativeVectorCallClass_spec = {
     .name = "_testlimitedcapi.LimitedRelativeVectorCallClass",
-    .basicsize = (int) -sizeof(LimitedRelativeVectorCallStruct),
+    .basicsize = -(int)sizeof(LimitedRelativeVectorCallStruct),
     .flags = Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_HAVE_VECTORCALL,
     .slots = (PyType_Slot[]) {
