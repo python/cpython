@@ -596,13 +596,13 @@ class HTTPErrorProcessor(BaseHandler):
     handler_order = 1000  # after all other processing
 
     def http_response(self, request, response):
-        code, msg, hdrs = response.status, response.msg, response.headers
+        status, msg, hdrs = response.status, response.msg, response.headers
 
         # According to RFC 2616, "2xx" code indicates that the client's
         # request was successfully received, understood, and accepted.
-        if not (200 <= code < 300):
+        if not (200 <= status < 300):
             response = self.parent.error(
-                'http', request, response, code, msg, hdrs)
+                'http', request, response, status, msg, hdrs)
 
         return response
 
@@ -1007,7 +1007,7 @@ class AbstractBasicAuthHandler:
 
     def http_response(self, req, response):
         if hasattr(self.passwd, 'is_authenticated'):
-            if 200 <= response.code < 300:
+            if 200 <= response.status < 300:
                 self.passwd.update_authenticated(req.full_url, True)
             else:
                 self.passwd.update_authenticated(req.full_url, False)
