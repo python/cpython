@@ -212,7 +212,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
     url_type, path = _splittype(url)
 
     with contextlib.closing(urlopen(url, data)) as fp:
-        headers = fp.info()
+        headers = fp.headers
 
         # Just return the local path and the "headers" for file://
         # URLs. No sense in performing a copy unless requested.
@@ -1788,14 +1788,14 @@ class URLopener:
         if filename is None and (not type or type == 'file'):
             try:
                 fp = self.open_local_file(url1)
-                hdrs = fp.info()
+                hdrs = fp.status
                 fp.close()
                 return url2pathname(_splithost(url1)[1]), hdrs
             except OSError:
                 pass
         fp = self.open(url, data)
         try:
-            headers = fp.info()
+            headers = fp.status
             if filename:
                 tfp = open(filename, 'wb')
             else:
