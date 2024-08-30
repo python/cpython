@@ -8679,11 +8679,11 @@ check_num_args(PyObject *ob, int n)
 }
 
 static Py_ssize_t
-check_num_varargs(PyObject *ob, int min, int max)
+check_pow_args(PyObject *ob)
 {
     // Returns the argument count on success or `-1` on error.
-    assert(min >= 0);
-    assert(min < max);
+    int min = 1;
+    int max = 2;
     if (!PyTuple_CheckExact(ob)) {
         PyErr_SetString(PyExc_SystemError,
             "PyArg_UnpackTuple() argument list is not a tuple");
@@ -8780,7 +8780,7 @@ wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
 
     /* Note: This wrapper only works for __pow__() */
 
-    Py_ssize_t size = check_num_varargs(args, 1, 2);
+    Py_ssize_t size = check_pow_args(args);
     if (size == -1) {
         return NULL;
     }
@@ -8801,8 +8801,15 @@ wrap_ternaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 
     /* Note: This wrapper only works for __rpow__() */
 
-    if (!PyArg_UnpackTuple(args, "__rpow__", 1, 2, &other, &third))
+    Py_ssize_t size = check_pow_args(args);
+    if (size == -1) {
         return NULL;
+    }
+    other = PyTuple_GET_ITEM(args, 0);
+    if (size == 2) {
+       third = PyTuple_GET_ITEM(args, 1);
+    }
+
     return (*func)(other, self, third);
 }
 
