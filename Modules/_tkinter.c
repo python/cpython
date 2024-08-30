@@ -3389,6 +3389,14 @@ DisableEventHook(void)
 #endif
 }
 
+static void
+module_free(void *mod)
+{
+    Py_DECREF(Tkinter_TclError);
+    Py_DECREF(Tkapp_Type);
+    Py_DECREF(Tktt_Type);
+    Py_DECREF(PyTclObject_Type);
+}
 
 static struct PyModuleDef _tkintermodule = {
     PyModuleDef_HEAD_INIT,
@@ -3399,7 +3407,7 @@ static struct PyModuleDef _tkintermodule = {
     NULL,
     NULL,
     NULL,
-    NULL
+    module_free
 };
 
 PyMODINIT_FUNC
@@ -3421,7 +3429,6 @@ PyInit__tkinter(void)
     Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
     if (PyModule_AddObjectRef(m, "TclError", Tkinter_TclError)) {
         Py_DECREF(m);
-        Py_DECREF(Tkinter_TclError);
         return NULL;
     }
 
@@ -3475,22 +3482,18 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    Py_DECREF(Tkapp_Type);
 
     Tktt_Type = PyType_FromSpec(&Tktt_Type_spec);
     if (PyModule_AddObjectRef(m, "TkttType", Tktt_Type)) {
         Py_DECREF(m);
         return NULL;
     }
-    Py_DECREF(Tktt_Type);
 
     PyTclObject_Type = PyType_FromSpec(&PyTclObject_Type_spec);
     if (PyModule_AddObjectRef(m, "Tcl_Obj", PyTclObject_Type)) {
         Py_DECREF(m);
         return NULL;
     }
-    Py_DECREF(PyTclObject_Type);
-
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
