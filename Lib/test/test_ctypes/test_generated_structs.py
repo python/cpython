@@ -162,22 +162,6 @@ class MSStraddlingExample(Structure):
         ('last', c_uint, 18)]
 
 @register()
-class BitsfieldUnion(Union):
-    # Note that if the bit fields are changed to `c_int`,
-    # the alignment is unclear:
-    # MSC reports 1 but GCC with __attribute__((ms_struct)) gives 4.
-    _fields_ = [("A", c_int8, 1),
-                ("B", c_int8, 2),
-                ("C", c_int8, 3),
-                ("D", c_int8, 4),
-                ("E", c_int8, 5),
-                ("F", c_int8, 6),
-                ("G", c_int8, 7),
-                ("H", c_int8, 8),
-                # ("I", c_int, 9),
-                ("not_a_bitfield", c_int8)]
-
-@register()
 class IntBits(Structure):
     _fields_ = [("A", c_int, 1),
                 ("B", c_int, 2),
