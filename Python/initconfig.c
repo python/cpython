@@ -3277,7 +3277,6 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 // --- PyInitConfig API ---------------------------------------------------
 
 struct PyInitConfig {
-    // FIXME: add preconfig
     PyConfig config;
     PyStatus status;
     char *err_msg;
@@ -3492,21 +3491,15 @@ PyInitConfig_FreeStrList(size_t length, char **items)
 
 
 static const PyConfigSpec*
-initconfig_prepare_set(PyInitConfig *config, const char *name, int preconfig)
+initconfig_prepare_set(PyInitConfig *config, const char *name,
+                       void **raw_member)
 {
     const PyConfigSpec *spec = config_get_spec(name);
     if (spec == NULL) {
         initconfig_set_error(config, "unknown config option name");
         return NULL;
     }
-
-    if (preconfig) {
-        config->status = _Py_PreInitializeFromConfig(&config->config, NULL);
-        if (_PyStatus_EXCEPTION(config->status)) {
-            return NULL;
-        }
-    }
-
+    *raw_member = config_spec_get_member(spec, &config->config);
     return spec;
 }
 
@@ -3514,7 +3507,8 @@ initconfig_prepare_set(PyInitConfig *config, const char *name, int preconfig)
 int
 PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
 {
-    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 0);
+    void *raw_member;
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3527,7 +3521,7 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
         }
         int int_value = (int)value;
 
-        int *member = config_spec_get_member(spec, &config->config);
+        int *member = raw_member;
         *member = int_value;
     }
     else if (spec->type == PyConfig_MEMBER_UINT || spec->type == PyConfig_MEMBER_BOOL) {
@@ -3538,7 +3532,7 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
         }
         int int_value = (int)value;
 
-        int *member = config_spec_get_member(spec, &config->config);
+        int *member = raw_member;
         *member = int_value;
     }
     else if (spec->type == PyConfig_MEMBER_ULONG) {
@@ -3549,7 +3543,7 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
         }
         unsigned long ulong_value = (unsigned long)value;
 
-        unsigned long *member = config_spec_get_member(spec, &config->config);
+        unsigned long *member = raw_member;
         *member = ulong_value;
     }
     else {
@@ -3598,7 +3592,8 @@ utf8_to_wstr(PyInitConfig *config, const char *str)
 int
 PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
 {
-    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 1);
+    void *raw_member;
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3613,7 +3608,7 @@ PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
         initconfig_set_error(config, "config option string cannot be NULL");
     }
 
-    wchar_t **member = config_spec_get_member(spec, &config->config);
+    wchar_t **member = raw_member;
 
     *member = utf8_to_wstr(config, value);
     if (*member == NULL) {
@@ -3655,7 +3650,8 @@ int
 PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
                         size_t length, char * const *items)
 {
-    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 1);
+    void *raw_member;
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3664,7 +3660,7 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
         initconfig_set_error(config, "config option type is not strings list");
         return -1;
     }
-    PyWideStringList *list = config_spec_get_member(spec, &config->config);
+    PyWideStringList *list = raw_member;
     return _PyWideStringList_FromUTF8(config, list, length, items);
 }
 
@@ -3676,6 +3672,7 @@ Py_InitializeFromInitConfig(PyInitConfig *config)
     if (_PyStatus_EXCEPTION(config->status)) {
         return -1;
     }
+
     return 0;
 }
 
