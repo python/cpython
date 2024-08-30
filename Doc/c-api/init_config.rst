@@ -1605,8 +1605,8 @@ customized Python always running in isolated mode using
 :c:func:`Py_RunMain`.
 
 
-Get and Set the current runtime Python configuration
-====================================================
+Runtime Python configuration API
+================================
 
 The configuration option *name* parameter must be a non-NULL null-terminated
 UTF-8 encoded string.
