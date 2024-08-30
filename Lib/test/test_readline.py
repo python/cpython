@@ -355,19 +355,19 @@ readline.write_history_file(history_file)
     def test_gh123321_threadsafe(self):
         """gh-123321: readline should be thread-safe and not crash"""
         script = textwrap.dedent(r"""
-        import threading
-        from test.support.threading_helper import join_thread
+            import threading
+            from test.support.threading_helper import join_thread
 
-        def func():
-            input()
+            def func():
+                input()
 
-        thread1 = threading.Thread(target=func)
-        thread2 = threading.Thread(target=func)
-        thread1.start()
-        thread2.start()
-        join_thread(thread1)
-        join_thread(thread2)
-        print("done")
+            thread1 = threading.Thread(target=func)
+            thread2 = threading.Thread(target=func)
+            thread1.start()
+            thread2.start()
+            join_thread(thread1)
+            join_thread(thread2)
+            print("done")
         """)
 
         output = run_pty(script, input=b"input1\rinput2\r")
