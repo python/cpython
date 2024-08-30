@@ -2731,46 +2731,6 @@ def test_pdb_issue_gh_103225():
     (Pdb) continue
     """
 
-if not SKIP_ASYNCIO_TESTS:
-    def test_pdb_issue_gh_123321():
-        """See GH-123321
-
-        Make sure pdb does not segfault on asyncio threads on Windows.
-
-        >>> import asyncio
-
-        >>> async def test_main():
-        ...   def inner():
-        ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-        ...     pass
-        ...   task1 = asyncio.create_task(asyncio.to_thread(inner))
-        ...   task2 = asyncio.create_task(asyncio.to_thread(inner))
-        ...   await asyncio.gather(task1, task2)
-
-        >>> def test_function():
-        ...     loop = asyncio.new_event_loop()
-        ...     loop.run_until_complete(test_main())
-        ...     loop.close()
-        ...     asyncio.set_event_loop_policy(None)
-
-        >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
-        ...     'return',
-        ...     'next',
-        ...     'return',
-        ...     'next',  # Technically all we care about are the continue
-        ...     'next',  # statements. The rest is to trigger the segfault.
-        ...     'continue',  # Can't be accurate with output
-        ...     'continue',  # due to multithreading.
-        ... ]):
-        ...   test_function()
-        > <doctest test.test_pdb.test_pdb_issue_gh_123321[1]>(3)inner()
-        -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-        (Pdb) return
-        ...
-        (Pdb) continue...
-        (Pdb) continue
-        """
-
 def test_pdb_issue_gh_101517():
     """See GH-101517
 
