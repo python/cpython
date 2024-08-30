@@ -620,21 +620,21 @@ _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
 }
 
 static void
-de_instrument(PyCodeObject *code, int i, int event)
+de_instrument(_PyCoMonitoringData *monitoring, _Py_CODEUNIT *bytecode, int i, int event)
 {
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(event != PY_MONITORING_EVENT_LINE);
 
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+    _Py_CODEUNIT *instr = &bytecode[i];
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode = *opcode_ptr;
     assert(opcode != ENTER_EXECUTOR);
     if (opcode == INSTRUMENTED_LINE) {
-        opcode_ptr = &code->_co_monitoring->lines[i].original_opcode;
+        opcode_ptr = &monitoring->lines[i].original_opcode;
         opcode = *opcode_ptr;
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
+        opcode_ptr = &monitoring->per_instruction_opcodes[i];
         opcode = *opcode_ptr;
     }
     int deinstrumented = DE_INSTRUMENT[opcode];
@@ -779,19 +779,19 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
     assert(opcode_has_event(_Py_GetBaseCodeUnit(code, offset).op.code));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
+    bool should_deinstrument;
     if (monitoring && monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
-        if (monitoring->tools[offset] == 0) {
-            de_instrument(code, offset, event);
-        }
+        should_deinstrument = (monitoring->tools[offset] == 0);
     }
     else {
         /* Single tool */
         uint8_t single_tool = code->_co_monitoring->active_monitors.tools[event];
         assert(_Py_popcount32(single_tool) <= 1);
-        if (((single_tool & tools) == single_tool)) {
-            de_instrument(code, offset, event);
-        }
+        should_deinstrument = ((single_tool & tools) == single_tool);
+    }
+    if (should_deinstrument) {
+        de_instrument(monitoring, _PyCode_CODE(code), offset, event);
     }
 }
 
