@@ -393,16 +393,13 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    
+
     // GH-123321: We need to acquire the lock before setting
     // _PyOS_ReadlineTState and after the release of the GIL, otherwise
     // the variable may be nullified by a different thread or a deadlock
     // may occur if the GIL is taken in any sub-function.
     PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
     _PyOS_ReadlineTState = tstate;
-    
-    
-
 
     /* This is needed to handle the unlikely case that the
      * interpreter is in interactive mode *and* stdin/out are not
@@ -431,7 +428,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     // taking the GIL. Otherwise a deadlock or segfault may occur.
     _PyOS_ReadlineTState = NULL;
     PyThread_release_lock(_PyOS_ReadlineLock);
-    
+
     Py_END_ALLOW_THREADS
 
     if (rv == NULL)
