@@ -1858,6 +1858,48 @@ error:
 }
 
 
+static int test_initconfig_get_api(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    // test PyInitConfig_HasOption()
+    assert(PyInitConfig_HasOption(config, "verbose") == 1);
+    assert(PyInitConfig_HasOption(config, "non-existent") == 0);
+
+    // test PyInitConfig_GetInt()
+    int64_t value;
+    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
+    assert(value == 0);
+    assert(PyInitConfig_SetInt(config, "dev_mode", 1) == 0);
+    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
+    assert(value == 1);
+
+    // test PyInitConfig_GetStr()
+    char *str;
+    assert(PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) == 0);
+    assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
+    assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
+    free(str);
+
+    // test PyInitConfig_GetStrList() and PyInitConfig_FreeStrList()
+    char* xoptions[] = {"faulthandler"};
+    assert(PyInitConfig_SetStrList(config, "xoptions",
+                                   Py_ARRAY_LENGTH(xoptions), xoptions) == 0);
+    size_t length;
+    char **items;
+    assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
+    assert(length == 1);
+    assert(strcmp(items[0], "faulthandler") == 0);
+    PyInitConfig_FreeStrList(length, items);
+
+    return 0;
+}
+
+
 static int test_initconfig_exit(void)
 {
     PyInitConfig *config = PyInitConfig_Create();
@@ -2306,6 +2348,7 @@ static struct TestCase TestCases[] = {
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
     {"test_initconfig_api", test_initconfig_api},
+    {"test_initconfig_get_api", test_initconfig_get_api},
     {"test_initconfig_exit", test_initconfig_exit},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},

@@ -281,6 +281,12 @@ PyAPI_FUNC(PyInitConfig*) PyInitConfig_Create(void);
 // Free memory of a initialization configuration.
 PyAPI_FUNC(void) PyInitConfig_Free(PyInitConfig *config);
 
+PyAPI_FUNC(int) PyInitConfig_HasOption(PyInitConfig *config, const char *name);
+PyAPI_FUNC(int) PyInitConfig_GetInt(PyInitConfig *config, const char *name, int64_t *value);
+PyAPI_FUNC(int) PyInitConfig_GetStr(PyInitConfig *config, const char *name, char **value);
+PyAPI_FUNC(int) PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, char ***items);
+PyAPI_FUNC(void) PyInitConfig_FreeStrList(size_t length, char **items);
+
 // Set an integer configuration option.
 // Return 0 on success, or return -1 on error.
 PyAPI_FUNC(int) PyInitConfig_SetInt(

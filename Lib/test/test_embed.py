@@ -1770,6 +1770,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_initconfig_api", config, preconfig,
                                api=API_ISOLATED)
 
+    def test_initconfig_get_api(self):
+        self.run_embedded_interpreter("test_initconfig_get_api")
+
     def test_initconfig_exit(self):
         self.run_embedded_interpreter("test_initconfig_exit")
 

@@ -3462,6 +3462,7 @@ PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, 
     }
 
     PyWideStringList *list = config_spec_get_member(spec, &config->config);
+    *length = list->length;
 
     *items = malloc(list->length * sizeof(char*));
     if (*items == NULL) {
