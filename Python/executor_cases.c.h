@@ -5463,7 +5463,7 @@
         }
 
         case _INCREMENT_RUN_COUNT: {
-            current_executor->run_count++;
+            current_executor->vm_data.was_run = true;
             break;
         }
 

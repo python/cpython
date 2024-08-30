@@ -31,7 +31,8 @@ typedef struct {
     uint8_t oparg;
     uint16_t valid:1;
     uint16_t linked:1;
-    uint16_t chain_depth:14;  // Must be big engough for MAX_CHAIN_DEPTH - 1.
+    bool was_run:1;
+    uint16_t chain_depth:13;  // Must be big engough for MAX_CHAIN_DEPTH - 1.
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
@@ -73,7 +74,6 @@ typedef struct _PyExecutorObject {
     uint32_t exit_count;
     uint32_t code_size;
     size_t jit_size;
-    uint32_t run_count;
     void *jit_code;
     void *jit_side_entry;
     _PyExitData exits[1];

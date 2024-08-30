@@ -1201,7 +1201,9 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     executor->jit_code = NULL;
     executor->jit_side_entry = NULL;
     executor->jit_size = 0;
-    executor->run_count = UINT32_MAX;
+    // This is initialized to true so we can prevent the executor
+    // from being immediately detected as cold and invalidated.
+    executor->vm_data.was_run = true;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1686,7 +1688,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         _PyExecutorObject *next = exec->vm_data.links.next;
 
         total_executors++;
-        if (exec->run_count < 1) {
+        if (!exec->vm_data.was_run) {
             invalidated_executors++;
             unlink_executor(exec);
             if (PyList_Append(invalidate, (PyObject *)exec) < 0)
@@ -1695,7 +1697,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
             }
 
         } else {
-            exec->run_count = 0;
+            exec->vm_data.was_run = false;
         }
 
         exec = next;
