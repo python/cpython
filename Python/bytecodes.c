@@ -4844,7 +4844,7 @@ dummy_func(
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
         }
 
-        tier2 op(_INCREMENT_RUN_COUNT, (--)) {
+        tier2 op(_SET_RUN_STATE, (--)) {
             current_executor->vm_data.was_run = true;
         }
 

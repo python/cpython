@@ -571,7 +571,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
-    ADD_TO_TRACE(_INCREMENT_RUN_COUNT, 0, 0, 0);
+    ADD_TO_TRACE(_SET_RUN_STATE, 0, 0, 0);
     uint32_t target = 0;
 
     for (;;) {
@@ -1679,17 +1679,13 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         goto error;
     }
 
-    int total_executors = 0;
-    int invalidated_executors = 0;
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
 
-        total_executors++;
         if (!exec->vm_data.was_run) {
-            invalidated_executors++;
             unlink_executor(exec);
             if (PyList_Append(invalidate, (PyObject *)exec) < 0)
             {

@@ -2375,7 +2375,7 @@
             break;
         }
 
-        case _INCREMENT_RUN_COUNT: {
+        case _SET_RUN_STATE: {
             break;
         }
 
