@@ -199,7 +199,7 @@ pathlib
 pdb
 ---
 
-* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace()`) now
+* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace`) now
   reuse the most recent :class:`~pdb.Pdb` instance that calls
   :meth:`~pdb.Pdb.set_trace()`, instead of creating a new one each time.
   As a result, all the instance specific data like :pdbcmd:`display` and
