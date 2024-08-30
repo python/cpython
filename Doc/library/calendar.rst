@@ -393,17 +393,20 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: day_name
 
-   A sequence that represents the days of the week in the current locale.
+   A sequence that represents the days of the week in the current 
+   where ```Monday``` is ```0``` and ```Sunday``` is ```6``` in the
+   current locale.
    
       >>> import calendar
       >>> list(calendar.day_name)
       ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
       'Sunday']   
 
+
 .. data:: day_abbr
 
    A sequence that represents the abbreviated days of the week in 
-   the current locale where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+   the current locale where ``Mon`` is ``0`` and ``Sun`` is ``6``.
 
 
       >>> list(calendar.day_abbr)
@@ -438,10 +441,9 @@ The :mod:`calendar` module exports the following data attributes:
 .. data:: month_abbr
 
    A sequence that represents the abbreviated months of the year in the
-   current locale where ``JANUARY`` is ``1`` and ``DECEMBER`` is 
-   ``12``.  This follows normal convention of January being month 
-   number 1, so it has a length of 13 and  ``month_abbr[0]`` is the 
-   empty string.
+   current locale where ``Jan`` is ``1`` and ``Dec`` is ``12``.  This
+   follows normal convention of January being month number 1, so it has
+   a length of 13 and  ``month_abbr[0]`` is the empty string.
 
       >>> list(calendar.month_abbr)
       ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']   
