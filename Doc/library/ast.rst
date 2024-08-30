@@ -2171,7 +2171,7 @@ and classes for traversing abstract syntax trees:
    If ``type_comments=True`` is given, the parser is modified to check
    and return type comments as specified by :pep:`484` and :pep:`526`.
    This is equivalent to adding :data:`ast.PyCF_TYPE_COMMENTS` to the
-   flags passed to :func:`compile()`.  This will report syntax errors
+   flags passed to :func:`compile`.  This will report syntax errors
    for misplaced type comments.  Without this flag, type comments will
    be ignored, and the ``type_comment`` field on selected AST nodes
    will always be ``None``.  In addition, the locations of ``# type:
