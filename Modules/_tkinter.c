@@ -3489,6 +3489,7 @@ PyInit__tkinter(void)
         return NULL;
     }
 
+
     PyTclObject_Type = PyType_FromSpec(&PyTclObject_Type_spec);
     if (PyModule_AddObjectRef(m, "Tcl_Obj", PyTclObject_Type)) {
         Py_DECREF(m);
