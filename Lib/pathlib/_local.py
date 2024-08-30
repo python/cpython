@@ -3,7 +3,6 @@ import ntpath
 import operator
 import os
 import posixpath
-import shutil
 import sys
 from glob import _StringGlobber
 from itertools import chain
@@ -824,7 +823,9 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    _rmtree = shutil.rmtree
+    def _rmtree(self):
+        import shutil
+        shutil.rmtree(path=self)
 
     def rename(self, target):
         """
