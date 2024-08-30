@@ -3171,8 +3171,9 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
             int dummy;
             res = WSAIoctl(s->sock_fd, SIO_TCP_SET_ACK_FREQUENCY, &flag,
                            sizeof(flag), NULL, 0, &dummy, NULL, NULL);
-            if (res >= 0)
+            if (res >= 0) {
                 s->quickack = flag;
+            }
             goto done;
         }
 #endif
