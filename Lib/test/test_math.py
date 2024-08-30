@@ -1120,6 +1120,15 @@ class MathTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     math.isqrt(value)
 
+    @support.bigmemtest(2**32, memuse=0.85)
+    def test_isqrt_huge(self, size):
+        if size & 1:
+            size += 1
+        v = 1 << size
+        w = math.isqrt(v)
+        self.assertEqual(w.bit_length(), size // 2 + 1)
+        self.assertEqual(w.bit_count(), 1)
+
     def test_lcm(self):
         lcm = math.lcm
         self.assertEqual(lcm(0, 0), 0)
@@ -1260,6 +1269,13 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.log10, NINF)
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
+
+    @support.bigmemtest(2**32, memuse=0.2)
+    def test_log_huge_integer(self, size):
+        v = 1 << size
+        self.assertAlmostEqual(math.log2(v), size)
+        self.assertAlmostEqual(math.log(v), size * 0.6931471805599453)
+        self.assertAlmostEqual(math.log10(v), size * 0.3010299956639812)
 
     def testSumProd(self):
         sumprod = math.sumprod

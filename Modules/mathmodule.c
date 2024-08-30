@@ -1657,7 +1657,7 @@ math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, c_bit_length;
-    size_t c, d;
+    uint64_t c, d;
     uint64_t m;
     uint32_t u;
     PyObject *a = NULL, *b;
@@ -1680,7 +1680,7 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* c = (n.bit_length() - 1) // 2 */
     c = _PyLong_NumBits(n);
-    if (c == (size_t)(-1)) {
+    if (c == (uint64_t)(-1)) {
         goto error;
     }
     c = (c - 1U) / 2U;
@@ -1727,7 +1727,7 @@ math_isqrt(PyObject *module, PyObject *n)
 
     for (int s = c_bit_length - 6; s >= 0; --s) {
         PyObject *q;
-        size_t e = d;
+        uint64_t e = d;
 
         d = c >> s;
 
@@ -2185,7 +2185,7 @@ loghelper(PyObject* arg, double (*func)(double))
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
         double x, result;
-        Py_ssize_t e;
+        int64_t e;
 
         /* Negative or zero inputs give a ValueError. */
         if (!_PyLong_IsPositive((PyLongObject *)arg)) {
