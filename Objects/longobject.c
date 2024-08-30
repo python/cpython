@@ -6728,3 +6728,69 @@ Py_ssize_t
 PyUnstable_Long_CompactValue(const PyLongObject* op) {
     return _PyLong_CompactValue((PyLongObject*)op);
 }
+
+PyObject* PyLong_FromInt32(int32_t value)
+{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+
+PyObject* PyLong_FromUInt32(uint32_t value)
+{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+
+PyObject* PyLong_FromInt64(int64_t value)
+{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+
+PyObject* PyLong_FromUInt64(uint64_t value)
+{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+
+#define LONG_TO_INT(obj, value, type_name) \
+    do { \
+        int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
+                     | Py_ASNATIVEBYTES_ALLOW_INDEX); \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        if (bytes < 0) { \
+            return -1; \
+        } \
+        if ((size_t)bytes > sizeof(*value)) { \
+            PyErr_SetString(PyExc_OverflowError, \
+                            "Python int too large to convert to " type_name); \
+            return -1; \
+        } \
+        return 0; \
+    } while (0)
+
+int PyLong_AsInt32(PyObject *obj, int32_t *value)
+{
+    LONG_TO_INT(obj, value, "C int32_t");
+}
+
+int PyLong_AsInt64(PyObject *obj, int64_t *value)
+{
+    LONG_TO_INT(obj, value, "C int64_t");
+}
+
+#define LONG_TO_UINT(obj, value, type_name) \
+    do { \
+        int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
+                     | Py_ASNATIVEBYTES_UNSIGNED_BUFFER \
+                     | Py_ASNATIVEBYTES_REJECT_NEGATIVE \
+                     | Py_ASNATIVEBYTES_ALLOW_INDEX); \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        if (bytes < 0) { \
+            return -1; \
+        } \
+        if ((size_t)bytes > sizeof(*value)) { \
+            PyErr_SetString(PyExc_OverflowError, \
+                            "Python int too large to convert to " type_name); \
+            return -1; \
+        } \
+        return 0; \
+    } while (0)
+
+int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
+{
+    LONG_TO_UINT(obj, value, "C uint32_t");
+}
+
+int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
+{
+    LONG_TO_UINT(obj, value, "C uint64_t");
+}
