@@ -1,0 +1,1 @@
+Fixed reference leak in the initalization of :mod:`tkinter`.
