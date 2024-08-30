@@ -392,6 +392,128 @@ unicode_translate_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
     RETURN_SIZE(start);
 }
 
+/* Test PyUnicodeEncodeError_SetStart */
+static PyObject *
+unicode_encode_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeEncodeError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeDecodeError_SetStart */
+static PyObject *
+unicode_decode_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeDecodeError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeTranslateError_SetStart */
+static PyObject *
+unicode_translate_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeTranslateError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeEncodeError_GetEnd */
+static PyObject *
+unicode_encode_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeEncodeError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeDecodeError_GetEnd */
+static PyObject *
+unicode_decode_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeDecodeError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeTranslateError_GetEnd */
+static PyObject *
+unicode_translate_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeTranslateError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeEncodeError_SetEnd */
+static PyObject *
+unicode_encode_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeEncodeError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeDecodeError_SetEnd */
+static PyObject *
+unicode_decode_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeDecodeError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeTranslateError_SetEnd */
+static PyObject *
+unicode_translate_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeTranslateError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 /*
  * Define the PyRecurdingInfinitelyError_Type
@@ -439,6 +561,15 @@ static PyMethodDef test_methods[] = {
     {"unicode_encode_get_start", unicode_encode_get_start,       METH_O},
     {"unicode_decode_get_start", unicode_decode_get_start,       METH_O},
     {"unicode_translate_get_start", unicode_translate_get_start, METH_O},
+    {"unicode_encode_set_start", unicode_encode_set_start,       METH_VARARGS},
+    {"unicode_decode_set_start", unicode_decode_set_start,       METH_VARARGS},
+    {"unicode_translate_set_start", unicode_translate_set_start, METH_VARARGS},
+    {"unicode_encode_get_end", unicode_encode_get_end,           METH_O},
+    {"unicode_decode_get_end", unicode_decode_get_end,           METH_O},
+    {"unicode_translate_get_end", unicode_translate_get_end,     METH_O},
+    {"unicode_encode_set_end", unicode_encode_set_end,           METH_VARARGS},
+    {"unicode_decode_set_end", unicode_decode_set_end,           METH_VARARGS},
+    {"unicode_translate_set_end", unicode_translate_set_end,     METH_VARARGS},
     {NULL},
 };
 
