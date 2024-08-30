@@ -489,6 +489,9 @@ New Features
   similar to ``sep.join(iterable)`` in Python.
   (Contributed by Victor Stinner in :gh:`121645`.)
 
+* Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
+  (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
+
 
 Porting to Python 3.14
 ----------------------
