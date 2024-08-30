@@ -1499,7 +1499,7 @@ used to cause ZeroDivisionError now cause an OverflowError instead.
 .. nonce: rju34k
 .. section: Library
 
-Add :func:`os.cpu_count()` support for VxWorks RTOS.
+Add :func:`os.cpu_count` support for VxWorks RTOS.
 
 ..
 
