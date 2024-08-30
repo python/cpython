@@ -2561,12 +2561,12 @@ hash_const(const void *key)
     if (PySlice_Check(op)) {
         PySliceObject *s = (PySliceObject *)op;
         PyObject *data[3] = { s->start, s->stop, s->step };
-        return _Py_HashBytes(&data, sizeof(data));
+        return Py_HashBuffer(&data, sizeof(data));
     }
     else if (PyTuple_CheckExact(op)) {
         Py_ssize_t size = PyTuple_GET_SIZE(op);
         PyObject **data = _PyTuple_ITEMS(op);
-        return _Py_HashBytes(data, sizeof(PyObject *) * size);
+        return Py_HashBuffer(data, sizeof(PyObject *) * size);
     }
     Py_hash_t h = PyObject_Hash(op);
     if (h == -1) {

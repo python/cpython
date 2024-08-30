@@ -3842,7 +3842,7 @@ datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
 static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
-    return _Py_HashBytes(data, len);
+    return Py_HashBuffer(data, len);
 }
 
 

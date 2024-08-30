@@ -1598,7 +1598,7 @@ _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (a->ob_shash == -1) {
         /* Can't fail */
-        a->ob_shash = _Py_HashBytes(a->ob_sval, Py_SIZE(a));
+        a->ob_shash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
     }
     return a->ob_shash;
 _Py_COMP_DIAG_POP
