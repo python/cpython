@@ -1,1 +1,0 @@
-Use a Y2038 compatible openssl time function when available.

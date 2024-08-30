@@ -1,3 +1,0 @@
-Don't show empty fields (value ``None`` or ``[]``)
-in :func:`ast.dump` by default. Add ``show_empty=False``
-parameter to optionally show them.

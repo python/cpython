@@ -1314,7 +1314,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # Inherit from object on purpose to check some backwards compatibility paths
         class X(object):
             __slots__ = "a"
-        with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
+        with self.assertRaisesRegex(AttributeError, "'test.test_descr.ClassPropertiesAndMethods.test_slots.<locals>.X' object has no attribute 'a'"):
             X().a
 
         # Test string subclass in `__slots__`, see gh-98783
@@ -1593,8 +1593,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             self.fail("classmethod shouldn't accept keyword args")
 
         cm = classmethod(f)
-        cm_dict = {'__annotations__': {},
-                   '__doc__': (
+        cm_dict = {'__doc__': (
                        "f docstring"
                        if support.HAVE_DOCSTRINGS
                        else None
@@ -1609,6 +1608,41 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(cm.__dict__, {"x" : 42, **cm_dict})
         del cm.x
         self.assertNotHasAttr(cm, "x")
+
+    def test_classmethod_staticmethod_annotations(self):
+        for deco in (classmethod, staticmethod):
+            @deco
+            def unannotated(cls): pass
+            @deco
+            def annotated(cls) -> int: pass
+
+            for method in (annotated, unannotated):
+                with self.subTest(deco=deco, method=method):
+                    original_annotations = dict(method.__wrapped__.__annotations__)
+                    self.assertNotIn('__annotations__', method.__dict__)
+                    self.assertEqual(method.__annotations__, original_annotations)
+                    self.assertIn('__annotations__', method.__dict__)
+
+                    new_annotations = {"a": "b"}
+                    method.__annotations__ = new_annotations
+                    self.assertEqual(method.__annotations__, new_annotations)
+                    self.assertEqual(method.__wrapped__.__annotations__, original_annotations)
+
+                    del method.__annotations__
+                    self.assertEqual(method.__annotations__, original_annotations)
+
+                    original_annotate = method.__wrapped__.__annotate__
+                    self.assertNotIn('__annotate__', method.__dict__)
+                    self.assertIs(method.__annotate__, original_annotate)
+                    self.assertIn('__annotate__', method.__dict__)
+
+                    new_annotate = lambda: {"annotations": 1}
+                    method.__annotate__ = new_annotate
+                    self.assertIs(method.__annotate__, new_annotate)
+                    self.assertIs(method.__wrapped__.__annotate__, original_annotate)
+
+                    del method.__annotate__
+                    self.assertIs(method.__annotate__, original_annotate)
 
     @support.refcount_test
     def test_refleaks_in_classmethod___init__(self):
@@ -3987,6 +4021,20 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             y = x ** 2
         self.assertIn('unsupported operand type(s) for **', str(cm.exception))
 
+    def test_pow_wrapper_error_messages(self):
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 0',
+                               int().__pow__)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 3',
+                               int().__pow__, 1, 2, 3)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 0',
+                               int().__rpow__)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 3',
+                               int().__rpow__, 1, 2, 3)
+
     def test_mutable_bases(self):
         # Testing mutable bases...
 
@@ -5014,6 +5062,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 cls.lst = [2**i for i in range(10000)]
         X.descr
 
+    @support.suppress_immortalization()
     def test_remove_subclass(self):
         # bpo-46417: when the last subclass of a type is deleted,
         # remove_subclass() clears the internal dictionary of subclasses:
@@ -5088,7 +5137,8 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = list(it)
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
+        self.assertEqual(keys, ['__dict__', '__doc__', '__firstlineno__',
+                                '__module__',
                                 '__static_attributes__', '__weakref__',
                                 'meth'])
 
@@ -5099,7 +5149,7 @@ class DictProxyTests(unittest.TestCase):
         it = self.C.__dict__.values()
         self.assertNotIsInstance(it, list)
         values = list(it)
-        self.assertEqual(len(values), 6)
+        self.assertEqual(len(values), 7)
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                         'trace function introduces __local__')
@@ -5109,7 +5159,8 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = [item[0] for item in it]
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
+        self.assertEqual(keys, ['__dict__', '__doc__', '__firstlineno__',
+                                '__module__',
                                 '__static_attributes__', '__weakref__',
                                 'meth'])
 

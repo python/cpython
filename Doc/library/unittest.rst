@@ -1,5 +1,5 @@
-:mod:`unittest` --- Unit testing framework
-==========================================
+:mod:`!unittest` --- Unit testing framework
+===========================================
 
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
@@ -2316,8 +2316,8 @@ Loading and running tests
    (see :ref:`Warning control <using-on-warnings>`),
    otherwise it will be set to ``'default'``.
 
-   Calling ``main`` actually returns an instance of the ``TestProgram`` class.
-   This stores the result of the tests run as the ``result`` attribute.
+   Calling ``main`` returns an object with the ``result`` attribute that contains
+   the result of the tests run as a :class:`unittest.TestResult`.
 
    .. versionchanged:: 3.1
       The *exit* parameter was added.
@@ -2529,7 +2529,7 @@ Signal Handling
 .. versionadded:: 3.2
 
 The :option:`-c/--catch <unittest -c>` command-line option to unittest,
-along with the ``catchbreak`` parameter to :func:`unittest.main()`, provide
+along with the ``catchbreak`` parameter to :func:`unittest.main`, provide
 more friendly handling of control-C during a test run. With catch break
 behavior enabled control-C will allow the currently running test to complete,
 and the test run will then end and report all the results so far. A second

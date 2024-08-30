@@ -500,7 +500,7 @@ class TracebackCases(unittest.TestCase):
             traceback.format_exception(e.__class__, e)
         with self.assertRaisesRegex(ValueError, 'Both or neither'):
             traceback.format_exception(e.__class__, tb=e.__traceback__)
-        with self.assertRaisesRegex(TypeError, 'positional-only'):
+        with self.assertRaisesRegex(TypeError, 'required positional argument'):
             traceback.format_exception(exc=e)
 
     def test_format_exception_only_exc(self):
@@ -539,11 +539,11 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
-             'chain=True)'))
+             'chain=True, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
-            '(exc, /, value=<implicit>, *, show_group=False)')
+            '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
 
 
 class PurePythonExceptionFormattingMixin:
@@ -622,6 +622,7 @@ class TracebackErrorLocationCaretTestBase:
         def f_with_type():
             def foo(a: THIS_DOES_NOT_EXIST ) -> int:
                 return 0
+            foo.__annotations__
 
         lineno_f = f_with_type.__code__.co_firstlineno
         expected_f = (
@@ -629,7 +630,9 @@ class TracebackErrorLocationCaretTestBase:
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
             '    ~~~~~~~~^^\n'
-            f'  File "{__file__}", line {lineno_f+1}, in f_with_type\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_type\n'
+            '    foo.__annotations__\n'
+            f'  File "{__file__}", line {lineno_f+1}, in __annotate__\n'
             '    def foo(a: THIS_DOES_NOT_EXIST ) -> int:\n'
             '               ^^^^^^^^^^^^^^^^^^^\n'
         )
@@ -691,6 +694,35 @@ class TracebackErrorLocationCaretTestBase:
             '  File "?", line 7\n'
             '    foo(a, z\n'
             '           ^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+        # Check custom error messages covering multiple lines
+        code = textwrap.dedent("""
+        dummy_call(
+            "dummy value"
+            foo="bar",
+        )
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '  File "?", line 3\n'
+            '    "dummy value"\n'
+            '    ^^^^^^^^^^^^^'
             )
 
         result_lines = self.get_exception(f_with_multiline)
@@ -2309,19 +2341,22 @@ class BaseExceptionReportingTests:
     def test_syntax_error_various_offsets(self):
         for offset in range(-5, 10):
             for add in [0, 2]:
-                text = " "*add + "text%d" % offset
+                text = " " * add + "text%d" % offset
                 expected = ['  File "file.py", line 1']
                 if offset < 1:
                     expected.append("    %s" % text.lstrip())
                 elif offset <= 6:
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*(offset-1)))
+                    # Set the caret length to match the length of the text minus the offset.
+                    caret_length = max(1, len(text.lstrip()) - offset + 1)
+                    expected.append("    %s%s" % (" " * (offset - 1), "^" * caret_length))
                 else:
+                    caret_length = max(1, len(text.lstrip()) - 4)
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*5))
+                    expected.append("    %s%s" % (" " * 5, "^" * caret_length))
                 expected.append("SyntaxError: msg")
                 expected.append("")
-                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
+                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset + add, text)))
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
@@ -3882,6 +3917,27 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn(suggestion, actual)
 
+    def test_getattr_suggestions_underscored(self):
+        class A:
+            bluch = None
+
+        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
+
+        class B:
+            _bluch = None
+            def method(self, name):
+                getattr(self, name)
+
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
+        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+
     def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
         class A:
             blech = None
@@ -4073,6 +4129,17 @@ class SuggestionFormattingTestBase:
         ]:
             actual = self.get_import_from_suggestion(code, 'bluch')
             self.assertIn(suggestion, actual)
+
+    def test_import_from_suggestions_underscored(self):
+        code = "bluch = None"
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, 'blach'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_bluch'))
+
+        code = "_bluch = None"
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_blach'))
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertNotIn("'_bluch'", self.get_import_from_suggestion(code, 'bluch'))
 
     def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
         code = "blech = None"

@@ -1,5 +1,5 @@
-:mod:`xml.dom` --- The Document Object Model API
-================================================
+:mod:`!xml.dom` --- The Document Object Model API
+=================================================
 
 .. module:: xml.dom
    :synopsis: Document Object Model API for Python.

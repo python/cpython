@@ -26,7 +26,7 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
 #endif
 
     if (_PyTestLimitedCAPI_Init_Abstract(mod) < 0) {
@@ -42,6 +42,9 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Dict(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Eval(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Float(mod) < 0) {
@@ -66,6 +69,9 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Sys(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Tuple(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Unicode(mod) < 0) {

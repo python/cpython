@@ -1,4 +1,0 @@
-Allow to specify the signature of custom callable instances of extension
-type by the :attr:`__text_signature__` attribute. Specify signatures of
-:class:`operator.attrgetter`, :class:`operator.itemgetter`, and
-:class:`operator.methodcaller` instances.

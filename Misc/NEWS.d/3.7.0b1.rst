@@ -414,7 +414,7 @@ callback.
 .. section: Library
 
 Fix memory leak in asyncio.Queue, when the queue has limited size and it is
-full, the cancelation of queue.put() can cause a memory leak. Patch by: José
+full, the cancellation of queue.put() can cause a memory leak. Patch by: José
 Melero.
 
 ..
@@ -875,4 +875,4 @@ by Stéphane Wirtel
 .. section: C API
 
 Add C API access to the ``datetime.timezone`` constructor and
-``datetime.timzone.UTC`` singleton.
+``datetime.timezone.UTC`` singleton.

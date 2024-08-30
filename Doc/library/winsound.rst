@@ -1,5 +1,5 @@
-:mod:`winsound` --- Sound-playing interface for Windows
-=======================================================
+:mod:`!winsound` --- Sound-playing interface for Windows
+========================================================
 
 .. module:: winsound
    :platform: Windows

@@ -8,14 +8,14 @@
 #include "pycore_pystate.h"
 #include "pycore_runtime.h"
 
+#include "pycore_importdl.h"
+
 /* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
    supported on this platform. configure will then compile and link in one
    of the dynload_*.c files, as appropriate. We will call a function in
    those modules to get a function pointer to the module's init function.
 */
 #ifdef HAVE_DYNAMIC_LOADING
-
-#include "pycore_importdl.h"
 
 #ifdef MS_WINDOWS
 extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
@@ -27,6 +27,8 @@ extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
                                               const char *shortname,
                                               const char *pathname, FILE *fp);
 #endif
+
+#endif /* HAVE_DYNAMIC_LOADING */
 
 
 /***********************************/
@@ -111,9 +113,12 @@ _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 
 int
 _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
-                                PyObject *name, PyObject *filename)
+                                PyObject *name, PyObject *filename,
+                                _Py_ext_module_origin origin)
 {
-    struct _Py_ext_module_loader_info info = {0};
+    struct _Py_ext_module_loader_info info = {
+        .origin=origin,
+    };
 
     assert(name != NULL);
     if (!PyUnicode_Check(name)) {
@@ -183,12 +188,26 @@ _Py_ext_module_loader_info_init_for_builtin(
         .name_encoded=name_encoded,
         /* We won't need filename. */
         .path=name,
+        .origin=_Py_ext_module_origin_BUILTIN,
         .hook_prefix=ascii_only_prefix,
         .newcontext=NULL,
     };
     return 0;
 }
 
+int
+_Py_ext_module_loader_info_init_for_core(
+                            struct _Py_ext_module_loader_info *info,
+                            PyObject *name)
+{
+    if (_Py_ext_module_loader_info_init_for_builtin(info, name) < 0) {
+        return -1;
+    }
+    info->origin = _Py_ext_module_origin_CORE;
+    return 0;
+}
+
+#ifdef HAVE_DYNAMIC_LOADING
 int
 _Py_ext_module_loader_info_init_from_spec(
                             struct _Py_ext_module_loader_info *p_info,
@@ -203,11 +222,14 @@ _Py_ext_module_loader_info_init_from_spec(
         Py_DECREF(name);
         return -1;
     }
-    int err = _Py_ext_module_loader_info_init(p_info, name, filename);
+    /* We could also accommodate builtin modules here without much trouble. */
+    _Py_ext_module_origin origin = _Py_ext_module_origin_DYNAMIC;
+    int err = _Py_ext_module_loader_info_init(p_info, name, filename, origin);
     Py_DECREF(name);
     Py_DECREF(filename);
     return err;
 }
+#endif /* HAVE_DYNAMIC_LOADING */
 
 
 /********************************/
@@ -230,14 +252,14 @@ _Py_ext_module_loader_result_set_error(
 {
 #ifndef NDEBUG
     switch (kind) {
-    case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
+    case _Py_ext_module_loader_result_EXCEPTION: _Py_FALLTHROUGH;
     case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:
         assert(PyErr_Occurred());
         break;
-    case _Py_ext_module_loader_result_ERR_MISSING:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_UNINITIALIZED:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_NOT_MODULE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_MISSING: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_UNINITIALIZED: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_NOT_MODULE: _Py_FALLTHROUGH;
     case _Py_ext_module_loader_result_ERR_MISSING_DEF:
         assert(!PyErr_Occurred());
         break;
@@ -261,11 +283,11 @@ _Py_ext_module_loader_result_set_error(
         res->kind = _Py_ext_module_kind_INVALID;
         break;
     /* None of the rest affect the result kind. */
-    case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_MISSING:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_NOT_MODULE:  /* fall through */
+    case _Py_ext_module_loader_result_EXCEPTION: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_MISSING: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_NOT_MODULE: _Py_FALLTHROUGH;
     case _Py_ext_module_loader_result_ERR_MISSING_DEF:
         break;
     default:
@@ -289,14 +311,14 @@ _Py_ext_module_loader_result_apply_error(
 
 #ifndef NDEBUG
     switch (err.kind) {
-    case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
+    case _Py_ext_module_loader_result_EXCEPTION: _Py_FALLTHROUGH;
     case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:
         assert(err.exc != NULL);
         break;
-    case _Py_ext_module_loader_result_ERR_MISSING:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_UNINITIALIZED:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:  /* fall through */
-    case _Py_ext_module_loader_result_ERR_NOT_MODULE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_MISSING: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_UNINITIALIZED: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE: _Py_FALLTHROUGH;
+    case _Py_ext_module_loader_result_ERR_NOT_MODULE: _Py_FALLTHROUGH;
     case _Py_ext_module_loader_result_ERR_MISSING_DEF:
         assert(err.exc == NULL);
         break;
@@ -354,6 +376,7 @@ _Py_ext_module_loader_result_apply_error(
 /* getting/running the module init function */
 /********************************************/
 
+#ifdef HAVE_DYNAMIC_LOADING
 PyModInitFunction
 _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
                          FILE *fp)
@@ -388,6 +411,7 @@ _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
 
     return (PyModInitFunction)exportfunc;
 }
+#endif /* HAVE_DYNAMIC_LOADING */
 
 int
 _PyImport_RunModInitFunc(PyModInitFunction p0,
@@ -408,6 +432,11 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     /* Validate the result (and populate "res". */
 
     if (m == NULL) {
+        /* The init func for multi-phase init modules is expected
+         * to return a PyModuleDef after calling PyModuleDef_Init().
+         * That function never raises an exception nor returns NULL,
+         * so at this point it must be a single-phase init modules. */
+        res.kind = _Py_ext_module_kind_SINGLEPHASE;
         if (PyErr_Occurred()) {
             _Py_ext_module_loader_result_set_error(
                         &res, _Py_ext_module_loader_result_EXCEPTION);
@@ -418,6 +447,8 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         }
         goto error;
     } else if (PyErr_Occurred()) {
+        /* Likewise, we infer that this is a single-phase init module. */
+        res.kind = _Py_ext_module_kind_SINGLEPHASE;
         _Py_ext_module_loader_result_set_error(
                 &res, _Py_ext_module_loader_result_ERR_UNREPORTED_EXC);
         /* We would probably be correct to decref m here,
@@ -488,5 +519,3 @@ error:
     p_res->err = &p_res->_err;
     return -1;
 }
-
-#endif /* HAVE_DYNAMIC_LOADING */

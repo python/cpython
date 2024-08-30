@@ -1,5 +1,5 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
@@ -324,7 +324,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python was built with the :c:macro:`Py_DEBUG` macro
+   ``True`` if Python was built with the :c:macro:`Py_DEBUG` macro
    defined, that is, if
    Python was :ref:`built in debug mode <debug-build>`.
 
@@ -1701,7 +1701,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
 .. function:: check_warnings(*filters, quiet=True)
 
-   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   A convenience wrapper for :func:`warnings.catch_warnings` that makes it
    easier to test that a warning was correctly raised.  It is approximately
    equivalent to calling ``warnings.catch_warnings(record=True)`` with
    :meth:`warnings.simplefilter` set to ``always`` and with the option to

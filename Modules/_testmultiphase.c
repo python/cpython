@@ -901,7 +901,7 @@ PyInit__test_module_state_shared(void)
         return NULL;
     }
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
 
     if (PyModule_AddObjectRef(module, "Error", PyExc_Exception) < 0) {

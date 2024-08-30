@@ -22,6 +22,11 @@ typedef enum ext_module_kind {
     _Py_ext_module_kind_INVALID = 3,
 } _Py_ext_module_kind;
 
+typedef enum ext_module_origin {
+    _Py_ext_module_origin_CORE = 1,
+    _Py_ext_module_origin_BUILTIN = 2,
+    _Py_ext_module_origin_DYNAMIC = 3,
+} _Py_ext_module_origin;
 
 /* Input for loading an extension module. */
 struct _Py_ext_module_loader_info {
@@ -34,6 +39,7 @@ struct _Py_ext_module_loader_info {
     /* path is always a borrowed ref of name or filename,
      * depending on if it's builtin or not. */
     PyObject *path;
+    _Py_ext_module_origin origin;
     const char *hook_prefix;
     const char *newcontext;
 };
@@ -42,13 +48,19 @@ extern void _Py_ext_module_loader_info_clear(
 extern int _Py_ext_module_loader_info_init(
     struct _Py_ext_module_loader_info *info,
     PyObject *name,
-    PyObject *filename);
+    PyObject *filename,
+    _Py_ext_module_origin origin);
+extern int _Py_ext_module_loader_info_init_for_core(
+    struct _Py_ext_module_loader_info *p_info,
+    PyObject *name);
 extern int _Py_ext_module_loader_info_init_for_builtin(
     struct _Py_ext_module_loader_info *p_info,
     PyObject *name);
+#ifdef HAVE_DYNAMIC_LOADING
 extern int _Py_ext_module_loader_info_init_from_spec(
     struct _Py_ext_module_loader_info *info,
     PyObject *spec);
+#endif
 
 /* The result from running an extension module's init function. */
 struct _Py_ext_module_loader_result {
@@ -77,9 +89,11 @@ extern void _Py_ext_module_loader_result_apply_error(
 
 /* The module init function. */
 typedef PyObject *(*PyModInitFunction)(void);
+#ifdef HAVE_DYNAMIC_LOADING
 extern PyModInitFunction _PyImport_GetModInitFunc(
     struct _Py_ext_module_loader_info *info,
     FILE *fp);
+#endif
 extern int _PyImport_RunModInitFunc(
     PyModInitFunction p0,
     struct _Py_ext_module_loader_info *info,

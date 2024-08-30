@@ -1,1 +1,0 @@
-Remove unhandled ``PY_MONITORING_EVENT_BRANCH`` and ``PY_MONITORING_EVENT_EXCEPTION_HANDLED`` events from :func:`sys.settrace`.

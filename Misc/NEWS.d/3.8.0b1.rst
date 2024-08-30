@@ -176,8 +176,8 @@ Added new ``replace()`` method to the code type (:class:`types.CodeType`).
 .. nonce: d1SOtF
 .. section: Core and Builtins
 
-Implement :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`,
-and :func:`socket.if_indextoname()` on Windows.
+Implement :func:`socket.if_nameindex`, :func:`socket.if_nametoindex`,
+and :func:`socket.if_indextoname` on Windows.
 
 ..
 
@@ -600,7 +600,7 @@ default.
 .. nonce: sLULGQ
 .. section: Library
 
-Fix destructor :class:`_pyio.BytesIO` and :class:`_pyio.TextIOWrapper`:
+Fix destructor :class:`!_pyio.BytesIO` and :class:`!_pyio.TextIOWrapper`:
 initialize their ``_buffer`` attribute as soon as possible (in the class
 body), because it's used by ``__del__()`` which calls ``close()``.
 

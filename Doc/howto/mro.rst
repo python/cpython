@@ -426,7 +426,7 @@ In this case the MRO is GFEF and the local precedence ordering is
 preserved.
 
 As a general rule, hierarchies such as the previous one should be
-avoided, since it is unclear if F should override E or viceversa.
+avoided, since it is unclear if F should override E or vice-versa.
 Python 2.3 solves the ambiguity by raising an exception in the creation
 of class G, effectively stopping the programmer from generating
 ambiguous hierarchies.  The reason for that is that the C3 algorithm
