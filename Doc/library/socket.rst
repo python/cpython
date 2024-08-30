@@ -408,6 +408,9 @@ Constants
    in the Unix header files are defined; for a few symbols, default values are
    provided.
 
+   .. versionchanged:: ?.? On Windows, ``TCP_QUICKACK`` appear if run-time Windows
+      supports.
+
    .. versionchanged:: 3.6
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
