@@ -1,0 +1,1 @@
+Add a 'goto found_unused_or_dummy' in the set_add_entry function.
