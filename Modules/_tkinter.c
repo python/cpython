@@ -3419,7 +3419,7 @@ PyInit__tkinter(void)
 #endif
 
     Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
-    if (PyModule_AddObject(m, "TclError", Tkinter_TclError)) {
+    if (PyModule_AddObjectRef(m, "TclError", Tkinter_TclError)) {
         Py_DECREF(m);
         Py_DECREF(Tkinter_TclError);
         return NULL;
@@ -3471,25 +3471,25 @@ PyInit__tkinter(void)
     }
 
     Tkapp_Type = PyType_FromSpec(&Tkapp_Type_spec);
-    if (PyModule_AddObject(m, "TkappType", Tkapp_Type)) {
+    if (PyModule_AddObjectRef(m, "TkappType", Tkapp_Type)) {
         Py_DECREF(m);
-        Py_DECREF(Tkapp_Type);
         return NULL;
     }
+    Py_DECREF(Tkapp_Type);
 
     Tktt_Type = PyType_FromSpec(&Tktt_Type_spec);
-    if (PyModule_AddObject(m, "TkttType", Tktt_Type)) {
+    if (PyModule_AddObjectRef(m, "TkttType", Tktt_Type)) {
         Py_DECREF(m);
-        Py_DECREF(Tktt_Type);
         return NULL;
     }
+    Py_DECREF(Tktt_Type);
 
     PyTclObject_Type = PyType_FromSpec(&PyTclObject_Type_spec);
-    if (PyModule_AddObject(m, "Tcl_Obj", PyTclObject_Type)) {
+    if (PyModule_AddObjectRef(m, "Tcl_Obj", PyTclObject_Type)) {
         Py_DECREF(m);
-        Py_DECREF(PyTclObject_Type);
         return NULL;
     }
+    Py_DECREF(PyTclObject_Type);
 
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
