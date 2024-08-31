@@ -2214,28 +2214,30 @@ class TestSelectorUtils(test_utils.TestCase):
     @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
                          'need socket.TCP_NODELAY')
     def test_set_nodelay(self):
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            self.check_set_nodelay(sock)
+        with self.subTest('non-blocking'):
+            sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                                 proto=socket.IPPROTO_TCP)
+            with sock:
+                self.check_set_nodelay(sock)
 
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            sock.setblocking(False)
-            self.check_set_nodelay(sock)
+        with self.subTest('blocking'):
+            sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                                 proto=socket.IPPROTO_TCP)
+            with sock:
+                sock.setblocking(False)
+                self.check_set_nodelay(sock)
 
 
     def check_set_quickack(self, sock):
         # quickack already true by default on some OSes
         opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
         if opt:
-            base_events._unset_quickack(sock)
+            base_events._set_quickack(sock, 0)
 
         opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
         self.assertFalse(opt)
 
-        base_events._set_quickack(sock)
+        base_events._set_quickack(sock, 1)
 
         opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
         self.assertTrue(opt)
@@ -2243,16 +2245,17 @@ class TestSelectorUtils(test_utils.TestCase):
     @unittest.skipUnless(hasattr(socket, 'TCP_QUICKACK'),
                          'need socket.TCP_QUICKACK')
     def test_set_quickack(self):
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            self.check_set_quickack(sock)
-
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            sock.setblocking(False)
-            self.check_set_quickack(sock)
+        with self.subTest('non-blocking'):
+            sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                                 proto=socket.IPPROTO_TCP)
+            with sock:
+                self.check_set_quickack(sock)
+        with self.subTest('blocking'):
+            sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                                 proto=socket.IPPROTO_TCP)
+            with sock:
+                sock.setblocking(False)
+                self.check_set_quickack(sock)
 
 
 if __name__ == '__main__':
