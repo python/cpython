@@ -133,16 +133,16 @@ get_module_state_by_def(PyTypeObject *tp)
 
 // MSVC inlines a branch like this on PGO builds unless the caller branches
 static inline PyTypeObject *
-_left_or_right(PyObject *left, PyObject *right, void *token)
+base_from_left_or_right(PyObject *left, PyObject *right, void *token)
 {
-    PyTypeObject *super;
-    if (PyType_GetBaseByToken(Py_TYPE(left), token, &super) != 1) {
+    PyTypeObject *base;
+    if (PyType_GetBaseByToken(Py_TYPE(left), token, &base) != 1) {
         assert(!PyErr_Occurred());
-        PyType_GetBaseByToken(Py_TYPE(right), token, &super);
+        PyType_GetBaseByToken(Py_TYPE(right), token, &base);
     }
-    assert(super != NULL);
-    _Py_DECREF_NO_DEALLOC((PyObject *)super);
-    return super;
+    assert(base != NULL);
+    _Py_DECREF_NO_DEALLOC((PyObject *)base);
+    return base;
 }
 
 static PyType_Spec dec_spec;
@@ -150,8 +150,8 @@ static PyType_Spec dec_spec;
 static inline decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
-    PyTypeObject *super = _left_or_right(left, right, &dec_spec);
-    return (decimal_state *)_PyType_GetModuleState(super);
+    PyTypeObject *base = base_from_left_or_right(left, right, &dec_spec);
+    return (decimal_state *)_PyType_GetModuleState(base);
 }
 
 
