@@ -867,7 +867,8 @@ def check_cflags_pgo():
 
 
 def check_bolt_optimized():
-    # Always return false, if the platform is WASI.
+    # Always return false, if the platform is WASI,
+    # because BOLT optimization does not support WASM binary.
     if is_wasi:
         return False
     config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
