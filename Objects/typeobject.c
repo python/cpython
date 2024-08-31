@@ -5293,12 +5293,23 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
 }
 
 static inline int
-_token_found(PyTypeObject *type, PyTypeObject **result)
+_token_found(PyTypeObject **result, PyTypeObject *type)
 {
     if (result != NULL) {
         *result = (PyTypeObject *)Py_NewRef(type);
     }
     return 1;
+}
+
+// Prefer this to gotos for optimization
+static inline int
+_token_not_found(PyTypeObject **result, int ret)
+{
+    assert(-1 <= ret && ret <= 0);
+    if (result != NULL) {
+        *result = NULL;
+    }
+    return ret;
 }
 
 int
@@ -5307,28 +5318,28 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     if (token == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
-        goto error;
+        return _token_not_found(result, -1);
     }
     if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
-        goto error;
+        return _token_not_found(result, -1);
     }
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // Static type MRO contains no heap type,
         // which type_ready_mro() ensures.
-        goto not_found;
+        return _token_not_found(result, 0);
     }
     if (((PyHeapTypeObject*)type)->ht_token == token) {
-        return _token_found(type, result);
+        return _token_found(result, type);
     }
     PyObject *mro = type->tp_mro;
     if (mro == NULL) {
         PyTypeObject *base = get_base_by_token_recursive(type, token);
         if (base != NULL) {
-            return _token_found(base, result);
+            return _token_found(result, base);
         }
-        goto not_found;
+        return _token_not_found(result, 0);
     }
     assert(PyTuple_Check(mro));
     // mro_invoke() ensures that the type MRO cannot be empty.
@@ -5343,19 +5354,10 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
             continue;
         }
         if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return _token_found(base, result);
+            return _token_found(result, base);
         }
     }
-not_found:
-    if (result != NULL) {
-        *result = NULL;
-    }
-    return 0;
-error:
-    if (result != NULL) {
-        *result = NULL;
-    }
-    return -1;
+    return _token_not_found(result, 0);
 }
 
 
