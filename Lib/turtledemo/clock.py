@@ -11,29 +11,31 @@ and time
 from turtle import *
 from datetime import datetime
 
-def jump(distanz, angle=0):
+dtfont = "TkFixedFont", 14, "bold"
+
+def jump(distanz, winkel=0):
     penup()
-    right(angle)
+    right(winkel)
     forward(distanz)
-    left(angle)
+    left(winkel)
     pendown()
 
-def hand(spitze, tip):
-    fd(spitze*1.15)
+def hand(laenge, spitze):
+    fd(laenge*1.15)
     rt(90)
-    fd(tip/2.0)
+    fd(spitze/2.0)
     lt(120)
-    fd(tip)
+    fd(spitze)
     lt(120)
-    fd(tip)
+    fd(spitze)
     lt(120)
-    fd(tip/2.0)
+    fd(spitze/2.0)
 
-def make_hand_shape(name, spitze, tip):
+def make_hand_shape(name, laenge, spitze):
     reset()
-    jump(-spitze*0.15)
+    jump(-laenge*0.15)
     begin_poly()
-    hand(spitze, tip)
+    hand(laenge, spitze)
     end_poly()
     hand_form = get_poly()
     register_shape(name, hand_form)
@@ -56,11 +58,9 @@ def display_date_time():
     now = datetime.now()
     writer.home()
     writer.forward(distance=65)
-    writer.write(now.strftime(format="%A"),
-                 align="center", font=("TkFixedFont", 14, "bold"))
+    writer.write(now.strftime(format="%A"), align="center", font=dtfont)
     writer.back(distance=150)
-    writer.write(now.strftime(format="%Y/%m/%d"),
-                 align="center", font=("TkFixedFont", 14, "bold"))
+    writer.write(now.strftime(format="%Y/%m/%d"), align="center", font=dtfont)
     writer.forward(distance=85)
 
 def initialize_hand(shape, color):
