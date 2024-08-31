@@ -413,13 +413,13 @@ Constants
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
    .. versionchanged:: 3.6.5
-      Added support for ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` on Windows platforms 
+      Added support for ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` on Windows platforms
       when available.
 
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
 
-      Added support for ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` on Windows platforms 
+      Added support for ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` on Windows platforms
       when available.
 
    .. versionchanged:: 3.10
@@ -454,7 +454,7 @@ Constants
       Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
       on Linux.
 
-   .. versionchanged:: 3.14 
+   .. versionchanged:: 3.14
       Added support for ``TCP_QUICKACK`` on Windows platforms when available.
 
 
