@@ -225,6 +225,17 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+
+urllib.parse
+------------
+
+Add the *allow_none* parameter to :func:`~urllib.parse.urlparse`,
+:func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag` functions.
+Add the *keep_empty* parameter to :func:`~urllib.parse.urlunparse` and
+:func:`~urllib.parse.urlunsplit` functions and
+:func:`~urllib.parse.SplitResult.geturl` methods.
+(Contributed by Serhiy Storchaka in :gh:`67041`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
