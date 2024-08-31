@@ -112,6 +112,8 @@ class Emitter:
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
             "SYNC_SP": self.sync_sp,
+            "SAVE_STACK": self.save_stack,
+            "RELOAD_STACK": self.reload_stack,
             # "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
             "DISPATCH": self.dispatch
         }
@@ -249,6 +251,42 @@ class Emitter:
         self._print_storage(storage)
         return True
 
+    def emit_save(self, storage: Storage):
+        storage.save(self.out)
+        self._print_storage(storage)
+
+    def save_stack(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        self.emit_save(storage)
+        return True
+
+    def emit_reload(self, storage: Storage):
+        storage.reload(self.out)
+        self._print_storage(storage)
+
+    def reload_stack(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        self.emit_reload(storage)
+        return True
+
     def _print_storage(self, storage: Storage):
         if PRINT_STACKS:
             self.out.start_line()
@@ -314,6 +352,7 @@ class Emitter:
         braces = 1
         out_stores = set(uop.output_stores)
         tkn = next(tkn_iter)
+        reload: Token | None = None
         try:
             reachable = True
             line : int = -1
@@ -330,8 +369,11 @@ class Emitter:
                     self.out.start_line()
                     line = tkn.line
                 if tkn in escaping_calls:
-                    storage.flush(self.out)
-                    self._print_storage(storage)
+                    if tkn != reload:
+                        self.emit_save(storage)
+                    _, reload = escaping_calls[tkn]
+                elif tkn == reload:
+                    self.emit_reload(storage)
                 if tkn.kind == "LBRACE":
                     self.out.emit(tkn)
                     braces += 1

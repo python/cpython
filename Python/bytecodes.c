@@ -1204,7 +1204,8 @@ dummy_func(
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
 
             assert(exc && PyExceptionInstance_Check(exc));
-            if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
+            int matches = PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration);
+            if (matches) {
                 DECREF_INPUTS();
             }
             else {
@@ -4382,7 +4383,7 @@ dummy_func(
                 ERROR_NO_POP();
             }
             assert(EMPTY());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            SAVE_STACK();
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
             _PyFrame_Copy(frame, gen_frame);
@@ -4394,7 +4395,7 @@ dummy_func(
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             LOAD_IP(frame->return_offset);
-            LOAD_SP();
+            RELOAD_STACK();
             res = PyStackRef_FromPyObjectSteal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
         }
@@ -4818,6 +4819,13 @@ dummy_func(
 
         tier2 op(_ERROR_POP_N, (target/2, unused[oparg] --)) {
             frame->instr_ptr = ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive) + target;
+            {
+                stack_pointer -= oparg;
+                if (!WITHIN_STACK_BOUNDS()) {
+                    printf("Stacke level: %d, oparg: %d\n", STACK_LEVEL(), oparg);
+                }
+                stack_pointer += oparg;
+            }
             SYNC_SP();
             GOTO_UNWIND();
         }

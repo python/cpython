@@ -400,6 +400,7 @@ class Storage:
 
     stack: Stack
     outputs: list[Local]
+    spilled: int = 0
 
     def _push_defined_locals(self) -> None:
         while self.outputs:
@@ -422,6 +423,25 @@ class Storage:
     def flush(self, out: CWriter) -> None:
         self._push_defined_locals()
         self.stack.flush(out)
+
+    def save(self, out: CWriter) -> None:
+        assert self.spilled >= 0
+        if self.spilled == 0:
+            self.flush(out)
+            out.start_line()
+            out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+        else:
+            out.emit(f"/* Virtual flush {self.spilled} */\n")
+        self.spilled += 1
+
+    def reload(self, out: CWriter) -> None:
+        assert self.spilled > 0
+        self.spilled -= 1
+        if self.spilled == 0:
+            out.start_line()
+            out.emit("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+        else:
+            out.emit(f"/* Virtual reload {self.spilled} */\n")
 
     @staticmethod
     def for_uop(stack: Stack, uop: Uop, locals: dict[str, Local]) -> "Storage":

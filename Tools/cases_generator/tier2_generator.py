@@ -76,6 +76,7 @@ class Tier2Emitter(Emitter):
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
+        storage.flush(self.out)
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)

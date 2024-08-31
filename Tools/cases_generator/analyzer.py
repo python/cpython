@@ -6,7 +6,7 @@ from typing import Optional
 
 @dataclass
 class Properties:
-    escaping_calls: dict[lexer.Token, lexer.Token]
+    escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]
     error_with_pop: bool
     error_without_pop: bool
     deopts: bool
@@ -34,7 +34,7 @@ class Properties:
 
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
-        escaping_calls: dict[lexer.Token, lexer.Token] = {}
+        escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
         for p in properties:
             escaping_calls.update(p.escaping_calls)
         return Properties(
@@ -564,6 +564,13 @@ NON_ESCAPING_FUNCTIONS = (
     "PyCFunction_GET_SELF",
     "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
     "PyCell_GetRef",
+    "Py_UNREACHABLE",
+    "_Py_LeaveRecursiveCallTstate",
+    "_Py_EnterRecursiveCallTstateUnchecked",
+    "_PyObject_GC_IS_TRACKED",
+    "_PyObject_GC_MAY_BE_TRACKED",
+    "ADAPTIVE_COUNTER_TRIGGERS",
+    "_PyInterpreterState_GET",
 )
 
 def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
@@ -578,17 +585,30 @@ def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
         idx += 1
     return node.block.tokens[idx]
 
+
 def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         idx += 1
         tkn = node.block.tokens[idx]
-        if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
-            break
-    while node.block.tokens[idx].kind == "COMMENT":
-        idx -= 1
-    return node.block.tokens[idx]
+        if tkn.kind == "SEMI":
+            return node.block.tokens[idx+1]
 
+def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, lexer.Token]) -> None:
+    calls = {escapes[t][0] for t in escapes}
+    in_if = 0
+    tkn_iter = iter(instr.block.tokens)
+    for tkn in tkn_iter:
+        if tkn.kind == "IF":
+            next(tkn_iter)
+            in_if = 1
+        elif tkn.kind == "LPAREN" and in_if:
+            in_if += 1
+        elif tkn.kind == "RPAREN":
+            if in_if:
+                in_if -= 1
+        elif tkn in calls and in_if:
+            raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
 def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, lexer.Token]:
     result: dict[lexer.Token, lexer.Token] = {}
@@ -599,7 +619,7 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, lexer.To
         try:
             next_tkn = tokens[idx+1]
         except IndexError:
-            return result
+            break
         if next_tkn.kind != lexer.LPAREN:
             continue
         if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
@@ -615,6 +635,7 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, lexer.To
         start = find_stmt_start(instr, idx)
         end = find_stmt_end(instr, idx)
         result[start] = tkn, end
+    check_escaping_calls(instr, result)
     return result
 
 

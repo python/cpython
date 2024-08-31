@@ -91,7 +91,12 @@ def emit_default(out: CWriter, uop: Uop) -> None:
 
 
 class OptimizerEmitter(Emitter):
-    pass
+
+    def emit_save(self, storage: Storage):
+        pass
+
+    def emit_reload(self, storage: Storage):
+        pass
 
 
 def write_uop(
