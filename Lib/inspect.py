@@ -2272,16 +2272,34 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     Parameter = cls._parameter_cls
 
     # Parameter information.
-    func_code = func.__code__
+    annotations = get_annotations(
+        func,
+        globals=globals,
+        locals=locals,
+        eval_str=eval_str,
+    )
+    return _signature_from_code(
+        func.__code__,
+        annotations=annotations,
+        defaults=func.__defaults__,
+        kwdefaults=func.__kwdefaults__,
+        cls=cls,
+        is_duck_function=is_duck_function,
+    )
+
+
+def _signature_from_code(
+    func_code,
+    *,
+    annotations, defaults, kwdefaults,
+    cls, is_duck_function,
+):
     pos_count = func_code.co_argcount
     arg_names = func_code.co_varnames
     posonly_count = func_code.co_posonlyargcount
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
-    defaults = func.__defaults__
-    kwdefaults = func.__kwdefaults__
 
     if defaults:
         pos_default_count = len(defaults)
@@ -2952,6 +2970,29 @@ class Signature:
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
                                         globals=globals, locals=locals, eval_str=eval_str)
+
+    @classmethod
+    def from_frame(cls, frame):
+        """
+        Constructs Signature from a given frame object.
+
+        Notice that it is impossible to get signatures
+        with defaults or annotations from frames,
+        because annotations are stored
+        in a function inside ``__defaults__``, ``__kwdefaults__``,
+        and ``__annotations__`` attributes.
+        """
+        if not isframe(frame):
+            raise TypeError(f'Frame object expected, got: {type(frame)}')
+
+        return _signature_from_code(
+            frame.f_code,
+            annotations={},
+            defaults=(),
+            kwdefaults={},
+            cls=cls,
+            is_duck_function=False,
+        )
 
     @property
     def parameters(self):

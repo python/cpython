@@ -1,0 +1,2 @@
+Add :meth:`inspect.Signature.from_frame` to get a signature
+from a frame object.

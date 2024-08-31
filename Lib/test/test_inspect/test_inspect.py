@@ -4813,6 +4813,104 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
 
+class TestSignatureFromFrame(unittest.TestCase):
+    def test_from_frame(self):
+        ns = {}
+        def inner(a, /, b, *e, c: int = 3, d, **f) -> None:
+            ns['fr'] = inspect.currentframe()
+
+        inner(1, 2, d=4)
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(a, /, b, *e, c, d, **f)')
+
+    def test_from_frame_with_pos_only_defaults(self):
+        ns = {}
+        def inner(a=1, /, b=2, *e, c: int = 3, d, **f) -> None:
+            ns['fr'] = inspect.currentframe()
+
+        inner(d=4)
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(a, /, b, *e, c, d, **f)')
+
+    def test_from_frame_no_locals(self):
+        ns = {}
+        def inner():
+            ns['fr'] = inspect.currentframe()
+
+        inner()
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '()')
+
+    def test_from_frame_no_pos(self):
+        ns = {}
+        def inner(*, a, b=2, **c):
+            ns['fr'] = inspect.currentframe()
+
+        inner(a=1)
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(*, a, b, **c)')
+
+    def test_from_frame_no_kw(self):
+        ns = {}
+        def inner(a, /, b, *c):
+            ns['fr'] = inspect.currentframe()
+
+        inner(1, 2)
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(a, /, b, *c)')
+
+    def test_from_frame_with_nonlocal(self):
+        fr = None
+        def inner(a, /, b, *c):
+            nonlocal fr
+            fr = inspect.currentframe()
+
+        inner(1, 2)
+        self.assertEqual(str(inspect.Signature.from_frame(fr)),
+                         '(a, /, b, *c)')
+
+    def test_clear_frame(self):
+        ns = {}
+        def inner(a=1, /, c=5, *, b=2):
+            ns['fr'] = inspect.currentframe()
+
+        inner()
+        ns['fr'].clear()
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(a, /, c, *, b)')
+
+    def test_from_method_frame(self):
+        ns = {}
+        class _A:
+            def inner(self, a, *, b):
+                ns['fr'] = inspect.currentframe()
+
+        _A().inner(1, b=2)
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(self, a, *, b)')
+
+    def test_from_frame_defaults_change(self):
+        ns = {}
+        def inner(a=1, /, c=5, *, b=2):
+            a = 3
+            ns['fr'] = inspect.currentframe()
+            b = 4
+
+        inner()
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(a, /, c, *, b)')
+
+    def test_from_frame_mod(self):
+        self.assertEqual(str(inspect.Signature.from_frame(mod.fr)),
+                         '(x, y)')
+        self.assertEqual(str(inspect.Signature.from_frame(mod.fr.f_back)),
+                         '(a, /, b, c, d, e, f, *g, **h)')
+
+    def test_from_not_frame(self):
+        with self.assertRaisesRegex(TypeError, 'Frame object expected'):
+            inspect.Signature.from_frame(lambda: ...)
+
+
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
         P = inspect.Parameter
