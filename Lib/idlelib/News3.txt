@@ -4,8 +4,7 @@ Released on 2025-10-xx
 =========================
 
 
-gh-67407: Improve the Find, Replace and Find in Files dialogs. Patch by
-Wulian233 and AlSweigart.
+gh-67407: Improve the Find, Replace and Find in Files dialogs.
 
 
 What's New in IDLE 3.13.0
