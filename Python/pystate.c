@@ -660,6 +660,7 @@ init_interpreter(PyInterpreterState *interp,
 #ifdef _Py_TIER2
     (void)_Py_SetOptimizer(interp, NULL);
     interp->executor_list_head = NULL;
+    interp->executors_created = 0;
 #endif
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */

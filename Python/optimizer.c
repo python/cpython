@@ -1667,6 +1667,7 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             OPT_STAT_INC(executors_invalidated);
         }
     }
+    interp->executors_created=0;
 }
 
 void
@@ -1702,8 +1703,8 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
     }
-        Py_DECREF(invalidate);
-        return;
+    Py_DECREF(invalidate);
+    return;
 error:
     PyErr_Clear();
     Py_XDECREF(invalidate);
