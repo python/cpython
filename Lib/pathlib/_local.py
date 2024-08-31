@@ -826,7 +826,7 @@ class Path(PathBase, PurePath):
     def _rmtree(self):
         # Lazy import to improve module import time
         import shutil
-        shutil.rmtree(path=self)
+        shutil.rmtree(self)
 
     def rename(self, target):
         """
