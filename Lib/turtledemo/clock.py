@@ -1,6 +1,6 @@
 """       turtle-example-suite:
 
-             tdemo_clock.py
+           turtledemo/clock.py
 
 Enhanced clock-program, showing date
 and time
@@ -11,29 +11,29 @@ and time
 from turtle import *
 from datetime import datetime
 
-def jump(distanz, winkel=0):
+def jump(distanz, angle=0):
     penup()
-    right(winkel)
+    right(angle)
     forward(distanz)
-    left(winkel)
+    left(angle)
     pendown()
 
-def hand(laenge, spitze):
-    fd(laenge*1.15)
+def hand(spitze, tip):
+    fd(spitze*1.15)
     rt(90)
-    fd(spitze/2.0)
+    fd(tip/2.0)
     lt(120)
-    fd(spitze)
+    fd(tip)
     lt(120)
-    fd(spitze)
+    fd(tip)
     lt(120)
-    fd(spitze/2.0)
+    fd(tip/2.0)
 
-def make_hand_shape(name, laenge, spitze):
+def make_hand_shape(name, spitze, tip):
     reset()
-    jump(-laenge*0.15)
+    jump(-spitze*0.15)
     begin_poly()
-    hand(laenge, spitze)
+    hand(spitze, tip)
     end_poly()
     hand_form = get_poly()
     register_shape(name, hand_form)
