@@ -1237,6 +1237,48 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
         finally:
             tar.close()
 
+    def test_pax_header_bad_formats(self):
+        # The fields from the pax header have priority over the
+        # TarInfo.
+        pax_header_replacements = (
+            b" foo=bar\n",
+            b"0 \n",
+            b"1 \n",
+            b"2 \n",
+            b"3 =\n",
+            b"4 =a\n",
+            b"1000000 foo=bar\n",
+            b"0 foo=bar\n",
+            b"-12 foo=bar\n",
+            b"000000000000000000000000036 foo=bar\n",
+        )
+        pax_headers = {"foo": "bar"}
+
+        for replacement in pax_header_replacements:
+            with self.subTest(header=replacement):
+                tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
+                                   encoding="iso8859-1")
+                try:
+                    t = tarfile.TarInfo()
+                    t.name = "pax"  # non-ASCII
+                    t.uid = 1
+                    t.pax_headers = pax_headers
+                    tar.addfile(t)
+                finally:
+                    tar.close()
+
+                with open(tmpname, "rb") as f:
+                    data = f.read()
+                    self.assertIn(b"11 foo=bar\n", data)
+                    data = data.replace(b"11 foo=bar\n", replacement)
+
+                with open(tmpname, "wb") as f:
+                    f.truncate()
+                    f.write(data)
+
+                with self.assertRaisesRegex(tarfile.ReadError, r"method tar: ReadError\('invalid header'\)"):
+                    tarfile.open(tmpname, encoding="iso8859-1")
+
 
 class WriteTestBase(TarTest):
     # Put all write tests in here that are supposed to be tested
