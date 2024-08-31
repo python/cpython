@@ -349,6 +349,7 @@ class socket(_socket.socket):
     if hasattr(os, 'sendfile'):
 
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
+            # Lazy import to improve module import time
             import selectors
 
             self._check_sendfile_params(file, offset, count)
