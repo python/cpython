@@ -305,7 +305,6 @@ class MockResponse(io.StringIO):
         io.StringIO.__init__(self, data)
         self.status, self.msg, self.headers, self.url = code, msg, headers, url
 
-
     def info(self):
         return self.headers
 
