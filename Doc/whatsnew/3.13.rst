@@ -1651,7 +1651,7 @@ importlib.metadata
 ------------------
 
 * Remove deprecated subscript (:meth:`~object.__getitem__`) access for
-  :class:`~importlib.metadata.EntryPoint` objects.
+  :ref:`EntryPoint <entry-points>` objects.
   (Contributed by Jason R. Coombs in :gh:`113175`.)
 
 
@@ -1690,7 +1690,7 @@ re
 --
 
 * Remove the undocumented, deprecated, and broken
-  :func:`!re.template` function and :attr:`!re.TEMPLATE` / :attr:`re.T` flag.
+  :func:`!re.template` function and :attr:`!re.TEMPLATE` / :attr:`!re.T` flag.
   (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
 
 
