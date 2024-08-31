@@ -106,7 +106,7 @@ a :class:`Mapping`.
 
 .. versionadded:: 3.9
    These abstract classes now support ``[]``. See :ref:`types-genericalias`
-   and :pep:`585`.
+   and :pep:`585`. They, however, do not inherit from :class:`~typing.Generic` explicitly.
 
 .. _collections-abstract-base-classes:
 
@@ -197,7 +197,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 ----------------------------------------------------------
 
 
-.. class:: Container
+.. class:: Container[T_co]
 
    ABC for classes that provide the :meth:`~object.__contains__` method.
 
@@ -213,7 +213,10 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABC for classes that provide the :meth:`~object.__call__` method.
 
-.. class:: Iterable
+   See :ref:`annotating-callables` for details on how to use
+   :class:`Callable` and :class:`~typing.Callable` in type annotations.
+
+.. class:: Iterable[T_co]
 
    ABC for classes that provide the :meth:`~container.__iter__` method.
 
@@ -224,36 +227,71 @@ Collections Abstract Base Classes -- Detailed Descriptions
    The only reliable way to determine whether an object is :term:`iterable`
    is to call ``iter(obj)``.
 
-.. class:: Collection
+.. class:: Collection[T_co](Sized, Iterable[T_co], Container[T_co])
 
    ABC for sized iterable container classes.
 
    .. versionadded:: 3.6
 
-.. class:: Iterator
+.. class:: Iterator[T_co](Iterable[T_co])
 
    ABC for classes that provide the :meth:`~iterator.__iter__` and
    :meth:`~iterator.__next__` methods.  See also the definition of
    :term:`iterator`.
 
-.. class:: Reversible
+.. class:: Reversible[T_co](Iterable[T_co])
 
    ABC for iterable classes that also provide the :meth:`~object.__reversed__`
    method.
 
    .. versionadded:: 3.6
 
-.. class:: Generator
+.. class:: Generator[YieldType_co, SendType_contra, ReturnType_co](Iterator[YieldType_co])
 
    ABC for :term:`generator` classes that implement the protocol defined in
    :pep:`342` that extends :term:`iterators <iterator>` with the
    :meth:`~generator.send`,
    :meth:`~generator.throw` and :meth:`~generator.close` methods.
 
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
+
+      def infinite_stream(start: int) -> Generator[int]:
+          while True:
+              yield start
+              start += 1
+
+   It is also possible to set these types explicitly::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
    .. versionadded:: 3.5
 
-.. class:: Sequence
-           MutableSequence
+.. class:: Sequence[T_co](Reversible[T_co], Collection[T_co])
+           MutableSequence[T](Sequence[T])
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
@@ -270,24 +308,29 @@ Collections Abstract Base Classes -- Detailed Descriptions
       The index() method added support for *stop* and *start*
       arguments.
 
-.. class:: Set
-           MutableSet
+.. class:: Set[T_co](Collection[T_co])
+           MutableSet[T](Set[T])
 
    ABCs for read-only and mutable :ref:`sets <types-set>`.
 
-.. class:: Mapping
-           MutableMapping
+.. class:: Mapping[KT, VT_co](Collection[KT], Generic[KT, VT_co])
+           MutableMapping[KT, VT](Mapping[KT, VT])
 
    ABCs for read-only and mutable :term:`mappings <mapping>`.
 
-.. class:: MappingView
-           ItemsView
-           KeysView
-           ValuesView
+   Example use in type annotations::
+
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
+
+.. class:: MappingView(Sized)
+           ItemsView[KT_co, VT_co](MappingView, Set[tuple[KT_co, VT_co]])
+           KeysView[KT_co](MappingView, Set[KT_co])
+           ValuesView[VT_co](MappingView, Collection[VT_co])
 
    ABCs for mapping, items, keys, and values :term:`views <dictionary view>`.
 
-.. class:: Awaitable
+.. class:: Awaitable[T_co]
 
    ABC for :term:`awaitable` objects, which can be used in :keyword:`await`
    expressions.  Custom implementations must provide the
@@ -305,7 +348,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. versionadded:: 3.5
 
-.. class:: Coroutine
+.. class:: Coroutine[YieldType_co, SendType_contra, ReturnType_co](Awaitable[ReturnType_co])
 
    ABC for :term:`coroutine` compatible classes.  These implement the
    following methods, defined in :ref:`coroutine-objects`:
@@ -321,26 +364,70 @@ Collections Abstract Base Classes -- Detailed Descriptions
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
 
+   The variance and order of type variables
+   correspond to those of :class:`Generator`, for example::
+
+      from collections.abc import Coroutine
+      c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
+      x = c.send('hi')                   # Inferred type of 'x' is list[str]
+      async def bar() -> None:
+          y = await c                    # Inferred type of 'y' is int
+
    .. versionadded:: 3.5
 
-.. class:: AsyncIterable
+.. class:: AsyncIterable[T_co]
 
    ABC for classes that provide an ``__aiter__`` method.  See also the
    definition of :term:`asynchronous iterable`.
 
    .. versionadded:: 3.5
 
-.. class:: AsyncIterator
+.. class:: AsyncIterator[T_co](AsyncIterable[T_co])
 
    ABC for classes that provide ``__aiter__`` and ``__anext__``
    methods.  See also the definition of :term:`asynchronous iterator`.
 
    .. versionadded:: 3.5
 
-.. class:: AsyncGenerator
+.. class:: AsyncGenerator[YieldType_co, SendType_contra](AsyncIterator[YieldType_co])
 
    ABC for :term:`asynchronous generator` classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
+
+   An async generator can be annotated by the generic type
+   ``AsyncGenerator[YieldType, SendType]``. For example::
+
+      async def echo_round() -> AsyncGenerator[int, float]:
+          sent = yield 0
+          while sent >= 0.0:
+              rounded = await round(sent)
+              sent = yield rounded
+
+   Unlike normal generators, async generators cannot return a value, so there
+   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
+   ``SendType`` behaves contravariantly.
+
+   The ``SendType`` defaults to :const:`!None`::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   It is also possible to set this type explicitly::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   Alternatively, annotate your generator as having a return type of
+   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
+
+      async def infinite_stream(start: int) -> AsyncIterator[int]:
+          while True:
+              yield start
+              start = await increment(start)
 
    .. versionadded:: 3.6
 

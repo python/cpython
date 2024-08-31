@@ -3544,11 +3544,6 @@ Aliases to container ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Mapping`.
 
-   This type can be used as follows::
-
-      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-          return word_list[word]
-
    .. deprecated:: 3.9
       :class:`collections.abc.Mapping` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
@@ -3612,15 +3607,6 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Coroutine`.
 
-   The variance and order of type variables
-   correspond to those of :class:`Generator`, for example::
-
-      from collections.abc import Coroutine
-      c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
-      x = c.send('hi')                   # Inferred type of 'x' is list[str]
-      async def bar() -> None:
-          y = await c                    # Inferred type of 'y' is int
-
    .. versionadded:: 3.5.3
 
    .. deprecated:: 3.9
@@ -3630,41 +3616,6 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 .. class:: AsyncGenerator(AsyncIterator[YieldType], Generic[YieldType, SendType])
 
    Deprecated alias to :class:`collections.abc.AsyncGenerator`.
-
-   An async generator can be annotated by the generic type
-   ``AsyncGenerator[YieldType, SendType]``. For example::
-
-      async def echo_round() -> AsyncGenerator[int, float]:
-          sent = yield 0
-          while sent >= 0.0:
-              rounded = await round(sent)
-              sent = yield rounded
-
-   Unlike normal generators, async generators cannot return a value, so there
-   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
-   ``SendType`` behaves contravariantly.
-
-   The ``SendType`` defaults to :const:`!None`::
-
-      async def infinite_stream(start: int) -> AsyncGenerator[int]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   It is also possible to set this type explicitly::
-
-      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   Alternatively, annotate your generator as having a return type of
-   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
-
-      async def infinite_stream(start: int) -> AsyncIterator[int]:
-          while True:
-              yield start
-              start = await increment(start)
 
    .. versionadded:: 3.6.1
 
@@ -3731,9 +3682,6 @@ Aliases to other ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Callable`.
 
-   See :ref:`annotating-callables` for details on how to use
-   :class:`collections.abc.Callable` and ``typing.Callable`` in type annotations.
-
    .. deprecated:: 3.9
       :class:`collections.abc.Callable` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
@@ -3745,41 +3693,6 @@ Aliases to other ABCs in :mod:`collections.abc`
 .. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
 
    Deprecated alias to :class:`collections.abc.Generator`.
-
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
-
-      def infinite_stream(start: int) -> Generator[int]:
-          while True:
-              yield start
-              start += 1
-
-   It is also possible to set these types explicitly::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
 
    .. deprecated:: 3.9
       :class:`collections.abc.Generator` now supports subscripting (``[]``).
