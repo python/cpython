@@ -824,6 +824,7 @@ class Path(PathBase, PurePath):
         os.rmdir(self)
 
     def _rmtree(self):
+        # Lazy import to improve module import time
         import shutil
         shutil.rmtree(path=self)
 
