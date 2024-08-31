@@ -307,9 +307,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
                 goto error;
             }
             PyObject *line = PyList_GET_ITEM(xs, n - 1);
-            if (PyObject_SetAttr(exc, &_Py_ID(text), line) == -1) {
-                _PyErr_Clear(tstate);
-            }
+            PyObject_SetAttr(exc, &_Py_ID(text), line);
             Py_DECREF(xs);
         }
 error:
