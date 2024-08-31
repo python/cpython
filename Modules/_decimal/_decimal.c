@@ -31,6 +31,7 @@
 
 #include <Python.h>
 #include "pycore_long.h"          // _PyLong_IsZero()
+#include "pycore_object.h"        // _Py_DECREF_NO_DEALLOC()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
 #include "complexobject.h"
@@ -131,15 +132,17 @@ get_module_state_by_def(PyTypeObject *tp)
 }
 
 // MSVC inlines a branch like this on PGO builds unless the caller branches
-static inline PyObject *
+static inline PyTypeObject *
 _left_or_right(PyObject *left, PyObject *right, void *token)
 {
-    if (PyType_GetBaseByToken(Py_TYPE(left), token, NULL) == 1) {
-        return left;
+    PyTypeObject *super;
+    if (PyType_GetBaseByToken(Py_TYPE(left), token, &super) != 1) {
+        assert(!PyErr_Occurred());
+        PyType_GetBaseByToken(Py_TYPE(right), token, &super);
     }
-    assert(!PyErr_Occurred());
-    assert(PyType_GetBaseByToken(Py_TYPE(right), token, NULL) == 1);
-    return right;
+    assert(super != NULL);
+    _Py_DECREF_NO_DEALLOC((PyObject *)super);
+    return super;
 }
 
 static PyType_Spec dec_spec;
@@ -147,8 +150,8 @@ static PyType_Spec dec_spec;
 static inline decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
-    PyObject *dec = _left_or_right(left, right, &dec_spec);
-    return get_module_state_by_def(Py_TYPE(dec));
+    PyTypeObject *super = _left_or_right(left, right, &dec_spec);
+    return (decimal_state *)_PyType_GetModuleState(super);
 }
 
 
