@@ -30,7 +30,7 @@ def register(name, klass, instance=None, *, preferred=False):
         # Preferred browsers go to the front of the list.
         # Need to match to the default browser returned by xdg-settings, which
         # may be of the form e.g. "firefox.desktop".
-        if preferred or (_os_preferred_browser and name in _os_preferred_browser):
+        if preferred or (_os_preferred_browser and f'{name}.desktop' == _os_preferred_browser):
             _tryorder.insert(0, name)
         else:
             _tryorder.append(name)
