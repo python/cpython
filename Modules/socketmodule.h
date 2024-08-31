@@ -326,7 +326,7 @@ typedef struct {
                                         0.0 means non-blocking */
     struct _socket_state *state;
 #ifdef MS_WINDOWS
-    int quickack;
+    unsigned int quickack: 1;
 #endif
 } PySocketSockObject;
 
