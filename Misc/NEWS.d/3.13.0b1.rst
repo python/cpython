@@ -1213,7 +1213,7 @@ changed from ``'r'`` to ``'rb'``.
 .. nonce: eeS6w7
 .. section: Library
 
-Fix :func:`inspect.signature()` to correctly handle parameter defaults on
+Fix :func:`inspect.signature` to correctly handle parameter defaults on
 methods in extension modules that use names defined in the module namespace.
 
 ..
