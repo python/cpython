@@ -393,7 +393,10 @@ class _GlobberBase:
                 while stack:
                     path, dir_fd, rel_path = stack.pop()
                     if path is None:
-                        self.close(dir_fd)
+                        try:
+                            self.close(dir_fd)
+                        except OSError:
+                            pass
 
         def select_recursive_step(stack, match_pos):
             path, dir_fd, rel_path = stack.pop()
@@ -440,7 +443,8 @@ class _GlobberBase:
         return select_recursive
 
     def select_exists(self, path, dir_fd=None, rel_path=None, exists=False):
-        """Yields the given path, if it exists.
+        """Yields the given path, if it exists. If *dir_fd* is given, we check
+        whether *rel_path* exists relative to the fd.
         """
         if exists:
             # Optimization: this path is already known to exist, e.g. because
