@@ -1203,7 +1203,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     executor->jit_size = 0;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
-    executor->vm_data.was_run = true;
+    executor->vm_data.was_run = 1;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1693,7 +1693,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
             }
         }
         else {
-            exec->vm_data.was_run = false;
+            exec->vm_data.was_run = 0;
         }
 
         exec = next;

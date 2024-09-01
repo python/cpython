@@ -4845,7 +4845,7 @@ dummy_func(
         }
 
         tier2 op(_SET_EXECUTOR_RUN_STATE, (--)) {
-            current_executor->vm_data.was_run = true;
+            current_executor->vm_data.was_run = 1;
         }
 
         tier2 op(_FATAL_ERROR, (--)) {
