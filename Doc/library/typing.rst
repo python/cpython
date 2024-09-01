@@ -3690,7 +3690,7 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 
    See
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details of using :class:`collections.abc.Coroutine` and this class
+   for details on using :class:`collections.abc.Coroutine` and this class
    in type annotations.
 
    .. versionadded:: 3.5.3
@@ -3705,7 +3705,7 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 
    See
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details of using :class:`collections.abc.AsyncGenerator` and this class
+   for details on using :class:`collections.abc.AsyncGenerator` and this class
    in type annotations.
 
    .. versionadded:: 3.6.1
@@ -3790,7 +3790,7 @@ Aliases to other ABCs in :mod:`collections.abc`
 
    See
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details of using :class:`collections.abc.Generator` and this class
+   for details on using :class:`collections.abc.Generator` and this class
    in type annotations.
 
    .. deprecated:: 3.9

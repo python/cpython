@@ -255,7 +255,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Refer to
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details of using this class in type annotations.
+   for details on using this class in type annotations.
 
    .. versionadded:: 3.5
 
@@ -335,7 +335,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Refer to
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details of using this class in type annotations.
+   for details on using this class in type annotations.
    The variance and order of type variables correspond to those of
    :class:`Generator`.
 
@@ -362,7 +362,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Refer to
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details of using this class in type annotations.
+   for details on using this class in type annotations.
 
    .. versionadded:: 3.6
 
