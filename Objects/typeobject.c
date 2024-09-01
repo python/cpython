@@ -5301,11 +5301,11 @@ _token_found(PyTypeObject **result, PyTypeObject *type)
     return 1;
 }
 
-// Prefer this to gotos for optimization
+// Prefer this to gotos for better PGO by MSVC
 static inline int
 _token_not_found(PyTypeObject **result, int ret)
 {
-    assert(-1 <= ret && ret <= 0);
+    assert(ret == 0 || ret == -1);
     if (result != NULL) {
         *result = NULL;
     }

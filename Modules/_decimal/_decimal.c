@@ -131,27 +131,24 @@ get_module_state_by_def(PyTypeObject *tp)
     return get_module_state(mod);
 }
 
-// MSVC inlines a branch like this on PGO builds unless the caller branches
-static inline PyTypeObject *
-base_from_left_or_right(PyObject *left, PyObject *right, void *token)
-{
-    PyTypeObject *base;
-    if (PyType_GetBaseByToken(Py_TYPE(left), token, &base) != 1) {
-        assert(!PyErr_Occurred());
-        PyType_GetBaseByToken(Py_TYPE(right), token, &base);
-    }
-    assert(base != NULL);
-    _Py_DECREF_NO_DEALLOC((PyObject *)base);
-    return base;
-}
-
 static PyType_Spec dec_spec;
 
-static inline decimal_state *
+static inline Py_ALWAYS_INLINE decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
-    PyTypeObject *base = base_from_left_or_right(left, right, &dec_spec);
-    return (decimal_state *)_PyType_GetModuleState(base);
+    PyTypeObject *base;
+    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, &base) != 1) {
+        assert(!PyErr_Occurred());
+        PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base);
+    }
+    assert(base != NULL);
+    // Py_DECREF'ing the superclass immediately after Py_GetBaseByToken()
+    // finishes will be well optimized, which is safe here since the given
+    // subclass keeps it in tp_bases.
+    _Py_DECREF_NO_DEALLOC((PyObject *)base);
+    void *state = _PyType_GetModuleState(base);
+    assert(state != NULL);
+    return (decimal_state *)state;
 }
 
 
