@@ -457,9 +457,9 @@ For example::
            sent = yield round(sent)
        return 'Done'
 
-Note that unlike many other generics in the typing module, the ``SendType``
-of :class:`~collections.abc.Generator` behaves contravariantly, not covariantly or
-invariantly.
+Note that unlike many other generic classes in the standard library,
+the ``SendType`` of :class:`~collections.abc.Generator` behaves
+contravariantly, not covariantly or invariantly.
 
 The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
 
@@ -3690,8 +3690,8 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 
    See
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details on using :class:`collections.abc.Coroutine` and this class
-   in type annotations.
+   for details on using :class:`collections.abc.Coroutine`
+   and ``typing.Coroutine`` in type annotations.
 
    .. versionadded:: 3.5.3
 
@@ -3705,8 +3705,8 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 
    See
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details on using :class:`collections.abc.AsyncGenerator` and this class
-   in type annotations.
+   for details on using :class:`collections.abc.AsyncGenerator`
+   and ``typing.AsyncGenerator`` in type annotations.
 
    .. versionadded:: 3.6.1
 
@@ -3790,8 +3790,8 @@ Aliases to other ABCs in :mod:`collections.abc`
 
    See
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details on using :class:`collections.abc.Generator` and this class
-   in type annotations.
+   for details on using :class:`collections.abc.Generator`
+   and ``typing.Generator`` in type annotations.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Generator` now supports subscripting (``[]``).

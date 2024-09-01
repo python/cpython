@@ -106,7 +106,7 @@ a :class:`Mapping`.
 
 .. versionadded:: 3.9
    These abstract classes now support ``[]``. See :ref:`types-genericalias`
-   and :pep:`585`. They, however, do not inherit from :class:`~typing.Generic` explicitly.
+   and :pep:`585`.
 
 .. _collections-abstract-base-classes:
 
@@ -336,7 +336,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    Refer to
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
    for details on using this class in type annotations.
-   The variance and order of type variables correspond to those of
+   The variance and order of type parameters correspond to those of
    :class:`Generator`.
 
    .. versionadded:: 3.5
