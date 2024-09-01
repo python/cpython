@@ -3560,6 +3560,38 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(A().__dict__, {})
         A()
 
+    @support.cpython_only
+    def test_slots_with_wrong_init_subclass(self):
+        # TODO: This test is for a kinda-buggy behavior.
+        # Ideally, it should be fixed and `__init_subclass__`
+        # should be fully supported in the future versions.
+        # See https://github.com/python/cpython/issues/91126
+        class WrongSuper:
+            def __init_subclass__(cls, arg):
+                pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "missing 1 required positional argument: 'arg'",
+        ):
+            @dataclass(slots=True)
+            class WithWrongSuper(WrongSuper, arg=1):
+                pass
+
+        class CorrectSuper:
+            args = []
+            def __init_subclass__(cls, arg="default"):
+                cls.args.append(arg)
+
+        @dataclass(slots=True)
+        class WithCorrectSuper(CorrectSuper):
+            pass
+
+        # __init_subclass__ is called twice: once for `WithCorrectSuper`
+        # and once for `WithCorrectSuper__slots__` new class
+        # that we create internally.
+        self.assertEqual(CorrectSuper.args, ["default", "default"])
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
