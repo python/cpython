@@ -1667,7 +1667,6 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             OPT_STAT_INC(executors_invalidated);
         }
     }
-    interp->executors_created = 0;
 }
 
 void
