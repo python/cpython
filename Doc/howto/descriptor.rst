@@ -990,7 +990,7 @@ The documentation shows a typical use to define a managed attribute ``x``:
     AttributeError: 'C' object has no attribute '_C__x'
 
 To see how :func:`property` is implemented in terms of the descriptor protocol,
-here is a pure Python equivalent:
+here is a mostly pure Python equivalent:
 
 .. testcode::
 
@@ -1004,18 +1004,10 @@ here is a pure Python equivalent:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self._name = None
+            self.__name__ = ''
 
         def __set_name__(self, owner, name):
-            self._name = name
-
-        @property
-        def __name__(self):
-            return self._name if self._name is not None else self.fget.__name__
-
-        @__name__.setter
-        def __name__(self, value):
-            self._name = value
+            self.__name__ = name
 
         def __get__(self, obj, objtype=None):
             if obj is None:
@@ -1044,19 +1036,13 @@ here is a pure Python equivalent:
             self.fdel(obj)
 
         def getter(self, fget):
-            prop = type(self)(fget, self.fset, self.fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(fget, self.fset, self.fdel, self.__doc__)
 
         def setter(self, fset):
-            prop = type(self)(self.fget, fset, self.fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(self.fget, fset, self.fdel, self.__doc__)
 
         def deleter(self, fdel):
-            prop = type(self)(self.fget, self.fset, fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(self.fget, self.fset, fdel, self.__doc__)
 
 .. testcode::
     :hide:
