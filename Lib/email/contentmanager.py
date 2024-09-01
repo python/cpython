@@ -133,6 +133,8 @@ def _finalize_set(msg, disposition, filename, cid, params):
 # drop both this and quoprimime.body_encode in favor of enhanced binascii
 # routines that accepted a max_line_length parameter.
 def _encode_base64(data, max_line_length):
+    if not max_line_length:
+        return binascii.b2a_base64(data).decode('ascii')
     encoded_lines = []
     unencoded_bytes_per_line = max_line_length // 4 * 3
     for i in range(0, len(data), unencoded_bytes_per_line):
@@ -148,7 +150,10 @@ def _encode_text(string, charset, cte, policy):
     def normal_body(lines): return b'\n'.join(lines) + b'\n'
     if cte is None:
         # Use heuristics to decide on the "best" encoding.
-        if max((len(x) for x in lines), default=0) <= policy.max_line_length:
+        if (
+            not policy.max_line_length or
+            max((len(x) for x in lines), default=0) <= policy.max_line_length
+        ):
             try:
                 return '7bit', normal_body(lines).decode('ascii')
             except UnicodeDecodeError:
