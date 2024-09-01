@@ -197,7 +197,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 ----------------------------------------------------------
 
 
-.. class:: Container[T_co]
+.. class:: Container(Generic[T_co])
 
    ABC for classes that provide the :meth:`~object.__contains__` method.
 
@@ -216,7 +216,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    See :ref:`annotating-callables` for details on how to use
    :class:`Callable` and :class:`~typing.Callable` in type annotations.
 
-.. class:: Iterable[T_co]
+.. class:: Iterable(Generic[T_co])
 
    ABC for classes that provide the :meth:`~container.__iter__` method.
 
@@ -227,26 +227,26 @@ Collections Abstract Base Classes -- Detailed Descriptions
    The only reliable way to determine whether an object is :term:`iterable`
    is to call ``iter(obj)``.
 
-.. class:: Collection[T_co](Sized, Iterable[T_co], Container[T_co])
+.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
    ABC for sized iterable container classes.
 
    .. versionadded:: 3.6
 
-.. class:: Iterator[T_co](Iterable[T_co])
+.. class:: Iterator(Iterable[T_co])
 
    ABC for classes that provide the :meth:`~iterator.__iter__` and
    :meth:`~iterator.__next__` methods.  See also the definition of
    :term:`iterator`.
 
-.. class:: Reversible[T_co](Iterable[T_co])
+.. class:: Reversible(Iterable[T_co])
 
    ABC for iterable classes that also provide the :meth:`~object.__reversed__`
    method.
 
    .. versionadded:: 3.6
 
-.. class:: Generator[YieldType_co, SendType_contra, ReturnType_co](Iterator[YieldType_co])
+.. class:: Generator(Iterator[YieldType_co], Generic[YieldType_co, SendType_contra, ReturnType_co])
 
    ABC for :term:`generator` classes that implement the protocol defined in
    :pep:`342` that extends :term:`iterators <iterator>` with the
@@ -259,7 +259,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. versionadded:: 3.5
 
-.. class:: Sequence[T_co](Reversible[T_co], Collection[T_co])
+.. class:: Sequence(Reversible[T_co], Collection[T_co])
            MutableSequence[T](Sequence[T])
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
@@ -277,12 +277,12 @@ Collections Abstract Base Classes -- Detailed Descriptions
       The index() method added support for *stop* and *start*
       arguments.
 
-.. class:: Set[T_co](Collection[T_co])
+.. class:: Set(Collection[T_co])
            MutableSet[T](Set[T])
 
    ABCs for read-only and mutable :ref:`sets <types-set>`.
 
-.. class:: Mapping[KT, VT_co](Collection[KT], Generic[KT, VT_co])
+.. class:: Mapping(Collection[KT], Generic[KT, VT_co])
            MutableMapping[KT, VT](Mapping[KT, VT])
 
    ABCs for read-only and mutable :term:`mappings <mapping>`.
@@ -299,7 +299,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABCs for mapping, items, keys, and values :term:`views <dictionary view>`.
 
-.. class:: Awaitable[T_co]
+.. class:: Awaitable(Generic[T_co])
 
    ABC for :term:`awaitable` objects, which can be used in :keyword:`await`
    expressions.  Custom implementations must provide the
@@ -317,7 +317,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. versionadded:: 3.5
 
-.. class:: Coroutine[YieldType_co, SendType_contra, ReturnType_co](Awaitable[ReturnType_co])
+.. class:: Coroutine(Awaitable[ReturnType_co], Generic(YieldType_co, SendType_contra, ReturnType_co))
 
    ABC for :term:`coroutine` compatible classes.  These implement the
    following methods, defined in :ref:`coroutine-objects`:
@@ -340,21 +340,21 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. versionadded:: 3.5
 
-.. class:: AsyncIterable[T_co]
+.. class:: AsyncIterable(Generic[T_co])
 
    ABC for classes that provide an ``__aiter__`` method.  See also the
    definition of :term:`asynchronous iterable`.
 
    .. versionadded:: 3.5
 
-.. class:: AsyncIterator[T_co](AsyncIterable[T_co])
+.. class:: AsyncIterator(AsyncIterable[T_co])
 
    ABC for classes that provide ``__aiter__`` and ``__anext__``
    methods.  See also the definition of :term:`asynchronous iterator`.
 
    .. versionadded:: 3.5
 
-.. class:: AsyncGenerator[YieldType_co, SendType_contra](AsyncIterator[YieldType_co])
+.. class:: AsyncGenerator(AsyncIterator[YieldType_co], Generic[YieldType_co, SendType_contra])
 
    ABC for :term:`asynchronous generator` classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
