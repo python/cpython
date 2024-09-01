@@ -1947,6 +1947,12 @@ Corner-cases that used to crash:
     SyntaxError: cannot use pattern target as tuple
 
     >>> match ...:
+    ...   case 42 as (a + 1):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use pattern target as expression
+
+    >>> match ...:
     ...   case (32 as x) | (42 as a()):
     ...     ...
     Traceback (most recent call last):
