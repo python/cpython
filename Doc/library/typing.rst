@@ -208,7 +208,7 @@ Annotating callable objects
 ===========================
 
 Functions -- or other :term:`callable` objects -- can be annotated using
-:class:`collections.abc.Callable` or :data:`typing.Callable`.
+:class:`collections.abc.Callable` or deprecated :data:`typing.Callable`.
 ``Callable[[int], str]`` signifies a function that takes a single parameter
 of type :class:`int` and returns a :class:`str`.
 
@@ -401,7 +401,7 @@ The type of class objects
 =========================
 
 A variable annotated with ``C`` may accept a value of type ``C``. In
-contrast, a variable annotated with ``type[C]`` (or
+contrast, a variable annotated with ``type[C]`` (or deprecated
 :class:`typing.Type[C] <Type>`) may accept values that are classes
 themselves -- specifically, it will accept the *class object* of ``C``. For
 example::
