@@ -58,6 +58,7 @@ def display_date_time():
     global current_day
     writer.clear()
     now = datetime.now()
+    current_day = now.day
     writer.home()
     writer.forward(distance=65)
     writer.write(now.strftime(format="%A"), align="center", font=dtfont)
