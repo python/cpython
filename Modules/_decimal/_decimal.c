@@ -142,9 +142,9 @@ find_state_left_or_right(PyObject *left, PyObject *right)
         PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base);
     }
     assert(base != NULL);
-    // Py_DECREF'ing the superclass immediately after Py_GetBaseByToken()
+    // Py_DECREF'ing the `base` immediately after PyType_GetBaseByToken()
     // finishes will be well optimized, which is safe here since the given
-    // subclass keeps it in tp_bases.
+    // subclass keeps the superclass in tp_bases.
     _Py_DECREF_NO_DEALLOC((PyObject *)base);
     void *state = _PyType_GetModuleState(base);
     assert(state != NULL);
