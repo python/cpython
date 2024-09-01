@@ -124,7 +124,7 @@ Module contents
    - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
      is generated according to how *eq* and *frozen* are set.
 
-     :meth:`!__hash__` is used by built-in :meth:`hash()`, and when objects are
+     :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
      :meth:`!__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's

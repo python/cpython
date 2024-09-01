@@ -2850,8 +2850,8 @@ allow for tweaking of protocols and also to add support by default for
 .. nonce: 37IdsA
 .. section: Library
 
-Fixed integer overflow in the :meth:`~hashlib.shake.digest()` and
-:meth:`~hashlib.shake.hexdigest()` methods for the SHAKE algorithm in the
+Fixed integer overflow in the :meth:`~hashlib.shake.digest` and
+:meth:`~hashlib.shake.hexdigest` methods for the SHAKE algorithm in the
 :mod:`hashlib` module.
 
 ..
@@ -3212,9 +3212,9 @@ bytes objects. (microoptimization)
 .. section: Library
 
 Add :func:`~unittest.addModuleCleanup` and
-:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support cleanups
+:meth:`~unittest.TestCase.addClassCleanup` to unittest to support cleanups
 for :func:`~unittest.setUpModule` and
-:meth:`~unittest.TestCase.setUpClass()`. Patch by Lisa Roach.
+:meth:`~unittest.TestCase.setUpClass`. Patch by Lisa Roach.
 
 ..
 
@@ -3664,7 +3664,7 @@ Add pure Python fallback for functools.reduce. Patch by Robert Wright.
 .. section: Library
 
 The default asyncio task class now always has a name which can be get or set
-using two new methods (:meth:`~asyncio.Task.get_name()` and
+using two new methods (:meth:`~asyncio.Task.get_name` and
 :meth:`~asyncio.Task.set_name`) and is visible in the :func:`repr` output.
 An initial name can also be set using the new ``name`` keyword argument to
 :func:`asyncio.create_task` or the
@@ -4152,12 +4152,12 @@ Convert content length to string before putting to header.
 :func:`~os.path.exists`, :func:`~os.path.lexists`, :func:`~os.path.isdir`,
 :func:`~os.path.isfile`, :func:`~os.path.islink`, and
 :func:`~os.path.ismount`, and :mod:`pathlib.Path` methods that return a
-boolean result like :meth:`~pathlib.Path.exists()`,
-:meth:`~pathlib.Path.is_dir()`, :meth:`~pathlib.Path.is_file()`,
-:meth:`~pathlib.Path.is_mount()`, :meth:`~pathlib.Path.is_symlink()`,
-:meth:`~pathlib.Path.is_block_device()`,
-:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
-:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+boolean result like :meth:`~pathlib.Path.exists`,
+:meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.is_file`,
+:meth:`~pathlib.Path.is_mount`, :meth:`~pathlib.Path.is_symlink`,
+:meth:`~pathlib.Path.is_block_device`,
+:meth:`~pathlib.Path.is_char_device`, :meth:`~pathlib.Path.is_fifo`,
+:meth:`~pathlib.Path.is_socket` now return ``False`` instead of raising
 :exc:`ValueError` or its subclasses :exc:`UnicodeEncodeError` and
 :exc:`UnicodeDecodeError` for paths that contain characters or bytes
 unrepresentable at the OS level.

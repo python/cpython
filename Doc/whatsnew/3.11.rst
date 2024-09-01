@@ -2032,8 +2032,8 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   It was introduced in Python 3.4 but has been broken since Python 3.7.
   (Contributed by Inada Naoki in :issue:`23882`.)
 
-* Removed the undocumented private :meth:`!float.__set_format__()` method,
-  previously known as :meth:`!float.__setformat__()` in Python 3.7.
+* Removed the undocumented private :meth:`!float.__set_format__` method,
+  previously known as :meth:`!float.__setformat__` in Python 3.7.
   Its docstring said: "You probably don't want to use this function.
   It exists mainly to be used in Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)

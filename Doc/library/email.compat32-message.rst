@@ -105,7 +105,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __str__()
 
-      Equivalent to :meth:`.as_string()`.  Allows ``str(msg)`` to produce a
+      Equivalent to :meth:`.as_string`.  Allows ``str(msg)`` to produce a
       string containing the formatted message.
 
 
@@ -143,7 +143,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the formatted message.
 
       .. versionadded:: 3.4

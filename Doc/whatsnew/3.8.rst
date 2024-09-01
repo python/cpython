@@ -1077,16 +1077,16 @@ pathlib
 -------
 
 :mod:`pathlib.Path` methods that return a boolean result like
-:meth:`~pathlib.Path.exists()`, :meth:`~pathlib.Path.is_dir()`,
-:meth:`~pathlib.Path.is_file()`, :meth:`~pathlib.Path.is_mount()`,
-:meth:`~pathlib.Path.is_symlink()`, :meth:`~pathlib.Path.is_block_device()`,
-:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
-:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+:meth:`~pathlib.Path.exists`, :meth:`~pathlib.Path.is_dir`,
+:meth:`~pathlib.Path.is_file`, :meth:`~pathlib.Path.is_mount`,
+:meth:`~pathlib.Path.is_symlink`, :meth:`~pathlib.Path.is_block_device`,
+:meth:`~pathlib.Path.is_char_device`, :meth:`~pathlib.Path.is_fifo`,
+:meth:`~pathlib.Path.is_socket` now return ``False`` instead of raising
 :exc:`ValueError` or its subclass :exc:`UnicodeEncodeError` for paths that
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
-Added :meth:`!pathlib.Path.link_to()` which creates a hard link pointing
+Added :meth:`!pathlib.Path.link_to` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
 Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
@@ -1170,7 +1170,7 @@ recursively removing their contents first.
 socket
 ------
 
-Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
+Added :meth:`~socket.create_server` and :meth:`~socket.has_dualstack_ipv6`
 convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
@@ -1368,9 +1368,9 @@ have been added as well.
 (Contributed by Lisa Roach in :issue:`26467`).
 
 Added :func:`~unittest.addModuleCleanup` and
-:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
+:meth:`~unittest.TestCase.addClassCleanup` to unittest to support
 cleanups for :func:`~unittest.setUpModule` and
-:meth:`~unittest.TestCase.setUpClass()`.
+:meth:`~unittest.TestCase.setUpClass`.
 (Contributed by Lisa Roach in :issue:`24412`.)
 
 Several mock assert functions now also print a list of actual calls upon
@@ -1712,7 +1712,7 @@ Deprecated
   the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
-* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
+* The :meth:`~threading.Thread.isAlive` method of :class:`threading.Thread`
   has been deprecated.
   (Contributed by Donghee Na in :issue:`35283`.)
 

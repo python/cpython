@@ -531,7 +531,7 @@ Some smaller changes made to the core Python language are:
 
   (Proposed and implemented by Mark Dickinson; :issue:`9337`.)
 
-* :class:`memoryview` objects now have a :meth:`~memoryview.release()` method
+* :class:`memoryview` objects now have a :meth:`~memoryview.release` method
   and they also now support the context management protocol.  This allows timely
   release of any resources that were acquired when requesting a buffer from the
   original object.
@@ -1325,7 +1325,7 @@ the constructor and to support mixed-type comparisons.
   and :class:`fractions.Fraction` (:issue:`2531` and :issue:`8188`).
 
 Similar changes were made to :class:`fractions.Fraction` so that the
-:meth:`~fractions.Fraction.from_float()` and :meth:`~fractions.Fraction.from_decimal`
+:meth:`~fractions.Fraction.from_float` and :meth:`~fractions.Fraction.from_decimal`
 methods are no longer needed (:issue:`8294`):
 
 >>> from decimal import Decimal
@@ -1622,7 +1622,7 @@ socket
 
 The :mod:`socket` module has two new improvements.
 
-* Socket objects now have a :meth:`~socket.socket.detach()` method which puts
+* Socket objects now have a :meth:`~socket.socket.detach` method which puts
   the socket into closed state without actually closing the underlying file
   descriptor.  The latter can then be reused for other purposes.
   (Added by Antoine Pitrou; :issue:`8524`.)
@@ -1859,11 +1859,11 @@ asyncore
 --------
 
 :class:`!asyncore.dispatcher` now provides a
-:meth:`!handle_accepted()` method
+:meth:`!handle_accepted` method
 returning a ``(sock, addr)`` pair which is called when a connection has actually
 been established with a new remote endpoint. This is supposed to be used as a
-replacement for old :meth:`!handle_accept()` and avoids
-the user  to call :meth:`!accept()` directly.
+replacement for old :meth:`!handle_accept` and avoids
+the user  to call :meth:`!accept` directly.
 
 (Contributed by Giampaolo Rodolà; :issue:`6706`.)
 

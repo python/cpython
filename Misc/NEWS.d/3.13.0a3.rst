@@ -863,7 +863,7 @@ Fixed tarfile list() method to show file type.
 .. nonce: jLWGlr
 .. section: Library
 
-:meth:`asyncio.futures.Future.set_exception()` now transforms
+:meth:`asyncio.futures.Future.set_exception` now transforms
 :exc:`StopIteration` into :exc:`RuntimeError` instead of hanging or other
 misbehavior. Patch contributed by Jamie Phan.
 

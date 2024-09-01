@@ -1314,7 +1314,7 @@ functions in the :mod:`os` module.
 if the basename of current user's home directory does not match their
 username.
 
-:meth:`pathlib.Path.expanduser()` and :meth:`~pathlib.Path.home()` now
+:meth:`pathlib.Path.expanduser` and :meth:`~pathlib.Path.home` now
 consistently raise :exc:`RuntimeError` exception when a home directory
 cannot be resolved. Previously a :exc:`KeyError` exception could be raised
 on Windows when the ``"USERNAME"``  environment variable was unset.
@@ -1516,7 +1516,7 @@ Adds additional arguments to :func:`os.startfile` function.
 .. nonce: F0Cg6X
 .. section: Windows
 
-Avoid raising errors from :meth:`pathlib.Path.exists()` when passed an
+Avoid raising errors from :meth:`pathlib.Path.exists` when passed an
 invalid filename.
 
 ..

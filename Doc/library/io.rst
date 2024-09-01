@@ -55,7 +55,7 @@ the backing store is natively made of bytes (such as in the case of a file),
 encoding and decoding of data is made transparently as well as optional
 translation of platform-specific newline characters.
 
-The easiest way to create a text stream is with :meth:`open()`, optionally
+The easiest way to create a text stream is with :meth:`open`, optionally
 specifying an encoding::
 
    f = open("myfile.txt", "r", encoding="utf-8")
@@ -77,7 +77,7 @@ objects.  No encoding, decoding, or newline translation is performed.  This
 category of streams can be used for all kinds of non-text data, and also when
 manual control over the handling of text data is desired.
 
-The easiest way to create a binary stream is with :meth:`open()` with ``'b'`` in
+The easiest way to create a binary stream is with :meth:`open` with ``'b'`` in
 the mode string::
 
    f = open("myfile.jpg", "rb")

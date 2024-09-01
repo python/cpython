@@ -67,7 +67,7 @@ although there is currently no date scheduled for their removal.
   * Implicit ``None`` on return values.
 
 * :mod:`logging`: the ``warn()`` method has been deprecated
-  since Python 3.3, use :meth:`~logging.warning()` instead.
+  since Python 3.3, use :meth:`~logging.warning` instead.
 
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
