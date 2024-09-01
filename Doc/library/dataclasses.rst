@@ -185,10 +185,21 @@ Module contents
    - *slots*: If true (the default is ``False``), :attr:`~object.__slots__` attribute
      will be generated and new class will be returned instead of the original one.
      If :attr:`!__slots__` is already defined in the class, then :exc:`TypeError`
-     is raised. Calling no-arg :func:`super` in dataclasses using ``slots=True`` will result in
-     the following exception being raised:
-     ``TypeError: super(type, obj): obj must be an instance or subtype of type``.
-     The two-arg :func:`super` is a valid workaround. See :gh:`90562` for full details.
+     is raised.
+
+    .. warning::
+        Calling no-arg :func:`super` in dataclasses using ``slots=True``
+        will result in the following exception being raised:
+        ``TypeError: super(type, obj): obj must be an instance or subtype of type``.
+        The two-arg :func:`super` is a valid workaround.
+        See :gh:`90562` for full details.
+
+    .. warning::
+       Passing parameters to a base class :meth:`~object.__init_subclass__`
+       when using ``slots=True`` will result in a :exc:`TypeError`.
+       Either use ``__init_subclass__`` with no parameters
+       or use default values as a workaround.
+       See :gh:`91126` for full details.
 
     .. versionadded:: 3.10
 
