@@ -447,7 +447,7 @@ For example::
 Annotating generators and coroutines
 ====================================
 
-A generator can be annotated by the generic type
+A generator can be annotated using the generic type
 :class:`Generator[YieldType, SendType, ReturnType] <collections.abc.Generator>`.
 For example::
 
@@ -475,8 +475,9 @@ It is also possible to set these types explicitly::
            yield start
            start += 1
 
-Alternatively, annotate your generator as having a return type of
-either :class:`Iterable[YieldType] <collections.abc.Iterable>`
+Simple generators that only ever yield values can also be annotated
+as having a return type of either
+:class:`Iterable[YieldType] <collections.abc.Iterable>`
 or :class:`Iterator[YieldType] <collections.abc.Iterator>`::
 
    def infinite_stream(start: int) -> Iterator[int]:
@@ -500,7 +501,7 @@ are equivalent::
            yield start
            start = await increment(start)
 
-As in synchronous case,
+As in the synchronous case,
 :class:`AsyncIterable[YieldType] <collections.abc.AsyncIterable>`
 and :class:`AsyncIterator[YieldType] <collections.abc.AsyncIterator>` are
 available as well::
@@ -3687,6 +3688,11 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Coroutine`.
 
+   See
+   :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
+   for details of using :class:`collections.abc.Coroutine` and this class
+   in type annotations.
+
    .. versionadded:: 3.5.3
 
    .. deprecated:: 3.9
@@ -3696,6 +3702,11 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
 .. class:: AsyncGenerator(AsyncIterator[YieldType], Generic[YieldType, SendType])
 
    Deprecated alias to :class:`collections.abc.AsyncGenerator`.
+
+   See
+   :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
+   for details of using :class:`collections.abc.AsyncGenerator` and this class
+   in type annotations.
 
    .. versionadded:: 3.6.1
 
@@ -3762,6 +3773,9 @@ Aliases to other ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Callable`.
 
+   See :ref:`annotating-callables` for details on how to use
+   :class:`collections.abc.Callable` and ``typing.Callable`` in type annotations.
+
    .. deprecated:: 3.9
       :class:`collections.abc.Callable` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
@@ -3773,6 +3787,11 @@ Aliases to other ABCs in :mod:`collections.abc`
 .. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
 
    Deprecated alias to :class:`collections.abc.Generator`.
+
+   See
+   :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
+   for details of using :class:`collections.abc.Generator` and this class
+   in type annotations.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Generator` now supports subscripting (``[]``).
