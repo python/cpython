@@ -1,0 +1,2 @@
+Fix REPL Windows virtual keyboard support. Keys F17 to F20 were previously
+handled incorrectly. Patch by Bénédikt Tran.
