@@ -9,8 +9,8 @@ def _reset_tzpath(to=None, stacklevel=4):
     if tzpaths is not None:
         if isinstance(tzpaths, (str, bytes)):
             raise TypeError(
-                f"tzpaths must be a list or tuple, "
-                + f"not {type(tzpaths)}: {tzpaths!r}"
+                "tzpaths must be a list or tuple, "
+                f"not {type(tzpaths)}: {tzpaths!r}"
             )
 
         if not all(map(os.path.isabs, tzpaths)):

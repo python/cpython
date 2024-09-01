@@ -444,11 +444,11 @@ def _checknetloc(netloc):
 def _check_bracketed_host(hostname):
     if hostname.startswith('v'):
         if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
-            raise ValueError(f"IPvFuture address is invalid")
+            raise ValueError("IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
         if isinstance(ip, ipaddress.IPv4Address):
-            raise ValueError(f"An IPv4 address cannot be in brackets")
+            raise ValueError("An IPv4 address cannot be in brackets")
 
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.

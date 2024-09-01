@@ -554,7 +554,7 @@ class ShellSidebarTest(unittest.TestCase):
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, None, None, '>>>'])
 
-        text.mark_set('insert', f'insert -1line linestart')
+        text.mark_set('insert', 'insert -1line linestart')
         text.event_generate('<<squeeze-current-text>>')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])

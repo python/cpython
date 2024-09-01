@@ -677,14 +677,14 @@ def _frozen_get_del_attr(cls, fields, func_builder):
                         ('self', 'name', 'value'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot assign to field {name!r}")',
-                         f'  super(cls, self).__setattr__(name, value)'),
+                          '  super(cls, self).__setattr__(name, value)'),
                         locals=locals,
                         overwrite_error=True)
     func_builder.add_fn('__delattr__',
                         ('self', 'name'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot delete field {name!r}")',
-                         f'  super(cls, self).__delattr__(name)'),
+                          '  super(cls, self).__delattr__(name)'),
                         locals=locals,
                         overwrite_error=True)
 

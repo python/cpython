@@ -349,7 +349,7 @@ class LineNumbers(BaseSideBar):
                     [''],
                     map(str, range(self.prev_end + 1, end + 1)),
                 ))
-                self.sidebar_text.insert(f'end -1c', new_text, 'linenumber')
+                self.sidebar_text.insert('end -1c', new_text, 'linenumber')
             else:
                 self.sidebar_text.delete(f'{end+1}.0 -1c', 'end -1c')
 

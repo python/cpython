@@ -453,7 +453,7 @@ def median_grouped(data, interval=1.0):
         interval = float(interval)
         x = float(x)
     except ValueError:
-        raise TypeError(f'Value cannot be converted to a float')
+        raise TypeError('Value cannot be converted to a float')
 
     # Interpolate the median using the formula found at:
     # https://www.cuemath.com/data/median-of-grouped-data/
