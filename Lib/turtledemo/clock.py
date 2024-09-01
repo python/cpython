@@ -12,6 +12,7 @@ from turtle import *
 from datetime import datetime
 
 dtfont = "TkFixedFont", 14, "bold"
+current_day = None
 
 def jump(distanz, winkel=0):
     penup()
@@ -54,6 +55,7 @@ def clockface(radius):
         rt(6)
 
 def display_date_time():
+    global current_day
     writer.clear()
     now = datetime.now()
     writer.home()
@@ -81,8 +83,8 @@ def setup():
     clockface(160)
 
     second_hand = initialize_hand("second_hand", ("gray20", "gray80"))
-    minute_hand = initialize_hand( "minute_hand", ("blue1", "red1"))
-    hour_hand = initialize_hand( "hour_hand", ("blue3", "red3"))
+    minute_hand = initialize_hand("minute_hand", ("blue1", "red1"))
+    hour_hand = initialize_hand("hour_hand", ("blue3", "red3"))
 
     ht()
     writer = Turtle()
@@ -92,6 +94,7 @@ def setup():
     display_date_time()
 
 def tick():
+    global current_day
     now = datetime.now()
     sekunde = now.second + now.microsecond * 0.000001
     minute = now.minute + sekunde / 60.0
@@ -102,6 +105,8 @@ def tick():
         second_hand.setheading(6*sekunde)  # or here
         minute_hand.setheading(6*minute)
         hour_hand.setheading(30*stunde)
+        if now.day != current_day:
+            display_date_time()
         tracer(True)
         ontimer(tick, 100)
     except Terminator:
