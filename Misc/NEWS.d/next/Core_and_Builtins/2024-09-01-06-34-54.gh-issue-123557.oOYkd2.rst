@@ -1,0 +1,1 @@
+This PR would fix the problem of overallocating memory when reading from Unix sockets, extending the merged PR regarding pipes.
