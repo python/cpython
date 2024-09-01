@@ -3402,11 +3402,6 @@ Aliases to built-in types
    to use an abstract collection type such as :class:`Mapping`
    rather than to use :class:`dict` or :class:`!typing.Dict`.
 
-   This type can be used as follows::
-
-      def count_words(text: str) -> Dict[str, int]:
-          ...
-
    .. deprecated:: 3.9
       :class:`builtins.dict <dict>` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
@@ -3418,14 +3413,6 @@ Aliases to built-in types
    Note that to annotate arguments, it is preferred
    to use an abstract collection type such as :class:`Sequence` or
    :class:`Iterable` rather than to use :class:`list` or :class:`!typing.List`.
-
-   This type may be used as follows::
-
-      def vec2[T: (int, float)](x: T, y: T) -> List[T]:
-          return [x, y]
-
-      def keep_positives[T: (int, float)](vector: Sequence[T]) -> List[T]:
-          return [item for item in vector if item > 0]
 
    .. deprecated:: 3.9
       :class:`builtins.list <list>` now supports subscripting (``[]``).

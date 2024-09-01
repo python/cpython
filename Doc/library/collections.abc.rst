@@ -287,11 +287,6 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABCs for read-only and mutable :term:`mappings <mapping>`.
 
-   Example use in type annotations::
-
-      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-          return word_list[word]
-
 .. class:: MappingView
            ItemsView
            KeysView
