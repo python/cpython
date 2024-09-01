@@ -31,7 +31,7 @@ typedef struct {
     uint8_t oparg;
     uint16_t valid:1;
     uint16_t linked:1;
-    bool was_run:1;
+    uint16_t was_run:1;
     uint16_t chain_depth:13;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
