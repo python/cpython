@@ -7476,12 +7476,14 @@ compiler_unit_metadata(struct compiler *c)
     return &c->u->u_metadata;
 }
 
+#ifndef NDEBUG
 static int
 compiler_is_top_level_await(struct compiler *c)
 {
     return c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT &&
            c->u->u_ste->ste_type == ModuleBlock;
 }
+#endif
 
 // Merge *obj* with constant cache, without recursion.
 int
