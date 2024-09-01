@@ -1118,8 +1118,8 @@ iterations of the loop.
       if count == 0:
           value = ()
       else:
-          STACK = STACK[:-count]
           value = tuple(STACK[-count:])
+          STACK = STACK[:-count]
 
       STACK.append(value)
 
