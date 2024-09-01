@@ -77,6 +77,9 @@ def open(url, new=0, autoraise=True):
     - 1: a new browser window.
     - 2: a new browser page ("tab").
     If possible, autoraise raises the window (the default) or not.
+
+    If opening the browser succeeds, return True.
+    If there is a problem, return False.
     """
     if _tryorder is None:
         with _lock:
