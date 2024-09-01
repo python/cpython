@@ -808,7 +808,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         }
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
-        _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+        /* TODO(mpage) - Need to handle this */
+        _Py_Instrument(_PyFrame_GetCode(frame), _PyFrame_GetBytecode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->instr_ptr);
         /* TO DO -- Monitor throw entry. */
         goto resume_with_error;

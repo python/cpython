@@ -453,6 +453,10 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 
 extern void _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size);
 
+#ifdef Py_GIL_DISABLED
+static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
+#endif
+
 static int
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
@@ -517,10 +521,11 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
 #ifdef Py_GIL_DISABLED
-    // XXX - initialize code array
-    co->co_specialized_code = PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(void*) * INITIAL_SPECIALIZED_CODE_SIZE);
-    co->co_specialized_code->size = INITIAL_SPECIALIZED_CODE_SIZE;
-    co->co_specialized_code->entries[0] = (char *) _PyCode_CODE(co);
+    co->co_specialized_code = _PyCodeArray_New(INITIAL_SPECIALIZED_CODE_SIZE);
+    if (co->co_specialized_code == NULL) {
+        return -1;
+    }
+    co->co_specialized_code->entries[0].bytecode = (uint8_t *) _PyCode_CODE(co);
 #endif
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
@@ -1891,7 +1896,7 @@ code_dealloc(PyCodeObject *co)
     // part of the code object, which will be freed when the code object is
     // freed.
     for (Py_ssize_t i = 1; i < co->co_specialized_code->size; i++) {
-        PyMem_Free(co->co_specialized_code->entries[i]);
+        PyMem_Free(co->co_specialized_code->entries[i].bytecode);
     }
     PyMem_Free(co->co_specialized_code);
 #endif
@@ -2664,6 +2669,18 @@ _PyCode_Fini(PyInterpreterState *interp)
 
 #ifdef Py_GIL_DISABLED
 
+static _PyCodeArray *
+_PyCodeArray_New(Py_ssize_t size)
+{
+    _PyCodeArray *arr = PyMem_Calloc(sizeof(_PyCodeArray) + sizeof(_PySpecializableCode) * size, 1);
+    if (arr == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    arr->size = size;
+    return arr;
+}
+
 static void
 copy_code(_Py_CODEUNIT *dst, _Py_CODEUNIT *src, Py_ssize_t nbytes)
 {
@@ -2675,38 +2692,35 @@ copy_code(_Py_CODEUNIT *dst, _Py_CODEUNIT *src, Py_ssize_t nbytes)
     _PyCode_Quicken(dst_bytecode, code_len);
 }
 
-static _Py_CODEUNIT *
+static _PySpecializableCode *
 create_specializable_code_lock_held(PyCodeObject *co)
 {
     _PyCodeArray *spec_code = co->co_specialized_code;
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
     Py_ssize_t idx = tstate->specialized_code_index;
     if (idx >= spec_code->size) {
-        Py_ssize_t new_size = spec_code->size * 2;
-        _PyCodeArray *new_spec_code = PyMem_Calloc(sizeof(_PyCodeArray) + sizeof(char*) * new_size, 1);
+        _PyCodeArray *new_spec_code = _PyCodeArray_New(spec_code->size * 2);
         if (new_spec_code == NULL) {
-            PyErr_NoMemory();
             return NULL;
         }
-        new_spec_code->size = new_size;
-        memcpy(new_spec_code->entries, spec_code->entries, spec_code->size * sizeof(char*));
+        memcpy(new_spec_code->entries, spec_code->entries, spec_code->size * sizeof(_PySpecializableCode));
         _Py_atomic_store_ptr_release(&co->co_specialized_code, new_spec_code);
         _PyMem_FreeDelayed(spec_code);
         spec_code = new_spec_code;
     }
-    spec_code->entries[idx] = PyMem_Malloc(_PyCode_NBYTES(co));
-    if (spec_code->entries[idx] == NULL) {
+    spec_code->entries[idx].bytecode = PyMem_Malloc(_PyCode_NBYTES(co));
+    if (spec_code->entries[idx].bytecode == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    copy_code((_Py_CODEUNIT *) spec_code->entries[idx], _PyCode_CODE(co), _PyCode_NBYTES(co));
-    return (_Py_CODEUNIT *) spec_code->entries[idx];
+    copy_code((_Py_CODEUNIT *) spec_code->entries[idx].bytecode, _PyCode_CODE(co), _PyCode_NBYTES(co));
+    return &spec_code->entries[idx];
 }
 
-_Py_CODEUNIT *
+_PySpecializableCode *
 _PyCode_CreateSpecializableCode(PyCodeObject *co)
 {
-    _Py_CODEUNIT *result;
+    _PySpecializableCode *result;
     Py_BEGIN_CRITICAL_SECTION(co);
     result = create_specializable_code_lock_held(co);
     Py_END_CRITICAL_SECTION();
