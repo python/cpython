@@ -39,8 +39,9 @@ except ImportError:
 #
 #
 
-# Default PIPE buffer size of many posix platforms.
+# 64KiB is the default PIPE buffer size of most posix platforms.
 BUFSIZE = 64*1024
+
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
 
