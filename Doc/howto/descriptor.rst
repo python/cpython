@@ -803,7 +803,7 @@ The full C implementation can be found in :c:func:`!super_getattro` in
 Summary of invocation logic
 ---------------------------
 
-The mechanism for descriptors is embedded in the :meth:`__getattribute__()`
+The mechanism for descriptors is embedded in the :meth:`__getattribute__`
 methods for :class:`object`, :class:`type`, and :func:`super`.
 
 The important points to remember are:
