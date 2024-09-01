@@ -1,0 +1,1 @@
+Remove duplicative dereference counting in cases where call optimization errors.
