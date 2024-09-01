@@ -3477,7 +3477,7 @@ place, and instead produce new objects.
    ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
    are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
 
-   Unlike :func:`str.swapcase()`, it is always the case that
+   Unlike :func:`str.swapcase`, it is always the case that
    ``bin.swapcase().swapcase() == bin`` for the binary versions. Case
    conversions are symmetrical in ASCII, even though that is not generally
    true for arbitrary Unicode code points.
@@ -4023,7 +4023,7 @@ copying.
       dangling resources) as soon as possible.
 
       After this method has been called, any further operation on the view
-      raises a :class:`ValueError` (except :meth:`release()` itself which can
+      raises a :class:`ValueError` (except :meth:`release` itself which can
       be called multiple times)::
 
          >>> m = memoryview(b'abc')

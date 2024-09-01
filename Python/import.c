@@ -1174,7 +1174,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 static Py_uhash_t
 hashtable_hash_str(const void *key)
 {
-    return _Py_HashBytes(key, strlen((const char *)key));
+    return Py_HashBuffer(key, strlen((const char *)key));
 }
 
 static int
