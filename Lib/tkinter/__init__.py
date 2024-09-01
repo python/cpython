@@ -295,6 +295,8 @@ class Event:
             ''.join(' %s=%s' % (k, attrs[k]) for k in keys if k in attrs)
         )
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 _support_default_root = True
 _default_root = None
