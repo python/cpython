@@ -102,7 +102,9 @@ typedef _PyJumpTargetLabel jump_target_label;
 
 enum fblocktype;
 
+#ifndef NDEBUG
 static int compiler_is_top_level_await(struct compiler *c);
+#endif
 static PyObject *compiler_mangle(struct compiler *c, PyObject *name);
 static PyObject *compiler_maybe_mangle(struct compiler *c, PyObject *name);
 static int compiler_optimization_level(struct compiler *c);
