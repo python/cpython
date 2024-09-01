@@ -1534,10 +1534,10 @@ historic, obsolete, or insecure status.
 All of the following modules were deprecated in Python 3.11,
 and are now removed:
 
-* :mod:`!aifc`.
-* :mod:`!audioop`.
-* :mod:`!chunk`.
-* :mod:`!cgi` and :mod:`!cgitb`.
+* :mod:`!aifc`
+* :mod:`!audioop`
+* :mod:`!chunk`
+* :mod:`!cgi` and :mod:`!cgitb`
 
   * :class:`!cgi.FieldStorage` can typically be replaced with
     :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests,
@@ -1592,10 +1592,10 @@ and are now removed:
   For example, the :func:`!puremagic.what` function can be used
   to replace the :func:`!imghdr.what` function for all file formats
   that were supported by :mod:`!imghdr`.
-* :mod:`!mailcap`.
+* :mod:`!mailcap`:
   Use the :mod:`mimetypes` module instead.
-* :mod:`!msilib`.
-* :mod:`!nis`.
+* :mod:`!msilib`
+* :mod:`!nis`
 * :mod:`!nntplib`:
   Use the :pypi:`nntplib` library from PyPI instead.
 * :mod:`!ossaudiodev`:
@@ -1607,12 +1607,12 @@ and are now removed:
   should be used as replacements.
 * :mod:`!spwd`:
   Use the :pypi:`python-pam` library from PyPI instead.
-* :mod:`!sunau`.
+* :mod:`!sunau`
 * :mod:`!telnetlib`,
   Use the :pypi:`telnetlib3` or :pypi:`Exscript` libraries from PyPI instead.
 * :mod:`!uu`:
   Use the :mod:`base64` module instead, as a modern alternative.
-* :mod:`!xdrlib`.
+* :mod:`!xdrlib`
 
 (Contributed by Victor Stinner and Zachary Ware in :gh:`104773` and :gh:`104780`.)
 
@@ -1620,9 +1620,9 @@ and are now removed:
 2to3
 ----
 
-Remove the :program:`2to3` program and the :mod:`!lib2to3` module,
-previously deprecated in Python 3.11.
-(Contributed by Victor Stinner in :gh:`104780`.)
+* Remove the :program:`2to3` program and the :mod:`!lib2to3` module,
+  previously deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104780`.)
 
 
 builtins
