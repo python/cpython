@@ -102,7 +102,9 @@ typedef _PyJumpTargetLabel jump_target_label;
 
 enum fblocktype;
 
+#ifndef NDEBUG
 static int compiler_is_top_level_await(struct compiler *c);
+#endif
 static PyObject *compiler_mangle(struct compiler *c, PyObject *name);
 static PyObject *compiler_maybe_mangle(struct compiler *c, PyObject *name);
 static int compiler_optimization_level(struct compiler *c);
@@ -7476,12 +7478,14 @@ compiler_unit_metadata(struct compiler *c)
     return &c->u->u_metadata;
 }
 
+#ifndef NDEBUG
 static int
 compiler_is_top_level_await(struct compiler *c)
 {
     return c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT &&
            c->u->u_ste->ste_type == ModuleBlock;
 }
+#endif
 
 // Merge *obj* with constant cache, without recursion.
 int

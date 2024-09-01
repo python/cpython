@@ -1,0 +1,1 @@
+Add :meth:`~object.__class_getitem__` to :class:`!tkinter.Event` for type subscript support at runtime. Patch by Adonis Rakateli.
