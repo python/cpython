@@ -214,7 +214,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    ABC for classes that provide the :meth:`~object.__call__` method.
 
    See :ref:`annotating-callables` for details on how to use
-   :class:`Callable` and :class:`~typing.Callable` in type annotations.
+   :class:`!Callable` in type annotations.
 
 .. class:: Iterable
 
@@ -255,7 +255,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Refer to
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details on using this class in type annotations.
+   for details on using :class:`!Generator` in type annotations.
 
    .. versionadded:: 3.5
 
@@ -330,7 +330,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Refer to
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details on using this class in type annotations.
+   for details on using :class:`!Coroutine` in type annotations.
    The variance and order of type parameters correspond to those of
    :class:`Generator`.
 
@@ -357,7 +357,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Refer to
    :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
-   for details on using this class in type annotations.
+   for details on using :class:`!AsyncGenerator` in type annotations.
 
    .. versionadded:: 3.6
 
