@@ -390,7 +390,7 @@ Module contents
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, dataclass_factory=dataclass)
 
    Creates a new dataclass with name *cls_name*, fields as defined
    in *fields*, base classes as given in *bases*, and initialized
