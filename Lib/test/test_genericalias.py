@@ -57,6 +57,10 @@ from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
 from typing import Unpack
+try:
+    from tkinter import Event
+except ImportError:
+    Event = None
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -139,6 +143,8 @@ class BaseTest(unittest.TestCase):
     if ValueProxy is not None:
         generic_types.extend((ValueProxy, DictProxy, ListProxy, ApplyResult,
                               MPSimpleQueue, MPQueue, MPJoinableQueue))
+    if Event is not None:
+        generic_types.append(Event)
 
     def test_subscriptable(self):
         for t in self.generic_types:
