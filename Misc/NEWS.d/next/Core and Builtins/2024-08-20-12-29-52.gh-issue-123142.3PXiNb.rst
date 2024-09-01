@@ -1,0 +1,2 @@
+Fix too-wide source location in exception tracebacks coming from broken
+iterables in comprehensions.

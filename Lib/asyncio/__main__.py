@@ -91,35 +91,24 @@ class REPLThread(threading.Thread):
             console.write(banner)
 
             if startup_path := os.getenv("PYTHONSTARTUP"):
+                sys.audit("cpython.run_startup", startup_path)
+
                 import tokenize
                 with tokenize.open(startup_path) as f:
                     startup_code = compile(f.read(), startup_path, "exec")
                     exec(startup_code, console.locals)
 
             ps1 = getattr(sys, "ps1", ">>> ")
-            if can_colorize():
+            if can_colorize() and CAN_USE_PYREPL:
                 ps1 = f"{ANSIColors.BOLD_MAGENTA}{ps1}{ANSIColors.RESET}"
             console.write(f"{ps1}import asyncio\n")
 
-            try:
-                import errno
-                if os.getenv("PYTHON_BASIC_REPL"):
-                    raise RuntimeError("user environment requested basic REPL")
-                if not os.isatty(sys.stdin.fileno()):
-                    raise OSError(errno.ENOTTY, "tty required", "stdin")
-
-                # This import will fail on operating systems with no termios.
+            if CAN_USE_PYREPL:
                 from _pyrepl.simple_interact import (
-                    check,
                     run_multiline_interactive_console,
                 )
-                if err := check():
-                    raise RuntimeError(err)
-            except Exception as e:
-                console.interact(banner="", exitmsg="")
-            else:
                 try:
-                    run_multiline_interactive_console(console=console)
+                    run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands
                     pass
@@ -128,6 +117,8 @@ class REPLThread(threading.Thread):
                     console.showtraceback()
                     console.write("Internal error, ")
                     return_code = 1
+            else:
+                console.interact(banner="", exitmsg="")
         finally:
             warnings.filterwarnings(
                 'ignore',
@@ -138,7 +129,12 @@ class REPLThread(threading.Thread):
 
 
 if __name__ == '__main__':
-    CAN_USE_PYREPL = True
+    sys.audit("cpython.run_stdin")
+
+    if os.getenv('PYTHON_BASIC_REPL'):
+        CAN_USE_PYREPL = False
+    else:
+        from _pyrepl.main import CAN_USE_PYREPL
 
     return_code = 0
     loop = asyncio.new_event_loop()
@@ -163,6 +159,7 @@ if __name__ == '__main__':
     interactive_hook = getattr(sys, "__interactivehook__", None)
 
     if interactive_hook is not None:
+        sys.audit("cpython.run_interactivehook", interactive_hook)
         interactive_hook()
 
     if interactive_hook is site.register_readline:
