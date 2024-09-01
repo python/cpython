@@ -400,11 +400,12 @@ class Connection(_ConnectionBase):
         buf = io.BytesIO()
         handle = self._handle
         remaining = size
-        is_pipe = False
+        is_pipe = is_socket = False
         if size > self._default_pipe_size > 0:
             mode = os.fstat(handle).st_mode
             is_pipe = stat.S_ISFIFO(mode)
-        limit = self._default_pipe_size if is_pipe else remaining
+            is_socket = stat.S_ISSOCK(mode)
+        limit = self._default_pipe_size if is_pipe or is_socket else remaining
         while remaining > 0:
             to_read = min(limit, remaining)
             chunk = read(handle, to_read)
