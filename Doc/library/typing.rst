@@ -3424,7 +3424,7 @@ Aliases to built-in types
    Deprecated alias to :class:`builtins.set <set>`.
 
    Note that to annotate arguments, it is preferred
-   to use an abstract collection type such as :class:`~collections.abc.Set`
+   to use an abstract collection type such as :class:`collections.abc.Set`
    rather than to use :class:`set` or :class:`!typing.Set`.
 
    .. deprecated:: 3.9
