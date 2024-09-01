@@ -77,6 +77,7 @@ sym_new(_Py_UOpsContext *ctx)
     self->typ = NULL;
     self->const_val = NULL;
     self->type_version = 0;
+    self->is_static = false;
 
     return self;
 }
@@ -187,6 +188,7 @@ _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const
         sym->typ = typ;
         sym->const_val = Py_NewRef(const_val);
     }
+    sym->is_static = true;
 }
 
 void
@@ -196,6 +198,7 @@ _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
         sym_set_bottom(ctx, sym);
     }
     sym_set_flag(sym, IS_NULL);
+    sym->is_static = true;
 }
 
 void

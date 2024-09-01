@@ -486,6 +486,106 @@ error:
 }
 
 
+/* 1 for success, 0 for not ready, cannot error at the moment. */
+static int
+partial_evaluate_uops(
+    PyCodeObject *co,
+    _PyUOpInstruction *trace,
+    int trace_len,
+    int curr_stacklen,
+    _PyBloomFilter *dependencies
+)
+{
+
+    _Py_UOpsContext context;
+    _Py_UOpsContext *ctx = &context;
+    uint32_t opcode = UINT16_MAX;
+    int curr_space = 0;
+    int max_space = 0;
+    _PyUOpInstruction *first_valid_check_stack = NULL;
+    _PyUOpInstruction *corresponding_check_stack = NULL;
+
+    _Py_uop_abstractcontext_init(ctx);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
+    if (frame == NULL) {
+        return -1;
+    }
+    ctx->curr_frame_depth++;
+    ctx->frame = frame;
+    ctx->done = false;
+    ctx->out_of_space = false;
+    ctx->contradiction = false;
+
+    _PyUOpInstruction *this_instr = NULL;
+    for (int i = 0; !ctx->done; i++) {
+        assert(i < trace_len);
+        this_instr = &trace[i];
+
+        int oparg = this_instr->oparg;
+        opcode = this_instr->opcode;
+        _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
+
+#ifdef Py_DEBUG
+        if (get_lltrace() >= 3) {
+            printf("%4d pe: ", (int)(this_instr - trace));
+            _PyUOpPrint(this_instr);
+            printf(" ");
+        }
+#endif
+
+        switch (opcode) {
+
+#include "partial_evaluator_cases.c.h"
+
+            default:
+                DPRINTF(1, "\nUnknown opcode in pe's abstract interpreter\n");
+                Py_UNREACHABLE();
+        }
+        assert(ctx->frame != NULL);
+        DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
+        ctx->frame->stack_pointer = stack_pointer;
+        assert(STACK_LEVEL() >= 0);
+    }
+    if (ctx->out_of_space) {
+        DPRINTF(3, "\n");
+        DPRINTF(1, "Out of space in pe's abstract interpreter\n");
+    }
+    if (ctx->contradiction) {
+        // Attempted to push a "bottom" (contradiction) symbol onto the stack.
+        // This means that the abstract interpreter has hit unreachable code.
+        // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
+        // bottom indicates type instability, so we are probably better off
+        // retrying later.
+        DPRINTF(3, "\n");
+        DPRINTF(1, "Hit bottom in pe's abstract interpreter\n");
+        _Py_uop_abstractcontext_fini(ctx);
+        return 0;
+    }
+
+    /* Either reached the end or cannot optimize further, but there
+     * would be no benefit in retrying later */
+    _Py_uop_abstractcontext_fini(ctx);
+    if (first_valid_check_stack != NULL) {
+        assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
+        assert(max_space > 0);
+        assert(max_space <= INT_MAX);
+        assert(max_space <= INT32_MAX);
+        first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
+        first_valid_check_stack->operand = max_space;
+    }
+    return trace_len;
+
+    error:
+    DPRINTF(3, "\n");
+    DPRINTF(1, "Encountered error in pe's abstract interpreter\n");
+    if (opcode <= MAX_UOP_ID) {
+        OPT_ERROR_IN_OPCODE(opcode);
+    }
+    _Py_uop_abstractcontext_fini(ctx);
+    return -1;
+
+}
+
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {

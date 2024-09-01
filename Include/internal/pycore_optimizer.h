@@ -152,6 +152,7 @@ struct _Py_UopsSymbol {
     PyTypeObject *typ;  // Borrowed reference
     PyObject *const_val;  // Owned reference (!)
     unsigned int type_version; // currently stores type version
+    bool is_static;  // used for binding-time analysis
 };
 
 #define UOP_FORMAT_TARGET 0

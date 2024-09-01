@@ -1951,7 +1951,7 @@ Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 regen-cases: \
         regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
 		regen-generated-cases regen-executor-cases regen-optimizer-cases \
-		regen-opcode-metadata regen-uop-metadata
+		regen-partial-evaluator-cases regen-opcode-metadata regen-uop-metadata
 
 .PHONY: regen-opcode-ids
 regen-opcode-ids:
@@ -1996,6 +1996,15 @@ regen-optimizer-cases:
 	    $(srcdir)/Python/optimizer_bytecodes.c \
 	    $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/optimizer_cases.c.h $(srcdir)/Python/optimizer_cases.c.h.new
+
+.PHONY: regen-partial-evaluator-cases
+regen-partial-evaluator-cases:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/partial_evaluator_generator.py \
+	    -o $(srcdir)/Python/partial_evaluator_cases.c.h.new \
+	    $(srcdir)/Python/partial_evaluator_bytecodes.c \
+	    $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/partial_evaluator_cases.c.h $(srcdir)/Python/partial_evaluator_cases.c.h.new
+
 
 .PHONY: regen-opcode-metadata
 regen-opcode-metadata:
