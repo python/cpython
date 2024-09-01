@@ -1692,8 +1692,8 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
             {
                 goto error;
             }
-
-        } else {
+        }
+        else {
             exec->vm_data.was_run = false;
         }
 
