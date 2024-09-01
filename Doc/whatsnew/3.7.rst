@@ -603,7 +603,7 @@ The new :mod:`importlib.resources` module provides several new APIs and one
 new ABC for access to, opening, and reading *resources* inside packages.
 Resources are roughly similar to files inside packages, but they needn't
 be actual files on the physical file system.  Module loaders can provide a
-:meth:`get_resource_reader()` function which returns
+:meth:`get_resource_reader` function which returns
 a :class:`importlib.abc.ResourceReader` instance to support this
 new API.  Built-in file path loaders and zip file loaders both support this.
 
@@ -2017,11 +2017,11 @@ importlib
 ---------
 
 Methods
-:meth:`!MetaPathFinder.find_module()`
+:meth:`!MetaPathFinder.find_module`
 (replaced by
 :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`)
 and
-:meth:`!PathEntryFinder.find_loader()`
+:meth:`!PathEntryFinder.find_loader`
 (replaced by
 :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
 both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`.
@@ -2425,7 +2425,7 @@ Changes in the Python API
   to :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
   (Contributed by Anthony Sottile in :issue:`26510`.)
 
-* :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
+* :meth:`ast.literal_eval` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
   (Contributed by Serhiy Storchaka in :issue:`31778`.)
 

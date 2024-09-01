@@ -1444,7 +1444,7 @@ importlib
 * Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
 
-  * References to, and support for :meth:`!module_repr()` has been removed.
+  * References to, and support for :meth:`!module_repr` has been removed.
     (Contributed by Barry Warsaw in :gh:`97850`.)
 
   * ``importlib.util.set_package``, ``importlib.util.set_loader`` and

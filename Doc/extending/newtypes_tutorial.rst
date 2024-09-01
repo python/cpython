@@ -449,7 +449,7 @@ Further, the attributes can be deleted, setting the C pointers to ``NULL``.  Eve
 though we can make sure the members are initialized to non-``NULL`` values, the
 members can be set to ``NULL`` if the attributes are deleted.
 
-We define a single method, :meth:`!Custom.name()`, that outputs the objects name as the
+We define a single method, :meth:`!Custom.name`, that outputs the objects name as the
 concatenation of the first and last names. ::
 
    static PyObject *
