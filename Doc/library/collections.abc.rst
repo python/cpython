@@ -253,40 +253,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
    :meth:`~generator.send`,
    :meth:`~generator.throw` and :meth:`~generator.close` methods.
 
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
-
-      def infinite_stream(start: int) -> Generator[int]:
-          while True:
-              yield start
-              start += 1
-
-   It is also possible to set these types explicitly::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
+   Refer to
+   :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
+   section for details of using this class in type annotations.
 
    .. versionadded:: 3.5
 
@@ -365,13 +334,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
       Use :func:`inspect.isawaitable` to detect them.
 
    The variance and order of type variables
-   correspond to those of :class:`Generator`, for example::
-
-      from collections.abc import Coroutine
-      c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
-      x = c.send('hi')                   # Inferred type of 'x' is list[str]
-      async def bar() -> None:
-          y = await c                    # Inferred type of 'y' is int
+   correspond to those of :class:`Generator`. Refer to
+   :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
+   section for details of using this class in type annotations.
 
    .. versionadded:: 3.5
 
@@ -394,40 +359,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
    ABC for :term:`asynchronous generator` classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
 
-   An async generator can be annotated by the generic type
-   ``AsyncGenerator[YieldType, SendType]``. For example::
-
-      async def echo_round() -> AsyncGenerator[int, float]:
-          sent = yield 0
-          while sent >= 0.0:
-              rounded = await round(sent)
-              sent = yield rounded
-
-   Unlike normal generators, async generators cannot return a value, so there
-   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
-   ``SendType`` behaves contravariantly.
-
-   The ``SendType`` defaults to :const:`!None`::
-
-      async def infinite_stream(start: int) -> AsyncGenerator[int]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   It is also possible to set this type explicitly::
-
-      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   Alternatively, annotate your generator as having a return type of
-   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
-
-      async def infinite_stream(start: int) -> AsyncIterator[int]:
-          while True:
-              yield start
-              start = await increment(start)
+   Refer to
+   :ref:`annotating generators and coroutines <annotating-generators-and-coroutines>`
+   section for details of using this class in type annotations.
 
    .. versionadded:: 3.6
 

@@ -441,6 +441,86 @@ For example::
 ``type[Any]`` is equivalent to :class:`type`, which is the root of Python's
 :ref:`metaclass hierarchy <metaclasses>`.
 
+
+.. _annotating-generators-and-coroutines:
+
+Annotating generators and coroutines
+====================================
+
+A generator can be annotated by the generic type
+:class:`Generator[YieldType, SendType, ReturnType] <collections.abc.Generator>`.
+For example::
+
+   def echo_round() -> Generator[int, float, str]:
+       sent = yield 0
+       while sent >= 0:
+           sent = yield round(sent)
+       return 'Done'
+
+Note that unlike many other generics in the typing module, the ``SendType``
+of :class:`~collections.abc.Generator` behaves contravariantly, not covariantly or
+invariantly.
+
+The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
+
+   def infinite_stream(start: int) -> Generator[int]:
+       while True:
+           yield start
+           start += 1
+
+It is also possible to set these types explicitly::
+
+   def infinite_stream(start: int) -> Generator[int, None, None]:
+       while True:
+           yield start
+           start += 1
+
+Alternatively, annotate your generator as having a return type of
+either :class:`Iterable[YieldType] <collections.abc.Iterable>`
+or :class:`Iterator[YieldType] <collections.abc.Iterator>`::
+
+   def infinite_stream(start: int) -> Iterator[int]:
+       while True:
+           yield start
+           start += 1
+
+Async generators are handled in a similar fashion, but don't
+expect a `ReturnType` type argument
+(:class:`AsyncGenerator[YieldType, SendType] <collections.abc.AsyncGenerator>`).
+The `SendType` argument defaults to :const:`!None`, so the following definitions
+are equivalent::
+
+   async def infinite_stream(start: int) -> AsyncGenerator[int]:
+       while True:
+           yield start
+           start = await increment(start)
+
+   async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
+       while True:
+           yield start
+           start = await increment(start)
+
+As in synchronous case,
+:class:`AsyncIterable[YieldType] <collections.abc.AsyncIterable>`
+and :class:`AsyncIterator[YieldType] <collections.abc.AsyncIterator>` are
+available as well::
+
+   async def infinite_stream(start: int) -> AsyncIterator[int]:
+       while True:
+           yield start
+           start = await increment(start)
+
+Coroutines can be annotated using
+:class:`Coroutine[YieldType, SendType, ReturnType] <collections.abc.Coroutine>`.
+Generic arguments correspond to those of :class:`~collections.abc.Generator`,
+for example::
+
+   from collections.abc import Coroutine
+   c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
+   x = c.send('hi')                   # Inferred type of 'x' is list[str]
+   async def bar() -> None:
+       y = await c                    # Inferred type of 'y' is int
+
 .. _user-defined-generics:
 
 User-defined generic types
