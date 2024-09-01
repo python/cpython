@@ -1688,8 +1688,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
 
         if (!exec->vm_data.was_run) {
             unlink_executor(exec);
-            if (PyList_Append(invalidate, (PyObject *)exec) < 0)
-            {
+            if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
                 goto error;
             }
         }
