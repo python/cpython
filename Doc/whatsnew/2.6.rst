@@ -1453,7 +1453,7 @@ that will be the numerator and denominator of the resulting fraction. ::
     Fraction(5, 3)
 
 For converting floating-point numbers to rationals,
-the float type now has an :meth:`as_integer_ratio()` method that returns
+the float type now has an :meth:`as_integer_ratio` method that returns
 the numerator and denominator for a fraction that evaluates to the same
 floating-point value::
 
@@ -2273,7 +2273,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Guido van Rossum from work for Google App Engine;
   :issue:`3487`.)
 
-* The :mod:`rlcompleter` module's :meth:`Completer.complete()` method
+* The :mod:`rlcompleter` module's :meth:`Completer.complete` method
   will now ignore exceptions triggered while evaluating a name.
   (Fixed by Lorenz Quack; :issue:`2250`.)
 
@@ -2566,7 +2566,7 @@ changes, or look through the Subversion logs for all the details.
     :meth:`tracer`, and :meth:`speed` methods.
   * The ability to set new shapes for the turtle, and to
     define a new coordinate system.
-  * Turtles now have an :meth:`undo()` method that can roll back actions.
+  * Turtles now have an :meth:`undo` method that can roll back actions.
   * Simple support for reacting to input events such as mouse and keyboard
     activity, making it possible to write simple games.
   * A :file:`turtle.cfg` file can be used to customize the starting appearance
