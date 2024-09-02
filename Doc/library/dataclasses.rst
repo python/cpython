@@ -406,6 +406,11 @@ Module contents
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
 
+   The *dataclass_factory* is a callable that will be used to create the dataclass.
+   It should take the class object as a first argument and the same keyword arguments
+   as :func:`@dataclass <dataclass>`. By default, the :func:`@dataclass <dataclass>`
+   function is used.
+
    This function is not strictly required, because any Python
    mechanism for creating a new class with :attr:`!__annotations__` can
    then apply the :func:`@dataclass <dataclass>` function to convert that class to
@@ -428,6 +433,9 @@ Module contents
 
          def add_one(self):
              return self.x + 1
+
+   .. versionadded:: 3.14
+      Added the *dataclass_factory* parameter.
 
 .. function:: replace(obj, /, **changes)
 

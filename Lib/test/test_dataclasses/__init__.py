@@ -4211,12 +4211,9 @@ class TestMakeDataclass(unittest.TestCase):
 
     def test_dataclass_custom_factory(self):
         def custom_dataclass(cls, *args, **kwargs):
-            def wrap(cls):
-                dc = dataclass(cls, *args, **kwargs)
-                dc.__custom__ = True
-                return dc
-
-            return wrap(cls)
+            dc = dataclass(cls, *args, **kwargs)
+            dc.__custom__ = True
+            return dc
 
         C = make_dataclass('C', [('x', int)], dataclass_factory=custom_dataclass)
         c = C(10)
