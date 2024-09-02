@@ -3124,7 +3124,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    sizeof(flags_fields) / sizeof(flags_fields[0]) - 1
+    Py_ARRAY_LENGTH(flags_fields) - 1
 };
 
 static int
