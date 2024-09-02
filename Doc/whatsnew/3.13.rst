@@ -953,7 +953,7 @@ io
   the :meth:`~io.IOBase.close` method with :data:`sys.unraisablehook`.
   Previously, errors were ignored silently by default,
   and only logged in :ref:`Python Development Mode <devmode>`
-  or when using a :ref:`<Python debug build <debug-build>`.
+  or when using a :ref:`Python debug build <debug-build>`.
   (Contributed by Victor Stinner in :gh:`62948`.)
 
 
