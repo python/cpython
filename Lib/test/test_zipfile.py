@@ -3312,7 +3312,8 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
         root = zipfile.Path(zf)
         contents = root.iterdir()
         assert next(contents).name == 'path?'
-        assert next(contents).name == 'V: NMS.flac'
+        item = next(contents)
+        assert item.name == 'V: NMS.flac', item.name
         assert root.joinpath('V: NMS.flac').read_bytes() == b"fLaC..."
 
     def test_backslash_not_separator(self):
@@ -3326,7 +3327,7 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
         root = zipfile.Path(zf)
         (first,) = root.iterdir()
         assert not first.is_dir()
-        assert first.name == 'foo\\bar'
+        assert first.name == 'foo\\bar', first.name
 
 
 class DirtyZipInfo(zipfile.ZipInfo):
