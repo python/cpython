@@ -1846,46 +1846,6 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 }
 
 
-static void
-sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
-{
-    PyObject *old_value = PyStructSequence_GET_ITEM(flags, pos);
-    PyStructSequence_SET_ITEM(flags, pos, Py_NewRef(value));
-    Py_XDECREF(old_value);
-}
-
-
-int
-_PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
-{
-    PyObject *flags = Py_XNewRef(PySys_GetObject("flags"));
-    if (flags == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.flags");
-        }
-        return -1;
-    }
-
-    sys_set_flag(flags, pos, value);
-    Py_DECREF(flags);
-    return 0;
-}
-
-
-static int
-_PySys_SetFlagInt(Py_ssize_t pos, int value)
-{
-    PyObject *obj = PyLong_FromLong(value);
-    if (obj == NULL) {
-        return -1;
-    }
-
-    int res = _PySys_SetFlagObj(pos, obj);
-    Py_DECREF(obj);
-    return res;
-}
-
-
 /*[clinic input]
 sys.set_int_max_str_digits
 
@@ -3161,8 +3121,50 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    18
+    19
 };
+
+static void
+sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
+{
+    assert(pos >= 0 && pos < flags_desc.n_in_sequence);
+
+    PyObject *old_value = PyStructSequence_GET_ITEM(flags, pos);
+    PyStructSequence_SET_ITEM(flags, pos, Py_NewRef(value));
+    Py_XDECREF(old_value);
+}
+
+
+int
+_PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
+{
+    PyObject *flags = Py_XNewRef(PySys_GetObject("flags"));
+    if (flags == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "lost sys.flags");
+        }
+        return -1;
+    }
+
+    sys_set_flag(flags, pos, value);
+    Py_DECREF(flags);
+    return 0;
+}
+
+
+static int
+_PySys_SetFlagInt(Py_ssize_t pos, int value)
+{
+    PyObject *obj = PyLong_FromLong(value);
+    if (obj == NULL) {
+        return -1;
+    }
+
+    int res = _PySys_SetFlagObj(pos, obj);
+    Py_DECREF(obj);
+    return res;
+}
+
 
 static int
 set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
@@ -4127,7 +4129,9 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
     }
 
     // Set PyInterpreterState.long_state.max_str_digits
+    // and PyInterpreterState.config.int_max_str_digits.
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->long_state.max_str_digits = maxdigits;
+    interp->config.int_max_str_digits = maxdigits;
     return 0;
 }
