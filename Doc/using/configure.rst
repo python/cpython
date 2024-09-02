@@ -299,7 +299,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :ref:`free-threaded-cpython` for more detail.
+   See :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 
@@ -1101,7 +1101,7 @@ Remove built files.
 make distclean
 ^^^^^^^^^^^^^^
 
-In addition to the the work done by ``make clean``, remove files
+In addition to the work done by ``make clean``, remove files
 created by the configure script.  ``configure`` will have to be run
 before building again. [#]_
 

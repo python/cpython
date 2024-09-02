@@ -1,6 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper, os_helper, MS_WINDOWS
+from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
@@ -1791,6 +1791,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f'fail to decode stdout: {out!r}')
 
         self.assertEqual(out, expected)
+
+    @threading_helper.requires_working_threading()
+    def test_init_in_background_thread(self):
+        # gh-123022: Check that running Py_Initialize() in a background
+        # thread doesn't crash.
+        out, err = self.run_embedded_interpreter("test_init_in_background_thread")
+        self.assertEqual(err, "")
 
 
 class SetConfigTests(unittest.TestCase):

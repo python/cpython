@@ -1344,7 +1344,6 @@ int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    assert(debug_check_sanity(tstate->interp, code));
     int offset = (int)(instr - _PyCode_CODE(code));
     _PyCoMonitoringData *instrumentation_data = code->_co_monitoring;
     assert(instrumentation_data->per_instruction_opcodes);
@@ -1352,6 +1351,7 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
     if (tstate->tracing) {
         return next_opcode;
     }
+    assert(debug_check_sanity(tstate->interp, code));
     PyInterpreterState *interp = tstate->interp;
     uint8_t tools = instrumentation_data->per_instruction_tools != NULL ?
         instrumentation_data->per_instruction_tools[offset] :

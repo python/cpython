@@ -161,7 +161,7 @@ are always available.  They are listed here in alphabetical order.
    This function drops you into the debugger at the call site.  Specifically,
    it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
    through.  By default, ``sys.breakpointhook()`` calls
-   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
+   :func:`pdb.set_trace` expecting no arguments.  In this case, it is
    purely a convenience function so you don't have to explicitly import
    :mod:`pdb` or type as much code to enter the debugger.  However,
    :func:`sys.breakpointhook` can be set to some other function and
@@ -1329,7 +1329,7 @@ are always available.  They are listed here in alphabetical order.
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
    *encoding* is not specified the encoding used is platform-dependent:
-   :func:`locale.getencoding()` is called to get the current locale encoding.
+   :func:`locale.getencoding` is called to get the current locale encoding.
    (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
@@ -1502,7 +1502,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open file,mode,flags open
+   .. audit-event:: open path,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
@@ -1692,6 +1692,13 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.5
       The docstrings of property objects are now writeable.
+
+   .. attribute:: __name__
+
+      Attribute holding the name of the property. The name of the property
+      can be changed at runtime.
+
+      .. versionadded:: 3.13
 
 
 .. _func-range:

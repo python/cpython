@@ -2170,14 +2170,15 @@ dummy_func(
                 new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
-            Py_DECREF(old_value);
-            STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
                 _PyObject_GC_TRACK(dict);
             }
-            /* PEP 509 */
-            dict->ma_version_tag = new_version;
+            dict->ma_version_tag = new_version; // PEP 509
+            // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
+            // when dict only holds the strong reference to value in ep->me_value.
+            Py_DECREF(old_value);
+            STAT_INC(STORE_ATTR, hit);
             Py_DECREF(owner);
         }
 
@@ -3407,6 +3408,8 @@ dummy_func(
             PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init->func_code;
             DEOPT_IF(code->co_argcount != oparg+1);
+            DEOPT_IF((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED);
+            DEOPT_IF(code->co_kwonlyargcount);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize));
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);

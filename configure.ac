@@ -6164,16 +6164,19 @@ AC_MSG_CHECKING([LDVERSION])
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
-# Configure the flags and dependencies used when compiling shared modules
+# Configure the flags and dependencies used when compiling shared modules.
+# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
+# systems (e.g. Meson) to decide whether to link extension modules against
+# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
-AC_SUBST([MODULE_LDFLAGS])
+AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
-MODULE_LDFLAGS=''
+LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  MODULE_LDFLAGS="\$(BLDLIBRARY)"
+  LIBPYTHON="\$(BLDLIBRARY)"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -7315,8 +7318,6 @@ AC_DEFINE([PY_SSL_DEFAULT_CIPHERS], [1])
 
 # builtin hash modules
 default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
-AC_DEFINE([PY_BUILTIN_HASHLIB_HASHES], [], [enabled builtin hash modules]
-)
 AC_MSG_CHECKING([for --with-builtin-hashlib-hashes])
 AC_ARG_WITH(
   [builtin-hashlib-hashes],
@@ -7333,7 +7334,8 @@ AC_ARG_WITH(
 
 AC_MSG_RESULT([$with_builtin_hashlib_hashes])
 AC_DEFINE_UNQUOTED([PY_BUILTIN_HASHLIB_HASHES],
-  ["$with_builtin_hashlib_hashes"])
+                   ["$with_builtin_hashlib_hashes"],
+                   [enabled builtin hash modules])
 
 as_save_IFS=$IFS
 IFS=,

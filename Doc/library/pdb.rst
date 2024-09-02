@@ -49,7 +49,7 @@ You can then step through the code following this statement, and continue
 running without the debugger using the :pdbcmd:`continue` command.
 
 .. versionchanged:: 3.7
-   The built-in :func:`breakpoint()`, when called with defaults, can be used
+   The built-in :func:`breakpoint`, when called with defaults, can be used
    instead of ``import pdb; pdb.set_trace()``.
 
 ::

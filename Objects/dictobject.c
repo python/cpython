@@ -1762,6 +1762,8 @@ insert_split_value(PyInterpreterState *interp, PyDictObject *mp, PyObject *key, 
         uint64_t new_version = _PyDict_NotifyEvent(interp, PyDict_EVENT_MODIFIED, mp, key, value);
         STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
         mp->ma_version_tag = new_version;
+        // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
+        // when dict only holds the strong reference to value in ep->me_value.
         Py_DECREF(old_value);
     }
     ASSERT_CONSISTENT(mp);

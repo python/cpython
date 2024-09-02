@@ -377,7 +377,7 @@ Bytes
 
    A bytes object is an immutable array.  The items are 8-bit bytes,
    represented by integers in the range 0 <= x < 256.  Bytes literals
-   (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+   (like ``b'abc'``) and the built-in :func:`bytes` constructor
    can be used to create bytes objects.  Also, bytes objects can be
    decoded to strings via the :meth:`~bytes.decode` method.
 

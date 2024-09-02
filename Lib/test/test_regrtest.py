@@ -475,6 +475,19 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.hunt_refleak.runs, 10)
         self.assertFalse(regrtest.output_on_failure)
 
+    def test_single_process(self):
+        args = ['-j2', '--single-process']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
+
+        args = ['--fast-ci', '--single-process']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
+
 
 @dataclasses.dataclass(slots=True)
 class Rerun:
