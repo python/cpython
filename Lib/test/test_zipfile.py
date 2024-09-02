@@ -3064,6 +3064,8 @@ class TestPath(unittest.TestCase):
         """
         data = io.BytesIO()
         zf = zipfile.ZipFile(data, "w")
+        zf.writestr("/one-slash.txt", b"content")
+        zf.writestr("//two-slash.txt", b"content")
         zf.writestr("../parent.txt", b"content")
         zf.filename = ''
         root = zipfile.Path(zf)
