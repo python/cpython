@@ -324,6 +324,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
+#define sym_set_locals_idx _Py_uop_sym_set_locals_idx
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
@@ -565,17 +566,9 @@ partial_evaluate_uops(
     /* Either reached the end or cannot optimize further, but there
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
-    if (first_valid_check_stack != NULL) {
-        assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
-        assert(max_space > 0);
-        assert(max_space <= INT_MAX);
-        assert(max_space <= INT32_MAX);
-        first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
-        first_valid_check_stack->operand = max_space;
-    }
     return trace_len;
 
-    error:
+error:
     DPRINTF(3, "\n");
     DPRINTF(1, "Encountered error in pe's abstract interpreter\n");
     if (opcode <= MAX_UOP_ID) {
@@ -691,6 +684,14 @@ _Py_uop_analyze_and_optimize(
     }
 
     length = optimize_uops(
+        _PyFrame_GetCode(frame), buffer,
+        length, curr_stacklen, dependencies);
+
+    if (length <= 0) {
+        return length;
+    }
+
+    length = partial_evaluate_uops(
         _PyFrame_GetCode(frame), buffer,
         length, curr_stacklen, dependencies);
 

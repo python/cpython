@@ -25,6 +25,7 @@ from lexer import Token
 from stack import Local, Stack, StackError
 
 DEFAULT_OUTPUT = ROOT / "Python/partial_evaluator_cases.c.h"
+DEFAULT_SPECIALIZER_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/partial_evaluator_bytecodes.c").absolute().as_posix()
 
 
@@ -211,8 +212,7 @@ arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 
-
-arg_parser.add_argument("input", nargs="*", help="Abstract interpreter definition file")
+arg_parser.add_argument("input", nargs="*", help="Partial evaluator definition file")
 
 arg_parser.add_argument(
     "base", nargs="*", help="The base instruction definition file(s)"
@@ -224,6 +224,7 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
     if not args.input:
         args.base.append(DEFAULT_INPUT)
+        args.input.append(DEFAULT_SPECIALIZER_INPUT)
         args.input.append(DEFAULT_ABSTRACT_INPUT)
     else:
         args.base.append(args.input[-1])
