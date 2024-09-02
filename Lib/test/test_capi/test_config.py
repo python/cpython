@@ -152,24 +152,35 @@ class CAPITests(unittest.TestCase):
             ("interactive", "interactive", False),
             ("optimize", "optimization_level", False),
             ("dont_write_bytecode", "write_bytecode", True),
-            # no_user_site / user_site_directory
+            ("no_user_site", "user_site_directory", True),
             ("no_site", "site_import", True),
             ("ignore_environment", "use_environment", True),
             ("verbose", "verbose", False),
             ("bytes_warning", "bytes_warning", False),
             ("quiet", "quiet", False),
+            # "hash_randomization" is tested below
             ("isolated", "isolated", False),
             ("dev_mode", "dev_mode", False),
             ("utf8_mode", "utf8_mode", False),
-            # warn_default_encoding
-            # safe_path
+            ("warn_default_encoding", "warn_default_encoding", False),
+            ("safe_path", "safe_path", False),
             ("int_max_str_digits", "int_max_str_digits", False),
+            # "gil" is tested below
         ):
             with self.subTest(flag=flag, name=name, negate=negate):
                 value = config_get(name)
                 if negate:
                     value = not value
                 self.assertEqual(getattr(sys.flags, flag), value)
+
+        self.assertEqual(sys.flags.hash_randomization,
+                         config_get('use_hash_seed') == 0
+                         or config_get('hash_seed') != 0)
+
+        if sysconfig.get_config_var('Py_GIL_DISABLED'):
+            value = config_get('enable_gil')
+            expected = (value if value != -1 else None)
+            self.assertEqual(sys.flags.gil, expected)
 
     def test_config_get_non_existent(self):
         # Test PyConfig_Get() on non-existent option name
@@ -206,7 +217,7 @@ class CAPITests(unittest.TestCase):
         # PyPreConfig member
         self.assertIsInstance(config_getint('allocator'), int)
 
-        # platlibdir is a str
+        # platlibdir type is str
         with self.assertRaises(TypeError):
             config_getint('platlibdir')
 
@@ -290,23 +301,26 @@ class CAPITests(unittest.TestCase):
             return (int(value), int(not value))
 
         for name, sys_flag, option_type, expect_func in (
+            # (some flags cannot be set, see comments below.)
             ('parser_debug', 'debug', bool, expect_bool),
             ('inspect', 'inspect', bool, expect_bool),
             ('interactive', 'interactive', bool, expect_bool),
             ('optimization_level', 'optimize', unsigned_int, expect_int),
             ('write_bytecode', 'dont_write_bytecode', bool, expect_bool_not),
-            # no_user_site
-            # no_site
+            # user_site_directory
+            # site_import
             ('use_environment', 'ignore_environment', bool, expect_bool_not),
             ('verbose', 'verbose', unsigned_int, expect_int),
             ('bytes_warning', 'bytes_warning', unsigned_int, expect_int),
             ('quiet', 'quiet', bool, expect_bool),
+            # hash_randomization
             # isolated
             # dev_mode
             # utf8_mode
             # warn_default_encoding
             # safe_path
             ('int_max_str_digits', 'int_max_str_digits', unsigned_int, expect_int),
+            # gil
         ):
             if name == "int_max_str_digits":
                 new_values = (0, 5_000, 999_999)
