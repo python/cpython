@@ -647,14 +647,13 @@ class CmdLineTest(unittest.TestCase):
             expected_bool = int(bool(value))
             code = (
                 "import sys; "
-                "flags = sys.flags; "
-                "sys.stderr.write(str(flags)); "
+                "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
                     sys.flags.optimize == sys.flags.verbose == {expected}
                     and sys.flags.debug == sys.flags.dont_write_bytecode == {expected_bool}
                 ))"""
             )
-            with self.subTest(envar_value=value, expected=expected):
+            with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
     def test_set_pycache_prefix(self):
