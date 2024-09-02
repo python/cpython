@@ -55,7 +55,7 @@ Queue
       Return ``True`` if there are :attr:`maxsize` items in the queue.
 
       If the queue was initialized with ``maxsize=0`` (the default),
-      then :meth:`full()` never returns ``True``.
+      then :meth:`full` never returns ``True``.
 
    .. coroutinemethod:: get()
 
