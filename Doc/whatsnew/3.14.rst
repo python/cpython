@@ -505,6 +505,8 @@ New Features
 
   * :c:func:`PyInitConfig_Create`
   * :c:func:`PyInitConfig_Free`
+  * :c:func:`PyInitConfig_GetError`
+  * :c:func:`PyInitConfig_GetExitCode`
   * :c:func:`PyInitConfig_HasOption`
   * :c:func:`PyInitConfig_GetInt`
   * :c:func:`PyInitConfig_GetStr`
@@ -514,8 +516,6 @@ New Features
   * :c:func:`PyInitConfig_SetStr`
   * :c:func:`PyInitConfig_SetStrList`
   * :c:func:`Py_InitializeFromInitConfig`
-  * :c:func:`PyInitConfig_GetError`
-  * :c:func:`PyInitConfig_GetExitCode`
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 

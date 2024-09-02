@@ -1618,6 +1618,41 @@ Create Config
    Free memory of the initialization configuration *config*.
 
 
+Error Handling
+--------------
+
+.. c:function:: int PyInitConfig_GetError(PyInitConfig* config, const char **err_msg)
+
+   Get the *config* error message.
+
+   * Set *\*err_msg* and return ``1`` if an error is set.
+   * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
+
+   An error message is an UTF-8 encoded string.
+
+   If *config* has an exit code, format the exit code as an error
+   message.
+
+   The error message remains valid until another ``PyInitConfig``
+   function is called with *config*. The caller doesn't have to free the
+   error message.
+
+
+.. c:function:: int PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
+
+   Get the *config* exit code.
+
+   * Set *\*exitcode* and return ``1`` if Python wants to exit.
+   * Return ``0`` if *config* has no exit code set.
+
+   Only the ``Py_InitializeFromInitConfig()`` function can set an exit
+   code if the ``parse_argv`` option is non-zero.
+
+   An exit code can be set when parsing the command line failed (exit
+   code ``2``) or when a command line option asks to display the command
+   line help (exit code ``0``).
+
+
 Get Options
 -----------
 
@@ -1718,41 +1753,6 @@ Initialize Python
      exit.
 
    See ``PyInitConfig_GetExitcode()`` for the exit code case.
-
-
-Error Handling
---------------
-
-.. c:function:: int PyInitConfig_GetError(PyInitConfig* config, const char **err_msg)
-
-   Get the *config* error message.
-
-   * Set *\*err_msg* and return ``1`` if an error is set.
-   * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
-
-   An error message is an UTF-8 encoded string.
-
-   If *config* has an exit code, format the exit code as an error
-   message.
-
-   The error message remains valid until another ``PyInitConfig``
-   function is called with *config*. The caller doesn't have to free the
-   error message.
-
-
-.. c:function:: int PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
-
-   Get the *config* exit code.
-
-   * Set *\*exitcode* and return ``1`` if Python wants to exit.
-   * Return ``0`` if *config* has no exit code set.
-
-   Only the ``Py_InitializeFromInitConfig()`` function can set an exit
-   code if the ``parse_argv`` option is non-zero.
-
-   An exit code can be set when parsing the command line failed (exit
-   code ``2``) or when a command line option asks to display the command
-   line help (exit code ``0``).
 
 
 Example
