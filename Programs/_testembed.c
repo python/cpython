@@ -1872,6 +1872,7 @@ static int test_initconfig_get_api(void)
 
     // test PyInitConfig_HasOption()
     assert(PyInitConfig_HasOption(config, "verbose") == 1);
+    assert(PyInitConfig_HasOption(config, "utf8_mode") == 1);
     assert(PyInitConfig_HasOption(config, "non-existent") == 0);
 
     // test PyInitConfig_GetInt()

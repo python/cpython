@@ -3524,6 +3524,9 @@ int
 PyInitConfig_HasOption(PyInitConfig *config, const char *name)
 {
     const PyConfigSpec *spec = initconfig_find_spec(PYCONFIG_SPEC, name);
+    if (spec == NULL) {
+        spec = initconfig_find_spec(PYPRECONFIG_SPEC, name);
+    }
     return (spec != NULL);
 }
 
