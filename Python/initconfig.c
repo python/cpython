@@ -1121,6 +1121,13 @@ config_spec_get_member(const PyConfigSpec *spec, const PyConfig *config)
 }
 
 
+static inline void*
+preconfig_spec_get_member(const PyConfigSpec *spec, const PyPreConfig *preconfig)
+{
+    return (char *)preconfig + spec->offset;
+}
+
+
 PyStatus
 _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 {
@@ -3415,6 +3422,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 // --- PyInitConfig API ---------------------------------------------------
 
 struct PyInitConfig {
+    PyPreConfig preconfig;
     PyConfig config;
     PyStatus status;
     char *err_msg;
@@ -3434,6 +3442,7 @@ PyInitConfig_Create(void)
     if (config == NULL) {
         return NULL;
     }
+    PyPreConfig_InitIsolatedConfig(&config->preconfig);
     PyConfig_InitIsolatedConfig(&config->config);
     config->status = _PyStatus_OK();
     return config;
@@ -3456,9 +3465,8 @@ initconfig_set_error(PyInitConfig *config, const char *err_msg)
 
 
 static const PyConfigSpec*
-initconfig_get_spec(const char *name)
+initconfig_find_spec(const PyConfigSpec *spec, const char *name)
 {
-    const PyConfigSpec *spec = PYCONFIG_SPEC;
     for (; spec->name != NULL; spec++) {
         if (strcmp(name, spec->name) == 0) {
             return spec;
@@ -3471,27 +3479,36 @@ initconfig_get_spec(const char *name)
 int
 PyInitConfig_HasOption(PyInitConfig *config, const char *name)
 {
-    const PyConfigSpec *spec = initconfig_get_spec(name);
+    const PyConfigSpec *spec = initconfig_find_spec(PYCONFIG_SPEC, name);
     return (spec != NULL);
 }
 
 
 static const PyConfigSpec*
-initconfig_prepare_get(PyInitConfig *config, const char *name)
+initconfig_prepare(PyInitConfig *config, const char *name, void **raw_member)
 {
-    const PyConfigSpec *spec = initconfig_get_spec(name);
-    if (spec == NULL) {
-        initconfig_set_error(config, "unknown config option name");
-        return NULL;
+    const PyConfigSpec *spec = initconfig_find_spec(PYCONFIG_SPEC, name);
+    if (spec != NULL) {
+        *raw_member = config_spec_get_member(spec, &config->config);
+        return spec;
     }
-    return spec;
+
+    spec = initconfig_find_spec(PYPRECONFIG_SPEC, name);
+    if (spec != NULL) {
+        *raw_member = preconfig_spec_get_member(spec, &config->preconfig);
+        return spec;
+    }
+
+    initconfig_set_error(config, "unknown config option name");
+    return NULL;
 }
 
 
 int
 PyInitConfig_GetInt(PyInitConfig *config, const char *name, int64_t *value)
 {
-    const PyConfigSpec *spec = initconfig_prepare_get(config, name);
+    void *raw_member;
+    const PyConfigSpec *spec = initconfig_prepare(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3501,14 +3518,14 @@ PyInitConfig_GetInt(PyInitConfig *config, const char *name, int64_t *value)
     case PyConfig_MEMBER_UINT:
     case PyConfig_MEMBER_BOOL:
     {
-        int *member = config_spec_get_member(spec, &config->config);
+        int *member = raw_member;
         *value = *member;
         break;
     }
 
     case PyConfig_MEMBER_ULONG:
     {
-        unsigned long *member = config_spec_get_member(spec, &config->config);
+        unsigned long *member = raw_member;
 #if SIZEOF_LONG >= 8
         if ((unsigned long)INT64_MAX < *member) {
             initconfig_set_error(config,
@@ -3560,7 +3577,8 @@ wstr_to_utf8(PyInitConfig *config, wchar_t *wstr)
 int
 PyInitConfig_GetStr(PyInitConfig *config, const char *name, char **value)
 {
-    const PyConfigSpec *spec = initconfig_prepare_get(config, name);
+    void *raw_member;
+    const PyConfigSpec *spec = initconfig_prepare(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3571,7 +3589,7 @@ PyInitConfig_GetStr(PyInitConfig *config, const char *name, char **value)
         return -1;
     }
 
-    wchar_t **member = config_spec_get_member(spec, &config->config);
+    wchar_t **member = raw_member;
     if (*member == NULL) {
         *value = NULL;
         return 0;
@@ -3588,7 +3606,8 @@ PyInitConfig_GetStr(PyInitConfig *config, const char *name, char **value)
 int
 PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, char ***items)
 {
-    const PyConfigSpec *spec = initconfig_prepare_get(config, name);
+    void *raw_member;
+    const PyConfigSpec *spec = initconfig_prepare(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3598,7 +3617,7 @@ PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, 
         return -1;
     }
 
-    PyWideStringList *list = config_spec_get_member(spec, &config->config);
+    PyWideStringList *list = raw_member;
     *length = list->length;
 
     *items = malloc(list->length * sizeof(char*));
@@ -3628,25 +3647,11 @@ PyInitConfig_FreeStrList(size_t length, char **items)
 }
 
 
-static const PyConfigSpec*
-initconfig_prepare_set(PyInitConfig *config, const char *name,
-                       void **raw_member)
-{
-    const PyConfigSpec *spec = initconfig_get_spec(name);
-    if (spec == NULL) {
-        initconfig_set_error(config, "unknown config option name");
-        return NULL;
-    }
-    *raw_member = config_spec_get_member(spec, &config->config);
-    return spec;
-}
-
-
 int
 PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
 {
     void *raw_member;
-    const PyConfigSpec *spec = initconfig_prepare_set(config, name, &raw_member);
+    const PyConfigSpec *spec = initconfig_prepare(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3731,7 +3736,7 @@ int
 PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
 {
     void *raw_member;
-    const PyConfigSpec *spec = initconfig_prepare_set(config, name, &raw_member);
+    const PyConfigSpec *spec = initconfig_prepare(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3789,7 +3794,7 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
                         size_t length, char * const *items)
 {
     void *raw_member;
-    const PyConfigSpec *spec = initconfig_prepare_set(config, name, &raw_member);
+    const PyConfigSpec *spec = initconfig_prepare(config, name, &raw_member);
     if (spec == NULL) {
         return -1;
     }
@@ -3800,18 +3805,6 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
     }
     PyWideStringList *list = raw_member;
     return _PyWideStringList_FromUTF8(config, list, length, items);
-}
-
-
-int
-Py_InitializeFromInitConfig(PyInitConfig *config)
-{
-    config->status = Py_InitializeFromConfig(&config->config);
-    if (_PyStatus_EXCEPTION(config->status)) {
-        return -1;
-    }
-
-    return 0;
 }
 
 
@@ -3856,6 +3849,28 @@ PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
     else {
         return 0;
     }
+}
+
+
+int
+Py_InitializeFromInitConfig(PyInitConfig *config)
+{
+    _PyPreConfig_GetConfig(&config->preconfig, &config->config);
+
+    config->status = Py_PreInitializeFromArgs(
+        &config->preconfig,
+        config->config.argv.length,
+        config->config.argv.items);
+    if (_PyStatus_EXCEPTION(config->status)) {
+        return -1;
+    }
+
+    config->status = Py_InitializeFromConfig(&config->config);
+    if (_PyStatus_EXCEPTION(config->status)) {
+        return -1;
+    }
+
+    return 0;
 }
 
 

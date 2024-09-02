@@ -1756,17 +1756,17 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                api=API_ISOLATED)
 
     def test_initconfig_api(self):
-        preconfig = {}
+        preconfig = {
+            'configure_locale': True,
+        }
         config = {
             'pycache_prefix': 'conf_pycache_prefix',
             'xoptions': {'faulthandler': True},
             'hash_seed': 10,
             'use_hash_seed': True,
         }
-        preconfig['allocator'] = PYMEM_ALLOCATOR_DEBUG
-        preconfig['dev_mode'] = 1
-        config['dev_mode'] = 1
-        config['warnoptions'] = ['default']
+        config_dev_mode(preconfig, config)
+        config['faulthandler'] = 0
         self.check_all_configs("test_initconfig_api", config, preconfig,
                                api=API_ISOLATED)
 

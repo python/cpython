@@ -1814,6 +1814,10 @@ static int test_initconfig_api(void)
         return 1;
     }
 
+    if (PyInitConfig_SetInt(config, "configure_locale", 1) < 0) {
+        goto error;
+    }
+
     if (PyInitConfig_SetInt(config, "dev_mode", 1) < 0) {
         goto error;
     }
@@ -1876,6 +1880,13 @@ static int test_initconfig_get_api(void)
     assert(value == 0);
     assert(PyInitConfig_SetInt(config, "dev_mode", 1) == 0);
     assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
+    assert(value == 1);
+
+    // test PyInitConfig_GetInt() on a PyPreConfig option
+    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
+    assert(value == 0);
+    assert(PyInitConfig_SetInt(config, "utf8_mode", 1) == 0);
+    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
     assert(value == 1);
 
     // test PyInitConfig_GetStr()
