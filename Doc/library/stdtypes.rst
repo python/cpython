@@ -832,7 +832,7 @@ over ``&``, ``|`` and ``^``.
 .. deprecated:: 3.12
 
    The use of the bitwise inversion operator ``~`` is deprecated and will
-   raise an error in Python 3.14.
+   raise an error in Python 3.16.
 
 :class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
 many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, respectively.
@@ -1209,8 +1209,9 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
 |                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.remove(x)``              | remove the first item from *s* | \(3)                |
-|                              | where ``s[i]`` is equal to *x* |                     |
+| ``s.remove(x)``              | removes the first item from    | \(3)                |
+|                              | *s* where ``s[i]`` is equal to |                     |
+|                              | *x*                            |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
 |                              | place                          |                     |
@@ -3440,7 +3441,7 @@ place, and instead produce new objects.
    ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
    are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
 
-   Unlike :func:`str.swapcase()`, it is always the case that
+   Unlike :func:`str.swapcase`, it is always the case that
    ``bin.swapcase().swapcase() == bin`` for the binary versions. Case
    conversions are symmetrical in ASCII, even though that is not generally
    true for arbitrary Unicode code points.

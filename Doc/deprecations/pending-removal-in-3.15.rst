@@ -9,8 +9,8 @@ Pending Removal in Python 3.15
 * :class:`locale`: :func:`locale.getdefaultlocale` was deprecated in Python 3.11
   and originally planned for removal in Python 3.13 (:gh:`90817`),
   but removal has been postponed to Python 3.15.
-  Use :func:`locale.setlocale()`, :func:`locale.getencoding()` and
-  :func:`locale.getlocale()` instead.
+  Use :func:`locale.setlocale`, :func:`locale.getencoding` and
+  :func:`locale.getlocale` instead.
   (Contributed by Hugo van Kemenade in :gh:`111187`.)
 
 * :mod:`pathlib`:

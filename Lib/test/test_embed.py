@@ -1,6 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper, os_helper, MS_WINDOWS
+from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
@@ -464,8 +464,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         # Test _PyArg_Parser initializations via _PyArg_UnpackKeywords()
         # https://github.com/python/cpython/issues/122334
         code = textwrap.dedent("""
-            import _ssl
-            _ssl.txt2obj(txt='1.3')
+            try:
+                import _ssl
+            except ModuleNotFoundError:
+                _ssl = None
+            if _ssl is not None:
+                _ssl.txt2obj(txt='1.3')
             print('1')
 
             import _queue
@@ -1787,6 +1791,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f'fail to decode stdout: {out!r}')
 
         self.assertEqual(out, expected)
+
+    @threading_helper.requires_working_threading()
+    def test_init_in_background_thread(self):
+        # gh-123022: Check that running Py_Initialize() in a background
+        # thread doesn't crash.
+        out, err = self.run_embedded_interpreter("test_init_in_background_thread")
+        self.assertEqual(err, "")
 
 
 class SetConfigTests(unittest.TestCase):

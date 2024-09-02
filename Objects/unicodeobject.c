@@ -14817,7 +14817,16 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         return PyObject_Str(object);
     }
     const char *encoding = arg_as_utf8(args[1], "encoding");
-    const char *errors = (nargs == 3) ? arg_as_utf8(args[2], "errors") : NULL;
+    if (encoding == NULL) {
+        return NULL;
+    }
+    const char *errors = NULL;
+    if (nargs == 3) {
+        errors = arg_as_utf8(args[2], "errors");
+        if (errors == NULL) {
+            return NULL;
+        }
+    }
     return PyUnicode_FromEncodedObject(object, encoding, errors);
 }
 
