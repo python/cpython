@@ -58,13 +58,13 @@ typedef enum {
 } PyConfigMemberType;
 
 typedef enum {
-    // Option which cannot get or set by PyConfig_Get() and PyConfig_Set()
+    // Option which cannot be get or set by PyConfig_Get() and PyConfig_Set()
     PyConfig_MEMBER_INIT_ONLY = 0,
 
     // Option which cannot be set by PyConfig_Set()
     PyConfig_MEMBER_READ_ONLY = 1,
 
-    // Public option: can be get or set by PyConfig_Get() and PyConfig_Set()
+    // Public option: can be get and set by PyConfig_Get() and PyConfig_Set()
     PyConfig_MEMBER_PUBLIC = 2,
 } PyConfigMemberVisibility;
 
@@ -745,6 +745,28 @@ _PyWideStringList_AsList(const PyWideStringList *list)
         PyList_SET_ITEM(pylist, i, item);
     }
     return pylist;
+}
+
+
+static PyObject*
+_PyWideStringList_AsTuple(const PyWideStringList *list)
+{
+    assert(_PyWideStringList_CheckConsistency(list));
+
+    PyObject *tuple = PyTuple_New(list->length);
+    if (tuple == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < list->length; i++) {
+        PyObject *item = PyUnicode_FromWideChar(list->items[i], -1);
+        if (item == NULL) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(tuple, i, item);
+    }
+    return tuple;
 }
 
 
@@ -3403,8 +3425,6 @@ config_generic_find_spec(const PyConfigSpec *spec, const char *name)
             return spec;
         }
     }
-    PyErr_Format(PyExc_ValueError,
-                 "unknown config option name: %s", name);
     return NULL;
 }
 
@@ -3534,7 +3554,7 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
         }
     }
 
-    char *member = config_spec_get_member(spec, config);
+    void *member = config_spec_get_member(spec, config);
     switch (spec->type) {
     case PyConfig_MEMBER_INT:
     case PyConfig_MEMBER_UINT:
@@ -3574,20 +3594,12 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
         }
         else {
             const PyWideStringList *list = (const PyWideStringList *)member;
-            PyObject *pylist = _PyWideStringList_AsList(list);
-            if (pylist == NULL) {
-                return NULL;
-            }
-
-            PyObject *tuple = PyList_AsTuple(pylist);
-            Py_DECREF(pylist);
-            return tuple;
+            return _PyWideStringList_AsTuple(list);
         }
     }
+
     default:
-        PyErr_Format(PyExc_TypeError,
-                     "config option %s is not a strings list", spec->name);
-        return NULL;
+        Py_UNREACHABLE();
     }
 }
 
@@ -3611,6 +3623,13 @@ preconfig_get(const PyPreConfig *preconfig, const PyConfigSpec *spec)
 }
 
 
+static void
+config_unknown_name_error(const char *name)
+{
+    PyErr_Format(PyExc_ValueError, "unknown config option name: %s", name);
+}
+
+
 PyObject*
 PyConfig_Get(const char *name)
 {
@@ -3619,7 +3638,6 @@ PyConfig_Get(const char *name)
         const PyConfig *config = _Py_GetConfig();
         return config_get(config, spec, 1);
     }
-    PyErr_Clear();
 
     spec = preconfig_find_spec(name);
     if (spec != NULL) {
@@ -3627,6 +3645,7 @@ PyConfig_Get(const char *name)
         return preconfig_get(preconfig, spec);
     }
 
+    config_unknown_name_error(name);
     return NULL;
 }
 
@@ -3651,7 +3670,7 @@ PyConfig_GetInt(const char *name, int *value)
     Py_DECREF(obj);
     if (as_int == -1 && PyErr_Occurred()) {
         PyErr_Format(PyExc_OverflowError,
-                     "config option %s value does not fit into an int", name);
+                     "config option %s value does not fit into a C int", name);
         return -1;
     }
 
@@ -3739,10 +3758,13 @@ config_set_sys_flag(const PyConfigSpec *spec, int int_value)
     }
 
     // Set PyConfig.ATTR
+    assert(spec->type == PyConfig_MEMBER_INT
+           || spec->type == PyConfig_MEMBER_UINT
+           || spec->type == PyConfig_MEMBER_BOOL);
     int *member = config_spec_get_member(spec, config);
     *member = int_value;
 
-    // Set sys.dont_write_bytecode
+    // Set sys.dont_write_bytecode attribute
     if (strcmp(spec->name, "write_bytecode") == 0) {
         if (PySys_SetObject("dont_write_bytecode", value) < 0) {
             goto error;
@@ -3763,9 +3785,9 @@ PyConfig_Set(const char *name, PyObject *value)
 {
     const PyConfigSpec *spec = config_find_spec(name);
     if (spec == NULL) {
-        PyErr_Clear();
         spec = preconfig_find_spec(name);
         if (spec == NULL) {
+            config_unknown_name_error(name);
             return -1;
         }
         assert(spec->visibility != PyConfig_MEMBER_PUBLIC);
@@ -3868,6 +3890,8 @@ PyConfig_Set(const char *name, PyObject *value)
 
 
     if (spec->sys.attr != NULL) {
+        // Set the sys attribute, but don't set PyInterpreterState.config
+        // to keep the code simple.
         return PySys_SetObject(spec->sys.attr, value);
     }
     else if (spec->sys.flag_index >= 0 && has_int_value) {
