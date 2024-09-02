@@ -1289,6 +1289,7 @@ gc_collect_young(PyThreadState *tstate,
     GCState *gcstate = &tstate->interp->gc;
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    GC_STAT_ADD(0, collections, 1);
 #ifdef Py_STATS
     {
         Py_ssize_t count = 0;
@@ -1417,6 +1418,7 @@ completed_cycle(GCState *gcstate)
 static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 {
+    GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
@@ -1462,6 +1464,7 @@ static void
 gc_collect_full(PyThreadState *tstate,
                 struct gc_collection_stats *stats)
 {
+    GC_STAT_ADD(2, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     validate_old(gcstate);
     PyGC_Head *young = &gcstate->young.head;
@@ -1698,20 +1701,25 @@ _PyGC_GetObjects(PyInterpreterState *interp, int generation)
     GCState *gcstate = &interp->gc;
 
     PyObject *result = PyList_New(0);
-    if (result == NULL) {
-        return NULL;
+    /* Generation:
+     * -1: Return all objects
+     * 0: All young objects
+     * 1: No objects
+     * 2: All old objects
+     */
+    if (result == NULL || generation == 1) {
+        return result;
     }
-
-    if (generation == -1) {
-        /* If generation is -1, get all objects from all generations */
-        for (int i = 0; i < NUM_GENERATIONS; i++) {
-            if (append_objects(result, GEN_HEAD(gcstate, i))) {
-                goto error;
-            }
+    if (generation <= 0) {
+        if (append_objects(result, &gcstate->young.head)) {
+            goto error;
         }
     }
-    else {
-        if (append_objects(result, GEN_HEAD(gcstate, generation))) {
+    if (generation != 0) {
+        if (append_objects(result, &gcstate->old[0].head)) {
+            goto error;
+        }
+        if (append_objects(result, &gcstate->old[1].head)) {
             goto error;
         }
     }
@@ -1784,6 +1792,24 @@ PyGC_IsEnabled(void)
     return gcstate->enabled;
 }
 
+// Show stats for objects in each generations
+static void
+show_stats_each_generations(GCState *gcstate)
+{
+    char buf[100];
+    size_t pos = 0;
+
+    for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
+        pos += PyOS_snprintf(buf+pos, sizeof(buf)-pos,
+                             " %zd",
+                             gc_list_size(GEN_HEAD(gcstate, i)));
+    }
+    PySys_FormatStderr(
+        "gc: objects in each generation:%s\n"
+        "gc: objects in permanent generation: %zd\n",
+        buf, gc_list_size(&gcstate->permanent_generation.head));
+}
+
 Py_ssize_t
 _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
@@ -1798,6 +1824,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     struct gc_collection_stats stats = { 0 };
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "start", generation, &stats);
+    }
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        show_stats_each_generations(gcstate);
     }
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);

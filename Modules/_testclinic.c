@@ -982,23 +982,6 @@ posonly_vararg_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
-vararg_and_posonly
-
-    a: object
-    *args: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
-{
-    return pack_arguments_newref(2, a, args);
-}
-
-
-/*[clinic input]
 vararg
 
     a: object
@@ -1068,6 +1051,25 @@ vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
 }
 
 
+/*[clinic input]
+vararg_kwonly_req_opt
+
+    *args: object
+    a: object
+    b: object = None
+    c: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_kwonly_req_opt_impl(PyObject *module, PyObject *args, PyObject *a,
+                           PyObject *b, PyObject *c)
+/*[clinic end generated code: output=54694a99c3da370a input=b0d8bf09e540d400]*/
+{
+    return pack_arguments_newref(4, args, a, b, c);
+}
+
+
 
 /*[clinic input]
 gh_32092_oob
@@ -1115,7 +1117,6 @@ gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
 gh_99233_refcount
 
     *args: object
-    /
 
 Proof-of-concept of GH-99233 refcount error bug.
 
@@ -1123,7 +1124,7 @@ Proof-of-concept of GH-99233 refcount error bug.
 
 static PyObject *
 gh_99233_refcount_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=585855abfbca9a7f input=85f5fb47ac91a626]*/
+/*[clinic end generated code: output=585855abfbca9a7f input=eecfdc2092d90dc3]*/
 {
     Py_RETURN_NONE;
 }
@@ -1923,11 +1924,11 @@ static PyMethodDef tester_methods[] = {
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
     POSONLY_VARARG_METHODDEF
-    VARARG_AND_POSONLY_METHODDEF
     VARARG_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
     VARARG_WITH_DEFAULT2_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
+    VARARG_KWONLY_REQ_OPT_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF

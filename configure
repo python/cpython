@@ -28430,9 +28430,6 @@ fi
 
 # builtin hash modules
 default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
-
-printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hashes" >&5
 printf %s "checking for --with-builtin-hashlib-hashes... " >&6; }
 
@@ -28457,6 +28454,7 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_builtin_hashlib_hashes" >&5
 printf "%s\n" "$with_builtin_hashlib_hashes" >&6; }
+
 printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES \"$with_builtin_hashlib_hashes\"" >>confdefs.h
 
 

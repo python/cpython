@@ -452,7 +452,7 @@ set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
             assert(PyTuple_GET_SIZE(bases) == 1);
             assert(PyTuple_GET_ITEM(bases, 0) == (PyObject *)self->tp_base);
             assert(self->tp_base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-            assert(_Py_IsImmortal(self->tp_base));
+            assert(_Py_IsImmortalLoose(self->tp_base));
         }
         _Py_SetImmortal(bases);
     }
@@ -469,7 +469,7 @@ clear_tp_bases(PyTypeObject *self, int final)
                     Py_CLEAR(self->tp_bases);
                 }
                 else {
-                    assert(_Py_IsImmortal(self->tp_bases));
+                    assert(_Py_IsImmortalLoose(self->tp_bases));
                     _Py_ClearImmortal(self->tp_bases);
                 }
             }
@@ -534,7 +534,7 @@ clear_tp_mro(PyTypeObject *self, int final)
                     Py_CLEAR(self->tp_mro);
                 }
                 else {
-                    assert(_Py_IsImmortal(self->tp_mro));
+                    assert(_Py_IsImmortalLoose(self->tp_mro));
                     _Py_ClearImmortal(self->tp_mro);
                 }
             }
@@ -5657,7 +5657,7 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
                  int isbuiltin, int final)
 {
     assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-    assert(_Py_IsImmortal((PyObject *)type));
+    assert(_Py_IsImmortalLoose((PyObject *)type));
 
     type_dealloc_common(type);
 

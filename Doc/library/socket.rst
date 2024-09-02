@@ -736,7 +736,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
    :func:`socket.fromfd`, *fileno* will return the same socket and not a
    duplicate. This may help close a detached socket using
-   :meth:`socket.close()`.
+   :meth:`socket.close`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
@@ -1415,7 +1415,7 @@ to sockets.
 .. method:: socket.close()
 
    Mark the socket closed.  The underlying system resource (e.g. a file
-   descriptor) is also closed when all file objects from :meth:`makefile()`
+   descriptor) is also closed when all file objects from :meth:`makefile`
    are closed.  Once that happens, all future operations on the socket
    object will fail. The remote end will receive no more data (after
    queued data is flushed).
@@ -1430,10 +1430,10 @@ to sockets.
 
    .. note::
 
-      :meth:`close()` releases the resource associated with a connection but
+      :meth:`close` releases the resource associated with a connection but
       does not necessarily close the connection immediately.  If you want
-      to close the connection in a timely fashion, call :meth:`shutdown()`
-      before :meth:`close()`.
+      to close the connection in a timely fashion, call :meth:`shutdown`
+      before :meth:`close`.
 
 
 .. method:: socket.connect(address)
@@ -2042,7 +2042,7 @@ can be changed by calling :func:`setdefaulttimeout`.
    in non-blocking mode.  Also, the blocking and timeout modes are shared between
    file descriptors and socket objects that refer to the same network endpoint.
    This implementation detail can have visible consequences if e.g. you decide
-   to use the :meth:`~socket.fileno()` of a socket.
+   to use the :meth:`~socket.fileno` of a socket.
 
 Timeouts and the ``connect`` method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

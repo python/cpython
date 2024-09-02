@@ -124,7 +124,7 @@ Module contents
    - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
      is generated according to how *eq* and *frozen* are set.
 
-     :meth:`!__hash__` is used by built-in :meth:`hash()`, and when objects are
+     :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
      :meth:`!__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
@@ -215,7 +215,8 @@ Module contents
 
    - *weakref_slot*: If true (the default is ``False``), add a slot
      named "__weakref__", which is required to make an instance
-     weakref-able.  It is an error to specify ``weakref_slot=True``
+     :func:`weakref-able <weakref.ref>`.
+     It is an error to specify ``weakref_slot=True``
      without also specifying ``slots=True``.
 
     .. versionadded:: 3.11
