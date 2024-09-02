@@ -1495,7 +1495,7 @@ The dictionary returned by :meth:`.SSLSocket.getpeercert` contains additional
 stat
 ----
 
-The :mod:`stat` module is now backed by a C implementation in :mod:`_stat`. A C
+The :mod:`stat` module is now backed by a C implementation in :mod:`!_stat`. A C
 implementation is required as most of the values aren't standardized and
 are platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
@@ -1967,7 +1967,7 @@ Other Improvements
 
 * The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
   also checks for memory allocation leaks, using
-  :func:`sys.getallocatedblocks()`.  (Contributed by Antoine Pitrou in
+  :func:`sys.getallocatedblocks`.  (Contributed by Antoine Pitrou in
   :issue:`13390`.)
 
 * ``python -m`` now works with namespace packages.

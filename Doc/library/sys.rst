@@ -735,11 +735,11 @@ always available.
    regardless of their size.  This function is mainly useful for tracking
    and debugging memory leaks.  Because of the interpreter's internal
    caches, the result can vary from call to call; you may have to call
-   :func:`_clear_internal_caches()` and :func:`gc.collect()` to get more
+   :func:`_clear_internal_caches` and :func:`gc.collect` to get more
    predictable results.
 
    If a Python build or implementation cannot reasonably compute this
-   information, :func:`getallocatedblocks()` is allowed to return 0 instead.
+   information, :func:`getallocatedblocks` is allowed to return 0 instead.
 
    .. versionadded:: 3.4
 
@@ -1712,7 +1712,7 @@ always available.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,
-   pass set *depth* to zero.
+   set *depth* to zero.
 
    This setting is thread-specific.
 
