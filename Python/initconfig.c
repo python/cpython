@@ -3631,7 +3631,8 @@ PyInitConfig_GetStr(PyInitConfig *config, const char *name, char **value)
     }
 
     if (spec->type != PyConfig_MEMBER_WSTR
-            && spec->type != PyConfig_MEMBER_WSTR_OPT) {
+        && spec->type != PyConfig_MEMBER_WSTR_OPT)
+    {
         initconfig_set_error(config, "config option type is not string");
         return -1;
     }
@@ -3676,7 +3677,7 @@ PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, 
     for (Py_ssize_t i=0; i < list->length; i++) {
         (*items)[i] = wstr_to_utf8(config, list->items[i]);
         if ((*items)[i] == NULL) {
-            free(*items);
+            PyInitConfig_FreeStrList(i, *items);
             return -1;
         }
     }

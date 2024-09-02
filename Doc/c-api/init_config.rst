@@ -1682,6 +1682,9 @@ null-terminated UTF-8 encoded string.
    * Set *\*value*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
+   *\*value* can be set to ``NULL`` if the option is an optional string and the
+   option is unset.
+
    On success, the string must be released with ``free(value)``.
 
 
