@@ -3121,13 +3121,13 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    19
+    18
 };
 
 static void
 sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 {
-    assert(pos >= 0 && pos < flags_desc.n_in_sequence);
+    assert(pos >= 0 && pos < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1));
 
     PyObject *old_value = PyStructSequence_GET_ITEM(flags, pos);
     PyStructSequence_SET_ITEM(flags, pos, Py_NewRef(value));
