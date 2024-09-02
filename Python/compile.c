@@ -95,6 +95,7 @@ static PySTEntryObject *compiler_symtable_entry(struct compiler *c);
 #define SCOPE_TYPE(C) compiler_scope_type(C)
 #define QUALNAME(C) compiler_qualname(C)
 #define METADATA(C) compiler_unit_metadata(C)
+#define ARENA(C) compiler_arena(C)
 
 typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
@@ -131,6 +132,7 @@ static void compiler_exit_scope(struct compiler *c);
 static Py_ssize_t compiler_add_const(struct compiler *c, PyObject *o);
 static int compiler_maybe_add_static_attribute_to_class(struct compiler *c, expr_ty e);
 static _PyCompile_CodeUnitMetadata *compiler_unit_metadata(struct compiler *c);
+static PyArena *compiler_arena(struct compiler *c);
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
@@ -248,60 +250,6 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
     *array = arr;
     return SUCCESS;
 }
-
-
-/* The following items change on entry and exit of code blocks.
-   They must be saved and restored when returning to a block.
-*/
-struct compiler_unit {
-    PySTEntryObject *u_ste;
-
-    int u_scope_type;
-
-    PyObject *u_private;            /* for private name mangling */
-    PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
-    PyObject *u_deferred_annotations; /* AnnAssign nodes deferred to the end of compilation */
-
-    instr_sequence *u_instr_sequence; /* codegen output */
-
-    int u_nfblocks;
-    int u_in_inlined_comp;
-
-    struct fblockinfo u_fblock[CO_MAXBLOCKS];
-
-    _PyCompile_CodeUnitMetadata u_metadata;
-};
-
-/* This struct captures the global state of a compilation.
-
-The u pointer points to the current compilation unit, while units
-for enclosing blocks are stored in c_stack.     The u and c_stack are
-managed by compiler_enter_scope() and compiler_exit_scope().
-
-Note that we don't track recursion levels during compilation - the
-task of detecting and rejecting excessive levels of nesting is
-handled by the symbol analysis pass.
-
-*/
-
-struct compiler {
-    PyObject *c_filename;
-    struct symtable *c_st;
-    _PyFutureFeatures c_future;  /* module's __future__ */
-    PyCompilerFlags c_flags;
-
-    int c_optimize;              /* optimization level */
-    int c_interactive;           /* true if in interactive mode */
-    PyObject *c_const_cache;     /* Python dict holding all constants,
-                                    including names tuple */
-    struct compiler_unit *u;     /* compiler state for current block */
-    PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
-    PyArena *c_arena;            /* pointer to memory allocation arena */
-
-    bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
-                                  * (including instructions for nested code objects)
-                                  */
-};
 
 
 typedef struct {
@@ -918,6 +866,21 @@ codegen_unwind_fblock_stack(struct compiler *c, location *ploc,
 }
 
 static int
+codegen_enter_scope(struct compiler *c, identifier name, int scope_type,
+                    void *key, int lineno, PyObject *private,
+                    _PyCompile_CodeUnitMetadata *umd)
+{
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, name, scope_type, key, lineno, private, umd));
+    location loc = LOCATION(lineno, lineno, 0, 0);
+    if (scope_type == COMPILER_SCOPE_MODULE) {
+        loc.lineno = 0;
+    }
+    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+    return SUCCESS;
+}
+
+static int
 codegen_setup_annotations_scope(struct compiler *c, location loc,
                                 void *key, PyObject *name)
 {
@@ -925,8 +888,8 @@ codegen_setup_annotations_scope(struct compiler *c, location loc,
         .u_posonlyargcount = 1,
     };
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
-                             key, loc.lineno, NULL, &umd));
+        codegen_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
+                            key, loc.lineno, NULL, &umd));
 
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
@@ -1006,6 +969,14 @@ codegen_process_deferred_annotations(struct compiler *c, location loc)
     return SUCCESS;
 }
 
+/* Compile an expression */
+static int
+codegen_expression(struct compiler *c, expr_ty e)
+{
+    VISIT(c, expr, e);
+    return SUCCESS;
+}
+
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
 
@@ -1073,8 +1044,8 @@ codegen_enter_anonymous_scope(struct compiler* c, mod_ty mod)
 {
     _Py_DECLARE_STR(anon_module, "<module>");
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
-                             mod, 1, NULL, NULL));
+        codegen_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
+                            mod, 1, NULL, NULL));
     return SUCCESS;
 }
 
@@ -1504,7 +1475,7 @@ codegen_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t fu
         .u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs),
     };
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
+        codegen_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
@@ -1617,8 +1588,8 @@ codegen_function(struct compiler *c, stmt_ty s, int is_async)
         _PyCompile_CodeUnitMetadata umd = {
             .u_argcount = num_typeparam_args,
         };
-        int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                       (void *)type_params, firstlineno, NULL, &umd);
+        int ret = codegen_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+                                      (void *)type_params, firstlineno, NULL, &umd);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
@@ -1696,8 +1667,8 @@ codegen_class_body(struct compiler *c, stmt_ty s, int firstlineno)
 
     /* 1. compile the class body into a code object */
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, s->v.ClassDef.name, COMPILER_SCOPE_CLASS,
-                             (void *)s, firstlineno, s->v.ClassDef.name, NULL));
+        codegen_enter_scope(c, s->v.ClassDef.name, COMPILER_SCOPE_CLASS,
+                            (void *)s, firstlineno, s->v.ClassDef.name, NULL));
 
     location loc = LOCATION(firstlineno, firstlineno, 0, 0);
     /* load (global) __name__ ... */
@@ -1805,8 +1776,8 @@ codegen_class(struct compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                       (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
+        int ret = codegen_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+                                      (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
@@ -1833,7 +1804,7 @@ codegen_class(struct compiler *c, stmt_ty s)
 
         Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
         asdl_expr_seq *bases = _Py_asdl_expr_seq_new(
-            original_len + 1, c->c_arena);
+            original_len + 1, ARENA(c));
         if (bases == NULL) {
             compiler_exit_scope(c);
             return ERROR;
@@ -1843,7 +1814,7 @@ codegen_class(struct compiler *c, stmt_ty s)
         }
         expr_ty name_node = _PyAST_Name(
             &_Py_STR(generic_base), Load,
-            loc.lineno, loc.col_offset, loc.end_lineno, loc.end_col_offset, c->c_arena
+            loc.lineno, loc.col_offset, loc.end_lineno, loc.end_col_offset, ARENA(c)
         );
         if (name_node == NULL) {
             compiler_exit_scope(c);
@@ -1920,8 +1891,8 @@ codegen_typealias(struct compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        int ret = compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                       (void *)type_params, loc.lineno, NULL, NULL);
+        int ret = codegen_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+                                      (void *)type_params, loc.lineno, NULL, NULL);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
         ADDOP_LOAD_CONST_IN_SCOPE(c, loc, name);
@@ -2183,8 +2154,8 @@ codegen_lambda(struct compiler *c, expr_ty e)
     };
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
-                             (void *)e, e->lineno, NULL, &umd));
+        codegen_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
+                            (void *)e, e->lineno, NULL, &umd));
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
@@ -4765,7 +4736,6 @@ static int
 pop_inlined_comprehension_state(struct compiler *c, location loc,
                                 inlined_comprehension_state *state)
 {
-    c->u->u_in_inlined_comp--;
     RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
     RETURN_IF_ERROR(compiler_revert_inlined_comprehension_scopes(c, loc, state));
     return SUCCESS;
@@ -4819,8 +4789,8 @@ codegen_comprehension(struct compiler *c, expr_ty e, int type,
         _PyCompile_CodeUnitMetadata umd = {
             .u_argcount = 1,
         };
-        if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                                 (void *)e, e->lineno, NULL, &umd) < 0) {
+        if (codegen_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
+                                (void *)e, e->lineno, NULL, &umd) < 0) {
             goto error;
         }
     }
@@ -6442,7 +6412,83 @@ codegen_add_return_at_end(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
+#undef ADDOP_I
+#undef ADDOP_I_IN_SCOPE
+#undef ADDOP
+#undef ADDOP_IN_SCOPE
+#undef ADDOP_LOAD_CONST
+#undef ADDOP_LOAD_CONST_IN_SCOPE
+#undef ADDOP_LOAD_CONST_NEW
+#undef ADDOP_N
+#undef ADDOP_N_IN_SCOPE
+#undef ADDOP_NAME
+#undef ADDOP_JUMP
+#undef ADDOP_COMPARE
+#undef ADDOP_BINARY
+#undef ADDOP_INPLACE
+#undef ADD_YIELD_FROM
+#undef POP_EXCEPT_AND_RERAISE
+#undef ADDOP_YIELD
+#undef VISIT
+#undef VISIT_IN_SCOPE
+#undef VISIT_SEQ
+#undef VISIT_SEQ_IN_SCOPE
+
 /*** end of CODEGEN, start of compiler implementation ***/
+
+/* The following items change on entry and exit of code blocks.
+   They must be saved and restored when returning to a block.
+*/
+struct compiler_unit {
+    PySTEntryObject *u_ste;
+
+    int u_scope_type;
+
+    PyObject *u_private;            /* for private name mangling */
+    PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
+    PyObject *u_deferred_annotations; /* AnnAssign nodes deferred to the end of compilation */
+
+    instr_sequence *u_instr_sequence; /* codegen output */
+
+    int u_nfblocks;
+    int u_in_inlined_comp;
+
+    struct fblockinfo u_fblock[CO_MAXBLOCKS];
+
+    _PyCompile_CodeUnitMetadata u_metadata;
+};
+
+/* This struct captures the global state of a compilation.
+
+The u pointer points to the current compilation unit, while units
+for enclosing blocks are stored in c_stack.     The u and c_stack are
+managed by compiler_enter_scope() and compiler_exit_scope().
+
+Note that we don't track recursion levels during compilation - the
+task of detecting and rejecting excessive levels of nesting is
+handled by the symbol analysis pass.
+
+*/
+
+struct compiler {
+    PyObject *c_filename;
+    struct symtable *c_st;
+    _PyFutureFeatures c_future;  /* module's __future__ */
+    PyCompilerFlags c_flags;
+
+    int c_optimize;              /* optimization level */
+    int c_interactive;           /* true if in interactive mode */
+    PyObject *c_const_cache;     /* Python dict holding all constants,
+                                    including names tuple */
+    struct compiler_unit *u;     /* compiler state for current block */
+    PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
+    PyArena *c_arena;            /* pointer to memory allocation arena */
+
+    bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
+                                  * (including instructions for nested code objects)
+                                  */
+};
+
 
 static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
@@ -6801,10 +6847,7 @@ compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
                      void *key, int lineno, PyObject *private,
                     _PyCompile_CodeUnitMetadata *umd)
 {
-    location loc = LOCATION(lineno, lineno, 0, 0);
-
     struct compiler_unit *u;
-
     u = (struct compiler_unit *)PyMem_Calloc(1, sizeof(struct compiler_unit));
     if (!u) {
         PyErr_NoMemory();
@@ -6918,15 +6961,9 @@ compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
     u->u_private = Py_XNewRef(private);
 
     c->u = u;
-
-    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        loc.lineno = 0;
-    }
-    else {
+    if (scope_type != COMPILER_SCOPE_MODULE) {
         RETURN_IF_ERROR(compiler_set_qualname(c));
     }
-    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
-
     return SUCCESS;
 }
 
@@ -7032,7 +7069,7 @@ compiler_codegen(struct compiler *c, mod_ty mod)
         break;
     }
     case Expression_kind: {
-        VISIT(c, expr, mod->v.Expression.body);
+        RETURN_IF_ERROR(codegen_expression(c, mod->v.Expression.body));
         break;
     }
     default: {
@@ -7283,6 +7320,7 @@ static int
 compiler_revert_inlined_comprehension_scopes(struct compiler *c, location loc,
                                              inlined_comprehension_state *state)
 {
+    c->u->u_in_inlined_comp--;
     if (state->temp_symbols) {
         PyObject *k, *v;
         Py_ssize_t pos = 0;
@@ -7476,6 +7514,12 @@ static _PyCompile_CodeUnitMetadata *
 compiler_unit_metadata(struct compiler *c)
 {
     return &c->u->u_metadata;
+}
+
+static PyArena *
+compiler_arena(struct compiler *c)
+{
+    return c->c_arena;
 }
 
 #ifndef NDEBUG
