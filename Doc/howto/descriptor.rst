@@ -990,7 +990,7 @@ The documentation shows a typical use to define a managed attribute ``x``:
     AttributeError: 'C' object has no attribute '_C__x'
 
 To see how :func:`property` is implemented in terms of the descriptor protocol,
-here is a mostly pure Python equivalent:
+here is a pure Python equivalent that implements most of the core functionality:
 
 .. testcode::
 
@@ -1013,26 +1013,17 @@ here is a mostly pure Python equivalent:
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(
-                    f'property {self.__name__!r} of {type(obj).__name__!r} '
-                    'object has no getter'
-                 )
+                raise AttributeError
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(
-                    f'property {self.__name__!r} of {type(obj).__name__!r} '
-                    'object has no setter'
-                 )
+                raise AttributeError
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(
-                    f'property {self.__name__!r} of {type(obj).__name__!r} '
-                    'object has no deleter'
-                 )
+                raise AttributeError
             self.fdel(obj)
 
         def getter(self, fget):
@@ -1105,23 +1096,23 @@ here is a mostly pure Python equivalent:
     >>> try:
     ...     cc.no_getter
     ... except AttributeError as e:
-    ...     e.args[0]
+    ...     type(e).__name__
     ...
-    "property 'no_getter' of 'CC' object has no getter"
+    'AttributeError'
 
     >>> try:
     ...     cc.no_setter = 33
     ... except AttributeError as e:
-    ...     e.args[0]
+    ...     type(e).__name__
     ...
-    "property 'no_setter' of 'CC' object has no setter"
+    'AttributeError'
 
     >>> try:
     ...     del cc.no_deleter
     ... except AttributeError as e:
-    ...     e.args[0]
+    ...     type(e).__name__
     ...
-    "property 'no_deleter' of 'CC' object has no deleter"
+    'AttributeError'
 
     >>> CC.no_doc.__doc__ is None
     True
