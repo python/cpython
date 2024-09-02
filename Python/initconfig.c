@@ -3457,6 +3457,50 @@ PyInitConfig_Free(PyInitConfig *config)
 }
 
 
+int
+PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
+{
+    if (_PyStatus_IS_EXIT(config->status)) {
+        char buffer[22];  // len("exit code -2147483648\0")
+        PyOS_snprintf(buffer, sizeof(buffer),
+                      "exit code %i",
+                      config->status.exitcode);
+
+        if (config->err_msg != NULL) {
+            free(config->err_msg);
+        }
+        config->err_msg = strdup(buffer);
+        if (config->err_msg != NULL) {
+            *perr_msg = config->err_msg;
+            return 1;
+        }
+        config->status = _PyStatus_NO_MEMORY();
+    }
+
+    if (_PyStatus_IS_ERROR(config->status) && config->status.err_msg != NULL) {
+        *perr_msg = config->status.err_msg;
+        return 1;
+    }
+    else {
+        *perr_msg = NULL;
+        return 0;
+    }
+}
+
+
+int
+PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
+{
+    if (_PyStatus_IS_EXIT(config->status)) {
+        *exitcode = config->status.exitcode;
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+
 static void
 initconfig_set_error(PyInitConfig *config, const char *err_msg)
 {
@@ -3805,50 +3849,6 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
     }
     PyWideStringList *list = raw_member;
     return _PyWideStringList_FromUTF8(config, list, length, items);
-}
-
-
-int
-PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
-{
-    if (_PyStatus_IS_EXIT(config->status)) {
-        char buffer[22];  // len("exit code -2147483648\0")
-        PyOS_snprintf(buffer, sizeof(buffer),
-                      "exit code %i",
-                      config->status.exitcode);
-
-        if (config->err_msg != NULL) {
-            free(config->err_msg);
-        }
-        config->err_msg = strdup(buffer);
-        if (config->err_msg != NULL) {
-            *perr_msg = config->err_msg;
-            return 1;
-        }
-        config->status = _PyStatus_NO_MEMORY();
-    }
-
-    if (_PyStatus_IS_ERROR(config->status) && config->status.err_msg != NULL) {
-        *perr_msg = config->status.err_msg;
-        return 1;
-    }
-    else {
-        *perr_msg = NULL;
-        return 0;
-    }
-}
-
-
-int
-PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
-{
-    if (_PyStatus_IS_EXIT(config->status)) {
-        *exitcode = config->status.exitcode;
-        return 1;
-    }
-    else {
-        return 0;
-    }
 }
 
 
