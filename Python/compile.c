@@ -590,9 +590,17 @@ compiler_unit_free(struct compiler_unit *u)
     PyMem_Free(u);
 }
 
-static struct compiler_unit *
-get_class_compiler_unit(struct compiler *c)
+static int
+compiler_maybe_add_static_attribute_to_class(struct compiler *c, expr_ty e)
 {
+    assert(e->kind == Attribute_kind);
+    expr_ty attr_value = e->v.Attribute.value;
+    if (attr_value->kind != Name_kind ||
+        e->v.Attribute.ctx != Store ||
+        !_PyUnicode_EqualToASCIIString(attr_value->v.Name.id, "self"))
+    {
+        return SUCCESS;
+    }
     Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
     for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
         PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
@@ -600,10 +608,12 @@ get_class_compiler_unit(struct compiler *c)
                                                               capsule, CAPSULE_NAME);
         assert(u);
         if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
-            return u;
+            assert(u->u_static_attributes);
+            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, e->v.Attribute.attr));
+            break;
         }
     }
-    return NULL;
+    return SUCCESS;
 }
 
 static int
@@ -3152,7 +3162,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, end);
 
     VISIT(c, expr, s->v.AsyncFor.iter);
-    ADDOP(c, loc, GET_AITER);
+    ADDOP(c, LOC(s->v.AsyncFor.iter), GET_AITER);
 
     USE_LABEL(c, start);
     RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
@@ -5376,14 +5386,15 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
             }
             if (IS_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
-                ADDOP(c, loc, GET_ITER);
+                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
+
     if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
-        ADDOP_JUMP(c, loc, FOR_ITER, anchor);
+        ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
 
@@ -5475,7 +5486,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
-            ADDOP(c, loc, GET_AITER);
+            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
 
@@ -5765,15 +5776,14 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
 }
 
 static inline int
-compiler_comprehension_iter(struct compiler *c, location loc,
-                            comprehension_ty comp)
+compiler_comprehension_iter(struct compiler *c, comprehension_ty comp)
 {
     VISIT(c, expr, comp->iter);
     if (comp->is_async) {
-        ADDOP(c, loc, GET_AITER);
+        ADDOP(c, LOC(comp->iter), GET_AITER);
     }
     else {
-        ADDOP(c, loc, GET_ITER);
+        ADDOP(c, LOC(comp->iter), GET_ITER);
     }
     return SUCCESS;
 }
@@ -5799,7 +5809,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (compiler_comprehension_iter(c, loc, outermost)) {
+        if (compiler_comprehension_iter(c, outermost)) {
             goto error;
         }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
@@ -5885,7 +5895,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    if (compiler_comprehension_iter(c, loc, outermost)) {
+    if (compiler_comprehension_iter(c, outermost)) {
         goto error;
     }
 
@@ -6285,17 +6295,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP(c, loc, NOP);
             return SUCCESS;
         }
-        if (e->v.Attribute.value->kind == Name_kind &&
-            _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
-        {
-            struct compiler_unit *class_u = get_class_compiler_unit(c);
-            if (class_u != NULL) {
-                assert(class_u->u_scope_type == COMPILER_SCOPE_CLASS);
-                assert(class_u->u_static_attributes);
-                RETURN_IF_ERROR(
-                    PySet_Add(class_u->u_static_attributes, e->v.Attribute.attr));
-            }
-        }
+        RETURN_IF_ERROR(compiler_maybe_add_static_attribute_to_class(c, e));
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
@@ -7480,7 +7480,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, LOC(m->pattern), POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body

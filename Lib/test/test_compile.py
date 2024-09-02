@@ -1172,7 +1172,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 2, 0]
+        genexp_lines = [0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[1]
         code_lines = self.get_code_lines(genexp_code)
@@ -1627,7 +1627,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
-            line=1, end_line=6, column=0, end_column=32, occurrence=1)
+            line=4, end_line=4, column=7, end_column=14, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
         snippet = textwrap.dedent("""\
@@ -2089,12 +2089,15 @@ class TestSourcePositions(unittest.TestCase):
             self.assertEqual(end_col, 20)
 
 
-class TestExpectedAttributes(unittest.TestCase):
+class TestStaticAttributes(unittest.TestCase):
 
     def test_basic(self):
         class C:
             def f(self):
                 self.a = self.b = 42
+                # read fields are not included
+                self.f()
+                self.arr[3]
 
         self.assertIsInstance(C.__static_attributes__, tuple)
         self.assertEqual(sorted(C.__static_attributes__), ['a', 'b'])
