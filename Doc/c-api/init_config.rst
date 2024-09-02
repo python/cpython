@@ -1605,6 +1605,75 @@ customized Python always running in isolated mode using
 :c:func:`Py_RunMain`.
 
 
+Runtime Python configuration API
+================================
+
+The configuration option *name* parameter must be a non-NULL null-terminated
+UTF-8 encoded string.
+
+Some options are read from the :mod:`sys` attributes. For example, the option
+``"argv"`` is read from :data:`sys.argv`.
+
+
+.. c:function:: PyObject* PyConfig_Get(const char *name)
+
+   Get the current runtime value of a configuration option as a Python object.
+
+   * Return a new reference on success.
+   * Set an exception and return ``NULL`` on error.
+
+   The object type depends on the configuration option. It can be:
+
+   * ``bool``
+   * ``int``
+   * ``str``
+   * ``list[str]``
+   * ``dict[str, str]``
+
+   The caller must hold the GIL. The function cannot be called before
+   Python initialization nor after Python finalization.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyConfig_GetInt(const char *name, int *value)
+
+   Similar to :c:func:`PyConfig_Get`, but get the value as a C int.
+
+   * Return ``0`` on success.
+   * Set an exception and return ``-1`` on error.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: PyObject* PyConfig_Names(void)
+
+   Get all configuration option names as a ``frozenset``.
+
+   * Return a new reference on success.
+   * Set an exception and return ``NULL`` on error.
+
+   The caller must hold the GIL. The function cannot be called before
+   Python initialization nor after Python finalization.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyConfig_Set(const char *name, PyObject *value)
+
+   Set the current runtime value of a configuration option.
+
+   * Raise a :exc:`ValueError` if there is no option *name*.
+   * Raise a :exc:`ValueError` if *value* is an invalid value.
+   * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
+   * Raise a :exc:`TypeError` if *value* has not the proper type.
+
+   The caller must hold the GIL. The function cannot be called before
+   Python initialization nor after Python finalization.
+
+   .. versionadded:: 3.14
+
+
 Py_GetArgcArgv()
 ================
 
