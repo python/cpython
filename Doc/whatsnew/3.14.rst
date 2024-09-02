@@ -492,6 +492,15 @@ New Features
 * Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
   (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
 
+* Add functions to get and set the current runtime Python configuration:
+
+  * :c:func:`PyConfig_Get`
+  * :c:func:`PyConfig_GetInt`
+  * :c:func:`PyConfig_Set`
+  * :c:func:`PyConfig_Names`
+
+  (Contributed by Victor Stinner in :gh:`107954`.)
+
 
 Porting to Python 3.14
 ----------------------

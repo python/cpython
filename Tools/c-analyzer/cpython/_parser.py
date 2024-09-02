@@ -329,6 +329,7 @@ MAX_SIZES = {
     _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/initconfig.c'): (50_000, 500),
 
     # Generated files:
     _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),

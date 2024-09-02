@@ -90,6 +90,7 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
 # Internal constant list
 Python/initconfig.c	-	PYCONFIG_SPEC	-
+Python/initconfig.c	-	PYPRECONFIG_SPEC	-
 
 
 ##-----------------------

@@ -260,6 +260,14 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     Py_ssize_t length, wchar_t **items);
 
 
+/* --- PyConfig_Get() ----------------------------------------- */
+
+PyAPI_FUNC(PyObject*) PyConfig_Get(const char *name);
+PyAPI_FUNC(int) PyConfig_GetInt(const char *name, int *value);
+PyAPI_FUNC(PyObject*) PyConfig_Names(void);
+PyAPI_FUNC(int) PyConfig_Set(const char *name, PyObject *value);
+
+
 /* --- Helper functions --------------------------------------- */
 
 /* Get the original command line arguments, before Python modified them.
