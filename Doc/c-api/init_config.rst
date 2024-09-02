@@ -1685,7 +1685,8 @@ null-terminated UTF-8 encoded string.
    *\*value* can be set to ``NULL`` if the option is an optional string and the
    option is unset.
 
-   On success, the string must be released with ``free(value)``.
+   On success, the string must be released with ``free(value)`` if it's not
+   ``NULL``.
 
 
 .. c:function:: int PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, char ***items)
