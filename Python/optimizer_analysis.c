@@ -486,6 +486,10 @@ error:
 
 }
 
+#define WRITE_OP(INST, OP, ARG, OPERAND)    \
+    (INST)->opcode = OP;            \
+    (INST)->oparg = ARG;            \
+    (INST)->operand = OPERAND;
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
@@ -498,7 +502,10 @@ partial_evaluate_uops(
 )
 {
 
+    _PyUOpInstruction trace_dest[UOP_MAX_TRACE_LENGTH];
     _Py_UOpsContext context;
+    context.trace_dest = trace_dest;
+    context.n_trace_dest = 0;
     _Py_UOpsContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
     int curr_space = 0;
@@ -521,9 +528,11 @@ partial_evaluate_uops(
     for (int i = 0; !ctx->done; i++) {
         assert(i < trace_len);
         this_instr = &trace[i];
+        trace_dest[ctx->n_trace_dest] = *this_instr;
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
+        uint64_t operand = this_instr->operand;
         _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
@@ -546,6 +555,8 @@ partial_evaluate_uops(
         DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
         ctx->frame->stack_pointer = stack_pointer;
         assert(STACK_LEVEL() >= 0);
+        WRITE_OP(&trace_dest[ctx->n_trace_dest], opcode, oparg, operand);
+        ctx->n_trace_dest++;
     }
     if (ctx->out_of_space) {
         DPRINTF(3, "\n");
@@ -563,10 +574,19 @@ partial_evaluate_uops(
         return 0;
     }
 
-    /* Either reached the end or cannot optimize further, but there
-     * would be no benefit in retrying later */
-    _Py_uop_abstractcontext_fini(ctx);
-    return trace_len;
+    if (ctx->out_of_space || !is_terminator(this_instr)) {
+        _Py_uop_abstractcontext_fini(ctx);
+        return trace_len;
+    }
+    else {
+        // We MUST not have bailed early here.
+        // That's the only time the PE's residual is valid.
+        assert(ctx->n_trace_dest < UOP_MAX_TRACE_LENGTH);
+        assert(is_terminator(this_instr));
+        memcpy(trace, trace_dest, ctx->n_trace_dest * sizeof(_PyUOpInstruction));
+        _Py_uop_abstractcontext_fini(ctx);
+        return trace_len;
+    }
 
 error:
     DPRINTF(3, "\n");

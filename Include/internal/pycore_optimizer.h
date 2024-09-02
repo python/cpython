@@ -226,6 +226,9 @@ struct _Py_UOpsContext {
     _Py_UopsSymbol **n_consumed;
     _Py_UopsSymbol **limit;
     _Py_UopsSymbol *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+
+    _PyUOpInstruction *trace_dest;
+    int n_trace_dest;
 };
 
 typedef struct _Py_UOpsContext _Py_UOpsContext;
