@@ -765,7 +765,7 @@ which are used to control the execution of a generator function.
 .. coroutinemethod:: agen.asend(value)
 
    Returns an awaitable which when run resumes the execution of the
-   asynchronous generator. As with the :meth:`~generator.send()` method for a
+   asynchronous generator. As with the :meth:`~generator.send` method for a
    generator, this "sends" a value into the asynchronous generator function,
    and the *value* argument becomes the result of the current yield expression.
    The awaitable returned by the :meth:`asend` method will return the next

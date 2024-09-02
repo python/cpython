@@ -1034,7 +1034,7 @@ Other constructors, all class methods:
    .. versionadded:: 3.7
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
-      :meth:`date.isoformat()` or :meth:`datetime.isoformat()`.
+      :meth:`date.isoformat` or :meth:`datetime.isoformat`.
 
 
 .. classmethod:: datetime.fromisocalendar(year, week, day)
@@ -1817,7 +1817,7 @@ Other constructor:
    .. versionadded:: 3.7
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
-      :meth:`time.isoformat()`.
+      :meth:`time.isoformat`.
 
 
 Instance methods:

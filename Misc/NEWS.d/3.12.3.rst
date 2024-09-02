@@ -802,7 +802,7 @@ Add missing call to localization function in :mod:`argparse`.
 .. nonce: Me7fJe
 .. section: Library
 
-Fix :meth:`multiprocessing.connection.Listener.accept()` to accept empty
+Fix :meth:`multiprocessing.connection.Listener.accept` to accept empty
 bytes as authkey. Not accepting empty bytes as key causes it to hang
 indefinitely.
 
