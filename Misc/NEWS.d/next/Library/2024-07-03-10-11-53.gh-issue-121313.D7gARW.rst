@@ -1,1 +1,1 @@
-Limit reading size in multiprocessing ``connection._recv`` to 64KiB, in order to avoid memory overallocation and unnecessary memory management system calls.
+Limit the reading size in the :class:`multiprocessing.Connection` class to 64KiB to prevent memory overallocation and unnecessary memory management system calls.
