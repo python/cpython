@@ -71,6 +71,18 @@ class previous_history(commands.Command):
         r.select_item(r.historyi - 1)
 
 
+class history_search_backward(commands.Command):
+    def do(self) -> None:
+        r = self.reader
+        r.search_next(False)
+
+
+class history_search_forward(commands.Command):
+    def do(self) -> None:
+        r = self.reader
+        r.search_next(True)
+
+
 class restore_history(commands.Command):
     def do(self) -> None:
         r = self.reader
@@ -234,6 +246,8 @@ class HistoricalReader(Reader):
             isearch_forwards,
             isearch_backwards,
             operate_and_get_next,
+            history_search_backward,
+            history_search_forward,
         ]:
             self.commands[c.__name__] = c
             self.commands[c.__name__.replace("_", "-")] = c
@@ -251,8 +265,8 @@ class HistoricalReader(Reader):
             (r"\C-s", "forward-history-isearch"),
             (r"\M-r", "restore-history"),
             (r"\M-.", "yank-arg"),
-            (r"\<page down>", "last-history"),
-            (r"\<page up>", "first-history"),
+            (r"\<page down>", "history-search-forward"),
+            (r"\<page up>", "history-search-backward"),
         )
 
     def select_item(self, i: int) -> None:
@@ -304,6 +318,28 @@ class HistoricalReader(Reader):
             return "(%s-search `%s') " % (d, self.isearch_term)
         else:
             return super().get_prompt(lineno, cursor_on_line)
+
+    def search_next(self, forwards: bool) -> None:
+        old_pos = self.pos
+        # st is empty is old_pos is zero
+        st = self.get_unicode()[:old_pos]
+        i = self.historyi
+        s = self.get_unicode()
+        while 1:
+            if (forwards and i >= len(self.history) - 1) or (not forwards and i == 0):
+                self.error("not found")
+                return
+            if forwards:
+                i += 1
+                s = self.get_item(i)
+            else:
+                i -= 1
+                s = self.get_item(i)
+
+            if s.startswith(st):
+                self.select_item(i)
+                self.pos = old_pos
+                return
 
     def isearch_next(self) -> None:
         st = self.isearch_term
