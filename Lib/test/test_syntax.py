@@ -1932,31 +1932,31 @@ Corner-cases that used to crash:
     ...   case 42 as 1+2+4:
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: cannot use pattern target as expression
+    SyntaxError: cannot use expression as pattern target
 
     >>> match ...:
     ...   case 42 as a.b:
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: cannot use pattern target as attribute
+    SyntaxError: cannot use attribute as pattern target
 
     >>> match ...:
     ...   case 42 as (a, b):
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: cannot use pattern target as tuple
+    SyntaxError: cannot use tuple as pattern target
 
     >>> match ...:
     ...   case 42 as (a + 1):
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: cannot use pattern target as expression
+    SyntaxError: cannot use expression as pattern target
 
     >>> match ...:
     ...   case (32 as x) | (42 as a()):
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: cannot use pattern target as function call
+    SyntaxError: cannot use function call as pattern target
 
     >>> match ...:
     ...   case Foo(z=1, y=2, x):
@@ -2850,7 +2850,7 @@ while 1:
                         ...
                 """
             ),
-            errtext="cannot use pattern target as attribute",
+            errtext="cannot use attribute as pattern target",
             lineno=3,
             end_lineno=3,
             offset=15,
