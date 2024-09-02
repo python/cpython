@@ -362,7 +362,7 @@ dummy_func(
             EXIT_IF(!PyLong_CheckExact(value));
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
-                assert(_Py_IsImmortal(value));
+                assert(_Py_IsImmortalLoose(value));
                 res = Py_False;
             }
             else {
@@ -389,7 +389,7 @@ dummy_func(
             EXIT_IF(!PyUnicode_CheckExact(value));
             STAT_INC(TO_BOOL, hit);
             if (value == &_Py_STR(empty)) {
-                assert(_Py_IsImmortal(value));
+                assert(_Py_IsImmortalLoose(value));
                 res = Py_False;
             }
             else {
