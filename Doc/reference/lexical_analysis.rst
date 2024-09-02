@@ -1003,7 +1003,7 @@ The following tokens are operators:
 
    +       -       *       **      /       //      %      @
    <<      >>      &       |       ^       ~       :=
-   <       >       <=      >=      ==      !=
+   <       >       <=      >=      ==      !=      !
 
 
 .. _delimiters:
