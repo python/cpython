@@ -3456,7 +3456,7 @@ initconfig_set_error(PyInitConfig *config, const char *err_msg)
 
 
 static const PyConfigSpec*
-config_get_spec(const char *name)
+initconfig_get_spec(const char *name)
 {
     const PyConfigSpec *spec = PYCONFIG_SPEC;
     for (; spec->name != NULL; spec++) {
@@ -3471,7 +3471,7 @@ config_get_spec(const char *name)
 int
 PyInitConfig_HasOption(PyInitConfig *config, const char *name)
 {
-    const PyConfigSpec *spec = config_get_spec(name);
+    const PyConfigSpec *spec = initconfig_get_spec(name);
     return (spec != NULL);
 }
 
@@ -3479,7 +3479,7 @@ PyInitConfig_HasOption(PyInitConfig *config, const char *name)
 static const PyConfigSpec*
 initconfig_prepare_get(PyInitConfig *config, const char *name)
 {
-    const PyConfigSpec *spec = config_get_spec(name);
+    const PyConfigSpec *spec = initconfig_get_spec(name);
     if (spec == NULL) {
         initconfig_set_error(config, "unknown config option name");
         return NULL;
@@ -3632,7 +3632,7 @@ static const PyConfigSpec*
 initconfig_prepare_set(PyInitConfig *config, const char *name,
                        void **raw_member)
 {
-    const PyConfigSpec *spec = config_get_spec(name);
+    const PyConfigSpec *spec = initconfig_get_spec(name);
     if (spec == NULL) {
         initconfig_set_error(config, "unknown config option name");
         return NULL;
