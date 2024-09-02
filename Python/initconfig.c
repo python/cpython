@@ -1115,14 +1115,14 @@ PyConfig_SetBytesString(PyConfig *config, wchar_t **config_str,
 
 
 static inline void*
-config_spec_get_member(const PyConfigSpec *spec, const PyConfig *config)
+config_get_spec_member(const PyConfig *config, const PyConfigSpec *spec)
 {
     return (char *)config + spec->offset;
 }
 
 
 static inline void*
-preconfig_spec_get_member(const PyConfigSpec *spec, const PyPreConfig *preconfig)
+preconfig_get_spec_member(const PyPreConfig *preconfig, const PyConfigSpec *spec)
 {
     return (char *)preconfig + spec->offset;
 }
@@ -1136,8 +1136,8 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     PyStatus status;
     const PyConfigSpec *spec = PYCONFIG_SPEC;
     for (; spec->name != NULL; spec++) {
-        void *member = config_spec_get_member(spec, config);
-        const void *member2 = config_spec_get_member(spec, (PyConfig*)config2);
+        void *member = config_get_spec_member(config, spec);
+        const void *member2 = config_get_spec_member((PyConfig*)config2, spec);
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
         case PyConfig_MEMBER_UINT:
@@ -3533,13 +3533,13 @@ initconfig_prepare(PyInitConfig *config, const char *name, void **raw_member)
 {
     const PyConfigSpec *spec = initconfig_find_spec(PYCONFIG_SPEC, name);
     if (spec != NULL) {
-        *raw_member = config_spec_get_member(spec, &config->config);
+        *raw_member = config_get_spec_member(&config->config, spec);
         return spec;
     }
 
     spec = initconfig_find_spec(PYPRECONFIG_SPEC, name);
     if (spec != NULL) {
-        *raw_member = preconfig_spec_get_member(spec, &config->preconfig);
+        *raw_member = preconfig_get_spec_member(&config->preconfig, spec);
         return spec;
     }
 
@@ -4016,7 +4016,7 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
         }
     }
 
-    void *member = config_spec_get_member(spec, config);
+    void *member = config_get_spec_member(config, spec);
     switch (spec->type) {
     case PyConfig_MEMBER_INT:
     case PyConfig_MEMBER_UINT:
@@ -4223,7 +4223,7 @@ config_set_sys_flag(const PyConfigSpec *spec, int int_value)
     assert(spec->type == PyConfig_MEMBER_INT
            || spec->type == PyConfig_MEMBER_UINT
            || spec->type == PyConfig_MEMBER_BOOL);
-    int *member = config_spec_get_member(spec, config);
+    int *member = config_get_spec_member(config, spec);
     *member = int_value;
 
     // Set sys.dont_write_bytecode attribute
