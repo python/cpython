@@ -1,1 +1,2 @@
-Skip test_gdb if the binary is BOLTed. Patch by Donghee Na.
+Skip ``test_gdb`` if the binary is relocated by BOLT.
+Patch by Donghee Na.
