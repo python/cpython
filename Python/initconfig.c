@@ -3707,7 +3707,7 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
     switch (spec->type) {
     case PyConfig_MEMBER_INT:
     {
-        if (value < (int64_t)INT_MIN || INT_MAX < (int64_t)value) {
+        if (value < (int64_t)INT_MIN || (int64_t)INT_MAX < value) {
             initconfig_set_error(config,
                 "config option value is out of int range");
             return -1;
@@ -3722,7 +3722,7 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
     case PyConfig_MEMBER_UINT:
     case PyConfig_MEMBER_BOOL:
     {
-        if (value < 0 || UINT_MAX < (int64_t)value) {
+        if (value < 0 || (uint64_t)UINT_MAX < (uint64_t)value) {
             initconfig_set_error(config,
                 "config option value is out of unsigned int range");
             return -1;
