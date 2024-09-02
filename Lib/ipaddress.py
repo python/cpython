@@ -1970,12 +1970,21 @@ class IPv6Address(_BaseV6, _BaseAddress):
     def _explode_shorthand_ip_string(self):
         ipv4_mapped = self.ipv4_mapped
         if ipv4_mapped is None:
-            long_form = super()._explode_shorthand_ip_string()
-        else:
-            prefix_len = 30
-            raw_exploded_str = super()._explode_shorthand_ip_string()
-            long_form = "%s%s" % (raw_exploded_str[:prefix_len], str(ipv4_mapped))
-        return long_form
+            return super()._explode_shorthand_ip_string()
+        prefix_len = 30
+        raw_exploded_str = super()._explode_shorthand_ip_string()
+        return f"{raw_exploded_str[:prefix_len]}{ipv4_mapped!s}"
+
+    def _reverse_pointer(self):
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            return super()._reverse_pointer()
+        prefix_len = 30
+        raw_exploded_str = super()._explode_shorthand_ip_string()[:prefix_len]
+        # ipv4 encoded using hexadecimal nibbles instead of decimals
+        ipv4_int = ipv4_mapped._ip
+        reverse_chars = f"{raw_exploded_str}{ipv4_int:008x}"[::-1].replace(':', '')
+        return '.'.join(reverse_chars) + '.ip6.arpa'
 
     def _ipv4_mapped_ipv6_to_str(self):
         """Return convenient text representation of IPv4-mapped IPv6 address
