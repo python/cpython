@@ -1375,7 +1375,9 @@ invalid_case_block:
         RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
 invalid_as_pattern:
     | or_pattern 'as' a="_" { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use '_' as a target") }
-    | or_pattern 'as' !NAME a=expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "invalid pattern target") }
+    | or_pattern 'as' a=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "cannot use %s as pattern target", _PyPegen_get_expr_name(a)) }
 invalid_class_pattern:
     | name_or_attr '(' a=invalid_class_argument_pattern  { RAISE_SYNTAX_ERROR_KNOWN_RANGE(
         PyPegen_first_item(a, pattern_ty),

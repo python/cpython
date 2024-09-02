@@ -24005,7 +24005,7 @@ invalid_case_block_rule(Parser *p)
     return _res;
 }
 
-// invalid_as_pattern: or_pattern 'as' "_" | or_pattern 'as' !NAME expression
+// invalid_as_pattern: or_pattern 'as' "_" | or_pattern 'as' expression
 static void *
 invalid_as_pattern_rule(Parser *p)
 {
@@ -24048,12 +24048,12 @@ invalid_as_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_as_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "or_pattern 'as' \"_\""));
     }
-    { // or_pattern 'as' !NAME expression
+    { // or_pattern 'as' expression
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_as_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' !NAME expression"));
+        D(fprintf(stderr, "%*c> invalid_as_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' expression"));
         Token * _keyword;
         expr_ty a;
         pattern_ty or_pattern_var;
@@ -24062,13 +24062,11 @@ invalid_as_pattern_rule(Parser *p)
             &&
             (_keyword = _PyPegen_expect_token(p, 666))  // token='as'
             &&
-            _PyPegen_lookahead_with_name(0, _PyPegen_name_token, p)
-            &&
             (a = expression_rule(p))  // expression
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_as_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' !NAME expression"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "invalid pattern target" );
+            D(fprintf(stderr, "%*c+ invalid_as_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' expression"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use %s as pattern target" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -24078,7 +24076,7 @@ invalid_as_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_as_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "or_pattern 'as' !NAME expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "or_pattern 'as' expression"));
     }
     _res = NULL;
   done:
