@@ -374,7 +374,6 @@ class Connection(_ConnectionBase):
             _close(self._handle)
         _write = _multiprocessing.send
         _read = _multiprocessing.recv
-        _default_pipe_size = 0
     else:
         def _close(self, _close=os.close):
             _close(self._handle)
