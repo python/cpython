@@ -3704,7 +3704,9 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
         return -1;
     }
 
-    if (spec->type == PyConfig_MEMBER_INT) {
+    switch (spec->type) {
+    case PyConfig_MEMBER_INT:
+    {
         if (value < (int64_t)INT_MIN || INT_MAX < (int64_t)value) {
             initconfig_set_error(config,
                 "config option value is out of int range");
@@ -3714,8 +3716,12 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
 
         int *member = raw_member;
         *member = int_value;
+        break;
     }
-    else if (spec->type == PyConfig_MEMBER_UINT || spec->type == PyConfig_MEMBER_BOOL) {
+
+    case PyConfig_MEMBER_UINT:
+    case PyConfig_MEMBER_BOOL:
+    {
         if (value < 0 || UINT_MAX < (int64_t)value) {
             initconfig_set_error(config,
                 "config option value is out of unsigned int range");
@@ -3725,8 +3731,11 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
 
         int *member = raw_member;
         *member = int_value;
+        break;
     }
-    else if (spec->type == PyConfig_MEMBER_ULONG) {
+
+    case PyConfig_MEMBER_ULONG:
+    {
         if (value < 0 || (uint64_t)ULONG_MAX < (uint64_t)value) {
             initconfig_set_error(config,
                 "config option value is out of unsigned long range");
@@ -3736,8 +3745,10 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
 
         unsigned long *member = raw_member;
         *member = ulong_value;
+        break;
     }
-    else {
+
+    default:
         initconfig_set_error(config, "config option type is not int");
         return -1;
     }
