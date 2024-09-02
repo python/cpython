@@ -357,3 +357,15 @@ class td354(typing.TypedDict):
 
 # line 358
 td359 = typing.TypedDict('td359', (('x', int), ('y', int)))
+
+import dataclasses
+
+# line 363
+@dataclasses.dataclass
+class dc364:
+    x: int
+    y: int
+
+# line 369
+dc370 = dataclasses.make_dataclass('dc370', (('x', int), ('y', int)))
+dc371 = dataclasses.make_dataclass('dc370', (('x', int), ('y', int)), module=__name__)

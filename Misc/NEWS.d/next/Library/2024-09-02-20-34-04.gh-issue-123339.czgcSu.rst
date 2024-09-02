@@ -1,0 +1,4 @@
+Fix :func:`inspect.getsource` for classes in :mod:`collections.abc` and
+:mod:`decimal` (for pure Python implementation) modules.
+:func:`inspect.getcomments` now raises OSError instead of IndexError if the
+``__firstlineno__`` value for a class is out of bound.

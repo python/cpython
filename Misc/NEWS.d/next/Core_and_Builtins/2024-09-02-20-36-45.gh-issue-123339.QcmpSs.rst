@@ -1,0 +1,3 @@
+Setting the :attr:`!__module__` attribute for a class now removes the
+``__firstlineno__`` item from the type's dict, so they will no longer be
+inconsistent.
