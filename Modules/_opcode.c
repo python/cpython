@@ -417,11 +417,34 @@ opcode_functions[] =  {
     {NULL, NULL, 0, NULL}
 };
 
+
 static int
 _opcode_exec(PyObject *m) {
-    if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
-        return -1;
-    }
+#define ADD(X)                                         \
+    do {                                               \
+        if (PyModule_AddIntConstant(m, #X, (X)) < 0) { \
+            return -1;                                 \
+        }                                              \
+    } while (0)
+
+    ADD(ENABLE_SPECIALIZATION);
+    ADD(ENABLE_SPECIALIZED_BINARY_OP);
+    ADD(ENABLE_SPECIALIZED_BINARY_SUBSCR);
+    ADD(ENABLE_SPECIALIZED_CALL);
+    ADD(ENABLE_SPECIALIZED_CALL_KW);
+    ADD(ENABLE_SPECIALIZED_COMPARE_OP);
+    ADD(ENABLE_SPECIALIZED_CONTAINS_OP);
+    ADD(ENABLE_SPECIALIZED_FOR_ITER);
+    ADD(ENABLE_SPECIALIZED_LOAD_ATTR);
+    ADD(ENABLE_SPECIALIZED_LOAD_GLOBAL);
+    ADD(ENABLE_SPECIALIZED_LOAD_SUPER_ATTR);
+    ADD(ENABLE_SPECIALIZED_SEND);
+    ADD(ENABLE_SPECIALIZED_STORE_ATTR);
+    ADD(ENABLE_SPECIALIZED_STORE_SUBSCR);
+    ADD(ENABLE_SPECIALIZED_TO_BOOL);
+    ADD(ENABLE_SPECIALIZED_UNPACK_SEQUENCE);
+
+#undef ADD
     return 0;
 }
 

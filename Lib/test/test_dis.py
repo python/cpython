@@ -10,7 +10,8 @@ import sys
 import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only)
+                          requires_specialization,
+                          requires_specialization_of, cpython_only)
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
@@ -1212,8 +1213,8 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, dis_load_test_quickened_code)
 
     @cpython_only
-    @requires_specialization
-    def test_binary_specialize(self):
+    @requires_specialization_of("BINARY_OP")
+    def test_binary_op_specialize(self):
         binary_op_quicken = """\
   0           RESUME_CHECK             0
 
@@ -1232,6 +1233,9 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(co_unicode, adaptive=True)
         self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE    0 (+)")
 
+    @cpython_only
+    @requires_specialization_of("BINARY_SUBSCR")
+    def test_binary_subscr_specialize(self):
         binary_subscr_quicken = """\
   0           RESUME_CHECK             0
 
@@ -1251,7 +1255,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, binary_subscr_quicken % "BINARY_SUBSCR_DICT")
 
     @cpython_only
-    @requires_specialization
+    @requires_specialization_of("LOAD_ATTR")
     def test_load_attr_specialize(self):
         load_attr_quicken = """\
   0           RESUME_CHECK             0
@@ -1266,7 +1270,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, load_attr_quicken)
 
     @cpython_only
-    @requires_specialization
+    @requires_specialization_of("CALL")
     def test_call_specialize(self):
         call_quicken = """\
   0           RESUME_CHECK             0
@@ -1283,7 +1287,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, call_quicken)
 
     @cpython_only
-    @requires_specialization
+    @requires_specialization_of("FOR_ITER", "LOAD_GLOBAL")
     def test_loop_quicken(self):
         # Loop can trigger a quicken where the loop is located
         self.code_quicken(loop_test, 4)
@@ -1292,7 +1296,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
-    @requires_specialization
+    @requires_specialization_of("COMPARE_OP", "FOR_ITER")
     def test_loop_with_conditional_at_end_is_quickened(self):
         def for_loop_true(x):
             for i in range(10):
