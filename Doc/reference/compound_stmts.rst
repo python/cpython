@@ -841,7 +841,7 @@ A literal pattern corresponds to most
                   : | "None"
                   : | "True"
                   : | "False"
-                  : | `signed_number`: NUMBER | "-" NUMBER
+   signed_number: ["-"] NUMBER
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
