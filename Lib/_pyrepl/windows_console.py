@@ -63,6 +63,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import IO
 
+# Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 VK_MAP: dict[int, str] = {
     0x23: "end",  # VK_END
     0x24: "home",  # VK_HOME
@@ -87,10 +88,10 @@ VK_MAP: dict[int, str] = {
     0x7D: "f14",  # VK_F14
     0x7E: "f15",  # VK_F15
     0x7F: "f16",  # VK_F16
-    0x79: "f17",  # VK_F17
-    0x80: "f18",  # VK_F18
-    0x81: "f19",  # VK_F19
-    0x82: "f20",  # VK_F20
+    0x80: "f17",  # VK_F17
+    0x81: "f18",  # VK_F18
+    0x82: "f19",  # VK_F19
+    0x83: "f20",  # VK_F20
 }
 
 # Console escape codes: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
