@@ -1667,7 +1667,7 @@ Both the :class:`!SMTPServer` and :class:`!SMTPChannel` classes now
 accept a *decode_data* keyword argument to determine if the ``DATA`` portion of
 the SMTP transaction is decoded using the ``"utf-8"`` codec or is instead
 provided to the
-:meth:`!SMTPServer.process_message()`
+:meth:`!SMTPServer.process_message`
 method as a byte string.  The default is ``True`` for backward compatibility
 reasons, but will change to ``False`` in Python 3.6.  If *decode_data* is set
 to ``False``, the ``process_message`` method must be prepared to accept keyword
@@ -1677,14 +1677,14 @@ arguments.
 The :class:`!SMTPServer` class now advertises the ``8BITMIME`` extension
 (:rfc:`6152`) if *decode_data* has been set ``True``.  If the client
 specifies ``BODY=8BITMIME`` on the ``MAIL`` command, it is passed to
-:meth:`!SMTPServer.process_message()`
+:meth:`!SMTPServer.process_message`
 via the *mail_options* keyword.
 (Contributed by Milan Oberkirch and R.  David Murray in :issue:`21795`.)
 
 The :class:`!SMTPServer` class now also supports the ``SMTPUTF8``
 extension (:rfc:`6531`: Internationalized Email).  If the client specified
 ``SMTPUTF8 BODY=8BITMIME`` on the ``MAIL`` command, they are passed to
-:meth:`!SMTPServer.process_message()`
+:meth:`!SMTPServer.process_message`
 via the *mail_options* keyword.  It is the responsibility of the
 ``process_message`` method to correctly handle the ``SMTPUTF8`` data.
 (Contributed by Milan Oberkirch in :issue:`21725`.)
@@ -2405,7 +2405,7 @@ Changes in the Python API
   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
   details.
 
-* The :meth:`ssl.SSLSocket.send()` method now raises either
+* The :meth:`ssl.SSLSocket.send` method now raises either
   :exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError`
   on a non-blocking socket if the operation would block.  Previously,
   it would return ``0``.  (Contributed by Nikolaus Rath in :issue:`20951`.)

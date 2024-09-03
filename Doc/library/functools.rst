@@ -34,7 +34,7 @@ The :mod:`functools` module defines the following functions:
    Returns the same as ``lru_cache(maxsize=None)``, creating a thin
    wrapper around a dictionary lookup for the function arguments.  Because it
    never needs to evict old values, this is smaller and faster than
-   :func:`lru_cache()` with a size limit.
+   :func:`lru_cache` with a size limit.
 
    For example::
 

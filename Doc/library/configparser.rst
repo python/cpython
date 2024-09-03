@@ -986,7 +986,7 @@ ConfigParser Objects
    When *converters* is given, it should be a dictionary where each key
    represents the name of a type converter and each value is a callable
    implementing the conversion from string to the desired datatype.  Every
-   converter gets its own corresponding :meth:`!get*()` method on the parser
+   converter gets its own corresponding :meth:`!get*` method on the parser
    object and section proxies.
 
    It is possible to read several configurations into a single
@@ -1026,7 +1026,7 @@ ConfigParser Objects
       The *converters* argument was added.
 
    .. versionchanged:: 3.7
-      The *defaults* argument is read with :meth:`read_dict()`,
+      The *defaults* argument is read with :meth:`read_dict`,
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 
@@ -1314,12 +1314,18 @@ RawConfigParser Objects
 
    .. method:: add_section(section)
 
-      Add a section named *section* to the instance.  If a section by the given
-      name already exists, :exc:`DuplicateSectionError` is raised.  If the
-      *default section* name is passed, :exc:`ValueError` is raised.
+      Add a section named *section* or :const:`UNNAMED_SECTION` to the instance.
+
+      If the given section already exists, :exc:`DuplicateSectionError` is
+      raised. If the *default section* name is passed, :exc:`ValueError` is
+      raised. If :const:`UNNAMED_SECTION` is passed and support is disabled,
+      :exc:`UnnamedSectionDisabledError` is raised.
 
       Type of *section* is not checked which lets users create non-string named
       sections.  This behaviour is unsupported and may cause internal errors.
+
+   .. versionchanged:: 3.14
+      Added support for :const:`UNNAMED_SECTION`.
 
 
    .. method:: set(section, option, value)
@@ -1405,7 +1411,6 @@ Exceptions
    Exception raised when attempting to parse a file which has no section
    headers.
 
-
 .. exception:: ParsingError
 
    Exception raised when errors occur attempting to parse a file.
@@ -1420,6 +1425,13 @@ Exceptions
    an indented line.
 
    .. versionadded:: 3.13
+
+.. exception:: UnnamedSectionDisabledError
+
+   Exception raised when attempting to use the
+   :const:`UNNAMED_SECTION` without enabling it.
+
+    .. versionadded:: 3.14
 
 .. rubric:: Footnotes
 
