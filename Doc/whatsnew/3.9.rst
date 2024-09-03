@@ -408,8 +408,8 @@ Added :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 
 datetime
 --------
-The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
-and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
+The :meth:`~datetime.date.isocalendar` of :class:`datetime.date`
+and :meth:`~datetime.datetime.isocalendar` of :class:`datetime.datetime`
 methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
 (Contributed by Donghee Na in :issue:`24416`.)
 
@@ -610,7 +610,7 @@ convert a wait status to an exit code.
 pathlib
 -------
 
-Added :meth:`pathlib.Path.readlink()` which acts similarly to
+Added :meth:`pathlib.Path.readlink` which acts similarly to
 :func:`os.readlink`.
 (Contributed by Girts Folkmanis in :issue:`30618`)
 
@@ -987,9 +987,9 @@ Removed
   removed. They were deprecated since Python 3.7.
   (Contributed by Victor Stinner in :issue:`37320`.)
 
-* The :meth:`!isAlive()` method of :class:`threading.Thread`
+* The :meth:`!isAlive` method of :class:`threading.Thread`
   has been removed. It was deprecated since Python 3.8.
-  Use :meth:`~threading.Thread.is_alive()` instead.
+  Use :meth:`~threading.Thread.is_alive` instead.
   (Contributed by Donghee Na in :issue:`37804`.)
 
 * Methods ``getchildren()`` and ``getiterator()`` of classes

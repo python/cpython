@@ -37,7 +37,7 @@ As of 2022, this was known true for 1 'major' Linux distribution.
 (Same would be true for any non-Aqua macOS with 8.5, but now none?)
 Can be deleted when we require 8.6 or it is known always used.
 
-Future: Derivitives of Python logo should be submitted for approval.
+Future: Derivatives of Python logo should be submitted for approval.
 PSF Trademark Working Group / Committee psf-trademarks@python.org
 https://www.python.org/community/logos/  # Original files
 https://www.python.org/psf/trademarks-faq/
