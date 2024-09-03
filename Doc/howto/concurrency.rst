@@ -397,23 +397,66 @@ Critical caveats
 Here are some important details to consider, specific to individual
 concurrency models in Python.
 
-free-threading
-^^^^^^^^^^^^^^
+.. _concurrency-races:
 
-Python directly supports use of physical threads through the
-:mod:`threading` module.
+Data races, AKA non-deterministic scheduling (free-threading)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* minimal conceptual indirection: closely tied to low-level physical threads
-* the most direct route to taking advantage of multi-core parallelism
+Python threads are light wrappers around physical threads
+and thus have the same caveats.  The principal one is that each thread
+shares the *full* memory of the process with all its other threads.
+Combined with their non-deterministic scheduling (and parallel
+execution), threads expose programs to a significant risk of races.
 
-The main downside to using threads is that each one shares the full
-memory of the process with all the others.  That exposes programs
-to a significant risk of `races <concurrency-downsides_>`_.
+The potential consequences of a race are data corruption and invalidated
+expectations of data consistency.  In each case, the non-deterministic
+scheduling of threads means it is both hard to reproduce races and to
+track down where a race happened.  These qualities make these bugs
+especially frustrating and worth diligently avoiding.
+
+The majority of data in a Python program is mutable and *all* of the
+program's data is subject to potential modification by any thread
+at any moment.  This requires extra effort, to synchronize around
+reads and writes.  Furthermore, given the maximally-broad scope
+of the data involved, it's difficult to be sure all possible races
+have been dealt with, especially as a code base changes over time.
+
+The other concurrency models essentially don't have this problem.
+In the case of coroutines, explicit cooperative scheduling eliminates
+the risk of a simultaneous read-write or write-write.  It also means
+program logic can rely on memory consistency between synchronization
+points (``await``).
+
+With the remaining concurrency models, data is never shared between
+logical threads unless done explicitly (typically at the existing
+inherent points of synchronization).  By default that shared data is
+either read-only or managed in a thread-safe way.  Most notably,
+the opt-in sharing means the set of shared data to manage is
+explicitly defined (and often small) instead of covering
+*all* memory in the process.
+
+Shared resources
+^^^^^^^^^^^^^^^^
+
+Aside from memory, all physical threads in a process share the
+following resources:
+
+* env vars
+* file descriptors
+* ...
+
+Tracing execution
+^^^^^^^^^^^^^^^^^
 
 The other potential problem with using threads is that the conceptual
 model has no inherent synchronization, so it can be hard to follow
 what is going on in the program at any given moment.  That is
 especially challenging for testing and debugging.
+
+* "callback hell"
+* "where was this thread/coroutine started?"
+* composing a reliable sequential representation of the program?
+* "what happened (in order) leading up to this point?"
 
 .. _python-gil:
 
@@ -426,7 +469,7 @@ the :term:`global interpreter lock` (GIL).
 
 The :term:`!GIL` is very efficient tool for keeping the Python
 implementation simple, which is an important constraint for the project.
-In fact, it protects Python's maintainers and users from a large
+In fact, it protects Python's maintainers *and* users from a large
 category of concurrency problems that one must normally face when
 threads are involved.
 
@@ -434,11 +477,11 @@ The big tradeoff is that the bytecode interpreter, which executes your
 Python code, only runs while holding the :term:`!GIL`.  That means only
 one thread can be running Python code at a time.  Threads will take
 short turns, so none have to wait too long, but it still prevents
-any actual parallelism.
+any actual parallelism of CPU-bound code.
 
-At the same time, the Python runtime (and extension modules) can
-release the :term:`!GIL` when the thread is going to be doing something
-unrelated to Python, particularly something slow or long,
+That said, the Python runtime (and extension modules) can release the
+:term:`!GIL` when the thread is going to be doing something unrelated
+to Python, particularly something slow or long,
 like a blocking IO operation.
 
 There is also an ongoing effort to eliminate the :term:`!GIL`:
@@ -447,6 +490,10 @@ some slowdown to single-threaded performance and extra maintenance
 burden to the Python project and extension module maintainers.
 However, there is sufficient interest in unlocking full multi-core
 parallelism to justify the current experiment.
+
+
+
+
 
 
 Isolated Threads (CSP/Actor Model)
@@ -620,38 +667,6 @@ Using multiprocessing for distributed computing
 
 
 
-
-.. _concurrency-races:
-
-Data races
-----------
-
-The first category relates to mutable data shared between threads:
-a data race is where one thread writes to memory at a time when another
-thread is expecting the value to be unchanged, invalidating its logic.
-Similarly, two threads could write to the same memory location at the
-same time, either corrupting the data there or invalidating
-the expectations of one of the threads.
-
-In each case, the non-deterministic scheduling of threads means it is
-both hard to reproduce races and to track down where a race happened.
-These qualities much these bugs especially frustrating
-and worth diligently avoiding.
-
-Races are possible when the concurrency approach is subject
-to parallel execution or to non-deterministic switching.
-(This excludes coroutines, which rely on cooperative multitasking.)
-When all memory is possibly shared, as is the case with free-threading,
-then all memory is at risk.
-
-Dealing with data races is often managed using locks (AKA mutexes),
-at a low level, and thread-safe types and APIs at a high level.
-Depending on the programming language, the complexity is sometimes
-mitigated somewhat by the compiler and runtime.  There are even
-libraries and frameworks that help abstract away the complexity
-to an extent.  On top of that, there are tools that can help identify
-potential races via static analysis.  Unfortunately, none of these aids
-is foolproof and the risk of hitting a race is always looming.
 
 
 
@@ -838,6 +853,10 @@ free-threading:
 
 * main value: efficient multi-core
 * main costs: races & conceptual overhead
+
+* minimal conceptual indirection: closely tied to low-level physical threads
+* the most direct route to taking advantage of multi-core parallelism
+
 
 A high-level look:
 
