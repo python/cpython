@@ -496,7 +496,7 @@ in the same order they were added sequentially over the dictionary.
 Replacing an existing key does not change the order, however removing a key
 and re-inserting it will add it to the end instead of keeping its old place.
 
-Dictionaries are mutable; they can be created by the ``{...}`` notation (see
+Dictionaries are mutable; they can be created by the ``{}`` notation (see
 section :ref:`dict`).
 
 .. index::
