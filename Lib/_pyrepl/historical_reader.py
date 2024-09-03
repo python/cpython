@@ -74,13 +74,13 @@ class previous_history(commands.Command):
 class history_search_backward(commands.Command):
     def do(self) -> None:
         r = self.reader
-        r.search_next(False)
+        r.search_next(forwards=False)
 
 
 class history_search_forward(commands.Command):
     def do(self) -> None:
         r = self.reader
-        r.search_next(True)
+        r.search_next(forwards=True)
 
 
 class restore_history(commands.Command):
@@ -319,12 +319,22 @@ class HistoricalReader(Reader):
         else:
             return super().get_prompt(lineno, cursor_on_line)
 
-    def search_next(self, forwards: bool) -> None:
-        old_pos = self.pos
-        # st is empty is old_pos is zero
-        st = self.get_unicode()[:old_pos]
-        i = self.historyi
+    def search_next(self, *, forwards: bool) -> None:
+        pos = self.pos
         s = self.get_unicode()
+        i = self.historyi
+        st = s[:pos]
+
+        match_prefix = True
+        if i < len(self.history):
+            len_item = len(self.get_item(i))
+        else:
+            len_item = 0
+        if len_item and pos == len_item:
+            match_prefix = False
+        elif not pos:
+            match_prefix = False
+
         while 1:
             if (forwards and i >= len(self.history) - 1) or (not forwards and i == 0):
                 self.error("not found")
@@ -336,9 +346,13 @@ class HistoricalReader(Reader):
                 i -= 1
                 s = self.get_item(i)
 
+            if not match_prefix:
+                self.select_item(i)
+                return
+
             if s.startswith(st):
                 self.select_item(i)
-                self.pos = old_pos
+                self.pos = pos
                 return
 
     def isearch_next(self) -> None:
