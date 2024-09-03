@@ -317,6 +317,12 @@ _Py_uop_sym_set_locals_idx(_Py_UopsLocalsPlusSlot sym, int locals_idx)
 }
 
 int
+_Py_uop_sym_get_locals_idx(_Py_UopsLocalsPlusSlot sym)
+{
+    return sym.sym->locals_idx;
+}
+
+int
 _Py_uop_sym_truthiness(_Py_UopsLocalsPlusSlot sym)
 {
     /* There are some non-constant values for

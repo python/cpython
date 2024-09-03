@@ -256,6 +256,7 @@ extern bool _Py_uop_sym_has_type(_Py_UopsLocalsPlusSlot sym);
 extern bool _Py_uop_sym_matches_type(_Py_UopsLocalsPlusSlot sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_matches_type_version(_Py_UopsLocalsPlusSlot sym, unsigned int version);
 extern void _Py_uop_sym_set_locals_idx(_Py_UopsLocalsPlusSlot sym, int locals_idx);
+extern int _Py_uop_sym_get_locals_idx(_Py_UopsLocalsPlusSlot sym);
 extern void _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym);
 extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym);
 extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym, PyTypeObject *typ);

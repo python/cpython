@@ -140,7 +140,7 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-        pure _static inst(NOP, (--)) {
+        _static inst(NOP, (--)) {
         }
 
         family(RESUME, 0) = {
@@ -261,7 +261,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
         }
 
-        replicate(8) inst(STORE_FAST, (value --)) {
+        replicate(8) _static inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -283,7 +283,7 @@ dummy_func(
             SETLOCAL(oparg2, value2);
         }
 
-        pure _static inst(POP_TOP, (value --)) {
+        _static inst(POP_TOP, (value --)) {
             DECREF_INPUTS();
         }
 

@@ -89,7 +89,7 @@ dummy_func(void) {
         GETLOCAL(oparg) = temp;
     }
 
-    op(_STORE_FAST, (value --)) {
+    _static op(_STORE_FAST, (value --)) {
         GETLOCAL(oparg) = value;
     }
 

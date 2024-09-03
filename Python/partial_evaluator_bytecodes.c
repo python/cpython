@@ -75,6 +75,7 @@ dummy_func(void) {
 
     override op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        sym_set_locals_idx(value, oparg);
         SET_STATIC_INST();
         value.is_virtual = true;
     }
@@ -84,16 +85,22 @@ dummy_func(void) {
         GETLOCAL(oparg) = sym_new_null(ctx);
     }
 
-    override op(_STORE_FAST, (value --)) {
-        GETLOCAL(oparg) = value;
-        sym_set_locals_idx(value, oparg);
-    }
 
     override op(_LOAD_CONST, (-- value)) {
         // Should've all been converted by specializer.
         Py_UNREACHABLE();
     }
 
+    override op(_STORE_FAST, (value --)) {
+        // Gets rid of stores by the same load
+        if (value.is_virtual && oparg == sym_get_locals_idx(value)) {
+            SET_STATIC_INST();
+        }
+        else {
+            reify_shadow_stack(ctx);
+        }
+        GETLOCAL(oparg) = value;
+    }
 
     override op(_POP_TOP, (pop --)) {
         if (pop.is_virtual) {

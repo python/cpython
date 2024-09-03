@@ -40,6 +40,7 @@
         case _LOAD_FAST: {
             _Py_UopsLocalsPlusSlot value;
             value = GETLOCAL(oparg);
+            sym_set_locals_idx(value, oparg);
             SET_STATIC_INST();
             value.is_virtual = true;
             stack_pointer[0] = value;
@@ -71,8 +72,14 @@
         case _STORE_FAST: {
             _Py_UopsLocalsPlusSlot value;
             value = stack_pointer[-1];
+            // Gets rid of stores by the same load
+            if (value.is_virtual && oparg == sym_get_locals_idx(value)) {
+                SET_STATIC_INST();
+            }
+            else {
+                reify_shadow_stack(ctx);
+            }
             GETLOCAL(oparg) = value;
-            sym_set_locals_idx(value, oparg);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
