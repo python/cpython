@@ -654,7 +654,7 @@ support importlib.invalidate_caches(). Patch by Desmond Cheong.
 .. nonce: 3r0HFY
 .. section: Library
 
-Fail fast in :func:`shutil.move()` to avoid creating destination directories
+Fail fast in :func:`shutil.move` to avoid creating destination directories
 on failure.
 
 ..
@@ -701,8 +701,8 @@ sessions in :mod:`pdb`'s interactive mode.
 When the :data:`tempfile.tempdir` global variable is set to a value of type
 bytes, it is now handled consistently.  Previously exceptions could be
 raised from some tempfile APIs when the directory did not already exist in
-this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
-:func:`tempfile.gettempdirb()` functions *always* return ``str`` and
+this situation.  Also ensures that the :func:`tempfile.gettempdir` and
+:func:`tempfile.gettempdirb` functions *always* return ``str`` and
 ``bytes`` respectively.
 
 ..

@@ -889,7 +889,7 @@ Statements
 .. class:: AnnAssign(target, annotation, value, simple)
 
    An assignment with a type annotation. ``target`` is a single node and can
-   be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
+   be a :class:`Name`, an :class:`Attribute` or a :class:`Subscript`.
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
    node. ``value`` is a single optional node.
 
@@ -1981,7 +1981,7 @@ Function and class definitions
            YieldFrom(value)
 
    A ``yield`` or ``yield from`` expression. Because these are expressions, they
-   must be wrapped in a :class:`Expr` node if the value sent back is not used.
+   must be wrapped in an :class:`Expr` node if the value sent back is not used.
 
    .. doctest::
 
@@ -2134,7 +2134,7 @@ and classes for traversing abstract syntax trees:
    If ``type_comments=True`` is given, the parser is modified to check
    and return type comments as specified by :pep:`484` and :pep:`526`.
    This is equivalent to adding :data:`ast.PyCF_TYPE_COMMENTS` to the
-   flags passed to :func:`compile()`.  This will report syntax errors
+   flags passed to :func:`compile`.  This will report syntax errors
    for misplaced type comments.  Without this flag, type comments will
    be ignored, and the ``type_comment`` field on selected AST nodes
    will always be ``None``.  In addition, the locations of ``# type:

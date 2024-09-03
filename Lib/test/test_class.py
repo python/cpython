@@ -787,6 +787,19 @@ class ClassTests(unittest.TestCase):
             Type(i)
         self.assertEqual(calls, 100)
 
+    def test_specialization_class_call_doesnt_crash(self):
+        # gh-123185
+
+        class Foo:
+            def __init__(self, arg):
+                pass
+
+        for _ in range(8):
+            try:
+                Foo()
+            except:
+                pass
+
 
 from _testinternalcapi import has_inline_values
 
@@ -881,6 +894,24 @@ class TestInlineValues(unittest.TestCase):
         del f.__dict__
         f.a = 3
         self.assertEqual(f.a, 3)
+
+    def test_rematerialize_object_dict(self):
+        # gh-121860: rematerializing an object's managed dictionary after it
+        # had been deleted caused a crash.
+        class Foo: pass
+        f = Foo()
+        f.__dict__["attr"] = 1
+        del f.__dict__
+
+        # Using a str subclass is a way to trigger the re-materialization
+        class StrSubclass(str): pass
+        self.assertFalse(hasattr(f, StrSubclass("attr")))
+
+        # Changing the __class__ also triggers the re-materialization
+        class Bar: pass
+        f.__class__ = Bar
+        self.assertIsInstance(f, Bar)
+        self.assertEqual(f.__dict__, {})
 
     def test_store_attr_type_cache(self):
         """Verifies that the type cache doesn't provide a value which  is
