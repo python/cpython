@@ -388,43 +388,6 @@ exposure
      - medium?
      - n/a
 
-high-level APIs
----------------
-
-Also note that Python's stdlib provides various higher-level APIs
-that support these concurrency models in various contexts:
-
-.. list-table::
-   :header-rows: 1
-   :class: borderless vert-aligned
-   :align: left
-
-   * -
-     - :mod:`concurrent.futures`
-     - :mod:`socketserver`
-     - :mod:`http.server`
-   * - free-threading
-     - :class:`yes <concurrent.futures.ThreadPoolExecutor>`
-     - :class:`yes <socketserver.ThreadingMixIn>`
-     - :class:`yes <http.server.ThreadingHTTPServer>`
-   * - multiple interpreters
-     - (`pending <python-stdlib-interpreters_>`_)
-     - 
-     - 
-   * - coroutines
-     - ???
-     - 
-     - 
-   * - multi-processing
-     - | :class:`yes <concurrent.futures.ProcessPoolExecutor>`
-       | (:class:`similar <multiprocessing.pool.Pool>`)
-     - :class:`yes <socketserver.ForkingMixIn>`
-     - 
-   * - distributed
-     - ???
-     - 
-     - 
-
 Critical caveats
 ----------------
 
@@ -744,6 +707,46 @@ other.  This applies equally to threads that start other threads as to
 concurrency models that use callbacks.  Knowing where the failing thread
 was started is valuable when debugging, as is knowing where a callback
 was registered.
+
+
+
+
+high-level APIs
+---------------
+
+Also note that Python's stdlib provides various higher-level APIs
+that support these concurrency models in various contexts:
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * -
+     - :mod:`concurrent.futures`
+     - :mod:`socketserver`
+     - :mod:`http.server`
+   * - free-threading
+     - :class:`yes <concurrent.futures.ThreadPoolExecutor>`
+     - :class:`yes <socketserver.ThreadingMixIn>`
+     - :class:`yes <http.server.ThreadingHTTPServer>`
+   * - multiple interpreters
+     - (`pending <python-stdlib-interpreters_>`_)
+     -
+     -
+   * - coroutines
+     - ???
+     -
+     -
+   * - multi-processing
+     - | :class:`yes <concurrent.futures.ProcessPoolExecutor>`
+       | (:class:`similar <multiprocessing.pool.Pool>`)
+     - :class:`yes <socketserver.ForkingMixIn>`
+     -
+   * - distributed
+     - ???
+     -
+     -
 
 
 Designing A Program For Concurrency
