@@ -1004,7 +1004,6 @@ here is a pure Python equivalent that implements most of the core functionality:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self.__name__ = ''
 
         def __set_name__(self, owner, name):
             self.__name__ = name
