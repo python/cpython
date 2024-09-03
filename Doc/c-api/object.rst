@@ -575,3 +575,18 @@ Object Protocol
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
+
+.. c:function:: int PyUnstable_Object_SetDeferredRefcount(PyObject *obj)
+
+	Enable `deferred reference counting https://peps.python.org/pep-0703/#deferred-reference-counting`_ on *obj*.
+
+	*obj* must be an object tracked by the garbage collector (see :func:`gc.is_tracked`), must have been
+	created by the calling thread, and must not be in use by any existing threads.
+
+	If any of the above conditions are not met, this function returns a negative value
+	and sets an exception.
+
+	This function is a no-op on builds with the :term:`GIL` enabled.
+
+	.. versionadded:: 3.14
+
