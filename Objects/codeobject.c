@@ -907,7 +907,6 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         goto failed;
     }
 
-#define emptystring (PyObject *)&_Py_SINGLETON(bytes_empty)
     struct _PyCodeConstructor con = {
         .filename = filename_ob,
         .name = funcname_ob,
@@ -918,8 +917,8 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         .consts = nulltuple,
         .names = nulltuple,
         .localsplusnames = nulltuple,
-        .localspluskinds = emptystring,
-        .exceptiontable = emptystring,
+        .localspluskinds = _Py_EMPTY_BYTES,
+        .exceptiontable = _Py_EMPTY_BYTES,
         .stacksize = 1,
     };
     result = _PyCode_New(&con);

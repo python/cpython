@@ -2918,7 +2918,7 @@ expand_template(TemplateObject *self, MatchObject *match)
     }
     else {
         Py_SET_SIZE(list, count);
-        result = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
+        result = PyBytes_Join(_Py_EMPTY_BYTES, list);
     }
 
 cleanup:

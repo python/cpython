@@ -1283,7 +1283,7 @@ found:
         Py_CLEAR(res);
         goto end;
     }
-    Py_XSETREF(res, PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
+    Py_XSETREF(res, PyBytes_Join(_Py_EMPTY_BYTES, chunks));
 
 end:
     LEAVE_BUFFERED(self)
@@ -1736,7 +1736,7 @@ _bufferedreader_read_all(buffered *self)
                 goto cleanup;
             }
             else {
-                tmp = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
+                tmp = PyBytes_Join(_Py_EMPTY_BYTES, chunks);
                 res = tmp;
                 goto cleanup;
             }

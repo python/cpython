@@ -39,7 +39,7 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
 #define CHARACTER(ch) \
      ((PyBytesObject *)&(CHARACTERS[ch]));
-#define EMPTY (&_Py_SINGLETON(bytes_empty))
+#define EMPTY ((PyBytesObject *)_Py_EMPTY_BYTES)
 
 
 // Return a reference to the immortal empty bytes string singleton.
