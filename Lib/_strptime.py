@@ -268,7 +268,7 @@ class TimeRE(dict):
         if day_of_month_in_format and not year_in_format:
             import warnings
             warnings.warn("""\
-Parsing dates involving a day of month without a year specified is ambiguious
+Parsing dates involving a day of month without a year specified is ambiguous
 and fails to parse leap day. The default behavior will change in Python 3.15
 to either always raise an exception or to use a different default year (TBD).
 To avoid trouble, add a specific year to the input & format.
