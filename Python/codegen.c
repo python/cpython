@@ -99,13 +99,6 @@ typedef _PyCompile_FBlockInfo fblockinfo;
 #define USE_LABEL(C, LBL) \
     RETURN_IF_ERROR(_PyInstructionSequence_UseLabel(INSTR_SEQUENCE(C), (LBL).id))
 
-
-enum _PyCompile_FBlockType : short {
-     WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
-     WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER,
-     EXCEPTION_GROUP_HANDLER, ASYNC_COMPREHENSION_GENERATOR, STOP_ITERATION,
-};
-
 static const int compare_masks[] = {
     [Py_LT] = COMPARISON_LESS_THAN,
     [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
@@ -509,14 +502,14 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
                       fblockinfo *info, int preserve_tos)
 {
     switch (info->fb_type) {
-        case WHILE_LOOP:
-        case EXCEPTION_HANDLER:
-        case EXCEPTION_GROUP_HANDLER:
-        case ASYNC_COMPREHENSION_GENERATOR:
-        case STOP_ITERATION:
+        case COMPILER_FBLOCK_WHILE_LOOP:
+        case COMPILER_FBLOCK_EXCEPTION_HANDLER:
+        case COMPILER_FBLOCK_EXCEPTION_GROUP_HANDLER:
+        case COMPILER_FBLOCK_ASYNC_COMPREHENSION_GENERATOR:
+        case COMPILER_FBLOCK_STOP_ITERATION:
             return SUCCESS;
 
-        case FOR_LOOP:
+        case COMPILER_FBLOCK_FOR_LOOP:
             /* Pop the iterator */
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
@@ -524,21 +517,22 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
             ADDOP(c, *ploc, POP_TOP);
             return SUCCESS;
 
-        case TRY_EXCEPT:
+        case COMPILER_FBLOCK_TRY_EXCEPT:
             ADDOP(c, *ploc, POP_BLOCK);
             return SUCCESS;
 
-        case FINALLY_TRY:
+        case COMPILER_FBLOCK_FINALLY_TRY:
             /* This POP_BLOCK gets the line number of the unwinding statement */
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
                 RETURN_IF_ERROR(
-                    _PyCompiler_PushFBlock(c, *ploc, POP_VALUE, NO_LABEL, NO_LABEL, NULL));
+                    _PyCompiler_PushFBlock(c, *ploc, COMPILER_FBLOCK_POP_VALUE,
+                                           NO_LABEL, NO_LABEL, NULL));
             }
             /* Emit the finally block */
             VISIT_SEQ(c, stmt, info->fb_datum);
             if (preserve_tos) {
-                _PyCompiler_PopFBlock(c, POP_VALUE, NO_LABEL);
+                _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_POP_VALUE, NO_LABEL);
             }
             /* The finally block should appear to execute after the
              * statement causing the unwinding, so make the unwinding
@@ -546,7 +540,7 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
             *ploc = NO_LOCATION;
             return SUCCESS;
 
-        case FINALLY_END:
+        case COMPILER_FBLOCK_FINALLY_END:
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
@@ -558,8 +552,8 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
             ADDOP(c, *ploc, POP_EXCEPT);
             return SUCCESS;
 
-        case WITH:
-        case ASYNC_WITH:
+        case COMPILER_FBLOCK_WITH:
+        case COMPILER_FBLOCK_ASYNC_WITH:
             *ploc = info->fb_loc;
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
@@ -567,7 +561,7 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
             RETURN_IF_ERROR(codegen_call_exit_with_nones(c, *ploc));
-            if (info->fb_type == ASYNC_WITH) {
+            if (info->fb_type == COMPILER_FBLOCK_ASYNC_WITH) {
                 ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
                 ADDOP_LOAD_CONST(c, *ploc, Py_None);
                 ADD_YIELD_FROM(c, *ploc, 1);
@@ -579,7 +573,7 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
             *ploc = NO_LOCATION;
             return SUCCESS;
 
-        case HANDLER_CLEANUP: {
+        case COMPILER_FBLOCK_HANDLER_CLEANUP: {
             if (info->fb_datum) {
                 ADDOP(c, *ploc, POP_BLOCK);
             }
@@ -595,7 +589,7 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
             }
             return SUCCESS;
         }
-        case POP_VALUE: {
+        case COMPILER_FBLOCK_POP_VALUE: {
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
@@ -615,11 +609,12 @@ codegen_unwind_fblock_stack(struct compiler *c, location *ploc,
     if (top == NULL) {
         return SUCCESS;
     }
-    if (top->fb_type == EXCEPTION_GROUP_HANDLER) {
+    if (top->fb_type == COMPILER_FBLOCK_EXCEPTION_GROUP_HANDLER) {
         return _PyCompiler_Error(
             c, *ploc, "'break', 'continue' and 'return' cannot appear in an except* block");
     }
-    if (loop != NULL && (top->fb_type == WHILE_LOOP || top->fb_type == FOR_LOOP)) {
+    if (loop != NULL && (top->fb_type == COMPILER_FBLOCK_WHILE_LOOP ||
+                         top->fb_type == COMPILER_FBLOCK_FOR_LOOP)) {
         *loop = top;
         return SUCCESS;
     }
@@ -1256,7 +1251,7 @@ codegen_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t fu
     if (add_stopiteration_handler) {
         /* codegen_wrap_in_stopiteration_handler will push a block, so we need to account for that */
         RETURN_IF_ERROR(
-            _PyCompiler_PushFBlock(c, NO_LOCATION, STOP_ITERATION,
+            _PyCompiler_PushFBlock(c, NO_LOCATION, COMPILER_FBLOCK_STOP_ITERATION,
                                  start, NO_LABEL, NULL));
     }
 
@@ -1265,7 +1260,7 @@ codegen_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t fu
     }
     if (add_stopiteration_handler) {
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_wrap_in_stopiteration_handler(c));
-        _PyCompiler_PopFBlock(c, STOP_ITERATION, start);
+        _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_STOP_ITERATION, start);
     }
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
     _PyCompiler_ExitScope(c);
@@ -1970,7 +1965,7 @@ codegen_for(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
     NEW_JUMP_TARGET_LABEL(c, end);
 
-    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, FOR_LOOP, start, end, NULL));
+    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_FOR_LOOP, start, end, NULL));
 
     VISIT(c, expr, s->v.For.iter);
 
@@ -1999,7 +1994,7 @@ codegen_for(struct compiler *c, stmt_ty s)
     ADDOP(c, NO_LOCATION, END_FOR);
     ADDOP(c, NO_LOCATION, POP_TOP);
 
-    _PyCompiler_PopFBlock(c, FOR_LOOP, start);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_FOR_LOOP, start);
 
     VISIT_SEQ(c, stmt, s->v.For.orelse);
 
@@ -2021,7 +2016,7 @@ codegen_async_for(struct compiler *c, stmt_ty s)
     ADDOP(c, LOC(s->v.AsyncFor.iter), GET_AITER);
 
     USE_LABEL(c, start);
-    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, FOR_LOOP, start, end, NULL));
+    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_FOR_LOOP, start, end, NULL));
 
     /* SETUP_FINALLY to guard the __anext__ call */
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
@@ -2036,7 +2031,7 @@ codegen_async_for(struct compiler *c, stmt_ty s)
     /* Mark jump as artificial */
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
-    _PyCompiler_PopFBlock(c, FOR_LOOP, start);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_FOR_LOOP, start);
 
     /* Except block for __anext__ */
     USE_LABEL(c, except);
@@ -2062,13 +2057,13 @@ codegen_while(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, loop);
 
-    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
+    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, LOC(s), COMPILER_FBLOCK_WHILE_LOOP, loop, end, NULL));
     RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
     VISIT_SEQ(c, stmt, s->v.While.body);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
 
-    _PyCompiler_PopFBlock(c, WHILE_LOOP, loop);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_WHILE_LOOP, loop);
 
     USE_LABEL(c, anchor);
     if (s->v.While.orelse) {
@@ -2196,7 +2191,7 @@ codegen_try_finally(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, body);
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, FINALLY_TRY, body, end,
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_FINALLY_TRY, body, end,
                              s->v.Try.finalbody));
 
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
@@ -2206,7 +2201,7 @@ codegen_try_finally(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-    _PyCompiler_PopFBlock(c, FINALLY_TRY, body);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
 
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, exit);
@@ -2218,9 +2213,9 @@ codegen_try_finally(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
     ADDOP(c, loc, PUSH_EXC_INFO);
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_FINALLY_END, end, NO_LABEL, NULL));
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    _PyCompiler_PopFBlock(c, FINALLY_END, end);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_FINALLY_END, end);
 
     loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
@@ -2246,8 +2241,8 @@ codegen_try_star_finally(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, body);
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, FINALLY_TRY, body, end,
-                             s->v.TryStar.finalbody));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_FINALLY_TRY, body, end,
+                               s->v.TryStar.finalbody));
 
     if (s->v.TryStar.handlers && asdl_seq_LEN(s->v.TryStar.handlers)) {
         RETURN_IF_ERROR(codegen_try_star_except(c, s));
@@ -2256,7 +2251,7 @@ codegen_try_star_finally(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, s->v.TryStar.body);
     }
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-    _PyCompiler_PopFBlock(c, FINALLY_TRY, body);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
 
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, exit);
@@ -2268,11 +2263,11 @@ codegen_try_star_finally(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
     ADDOP(c, loc, PUSH_EXC_INFO);
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_FINALLY_END, end, NO_LABEL, NULL));
 
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
 
-    _PyCompiler_PopFBlock(c, FINALLY_END, end);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_FINALLY_END, end);
     loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
 
@@ -2327,9 +2322,9 @@ codegen_try_except(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, body);
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, TRY_EXCEPT, body, NO_LABEL, NULL));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_TRY_EXCEPT, body, NO_LABEL, NULL));
     VISIT_SEQ(c, stmt, s->v.Try.body);
-    _PyCompiler_PopFBlock(c, TRY_EXCEPT, body);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_TRY_EXCEPT, body);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     if (s->v.Try.orelse && asdl_seq_LEN(s->v.Try.orelse)) {
         VISIT_SEQ(c, stmt, s->v.Try.orelse);
@@ -2344,7 +2339,8 @@ codegen_try_except(struct compiler *c, stmt_ty s)
 
     /* Runtime will push a block here, so we need to account for that */
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, EXCEPTION_HANDLER, NO_LABEL, NO_LABEL, NULL));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_EXCEPTION_HANDLER,
+                               NO_LABEL, NO_LABEL, NULL));
 
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
@@ -2383,12 +2379,12 @@ codegen_try_except(struct compiler *c, stmt_ty s)
 
             USE_LABEL(c, cleanup_body);
             RETURN_IF_ERROR(
-                _PyCompiler_PushFBlock(c, loc, HANDLER_CLEANUP, cleanup_body,
-                                     NO_LABEL, handler->v.ExceptHandler.name));
+                _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_HANDLER_CLEANUP, cleanup_body,
+                                       NO_LABEL, handler->v.ExceptHandler.name));
 
             /* second # body */
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
-            _PyCompiler_PopFBlock(c, HANDLER_CLEANUP, cleanup_body);
+            _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_HANDLER_CLEANUP, cleanup_body);
             /* name = None; del name; # Mark as artificial */
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
@@ -2419,11 +2415,11 @@ codegen_try_except(struct compiler *c, stmt_ty s)
 
             USE_LABEL(c, cleanup_body);
             RETURN_IF_ERROR(
-                _PyCompiler_PushFBlock(c, loc, HANDLER_CLEANUP, cleanup_body,
+                _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_HANDLER_CLEANUP, cleanup_body,
                                      NO_LABEL, NULL));
 
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
-            _PyCompiler_PopFBlock(c, HANDLER_CLEANUP, cleanup_body);
+            _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_HANDLER_CLEANUP, cleanup_body);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
             ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
@@ -2432,7 +2428,7 @@ codegen_try_except(struct compiler *c, stmt_ty s)
         USE_LABEL(c, except);
     }
     /* artificial */
-    _PyCompiler_PopFBlock(c, EXCEPTION_HANDLER, NO_LABEL);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_EXCEPTION_HANDLER, NO_LABEL);
     ADDOP_I(c, NO_LOCATION, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -2510,9 +2506,9 @@ codegen_try_star_except(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, body);
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, TRY_EXCEPT, body, NO_LABEL, NULL));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_TRY_EXCEPT, body, NO_LABEL, NULL));
     VISIT_SEQ(c, stmt, s->v.TryStar.body);
-    _PyCompiler_PopFBlock(c, TRY_EXCEPT, body);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_TRY_EXCEPT, body);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, orelse);
     Py_ssize_t n = asdl_seq_LEN(s->v.TryStar.handlers);
@@ -2524,8 +2520,8 @@ codegen_try_star_except(struct compiler *c, stmt_ty s)
 
     /* Runtime will push a block here, so we need to account for that */
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, EXCEPTION_GROUP_HANDLER,
-                             NO_LABEL, NO_LABEL, "except handler"));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_EXCEPTION_GROUP_HANDLER,
+                               NO_LABEL, NO_LABEL, "except handler"));
 
     for (Py_ssize_t i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
@@ -2581,12 +2577,12 @@ codegen_try_star_except(struct compiler *c, stmt_ty s)
 
         USE_LABEL(c, cleanup_body);
         RETURN_IF_ERROR(
-            _PyCompiler_PushFBlock(c, loc, HANDLER_CLEANUP, cleanup_body,
-                                 NO_LABEL, handler->v.ExceptHandler.name));
+            _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_HANDLER_CLEANUP, cleanup_body,
+                                   NO_LABEL, handler->v.ExceptHandler.name));
 
         /* second # body */
         VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
-        _PyCompiler_PopFBlock(c, HANDLER_CLEANUP, cleanup_body);
+        _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_HANDLER_CLEANUP, cleanup_body);
         /* name = None; del name; # artificial */
         ADDOP(c, NO_LOCATION, POP_BLOCK);
         if (handler->v.ExceptHandler.name) {
@@ -2631,7 +2627,7 @@ codegen_try_star_except(struct compiler *c, stmt_ty s)
         }
     }
     /* artificial */
-    _PyCompiler_PopFBlock(c, EXCEPTION_GROUP_HANDLER, NO_LABEL);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_EXCEPTION_GROUP_HANDLER, NO_LABEL);
     NEW_JUMP_TARGET_LABEL(c, reraise);
 
     USE_LABEL(c, reraise_star);
@@ -4266,8 +4262,8 @@ codegen_async_comprehension_generator(struct compiler *c, location loc,
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
     RETURN_IF_ERROR(
-        _PyCompiler_PushFBlock(c, loc, ASYNC_COMPREHENSION_GENERATOR,
-                             start, NO_LABEL, NULL));
+        _PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
+                               start, NO_LABEL, NULL));
 
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
@@ -4327,7 +4323,7 @@ codegen_async_comprehension_generator(struct compiler *c, location loc,
     USE_LABEL(c, if_cleanup);
     ADDOP_JUMP(c, elt_loc, JUMP, start);
 
-    _PyCompiler_PopFBlock(c, ASYNC_COMPREHENSION_GENERATOR, start);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_ASYNC_COMPREHENSION_GENERATOR, start);
 
     USE_LABEL(c, except);
 
@@ -4744,7 +4740,7 @@ codegen_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* SETUP_WITH pushes a finally block. */
     USE_LABEL(c, block);
-    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, ASYNC_WITH, block, final, s));
+    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_ASYNC_WITH, block, final, s));
 
     if (item->optional_vars) {
         VISIT(c, expr, item->optional_vars);
@@ -4763,7 +4759,7 @@ codegen_async_with(struct compiler *c, stmt_ty s, int pos)
         RETURN_IF_ERROR(codegen_async_with(c, s, pos));
     }
 
-    _PyCompiler_PopFBlock(c, ASYNC_WITH, block);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_ASYNC_WITH, block);
 
     ADDOP(c, loc, POP_BLOCK);
     /* End of body; start the cleanup */
@@ -4843,7 +4839,7 @@ codegen_with(struct compiler *c, stmt_ty s, int pos)
 
     /* SETUP_WITH pushes a finally block. */
     USE_LABEL(c, block);
-    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, WITH, block, final, s));
+    RETURN_IF_ERROR(_PyCompiler_PushFBlock(c, loc, COMPILER_FBLOCK_WITH, block, final, s));
 
     if (item->optional_vars) {
         VISIT(c, expr, item->optional_vars);
@@ -4863,7 +4859,7 @@ codegen_with(struct compiler *c, stmt_ty s, int pos)
     }
 
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-    _PyCompiler_PopFBlock(c, WITH, block);
+    _PyCompiler_PopFBlock(c, COMPILER_FBLOCK_WITH, block);
 
     /* End of body; start the cleanup. */
 
