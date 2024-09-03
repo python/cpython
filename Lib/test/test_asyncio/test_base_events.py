@@ -2214,18 +2214,16 @@ class TestSelectorUtils(test_utils.TestCase):
     @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
                          'need socket.TCP_NODELAY')
     def test_set_nodelay(self):
-        with self.subTest('non-blocking'):
-            sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                                 proto=socket.IPPROTO_TCP)
-            with sock:
-                self.check_set_nodelay(sock)
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                                proto=socket.IPPROTO_TCP)
+        with sock:
+            self.check_set_nodelay(sock)
 
-        with self.subTest('blocking'):
-            sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                                 proto=socket.IPPROTO_TCP)
-            with sock:
-                sock.setblocking(False)
-                self.check_set_nodelay(sock)
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                                proto=socket.IPPROTO_TCP)
+        with sock:
+            sock.setblocking(False)
+            self.check_set_nodelay(sock)
 
 
 if __name__ == '__main__':
