@@ -125,7 +125,7 @@ _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
         'getturtle', 'goto', 'heading', 'hideturtle', 'home', 'ht', 'isdown',
         'isvisible', 'left', 'lt', 'onclick', 'ondrag', 'onrelease', 'pd',
         'pen', 'pencolor', 'pendown', 'pensize', 'penup', 'pos', 'position',
-        'pu', 'radians', 'right', 'reset', 'resizemode', 'rt',
+        'pu', 'radians', 'right', 'reset', 'save', 'resizemode', 'rt',
         'seth', 'setheading', 'setpos', 'setposition',
         'setundobuffer', 'setx', 'sety', 'shape', 'shapesize', 'shapetransform', 'shearfactor', 'showturtle',
         'speed', 'st', 'stamp', 'teleport', 'tilt', 'tiltangle', 'towards',
@@ -2515,7 +2515,7 @@ class _TurtleImage(object):
             self._item = [screen._createpoly() for item in
                                           screen._shapes[shapeIndex]._data]
 
-
+# HELLO
 class RawTurtle(TPen, TNavigator):
     """Animation part of the RawTurtle.
     Puts RawTurtle upon a TurtleScreen and provides tools for
@@ -2587,6 +2587,21 @@ class RawTurtle(TPen, TNavigator):
         self._clear()
         self._drawturtle()
         self._update()
+
+    def save(self, filepath, cover=False):
+        """Save the image of the turtle's
+
+        Argument:
+        filepath -- saved target path
+
+        Example (for a Turtle instance named turtle):
+        >>> turtle.save('./example.ps')
+        """
+        if not cover and isfile(filepath):
+            raise FileExistsError('File is already exist: %s' % filepath)
+
+        with open(filepath, 'w') as fp:
+            fp.write(self.screen._canvas.postscript())
 
     def setundobuffer(self, size):
         """Set or disable undobuffer.
