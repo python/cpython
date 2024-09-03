@@ -644,13 +644,6 @@ class Grep(WorkloadExamples):
         # [end-grep-cf-multiprocessing]
         Grep.app(run_all)
 
-    @example
-    def run_using_dask():
-        # [start-grep-dask]
-        # dask 1
-        ...
-        # [end-grep-dask]
-
 
 #######################################
 # workload: image resizer
@@ -724,13 +717,6 @@ class ImageResizer(WorkloadExamples):
         # concurrent.futures 2
         ...
         # [end-image-resizer-cf-multiprocessing]
-
-    @example
-    def run_using_dask():
-        # [start-image-resizer-dask]
-        # dask 2
-        ...
-        # [end-image-resizer-dask]
 
 
 #######################################
@@ -806,13 +792,6 @@ class Workload2(WorkloadExamples):
         ...
         # [end-w2-cf-multiprocessing]
 
-    @example
-    def run_using_dask():
-        # [start-w2-dask]
-        # dask 3
-        ...
-        # [end-w2-dask]
-
 
 #######################################
 # workload 3: ...
@@ -886,13 +865,6 @@ class Workload3(WorkloadExamples):
         # concurrent.futures 3
         ...
         # [end-w3-cf-multiprocessing]
-
-    @example
-    def run_using_dask():
-        # [start-w3-dask]
-        # dask 3
-        ...
-        # [end-w3-dask]
 
 
 #######################################

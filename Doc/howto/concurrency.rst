@@ -9,13 +9,13 @@ that would do an excellent job of introducing you to concurrency.
 This howto document builds on those by walking you through how
 to apply that knowledge using Python.
 
-Python supports the following concurrency models:
+Python supports the following concurrency models directly:
 
-* free-threading
-* isolated threads, AKA CSP/actor model
-* coroutines (async/await)
-* multi-processing
-* distributed, e.g. SMP
+* free-threading (stdlib, C-API)
+* isolated threads, AKA CSP/actor model (stdlib*, C-API)
+* coroutines, AKA async/await (language, stdlib, C-API)
+* multi-processing (stdlib)
+* distributed, e.g. SMP (stdlib)
 
 In this document, we'll look at how to take advantage of this
 concurrency support.  The overall focus is on the following:
@@ -44,6 +44,12 @@ concurrency support.  The overall focus is on the following:
    newer programming languages typically avoid exposing threads directly.
    Take that into consideration before reaching for threads and look at
    the alternatives first.
+
+.. note::
+
+   Python supports other concurrency models indirectly through
+   community-maintained PyPI packages.  One well-known example is
+   :pypi:`dask`, which supports "distributed" computing.
 
 We'll be using the following terms and ideas throughout:
 
@@ -1129,7 +1135,6 @@ side-by-side for easy comparison:
      - multiple interpreters
      - coroutines
      - multiple processes
-     - distributed
    * - .. raw:: html
 
           <details>
@@ -1205,21 +1210,6 @@ side-by-side for easy comparison:
 
           </details>
 
-     - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-grep-dask]
-          :end-before: [end-grep-dask]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
-
 For threads, multiprocessing, and
 `multiple interpreters * <python-stdlib-interpreters_>`_,
 you can also use :mod:`concurrent.futures`:
@@ -1261,7 +1251,6 @@ side-by-side for easy comparison:
      - multiple interpreters
      - coroutines
      - multiple processes
-     - distributed
    * - .. raw:: html
 
           <details>
@@ -1337,21 +1326,6 @@ side-by-side for easy comparison:
 
           </details>
 
-     - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-w2-dask]
-          :end-before: [end-w2-dask]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
-
 .. raw:: html
 
    <br/>
@@ -1374,7 +1348,6 @@ side-by-side for easy comparison:
      - multiple interpreters
      - coroutines
      - multiple processes
-     - distributed
    * - .. raw:: html
 
           <details>
@@ -1443,21 +1416,6 @@ side-by-side for easy comparison:
        .. literalinclude:: ../includes/concurrency.py
           :start-after: [start-w3-multiprocessing]
           :end-before: [end-w3-multiprocessing]
-          :dedent:
-          :linenos:
-
-       .. raw:: html
-
-          </details>
-
-     - .. raw:: html
-
-          <details>
-          <summary>(expand)</summary>
-
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-w3-dask]
-          :end-before: [end-w3-dask]
           :dedent:
           :linenos:
 
