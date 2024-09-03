@@ -674,10 +674,10 @@ class LongTests(unittest.TestCase):
         int_info = sys.int_info
         layout = _testcapi.get_pylong_layout()
         expected = {
-            'array_endian': -1,
+            'endian': -1,
             'bits_per_digit': int_info.bits_per_digit,
             'digit_size': int_info.sizeof_digit,
-            'word_endian': -1 if sys.byteorder == 'little' else 1,
+            'digits_order': -1 if sys.byteorder == 'little' else 1,
         }
         self.assertEqual(layout, expected)
 
@@ -749,11 +749,11 @@ class LongTests(unittest.TestCase):
             return (-endian if endian else 1)
         with self.assertRaises(ValueError):
             layout = _testcapi.get_pylong_layout()
-            layout['word_endian'] = change_endian(layout['word_endian'])
+            layout['digits_order'] = change_endian(layout['digits_order'])
             pylongwriter_create(0, [123], layout)
         with self.assertRaises(ValueError):
             layout = _testcapi.get_pylong_layout()
-            layout['array_endian'] = change_endian(layout['array_endian'])
+            layout['endian'] = change_endian(layout['endian'])
             pylongwriter_create(0, [123], layout)
 
 

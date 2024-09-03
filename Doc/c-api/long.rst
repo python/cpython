@@ -647,14 +647,14 @@ Export API
 
       Digit size in bytes.
 
-   .. c:member:: int8_t word_endian
+   .. c:member:: int8_t digits_order
 
       Word endian:
 
       - ``1`` for most significant word first (big endian)
       - ``-1`` for least significant first (little endian)
 
-   .. c:member:: int8_t array_endian
+   .. c:member:: int8_t endian
 
       Array endian:
 

@@ -145,21 +145,21 @@ layout_to_dict(const PyLongLayout *layout)
         goto error;
     }
 
-    value = PyLong_FromLong(layout->word_endian);
+    value = PyLong_FromLong(layout->digits_order);
     if (value == NULL) {
         goto error;
     }
-    res = PyDict_SetItemString(dict, "word_endian", value);
+    res = PyDict_SetItemString(dict, "digits_order", value);
     Py_DECREF(value);
     if (res < 0) {
         goto error;
     }
 
-    value = PyLong_FromLong(layout->array_endian);
+    value = PyLong_FromLong(layout->endian);
     if (value == NULL) {
         goto error;
     }
-    res = PyDict_SetItemString(dict, "array_endian", value);
+    res = PyDict_SetItemString(dict, "endian", value);
     Py_DECREF(value);
     if (res < 0) {
         goto error;
@@ -218,15 +218,15 @@ layout_from_dict(PyLongLayout *layout, PyObject *dict)
     }
     layout->digit_size = (uint8_t)value;
 
-    if (layout_from_dict_get(dict, "word_endian", 1, &value) < 0) {
+    if (layout_from_dict_get(dict, "digits_order", 1, &value) < 0) {
         goto error;
     }
-    layout->word_endian = (int8_t)value;
+    layout->digits_order = (int8_t)value;
 
-    if (layout_from_dict_get(dict, "array_endian", 1, &value) < 0) {
+    if (layout_from_dict_get(dict, "endian", 1, &value) < 0) {
         goto error;
     }
-    layout->array_endian = (int8_t)value;
+    layout->endian = (int8_t)value;
 
     return 0;
 

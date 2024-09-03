@@ -153,12 +153,12 @@ typedef struct PyLongLayout {
     // Word endian:
     // * 1 for most significant word first (big endian)
     // * -1 for least significant first (little endian)
-    int8_t word_endian;
+    int8_t digits_order;
 
     // Array endian:
     // * 1 for most significant byte first (big endian)
     // * -1 for least significant first (little endian)
-    int8_t array_endian;
+    int8_t endian;
 } PyLongLayout;
 
 PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
