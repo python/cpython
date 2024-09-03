@@ -581,6 +581,7 @@
     <ClCompile Include="..\Python\brc.c" />
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
+    <ClCompile Include="..\Python\codegen.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
     <ClCompile Include="..\Python\critical_section.c" />

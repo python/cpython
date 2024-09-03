@@ -86,8 +86,6 @@ struct _PyCfgBuilder {
 
 typedef struct _PyCfgBuilder cfg_builder;
 
-static const jump_target_label NO_LABEL = {-1};
-
 #define SAME_LABEL(L1, L2) ((L1).id == (L2).id)
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
@@ -1302,7 +1300,7 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
 static int
 add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
 {
-    if (_PyCompile_ConstCacheMergeOne(const_cache, &newconst) < 0) {
+    if (_PyCompiler_ConstCacheMergeOne(const_cache, &newconst) < 0) {
         Py_DECREF(newconst);
         return -1;
     }
