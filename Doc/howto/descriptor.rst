@@ -1303,8 +1303,8 @@ mean, median, and other descriptive statistics that depend on the data. However,
 there may be useful functions which are conceptually related but do not depend
 on the data.  For instance, ``erf(x)`` is handy conversion routine that comes up
 in statistical work but does not directly depend on a particular dataset.
-It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` or
-``Sample.erf(1.5) --> .9332``.
+It can be called either from an object or the class:  ``s.erf(1.5) --> 0.9332``
+or ``Sample.erf(1.5) --> 0.9332``.
 
 Since static methods return the underlying function with no changes, the
 example calls are unexciting:
