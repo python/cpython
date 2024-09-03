@@ -337,8 +337,14 @@ class HistoricalReader(Reader):
 
         while 1:
             if (forwards and i >= len(self.history) - 1) or (not forwards and i == 0):
-                self.error("not found")
+                if forwards and not match_prefix:
+                    self.pos = 0
+                    self.buffer = []
+                    self.dirty = True
+                else:
+                    self.error("not found")
                 return
+
             if forwards:
                 i += 1
                 s = self.get_item(i)
