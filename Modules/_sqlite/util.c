@@ -162,7 +162,7 @@ _pysqlite_long_as_int64(PyObject * py_val)
         sqlite_int64 int64val;
         if (_PyLong_AsByteArray((PyLongObject *)py_val,
                                 (unsigned char *)&int64val, sizeof(int64val),
-                                IS_LITTLE_ENDIAN, 1 /* signed */) >= 0) {
+                                IS_LITTLE_ENDIAN, 1 /* signed */, 0) >= 0) {
             return int64val;
         }
     }

@@ -1,5 +1,5 @@
-:mod:`posix` --- The most common POSIX system calls
-===================================================
+:mod:`!posix` --- The most common POSIX system calls
+====================================================
 
 .. module:: posix
    :platform: Unix

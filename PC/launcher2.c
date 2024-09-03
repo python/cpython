@@ -853,7 +853,7 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
     }
 
     wchar_t filename[MAXLEN];
-    if (wcsncpy_s(filename, MAXLEN, command, lastDot)) {
+    if (wcsncpy_s(filename, MAXLEN, command, commandLength)) {
         return RC_BAD_VIRTUAL_PATH;
     }
 
@@ -1594,6 +1594,7 @@ _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentI
 
             int count = swprintf_s(realTag, tagLength + 4, L"%s-32", env->tag);
             if (count == -1) {
+                debug(L"# Failed to generate 32bit tag\n");
                 free(realTag);
                 return RC_INTERNAL_ERROR;
             }
@@ -1749,10 +1750,18 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
         exeName = search->windowed ? L"pythonw.exe" : L"python.exe";
     }
 
-    if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, buffer)) ||
-        !join(buffer, MAXLEN, L"Microsoft\\WindowsApps") ||
+    // Failure to get LocalAppData may just mean we're running as a user who
+    // doesn't have a profile directory.
+    // In this case, return "not found", but don't fail.
+    // Chances are they can't launch Store installs anyway.
+    if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, buffer))) {
+        return RC_NO_PYTHON;
+    }
+
+    if (!join(buffer, MAXLEN, L"Microsoft\\WindowsApps") ||
         !join(buffer, MAXLEN, packageFamilyName) ||
         !join(buffer, MAXLEN, exeName)) {
+        debug(L"# Failed to construct App Execution Alias path\n");
         return RC_INTERNAL_ERROR;
     }
 
@@ -1953,6 +1962,7 @@ struct AppxSearchInfo {
 
 struct AppxSearchInfo APPX_SEARCH[] = {
     // Releases made through the Store
+    { L"PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0", L"3.13", 10 },
     { L"PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0", L"3.12", 10 },
     { L"PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0", L"3.11", 10 },
     { L"PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0", L"3.10", 10 },
@@ -1962,6 +1972,7 @@ struct AppxSearchInfo APPX_SEARCH[] = {
     // Side-loadable releases. Note that the publisher ID changes whenever we
     // renew our code-signing certificate, so the newer ID has a higher
     // priority (lower sortKey)
+    { L"PythonSoftwareFoundation.Python.3.13_3847v3x7pw1km", L"3.13", 11 },
     { L"PythonSoftwareFoundation.Python.3.12_3847v3x7pw1km", L"3.12", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_3847v3x7pw1km", L"3.11", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_hd69rhyc2wevp", L"3.11", 12 },
@@ -1982,6 +1993,7 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
     EnvironmentInfo *env = NULL;
 
     if (!result) {
+        debug(L"# collectEnvironments() was passed a NULL result\n");
         return RC_INTERNAL_ERROR;
     }
     *result = NULL;
@@ -2042,7 +2054,8 @@ struct StoreSearchInfo {
 
 
 struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.11 */ L"9NRWMJP3717K" },
+    { L"3", /* 3.12 */ L"9NCVDN91XZQP" },
+    { L"3.13", L"9PNRBTZXMB4Z" },
     { L"3.12", L"9NCVDN91XZQP" },
     { L"3.11", L"9NRWMJP3717K" },
     { L"3.10", L"9PJPW5LDXLZ5" },
@@ -2276,6 +2289,7 @@ int
 selectEnvironment(const SearchInfo *search, EnvironmentInfo *root, EnvironmentInfo **best)
 {
     if (!best) {
+        debug(L"# selectEnvironment() was passed a NULL best\n");
         return RC_INTERNAL_ERROR;
     }
     if (!root) {
@@ -2693,6 +2707,11 @@ process(int argc, wchar_t ** argv)
     DWORD len = GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", NULL, 0);
     if (len > 1) {
         wchar_t *limitToCompany = allocSearchInfoBuffer(&search, len);
+        if (!limitToCompany) {
+            exitCode = RC_NO_MEMORY;
+            winerror(0, L"Failed to allocate internal buffer");
+            goto abort;
+        }
         search.limitToCompany = limitToCompany;
         if (0 == GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", limitToCompany, len)) {
             exitCode = RC_INTERNAL_ERROR;

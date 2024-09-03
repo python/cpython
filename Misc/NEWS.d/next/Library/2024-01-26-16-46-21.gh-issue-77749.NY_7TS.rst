@@ -1,2 +1,0 @@
-:meth:`email.policy.EmailPolicy.fold` now always encodes non-ASCII characters
-in headers if :attr:`~email.policy.EmailPolicy.utf8` is false.

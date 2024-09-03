@@ -1,5 +1,5 @@
-:mod:`pickletools` --- Tools for pickle developers
-==================================================
+:mod:`!pickletools` --- Tools for pickle developers
+===================================================
 
 .. module:: pickletools
    :synopsis: Contains extensive comments about the pickle protocols and

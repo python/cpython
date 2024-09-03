@@ -222,6 +222,10 @@ annotations = {
     "register",
     "replaced",
     "pure",
+    "split",
+    "replicate",
+    "tier1",
+    "tier2",
 }
 
 __all__ = []
@@ -238,7 +242,7 @@ def make_syntax_error(
     return SyntaxError(message, (filename, line, column, line_text))
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Token:
     filename: str
     kind: str

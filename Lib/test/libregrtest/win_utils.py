@@ -24,6 +24,10 @@ class WindowsLoadTracker():
     """
 
     def __init__(self):
+        # make __del__ not fail if pre-flight test fails
+        self._running = None
+        self._stopped = None
+
         # Pre-flight test for access to the performance data;
         # `PermissionError` will be raised if not allowed
         winreg.QueryInfoKey(winreg.HKEY_PERFORMANCE_DATA)

@@ -32,9 +32,6 @@ _PyObjectStackChunk_New(void);
 extern void
 _PyObjectStackChunk_Free(_PyObjectStackChunk *);
 
-extern void
-_PyObjectStackChunk_ClearFreeList(_PyFreeListState *state, int is_finalization);
-
 // Push an item onto the stack. Return -1 on allocation failure, 0 on success.
 static inline int
 _PyObjectStack_Push(_PyObjectStack *stack, PyObject *obj)
@@ -73,6 +70,10 @@ _PyObjectStack_Pop(_PyObjectStack *stack)
     }
     return obj;
 }
+
+// Merge src into dst, leaving src empty
+extern void
+_PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src);
 
 // Remove all items from the stack
 extern void

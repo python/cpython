@@ -4,6 +4,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #ifdef HAVE_UNISTD_H
@@ -74,7 +75,7 @@ static fault_handler_t faulthandler_handlers[] = {
 #ifdef SIGILL
     {SIGILL, 0, "Illegal instruction", },
 #endif
-    {SIGFPE, 0, "Floating point exception", },
+    {SIGFPE, 0, "Floating-point exception", },
     {SIGABRT, 0, "Aborted", },
     /* define SIGSEGV at the end to make it the default choice if searching the
        handler fails in faulthandler_fatal_error() */
@@ -119,6 +120,13 @@ faulthandler_get_fileno(PyObject **file_ptr)
         }
     }
     else if (PyLong_Check(file)) {
+        if (PyBool_Check(file)) {
+            if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                    "bool is used as a file descriptor", 1))
+            {
+                return -1;
+            }
+        }
         fd = PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;
@@ -616,7 +624,7 @@ cancel_dump_traceback_later(void)
 #define SEC_TO_US (1000 * 1000)
 
 static char*
-format_timeout(_PyTime_t us)
+format_timeout(PyTime_t us)
 {
     unsigned long sec, min, hour;
     char buffer[100];
@@ -649,7 +657,7 @@ faulthandler_dump_traceback_later(PyObject *self,
 {
     static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
     PyObject *timeout_obj;
-    _PyTime_t timeout, timeout_us;
+    PyTime_t timeout, timeout_us;
     int repeat = 0;
     PyObject *file = NULL;
     int fd;
@@ -1184,58 +1192,67 @@ PyDoc_STRVAR(module_doc,
 static PyMethodDef module_methods[] = {
     {"enable",
      _PyCFunction_CAST(faulthandler_py_enable), METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("enable(file=sys.stderr, all_threads=True): "
-               "enable the fault handler")},
+     PyDoc_STR("enable($module, /, file=sys.stderr, all_threads=True)\n--\n\n"
+               "Enable the fault handler.")},
     {"disable", faulthandler_disable_py, METH_NOARGS,
-     PyDoc_STR("disable(): disable the fault handler")},
+     PyDoc_STR("disable($module, /)\n--\n\n"
+               "Disable the fault handler.")},
     {"is_enabled", faulthandler_is_enabled, METH_NOARGS,
-     PyDoc_STR("is_enabled()->bool: check if the handler is enabled")},
+     PyDoc_STR("is_enabled($module, /)\n--\n\n"
+               "Check if the handler is enabled.")},
     {"dump_traceback",
      _PyCFunction_CAST(faulthandler_dump_traceback_py), METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=True): "
-               "dump the traceback of the current thread, or of all threads "
-               "if all_threads is True, into file")},
+     PyDoc_STR("dump_traceback($module, /, file=sys.stderr, all_threads=True)\n--\n\n"
+               "Dump the traceback of the current thread, or of all threads "
+               "if all_threads is True, into file.")},
     {"dump_traceback_later",
      _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False):\n"
-               "dump the traceback of all threads in timeout seconds,\n"
+     PyDoc_STR("dump_traceback_later($module, /, timeout, repeat=False, file=sys.stderr, exit=False)\n--\n\n"
+               "Dump the traceback of all threads in timeout seconds,\n"
                "or each timeout seconds if repeat is True. If exit is True, "
                "call _exit(1) which is not safe.")},
     {"cancel_dump_traceback_later",
      faulthandler_cancel_dump_traceback_later_py, METH_NOARGS,
-     PyDoc_STR("cancel_dump_traceback_later():\ncancel the previous call "
-               "to dump_traceback_later().")},
+     PyDoc_STR("cancel_dump_traceback_later($module, /)\n--\n\n"
+               "Cancel the previous call to dump_traceback_later().")},
 #ifdef FAULTHANDLER_USER
     {"register",
      _PyCFunction_CAST(faulthandler_register_py), METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("register(signum, file=sys.stderr, all_threads=True, chain=False): "
-               "register a handler for the signal 'signum': dump the "
+     PyDoc_STR("register($module, /, signum, file=sys.stderr, all_threads=True, chain=False)\n--\n\n"
+               "Register a handler for the signal 'signum': dump the "
                "traceback of the current thread, or of all threads if "
-               "all_threads is True, into file")},
+               "all_threads is True, into file.")},
     {"unregister",
-     _PyCFunction_CAST(faulthandler_unregister_py), METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("unregister(signum): unregister the handler of the signal "
-                "'signum' registered by register()")},
+     _PyCFunction_CAST(faulthandler_unregister_py), METH_VARARGS,
+     PyDoc_STR("unregister($module, signum, /)\n--\n\n"
+               "Unregister the handler of the signal "
+               "'signum' registered by register().")},
 #endif
     {"_read_null", faulthandler_read_null, METH_NOARGS,
-     PyDoc_STR("_read_null(): read from NULL, raise "
-               "a SIGSEGV or SIGBUS signal depending on the platform")},
+     PyDoc_STR("_read_null($module, /)\n--\n\n"
+               "Read from NULL, raise "
+               "a SIGSEGV or SIGBUS signal depending on the platform.")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
-     PyDoc_STR("_sigsegv(release_gil=False): raise a SIGSEGV signal")},
+     PyDoc_STR("_sigsegv($module, release_gil=False, /)\n--\n\n"
+               "Raise a SIGSEGV signal.")},
     {"_fatal_error_c_thread", faulthandler_fatal_error_c_thread, METH_NOARGS,
-     PyDoc_STR("fatal_error_c_thread(): "
-               "call Py_FatalError() in a new C thread.")},
+     PyDoc_STR("_fatal_error_c_thread($module, /)\n--\n\n"
+               "Call Py_FatalError() in a new C thread.")},
     {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
-     PyDoc_STR("_sigabrt(): raise a SIGABRT signal")},
+     PyDoc_STR("_sigabrt($module, /)\n--\n\n"
+               "Raise a SIGABRT signal.")},
     {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
-     PyDoc_STR("_sigfpe(): raise a SIGFPE signal")},
+     PyDoc_STR("_sigfpe($module, /)\n--\n\n"
+               "Raise a SIGFPE signal.")},
 #ifdef FAULTHANDLER_STACK_OVERFLOW
     {"_stack_overflow", faulthandler_stack_overflow, METH_NOARGS,
-     PyDoc_STR("_stack_overflow(): recursive call to raise a stack overflow")},
+     PyDoc_STR("_stack_overflow($module, /)\n--\n\n"
+               "Recursive call to raise a stack overflow.")},
 #endif
 #ifdef MS_WINDOWS
     {"_raise_exception", faulthandler_raise_exception, METH_VARARGS,
-     PyDoc_STR("raise_exception(code, flags=0): Call RaiseException(code, flags).")},
+     PyDoc_STR("_raise_exception($module, code, flags=0, /)\n--\n\n"
+               "Call RaiseException(code, flags).")},
 #endif
     {NULL, NULL}  /* sentinel */
 };
@@ -1275,6 +1292,7 @@ static PyModuleDef_Slot faulthandler_slots[] = {
     {Py_mod_exec, PyExec_faulthandler},
     // XXX gh-103092: fix isolation.
     //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

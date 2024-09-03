@@ -4,7 +4,7 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -111,7 +111,7 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -328,7 +328,7 @@ _pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls);
 static PyObject *
 _pickle_Unpickler_load(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "load() takes no arguments");
         return NULL;
     }
@@ -614,7 +614,7 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -724,7 +724,7 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -1077,4 +1077,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ebe78653233827a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9452cf1219f2e7a input=a9049054013a1b77]*/

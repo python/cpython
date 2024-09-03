@@ -4,17 +4,20 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper, check_impl_detail
+from test.support import threading_helper, check_impl_detail, requires_specialization
+from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
 if check_impl_detail(cpython=False):
     raise unittest.SkipTest('implementation detail specific to cpython')
 
-import _testinternalcapi
+_testinternalcapi = import_module("_testinternalcapi")
 
 
 def disabling_optimizer(func):
     def wrapper(*args, **kwargs):
+        if not hasattr(_testinternalcapi, "get_optimizer"):
+            return func(*args, **kwargs)
         old_opt = _testinternalcapi.get_optimizer()
         _testinternalcapi.set_optimizer(None)
         try:
@@ -23,6 +26,13 @@ def disabling_optimizer(func):
             _testinternalcapi.set_optimizer(old_opt)
 
     return wrapper
+
+
+class TestBase(unittest.TestCase):
+    def assert_specialized(self, f, opname):
+        instructions = dis.get_instructions(f, adaptive=True)
+        opnames = {instruction.opname for instruction in instructions}
+        self.assertIn(opname, opnames)
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):
@@ -476,7 +486,7 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
-class TestCallCache(unittest.TestCase):
+class TestCallCache(TestBase):
     def test_too_many_defaults_0(self):
         def f():
             pass
@@ -504,20 +514,39 @@ class TestCallCache(unittest.TestCase):
             f(None)
             f()
 
+    @disabling_optimizer
+    @requires_specialization
+    def test_assign_init_code(self):
+        class MyClass:
+            def __init__(self):
+                pass
+
+        def instantiate():
+            return MyClass()
+
+        # Trigger specialization
+        for _ in range(1025):
+            instantiate()
+        self.assert_specialized(instantiate, "CALL_ALLOC_AND_ENTER_INIT")
+
+        def count_args(self, *args):
+            self.num_args = len(args)
+
+        # Set MyClass.__init__.__code__ to a code object that uses different
+        # args
+        MyClass.__init__.__code__ = count_args.__code__
+        instantiate()
+
 
 @threading_helper.requires_working_threading()
-class TestRacesDoNotCrash(unittest.TestCase):
+@requires_specialization
+class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
     ITEMS = 1000
     LOOPS = 4
     WARMUPS = 2
     WRITERS = 2
-
-    def assert_specialized(self, f, opname):
-        instructions = dis.get_instructions(f, adaptive=True)
-        opnames = {instruction.opname for instruction in instructions}
-        self.assertIn(opname, opnames)
 
     @disabling_optimizer
     def assert_races_do_not_crash(
@@ -1021,6 +1050,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
 class C:
     pass
 
+@requires_specialization
 class TestInstanceDict(unittest.TestCase):
 
     def setUp(self):
@@ -1042,20 +1072,13 @@ class TestInstanceDict(unittest.TestCase):
         c.a = 1
         c.b = 2
         c.__dict__
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
+        self.assertEqual(c.__dict__, {"a":1, "b": 2})
 
     def test_dict_dematerialization(self):
         c = C()
         c.a = 1
         c.b = 2
         c.__dict__
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
         for _ in range(100):
             c.a
         self.assertEqual(
@@ -1070,10 +1093,6 @@ class TestInstanceDict(unittest.TestCase):
         d = c.__dict__
         for _ in range(100):
             c.a
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
         self.assertIs(c.__dict__, d)
 
     def test_dict_dematerialization_copy(self):

@@ -22,13 +22,13 @@
 
 #define DEFAULT_BLOCK_SIZE 16
 
-typedef _PyCompilerSrcLocation location;
-typedef _PyCfgJumpTargetLabel jump_target_label;
+typedef _Py_SourceLocation location;
+typedef _PyJumpTargetLabel jump_target_label;
 
 typedef struct _PyCfgInstruction {
     int i_opcode;
     int i_oparg;
-    _PyCompilerSrcLocation i_loc;
+    _Py_SourceLocation i_loc;
     struct _PyCfgBasicblock *i_target; /* target block (if jump instruction) */
     struct _PyCfgBasicblock *i_except; /* target block when exception is raised */
 } cfg_instr;
@@ -40,7 +40,7 @@ typedef struct _PyCfgBasicblock {
        control flow. */
     struct _PyCfgBasicblock *b_list;
     /* The label of this block if it is a jump target, -1 otherwise */
-    _PyCfgJumpTargetLabel b_label;
+    _PyJumpTargetLabel b_label;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
     struct _PyCfgExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
@@ -81,7 +81,7 @@ struct _PyCfgBuilder {
     /* pointer to the block currently being constructed */
     struct _PyCfgBasicblock *g_curblock;
     /* label for the next instruction to be placed */
-    _PyCfgJumpTargetLabel g_current_label;
+    _PyJumpTargetLabel g_current_label;
 };
 
 typedef struct _PyCfgBuilder cfg_builder;
@@ -92,7 +92,7 @@ static const jump_target_label NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
-    ((const _PyCompilerSrcLocation){(LNO), (END_LNO), (COL), (END_COL)})
+    ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
 static inline int
 is_block_push(cfg_instr *i)
@@ -212,14 +212,14 @@ basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc)
 }
 
 static inline int
-basicblock_append_instructions(basicblock *target, basicblock *source)
+basicblock_append_instructions(basicblock *to, basicblock *from)
 {
-    for (int i = 0; i < source->b_iused; i++) {
-        int n = basicblock_next_instr(target);
+    for (int i = 0; i < from->b_iused; i++) {
+        int n = basicblock_next_instr(to);
         if (n < 0) {
             return ERROR;
         }
-        target->b_instr[n] = source->b_instr[i];
+        to->b_instr[n] = from->b_instr[i];
     }
     return SUCCESS;
 }
@@ -292,9 +292,9 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, %s\n",
+    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, preds: %d %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
-        b->b_startdepth, b_return);
+        b->b_startdepth, b->b_predecessors, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -665,12 +665,6 @@ translate_jump_labels_to_targets(basicblock *entryblock)
     return SUCCESS;
 }
 
-int
-_PyCfg_JumpLabelsToTargets(cfg_builder *g)
-{
-    return translate_jump_labels_to_targets(g->g_entryblock);
-}
-
 static int
 mark_except_handlers(basicblock *entryblock) {
 #ifndef NDEBUG
@@ -757,6 +751,36 @@ make_cfg_traversal_stack(basicblock *entryblock) {
     return stack;
 }
 
+/* Return the stack effect of opcode with argument oparg.
+
+   Some opcodes have different stack effect when jump to the target and
+   when not jump. The 'jump' parameter specifies the case:
+
+   * 0 -- when not jump
+   * 1 -- when jump
+   * -1 -- maximal
+ */
+Py_LOCAL(int)
+stack_effect(int opcode, int oparg, int jump)
+{
+    if (opcode < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
+        // Specialized instructions are not supported.
+        return PY_INVALID_STACK_EFFECT;
+    }
+    int popped = _PyOpcode_num_popped(opcode, oparg);
+    int pushed = _PyOpcode_num_pushed(opcode, oparg);
+    if (popped < 0 || pushed < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        return 0;
+    }
+    return pushed - popped;
+}
+
 Py_LOCAL_INLINE(int)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
@@ -801,8 +825,7 @@ calculate_stackdepth(cfg_builder *g)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int effect = PyCompile_OpcodeStackEffectWithJump(
-                             instr->i_opcode, instr->i_oparg, 0);
+            int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
                              "Invalid stack effect for opcode=%d, arg=%i",
@@ -819,8 +842,7 @@ calculate_stackdepth(cfg_builder *g)
                 maxdepth = new_depth;
             }
             if (HAS_TARGET(instr->i_opcode)) {
-                effect = PyCompile_OpcodeStackEffectWithJump(
-                             instr->i_opcode, instr->i_oparg, 1);
+                effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 if (effect == PY_INVALID_STACK_EFFECT) {
                     PyErr_Format(PyExc_SystemError,
                                  "Invalid stack effect for opcode=%d, arg=%i",
@@ -1165,15 +1187,26 @@ remove_redundant_jumps(cfg_builder *g) {
     return changes;
 }
 
+static inline bool
+basicblock_has_no_lineno(basicblock *b) {
+    for (int i = 0; i < b->b_iused; i++) {
+        if (b->b_instr[i].i_loc.lineno >= 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* Maximum size of basic block that should be copied in optimizer */
 #define MAX_COPY_SIZE 4
 
-/* If this block ends with an unconditional jump to a small exit block, then
+/* If this block ends with an unconditional jump to a small exit block or
+ * a block that has no line numbers (and no fallthrough), then
  * remove the jump and extend this block with the target.
  * Returns 1 if extended, 0 if no change, and -1 on error.
  */
 static int
-inline_small_exit_blocks(basicblock *bb) {
+basicblock_inline_small_or_no_lineno_blocks(basicblock *bb) {
     cfg_instr *last = basicblock_last_instr(bb);
     if (last == NULL) {
         return 0;
@@ -1182,12 +1215,44 @@ inline_small_exit_blocks(basicblock *bb) {
         return 0;
     }
     basicblock *target = last->i_target;
-    if (basicblock_exits_scope(target) && target->b_iused <= MAX_COPY_SIZE) {
+    bool small_exit_block = (basicblock_exits_scope(target) &&
+                             target->b_iused <= MAX_COPY_SIZE);
+    bool no_lineno_no_fallthrough = (basicblock_has_no_lineno(target) &&
+                                     !BB_HAS_FALLTHROUGH(target));
+    if (small_exit_block || no_lineno_no_fallthrough) {
+        assert(is_jump(last));
+        int removed_jump_opcode = last->i_opcode;
         INSTR_SET_OP0(last, NOP);
         RETURN_IF_ERROR(basicblock_append_instructions(bb, target));
+        if (no_lineno_no_fallthrough) {
+            last = basicblock_last_instr(bb);
+            if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode) &&
+                removed_jump_opcode == JUMP)
+            {
+                /* Make sure we don't lose eval breaker checks */
+                last->i_opcode = JUMP;
+            }
+        }
+        target->b_predecessors--;
         return 1;
     }
     return 0;
+}
+
+static int
+inline_small_or_no_lineno_blocks(basicblock *entryblock) {
+    bool changes;
+    do {
+        changes = false;
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+            int res = basicblock_inline_small_or_no_lineno_blocks(b);
+            RETURN_IF_ERROR(res);
+            if (res) {
+                changes = true;
+            }
+        }
+    } while(changes); /* every change removes a jump, ensuring convergence */
+    return changes;
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -1792,6 +1857,22 @@ error:
 
 static int resolve_line_numbers(cfg_builder *g, int firstlineno);
 
+static int
+remove_redundant_nops_and_jumps(cfg_builder *g)
+{
+    int removed_nops, removed_jumps;
+    do {
+        /* Convergence is guaranteed because the number of
+         * redundant jumps and nops only decreases.
+         */
+        removed_nops = remove_redundant_nops(g);
+        RETURN_IF_ERROR(removed_nops);
+        removed_jumps = remove_redundant_jumps(g);
+        RETURN_IF_ERROR(removed_jumps);
+    } while(removed_nops + removed_jumps > 0);
+    return SUCCESS;
+}
+
 /* Perform optimizations on a control flow graph.
    The consts object should still be in list form to allow new constants
    to be appended.
@@ -1804,9 +1885,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
 {
     assert(PyDict_CheckExact(const_cache));
     RETURN_IF_ERROR(check_cfg(g));
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(inline_small_exit_blocks(b));
-    }
+    RETURN_IF_ERROR(inline_small_or_no_lineno_blocks(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     RETURN_IF_ERROR(optimize_load_const(const_cache, g, consts));
@@ -1814,21 +1893,8 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts));
     }
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(inline_small_exit_blocks(b));
-    }
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
-
-    int removed_nops, removed_jumps;
-    do {
-        /* Convergence is guaranteed because the number of
-         * redundant jumps and nops only decreases.
-         */
-        removed_nops = remove_redundant_nops(g);
-        RETURN_IF_ERROR(removed_nops);
-        removed_jumps = remove_redundant_jumps(g);
-        RETURN_IF_ERROR(removed_jumps);
-    } while(removed_nops + removed_jumps > 0);
+    RETURN_IF_ERROR(remove_redundant_nops_and_jumps(g));
     assert(no_redundant_jumps(g));
     return SUCCESS;
 }
@@ -2029,7 +2095,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* now index_map[i] == i if consts[i] is used, -1 otherwise */
     /* condense consts */
     Py_ssize_t n_used_consts = 0;
-    for (int i = 0; i < nconsts; i++) {
+    for (Py_ssize_t i = 0; i < nconsts; i++) {
         if (index_map[i] != -1) {
             assert(index_map[i] == i);
             index_map[n_used_consts++] = index_map[i];
@@ -2244,15 +2310,11 @@ push_cold_blocks_to_end(cfg_builder *g) {
             if (!IS_LABEL(b->b_next->b_label)) {
                 b->b_next->b_label.id = next_lbl++;
             }
-            cfg_instr *prev_instr = basicblock_last_instr(b);
-            // b cannot be empty because at the end of an exception handler
-            // there is always a POP_EXCEPT + RERAISE/RETURN
-            assert(prev_instr);
-
             basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id,
-                             prev_instr->i_loc);
+                             NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
+            explicit_jump->b_predecessors = 1;
             b->b_next = explicit_jump;
 
             /* set target */
@@ -2302,7 +2364,7 @@ push_cold_blocks_to_end(cfg_builder *g) {
     b->b_next = cold_blocks;
 
     if (cold_blocks != NULL) {
-        RETURN_IF_ERROR(remove_redundant_jumps(g));
+        RETURN_IF_ERROR(remove_redundant_nops_and_jumps(g));
     }
     return SUCCESS;
 }
@@ -2327,18 +2389,13 @@ convert_pseudo_ops(cfg_builder *g)
             }
         }
     }
-    return remove_redundant_nops(g);
+    return remove_redundant_nops_and_jumps(g);
 }
 
 static inline bool
 is_exit_or_eval_check_without_lineno(basicblock *b) {
     if (basicblock_exits_scope(b) || basicblock_has_eval_break(b)) {
-        for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno >= 0) {
-                return false;
-            }
-        }
-        return true;
+        return basicblock_has_no_lineno(b);
     }
     else {
         return false;
@@ -2684,26 +2741,70 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
     return nlocalsplus;
 }
 
+cfg_builder *
+_PyCfg_FromInstructionSequence(_PyInstructionSequence *seq)
+{
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+        return NULL;
+    }
+    cfg_builder *g = _PyCfgBuilder_New();
+    if (g == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < seq->s_used; i++) {
+        seq->s_instrs[i].i_target = 0;
+    }
+    for (int i = 0; i < seq->s_used; i++) {
+        _PyInstruction *instr = &seq->s_instrs[i];
+        if (HAS_TARGET(instr->i_opcode)) {
+            assert(instr->i_oparg >= 0 && instr->i_oparg < seq->s_used);
+            seq->s_instrs[instr->i_oparg].i_target = 1;
+        }
+    }
+    for (int i = 0; i < seq->s_used; i++) {
+        _PyInstruction *instr = &seq->s_instrs[i];
+        if (instr->i_target) {
+            jump_target_label lbl_ = {i};
+            if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
+                goto error;
+            }
+        }
+        int opcode = instr->i_opcode;
+        int oparg = instr->i_oparg;
+        if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
+            goto error;
+        }
+    }
+    if (_PyCfgBuilder_CheckSize(g) < 0) {
+        goto error;
+    }
+    return g;
+error:
+    _PyCfgBuilder_Free(g);
+    return NULL;
+}
+
 int
-_PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq)
+_PyCfg_ToInstructionSequence(cfg_builder *g, _PyInstructionSequence *seq)
 {
     int lbl = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         b->b_label = (jump_target_label){lbl};
-        lbl += b->b_iused;
+        lbl += 1;
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(seq, b->b_label.id));
+        RETURN_IF_ERROR(_PyInstructionSequence_UseLabel(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+            if (HAS_TARGET(instr->i_opcode)) {
+                /* Set oparg to the label id (it will later be mapped to an offset) */
                 instr->i_oparg = instr->i_target->b_label.id;
             }
             RETURN_IF_ERROR(
-                _PyCompile_InstructionSequence_Addop(
+                _PyInstructionSequence_Addop(
                     seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
 
-            _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
+            _PyExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
             if (instr->i_except != NULL) {
                 hi->h_label = instr->i_except->b_label.id;
                 hi->h_startdepth = instr->i_except->b_startdepth;
@@ -2714,6 +2815,9 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq
             }
         }
     }
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -2722,7 +2826,7 @@ int
 _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
                                      _PyCompile_CodeUnitMetadata *umd, int code_flags,
                                      int *stackdepth, int *nlocalsplus,
-                                     _PyCompile_InstructionSequence *seq)
+                                     _PyInstructionSequence *seq)
 {
     *stackdepth = calculate_stackdepth(g);
     if (*stackdepth < 0) {
@@ -2756,4 +2860,78 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
     }
 
     return SUCCESS;
+}
+
+/* This is used by _PyCompile_Assemble to fill in the jump and exception
+ * targets in a synthetic CFG (which is not the output of the builtin compiler).
+ */
+int
+_PyCfg_JumpLabelsToTargets(cfg_builder *g)
+{
+    RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
+    RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
+    return SUCCESS;
+}
+
+/* Exported API functions */
+
+int
+PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
+{
+    return stack_effect(opcode, oparg, jump);
+}
+
+int
+PyCompile_OpcodeStackEffect(int opcode, int oparg)
+{
+    return stack_effect(opcode, oparg, -1);
+}
+
+/* Access to compiler optimizations for unit tests.
+
+ * _PyCompile_OptimizeCfg takes an instruction list, constructs
+ * a CFG, optimizes it and converts back to an instruction list.
+ */
+
+static PyObject *
+cfg_to_instruction_sequence(cfg_builder *g)
+{
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)_PyInstructionSequence_New();
+    if (seq == NULL) {
+        return NULL;
+    }
+    if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
+        PyInstructionSequence_Fini(seq);
+        return NULL;
+    }
+    return (PyObject*)seq;
+}
+
+PyObject *
+_PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
+{
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
+    PyObject *const_cache = PyDict_New();
+    if (const_cache == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = NULL;
+    cfg_builder *g = _PyCfg_FromInstructionSequence((_PyInstructionSequence*)seq);
+    if (g == NULL) {
+        goto error;
+    }
+    int nparams = 0, firstlineno = 1;
+    if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
+                                nparams, firstlineno) < 0) {
+        goto error;
+    }
+    res = cfg_to_instruction_sequence(g);
+error:
+    Py_DECREF(const_cache);
+    _PyCfgBuilder_Free(g);
+    return res;
 }

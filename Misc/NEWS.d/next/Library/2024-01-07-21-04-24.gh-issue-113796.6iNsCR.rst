@@ -1,3 +1,0 @@
-Add more validation checks in the :class:`csv.Dialect` constructor.
-:exc:`ValueError` is now raised if the same character is used in different
-roles.

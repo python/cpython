@@ -1,5 +1,5 @@
-:mod:`http.server` --- HTTP servers
-===================================
+:mod:`!http.server` --- HTTP servers
+====================================
 
 .. module:: http.server
    :synopsis: HTTP server and request handlers.
@@ -263,7 +263,7 @@ provides three different variants:
 
       Adds a blank line
       (indicating the end of the HTTP headers in the response)
-      to the headers buffer and calls :meth:`flush_headers()`.
+      to the headers buffer and calls :meth:`flush_headers`.
 
       .. versionchanged:: 3.2
          The buffered headers are written to the output stream.
@@ -378,7 +378,7 @@ provides three different variants:
 
       If the request was mapped to a file, it is opened. Any :exc:`OSError`
       exception in opening the requested file is mapped to a ``404``,
-      ``'File not found'`` error. If there was a ``'If-Modified-Since'``
+      ``'File not found'`` error. If there was an ``'If-Modified-Since'``
       header in the request, and the file was not modified after this time,
       a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
@@ -519,6 +519,12 @@ the ``--cgi`` option::
 
    :mod:`http.server` command line ``--cgi`` support is being removed
    because :class:`CGIHTTPRequestHandler` is being removed.
+
+.. warning::
+
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   are not intended for use by untrusted clients and may be vulnerable
+   to exploitation. Always use within a secure environment.
 
 .. _http.server-security:
 

@@ -1,3 +1,0 @@
-Fix race condition in :mod:`trace`. Instead of checking if a directory
-exists and creating it, directly call :func:`os.makedirs` with the kwarg
-``exist_ok=True``.

@@ -1,5 +1,5 @@
-:mod:`sysconfig` --- Provide access to Python's configuration information
-=========================================================================
+:mod:`!sysconfig` --- Provide access to Python's configuration information
+==========================================================================
 
 .. module:: sysconfig
    :synopsis: Python's configuration information
@@ -305,7 +305,7 @@ Installation path functions
    mix with those by the other.
 
    End users should not use this function, but :func:`get_default_scheme` and
-   :func:`get_preferred_scheme()` instead.
+   :func:`get_preferred_scheme` instead.
 
    .. versionadded:: 3.10
 
@@ -376,7 +376,7 @@ Other functions
 
    This is used mainly to distinguish platform-specific build directories and
    platform-specific built distributions.  Typically includes the OS name and
-   version and the architecture (as supplied by 'os.uname()'), although the
+   version and the architecture (as supplied by :func:`os.uname`), although the
    exact information included depends on the OS; e.g., on Linux, the kernel
    version isn't particularly important.
 
