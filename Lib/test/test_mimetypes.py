@@ -111,8 +111,8 @@ class MimeTypesTestCase(unittest.TestCase):
         # assert that each extension in the duplicate map is also in the default map
         # for a different type
         for ext, type in mimetypes.duplicate_ext_types.items():
-            self.assertIn(ext, mimetypes.types_map)
-            self.assertNotEqual(type, mimetypes.types_map[ext])
+            self.assertIn(ext, mimetypes._types_map_default)
+            self.assertNotEqual(type, mimetypes._types_map_default[ext])
 
     def test_non_standard_types(self):
         eq = self.assertEqual
