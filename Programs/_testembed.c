@@ -36,6 +36,7 @@ char **main_argv;
 
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
+#define PROGRAM_NAME_UTF8 "./_testembed"
 
 #define INIT_LOOPS 4
 
@@ -1805,6 +1806,141 @@ static int test_init_set_config(void)
 }
 
 
+static int test_initconfig_api(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    if (PyInitConfig_SetInt(config, "configure_locale", 1) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_SetInt(config, "dev_mode", 1) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_SetInt(config, "hash_seed", 10) < 0) {
+        goto error;
+    }
+
+    // Set a UTF-8 string (program_name)
+    if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
+        goto error;
+    }
+
+    // Set a UTF-8 string (pycache_prefix)
+    if (PyInitConfig_SetStr(config, "pycache_prefix",
+                            "conf_pycache_prefix") < 0) {
+        goto error;
+    }
+
+    // Set a list of UTF-8 strings (argv)
+    char* xoptions[] = {"faulthandler"};
+    if (PyInitConfig_SetStrList(config, "xoptions",
+                                Py_ARRAY_LENGTH(xoptions), xoptions) < 0) {
+        goto error;
+    }
+
+
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+    const char *err_msg;
+error:
+    (void)PyInitConfig_GetError(config, &err_msg);
+    printf("Python init failed: %s\n", err_msg);
+    exit(1);
+}
+
+
+static int test_initconfig_get_api(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    // test PyInitConfig_HasOption()
+    assert(PyInitConfig_HasOption(config, "verbose") == 1);
+    assert(PyInitConfig_HasOption(config, "utf8_mode") == 1);
+    assert(PyInitConfig_HasOption(config, "non-existent") == 0);
+
+    // test PyInitConfig_GetInt()
+    int64_t value;
+    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
+    assert(value == 0);
+    assert(PyInitConfig_SetInt(config, "dev_mode", 1) == 0);
+    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
+    assert(value == 1);
+
+    // test PyInitConfig_GetInt() on a PyPreConfig option
+    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
+    assert(value == 0);
+    assert(PyInitConfig_SetInt(config, "utf8_mode", 1) == 0);
+    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
+    assert(value == 1);
+
+    // test PyInitConfig_GetStr()
+    char *str;
+    assert(PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) == 0);
+    assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
+    assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
+    free(str);
+
+    // test PyInitConfig_GetStrList() and PyInitConfig_FreeStrList()
+    char* xoptions[] = {"faulthandler"};
+    assert(PyInitConfig_SetStrList(config, "xoptions",
+                                   Py_ARRAY_LENGTH(xoptions), xoptions) == 0);
+    size_t length;
+    char **items;
+    assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
+    assert(length == 1);
+    assert(strcmp(items[0], "faulthandler") == 0);
+    PyInitConfig_FreeStrList(length, items);
+
+    return 0;
+}
+
+
+static int test_initconfig_exit(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    char *argv[] = {PROGRAM_NAME_UTF8, "--help"};
+    assert(PyInitConfig_SetStrList(config, "argv",
+                                   Py_ARRAY_LENGTH(argv), argv) == 0);
+
+    assert(PyInitConfig_SetInt(config, "parse_argv", 1) == 0);
+
+    assert(Py_InitializeFromInitConfig(config) < 0);
+
+    int exitcode;
+    assert(PyInitConfig_GetExitCode(config, &exitcode) == 1);
+    assert(exitcode == 0);
+
+    const char *err_msg;
+    assert(PyInitConfig_GetError(config, &err_msg) == 1);
+    assert(strcmp(err_msg, "exit code 0") == 0);
+
+    PyInitConfig_Free(config);
+    return 0;
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -2223,6 +2359,9 @@ static struct TestCase TestCases[] = {
     {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
+    {"test_initconfig_api", test_initconfig_api},
+    {"test_initconfig_get_api", test_initconfig_get_api},
+    {"test_initconfig_exit", test_initconfig_exit},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},

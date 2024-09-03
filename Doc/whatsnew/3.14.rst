@@ -500,12 +500,31 @@ New Features
 * Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
   (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
 
-* Add functions to get and set the current runtime Python configuration:
+* Add functions to get and set the current runtime Python configuration
+  (:pep:`741`):
 
   * :c:func:`PyConfig_Get`
   * :c:func:`PyConfig_GetInt`
   * :c:func:`PyConfig_Set`
   * :c:func:`PyConfig_Names`
+
+  (Contributed by Victor Stinner in :gh:`107954`.)
+
+* Add functions to configure the Python initialization (:pep:`741`):
+
+  * :c:func:`PyInitConfig_Create`
+  * :c:func:`PyInitConfig_Free`
+  * :c:func:`PyInitConfig_GetError`
+  * :c:func:`PyInitConfig_GetExitCode`
+  * :c:func:`PyInitConfig_HasOption`
+  * :c:func:`PyInitConfig_GetInt`
+  * :c:func:`PyInitConfig_GetStr`
+  * :c:func:`PyInitConfig_GetStrList`
+  * :c:func:`PyInitConfig_FreeStrList`
+  * :c:func:`PyInitConfig_SetInt`
+  * :c:func:`PyInitConfig_SetStr`
+  * :c:func:`PyInitConfig_SetStrList`
+  * :c:func:`Py_InitializeFromInitConfig`
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
