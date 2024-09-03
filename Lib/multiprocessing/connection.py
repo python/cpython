@@ -13,7 +13,6 @@ import errno
 import io
 import itertools
 import os
-import stat
 import sys
 import socket
 import struct
@@ -40,7 +39,9 @@ except ImportError:
 #
 #
 
-BUFSIZE = 8192
+# 64 KiB is the default PIPE buffer size of most POSIX platforms.
+BUFSIZE = 64 * 1024
+
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
 
@@ -361,11 +362,6 @@ if _winapi:
             f.write(ov.getbuffer())
             return f
 
-"""
-The default size of a pipe on Linux systems is 16 times the base page size:
-https://man7.org/linux/man-pages/man7/pipe.7.html
-"""
-PAGES_PER_PIPE = 16
 
 class Connection(_ConnectionBase):
     """
@@ -378,14 +374,11 @@ class Connection(_ConnectionBase):
             _close(self._handle)
         _write = _multiprocessing.send
         _read = _multiprocessing.recv
-        _default_pipe_size = 0
     else:
         def _close(self, _close=os.close):
             _close(self._handle)
         _write = os.write
         _read = os.read
-        _base_page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
-        _default_pipe_size = _base_page_size * PAGES_PER_PIPE
 
     def _send(self, buf, write=_write):
         remaining = len(buf)
@@ -400,13 +393,8 @@ class Connection(_ConnectionBase):
         buf = io.BytesIO()
         handle = self._handle
         remaining = size
-        is_pipe = False
-        if size > self._default_pipe_size > 0:
-            mode = os.fstat(handle).st_mode
-            is_pipe = stat.S_ISFIFO(mode)
-        limit = self._default_pipe_size if is_pipe else remaining
         while remaining > 0:
-            to_read = min(limit, remaining)
+            to_read = min(BUFSIZE, remaining)
             chunk = read(handle, to_read)
             n = len(chunk)
             if n == 0:
