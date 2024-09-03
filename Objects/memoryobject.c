@@ -3087,7 +3087,7 @@ memory_hash(PyObject *_self)
         }
 
         /* Can't fail */
-        self->hash = _Py_HashBytes(mem, view->len);
+        self->hash = Py_HashBuffer(mem, view->len);
 
         if (mem != view->buf)
             PyMem_Free(mem);
