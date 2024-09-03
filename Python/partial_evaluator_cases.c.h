@@ -2298,6 +2298,7 @@
 
         case _CHECK_STACK_SPACE_OPERAND: {
             uint32_t framesize = (uint32_t)this_instr->operand;
+            (void)framesize;
             break;
         }
 

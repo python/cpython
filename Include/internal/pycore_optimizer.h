@@ -192,7 +192,6 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 // handle before rejoining the rest of the program.
 #define MAX_CHAIN_DEPTH 4
 
-
 typedef struct _Py_UopsSymbol _Py_UopsSymbol;
 
 typedef struct _Py_UopsLocalsPlusSlot {

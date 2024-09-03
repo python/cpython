@@ -502,15 +502,13 @@ error:
 
 static void
 reify_shadow_stack(_Py_UOpsContext *ctx)
-{;
-    bool wrote_inst = false;
+{
     _PyUOpInstruction *trace_dest = ctx->trace_dest;
     for (_Py_UopsLocalsPlusSlot *sp = ctx->frame->stack; sp < ctx->frame->stack_pointer; sp++) {
         _Py_UopsLocalsPlusSlot slot = *sp;
         assert(slot.sym != NULL);
         // Need reifying.
         if (slot.is_virtual) {
-            wrote_inst = true;
             if (slot.sym->const_val) {
                 DPRINTF(3, "reifying LOAD_CONST_INLINE\n");
                 WRITE_OP(&trace_dest[ctx->n_trace_dest], _Py_IsImmortal(slot.sym->const_val) ?
@@ -585,9 +583,7 @@ partial_evaluate_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        uint64_t operand = this_instr->operand;
         _Py_UopsLocalsPlusSlot *stack_pointer = ctx->frame->stack_pointer;
-        _Py_UopsLocalsPlusSlot *old_sp = stack_pointer;
 
         // An instruction is candidate static if it has no escapes, and all its inputs
         // are static.
@@ -797,8 +793,8 @@ _Py_uop_analyze_and_optimize(
 
     // Help the PE by removing as many _CHECK_VALIDITY as possible,
     // Since PE treats that as non-static since it can deopt arbitrarily.
-
     length = remove_unneeded_uops(buffer, length);
+    assert(length > 0);
 
     length = partial_evaluate_uops(
         _PyFrame_GetCode(frame), buffer,

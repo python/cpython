@@ -48,21 +48,6 @@ extern PyCodeObject *get_code(_PyUOpInstruction *op);
 static int
 dummy_func(void) {
 
-    PyCodeObject *co;
-    int oparg;
-    _Py_UopsSymbol *flag;
-    _Py_UopsSymbol *left;
-    _Py_UopsSymbol *right;
-    _Py_UopsSymbol *value;
-    _Py_UopsSymbol *res;
-    _Py_UopsSymbol *iter;
-    _Py_UopsSymbol *top;
-    _Py_UopsSymbol *bottom;
-    _Py_UOpsAbstractFrame *frame;
-    _Py_UOpsAbstractFrame *new_frame;
-    _Py_UOpsContext *ctx;
-    _PyUOpInstruction *this_instr;
-
 // BEGIN BYTECODES //
 
     override op(_LOAD_FAST_CHECK, (-- value)) {
@@ -115,7 +100,8 @@ dummy_func(void) {
         SET_STATIC_INST();
     }
 
-    override op (_CHECK_STACK_SPACE_OPERAND, ( -- )) {
+    override op(_CHECK_STACK_SPACE_OPERAND, ( -- )) {
+        (void)framesize;
     }
 
 // END BYTECODES //
