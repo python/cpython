@@ -6823,7 +6823,7 @@ PyLong_FreeDigitArray(PyLong_DigitArray *array)
 
 /* --- PyLongWriter API --------------------------------------------------- */
 
-PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, Py_digit **digits,
+PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits,
                                   const PyLongLayout *layout)
 {
     if (ndigits < 0) {

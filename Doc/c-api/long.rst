@@ -685,7 +685,7 @@ Export API
 
       Number of digits in :c:member:`digits` array.
 
-   .. c:member:: const Py_digit *digits
+   .. c:member:: const void *digits
 
       Read-only array of unsigned digits.
 
@@ -727,7 +727,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    The instance must be destroyed by :c:func:`PyLongWriter_Finish`.
 
 
-.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, Py_digit **digits, const PyLongLayout *layout)
+.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits, const PyLongLayout *layout)
 
    Create a :c:type:`PyLongWriter`.
 
@@ -761,12 +761,14 @@ Example creating an integer from an array of digits::
     PyObject *
     long_import(int negative, Py_ssize_t ndigits, Py_digit *digits)
     {
-        Py_digit *writer_digits;
+        void *writer_digits;
         PyLongWriter *writer = PyLongWriter_Create(negative, ndigits,
                                                    &writer_digits);
         if (writer == NULL) {
             return NULL;
         }
-        memcpy(writer_digits, digits, ndigits * sizeof(digit));
+
+        assert(layout.digit_size == sizeof(Py_digit));
+        memcpy(writer_digits, digits, ndigits * sizeof(Py_digit));
         return PyLongWriter_Finish(writer);
     }

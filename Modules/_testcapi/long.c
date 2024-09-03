@@ -246,9 +246,12 @@ pylong_asdigitarray(PyObject *module, PyObject *obj)
         return NULL;
     }
 
+    assert(array.layout->digit_size == sizeof(Py_digit));
+    const Py_digit *array_digits = array.digits;
+
     PyObject *digits = PyList_New(0);
     for (Py_ssize_t i=0; i < array.ndigits; i++) {
-        PyObject *digit = PyLong_FromUnsignedLong(array.digits[i]);
+        PyObject *digit = PyLong_FromUnsignedLong(array_digits[i]);
         if (digit == NULL) {
             goto error;
         }
@@ -317,13 +320,14 @@ pylongwriter_create(PyObject *module, PyObject *args)
         digits[i] = (Py_digit)digit;
     }
 
-    Py_digit *writer_digits;
+    void *writer_digits;
     PyLongWriter *writer = PyLongWriter_Create(negative, ndigits,
                                                &writer_digits, &layout);
     if (writer == NULL) {
         goto error;
     }
-    memcpy(writer_digits, digits, ndigits * sizeof(digit));
+    assert(layout.digit_size == sizeof(Py_digit));
+    memcpy(writer_digits, digits, ndigits * sizeof(Py_digit));
     PyObject *res = PyLongWriter_Finish(writer);
     PyMem_Free(digits);
 
