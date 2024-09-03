@@ -188,7 +188,7 @@ Python's memory management C API provides functions in three different
 :ref:`allocation domains <allocator-domains>`: "raw", "mem", and "object".
 For thread-safety, the free-threaded build requires that only Python objects
 are allocated using the object domain, and that all Python object are
-allocated using that domain.  This differes from the prior Python versions,
+allocated using that domain.  This differs from the prior Python versions,
 where this was only a best practice and not a hard requirement.
 
 .. note::

@@ -869,7 +869,7 @@ How do I convert a string to a number?
 --------------------------------------
 
 For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
-== 144``.  Similarly, :func:`float` converts to floating-point,
+== 144``.  Similarly, :func:`float` converts to a floating-point number,
 e.g. ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
@@ -1013,7 +1013,7 @@ Not as such.
 For simple input parsing, the easiest approach is usually to split the line into
 whitespace-delimited words using the :meth:`~str.split` method of string objects
 and then convert decimal strings to numeric values using :func:`int` or
-:func:`float`.  :meth:`!split()` supports an optional "sep" parameter which is useful
+:func:`float`.  :meth:`!split` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.
 
 For more complicated input parsing, regular expressions are more powerful

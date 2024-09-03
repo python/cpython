@@ -1,0 +1,1 @@
+:class:`zipfile.Path` objects now sanitize names from the zipfile.

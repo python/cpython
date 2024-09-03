@@ -536,7 +536,7 @@ class Regrtest:
                 self._run_tests_mp(runtests, self.num_workers)
             else:
                 # gh-117783: don't immortalize deferred objects when tracking
-                # refleaks. Only releveant for the free-threaded build.
+                # refleaks. Only relevant for the free-threaded build.
                 with suppress_immortalization(runtests.hunt_refleak):
                     self.run_tests_sequentially(runtests)
 

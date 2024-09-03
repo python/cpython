@@ -281,7 +281,7 @@ When the named module is not found in :data:`sys.modules`, Python next
 searches :data:`sys.meta_path`, which contains a list of meta path finder
 objects.  These finders are queried in order to see if they know how to handle
 the named module.  Meta path finders must implement a method called
-:meth:`~importlib.abc.MetaPathFinder.find_spec()` which takes three arguments:
+:meth:`~importlib.abc.MetaPathFinder.find_spec` which takes three arguments:
 a name, an import path, and (optionally) a target module.  The meta path
 finder can use any strategy it wants to determine whether it can handle
 the named module or not.
@@ -292,7 +292,7 @@ spec object.  If it cannot handle the named module, it returns ``None``.  If
 a spec, then a :exc:`ModuleNotFoundError` is raised.  Any other exceptions
 raised are simply propagated up, aborting the import process.
 
-The :meth:`~importlib.abc.MetaPathFinder.find_spec()` method of meta path
+The :meth:`~importlib.abc.MetaPathFinder.find_spec` method of meta path
 finders is called with two or three arguments.  The first is the fully
 qualified name of the module being imported, for example ``foo.bar.baz``.
 The second argument is the path entries to use for the module search.  For

@@ -1,0 +1,4 @@
+As part of implementing :pep:`649` and :pep:`749`, add a new module
+``annotationlib``. Add support for unresolved forward references in
+annotations to :mod:`dataclasses`, :class:`typing.TypedDict`, and
+:class:`typing.NamedTuple`.
