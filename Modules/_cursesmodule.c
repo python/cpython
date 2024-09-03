@@ -188,7 +188,7 @@ get_cursesmodule_state_by_cls(PyTypeObject *cls)
     return (_cursesmodule_state *)state;
 }
 
-// A global borrowed reference to the type error is needed for
+// A global borrowed reference to the exception is needed for
 // functions that cannot access the module's state at runtime.
 static PyObject *PyCursesError;
 
