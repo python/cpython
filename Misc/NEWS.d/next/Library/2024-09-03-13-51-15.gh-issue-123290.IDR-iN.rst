@@ -1,2 +1,2 @@
-Fix reference leaks for the :mod:`curses` and :mod:`curses.panel` modules.
+Fix reference leaks for the :mod:`curses` module.
 Patch by Bénédikt Tran.
