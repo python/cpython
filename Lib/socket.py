@@ -553,20 +553,18 @@ def fromfd(fd, family, type, proto=0):
     return socket(family, type, proto, nfd)
 
 if hasattr(_socket.socket, "sendmsg"):
-    import array
-
     def send_fds(sock, buffers, fds, flags=0, address=None):
         """ send_fds(sock, buffers, fds[, flags[, address]]) -> integer
 
         Send the list of file descriptors fds over an AF_UNIX socket.
         """
+        import array
+
         return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
             _socket.SCM_RIGHTS, array.array("i", fds))])
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
-    import array
-
     def recv_fds(sock, bufsize, maxfds, flags=0):
         """ recv_fds(sock, bufsize, maxfds[, flags]) -> (data, list of file
         descriptors, msg_flags, address)
@@ -574,6 +572,8 @@ if hasattr(_socket.socket, "recvmsg"):
         Receive up to maxfds file descriptors returning the message
         data and a list containing the descriptors.
         """
+        import array
+
         # Array of ints
         fds = array.array("i")
         msg, ancdata, flags, addr = sock.recvmsg(bufsize,
