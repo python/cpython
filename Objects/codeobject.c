@@ -525,7 +525,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     if (co->co_specialized_code == NULL) {
         return -1;
     }
-    co->co_specialized_code->entries[0].bytecode = (uint8_t *) _PyCode_CODE(co);
+    co->co_specialized_code->entries[0] = (_PyMutBytecode *) &co->co_code_adaptive_mutex;
+    co->co_specialized_code->entries[0]->mutex = (PyMutex){0};
 #endif
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
@@ -1892,11 +1893,10 @@ code_dealloc(PyCodeObject *co)
     }
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
-    // The first element always points to the bytecode that follows the fixed
-    // part of the code object, which will be freed when the code object is
-    // freed.
+    // The first element always points to the mutable bytecode at the end of
+    // the code object, which will be freed when the code object is freed.
     for (Py_ssize_t i = 1; i < co->co_specialized_code->size; i++) {
-        PyMem_Free(co->co_specialized_code->entries[i].bytecode);
+        PyMem_Free(co->co_specialized_code->entries[i]);
     }
     PyMem_Free(co->co_specialized_code);
 #endif
@@ -2672,7 +2672,7 @@ _PyCode_Fini(PyInterpreterState *interp)
 static _PyCodeArray *
 _PyCodeArray_New(Py_ssize_t size)
 {
-    _PyCodeArray *arr = PyMem_Calloc(sizeof(_PyCodeArray) + sizeof(_PySpecializableCode) * size, 1);
+    _PyCodeArray *arr = PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(_PyMutBytecode*) * size);
     if (arr == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -2682,7 +2682,7 @@ _PyCodeArray_New(Py_ssize_t size)
 }
 
 static void
-copy_code(_Py_CODEUNIT *dst, _Py_CODEUNIT *src, Py_ssize_t nbytes)
+copy_code(_PyMutBytecode *dst, PyCodeObject *co)
 {
     int code_len = Py_SIZE(co);
     _Py_CODEUNIT *dst_bytecode = (_Py_CODEUNIT *) dst->bytecode;
@@ -2692,35 +2692,53 @@ copy_code(_Py_CODEUNIT *dst, _Py_CODEUNIT *src, Py_ssize_t nbytes)
     _PyCode_Quicken(dst_bytecode, code_len);
 }
 
-static _PySpecializableCode *
+static Py_ssize_t
+get_pow2_greater(Py_ssize_t initial, Py_ssize_t limit)
+{
+    // initial must be a power of two
+    assert(!(initial & (initial - 1)));
+    Py_ssize_t res = initial;
+    while (res && res < limit) {
+        res <<= 1;
+    }
+    return res;
+}
+
+static _PyMutBytecode *
 create_specializable_code_lock_held(PyCodeObject *co)
 {
     _PyCodeArray *spec_code = co->co_specialized_code;
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
     Py_ssize_t idx = tstate->specialized_code_index;
     if (idx >= spec_code->size) {
-        _PyCodeArray *new_spec_code = _PyCodeArray_New(spec_code->size * 2);
+        Py_ssize_t new_size = get_pow2_greater(spec_code->size, idx + 1);
+        if (!new_size) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        _PyCodeArray *new_spec_code = _PyCodeArray_New(new_size);
         if (new_spec_code == NULL) {
             return NULL;
         }
-        memcpy(new_spec_code->entries, spec_code->entries, spec_code->size * sizeof(_PySpecializableCode));
+        memcpy(new_spec_code->entries, spec_code->entries, spec_code->size * sizeof(void*));
         _Py_atomic_store_ptr_release(&co->co_specialized_code, new_spec_code);
         _PyMem_FreeDelayed(spec_code);
         spec_code = new_spec_code;
     }
-    spec_code->entries[idx].bytecode = PyMem_Malloc(_PyCode_NBYTES(co));
-    if (spec_code->entries[idx].bytecode == NULL) {
+    _PyMutBytecode *bc = PyMem_Calloc(1, sizeof(_PyMutBytecode) + _PyCode_NBYTES(co));
+    if (bc == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    copy_code((_Py_CODEUNIT *) spec_code->entries[idx].bytecode, _PyCode_CODE(co), _PyCode_NBYTES(co));
-    return &spec_code->entries[idx];
+    copy_code(bc, co);
+    spec_code->entries[idx] = bc;
+    return bc;
 }
 
-_PySpecializableCode *
+_PyMutBytecode *
 _PyCode_CreateSpecializableCode(PyCodeObject *co)
 {
-    _PySpecializableCode *result;
+    _PyMutBytecode *result;
     Py_BEGIN_CRITICAL_SECTION(co);
     result = create_specializable_code_lock_held(co);
     Py_END_CRITICAL_SECTION();

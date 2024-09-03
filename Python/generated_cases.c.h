@@ -4492,7 +4492,7 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                _PySpecializableCode *code = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
+                _PyMutBytecode *code = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
                 if (frame->bytecode != (_Py_CODEUNIT *) code->bytecode) {
                     int off = this_instr - frame->bytecode;
                     frame->bytecode = (_Py_CODEUNIT *) code->bytecode;
@@ -4506,16 +4506,9 @@
             {
                 if (tstate->tracing == 0) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-                    PyCodeObject *code = _PyFrame_GetCode(frame);
-                    #ifdef Py_GIL_DISABLED
-                    _PySpecializableCode *spec_code = _PyCode_GetSpecializableCode(code);
-                    uintptr_t code_version = spec_code->instrumentation_version;
-                    #else
-                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
-                    #endif
+                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                     if (code_version != global_version) {
-                        _Py_CODEUNIT *bytecode = _PyFrame_GetBytecode(frame);
-                        int err = _Py_Instrument(code, bytecode, tstate->interp);
+                        int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         if (err) {
                             goto error;
                         }
@@ -6451,7 +6444,7 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                _PySpecializableCode *code = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
+                _PyMutBytecode *code = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
                 if (frame->bytecode != (_Py_CODEUNIT *) code->bytecode) {
                     int off = this_instr - frame->bytecode;
                     frame->bytecode = (_Py_CODEUNIT *) code->bytecode;
@@ -6465,16 +6458,9 @@
             {
                 if (tstate->tracing == 0) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-                    PyCodeObject *code = _PyFrame_GetCode(frame);
-                    #ifdef Py_GIL_DISABLED
-                    _PySpecializableCode *spec_code = _PyCode_GetSpecializableCode(code);
-                    uintptr_t code_version = spec_code->instrumentation_version;
-                    #else
-                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
-                    #endif
+                    uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                     if (code_version != global_version) {
-                        _Py_CODEUNIT *bytecode = _PyFrame_GetBytecode(frame);
-                        int err = _Py_Instrument(code, bytecode, tstate->interp);
+                        int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         if (err) {
                             goto error;
                         }
