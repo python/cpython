@@ -56,7 +56,8 @@ We'll be using the following terms and ideas throughout:
 task (logical thread)
    | a cohesive *linear* sequence of abstract steps in a program;
    | effectively, a mini-program;
-   | the logical equivalent of executed instructions corresponding to code
+   | the logical equivalent of executed instructions corresponding to code;
+   | also known as "logical process"
 
 physical thread (OS thread)
    | where the actual code for a logical thread runs on the CPU (and operating system); 
@@ -171,8 +172,8 @@ Python supports directly:
 After we look at some comparisons of the concurrency models,
 we'll briefly talk about critical caveats for specific models.
 
-Tables
-------
+Comparison tables
+-----------------
 
 The following tables provide a detailed look with side-by-side comparisons.
 We'll also compare them at a high level in
@@ -427,7 +428,6 @@ that support these concurrency models in various contexts:
 Critical caveats
 ----------------
 
-
 There are tradeoffs to each, whether in performance or complexity.
 Free-threading probably has the most notoriety and the most examples,
 but is also has the most pitfalls (see `concurrency-downsides`_ below).
@@ -436,7 +436,6 @@ Multiprocessing and distributed are likewise isolated, but less
 efficient, which can have a larger negative impact at smaller scales.
 Async can be straightforward, but may cascade throughout a code base
 and doesn't necessarily give you parallelism.
-
 
 free-threading
 ^^^^^^^^^^^^^^
