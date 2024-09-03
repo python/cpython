@@ -5331,9 +5331,9 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (new != NULL) {
         ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
-        ((PySocketSockObject*)new)->errorhandler = &set_error;
+        ((PySocketSockObject *)new)->errorhandler = &set_error;
 #ifdef MS_WINDOWS
-        ((PySocketSockObject*)new)->quickack = 0;
+        ((PySocketSockObject *)new)->quickack = 0;
 #endif
     }
     return new;
