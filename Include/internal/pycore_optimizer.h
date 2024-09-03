@@ -152,8 +152,8 @@ struct _Py_UopsSymbol {
     PyTypeObject *typ;  // Borrowed reference
     PyObject *const_val;  // Owned reference (!)
     unsigned int type_version; // currently stores type version
-    bool is_static;  // used for binding-time analysis
     int locals_idx;
+    char is_static;  // used for binding-time analysis
 };
 
 #define UOP_FORMAT_TARGET 0
@@ -191,16 +191,22 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 // handle before rejoining the rest of the program.
 #define MAX_CHAIN_DEPTH 4
 
+
 typedef struct _Py_UopsSymbol _Py_UopsSymbol;
+
+typedef struct _Py_UopsLocalsPlusSlot {
+    _Py_UopsSymbol *sym;
+    char is_virtual;
+} _Py_UopsLocalsPlusSlot;
 
 struct _Py_UOpsAbstractFrame {
     // Max stacklen
     int stack_len;
     int locals_len;
 
-    _Py_UopsSymbol **stack_pointer;
-    _Py_UopsSymbol **stack;
-    _Py_UopsSymbol **locals;
+    _Py_UopsLocalsPlusSlot *stack_pointer;
+    _Py_UopsLocalsPlusSlot *stack;
+    _Py_UopsLocalsPlusSlot *locals;
 };
 
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
@@ -223,9 +229,9 @@ struct _Py_UOpsContext {
     // Arena for the symbolic types.
     ty_arena t_arena;
 
-    _Py_UopsSymbol **n_consumed;
-    _Py_UopsSymbol **limit;
-    _Py_UopsSymbol *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+    _Py_UopsLocalsPlusSlot *n_consumed;
+    _Py_UopsLocalsPlusSlot *limit;
+    _Py_UopsLocalsPlusSlot locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
 
     _PyUOpInstruction *trace_dest;
     int n_trace_dest;
@@ -233,28 +239,28 @@ struct _Py_UOpsContext {
 
 typedef struct _Py_UOpsContext _Py_UOpsContext;
 
-extern bool _Py_uop_sym_is_null(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_is_not_null(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_is_const(_Py_UopsSymbol *sym);
-extern PyObject *_Py_uop_sym_get_const(_Py_UopsSymbol *sym);
-extern _Py_UopsSymbol *_Py_uop_sym_new_unknown(_Py_UOpsContext *ctx);
-extern _Py_UopsSymbol *_Py_uop_sym_new_not_null(_Py_UOpsContext *ctx);
-extern _Py_UopsSymbol *_Py_uop_sym_new_type(
+extern bool _Py_uop_sym_is_null(_Py_UopsLocalsPlusSlot sym);
+extern bool _Py_uop_sym_is_not_null(_Py_UopsLocalsPlusSlot sym);
+extern bool _Py_uop_sym_is_const(_Py_UopsLocalsPlusSlot sym);
+extern PyObject *_Py_uop_sym_get_const(_Py_UopsLocalsPlusSlot sym);
+extern _Py_UopsLocalsPlusSlot _Py_uop_sym_new_unknown(_Py_UOpsContext *ctx);
+extern _Py_UopsLocalsPlusSlot _Py_uop_sym_new_not_null(_Py_UOpsContext *ctx);
+extern _Py_UopsLocalsPlusSlot _Py_uop_sym_new_type(
     _Py_UOpsContext *ctx, PyTypeObject *typ);
-extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val);
-extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
-extern bool _Py_uop_sym_has_type(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, unsigned int version);
-extern void _Py_uop_sym_set_locals_idx(_Py_UopsSymbol *sym, int locals_idx);
-extern void _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version);
-extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val);
-extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
-extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
-extern PyTypeObject *_Py_uop_sym_get_type(_Py_UopsSymbol *sym);
+extern _Py_UopsLocalsPlusSlot _Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val);
+extern _Py_UopsLocalsPlusSlot _Py_uop_sym_new_null(_Py_UOpsContext *ctx);
+extern bool _Py_uop_sym_has_type(_Py_UopsLocalsPlusSlot sym);
+extern bool _Py_uop_sym_matches_type(_Py_UopsLocalsPlusSlot sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_matches_type_version(_Py_UopsLocalsPlusSlot sym, unsigned int version);
+extern void _Py_uop_sym_set_locals_idx(_Py_UopsLocalsPlusSlot sym, int locals_idx);
+extern void _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym);
+extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym);
+extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym, unsigned int version);
+extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym, PyObject *const_val);
+extern bool _Py_uop_sym_is_bottom(_Py_UopsLocalsPlusSlot sym);
+extern int _Py_uop_sym_truthiness(_Py_UopsLocalsPlusSlot sym);
+extern PyTypeObject *_Py_uop_sym_get_type(_Py_UopsLocalsPlusSlot sym);
 
 
 extern void _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
@@ -264,7 +270,7 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     _Py_UOpsContext *ctx,
     PyCodeObject *co,
     int curr_stackentries,
-    _Py_UopsSymbol **args,
+    _Py_UopsLocalsPlusSlot *args,
     int arg_len);
 extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 

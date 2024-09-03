@@ -75,12 +75,12 @@ dummy_func(void) {
 
     override op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        SET_STATIC_INST();
     }
 
     override op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UopsSymbol *temp = sym_new_null(ctx);
-        GETLOCAL(oparg) = temp;
+        GETLOCAL(oparg) = sym_new_null(ctx);
     }
 
     override op(_STORE_FAST, (value --)) {
@@ -88,14 +88,18 @@ dummy_func(void) {
         sym_set_locals_idx(value, oparg);
     }
 
-    override op(_PUSH_NULL, (-- res)) {
-        res = sym_new_null(ctx);
-    }
-
     override op(_LOAD_CONST, (-- value)) {
         // Should've all been converted by specializer.
         Py_UNREACHABLE();
     }
+
+
+    override op(_POP_TOP, (pop --)) {
+//        if (sym_is_virtual(pop)) {
+//            SET_STATIC_INST();
+//        }
+    }
+
 
     override op (_CHECK_STACK_SPACE_OPERAND, ( -- )) {
     }

@@ -85,7 +85,7 @@ dummy_func(void) {
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UopsSymbol *temp = sym_new_null(ctx);
+        _Py_UopsLocalsPlusSlot temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
     }
 
@@ -329,10 +329,10 @@ dummy_func(void) {
         }
     }
 
-    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame)) {
         (void)container;
         (void)sub;
-        new_frame = NULL;
+        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
         ctx->done = true;
     }
 
@@ -487,7 +487,7 @@ dummy_func(void) {
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
         (void)index;
         null = sym_new_null(ctx);
-        attr = NULL;
+        attr = (_Py_UopsLocalsPlusSlot){NULL, 0};
         if (this_instr[-1].opcode == _NOP) {
             // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
             assert(sym_is_const(owner));
@@ -500,7 +500,7 @@ dummy_func(void) {
                 attr = sym_new_const(ctx, res);
             }
         }
-        if (attr == NULL) {
+        if (attr.sym == NULL) {
             /* No conversion made. We don't know what `attr` is. */
             attr = sym_new_not_null(ctx);
         }
@@ -545,10 +545,10 @@ dummy_func(void) {
         self = owner;
     }
 
-    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
         (void)fget;
         (void)owner;
-        new_frame = NULL;
+        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
         ctx->done = true;
     }
 
@@ -568,7 +568,7 @@ dummy_func(void) {
         sym_set_type(callable, &PyMethod_Type);
     }
 
-    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame)) {
         int argcount = oparg;
 
         (void)callable;
@@ -594,7 +594,7 @@ dummy_func(void) {
             DPRINTF(3, "code=%p ", co);
         }
 
-        assert(self_or_null != NULL);
+        assert(self_or_null.sym != NULL);
         assert(args != NULL);
         if (sym_is_not_null(self_or_null)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
@@ -603,9 +603,9 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = frame_new(ctx, co, 0, args, argcount);
+            new_frame.sym = (_Py_UopsSymbol *)frame_new(ctx, co, 0, args, argcount);
         } else {
-            new_frame = frame_new(ctx, co, 0, NULL, 0);
+            new_frame.sym = (_Py_UopsSymbol *)frame_new(ctx, co, 0, NULL, 0);
 
         }
     }
@@ -618,21 +618,21 @@ dummy_func(void) {
         maybe_self = sym_new_not_null(ctx);
     }
 
-    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
         /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
         (void)callable;
         (void)self_or_null;
         (void)args;
-        new_frame = NULL;
+        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
         ctx->done = true;
     }
 
-    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
         (void)callable;
         (void)self_or_null;
         (void)args;
         (void)kwnames;
-        new_frame = NULL;
+        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
         ctx->done = true;
     }
 
@@ -645,11 +645,11 @@ dummy_func(void) {
         init = sym_new_not_null(ctx);
     }
 
-    op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame: _Py_UOpsAbstractFrame *)) {
+    op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame)) {
         (void)self;
         (void)init;
         (void)args;
-        init_frame = NULL;
+        init_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
         ctx->done = true;
     }
 
@@ -723,12 +723,12 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
+    op(_PUSH_FRAME, (new_frame -- unused if (0))) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        ctx->frame = new_frame;
+        ctx->frame = (_Py_UOpsAbstractFrame *)new_frame.sym;
         ctx->curr_frame_depth++;
-        stack_pointer = new_frame->stack_pointer;
+        stack_pointer = ((_Py_UOpsAbstractFrame *)new_frame.sym)->stack_pointer;
         co = get_code(this_instr);
         if (co == NULL) {
             // should be about to _EXIT_TRACE anyway
