@@ -51,7 +51,7 @@ typedef struct {
     int id;
 } _PyJumpTargetLabel;
 
-static _PyJumpTargetLabel NO_LABEL = {-1};
+#define NO_LABEL ((const _PyJumpTargetLabel){-1})
 
 #define SAME_JUMP_TARGET_LABEL(L1, L2) ((L1).id == (L2).id)
 #define IS_JUMP_TARGET_LABEL(L) (!SAME_JUMP_TARGET_LABEL((L), (NO_LABEL)))
