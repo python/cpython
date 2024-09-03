@@ -1,0 +1,50 @@
+I fixed the issue mentioned in https://github.com/python/cpython/issues/123614.  
+Here’s my test:
+
+```
+Python 3.14.0a0 (heads/main-dirty:9e079c220b, Sep  3 2024, 17:02:18) [MSC v.1941 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import turtle
+>>> t = turtle.Turtle()
+>>> t.forward(100)
+>>> t.left(90)
+>>> turtle.save('F:\\')
+Traceback (most recent call last):
+  File "<python-input-4>", line 1, in <module>
+    turtle.save('F:\\')
+    ~~~~~~~~~~~^^^^^^^^
+  File "<string>", line 8, in save
+  File "E:\code\cc\cpython\cpython-main\Lib\turtle.py", line 2606, in save
+    raise FileNotFoundError('Directory does not exist: %s' % dir_path)
+FileNotFoundError: Directory does not exist: F:\
+>>> turtle.save('F:\\example')
+Traceback (most recent call last):
+  File "<python-input-5>", line 1, in <module>
+    turtle.save('F:\\example')
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "<string>", line 8, in save
+  File "E:\code\cc\cpython\cpython-main\Lib\turtle.py", line 2606, in save
+    raise FileNotFoundError('Directory does not exist: %s' % dir_path)
+FileNotFoundError: Directory does not exist: F:\
+>>> turtle.save('D:\\example')
+Traceback (most recent call last):
+  File "<python-input-6>", line 1, in <module>
+    turtle.save('D:\\example')
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "<string>", line 8, in save
+  File "E:\code\cc\cpython\cpython-main\Lib\turtle.py", line 2609, in save
+    raise ValueError('Wrong suffix name: %s' % full_path)
+ValueError: Wrong suffix name: D:\example
+>>> turtle.save('D:\\example.ps')
+>>> turtle.save('D:\\example.ps')
+Traceback (most recent call last):
+  File "<python-input-8>", line 1, in <module>
+    turtle.save('D:\\example.ps')
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "<string>", line 8, in save
+  File "E:\code\cc\cpython\cpython-main\Lib\turtle.py", line 2603, in save
+    raise ValueError('File already exists: %s' % full_path)
+ValueError: File already exists: D:\example.ps
+>>> turtle.save('D:\\example.ps', overwrite=True)
+>>> 
+```
