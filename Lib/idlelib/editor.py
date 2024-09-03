@@ -914,7 +914,7 @@ class EditorWindow:
     def ApplyKeybindings(self):
         """Apply the virtual, configurable keybindings.
 
-        Alse update hotkeys to current keyset.
+        Also update hotkeys to current keyset.
         """
         # Called from configdialog.activate_config_changes.
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()

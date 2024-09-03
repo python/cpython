@@ -193,7 +193,7 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
-   The :meth:`!os.environ.refresh()` method updates :data:`os.environ` with
+   The :meth:`!os.environ.refresh` method updates :data:`os.environ` with
    changes to the environment made by :func:`os.putenv`, by
    :func:`os.unsetenv`, or made outside Python in the same process.
 
@@ -230,7 +230,7 @@ process and user.
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
    .. versionchanged:: 3.14
-      Added the :meth:`!os.environ.refresh()` method.
+      Added the :meth:`!os.environ.refresh` method.
 
 
 .. data:: environb
