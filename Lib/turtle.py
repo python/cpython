@@ -105,7 +105,7 @@ import time
 import inspect
 import sys
 
-from os.path import isfile, split, join
+from os.path import isfile, split, join, abspath, dirname, isdir, splitext
 from copy import deepcopy
 from tkinter import simpledialog
 
@@ -125,7 +125,7 @@ _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
         'getturtle', 'goto', 'heading', 'hideturtle', 'home', 'ht', 'isdown',
         'isvisible', 'left', 'lt', 'onclick', 'ondrag', 'onrelease', 'pd',
         'pen', 'pencolor', 'pendown', 'pensize', 'penup', 'pos', 'position',
-        'pu', 'radians', 'right', 'reset', 'resizemode', 'rt',
+        'pu', 'radians', 'right', 'reset', 'save', 'resizemode', 'rt',
         'seth', 'setheading', 'setpos', 'setposition',
         'setundobuffer', 'setx', 'sety', 'shape', 'shapesize', 'shapetransform', 'shearfactor', 'showturtle',
         'speed', 'st', 'stamp', 'teleport', 'tilt', 'tiltangle', 'towards',
@@ -2587,6 +2587,30 @@ class RawTurtle(TPen, TNavigator):
         self._clear()
         self._drawturtle()
         self._update()
+
+    def save(self, filename, overwrite=False):
+        """Save the image of the turtle's
+
+        Argument:
+        filepath -- saved target path
+
+        Example (for a Turtle instance named turtle):
+        >>> turtle.save('./example.ps')
+        """
+        full_path = abspath(filename)
+        dir_path = dirname(full_path)
+        
+        if not overwrite and isfile(full_path):
+            raise ValueError('File already exists: %s' % full_path)
+        
+        if not isdir(dir_path):
+            raise FileNotFoundError('Directory does not exist: %s' % dir_path)
+        
+        if splitext(full_path)[1] not in ['.ps', '.eps']:
+            raise ValueError('Wrong suffix name: %s' % full_path)
+        
+        with open(filename, 'w') as fp:
+            fp.write(self.screen._canvas.postscript())
 
     def setundobuffer(self, size):
         """Set or disable undobuffer.
