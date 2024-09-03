@@ -182,7 +182,7 @@ def _(path):
 @contextlib.contextmanager
 def _temp_path(dir: tempfile.TemporaryDirectory):
     """
-    Wrap tempfile.TemporyDirectory to return a pathlib object.
+    Wrap tempfile.TemporaryDirectory to return a pathlib object.
     """
     with dir as result:
         yield pathlib.Path(result)
