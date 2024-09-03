@@ -1698,21 +1698,22 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_from_uri_posix(self):
         P = self.cls
         self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file://localhost//foo/bar'), P('//foo/bar'))
         self.assertRaises(ValueError, P.from_uri, 'foo/bar')
         self.assertRaises(ValueError, P.from_uri, '/foo/bar')
         self.assertRaises(ValueError, P.from_uri, '//foo/bar')
         self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'file://foo/bar')
         self.assertRaises(ValueError, P.from_uri, 'http://foo/bar')
 
     @needs_posix
     def test_from_uri_pathname2url_posix(self):
         P = self.cls
-        self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
+        self.assertEqual(P.from_uri('file://' + pathname2url('/foo/bar')), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file://' + pathname2url('//foo/bar')), P('//foo/bar'))
 
     @needs_windows
     def test_absolute_windows(self):

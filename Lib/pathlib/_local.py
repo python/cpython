@@ -904,6 +904,9 @@ class Path(PathBase, PurePath):
         elif path[:12] == '//localhost/':
             # Remove 'localhost' authority
             path = path[11:]
+        elif path[:2] == '//' and os.name != 'nt':
+            # UNC paths aren't supported on POSIX
+            raise ValueError(f"URI is not local: {uri!r}")
         if path[:3] == '///' or (path[:1] == '/' and path[2:3] in ':|'):
             # Remove slash before DOS device/UNC path
             path = path[1:]
