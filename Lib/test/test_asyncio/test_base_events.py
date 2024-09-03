@@ -2215,12 +2215,12 @@ class TestSelectorUtils(test_utils.TestCase):
                          'need socket.TCP_NODELAY')
     def test_set_nodelay(self):
         sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                                proto=socket.IPPROTO_TCP)
+                             proto=socket.IPPROTO_TCP)
         with sock:
             self.check_set_nodelay(sock)
 
         sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                                proto=socket.IPPROTO_TCP)
+                             proto=socket.IPPROTO_TCP)
         with sock:
             sock.setblocking(False)
             self.check_set_nodelay(sock)
