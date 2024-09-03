@@ -200,17 +200,6 @@ else:
         pass
 
 
-if hasattr(socket, 'TCP_QUICKACK'):
-    def _set_quickack(sock, val):
-        if (sock.family in {socket.AF_INET, socket.AF_INET6} and
-                sock.type == socket.SOCK_STREAM and
-                sock.proto == socket.IPPROTO_TCP):
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, val)
-else:
-    def _set_quickack(sock, val):
-        pass
-
-
 def _check_ssl_socket(sock):
     if ssl is not None and isinstance(sock, ssl.SSLSocket):
         raise TypeError("Socket cannot be of type SSLSocket")
