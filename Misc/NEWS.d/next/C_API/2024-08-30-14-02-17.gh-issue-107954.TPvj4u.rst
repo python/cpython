@@ -1,4 +1,4 @@
-Add functions to configure the Python initialization:
+Add functions to configure the Python initialization (:pep:`741`):
 
 * :c:func:`PyInitConfig_Create`
 * :c:func:`PyInitConfig_Free`

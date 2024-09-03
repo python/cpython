@@ -1642,7 +1642,7 @@ Error Handling
 
    Get the *config* exit code.
 
-   * Set *\*exitcode* and return ``1`` if Python wants to exit.
+   * Set *\*exitcode* and return ``1`` if *config* has an exit code set.
    * Return ``0`` if *config* has no exit code set.
 
    Only the ``Py_InitializeFromInitConfig()`` function can set an exit
