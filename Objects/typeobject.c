@@ -5292,16 +5292,44 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
     return NULL;
 }
 
-static inline int
-_token_found(PyTypeObject **result, PyTypeObject *type)
+PyTypeObject *
+_PyType_GetBaseByTokenNoNewRef(PyTypeObject *type, void *token)
 {
-    if (result != NULL) {
-        *result = (PyTypeObject *)Py_NewRef(type);
+    assert(token != NULL);
+    assert(PyType_Check(type));
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // Static type MRO contains no heap type,
+        // which type_ready_mro() ensures.
+        return NULL;
     }
-    return 1;
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+        return type;
+    }
+    PyObject *mro = type->tp_mro;
+    if (mro == NULL) {
+        return get_base_by_token_recursive(type, token);
+    }
+    assert(PyTuple_Check(mro));
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            return base;
+        }
+    }
+    return NULL;
 }
 
-// Prefer this to gotos for better PGO by MSVC
+// MSVC seems to prefer this to goto jumps and duplicated branches on PGO,
+// which can affect the performance of setting a result.
 static inline int
 _token_not_found(PyTypeObject **result, int ret)
 {
@@ -5325,39 +5353,14 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
                      "expected a type, got a '%T' object", type);
         return _token_not_found(result, -1);
     }
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // Static type MRO contains no heap type,
-        // which type_ready_mro() ensures.
+    PyTypeObject *base = _PyType_GetBaseByTokenNoNewRef(type, token);
+    if (base == NULL) {
         return _token_not_found(result, 0);
     }
-    if (((PyHeapTypeObject*)type)->ht_token == token) {
-        return _token_found(result, type);
+    if (result != NULL) {
+        *result = (PyTypeObject *)Py_NewRef(base);
     }
-    PyObject *mro = type->tp_mro;
-    if (mro == NULL) {
-        PyTypeObject *base = get_base_by_token_recursive(type, token);
-        if (base != NULL) {
-            return _token_found(result, base);
-        }
-        return _token_not_found(result, 0);
-    }
-    assert(PyTuple_Check(mro));
-    // mro_invoke() ensures that the type MRO cannot be empty.
-    assert(PyTuple_GET_SIZE(mro) >= 1);
-    // Also, the first item in the MRO is the type itself, which
-    // we already checked above. We skip it in the loop.
-    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
-    Py_ssize_t n = PyTuple_GET_SIZE(mro);
-    for (Py_ssize_t i = 1; i < n; i++) {
-        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
-            continue;
-        }
-        if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return _token_found(result, base);
-        }
-    }
-    return _token_not_found(result, 0);
+    return 1;
 }
 
 

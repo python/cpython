@@ -31,7 +31,6 @@
 
 #include <Python.h>
 #include "pycore_long.h"          // _PyLong_IsZero()
-#include "pycore_object.h"        // _Py_DECREF_NO_DEALLOC()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
 #include "complexobject.h"
@@ -137,15 +136,11 @@ static inline Py_ALWAYS_INLINE decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
     PyTypeObject *base;
-    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, &base) != 1) {
-        assert(!PyErr_Occurred());
-        PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base);
+    base = _PyType_GetBaseByTokenNoNewRef(Py_TYPE(left), &dec_spec);
+    if (base == NULL) {
+        base = _PyType_GetBaseByTokenNoNewRef(Py_TYPE(right), &dec_spec);
+        assert(base != NULL);
     }
-    assert(base != NULL);
-    // Py_DECREF'ing the `base` immediately after PyType_GetBaseByToken()
-    // finishes will be well optimized, which is safe here since the given
-    // subclass keeps the superclass in tp_bases.
-    _Py_DECREF_NO_DEALLOC((PyObject *)base);
     void *state = _PyType_GetModuleState(base);
     assert(state != NULL);
     return (decimal_state *)state;
