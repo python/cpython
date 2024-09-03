@@ -797,6 +797,9 @@ struct _Py_global_strings {
      ? (PyObject*)&_Py_SINGLETON(strings).ascii[(CH)] \
      : (PyObject*)&_Py_SINGLETON(strings).latin1[(CH) - 128])
 
+#define _Py_DECLARE_EMPTY_STRING    _Py_DECLARE_STR(empty, "")
+#define _Py_EMPTY_STRING            ((PyObject *)(&_Py_STR(empty)))
+
 /* _Py_DECLARE_STR() should precede all uses of _Py_STR() in a function.
 
    This is true even if the same string has already been declared

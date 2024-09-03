@@ -2060,7 +2060,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
             if (result != NULL && PyList_Append(chunks, result) < 0)
                 goto fail;
             _Py_DECLARE_STR(empty, "");
-            Py_XSETREF(result, PyUnicode_Join(&_Py_STR(empty), chunks));
+            Py_XSETREF(result, PyUnicode_Join(_Py_EMPTY_STRING, chunks));
             if (result == NULL)
                 goto fail;
             Py_CLEAR(chunks);
@@ -2322,13 +2322,13 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
                 goto error;
             Py_DECREF(line);
         }
-        line = PyUnicode_Join(&_Py_STR(empty), chunks);
+        line = PyUnicode_Join(_Py_EMPTY_STRING, chunks);
         if (line == NULL)
             goto error;
         Py_CLEAR(chunks);
     }
     if (line == NULL) {
-        line = &_Py_STR(empty);
+        line = _Py_EMPTY_STRING;
     }
 
     return line;

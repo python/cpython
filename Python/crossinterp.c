@@ -418,7 +418,7 @@ error:
 
 // We accommodate backports here.
 #ifndef _Py_EMPTY_STR
-# define _Py_EMPTY_STR &_Py_STR(empty)
+# define _Py_EMPTY_STR _Py_EMPTY_STRING
 #endif
 
 static const char *

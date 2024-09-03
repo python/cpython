@@ -2,11 +2,12 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
-#include "pycore_long.h"          // _PyLong_GetOne()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_ceval.h"           // _PyEval_BuiltinsFromGlobals()
+#include "pycore_global_strings.h"  // _Py_EMPTY_STRING
+#include "pycore_long.h"            // _PyLong_GetOne()
+#include "pycore_modsupport.h"      // _PyArg_NoKeywords()
+#include "pycore_object.h"          // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"        // _PyErr_Occurred()
 
 
 static const char *
@@ -1036,8 +1037,8 @@ func_clear(PyFunctionObject *op)
     // However, name and qualname could be str subclasses, so they
     // could have reference cycles. The solution is to replace them
     // with a genuinely immutable string.
-    Py_SETREF(op->func_name, &_Py_STR(empty));
-    Py_SETREF(op->func_qualname, &_Py_STR(empty));
+    Py_SETREF(op->func_name, _Py_EMPTY_STRING);
+    Py_SETREF(op->func_qualname, _Py_EMPTY_STRING);
     return 0;
 }
 

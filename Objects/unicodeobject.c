@@ -213,8 +213,8 @@ static int unicode_is_singleton(PyObject *unicode);
 // Return a reference to the immortal empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
-    _Py_DECLARE_STR(empty, "");
-    return &_Py_STR(empty);
+    _Py_DECLARE_EMPTY_STRING;
+    return _Py_EMPTY_STRING;
 }
 
 /* This dictionary holds per-interpreter interned strings.
@@ -340,7 +340,7 @@ init_global_interned_strings(PyInterpreterState *interp)
         assert(s == LATIN1(i));
     }
 #ifdef Py_DEBUG
-    assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
+    assert(_PyUnicode_CheckConsistency(_Py_EMPTY_STRING, 1));
 
     for (int i = 0; i < 256; i++) {
         assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
@@ -1720,7 +1720,7 @@ unicode_dealloc(PyObject *unicode)
 static int
 unicode_is_singleton(PyObject *unicode)
 {
-    if (unicode == &_Py_STR(empty)) {
+    if (unicode == _Py_EMPTY_STRING) {
         return 1;
     }
 

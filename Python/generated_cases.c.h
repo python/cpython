@@ -780,7 +780,7 @@
                     goto error;
                 }
             }
-            PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
+            PyObject *str_o = _PyUnicode_JoinArray(_Py_EMPTY_STRING, pieces_o, oparg);
             STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
             for (int _i = oparg; --_i >= 0;) {
                 PyStackRef_CLOSE(pieces[_i]);
@@ -7391,7 +7391,7 @@
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             DEOPT_IF(!PyUnicode_CheckExact(value_o), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
-            if (value_o == &_Py_STR(empty)) {
+            if (value_o == _Py_EMPTY_STRING) {
                 assert(_Py_IsImmortalLoose(value_o));
                 res = PyStackRef_False;
             }

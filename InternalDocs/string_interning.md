@@ -26,7 +26,7 @@ They are collected from CPython sources using `make regen-global-objects`
 (`Tools/build/generate_global_objects.py`), which generates code
 for declaration, initialization and finalization.
 
-The empty string is one of the singletons: `_Py_STR(empty)`.
+The empty string is one of the singletons: `_Py_EMPTY_STRING`.
 
 The three sets of singletons (`_Py_LATIN1_CHR`, `_Py_ID`, `_Py_STR`)
 are disjoint.

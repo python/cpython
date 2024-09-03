@@ -37,7 +37,7 @@ _Py_DECLARE_STR(empty, "")
         .mutex = {0}, \
         .dummy_name = { \
             .kind = Name_kind, \
-            .v.Name.id = &_Py_STR(empty), \
+            .v.Name.id = _Py_EMPTY_STRING, \
             .v.Name.ctx = Load, \
             .lineno = 1, \
             .col_offset = 0, \
@@ -50,7 +50,7 @@ _Py_DECLARE_STR(empty, "")
     { \
         .dummy_name = { \
             .kind = Name_kind, \
-            .v.Name.id = &_Py_STR(empty), \
+            .v.Name.id = _Py_EMPTY_STRING, \
             .v.Name.ctx = Load, \
             .lineno = 1, \
             .col_offset = 0, \

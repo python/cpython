@@ -324,7 +324,7 @@ _Py_uop_sym_truthiness(_Py_UopsSymbol *sym)
         return !_PyLong_IsZero((PyLongObject *)value);
     }
     if (tp == &PyUnicode_Type) {
-        return value != &_Py_STR(empty);
+        return value != _Py_EMPTY_STRING;
     }
     if (tp == &PyBool_Type) {
         return value == Py_True;

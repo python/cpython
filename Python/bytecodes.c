@@ -402,7 +402,7 @@ dummy_func(
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             EXIT_IF(!PyUnicode_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
-            if (value_o == &_Py_STR(empty)) {
+            if (value_o == _Py_EMPTY_STRING) {
                 assert(_Py_IsImmortalLoose(value_o));
                 res = PyStackRef_False;
             }
@@ -1682,7 +1682,7 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
+            PyObject *str_o = _PyUnicode_JoinArray(_Py_EMPTY_STRING, pieces_o, oparg);
             STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
             DECREF_INPUTS();
             ERROR_IF(str_o == NULL, error);
