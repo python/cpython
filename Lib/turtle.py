@@ -105,7 +105,7 @@ import time
 import inspect
 import sys
 
-from os.path import isfile, split, join
+from os.path import isfile, split, join, splitext, isdir, abspath, dirname
 from copy import deepcopy
 from tkinter import simpledialog
 
@@ -2515,7 +2515,6 @@ class _TurtleImage(object):
             self._item = [screen._createpoly() for item in
                                           screen._shapes[shapeIndex]._data]
 
-# HELLO
 class RawTurtle(TPen, TNavigator):
     """Animation part of the RawTurtle.
     Puts RawTurtle upon a TurtleScreen and provides tools for
@@ -2588,7 +2587,7 @@ class RawTurtle(TPen, TNavigator):
         self._drawturtle()
         self._update()
 
-    def save(self, filepath, cover=False):
+    def save(self, filename, overwrite=False):
         """Save the image of the turtle's
 
         Argument:
@@ -2597,10 +2596,19 @@ class RawTurtle(TPen, TNavigator):
         Example (for a Turtle instance named turtle):
         >>> turtle.save('./example.ps')
         """
-        if not cover and isfile(filepath):
-            raise FileExistsError('File is already exist: %s' % filepath)
-
-        with open(filepath, 'w') as fp:
+        full_path = abspath(filename)
+        dir_path = dirname(full_path)
+        
+        if not overwrite and isfile(full_path):
+            raise ValueError('File already exists: %s' % full_path)
+        
+        if not isdir(dir_path):
+            raise FileNotFoundError('Directory does not exist: %s' % dir_path)
+        
+        if splitext(full_path)[1] not in ['.ps', '.eps']:
+            raise ValueError('Wrong suffix name: %s' % full_path)
+        
+        with open(filename, 'w') as fp:
             fp.write(self.screen._canvas.postscript())
 
     def setundobuffer(self, size):
