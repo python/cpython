@@ -107,6 +107,13 @@ class MimeTypesTestCase(unittest.TestCase):
             mock_open.assert_called_with(filename, encoding='utf-8')
         eq(mime_dict[".Français"], "application/no-mans-land")
 
+    def test_duplicate_ext_types(self):
+        # assert that each extension in the duplicate map is also in the default map
+        # for a different type
+        for ext, type in mimetypes.duplicate_ext_types.items():
+            self.assertIn(ext, mimetypes.types_map)
+            self.assertNotEqual(type, mimetypes.types_map[ext])
+
     def test_non_standard_types(self):
         eq = self.assertEqual
         # First try strict
@@ -231,6 +238,8 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
             self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
             self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
+            self.assertEqual(mimetypes.guess_extension('audio/3gpp'), '.3gp')
+            self.assertEqual(mimetypes.guess_extension('audio/3gpp2'), '.3g2')
             self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
             self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
             self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
@@ -242,7 +251,7 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
             self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
             self.assertEqual(mimetypes.guess_extension('video/3gpp'), '.3gp')
-            self.assertEqual(mimetypes.guess_extension('video/3gpp2'), '.3gp2')
+            self.assertEqual(mimetypes.guess_extension('video/3gpp2'), '.3g2')
             self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
             self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
 
@@ -257,6 +266,7 @@ class MimeTypesTestCase(unittest.TestCase):
         encodings_map = mimetypes.encodings_map
         types_map = mimetypes.types_map
         common_types = mimetypes.common_types
+        duplicate_ext_types = mimetypes.duplicate_ext_types
 
         mimetypes.init()
         self.assertIsNot(suffix_map, mimetypes.suffix_map)
@@ -267,6 +277,7 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(encodings_map, mimetypes.encodings_map)
         self.assertEqual(types_map, mimetypes.types_map)
         self.assertEqual(common_types, mimetypes.common_types)
+        self.assertEqual(duplicate_ext_types, mimetypes.duplicate_ext_types)
 
     def test_path_like_ob(self):
         filename = "LICENSE.txt"
