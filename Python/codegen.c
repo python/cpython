@@ -82,7 +82,6 @@ typedef _PyInstructionSequence instr_sequence;
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
 
-enum fblocktype : short;
 typedef _PyCompile_FBlockInfo fblockinfo;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
