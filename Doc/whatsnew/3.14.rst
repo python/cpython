@@ -238,15 +238,6 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
-
-socket
--------
-
-* Improve import time of :mod:`socket` by lazy importing modules and
-  writing :data:`!socket.errorTab` as a constant, which results in
-  a 30% speed up in standard pyperformance benchmarks.
-  (Contributed by Jiahao Li in :gh:`121424`.)
-
 Deprecated
 ==========
 
