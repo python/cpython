@@ -2599,16 +2599,12 @@ class RawTurtle(TPen, TNavigator):
         """
         full_path = abspath(filename)
         dir_path = dirname(full_path)
-        
         if not overwrite and isfile(full_path):
             raise ValueError('File already exists: %s' % full_path)
-        
         if not isdir(dir_path):
             raise FileNotFoundError('Directory does not exist: %s' % dir_path)
-        
         if splitext(full_path)[1] not in ['.ps', '.eps']:
             raise ValueError('Wrong suffix name: %s' % full_path)
-        
         with open(filename, 'w') as fp:
             fp.write(self.screen._canvas.postscript())
 
