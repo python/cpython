@@ -1018,9 +1018,9 @@ The following tokens serve as delimiters in the grammar:
 .. code-block:: none
 
    (       )       [       ]       {       }
-   ,       :       .       ;       @       =       ->
-   +=      -=      *=      /=      //=     %=      @=
-   &=      |=      ^=      >>=     <<=     **=
+   ,       :       !       .       ;       @       =
+   ->      +=      -=      *=      /=      //=     %=
+   @=      &=      |=      ^=      >>=     <<=     **=
 
 The period can also occur in floating-point and imaginary literals.  A sequence
 of three periods has a special meaning as an ellipsis literal. The second half
