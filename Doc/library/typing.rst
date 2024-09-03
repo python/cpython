@@ -3425,7 +3425,7 @@ Aliases to built-in types
 
    Note that to annotate arguments, it is preferred
    to use an abstract collection type such as :class:`collections.abc.Set`
-   rather than to use :class:`set` or :class:`!typing.Set`.
+   rather than to use :class:`set` or :class:`typing.Set`.
 
    .. deprecated:: 3.9
       :class:`builtins.set <set>` now supports subscripting (``[]``).
