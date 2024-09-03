@@ -169,15 +169,18 @@ Python supports directly:
        | (`multiprocessing <multiprocessing-distributed_>`_)
      - multiprocessing across multiple computers
 
-After we look at some comparisons of the concurrency models,
-we'll briefly talk about critical caveats for specific models.
+There are tradeoffs to each, whether in performance or complexity.
+We'll take a look at those tradeoffs in detail
+`later <concurrency-pick-a-model_>`_.
+
+Before that, we'll review various comparisons of the concurrency models,
+and we'll briefly talk about `critical caveats <Critical caveats_>`_
+for specific models.
 
 Comparison tables
 -----------------
 
 The following tables provide a detailed look with side-by-side comparisons.
-We'll also compare them at a high level in
-`a later section <concurrency-pick-a-model_>`_.
 
 key characteristics
 ^^^^^^^^^^^^^^^^^^^
@@ -391,14 +394,8 @@ exposure
 Critical caveats
 ----------------
 
-There are tradeoffs to each, whether in performance or complexity.
-Free-threading probably has the most notoriety and the most examples,
-but is also has the most pitfalls (see `concurrency-downsides`_ below).
-Isolated threads have few of those pitfalls but are less familiar.
-Multiprocessing and distributed are likewise isolated, but less
-efficient, which can have a larger negative impact at smaller scales.
-Async can be straightforward, but may cascade throughout a code base
-and doesn't necessarily give you parallelism.
+Here are some important details to consider, specific to individual
+concurrency models in Python.
 
 free-threading
 ^^^^^^^^^^^^^^
@@ -826,6 +823,16 @@ Picking a concurrency model
 ---------------------------
 
 ...
+
+As mentioned earlier, each concurrency model has its own set of tradeoffs.
+Free-threading probably has the most notoriety and the most examples,
+but is also has the most pitfalls (see `Critical caveats`_ above).
+Isolated threads have few of those pitfalls but are less familiar
+and at least a little less efficient.
+Multiprocessing and distributed are likewise isolated, but less
+efficient, which can have a larger negative impact at smaller scales.
+Async can be straightforward, but may cascade throughout a code base
+and doesn't necessarily give you parallelism.
 
 free-threading:
 
