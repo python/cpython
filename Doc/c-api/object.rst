@@ -578,7 +578,7 @@ Object Protocol
 
 .. c:function:: int PyUnstable_Object_SetDeferredRefcount(PyObject *obj)
 
-   Enable `deferred reference counting https://peps.python.org/pep-0703/#deferred-reference-counting`_ on *obj*.
+   Enable `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_ on *obj*.
 
    *obj* must be an object tracked by the garbage collector (see :func:`gc.is_tracked`), must have been
    created by the calling thread, and must not be in use by any existing threads.
