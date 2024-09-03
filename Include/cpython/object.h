@@ -526,3 +526,5 @@ typedef enum {
 typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);
 PyAPI_FUNC(int) PyRefTracer_SetTracer(PyRefTracer tracer, void *data);
 PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
+
+PyAPI_FUNC(int) PyUnstable_Object_SetDeferredRefcount(PyObject *);

@@ -2482,6 +2482,37 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_Object_SetDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    if (!PyType_IS_GC(Py_TYPE(op)))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                     "object is not tracked by the garbage collector");
+        return -1;
+    }
+
+    if (!_Py_IsOwnedByCurrentThread(op))
+    {
+        PyErr_SetString(PyExc_ValueError,
+                        "object is not owned by this thread");
+        return -1;
+    }
+
+    if (op->ob_ref_shared != 0)
+    {
+        PyErr_SetString(PyExc_ValueError,
+                        "object is already in use by another thread");
+        return -1;
+    }
+
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
+    op->ob_ref_shared = _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
+#endif
+    return 0;
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
