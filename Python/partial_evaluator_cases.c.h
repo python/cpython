@@ -4,6 +4,7 @@
 // Do not edit!
 
         case _NOP: {
+            SET_STATIC_INST();
             break;
         }
 
@@ -40,6 +41,7 @@
             _Py_UopsLocalsPlusSlot value;
             value = GETLOCAL(oparg);
             SET_STATIC_INST();
+            value.is_virtual = true;
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -78,9 +80,13 @@
 
         case _POP_TOP: {
             _Py_UopsLocalsPlusSlot pop;
-            //        if (sym_is_virtual(pop)) {
-                //            SET_STATIC_INST();
-            //        }
+            pop = stack_pointer[-1];
+            if (pop.is_virtual) {
+                SET_STATIC_INST();
+            }
+            else {
+                reify_shadow_stack(ctx);
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;

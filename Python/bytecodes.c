@@ -140,7 +140,7 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-        pure inst(NOP, (--)) {
+        pure _static inst(NOP, (--)) {
         }
 
         family(RESUME, 0) = {
@@ -239,7 +239,7 @@ dummy_func(
             value = PyStackRef_DUP(value_s);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value)) {
+        replicate(8) _static inst(LOAD_FAST, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
@@ -283,7 +283,7 @@ dummy_func(
             SETLOCAL(oparg2, value2);
         }
 
-        pure inst(POP_TOP, (value --)) {
+        pure _static inst(POP_TOP, (value --)) {
             DECREF_INPUTS();
         }
 

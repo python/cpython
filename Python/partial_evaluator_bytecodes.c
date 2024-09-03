@@ -76,6 +76,7 @@ dummy_func(void) {
     override op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
         SET_STATIC_INST();
+        value.is_virtual = true;
     }
 
     override op(_LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -95,11 +96,17 @@ dummy_func(void) {
 
 
     override op(_POP_TOP, (pop --)) {
-//        if (sym_is_virtual(pop)) {
-//            SET_STATIC_INST();
-//        }
+        if (pop.is_virtual) {
+            SET_STATIC_INST();
+        }
+        else {
+            reify_shadow_stack(ctx);
+        }
     }
 
+    override op(_NOP, (--)) {
+        SET_STATIC_INST();
+    }
 
     override op (_CHECK_STACK_SPACE_OPERAND, ( -- )) {
     }

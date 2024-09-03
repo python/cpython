@@ -158,6 +158,7 @@ struct _Py_UopsSymbol {
 
 #define UOP_FORMAT_TARGET 0
 #define UOP_FORMAT_JUMP 1
+void _PyUOpPrint(const _PyUOpInstruction*);
 
 static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
 {
@@ -207,6 +208,8 @@ struct _Py_UOpsAbstractFrame {
     _Py_UopsLocalsPlusSlot *stack_pointer;
     _Py_UopsLocalsPlusSlot *stack;
     _Py_UopsLocalsPlusSlot *locals;
+
+    void *instr_ptr;
 };
 
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
