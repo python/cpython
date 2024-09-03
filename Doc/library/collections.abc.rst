@@ -253,7 +253,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    :meth:`~generator.send`,
    :meth:`~generator.throw` and :meth:`~generator.close` methods.
 
-   Refer to :ref:`annotating-generators-and-coroutines`
+   See :ref:`annotating-generators-and-coroutines`
    for details on using :class:`!Generator` in type annotations.
 
    .. versionadded:: 3.5
@@ -327,7 +327,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
 
-   Refer to :ref:`annotating-generators-and-coroutines`
+   See :ref:`annotating-generators-and-coroutines`
    for details on using :class:`!Coroutine` in type annotations.
    The variance and order of type parameters correspond to those of
    :class:`Generator`.
@@ -353,7 +353,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    ABC for :term:`asynchronous generator` classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
 
-   Refer to :ref:`annotating-generators-and-coroutines`
+   See :ref:`annotating-generators-and-coroutines`
    for details on using :class:`!AsyncGenerator` in type annotations.
 
    .. versionadded:: 3.6
