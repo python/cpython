@@ -1,2 +1,0 @@
-Ignore an :exc:`OSError` in :meth:`asyncio.BaseEventLoop.create_server` when
-IPv6 is available but the interface cannot actually support it.

@@ -14,8 +14,8 @@ know about when using Python on Microsoft Windows.
 
 Unlike most Unix systems and services, Windows does not include a system
 supported installation of Python. To make Python available, the CPython team
-has compiled Windows installers (MSI packages) with every `release
-<https://www.python.org/download/releases/>`_ for many years. These installers
+has compiled Windows installers with every `release
+<https://www.python.org/downloads/>`_ for many years. These installers
 are primarily intended to add a per-user installation of Python, with the
 core interpreter and library being used by a single user. The installer is also
 able to install for all users of a single machine, and a separate ZIP file is
@@ -1285,7 +1285,7 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
+The :pypi:`PyWin32` module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 

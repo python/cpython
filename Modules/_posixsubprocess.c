@@ -977,7 +977,6 @@ _posixsubprocess.fork_exec as subprocess_fork_exec
     uid as uid_object: object
     child_umask: int
     preexec_fn: object
-    allow_vfork: bool
     /
 
 Spawn a fresh new child process.
@@ -1014,8 +1013,8 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           pid_t pgid_to_set, PyObject *gid_object,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
-                          PyObject *preexec_fn, int allow_vfork)
-/*[clinic end generated code: output=7ee4f6ee5cf22b5b input=51757287ef266ffa]*/
+                          PyObject *preexec_fn)
+/*[clinic end generated code: output=288464dc56e373c7 input=f311c3bcb5dd55c8]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -1031,8 +1030,10 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if ((preexec_fn != Py_None) && interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+    if ((preexec_fn != Py_None) &&
+        _PyInterpreterState_GetFinalizing(interp) != NULL)
+    {
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "preexec_fn not supported at interpreter shutdown");
         return NULL;
     }
@@ -1216,7 +1217,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #ifdef VFORK_USABLE
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
-    if (preexec_fn == Py_None && allow_vfork &&
+    if (preexec_fn == Py_None &&
         uid == (uid_t)-1 && gid == (gid_t)-1 && extra_group_size < 0) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
@@ -1315,6 +1316,7 @@ static PyMethodDef module_methods[] = {
 
 static PyModuleDef_Slot _posixsubprocess_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

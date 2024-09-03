@@ -1,0 +1,2 @@
+Speed up normalization of :class:`pathlib.PurePath` and
+:class:`~pathlib.Path` objects by not interning string parts.

@@ -3,7 +3,11 @@
 import unittest
 import dis
 import io
-from _testinternalcapi import compiler_codegen, optimize_cfg, assemble_code_object
+import opcode
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 _UNSPECIFIED = object()
 
@@ -65,16 +69,14 @@ class CompilationStepTestCase(unittest.TestCase):
     class Label:
         pass
 
-    def assertInstructionsMatch(self, actual_, expected_):
-        # get two lists where each entry is a label or
-        # an instruction tuple. Normalize the labels to the
-        # instruction count of the target, and compare the lists.
+    def assertInstructionsMatch(self, actual_seq, expected):
+        # get an InstructionSequence and an expected list, where each
+        # entry is a label or an instruction tuple. Construct an expected
+        # instruction sequence and compare with the one given.
 
-        self.assertIsInstance(actual_, list)
-        self.assertIsInstance(expected_, list)
-
-        actual = self.normalize_insts(actual_)
-        expected = self.normalize_insts(expected_)
+        self.assertIsInstance(expected, list)
+        actual = actual_seq.get_instructions()
+        expected = self.seq_from_insts(expected).get_instructions()
         self.assertEqual(len(actual), len(expected))
 
         # compare instructions
@@ -84,10 +86,8 @@ class CompilationStepTestCase(unittest.TestCase):
                 continue
             self.assertIsInstance(exp, tuple)
             self.assertIsInstance(act, tuple)
-            # crop comparison to the provided expected values
-            if len(act) > len(exp):
-                act = act[:len(exp)]
-            self.assertEqual(exp, act)
+            idx = max([p[0] for p in enumerate(exp) if p[1] != -1])
+            self.assertEqual(exp[:idx], act[:idx])
 
     def resolveAndRemoveLabels(self, insts):
         idx = 0
@@ -102,54 +102,57 @@ class CompilationStepTestCase(unittest.TestCase):
 
         return res
 
-    def normalize_insts(self, insts):
-        """ Map labels to instruction index.
-            Map opcodes to opnames.
-        """
-        insts = self.resolveAndRemoveLabels(insts)
-        res = []
+    def seq_from_insts(self, insts):
+        labels = {item for item in insts if isinstance(item, self.Label)}
+        for i, lbl in enumerate(labels):
+            lbl.value = i
+
+        seq = _testinternalcapi.new_instruction_sequence()
         for item in insts:
-            assert isinstance(item, tuple)
-            opcode, oparg, *loc = item
-            opcode = dis.opmap.get(opcode, opcode)
-            if isinstance(oparg, self.Label):
-                arg = oparg.value
+            if isinstance(item, self.Label):
+                seq.use_label(item.value)
             else:
-                arg = oparg if opcode in self.HAS_ARG else None
-            opcode = dis.opname[opcode]
-            res.append((opcode, arg, *loc))
-        return res
+                op = item[0]
+                if isinstance(op, str):
+                    op = opcode.opmap[op]
+                arg, *loc = item[1:]
+                if isinstance(arg, self.Label):
+                    arg = arg.value
+                loc = loc + [-1] * (4 - len(loc))
+                seq.addop(op, arg or 0, *loc)
+        return seq
 
-    def complete_insts_info(self, insts):
-        # fill in omitted fields in location, and oparg 0 for ops with no arg.
-        res = []
-        for item in insts:
-            assert isinstance(item, tuple)
-            inst = list(item)
-            opcode = dis.opmap[inst[0]]
-            oparg = inst[1]
-            loc = inst[2:] + [-1] * (6 - len(inst))
-            res.append((opcode, oparg, *loc))
-        return res
+    def check_instructions(self, insts):
+        for inst in insts:
+            if isinstance(inst, self.Label):
+                continue
+            op, arg, *loc = inst
+            if isinstance(op, str):
+                op = opcode.opmap[op]
+            self.assertEqual(op in opcode.hasarg,
+                             arg is not None,
+                             f"{opcode.opname[op]=} {arg=}")
+            self.assertTrue(all(isinstance(l, int) for l in loc))
 
 
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class CodegenTestCase(CompilationStepTestCase):
 
     def generate_code(self, ast):
-        insts, _ = compiler_codegen(ast, "my_file.py", 0)
+        insts, _ = _testinternalcapi.compiler_codegen(ast, "my_file.py", 0)
         return insts
 
 
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class CfgOptimizationTestCase(CompilationStepTestCase):
 
-    def get_optimized(self, insts, consts, nlocals=0):
-        insts = self.normalize_insts(insts)
-        insts = self.complete_insts_info(insts)
-        insts = optimize_cfg(insts, consts, nlocals)
+    def get_optimized(self, seq, consts, nlocals=0):
+        insts = _testinternalcapi.optimize_cfg(seq, consts, nlocals)
         return insts, consts
 
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class AssemblerTestCase(CompilationStepTestCase):
 
     def get_code_object(self, filename, insts, metadata):
-        co = assemble_code_object(filename, insts, metadata)
+        co = _testinternalcapi.assemble_code_object(filename, insts, metadata)
         return co

@@ -11,11 +11,10 @@
  *
  */
 
-#include "pyconfig.h"   // Py_GIL_DISABLED
-
-#ifndef Py_GIL_DISABLED
 // Need limited C API version 3.13 for PyModule_Add() on Windows
-#define Py_LIMITED_API 0x030d0000
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
@@ -507,7 +506,7 @@ S_IWOTH: write by others\n\
 S_IXOTH: execute by others\n\
 \n"
 
-"UF_SETTABLE: mask of owner changable flags\n\
+"UF_SETTABLE: mask of owner changeable flags\n\
 UF_NODUMP: do not dump file\n\
 UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\
@@ -680,6 +679,7 @@ stat_exec(PyObject *module)
 static PyModuleDef_Slot stat_slots[] = {
     {Py_mod_exec, stat_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -26,17 +26,16 @@ EXPECT_COERCION_IN_DEFAULT_LOCALE = True
 TARGET_LOCALES = ["C.UTF-8", "C.utf8", "UTF-8"]
 
 # Apply some platform dependent overrides
-if sys.platform.startswith("linux"):
-    if support.is_android:
-        # Android defaults to using UTF-8 for all system interfaces
-        EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
-        EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
-    else:
-        # Linux distros typically alias the POSIX locale directly to the C
-        # locale.
-        # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
-        #       able to check this case unconditionally
-        EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
+if sys.platform == "android":
+    # Android defaults to using UTF-8 for all system interfaces
+    EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
+    EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
+elif sys.platform.startswith("linux"):
+    # Linux distros typically alias the POSIX locale directly to the C
+    # locale.
+    # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
+    #       able to check this case unconditionally
+    EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
 elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
