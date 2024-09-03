@@ -6826,10 +6826,6 @@ class TestMacOSTCPFlags(unittest.TestCase):
     def test_tcp_keepalive(self):
         self.assertTrue(socket.TCP_KEEPALIVE)
 
-class TestQuickackFlag(unittest.TestCase):
-    def test_tcp_keepalive(self):
-        self.assertTrue(socket.TCP_KEEPALIVE)
-
 @unittest.skipUnless(hasattr(socket, 'TCP_QUICKACK'), 'need socket.TCP_QUICKACK')
 class TestQuickackFlag(unittest.TestCase):
     def check_set_quickack(self, sock):
