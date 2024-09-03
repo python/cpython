@@ -187,6 +187,19 @@ class TestInteractiveInterpreter(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_runsource_show_syntax_error_location(self):
+        user_input = dedent("""def f(x, x): ...
+                            """)
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        expected_lines = [
+            '    def f(x, x): ...',
+            '             ^',
+            "SyntaxError: duplicate argument 'x' in function definition"
+        ]
+        self.assertEqual(output.splitlines()[4:-1], expected_lines)
+
     def test_interactive_source_is_in_linecache(self):
         user_input = dedent("""
         def foo(x):
