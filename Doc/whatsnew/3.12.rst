@@ -1319,7 +1319,7 @@ Deprecated
   (Contributed by Brett Cannon in :gh:`65961`.)
 
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
-  error in Python 3.14. Use ``not`` for logical negation of bools instead.
+  error in Python 3.16. Use ``not`` for logical negation of bools instead.
   In the rare case that you really need the bitwise inversion of the underlying
   ``int``, convert to int explicitly: ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
@@ -1422,9 +1422,9 @@ hashlib
 -------
 
 * Remove the pure Python implementation of :mod:`hashlib`'s
-  :func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
+  :func:`hashlib.pbkdf2_hmac`, deprecated in Python 3.10. Python 3.10 and
   newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides
-  a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
+  a C implementation of :func:`~hashlib.pbkdf2_hmac` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
 importlib
@@ -1433,7 +1433,7 @@ importlib
 * Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
 
-  * References to, and support for :meth:`!module_repr()` has been removed.
+  * References to, and support for :meth:`!module_repr` has been removed.
     (Contributed by Barry Warsaw in :gh:`97850`.)
 
   * ``importlib.util.set_package``, ``importlib.util.set_loader`` and

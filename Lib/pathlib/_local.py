@@ -17,9 +17,9 @@ try:
 except ImportError:
     grp = None
 
-from ._os import (UnsupportedOperation, copyfile, file_metadata_keys,
-                  read_file_metadata, write_file_metadata)
-from ._abc import PurePathBase, PathBase
+from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
+                         write_file_metadata)
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 
 
 __all__ = [
@@ -272,8 +272,7 @@ class PurePath(PurePathBase):
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        return drv, root, parsed
+        return drv, root, [x for x in rel.split(sep) if x and x != '.']
 
     @property
     def _raw_path(self):
@@ -787,25 +786,18 @@ class Path(PathBase, PurePath):
     _write_metadata = write_file_metadata
 
     if copyfile:
-        def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+        def _copy_file(self, target):
             """
-            Copy the contents of this file to the given target. If this file is a
-            symlink and follow_symlinks is false, a symlink will be created at the
-            target.
+            Copy the contents of this file to the given target.
             """
             try:
                 target = os.fspath(target)
             except TypeError:
                 if not isinstance(target, PathBase):
                     raise
+                PathBase._copy_file(self, target)
             else:
-                try:
-                    copyfile(os.fspath(self), target, follow_symlinks)
-                    return
-                except UnsupportedOperation:
-                    pass  # Fall through to generic code.
-            PathBase.copy(self, target, follow_symlinks=follow_symlinks,
-                          preserve_metadata=preserve_metadata)
+                copyfile(os.fspath(self), target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
@@ -830,24 +822,10 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    def rmtree(self, ignore_errors=False, on_error=None):
-        """
-        Recursively delete this directory tree.
-
-        If *ignore_errors* is true, exceptions raised from scanning the tree
-        and removing files and directories are ignored. Otherwise, if
-        *on_error* is set, it will be called to handle the error. If neither
-        *ignore_errors* nor *on_error* are set, exceptions are propagated to
-        the caller.
-        """
-        if on_error:
-            def onexc(func, filename, err):
-                err.filename = filename
-                on_error(err)
-        else:
-            onexc = None
+    def _rmtree(self):
+        # Lazy import to improve module import time
         import shutil
-        shutil.rmtree(str(self), ignore_errors, onexc=onexc)
+        shutil.rmtree(self)
 
     def rename(self, target):
         """
@@ -882,6 +860,14 @@ class Path(PathBase, PurePath):
             Note the order of arguments (link, target) is the reverse of os.symlink.
             """
             os.symlink(target, self, target_is_directory)
+
+    if os.name == 'nt':
+        def _symlink_to_target_of(self, link):
+            """
+            Make this path a symlink with the same target as the given link.
+            This is used by copy().
+            """
+            self.symlink_to(link.readlink(), link.is_dir())
 
     if hasattr(os, "link"):
         def hardlink_to(self, target):

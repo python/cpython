@@ -725,7 +725,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
     assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    assert(_Py_IsImmortal(type));
+    assert(_Py_IsImmortalLoose(type));
 
     // Cannot delete a type if it still has subclasses
     if (_PyType_HasSubclasses(type)) {
