@@ -828,19 +828,21 @@ Data Types
 
 .. class:: EnumDict
 
-   *EnumDict* is a subclass of :class:`dict` that keeps track of the order of enum members and prevents reusing member names. Use *EnumDict* when member names must be unique and their order needs to be preserved.
+   *EnumDict* is a subclass of :class:`dict` that is used as the namespace
+   for defining enum classes (see :ref:`prepare`).
+   It is exposed to allow subclasses of :class:`EnumType` with advanced
+   behavior like having multiple values per member.
+   It prevents reusing member names, with special behavior for names that
+   start with an underscore.
+
+   Note that only the :class:`~collections.abc.MutableMapping` interface
+   (:meth:`~object.__setitem__` and :meth:`~dict.update`) is overridden.
+   It may be possible to bypass the checks using other :class:`!dict`
+   operations like :meth:`|= <object.__ior__>`.
 
    .. attribute:: EnumDict.member_names
 
-      Return list of member names.
-
-   .. method:: EnumDict.__setitem__(self, key, value)
-
-      Set any item as an enum member that is not dundered and not a descriptor.
-
-   .. method:: EnumDict.update(self, members, **more_members)
-
-      Update the dictionary from the given iterable or dictionary members and more_members.
+      A list of member names.
 
    .. versionadded:: 3.13
 
