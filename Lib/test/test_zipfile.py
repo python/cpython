@@ -5,6 +5,7 @@ import io
 import itertools
 import os
 import pathlib
+import platform
 import posixpath
 import string
 import struct
