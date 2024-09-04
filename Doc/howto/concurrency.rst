@@ -25,7 +25,7 @@ concurrency support.  The overall focus is on the following:
 * `key concurrency primitives <concurrency-primitives_>`_
 * `high-level, app-oriented practical examples <concurrency-workload-examples_>`_
 
-.. XXX Add a summary and section about key concurrency patterns
+.. TODO Add a summary and section about key concurrency patterns
 
 .. note::
 
@@ -270,7 +270,7 @@ overhead details
 complexity
 ^^^^^^^^^^
 
-.. XXX "human-friendly"
+.. TODO "human-friendly"
 
 .. list-table::
    :header-rows: 1
@@ -494,7 +494,7 @@ following resources:
 Tracing execution
 ^^^^^^^^^^^^^^^^^
 
-...
+.. TODO finish
 
 The other potential problem with using threads is that the conceptual
 model has no inherent synchronization, so it can be hard to follow
