@@ -492,6 +492,8 @@ following resources:
 Tracing execution
 ^^^^^^^^^^^^^^^^^
 
+...
+
 The other potential problem with using threads is that the conceptual
 model has no inherent synchronization, so it can be hard to follow
 what is going on in the program at any given moment.  That is
@@ -505,6 +507,16 @@ especially challenging for testing and debugging.
 Besides unlocking full multi-core parallelism, the isolation between
 interpreters means that, from a conceptual level, concurrency can be
 simpler.
+
+The second category of complexity is the problem of tracing the execution
+of one logical thread relative to another.  This is especially relevant
+for error handling, when an error in the one thread is exposed in the
+other.  This applies equally to threads that start other threads as to
+concurrency models that use callbacks.  Knowing where the failing thread
+was started is valuable when debugging, as is knowing where a callback
+was registered.
+
+
 
 .. _python-gil:
 
@@ -631,64 +643,6 @@ more easily recover from a crash in any one process.  Recovering
 from a crash when using free-threading, multiple interpreters, or
 coroutines isn't nearly so easy.
 
-
-
-
-
-
-.. _concurrency-downsides:
-
-What are the downsides?
------------------------
-
-The main challenge when using concurrency is the (potential) extra
-complexity.  This complexity comes from the effect of multiple logical
-threads running at the same time and interacting with each other.
-In practice, this falls into two categories: data races and tracing
-relative execution.  Both are a form of "spooky action at a distance" [#f1]_
-(meaning something changes unexpectedly in one place due to unknown
-changes somewhere else).
-
-The first category relates to mutable data shared between threads:
-a data race is where one thread writes to memory at a time when another
-thread is expecting the value to be unchanged, invalidating its logic.
-Similarly, two threads could write to the same memory location at the
-same time, either corrupting the data there or invalidating
-the expectations of one of the threads.
-
-In each case, the non-deterministic scheduling of threads means it is
-both hard to reproduce races and to track down where a race happened.
-These qualities much these bugs especially frustrating
-and worth diligently avoiding.
-
-Races are possible when the concurrency approach is subject
-to parallel execution or to non-deterministic switching.
-(This excludes coroutines, which rely on cooperative multitasking.)
-When all memory is possibly shared, as is the case with free-threading,
-then all memory is at risk.
-
-Dealing with data races is often managed using locks (AKA mutexes),
-at a low level, and thread-safe types and APIs at a high level.
-Depending on the programming language, the complexity is sometimes
-mitigated somewhat by the compiler and runtime.  There are even
-libraries and frameworks that help abstract away the complexity
-to an extent.  On top of that, there are tools that can help identify
-potential races via static analysis.  Unfortunately, none of these aids
-is foolproof and the risk of hitting a race is always looming.
-
-.. XXX mention reentrancy?
-
-The second category of complexity is the problem of tracing the execution
-of one logical thread relative to another.  This is especially relevant
-for error handling, when an error in the one thread is exposed in the
-other.  This applies equally to threads that start other threads as to
-concurrency models that use callbacks.  Knowing where the failing thread
-was started is valuable when debugging, as is knowing where a callback
-was registered.
-
-
-
-
 high-level APIs
 ---------------
 
@@ -725,6 +679,7 @@ that support these concurrency models in various contexts:
      - ???
      -
      -
+
 
 .. _concurrency-design:
 
@@ -784,6 +739,14 @@ How can concurrency hurt?
 -------------------------
 
 ...
+
+The main challenge when using concurrency is the (potential) extra
+complexity.  This complexity comes from the effect of multiple logical
+threads running at the same time and interacting with each other.
+In practice, this falls into two categories: data races and tracing
+relative execution.  Both are a form of "spooky action at a distance" [#f1]_
+(meaning something changes unexpectedly in one place due to unknown
+changes somewhere else).
 
 .. _concurrency-identify-tasks:
 
@@ -1023,6 +986,15 @@ Python Concurrency Primitives
 =============================
 
 ...
+
+Dealing with data races is often managed using locks (AKA mutexes),
+at a low level, and thread-safe types and APIs at a high level.
+Depending on the programming language, the complexity is sometimes
+mitigated somewhat by the compiler and runtime.  There are even
+libraries and frameworks that help abstract away the complexity
+to an extent.  On top of that, there are tools that can help identify
+potential races via static analysis.  Unfortunately, none of these aids
+is foolproof and the risk of hitting a race is always looming.
 
 
 .. _concurrency-workload-examples:
