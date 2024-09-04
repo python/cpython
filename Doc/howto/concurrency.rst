@@ -356,8 +356,10 @@ exposure
    :align: left
 
    * -
-     - research
-     - curriculum
+     - | academic
+       | research
+     - | academic
+       | curriculum
      - industry
      - examples
      - | Python
