@@ -54,6 +54,12 @@ def clockface(radius):
             jump(-radius)
         rt(6)
 
+def wochentag(t):
+    return t.strftime(format="%A")
+
+def datum(z):
+    return z.strftime(format="%Y/%m/%d")
+
 def display_date_time():
     global current_day
     writer.clear()
@@ -61,9 +67,9 @@ def display_date_time():
     current_day = now.day
     writer.home()
     writer.forward(distance=65)
-    writer.write(now.strftime(format="%A"), align="center", font=dtfont)
+    writer.write(wochentag(now), align="center", font=dtfont)
     writer.back(distance=150)
-    writer.write(now.strftime(format="%Y/%m/%d"), align="center", font=dtfont)
+    writer.write(datum(now), align="center", font=dtfont)
     writer.forward(distance=85)
 
 def initialize_hand(shape, color):
