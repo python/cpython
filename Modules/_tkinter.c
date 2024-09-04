@@ -3418,11 +3418,11 @@ module_free(void *mod)
 static struct PyModuleDef _tkintermodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_tkinter",
+    .m_size = -1,
     .m_methods = moduleMethods,
-    .m_clear = module_clear,
     .m_traverse = module_traverse,
+    .m_clear = module_clear,
     .m_free = module_free,
-    .m_size = -1
 };
 
 PyMODINIT_FUNC
