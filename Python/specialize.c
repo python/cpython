@@ -24,6 +24,13 @@ extern const char *_PyUOpName(int index);
  * ./adaptive.md
  */
 
+#ifdef Py_GIL_DISABLED
+#define SET_OPCODE(instr, opcode) _Py_atomic_store_uint8_relaxed(&(instr)->op.code, (opcode))
+#else
+#define SET_OPCODE(instr, opcode) (instr)->op.code = (opcode)
+#endif
+
+
 #ifdef Py_STATS
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
@@ -2237,18 +2244,18 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
                 bool to_store = (next.op.code == STORE_FAST);
                 if (to_store && PyStackRef_AsPyObjectBorrow(locals[next.op.arg]) == lhs) {
-                    instr->op.code = BINARY_OP_INPLACE_ADD_UNICODE;
+                    SET_OPCODE(instr, BINARY_OP_INPLACE_ADD_UNICODE);
                     goto success;
                 }
-                instr->op.code = BINARY_OP_ADD_UNICODE;
+                SET_OPCODE(instr, BINARY_OP_ADD_UNICODE);
                 goto success;
             }
             if (PyLong_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_ADD_INT;
+                SET_OPCODE(instr, BINARY_OP_ADD_INT);
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_ADD_FLOAT;
+                SET_OPCODE(instr, BINARY_OP_ADD_FLOAT);
                 goto success;
             }
             break;
@@ -2258,11 +2265,11 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_MULTIPLY_INT;
+                SET_OPCODE(instr, BINARY_OP_MULTIPLY_INT);
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_MULTIPLY_FLOAT;
+                SET_OPCODE(instr, BINARY_OP_MULTIPLY_FLOAT);
                 goto success;
             }
             break;
@@ -2272,11 +2279,11 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_SUBTRACT_INT;
+                SET_OPCODE(instr, BINARY_OP_SUBTRACT_INT);
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_SUBTRACT_FLOAT;
+                SET_OPCODE(instr, BINARY_OP_SUBTRACT_FLOAT);
                 goto success;
             }
             break;
