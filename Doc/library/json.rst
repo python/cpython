@@ -230,28 +230,28 @@ Basic Usage
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
-   *object_hook* will be used instead of the :class:`dict`.  This feature can be used
-   to implement custom decoders (e.g. `JSON-RPC <https://www.jsonrpc.org>`_
-   class hinting).
+   *object_hook* will be used instead of the :class:`dict`.  This feature can
+   be used to implement custom decoders (e.g. `JSON-RPC
+   <https://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook* is an optional function that will be called with the
    result of any object literal decoded with an ordered list of pairs.  The
    return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders.
-   If *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :class:`dict`.  This feature can be used to implement custom decoders.  If
+   *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
 
-   *parse_float*, if specified, will be called with the string of every JSON
-   float to be decoded.  By default, this is equivalent to ``float(num_str)``.
-   This can be used to use another datatype or parser for JSON floats
-   (e.g. :class:`decimal.Decimal`).
+   *parse_float* is an optional function that will be called with the string of
+   every JSON float to be decoded.  By default, this is equivalent to
+   ``float(num_str)``.  This can be used to use another datatype or parser for
+   JSON floats (e.g. :class:`decimal.Decimal`).
 
-   *parse_int*, if specified, will be called with the string of every JSON int
-   to be decoded.  By default, this is equivalent to ``int(num_str)``.  This can
-   be used to use another datatype or parser for JSON integers
-   (e.g. :class:`float`).
+   *parse_int* is an optional function that will be called with the string of
+   every JSON int to be decoded.  By default, this is equivalent to
+   ``int(num_str)``.  This can be used to use another datatype or parser for
+   JSON integers (e.g. :class:`float`).
 
    .. versionchanged:: 3.11
       The default *parse_int* of :func:`int` now limits the maximum length of
@@ -259,10 +259,9 @@ Basic Usage
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
 
-   *parse_constant*, if specified, will be called with one of the following
-   strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
-   This can be used to raise an exception if invalid JSON numbers
-   are encountered.
+   *parse_constant* is an optional function that will be called with one of the
+   following strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.  This can be
+   used to raise an exception if invalid JSON numbers are encountered.
 
    .. versionchanged:: 3.1
       *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
@@ -334,34 +333,33 @@ Encoders and Decoders
    It also understands ``NaN``, ``Infinity``, and ``-Infinity`` as their
    corresponding ``float`` values, which is outside the JSON spec.
 
-   *object_hook*, if specified, will be called with the result of every JSON
-   object decoded and its return value will be used in place of the given
-   :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
+   *object_hook* is an optional function that will be called with the result of
+   every JSON object decoded and its return value will be used in place of the
+   given :class:`dict`.  This can be used to provide custom deserializations
+   (e.g. to support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
 
-   *object_pairs_hook*, if specified will be called with the result of every
-   JSON object decoded with an ordered list of pairs.  The return value of
-   *object_pairs_hook* will be used instead of the :class:`dict`.  This
-   feature can be used to implement custom decoders.  If *object_hook* is also
-   defined, the *object_pairs_hook* takes priority.
+   *object_pairs_hook* is an optional function that will be called with the
+   result of every JSON object decoded with an ordered list of pairs.  The
+   return value of *object_pairs_hook* will be used instead of the
+   :class:`dict`.  This feature can be used to implement custom decoders.  If
+   *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
 
-   *parse_float*, if specified, will be called with the string of every JSON
-   float to be decoded.  By default, this is equivalent to ``float(num_str)``.
-   This can be used to use another datatype or parser for JSON floats
-   (e.g. :class:`decimal.Decimal`).
+   *parse_float* is an optional function that will be called with the string of
+   every JSON float to be decoded.  By default, this is equivalent to
+   ``float(num_str)``.  This can be used to use another datatype or parser for
+   JSON floats (e.g. :class:`decimal.Decimal`).
 
-   *parse_int*, if specified, will be called with the string of every JSON int
-   to be decoded.  By default, this is equivalent to ``int(num_str)``.  This can
-   be used to use another datatype or parser for JSON integers
-   (e.g. :class:`float`).
+   *parse_int* is an optional function that will be called with the string of
+   every JSON int to be decoded.  By default, this is equivalent to
+   ``int(num_str)``.  This can be used to use another datatype or parser for
+   JSON integers (e.g. :class:`float`).
 
-   *parse_constant*, if specified, will be called with one of the following
-   strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
-   This can be used to raise an exception if invalid JSON numbers
-   are encountered.
+   *parse_constant* is an optional function that will be called with one of the
+   following strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.  This can be
+   used to raise an exception if invalid JSON numbers are encountered.
 
    If *strict* is false (``True`` is the default), then control characters
    will be allowed inside strings.  Control characters in this context are
