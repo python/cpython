@@ -7,7 +7,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 /* ----------------------------------------------------------------------------
 Concurrent bitmap that can set/reset sequences of bits atomically,
-represeted as an array of fields where each field is a machine word (`size_t`)
+represented as an array of fields where each field is a machine word (`size_t`)
 
 There are two api's; the standard one cannot have sequences that cross
 between the bitmap fields (and a sequence must be <= MI_BITMAP_FIELD_BITS).

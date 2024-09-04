@@ -263,7 +263,7 @@ provides three different variants:
 
       Adds a blank line
       (indicating the end of the HTTP headers in the response)
-      to the headers buffer and calls :meth:`flush_headers()`.
+      to the headers buffer and calls :meth:`flush_headers`.
 
       .. versionchanged:: 3.2
          The buffered headers are written to the output stream.

@@ -1258,9 +1258,9 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         return 0;
     }
     if (tp->tp_getattro == _Py_type_getattro) {
-        int supress_missing_attribute_exception = 0;
-        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
-        if (supress_missing_attribute_exception) {
+        int suppress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &suppress_missing_attribute_exception);
+        if (suppress_missing_attribute_exception) {
             // return 0 without having to clear the exception
             return 0;
         }
@@ -2347,6 +2347,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
     &_PyTypeAlias_Type,
+    &_PyNoDefault_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class

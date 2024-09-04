@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -35,6 +36,7 @@ char **main_argv;
 
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
+#define PROGRAM_NAME_UTF8 "./_testembed"
 
 #define INIT_LOOPS 4
 
@@ -1804,6 +1806,219 @@ static int test_init_set_config(void)
 }
 
 
+static int initconfig_getint(PyInitConfig *config, const char *name)
+{
+    int64_t value;
+    int res = PyInitConfig_GetInt(config, name, &value);
+    assert(res == 0);
+    assert(INT_MIN <= value && value <= INT_MAX);
+    return (int)value;
+}
+
+
+static int test_initconfig_api(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    if (PyInitConfig_SetInt(config, "configure_locale", 1) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_SetInt(config, "dev_mode", 1) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_SetInt(config, "hash_seed", 10) < 0) {
+        goto error;
+    }
+
+    // Set a UTF-8 string (program_name)
+    if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
+        goto error;
+    }
+
+    // Set a UTF-8 string (pycache_prefix)
+    if (PyInitConfig_SetStr(config, "pycache_prefix",
+                            "conf_pycache_prefix") < 0) {
+        goto error;
+    }
+
+    // Set a list of UTF-8 strings (argv)
+    char* xoptions[] = {"faulthandler"};
+    if (PyInitConfig_SetStrList(config, "xoptions",
+                                Py_ARRAY_LENGTH(xoptions), xoptions) < 0) {
+        goto error;
+    }
+
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+    const char *err_msg;
+error:
+    (void)PyInitConfig_GetError(config, &err_msg);
+    printf("Python init failed: %s\n", err_msg);
+    exit(1);
+}
+
+
+static int test_initconfig_get_api(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    // test PyInitConfig_HasOption()
+    assert(PyInitConfig_HasOption(config, "verbose") == 1);
+    assert(PyInitConfig_HasOption(config, "utf8_mode") == 1);
+    assert(PyInitConfig_HasOption(config, "non-existent") == 0);
+
+    // test PyInitConfig_GetInt()
+    assert(initconfig_getint(config, "dev_mode") == 0);
+    assert(PyInitConfig_SetInt(config, "dev_mode", 1) == 0);
+    assert(initconfig_getint(config, "dev_mode") == 1);
+
+    // test PyInitConfig_GetInt() on a PyPreConfig option
+    assert(initconfig_getint(config, "utf8_mode") == 0);
+    assert(PyInitConfig_SetInt(config, "utf8_mode", 1) == 0);
+    assert(initconfig_getint(config, "utf8_mode") == 1);
+
+    // test PyInitConfig_GetStr()
+    char *str;
+    assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
+    assert(str == NULL);
+    assert(PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) == 0);
+    assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
+    assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
+    free(str);
+
+    // test PyInitConfig_GetStrList() and PyInitConfig_FreeStrList()
+    size_t length;
+    char **items;
+    assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
+    assert(length == 0);
+
+    char* xoptions[] = {"faulthandler"};
+    assert(PyInitConfig_SetStrList(config, "xoptions",
+                                   Py_ARRAY_LENGTH(xoptions), xoptions) == 0);
+
+    assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
+    assert(length == 1);
+    assert(strcmp(items[0], "faulthandler") == 0);
+    PyInitConfig_FreeStrList(length, items);
+
+    // Setting hash_seed sets use_hash_seed
+    assert(initconfig_getint(config, "use_hash_seed") == 0);
+    assert(PyInitConfig_SetInt(config, "hash_seed", 123) == 0);
+    assert(initconfig_getint(config, "use_hash_seed") == 1);
+
+    // Setting module_search_paths sets module_search_paths_set
+    assert(initconfig_getint(config, "module_search_paths_set") == 0);
+    char* paths[] = {"search", "path"};
+    assert(PyInitConfig_SetStrList(config, "module_search_paths",
+                                   Py_ARRAY_LENGTH(paths), paths) == 0);
+    assert(initconfig_getint(config, "module_search_paths_set") == 1);
+
+    return 0;
+}
+
+
+static int test_initconfig_exit(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    char *argv[] = {PROGRAM_NAME_UTF8, "--help"};
+    assert(PyInitConfig_SetStrList(config, "argv",
+                                   Py_ARRAY_LENGTH(argv), argv) == 0);
+
+    assert(PyInitConfig_SetInt(config, "parse_argv", 1) == 0);
+
+    assert(Py_InitializeFromInitConfig(config) < 0);
+
+    int exitcode;
+    assert(PyInitConfig_GetExitCode(config, &exitcode) == 1);
+    assert(exitcode == 0);
+
+    const char *err_msg;
+    assert(PyInitConfig_GetError(config, &err_msg) == 1);
+    assert(strcmp(err_msg, "exit code 0") == 0);
+
+    PyInitConfig_Free(config);
+    return 0;
+}
+
+
+static PyModuleDef_Slot extension_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
+static struct PyModuleDef extension_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "my_test_extension",
+    .m_size = 0,
+    .m_slots = extension_slots,
+};
+
+static PyObject* init_my_test_extension(void)
+{
+    return PyModuleDef_Init(&extension_module);
+}
+
+
+static int test_initconfig_module(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_AddModule(config, "my_test_extension",
+                               init_my_test_extension) < 0) {
+        goto error;
+    }
+
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+
+    if (PyRun_SimpleString("import my_test_extension") < 0) {
+        fprintf(stderr, "unable to import my_test_extension\n");
+        exit(1);
+    }
+
+    Py_Finalize();
+    return 0;
+
+    const char *err_msg;
+error:
+    (void)PyInitConfig_GetError(config, &err_msg);
+    printf("Python init failed: %s\n", err_msg);
+    exit(1);
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -2022,6 +2237,22 @@ static int test_init_main_interpreter_settings(void)
     return 0;
 }
 
+static void do_init(void *unused)
+{
+    _testembed_Py_Initialize();
+    Py_Finalize();
+}
+
+static int test_init_in_background_thread(void)
+{
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    if (PyThread_start_joinable_thread(&do_init, NULL, &ident, &handle) < 0) {
+        return -1;
+    }
+    return PyThread_join_thread(handle);
+}
+
 
 #ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
@@ -2206,11 +2437,16 @@ static struct TestCase TestCases[] = {
     {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
+    {"test_initconfig_api", test_initconfig_api},
+    {"test_initconfig_get_api", test_initconfig_get_api},
+    {"test_initconfig_exit", test_initconfig_exit},
+    {"test_initconfig_module", test_initconfig_module},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
+    {"test_init_in_background_thread", test_init_in_background_thread},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

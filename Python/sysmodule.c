@@ -1845,6 +1845,7 @@ sys_get_int_max_str_digits_impl(PyObject *module)
     return PyLong_FromLong(interp->long_state.max_str_digits);
 }
 
+
 /*[clinic input]
 sys.set_int_max_str_digits
 
@@ -1857,16 +1858,10 @@ static PyObject *
 sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
 /*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
-        tstate->interp->long_state.max_str_digits = maxdigits;
-        Py_RETURN_NONE;
-    } else {
-        PyErr_Format(
-            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
-            _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
+    if (_PySys_SetIntMaxStrDigits(maxdigits) < 0) {
         return NULL;
     }
+    Py_RETURN_NONE;
 }
 
 size_t
@@ -3120,12 +3115,56 @@ static PyStructSequence_Field flags_fields[] = {
     {0}
 };
 
+#define SYS_FLAGS_INT_MAX_STR_DIGITS 17
+
 static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
     18
 };
+
+static void
+sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
+{
+    assert(pos >= 0 && pos < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1));
+
+    PyObject *old_value = PyStructSequence_GET_ITEM(flags, pos);
+    PyStructSequence_SET_ITEM(flags, pos, Py_NewRef(value));
+    Py_XDECREF(old_value);
+}
+
+
+int
+_PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
+{
+    PyObject *flags = Py_XNewRef(PySys_GetObject("flags"));
+    if (flags == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "lost sys.flags");
+        }
+        return -1;
+    }
+
+    sys_set_flag(flags, pos, value);
+    Py_DECREF(flags);
+    return 0;
+}
+
+
+static int
+_PySys_SetFlagInt(Py_ssize_t pos, int value)
+{
+    PyObject *obj = PyLong_FromLong(value);
+    if (obj == NULL) {
+        return -1;
+    }
+
+    int res = _PySys_SetFlagObj(pos, obj);
+    Py_DECREF(obj);
+    return res;
+}
+
 
 static int
 set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
@@ -3142,8 +3181,8 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
         if (value == NULL) { \
             return -1; \
         } \
-        Py_XDECREF(PyStructSequence_GET_ITEM(flags, pos)); \
-        PyStructSequence_SET_ITEM(flags, pos, value); \
+        sys_set_flag(flags, pos, value); \
+        Py_DECREF(value); \
         pos++; \
     } while (0)
 #define SetFlag(expr) SetFlagObj(PyLong_FromLong(expr))
@@ -3599,64 +3638,6 @@ err_occurred:
     return _PyStatus_ERR("can't initialize sys module");
 }
 
-static int
-sys_add_xoption(PyObject *opts, const wchar_t *s)
-{
-    PyObject *name, *value = NULL;
-
-    const wchar_t *name_end = wcschr(s, L'=');
-    if (!name_end) {
-        name = PyUnicode_FromWideChar(s, -1);
-        if (name == NULL) {
-            goto error;
-        }
-        value = Py_NewRef(Py_True);
-    }
-    else {
-        name = PyUnicode_FromWideChar(s, name_end - s);
-        if (name == NULL) {
-            goto error;
-        }
-        value = PyUnicode_FromWideChar(name_end + 1, -1);
-        if (value == NULL) {
-            goto error;
-        }
-    }
-    if (PyDict_SetItem(opts, name, value) < 0) {
-        goto error;
-    }
-    Py_DECREF(name);
-    Py_DECREF(value);
-    return 0;
-
-error:
-    Py_XDECREF(name);
-    Py_XDECREF(value);
-    return -1;
-}
-
-
-static PyObject*
-sys_create_xoptions_dict(const PyConfig *config)
-{
-    Py_ssize_t nxoption = config->xoptions.length;
-    wchar_t * const * xoptions = config->xoptions.items;
-    PyObject *dict = PyDict_New();
-    if (dict == NULL) {
-        return NULL;
-    }
-
-    for (Py_ssize_t i=0; i < nxoption; i++) {
-        const wchar_t *option = xoptions[i];
-        if (sys_add_xoption(dict, option) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-    }
-
-    return dict;
-}
-
 
 // Update sys attributes for a new PyConfig configuration.
 // This function also adds attributes that _PySys_InitCore() didn't add.
@@ -3703,7 +3684,7 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     COPY_LIST("orig_argv", config->orig_argv);
     COPY_LIST("warnoptions", config->warnoptions);
 
-    SET_SYS("_xoptions", sys_create_xoptions_dict(config));
+    SET_SYS("_xoptions", _PyConfig_CreateXOptionsDict(config));
 
     const wchar_t *stdlibdir = _Py_GetStdlibDir();
     if (stdlibdir != NULL) {
@@ -4128,4 +4109,29 @@ PySys_FormatStderr(const char *format, ...)
     va_start(va, format);
     sys_format(&_Py_ID(stderr), stderr, format, va);
     va_end(va);
+}
+
+
+int
+_PySys_SetIntMaxStrDigits(int maxdigits)
+{
+    if (maxdigits != 0 && maxdigits < _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+        PyErr_Format(
+            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
+        return -1;
+    }
+
+    // Set sys.flags.int_max_str_digits
+    const Py_ssize_t pos = SYS_FLAGS_INT_MAX_STR_DIGITS;
+    if (_PySys_SetFlagInt(pos, maxdigits) < 0) {
+        return -1;
+    }
+
+    // Set PyInterpreterState.long_state.max_str_digits
+    // and PyInterpreterState.config.int_max_str_digits.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->long_state.max_str_digits = maxdigits;
+    interp->config.int_max_str_digits = maxdigits;
+    return 0;
 }

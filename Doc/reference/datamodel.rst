@@ -380,7 +380,7 @@ Bytes
 
    A bytes object is an immutable array.  The items are 8-bit bytes,
    represented by integers in the range 0 <= x < 256.  Bytes literals
-   (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+   (like ``b'abc'``) and the built-in :func:`bytes` constructor
    can be used to create bytes objects.  Also, bytes objects can be
    decoded to strings via the :meth:`~bytes.decode` method.
 
@@ -499,7 +499,7 @@ in the same order they were added sequentially over the dictionary.
 Replacing an existing key does not change the order, however removing a key
 and re-inserting it will add it to the end instead of keeping its old place.
 
-Dictionaries are mutable; they can be created by the ``{...}`` notation (see
+Dictionaries are mutable; they can be created by the ``{}`` notation (see
 section :ref:`dict`).
 
 .. index::
