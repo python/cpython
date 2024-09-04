@@ -1247,7 +1247,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
         /* Calculates the number of bits required for the *absolute* value
          * of v. This does not take sign into account, only magnitude. */
         uint64_t nb = _PyLong_NumBits((PyObject *)v);
-        /* Normally this would be((nb - 1) / 8) + 1 to avoid rounding up
+        /* Normally this would be ((nb - 1) / 8) + 1 to avoid rounding up
          * multiples of 8 to the next byte, but we add an implied bit for
          * the sign and it cancels out. */
         res = (Py_ssize_t)(nb / 8) + 1;
@@ -6175,7 +6175,9 @@ static PyObject *
 int_bit_length_impl(PyObject *self)
 /*[clinic end generated code: output=fc1977c9353d6a59 input=e4eb7a587e849a32]*/
 {
-    return PyLong_FromUInt64(_PyLong_NumBits(self));
+    uint64_t nbits =_PyLong_NumBits(self);
+    assert(!PyErr_Occurred());
+    return PyLong_FromUInt64(nbits);
 }
 
 static int
