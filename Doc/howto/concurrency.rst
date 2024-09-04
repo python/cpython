@@ -51,6 +51,9 @@ concurrency support.  The overall focus is on the following:
    community-maintained PyPI packages.  One well-known example is
    :pypi:`dask`, which supports "distributed" computing.
 
+Glossary
+--------
+
 We'll be using the following terms and ideas throughout:
 
 task (logical thread)
@@ -75,6 +78,9 @@ concurrency (multitasking)
 parallelism (multi-core)
    running a program's multiple logical threads on multiple physical
    threads (CPU cores)
+
+Quick reference
+---------------
 
 .. raw:: html
 
