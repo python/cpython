@@ -497,7 +497,7 @@ class TestTurtleScreen(unittest.TestCase):
             msg = (
                 f"the file '{file_path}' already exists. To overwrite it use"
                 " the 'overwrite=True' argument of the save function."
-            )
+            ).replace("\\", "\\"*2)  # Escape backslashes in Windows paths
             with self.assertRaisesRegex(FileExistsError, msg):
                 turtle.TurtleScreen.save(screen, file_path)
 
