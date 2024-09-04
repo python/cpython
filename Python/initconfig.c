@@ -1031,7 +1031,6 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->dev_mode = 0;
     config->install_signal_handlers = 0;
     config->use_hash_seed = 0;
-    config->faulthandler = 0;
     config->tracemalloc = 0;
     config->perf_profiling = 0;
     config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
@@ -3753,7 +3752,7 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
         return -1;
     }
 
-    if (strcmp(name, "hash_seed")) {
+    if (strcmp(name, "hash_seed") == 0) {
         config->config.use_hash_seed = 1;
     }
 
@@ -3863,7 +3862,14 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
         return -1;
     }
     PyWideStringList *list = raw_member;
-    return _PyWideStringList_FromUTF8(config, list, length, items);
+    if (_PyWideStringList_FromUTF8(config, list, length, items) < 0) {
+        return -1;
+    }
+
+    if (strcmp(name, "module_search_paths") == 0) {
+        config->config.module_search_paths_set = 1;
+    }
+    return 0;
 }
 
 

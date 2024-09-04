@@ -1766,7 +1766,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
         }
         config_dev_mode(preconfig, config)
-        config['faulthandler'] = 0
         self.check_all_configs("test_initconfig_api", config, preconfig,
                                api=API_ISOLATED)
 

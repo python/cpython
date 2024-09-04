@@ -1806,6 +1806,16 @@ static int test_init_set_config(void)
 }
 
 
+static int initconfig_getint(PyInitConfig *config, const char *name)
+{
+    int64_t value;
+    int res = PyInitConfig_GetInt(config, name, &value);
+    assert(res == 0);
+    assert(INT_MIN <= value && value <= INT_MAX);
+    return (int)value;
+}
+
+
 static int test_initconfig_api(void)
 {
     PyInitConfig *config = PyInitConfig_Create();
@@ -1844,7 +1854,6 @@ static int test_initconfig_api(void)
         goto error;
     }
 
-
     if (Py_InitializeFromInitConfig(config) < 0) {
         goto error;
     }
@@ -1876,37 +1885,50 @@ static int test_initconfig_get_api(void)
     assert(PyInitConfig_HasOption(config, "non-existent") == 0);
 
     // test PyInitConfig_GetInt()
-    int64_t value;
-    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
-    assert(value == 0);
+    assert(initconfig_getint(config, "dev_mode") == 0);
     assert(PyInitConfig_SetInt(config, "dev_mode", 1) == 0);
-    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
-    assert(value == 1);
+    assert(initconfig_getint(config, "dev_mode") == 1);
 
     // test PyInitConfig_GetInt() on a PyPreConfig option
-    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
-    assert(value == 0);
+    assert(initconfig_getint(config, "utf8_mode") == 0);
     assert(PyInitConfig_SetInt(config, "utf8_mode", 1) == 0);
-    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
-    assert(value == 1);
+    assert(initconfig_getint(config, "utf8_mode") == 1);
 
     // test PyInitConfig_GetStr()
     char *str;
+    assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
+    assert(str == NULL);
     assert(PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) == 0);
     assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
     assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
     free(str);
 
     // test PyInitConfig_GetStrList() and PyInitConfig_FreeStrList()
+    size_t length;
+    char **items;
+    assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
+    assert(length == 0);
+
     char* xoptions[] = {"faulthandler"};
     assert(PyInitConfig_SetStrList(config, "xoptions",
                                    Py_ARRAY_LENGTH(xoptions), xoptions) == 0);
-    size_t length;
-    char **items;
+
     assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
     assert(length == 1);
     assert(strcmp(items[0], "faulthandler") == 0);
     PyInitConfig_FreeStrList(length, items);
+
+    // Setting hash_seed sets use_hash_seed
+    assert(initconfig_getint(config, "use_hash_seed") == 0);
+    assert(PyInitConfig_SetInt(config, "hash_seed", 123) == 0);
+    assert(initconfig_getint(config, "use_hash_seed") == 1);
+
+    // Setting module_search_paths sets module_search_paths_set
+    assert(initconfig_getint(config, "module_search_paths_set") == 0);
+    char* paths[] = {"search", "path"};
+    assert(PyInitConfig_SetStrList(config, "module_search_paths",
+                                   Py_ARRAY_LENGTH(paths), paths) == 0);
+    assert(initconfig_getint(config, "module_search_paths_set") == 1);
 
     return 0;
 }
