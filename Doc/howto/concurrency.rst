@@ -62,7 +62,7 @@ task (logical thread)
    | also known as "logical process"
 
 physical thread (OS thread)
-   | where the actual code for a logical thread runs on the CPU (and operating system); 
+   | where the actual code for a logical thread runs on the CPU (and operating system);
    | we avoid using using plain "thread" for this, to avoid ambiguity
 
 Python thread
@@ -301,7 +301,7 @@ complexity
      - **yes**
      - **high**
      - **explicit**
-     - 
+     -
      - yes
      - low?
    * - multiple interpreters
@@ -570,31 +570,31 @@ When relevant, these must be managed in a thread-safe way.
 Tracing execution
 ^^^^^^^^^^^^^^^^^
 
+TBD
+
 .. TODO finish
 
-The other potential problem with using threads is that the conceptual
-model has no inherent synchronization, so it can be hard to follow
-what is going on in the program at any given moment.  That is
-especially challenging for testing and debugging.
+   The other potential problem with using threads is that the conceptual
+   model has no inherent synchronization, so it can be hard to follow
+   what is going on in the program at any given moment.  That is
+   especially challenging for testing and debugging.
 
-* "callback hell"
-* "where was this thread/coroutine started?"
-* composing a reliable sequential representation of the program?
-* "what happened (in order) leading up to this point?"
+   * "callback hell"
+   * "where was this thread/coroutine started?"
+   * composing a reliable sequential representation of the program?
+   * "what happened (in order) leading up to this point?"
 
-Besides unlocking full multi-core parallelism, the isolation between
-interpreters means that, from a conceptual level, concurrency can be
-simpler.
+   Besides unlocking full multi-core parallelism, the isolation between
+   interpreters means that, from a conceptual level, concurrency can be
+   simpler.
 
-The second category of complexity is the problem of tracing the execution
-of one logical thread relative to another.  This is especially relevant
-for error handling, when an error in the one thread is exposed in the
-other.  This applies equally to threads that start other threads as to
-concurrency models that use callbacks.  Knowing where the failing thread
-was started is valuable when debugging, as is knowing where a callback
-was registered.
-
-
+   The second category of complexity is the problem of tracing the execution
+   of one logical thread relative to another.  This is especially relevant
+   for error handling, when an error in the one thread is exposed in the
+   other.  This applies equally to threads that start other threads as to
+   concurrency models that use callbacks.  Knowing where the failing thread
+   was started is valuable when debugging, as is knowing where a callback
+   was registered.
 
 Coroutines are contagious
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -719,263 +719,264 @@ it's crucial that you understand the problem well.
 How can concurrency help?
 -------------------------
 
+TBD
+
 .. TODO finish
 
-Here are the benefits concurrency can bring to the table:
+   Here are the benefits concurrency can bring to the table:
 
-* ...
+   * ...
 
 
-Primarily, concurrency can be helpful by making your program faster
-and more responsive (less latency), when possible.  In other words,
-you get better computational throughput.  That happens by enabling
-the following:
+   Primarily, concurrency can be helpful by making your program faster
+   and more responsive (less latency), when possible.  In other words,
+   you get better computational throughput.  That happens by enabling
+   the following:
 
-* run on multiple CPU cores (parallelism)
-* keep blocking resources from blocking the whole program
-* make sure critical tasks have priority
-* make sure other tasks have a fair share of time
-* process results as they come, instead of waiting for them all
+   * run on multiple CPU cores (parallelism)
+   * keep blocking resources from blocking the whole program
+   * make sure critical tasks have priority
+   * make sure other tasks have a fair share of time
+   * process results as they come, instead of waiting for them all
 
-Other possible benefits:
+   Other possible benefits:
 
-* asynchronous events can be handled more cleanly
-* better efficiency using hardware resources
-* improved scalability
+   * asynchronous events can be handled more cleanly
+   * better efficiency using hardware resources
+   * improved scalability
 
 How can concurrency hurt?
 -------------------------
 
-.. TODO finish
-
 TBD
 
-The main challenge when using concurrency is the (potential) extra
-complexity.  This complexity comes from the effect of multiple logical
-threads running at the same time and interacting with each other.
-In practice, this falls into two categories: data races and tracing
-relative execution.  Both are a form of "spooky action at a distance" [#f1]_
-(meaning something changes unexpectedly in one place due to unknown
-changes somewhere else).
+.. TODO finish
+
+   The main challenge when using concurrency is the (potential) extra
+   complexity.  This complexity comes from the effect of multiple logical
+   threads running at the same time and interacting with each other.
+   In practice, this falls into two categories: data races and tracing
+   relative execution.  Both are a form of "spooky action at a distance" [#f1]_
+   (meaning something changes unexpectedly in one place due to unknown
+   changes somewhere else).
 
 .. _concurrency-identify-tasks:
 
 Identifying the logical tasks in your program
 ---------------------------------------------
 
-.. TODO finish
-
 TBD
 
-At its most fundamental, concurrency means doing multiple things at once,
-from a strictly *logical* viewpoint.
+.. TODO finish
 
-When a computer program runs, it executes a sequence of code
-in a given order.  If you were to trace the actual execution, you would
-still end up with a *linear* series of executed instructions that matches
-the code.  We call this sequence of code (and instructions) a logical
-"thread" of execution.
+   At its most fundamental, concurrency means doing multiple things at once,
+   from a strictly *logical* viewpoint.
 
-Sometimes it makes sense to break up that sequence into smaller pieces,
-where some of them can run independently of others.  Thus the program
-then involves multiple logical threads.  This is also called
-"multitasking" and each logical thread a "task".
+   When a computer program runs, it executes a sequence of code
+   in a given order.  If you were to trace the actual execution, you would
+   still end up with a *linear* series of executed instructions that matches
+   the code.  We call this sequence of code (and instructions) a logical
+   "thread" of execution.
 
+   Sometimes it makes sense to break up that sequence into smaller pieces,
+   where some of them can run independently of others.  Thus the program
+   then involves multiple logical threads.  This is also called
+   "multitasking" and each logical thread a "task".
 
-One important observation is that most concurrent programs
-can be represented instead as a single task, with the code of the
-concurrent tasks merged into a single sequence.
+   One important observation is that most concurrent programs
+   can be represented instead as a single task, with the code of the
+   concurrent tasks merged into a single sequence.
 
 .. _concurrency-characteristics:
 
 The concurrency characteristics of your program
 -----------------------------------------------
 
-.. TODO finish
-
 TBD
 
-For a given workload, here are some characteristics that will help you
-understand the problem and, potentially, which concurrency model would
-be the best fit:
+.. TODO finish
 
-* requests
+   For a given workload, here are some characteristics that will help you
+   understand the problem and, potentially, which concurrency model would
+   be the best fit:
 
-  * frequency
-  * expected latency for (at least partial) response
+   * requests
 
-* inputs per request
+     * frequency
+     * expected latency for (at least partial) response
 
-  * how many
-  * size of each input
+   * inputs per request
 
-* tasks (logical threads) per input
+     * how many
+     * size of each input
 
-  * how many
-  * variety vs. uniformity
-  * compute per task: how much
-  * data per task: how much and what kinds
-  * I/O per task: how much and what kinds
-  * tasks not tied to outputs
+   * tasks (logical threads) per input
 
-* task interaction
+     * how many
+     * variety vs. uniformity
+     * compute per task: how much
+     * data per task: how much and what kinds
+     * I/O per task: how much and what kinds
+     * tasks not tied to outputs
 
-  * how much and in what ways
-  * what data is shared between tasks
-  * how much blocking while waiting
+   * task interaction
 
-* outputs per request
+     * how much and in what ways
+     * what data is shared between tasks
+     * how much blocking while waiting
 
-  * how many
-  * size pf each output
-  * correlation to inputs
+   * outputs per request
 
-To some extent the most critical factors can be compressed down to:
+     * how many
+     * size pf each output
+     * correlation to inputs
 
-* many inputs vs. 1 large divisible input
-* many outputs vs. combined output vs. matching large output
-* many short computations vs. fewer medium/long computations
+   To some extent the most critical factors can be compressed down to:
 
-We could also break it down into quadrants::
+   * many inputs vs. 1 large divisible input
+   * many outputs vs. combined output vs. matching large output
+   * many short computations vs. fewer medium/long computations
 
-   .     stream of tasks       queue of tasks
-   C                       |
-   P                       |
-   U                       |
-   -                       |
-   b                       |
-   o                       |
-   u                       |
-   n                       |
-   d                       |
-    -----------------------|-----------------------
-   I                       |
-   O                       |
-   -                       |
-   b                       |
-   o                       |
-   u                       |
-   n                       |
-   d                       |
+   We could also break it down into quadrants::
+
+      .     stream of tasks       queue of tasks
+      C                       |
+      P                       |
+      U                       |
+      -                       |
+      b                       |
+      o                       |
+      u                       |
+      n                       |
+      d                       |
+       -----------------------|-----------------------
+      I                       |
+      O                       |
+      -                       |
+      b                       |
+      o                       |
+      u                       |
+      n                       |
+      d                       |
 
 
-Aside from the concurrency model, the answers to the above can impact
-the following:
+   Aside from the concurrency model, the answers to the above can impact
+   the following:
 
-* use of a worker pool
-* use of background tasks/threads
+   * use of a worker pool
+   * use of background tasks/threads
 
-In the context of the above characteristics, let's revisit the ways that
-concurrency can be helpful:
+   In the context of the above characteristics, let's revisit the ways that
+   concurrency can be helpful:
 
-* get work done faster
+   * get work done faster
 
-   * run more tasks at once (multi-core)
+      * run more tasks at once (multi-core)
 
-* make the app feel more responsive
+   * make the app feel more responsive
 
-   * make sure critical tasks have priority
-   * process results as they come, instead of waiting for them all
-   * send payload to multiple targets before starting next task
+      * make sure critical tasks have priority
+      * process results as they come, instead of waiting for them all
+      * send payload to multiple targets before starting next task
 
-* use system resources more efficiently
+   * use system resources more efficiently
 
-   * keep slow parts from blocking fast parts
-   * keep blocking resources from blocking the whole program
-   * make sure other tasks have a fair share of time
-   * task scheduling & resource usage optimization
+      * keep slow parts from blocking fast parts
+      * keep blocking resources from blocking the whole program
+      * make sure other tasks have a fair share of time
+      * task scheduling & resource usage optimization
 
-* scaling
-* handle asynchronous events
+   * scaling
+   * handle asynchronous events
 
 .. _concurrency-pick-a-model:
 
 Picking a concurrency model
 ---------------------------
 
-.. TODO finish
-
 TBD
 
-As mentioned earlier, each concurrency model has its own set of tradeoffs.
-Free-threading probably has the most notoriety and the most examples,
-but is also has the most pitfalls (see `Critical caveats`_ above).
-Isolated threads have few of those pitfalls but are less familiar
-and at least a little less efficient.
-Multiprocessing and distributed are likewise isolated, but less
-efficient, which can have a larger negative impact at smaller scales.
-Async can be straightforward, but may cascade throughout a code base
-and doesn't necessarily give you parallelism.
+.. TODO finish
 
-free-threading:
+   As mentioned earlier, each concurrency model has its own set of tradeoffs.
+   Free-threading probably has the most notoriety and the most examples,
+   but is also has the most pitfalls (see `Critical caveats`_ above).
+   Isolated threads have few of those pitfalls but are less familiar
+   and at least a little less efficient.
+   Multiprocessing and distributed are likewise isolated, but less
+   efficient, which can have a larger negative impact at smaller scales.
+   Async can be straightforward, but may cascade throughout a code base
+   and doesn't necessarily give you parallelism.
 
-* main value: efficient multi-core
-* main costs: races & conceptual overhead
+   free-threading:
 
-* minimal conceptual indirection: closely tied to low-level physical threads
-* the most direct route to taking advantage of multi-core parallelism
+   * main value: efficient multi-core
+   * main costs: races & conceptual overhead
+
+   * minimal conceptual indirection: closely tied to low-level physical threads
+   * the most direct route to taking advantage of multi-core parallelism
 
 
-A high-level look:
+   A high-level look:
 
-.. list-table::
-   :header-rows: 1
-   :class: borderless vert-aligned
-   :align: left
+   .. list-table::
+      :header-rows: 1
+      :class: borderless vert-aligned
+      :align: left
 
-   * - model
-     - pros
-     - cons
-   * - free threading
-     - * very light-weight and efficient
-       * wide-spread
-       * can enable multi-core parallelism (`caveat: GIL <python-gil_>`_)
-     - * all memory is shared, subject to races
-       * some IO may have races (e.g. writing to stdout)
-       * can be hard for humans to follow what's happening in different
-         threads at any given point
-   * - multiple interpreters (isolated threads)
-     - * isolation eliminates nearly all races, by default
-         (sharing is strictly opt-in)
-       * synchronization is built in to cross-interpreter interaction
-       * enables full multi-core parallelism of all Python code
-     - * unfamiliar to many
-       * less efficient than threads
-       * (currently) limited in what data can be shared between
-         interpreters
-   * - coroutines (async/await)
-     - * not subject to races
-       * increasingly familiar to many; popular in newer languages
-       * has a long history in Python (e.g. ``twisted``)
-     - * async and non-async functions don't mix well,
-         potentially leading to duplication of code
-       * switching to async can require substantial cascading code churn
-       * callbacks can make it difficult to follow program logic,
-         making debugging harder
-       * does not enable multi-core parallelism
-   * - multiprocessing
-     - * isolated (no races)
-       * enables full multi-core parallelism of all Python code
-     - * substantially less efficient than using a single process
-       * can lead to exhaustion of system resources
-         (e.g. file handles, PIDs)
-       * API can be hard to use
-   * - distributed
-     - * isolated (no races)
-       * fully parallel
-       * facilitates massive scaling
-     - * not necessarily a good fit for small-scale applications
-       * often requires configuration
+      * - model
+        - pros
+        - cons
+      * - free threading
+        - * very light-weight and efficient
+          * wide-spread
+          * can enable multi-core parallelism (`caveat: GIL <python-gil_>`_)
+        - * all memory is shared, subject to races
+          * some IO may have races (e.g. writing to stdout)
+          * can be hard for humans to follow what's happening in different
+            threads at any given point
+      * - multiple interpreters (isolated threads)
+        - * isolation eliminates nearly all races, by default
+            (sharing is strictly opt-in)
+          * synchronization is built in to cross-interpreter interaction
+          * enables full multi-core parallelism of all Python code
+        - * unfamiliar to many
+          * less efficient than threads
+          * (currently) limited in what data can be shared between
+            interpreters
+      * - coroutines (async/await)
+        - * not subject to races
+          * increasingly familiar to many; popular in newer languages
+          * has a long history in Python (e.g. ``twisted``)
+        - * async and non-async functions don't mix well,
+            potentially leading to duplication of code
+          * switching to async can require substantial cascading code churn
+          * callbacks can make it difficult to follow program logic,
+            making debugging harder
+          * does not enable multi-core parallelism
+      * - multiprocessing
+        - * isolated (no races)
+          * enables full multi-core parallelism of all Python code
+        - * substantially less efficient than using a single process
+          * can lead to exhaustion of system resources
+            (e.g. file handles, PIDs)
+          * API can be hard to use
+      * - distributed
+        - * isolated (no races)
+          * fully parallel
+          * facilitates massive scaling
+        - * not necessarily a good fit for small-scale applications
+          * often requires configuration
 
 Other considerations
 --------------------
 
-.. TODO finish
-
 TBD
 
-* are there libraries that can take care of the concurrency parts?
-* ...
+.. TODO finish
+
+   * are there libraries that can take care of the concurrency parts?
+   * ...
 
 
 .. _concurrency-primitives:
@@ -983,32 +984,32 @@ TBD
 Python Concurrency Primitives
 =============================
 
-.. TODO finish
-
 TBD
 
-Dealing with data races is often managed using locks (AKA mutexes),
-at a low level, and thread-safe types and APIs at a high level.
-Depending on the programming language, the complexity is sometimes
-mitigated somewhat by the compiler and runtime.  There are even
-libraries and frameworks that help abstract away the complexity
-to an extent.  On top of that, there are tools that can help identify
-potential races via static analysis.  Unfortunately, none of these aids
-is foolproof and the risk of hitting a race is always looming.
+.. TODO finish
 
-synchronization
----------------
+   Dealing with data races is often managed using locks (AKA mutexes),
+   at a low level, and thread-safe types and APIs at a high level.
+   Depending on the programming language, the complexity is sometimes
+   mitigated somewhat by the compiler and runtime.  There are even
+   libraries and frameworks that help abstract away the complexity
+   to an extent.  On top of that, there are tools that can help identify
+   potential races via static analysis.  Unfortunately, none of these aids
+   is foolproof and the risk of hitting a race is always looming.
 
-Additionally, concurrency often involves some degree of synchronization
-between the logical threads.  At the most basic conceptual level:
-one thread may wait for another to finish.
+   synchronization
+   ---------------
 
-shared resources
-----------------
+   Additionally, concurrency often involves some degree of synchronization
+   between the logical threads.  At the most basic conceptual level:
+   one thread may wait for another to finish.
 
-Aside from code running at the same time, concurrency typically
-also involves some amount of resources shared between the concurrent
-tasks.  That may include memory, files, and sockets.
+   shared resources
+   ----------------
+
+   Aside from code running at the same time, concurrency typically
+   also involves some amount of resources shared between the concurrent
+   tasks.  That may include memory, files, and sockets.
 
 .. _concurrency-workload-examples:
 
@@ -1408,7 +1409,9 @@ side-by-side for easy comparison:
           </details>
 
 
-.. rubric:: Footnotes
+.. XXX
 
-.. [#f1] The phrase was originally said by Albert Einstein about
-   quantum entanglement.
+   .. rubric:: Footnotes
+
+   .. [#f1] The phrase was originally said by Albert Einstein about
+      quantum entanglement.
