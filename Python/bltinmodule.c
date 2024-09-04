@@ -1749,6 +1749,46 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     return new_awaitable;
 }
 
+static PyObject* builtin_avg(PyObject* self, PyObject* args) {
+    PyObject* iterable;
+    PyObject* iterator;
+    PyObject* item;
+    double total = 0.0;
+    Py_ssize_t count = 0;
+
+    if (!PyArg_ParseTuple(args, "O", &iterable)) {
+        return NULL;
+    }
+
+    iterator = PyObject_GetIter(iterable);
+    if (iterator == NULL) {
+        return NULL;
+    }
+
+    while ((item = PyIter_Next(iterator)) != NULL) {
+        if (!PyNumber_Check(item)) {
+            Py_DECREF(item);
+            Py_DECREF(iterator);
+            PyErr_SetString(PyExc_TypeError, "All elements must be numbers.");
+            return NULL;
+        }
+        total += PyFloat_AsDouble(item);
+        count++;
+        Py_DECREF(item);
+    }
+    Py_DECREF(iterator);
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    if (count == 0) {
+        PyErr_SetString(PyExc_ValueError, "avg() arg is an empty sequence");
+        return NULL;
+    }
+
+    return Py_BuildValue("d", total / count);
+}
 
 /*[clinic input]
 len as builtin_len
@@ -3171,6 +3211,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
+    {"avg", _PyCFunction_CAST(builtin_avg), METH_VARARGS, "Calculate the average of an iterable of numbers."},
     {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},
     {"min", _PyCFunction_CAST(builtin_min), METH_FASTCALL | METH_KEYWORDS, min_doc},
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
