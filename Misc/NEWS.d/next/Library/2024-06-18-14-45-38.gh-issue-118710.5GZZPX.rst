@@ -1,0 +1,1 @@
+:class:`ipaddress.IPv4Address` and :class:`ipaddress.IPv6Address` attributes ``version`` and ``max_prefixlen`` are now available on the class.
