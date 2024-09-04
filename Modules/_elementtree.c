@@ -16,10 +16,12 @@
 #endif
 
 #include "Python.h"
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
-#include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_import.h"          // _PyImport_GetModuleAttrString()
+#include "pycore_pyhash.h"          // _Py_HashSecret
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_tuple.h"           // _Py_EMPTY_TUPLE
 
-#include <stddef.h>               // offsetof()
+#include <stddef.h>                 // offsetof()
 #include "expat.h"
 #include "pyexpat.h"
 
@@ -1095,23 +1097,17 @@ element_setstate_from_Python(elementtreestate *st, ElementObject *self,
 {
     static char *kwlist[] = {PICKLED_TAG, PICKLED_ATTRIB, PICKLED_TEXT,
                              PICKLED_TAIL, PICKLED_CHILDREN, 0};
-    PyObject *args;
     PyObject *tag, *attrib, *text, *tail, *children;
     PyObject *retval;
 
     tag = attrib = text = tail = children = NULL;
-    args = PyTuple_New(0);
-    if (!args)
-        return NULL;
-
-    if (PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
-                                    &attrib, &text, &tail, &children))
+    if (PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, state, "|$OOOOO", kwlist,
+                                    &tag, &attrib, &text, &tail, &children))
         retval = element_setstate_from_attributes(st, self, tag, attrib, text,
                                                   tail, children);
     else
         retval = NULL;
 
-    Py_DECREF(args);
     return retval;
 }
 
