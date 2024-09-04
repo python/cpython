@@ -11,19 +11,19 @@ to apply that knowledge using Python.
 
 Python supports the following concurrency models directly:
 
-* free-threading (stdlib, C-API)
-* isolated threads, AKA CSP/actor model (stdlib*, C-API)
-* coroutines, AKA async/await (language, stdlib, C-API)
-* multi-processing (stdlib)
-* distributed, e.g. SMP (stdlib)
+* **free-threading** (stdlib, C-API)
+* **isolated threads**, *AKA CSP/actor model* (stdlib\*, C-API)
+* **coroutines, AKA** *async/await* (language, stdlib, C-API)
+* **multi-processing** (stdlib)
+* **distributed**, *e.g. SMP* (stdlib)
 
 In this document, we'll look at how to take advantage of this
 concurrency support.  The overall focus is on the following:
 
-* understanding the supported concurrency models
-* factors to consider when designing a concurrent solution
-* key concurrency primitives
-* high-level, app-oriented practical examples
+* `understanding the supported concurrency models <concurrency-models_>`_
+* `factors to consider when designing a concurrent solution <concurrency-design_>`_
+* `key concurrency primitives <concurrency-primitives_>`_
+* `high-level, app-oriented practical examples <concurrency-workload-examples_>`_
 
 .. XXX Add a summary and section about key concurrency patterns
 
@@ -134,6 +134,8 @@ Likewise, the high-level examples:
      - ...
      - ...
 
+
+.. _concurrency-models:
 
 Python Concurrency Models
 =========================
@@ -760,6 +762,7 @@ that support these concurrency models in various contexts:
      -
      -
 
+.. _concurrency-design:
 
 Designing A Program For Concurrency
 ===================================
@@ -1050,11 +1053,15 @@ concurrency can be helpful:
 * handle asynchronous events
 
 
+.. _concurrency-primitives:
+
 Python Concurrency Primitives
 =============================
 
 ...
 
+
+.. _concurrency-workload-examples:
 
 Python Concurrency Workload Examples
 ====================================
