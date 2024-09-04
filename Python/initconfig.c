@@ -3423,6 +3423,8 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 struct PyInitConfig {
     PyPreConfig preconfig;
     PyConfig config;
+    struct _inittab *inittab;
+    Py_ssize_t inittab_size;
     PyStatus status;
     char *err_msg;
 };
@@ -3874,8 +3876,41 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
 
 
 int
+PyInitConfig_AddModule(PyInitConfig *config, const char *name,
+                       PyObject* (*initfunc)(void))
+{
+    size_t size = sizeof(struct _inittab) * (config->inittab_size + 2);
+    struct _inittab *new_inittab = PyMem_RawRealloc(config->inittab, size);
+    if (new_inittab == NULL) {
+        config->status = _PyStatus_NO_MEMORY();
+        return -1;
+    }
+    config->inittab = new_inittab;
+
+    struct _inittab *entry = &config->inittab[config->inittab_size];
+    entry->name = name;
+    entry->initfunc = initfunc;
+
+    // Terminator entry
+    entry = &config->inittab[config->inittab_size + 1];
+    entry->name = NULL;
+    entry->initfunc = NULL;
+
+    config->inittab_size++;
+    return 0;
+}
+
+
+int
 Py_InitializeFromInitConfig(PyInitConfig *config)
 {
+    if (config->inittab_size >= 1) {
+        if (PyImport_ExtendInittab(config->inittab) < 0) {
+            config->status = _PyStatus_NO_MEMORY();
+            return -1;
+        }
+    }
+
     _PyPreConfig_GetConfig(&config->preconfig, &config->config);
 
     config->status = Py_PreInitializeFromArgs(

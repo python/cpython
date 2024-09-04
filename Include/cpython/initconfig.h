@@ -313,6 +313,10 @@ PyAPI_FUNC(int) PyInitConfig_SetStrList(PyInitConfig *config,
     size_t length,
     char * const *items);
 
+PyAPI_FUNC(int) PyInitConfig_AddModule(PyInitConfig *config,
+    const char *name,
+    PyObject* (*initfunc)(void));
+
 PyAPI_FUNC(int) Py_InitializeFromInitConfig(PyInitConfig *config);
 
 

@@ -524,6 +524,7 @@ New Features
   * :c:func:`PyInitConfig_SetInt`
   * :c:func:`PyInitConfig_SetStr`
   * :c:func:`PyInitConfig_SetStrList`
+  * :c:func:`PyInitConfig_AddModule`
   * :c:func:`Py_InitializeFromInitConfig`
 
   (Contributed by Victor Stinner in :gh:`107954`.)

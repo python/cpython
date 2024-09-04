@@ -1963,6 +1963,62 @@ static int test_initconfig_exit(void)
 }
 
 
+static PyModuleDef_Slot extension_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
+static struct PyModuleDef extension_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "my_test_extension",
+    .m_size = 0,
+    .m_slots = extension_slots,
+};
+
+static PyObject* init_my_test_extension(void)
+{
+    return PyModuleDef_Init(&extension_module);
+}
+
+
+static int test_initconfig_module(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_AddModule(config, "my_test_extension",
+                               init_my_test_extension) < 0) {
+        goto error;
+    }
+
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+
+    if (PyRun_SimpleString("import my_test_extension") < 0) {
+        fprintf(stderr, "unable to import my_test_extension\n");
+        exit(1);
+    }
+
+    Py_Finalize();
+    return 0;
+
+    const char *err_msg;
+error:
+    (void)PyInitConfig_GetError(config, &err_msg);
+    printf("Python init failed: %s\n", err_msg);
+    exit(1);
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -2384,6 +2440,7 @@ static struct TestCase TestCases[] = {
     {"test_initconfig_api", test_initconfig_api},
     {"test_initconfig_get_api", test_initconfig_get_api},
     {"test_initconfig_exit", test_initconfig_exit},
+    {"test_initconfig_module", test_initconfig_module},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
