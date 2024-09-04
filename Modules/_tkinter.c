@@ -3399,6 +3399,16 @@ module_clear(PyObject *mod)
     return 0;
 }
 
+static int
+module_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Py_VISIT(Tkinter_TclError);
+    Py_VISIT(Tkapp_Type);
+    Py_VISIT(Tktt_Type);
+    Py_VISIT(PyTclObject_Type);
+    return 0;
+}
+
 static void
 module_free(void *mod)
 {
@@ -3410,7 +3420,8 @@ static struct PyModuleDef _tkintermodule = {
     .m_name = "_tkinter",
     .m_methods = moduleMethods,
     .m_clear = module_clear,
-    .m_free = module_free
+    .m_traverse = module_traverse,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC
