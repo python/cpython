@@ -436,6 +436,46 @@ the opt-in sharing means the set of shared data to manage is
 explicitly defined (and often small) instead of covering
 *all* memory in the process.
 
+Thread isolation and multiple interpreters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As just noted, races effectively stop being a problem if the memory
+used by each physical thread is effectively isolated from the others.
+That isolation can also help with the other caveats related to
+physical threads.  In Python you can get this isolation
+by using multiple interpreters.
+
+In this context, an "interpreter" represents nearly all the capability
+and state of the Python runtime, for its C-API and to execute Python
+code.  The full runtime supports multiple interpreters and includes
+some state that all interpreters share.  Most importantly, the state
+of each interpreter is effectively isolated from the others.
+
+That isolation includes things like :data:`sys.modules`.  By default,
+interpreters mostly don't share any data (including objects) at all.
+Anything that gets shared is done on a strictly opt-in basis.  That
+means programmers wouldn't need to worry about possible races with
+*any* data in the program.  They would only need to worry about data
+that was explicitly shared.
+
+Interpreters themselves are not specific to any thread, but instead
+each physical thread has (at most) one interpreter active at any given
+moment.  Each interpreter can be associated in this way with any number
+of threads.  Since each interpreter is isolated from the others,
+any thread using one interpreter is thus isolated from threads
+using any other interpreter.
+
+Using multiple interpreters is fairly straight-forward:
+
+1. create a new interpreter
+2. switch the current thread to use that interpreter
+3. call :func:`exec`, but targeting the new interpreter
+4. switch back
+
+Note that no threads were involved.  That's because running in an
+interpreter happens relative to the current thread.  New threads
+aren't implicitly involved.
+
 Shared resources
 ^^^^^^^^^^^^^^^^
 
@@ -458,6 +498,10 @@ especially challenging for testing and debugging.
 * "where was this thread/coroutine started?"
 * composing a reliable sequential representation of the program?
 * "what happened (in order) leading up to this point?"
+
+Besides unlocking full multi-core parallelism, the isolation between
+interpreters means that, from a conceptual level, concurrency can be
+simpler.
 
 .. _python-gil:
 
@@ -492,54 +536,15 @@ burden to the Python project and extension module maintainers.
 However, there is sufficient interest in unlocking full multi-core
 parallelism to justify the current experiment.
 
-
-
-
-
-
-Isolated Threads (CSP/Actor Model)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-There's a major alternative to free-threading, both for multi-core
-parallelism and for a simpler conceptual model: use multiple interpreters.
-
-Python's major implementation, CPython, has for decades supported
-running with multiple independent copies of the Python runtime
-("interpreter") in a single process.  However, these interpreters
-weren't completely isolated from one another; most importantly they
-shared the one :term:`!GIL`.  Over several years a lot of work went
-into improving the isolation between interpreters, culminating in
-no longer sharing a single :term:`!GIL`.
-
-Besides unlocking full multi-core parallelism, the isolation between
-interpreters means that, from a conceptual level, concurrency can be
-simpler.  An interpreter encapsulates all of Python's runtime state,
-including things like :data:`sys.modules`.  By default, interpreters
-mostly don't share any data (including objects) at all.  Anything that
-gets shared is done on a strictly opt-in basis.  That means programmers
-don't need to worry about possible `races <concurrency-downsides_>`_
-with *any* data in the program.  They only need to worry about data
-that was explicitly shared.
-
-Using multiple interpreters is fairly straight-forward:
-
-1. create a new interpreter
-2. switch the current thread to use that interpreter
-3. call :func:`exec`, but targeting the new interpreter
-4. switch back
-
-Note that no threads were involved.  That's because running in an
-interpreter happens relative to the current thread.  New threads
-aren't implicitly involved.  They can be added in explicitly though.
-Why?  For multi-core parallelism.
-
-If you want multi-core parallelism, run a different interpreter in each
-thread.  Their isolation means that each can run unblocked in that
-thread.
+You can also move from free-threading to isolated threads using multiple
+interpreters.  Each interpreter has has its own
+:term:`GIL <global interpreter lock>`.  Thus, If you want multi-core
+parallelism, run a different interpreter in each thread.  Their
+isolation means that each can run unblocked in that thread.
 
 .. _python-stdlib-interpreters:
 
-A Stdlib Module for Using Multiple Interpreters
+A stdlib module for using multiple interpreters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 While use of multiple interpreters has been part of Python's C-API
@@ -552,7 +557,7 @@ Python 3.13+ on PyPI: :pypi:`interpreters-pep-734`.
 
 .. _python-interpreters-overhead:
 
-Improving Performance for Multiple Interpreters
+Improving performance for multiple interpreters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The long effort to improve on Python's implementation of multiple
@@ -563,9 +568,16 @@ done to improve performance.  This has the most impact on:
   (i.e. how many can run at the same time)
 * how long it takes to create a new interpreter
 
+It also impacts how efficiently data/objects can be passed between
+interpreters, and how effectively objects can be shared.
+
 As the work on isolation wraps up, improvements will shift to focus
 on performance and memory usage.  Thus the overhead associated with
 using multiple interpreters will drastically decrease over time.
+
+
+
+
 
 Coroutines (Async/Await)
 ^^^^^^^^^^^^^^^^^^^^^^^^
