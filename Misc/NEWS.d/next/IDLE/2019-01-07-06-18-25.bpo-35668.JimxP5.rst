@@ -1,4 +1,0 @@
-Add docstrings to the IDLE debugger module. Fix two bugs:
-initialize Idb.botframe (should be in Bdb); in Idb.in_rpc_code,
-check whether prev_frame is None before trying to use it.
-Greatly expand test_debugger.

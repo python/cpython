@@ -34,6 +34,11 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 
+#ifdef MS_WINDOWS
+#  include <aclapi.h>             // SetEntriesInAcl
+#  include <sddl.h>               // SDDL_REVISION_1
+#endif
+
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -220,14 +225,15 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/uio.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+/* Should be included before <sys/sysmacros.h> on HP-UX v3 */
+#  include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
 #ifdef HAVE_SYS_SYSMACROS_H
 /* GNU C Library: major(), minor(), makedev() */
 #  include <sys/sysmacros.h>
 #endif
-
-#ifdef HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif /* HAVE_SYS_TYPES_H */
 
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h>
@@ -4610,6 +4616,12 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 /*[clinic end generated code: output=a70446903abe821f input=a61722e1576fab03]*/
 {
     int result;
+#ifdef MS_WINDOWS
+    int error = 0;
+    int pathError = 0;
+    SECURITY_ATTRIBUTES secAttr = { sizeof(secAttr) };
+    SECURITY_ATTRIBUTES *pSecAttr = NULL;
+#endif
 #ifdef HAVE_MKDIRAT
     int mkdirat_unavailable = 0;
 #endif
@@ -4621,11 +4633,38 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    result = CreateDirectoryW(path->wide, NULL);
+    if (mode == 0700 /* 0o700 */) {
+        ULONG sdSize;
+        pSecAttr = &secAttr;
+        // Set a discretionary ACL (D) that is protected (P) and includes
+        // inheritable (OICI) entries that allow (A) full control (FA) to
+        // SYSTEM (SY), Administrators (BA), and the owner (OW).
+        if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
+            L"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)",
+            SDDL_REVISION_1,
+            &secAttr.lpSecurityDescriptor,
+            &sdSize
+        )) {
+            error = GetLastError();
+        }
+    }
+    if (!error) {
+        result = CreateDirectoryW(path->wide, pSecAttr);
+        if (secAttr.lpSecurityDescriptor &&
+            // uncommonly, LocalFree returns non-zero on error, but still uses
+            // GetLastError() to see what the error code is
+            LocalFree(secAttr.lpSecurityDescriptor)) {
+            error = GetLastError();
+        }
+    }
     Py_END_ALLOW_THREADS
 
-    if (!result)
+    if (error) {
+        return PyErr_SetFromWindowsErr(error);
+    }
+    if (!result) {
         return path_error(path);
+    }
 #else
     Py_BEGIN_ALLOW_THREADS
 #if HAVE_MKDIRAT
@@ -8391,36 +8430,39 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
     if (!result)
         return NULL;
 
+    int pos = 0;
+
 #ifndef doubletime
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 #endif
 
-    PyStructSequence_SET_ITEM(result, 0,
-                              PyFloat_FromDouble(doubletime(ru->ru_utime)));
-    PyStructSequence_SET_ITEM(result, 1,
-                              PyFloat_FromDouble(doubletime(ru->ru_stime)));
-#define SET_INT(result, index, value)\
-        PyStructSequence_SET_ITEM(result, index, PyLong_FromLong(value))
-    SET_INT(result, 2, ru->ru_maxrss);
-    SET_INT(result, 3, ru->ru_ixrss);
-    SET_INT(result, 4, ru->ru_idrss);
-    SET_INT(result, 5, ru->ru_isrss);
-    SET_INT(result, 6, ru->ru_minflt);
-    SET_INT(result, 7, ru->ru_majflt);
-    SET_INT(result, 8, ru->ru_nswap);
-    SET_INT(result, 9, ru->ru_inblock);
-    SET_INT(result, 10, ru->ru_oublock);
-    SET_INT(result, 11, ru->ru_msgsnd);
-    SET_INT(result, 12, ru->ru_msgrcv);
-    SET_INT(result, 13, ru->ru_nsignals);
-    SET_INT(result, 14, ru->ru_nvcsw);
-    SET_INT(result, 15, ru->ru_nivcsw);
-#undef SET_INT
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(result, pos++, item);      \
+    } while(0)
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_utime)));
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_stime)));
+    SET_RESULT(PyLong_FromLong(ru->ru_maxrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_ixrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_idrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_isrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_minflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_majflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_nswap));
+    SET_RESULT(PyLong_FromLong(ru->ru_inblock));
+    SET_RESULT(PyLong_FromLong(ru->ru_oublock));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgsnd));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgrcv));
+    SET_RESULT(PyLong_FromLong(ru->ru_nsignals));
+    SET_RESULT(PyLong_FromLong(ru->ru_nvcsw));
+    SET_RESULT(PyLong_FromLong(ru->ru_nivcsw));
+#undef SET_RESULT
 
     return Py_BuildValue("NiN", PyLong_FromPid(pid), status, result);
 }
@@ -8543,15 +8585,25 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
     if (!result)
         return NULL;
 
-    PyStructSequence_SET_ITEM(result, 0, PyLong_FromPid(si.si_pid));
-    PyStructSequence_SET_ITEM(result, 1, _PyLong_FromUid(si.si_uid));
-    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si.si_signo)));
-    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong((long)(si.si_status)));
-    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong((long)(si.si_code)));
-    if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    int pos = 0;
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(result, pos++, item);      \
+    } while(0)
+
+    SET_RESULT(PyLong_FromPid(si.si_pid));
+    SET_RESULT(_PyLong_FromUid(si.si_uid));
+    SET_RESULT(PyLong_FromLong((long)(si.si_signo)));
+    SET_RESULT(PyLong_FromLong((long)(si.si_status)));
+    SET_RESULT(PyLong_FromLong((long)(si.si_code)));
+
+#undef SET_RESULT
 
     return result;
 }
@@ -11449,46 +11501,50 @@ _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
     if (v == NULL)
         return NULL;
 
+    int pos = 0;
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(v);                                    \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(v, pos++, item);           \
+    } while(0)
+
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong((long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5, PyLong_FromLong((long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong((long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7, PyLong_FromLong((long) st.f_favail));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
+    SET_RESULT(PyLong_FromLong((long) st.f_bsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_frsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_blocks));
+    SET_RESULT(PyLong_FromLong((long) st.f_bfree));
+    SET_RESULT(PyLong_FromLong((long) st.f_bavail));
+    SET_RESULT(PyLong_FromLong((long) st.f_files));
+    SET_RESULT(PyLong_FromLong((long) st.f_ffree));
+    SET_RESULT(PyLong_FromLong((long) st.f_favail));
+    SET_RESULT(PyLong_FromLong((long) st.f_flag));
+    SET_RESULT(PyLong_FromLong((long) st.f_namemax));
 #else
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((long long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3,
-                              PyLong_FromLongLong((long long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4,
-                              PyLong_FromLongLong((long long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5,
-                              PyLong_FromLongLong((long long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7,
-                              PyLong_FromLongLong((long long) st.f_favail));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
+    SET_RESULT(PyLong_FromLong((long) st.f_bsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_frsize));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_blocks));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_bfree));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_bavail));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_files));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_ffree));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_favail));
+    SET_RESULT(PyLong_FromLong((long) st.f_flag));
+    SET_RESULT(PyLong_FromLong((long) st.f_namemax));
 #endif
 /* The _ALL_SOURCE feature test macro defines f_fsid as a structure
  * (issue #32390). */
 #if defined(_AIX) && defined(_ALL_SOURCE)
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+    SET_RESULT(PyLong_FromUnsignedLong(st.f_fsid.val[0]));
 #else
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
+    SET_RESULT(PyLong_FromUnsignedLong(st.f_fsid));
 #endif
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
-        return NULL;
-    }
+
+#undef SET_RESULT
 
     return v;
 }
@@ -13433,12 +13489,23 @@ os_get_terminal_size_impl(PyObject *module, int fd)
     termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);
     if (termsize == NULL)
         return NULL;
-    PyStructSequence_SET_ITEM(termsize, 0, PyLong_FromLong(columns));
-    PyStructSequence_SET_ITEM(termsize, 1, PyLong_FromLong(lines));
-    if (PyErr_Occurred()) {
-        Py_DECREF(termsize);
-        return NULL;
-    }
+
+    int pos = 0;
+
+#define SET_TERMSIZE(CALL)                                   \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(termsize);                             \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(termsize, pos++, item);    \
+    } while(0)
+
+    SET_TERMSIZE(PyLong_FromLong(columns));
+    SET_TERMSIZE(PyLong_FromLong(lines));
+#undef SET_TERMSIZE
+
     return termsize;
 }
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */

@@ -125,7 +125,13 @@ class check(Command):
         # the include and csv_table directives need this to be a path
         source_path = self.distribution.script_name or 'setup.py'
         parser = Parser()
-        settings = frontend.OptionParser(components=(Parser,)).get_default_values()
+        try:
+            get_default_settings = frontend.get_default_settings
+        except AttributeError:
+            # Deprecated in Docutils 0.19, may be broken in Docutils 0.21.
+            settings = frontend.OptionParser(components=(Parser,)).get_default_values()
+        else:
+            settings = get_default_settings(Parser)
         settings.tab_width = 4
         settings.pep_references = None
         settings.rfc_references = None

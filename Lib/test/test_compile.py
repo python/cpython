@@ -704,7 +704,7 @@ if 1:
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+        self.assertEqual(f1.__code__.co_consts, (f1.__doc__, 42))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -935,6 +935,8 @@ if 1:
 
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
+                if func is no_code1 and no_code1.__doc__ is None:
+                    continue
                 code = func.__code__
                 lines = list(code.co_lines())
                 start, end, line = lines[0]

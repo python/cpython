@@ -1912,7 +1912,7 @@ class PatchTest(unittest.TestCase):
 
         with patch.object(foo, '__module__', "testpatch2"):
             self.assertEqual(foo.__module__, "testpatch2")
-        self.assertEqual(foo.__module__, 'unittest.test.testmock.testpatch')
+        self.assertEqual(foo.__module__, __name__)
 
         with patch.object(foo, '__annotations__', dict([('s', 1, )])):
             self.assertEqual(foo.__annotations__, dict([('s', 1, )]))

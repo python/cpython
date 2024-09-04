@@ -298,11 +298,15 @@ def copymode(src, dst, *, follow_symlinks=True):
     sys.audit("shutil.copymode", src, dst)
 
     if not follow_symlinks and _islink(src) and os.path.islink(dst):
-        if hasattr(os, 'lchmod'):
+        if os.name == 'nt':
+            stat_func, chmod_func = os.lstat, os.chmod
+        elif hasattr(os, 'lchmod'):
             stat_func, chmod_func = os.lstat, os.lchmod
         else:
             return
     else:
+        if os.name == 'nt' and os.path.islink(dst):
+            dst = os.path.realpath(dst, strict=True)
         stat_func, chmod_func = _stat, os.chmod
 
     st = stat_func(src)
@@ -378,8 +382,16 @@ def copystat(src, dst, *, follow_symlinks=True):
     # We must copy extended attributes before the file is (potentially)
     # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
     _copyxattr(src, dst, follow_symlinks=follow)
+    _chmod = lookup("chmod")
+    if os.name == 'nt':
+        if follow:
+            if os.path.islink(dst):
+                dst = os.path.realpath(dst, strict=True)
+        else:
+            def _chmod(*args, **kwargs):
+                os.chmod(*args)
     try:
-        lookup("chmod")(dst, mode, follow_symlinks=follow)
+        _chmod(dst, mode, follow_symlinks=follow)
     except NotImplementedError:
         # if we got a NotImplementedError, it's because
         #   * follow_symlinks=False,
@@ -650,7 +662,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
                     continue
         if is_dir:
             try:
-                dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
+                dirfd = os.open(entry.name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=topfd)
                 dirfd_closed = False
             except OSError:
                 onerror(os.open, fullname, sys.exc_info())
@@ -660,7 +672,12 @@ def _rmtree_safe_fd(topfd, path, onerror):
                         _rmtree_safe_fd(dirfd, fullname, onerror)
                         try:
                             os.close(dirfd)
+                        except OSError:
+                            # close() should not be retried after an error.
                             dirfd_closed = True
+                            onerror(os.close, fullname, sys.exc_info())
+                        dirfd_closed = True
+                        try:
                             os.rmdir(entry.name, dir_fd=topfd)
                         except OSError:
                             onerror(os.rmdir, fullname, sys.exc_info())
@@ -675,7 +692,10 @@ def _rmtree_safe_fd(topfd, path, onerror):
                             onerror(os.path.islink, fullname, sys.exc_info())
                 finally:
                     if not dirfd_closed:
-                        os.close(dirfd)
+                        try:
+                            os.close(dirfd)
+                        except OSError:
+                            onerror(os.close, fullname, sys.exc_info())
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
@@ -722,7 +742,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
             onerror(os.lstat, path, sys.exc_info())
             return
         try:
-            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
+            fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
             fd_closed = False
         except Exception:
             onerror(os.open, path, sys.exc_info())
@@ -732,7 +752,12 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
                 _rmtree_safe_fd(fd, path, onerror)
                 try:
                     os.close(fd)
+                except OSError:
+                    # close() should not be retried after an error.
                     fd_closed = True
+                    onerror(os.close, path, sys.exc_info())
+                fd_closed = True
+                try:
                     os.rmdir(path, dir_fd=dir_fd)
                 except OSError:
                     onerror(os.rmdir, path, sys.exc_info())
@@ -744,7 +769,10 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
                     onerror(os.path.islink, path, sys.exc_info())
         finally:
             if not fd_closed:
-                os.close(fd)
+                try:
+                    os.close(fd)
+                except OSError:
+                    onerror(os.close, path, sys.exc_info())
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
@@ -785,12 +813,12 @@ def move(src, dst, copy_function=copy2):
     similar to the Unix "mv" command. Return the file or directory's
     destination.
 
-    If the destination is a directory or a symlink to a directory, the source
-    is moved inside the directory. The destination path must not already
-    exist.
+    If dst is an existing directory or a symlink to a directory, then src is
+    moved inside that directory. The destination path in that directory must
+    not already exist.
 
-    If the destination already exists but is not a directory, it may be
-    overwritten depending on os.rename() semantics.
+    If dst already exists but is not a directory, it may be overwritten
+    depending on os.rename() semantics.
 
     If the destination is on our current filesystem, then rename() is used.
     Otherwise, src is copied to the destination and then removed. Symlinks are
@@ -809,7 +837,7 @@ def move(src, dst, copy_function=copy2):
     sys.audit("shutil.move", src, dst)
     real_dst = dst
     if os.path.isdir(dst):
-        if _samefile(src, dst):
+        if _samefile(src, dst) and not os.path.islink(src):
             # We might be on a case insensitive filesystem,
             # perform the rename anyway.
             os.rename(src, dst)

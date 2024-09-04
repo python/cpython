@@ -1,1 +1,0 @@
-Fix :mod:`_blake2` not checking for errors when initializing.

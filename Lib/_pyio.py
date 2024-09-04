@@ -1224,7 +1224,8 @@ class BufferedReader(_BufferedIOMixin):
         return written
 
     def tell(self):
-        return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
+        # GH-95782: Keep return value non-negative
+        return max(_BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos, 0)
 
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
@@ -2224,8 +2225,9 @@ class TextIOWrapper(TextIOBase):
         self.buffer.write(b)
         if self._line_buffering and (haslf or "\r" in s):
             self.flush()
-        self._set_decoded_chars('')
-        self._snapshot = None
+        if self._snapshot is not None:
+            self._set_decoded_chars('')
+            self._snapshot = None
         if self._decoder:
             self._decoder.reset()
         return length
@@ -2539,8 +2541,9 @@ class TextIOWrapper(TextIOBase):
             # Read everything.
             result = (self._get_decoded_chars() +
                       decoder.decode(self.buffer.read(), final=True))
-            self._set_decoded_chars('')
-            self._snapshot = None
+            if self._snapshot is not None:
+                self._set_decoded_chars('')
+                self._snapshot = None
             return result
         else:
             # Keep reading chunks until we have size characters to return.

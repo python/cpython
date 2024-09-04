@@ -1,1 +1,0 @@
-Fix a regression that prevented jumping across ``is None`` and ``is not None`` when debugging. Patch by Savannah Ostrowski.

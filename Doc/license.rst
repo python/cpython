@@ -1041,26 +1041,58 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
 Audioop
 -------
 
-The audioop module uses the code base in g771.c file of the SoX project::
+The audioop module uses the code base in g771.c file of the SoX project.
+https://sourceforge.net/projects/sox/files/sox/12.17.7/sox-12.17.7.tar.gz
 
-    Programming the AdLib/Sound Blaster
-    FM Music Chips
-    Version 2.0 (24 Feb 1992)
-    Copyright (c) 1991, 1992 by Jeffrey S. Lee
-    jlee@smylex.uucp
-    Warranty and Copyright Policy
-    This document is provided on an "as-is" basis, and its author makes
-    no warranty or representation, express or implied, with respect to
-    its quality performance or fitness for a particular purpose.  In no
-    event will the author of this document be liable for direct, indirect,
-    special, incidental, or consequential damages arising out of the use
-    or inability to use the information contained within.  Use of this
-    document is at your own risk.
-    This file may be used and copied freely so long as the applicable
-    copyright notices are retained, and no modifications are made to the
-    text of the document.  No money shall be charged for its distribution
-    beyond reasonable shipping, handling and duplication costs, nor shall
-    proprietary changes be made to this document so that it cannot be
-    distributed freely.  This document may not be included in published
-    material or commercial packages without the written consent of its
-    author.
+   This source code is a product of Sun Microsystems, Inc. and is provided
+   for unrestricted use.  Users may copy or modify this source code without
+   charge.
+
+   SUN SOURCE CODE IS PROVIDED AS IS WITH NO WARRANTIES OF ANY KIND INCLUDING
+   THE WARRANTIES OF DESIGN, MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
+   PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE PRACTICE.
+
+   Sun source code is provided with no support and without any obligation on
+   the part of Sun Microsystems, Inc. to assist in its use, correction,
+   modification or enhancement.
+
+   SUN MICROSYSTEMS, INC. SHALL HAVE NO LIABILITY WITH RESPECT TO THE
+   INFRINGEMENT OF COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY THIS SOFTWARE
+   OR ANY PART THEREOF.
+
+   In no event will Sun Microsystems, Inc. be liable for any lost revenue
+   or profits or other special, indirect and consequential damages, even if
+   Sun has been advised of the possibility of such damages.
+
+   Sun Microsystems, Inc.
+   2550 Garcia Avenue
+   Mountain View, California  94043
+
+
+asyncio
+----------
+
+Parts of the :mod:`asyncio` module are incorporated from
+`uvloop 0.16 <https://github.com/MagicStack/uvloop/tree/v0.16.0>`_,
+which is distributed under the MIT license::
+
+  Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

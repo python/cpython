@@ -54,7 +54,7 @@ See :pep:`405` for more background on Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments>`__
 
 .. include:: ../includes/wasm-notavail.rst
 
@@ -194,10 +194,10 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
 
-    .. versionadded:: 3.6
+    .. versionchanged:: 3.6
        Added the ``prompt`` parameter
 
-    .. versionadded:: 3.9
+    .. versionchanged:: 3.9
        Added the ``upgrade_deps`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
@@ -275,10 +275,6 @@ creation according to their needs, the :class:`EnvBuilder` class.
           account filesystem redirections. This can be used to run Python in
           the virtual environment.
 
-
-        .. versionchanged:: 3.12
-           The attribute ``lib_path`` was added to the context, and the context
-           object was documented.
 
         .. versionchanged:: 3.11
            The *venv*

@@ -1,7 +1,7 @@
 on:
   workflow_call:
     inputs:
-      free-threaded:
+      free-threading:
         required: false
         type: boolean
         default: false
@@ -16,7 +16,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -d -p Win32 ${{ inputs.free-threaded && '--disable-gil' || '' }}
+      run: .\PCbuild\build.bat -e -d -p Win32 ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -33,7 +33,7 @@ jobs:
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -d -p x64 ${{ inputs.free-threaded && '--disable-gil' || '' }}
+      run: .\PCbuild\build.bat -e -d -p x64 ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -50,4 +50,4 @@ jobs:
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -d -p arm64 ${{ inputs.free-threaded && '--disable-gil' || '' }}
+      run: .\PCbuild\build.bat -e -d -p arm64 ${{ inputs.free-threading && '--disable-gil' || '' }}

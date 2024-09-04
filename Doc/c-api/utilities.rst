@@ -17,5 +17,6 @@ and parsing function arguments and constructing Python values from C values.
    marshal.rst
    arg.rst
    conversion.rst
+   hash.rst
    reflection.rst
    codec.rst

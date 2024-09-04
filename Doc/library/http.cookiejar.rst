@@ -649,6 +649,11 @@ internal consistency, so you should know what you're doing if you do that.
    :const:`None`.
 
 
+.. attribute:: Cookie.domain
+
+   Cookie domain (a string).
+
+
 .. attribute:: Cookie.path
 
    Cookie path (a string, eg. ``'/acme/rocket_launchers'``).

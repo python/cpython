@@ -745,3 +745,7 @@ class TestSendRecv(TestBase):
         self.assertEqual(obj4, b'spam')
         self.assertEqual(obj5, b'eggs')
         self.assertIs(obj6, default)
+
+
+if __name__ == "__main__":
+    unittest.main()

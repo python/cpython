@@ -1,3 +1,0 @@
-Update macOS installer to include an upstream Tcl/Tk fix for the
-``Secure coding is not enabled for restorable state!`` warning
-encountered in Tkinter on macOS 14 Sonoma.

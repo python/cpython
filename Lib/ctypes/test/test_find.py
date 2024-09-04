@@ -122,6 +122,9 @@ class FindLibraryLinux(unittest.TestCase):
              unittest.mock.patch("ctypes.util._findLib_gcc", lambda *args: None):
             self.assertNotEqual(find_library('c'), None)
 
+    def test_gh114257(self):
+        self.assertIsNone(find_library("libc"))
+
 
 if __name__ == "__main__":
     unittest.main()

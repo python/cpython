@@ -1,7 +1,4 @@
 fix = true
-select = [
-    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
-]
 extend-exclude = [
     # Excluded (these aren't actually executed, they're just "data files")
     "tokenizedata/*.py",
@@ -21,4 +18,9 @@ extend-exclude = [
     "test_tokenize.py",
     "test_yield_from.py",
     "time_hashlib.py",
+]
+
+[lint]
+select = [
+    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
 ]

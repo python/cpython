@@ -636,6 +636,23 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def test_caret_for_failed_assertion(self):
+        def f_assert():
+            test = 3
+            assert test == 1 and test == 2, "Bug found?"
+
+        lineno_f = f_assert.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_assert\n'
+            '    assert test == 1 and test == 2, "Bug found?"\n'
+            '           ^^^^^^^^^^^^^^^^^^^^^^^\n'
+        )
+        result_lines = self.get_exception(f_assert)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
     def test_traceback_specialization_with_syntax_error(self):
         bytecode = compile("1 / 0 / 1 / 2\n", TESTFN, "exec")
 
@@ -1600,6 +1617,21 @@ class BaseExceptionReportingTests:
         e.__notes__  = [Unprintable(), 'Final Note']
         err_msg = '<note str() failed>'
         self.assertEqual(self.get_report(e), vanilla + err_msg + '\nFinal Note\n')
+
+        # an exception with a broken __getattr__ raising a non expected error
+        class BrokenException(Exception):
+            broken = False
+            def __getattr__(self, name):
+                if self.broken:
+                    raise ValueError(f'no {name}')
+                raise AttributeError(name)
+
+        e = BrokenException(123)
+        vanilla = self.get_report(e)
+        e.broken = True
+        self.assertEqual(
+            self.get_report(e),
+            vanilla + "Ignored error getting __notes__: ValueError('no __notes__')\n")
 
     def test_exception_with_multiple_notes(self):
         for e in [ValueError(42), SyntaxError('bad syntax')]:

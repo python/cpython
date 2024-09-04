@@ -303,19 +303,33 @@ def _unpack_args(args):
             newargs.append(arg)
     return newargs
 
-def _deduplicate(params):
+def _deduplicate(params, *, unhashable_fallback=False):
     # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
-    return params
+    try:
+        return dict.fromkeys(params)
+    except TypeError:
+        if not unhashable_fallback:
+            raise
+        # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
+        return _deduplicate_unhashable(params)
 
+def _deduplicate_unhashable(unhashable_params):
+    new_unhashable = []
+    for t in unhashable_params:
+        if t not in new_unhashable:
+            new_unhashable.append(t)
+    return new_unhashable
+
+def _compare_args_orderless(first_args, second_args):
+    first_unhashable = _deduplicate_unhashable(first_args)
+    second_unhashable = _deduplicate_unhashable(second_args)
+    t = list(second_unhashable)
+    try:
+        for elem in first_unhashable:
+            t.remove(elem)
+    except ValueError:
+        return False
+    return not t
 
 def _remove_dups_flatten(parameters):
     """Internal helper for Union creation and substitution.
@@ -330,7 +344,7 @@ def _remove_dups_flatten(parameters):
         else:
             params.append(p)
 
-    return tuple(_deduplicate(params))
+    return tuple(_deduplicate(params, unhashable_fallback=True))
 
 
 def _flatten_literal_params(parameters):
@@ -522,7 +536,7 @@ class Any(metaclass=_AnyMeta):
     def __new__(cls, *args, **kwargs):
         if cls is Any:
             raise TypeError("Any cannot be instantiated")
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
 
 @_SpecialForm
@@ -856,7 +870,7 @@ class ForwardRef(_Final, _root=True):
         # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
-        if arg[0] == '*':
+        if arg.startswith('*'):
             arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
@@ -1275,7 +1289,9 @@ class _BaseGenericAlias(_Final, _root=True):
         result = self.__origin__(*args, **kwargs)
         try:
             result.__orig_class__ = self
-        except AttributeError:
+        # Some objects raise TypeError (or something even more exotic)
+        # if you try to set attributes on them; we guard against that here
+        except Exception:
             pass
         return result
 
@@ -1671,7 +1687,10 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __eq__(self, other):
         if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
             return NotImplemented
-        return set(self.__args__) == set(other.__args__)
+        try:  # fast path
+            return set(self.__args__) == set(other.__args__)
+        except TypeError:  # not hashable, slow path
+            return _compare_args_orderless(self.__args__, other.__args__)
 
     def __hash__(self):
         return hash(frozenset(self.__args__))
@@ -2214,9 +2233,14 @@ class Annotated:
     def __new__(cls, *args, **kwargs):
         raise TypeError("Type Annotated cannot be instantiated.")
 
-    @_tp_cache
     def __class_getitem__(cls, params):
-        if not isinstance(params, tuple) or len(params) < 2:
+        if not isinstance(params, tuple):
+            params = (params,)
+        return cls._class_getitem_inner(cls, *params)
+
+    @_tp_cache(typed=True)
+    def _class_getitem_inner(cls, *params):
+        if len(params) < 2:
             raise TypeError("Annotated[...] should be used "
                             "with at least two arguments (a type and an "
                             "annotation).")
@@ -2987,8 +3011,14 @@ class _TypedDictMeta(type):
 
         for base in bases:
             annotations.update(base.__dict__.get('__annotations__', {}))
-            required_keys.update(base.__dict__.get('__required_keys__', ()))
-            optional_keys.update(base.__dict__.get('__optional_keys__', ()))
+
+            base_required = base.__dict__.get('__required_keys__', set())
+            required_keys |= base_required
+            optional_keys -= base_required
+
+            base_optional = base.__dict__.get('__optional_keys__', set())
+            required_keys -= base_optional
+            optional_keys |= base_optional
 
         annotations.update(own_annotations)
         for annotation_key, annotation_type in own_annotations.items():
@@ -3000,14 +3030,23 @@ class _TypedDictMeta(type):
                     annotation_origin = get_origin(annotation_type)
 
             if annotation_origin is Required:
-                required_keys.add(annotation_key)
+                is_required = True
             elif annotation_origin is NotRequired:
-                optional_keys.add(annotation_key)
-            elif total:
+                is_required = False
+            else:
+                is_required = total
+
+            if is_required:
                 required_keys.add(annotation_key)
+                optional_keys.discard(annotation_key)
             else:
                 optional_keys.add(annotation_key)
+                required_keys.discard(annotation_key)
 
+        assert required_keys.isdisjoint(optional_keys), (
+            f"Required keys overlap with optional keys in {name}:"
+            f" {required_keys=}, {optional_keys=}"
+        )
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
@@ -3360,7 +3399,7 @@ class TextIO(IO[str]):
 
 class _DeprecatedType(type):
     def __getattribute__(cls, name):
-        if name not in ("__dict__", "__module__") and name in cls.__dict__:
+        if name not in {"__dict__", "__module__", "__doc__"} and name in cls.__dict__:
             warnings.warn(
                 f"{cls.__name__} is deprecated, import directly "
                 f"from typing instead. {cls.__name__} will be removed "
@@ -3399,7 +3438,7 @@ sys.modules[re.__name__] = re
 
 
 def reveal_type(obj: T, /) -> T:
-    """Reveal the inferred type of a variable.
+    """Ask a static type checker to reveal the inferred type of an expression.
 
     When a static type checker encounters a call to ``reveal_type()``,
     it will emit the inferred type of the argument::
@@ -3411,7 +3450,7 @@ def reveal_type(obj: T, /) -> T:
     will produce output similar to 'Revealed type is "builtins.int"'.
 
     At runtime, the function prints the runtime type of the
-    argument and returns it unchanged.
+    argument and returns the argument unchanged.
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj

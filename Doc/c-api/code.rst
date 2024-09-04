@@ -22,12 +22,13 @@ bound into a function.
 .. c:var:: PyTypeObject PyCode_Type
 
    This is an instance of :c:type:`PyTypeObject` representing the Python
-   :class:`code` type.
+   :ref:`code object <code-objects>`.
 
 
 .. c:function:: int PyCode_Check(PyObject *co)
 
-   Return true if *co* is a :class:`code` object.  This function always succeeds.
+   Return true if *co* is a :ref:`code object <code-objects>`.
+   This function always succeeds.
 
 .. c:function:: int PyCode_GetNumFree(PyCodeObject *co)
 

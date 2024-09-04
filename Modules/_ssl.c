@@ -3023,7 +3023,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 /*[clinic end generated code: output=2cf0d7a0741b6bd1 input=8d58a805b95fc534]*/
 {
     PySSLContext *self;
-    long options;
+    uint64_t options;
     const SSL_METHOD *method = NULL;
     SSL_CTX *ctx = NULL;
     X509_VERIFY_PARAM *params;
@@ -3165,7 +3165,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
     }
     if (result == 0) {
-        Py_DECREF(self);
         ERR_clear_error();
         PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                         "No cipher can be selected.");
@@ -3621,20 +3620,32 @@ PyDoc_STRVAR(PySSLContext_security_level_doc, "The current security level");
 static PyObject *
 get_options(PySSLContext *self, void *c)
 {
-    return PyLong_FromLong(SSL_CTX_get_options(self->ctx));
+    uint64_t options = SSL_CTX_get_options(self->ctx);
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(options));
+    return PyLong_FromUnsignedLongLong(options);
 }
 
 static int
 set_options(PySSLContext *self, PyObject *arg, void *c)
 {
-    long new_opts, opts, set, clear;
-    long opt_no = (
+    PyObject *new_opts_obj;
+    unsigned long long new_opts_arg;
+    uint64_t new_opts, opts, clear, set;
+    uint64_t opt_no = (
         SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 |
         SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
-    if (!PyArg_Parse(arg, "l", &new_opts))
+    if (!PyArg_Parse(arg, "O!", &PyLong_Type, &new_opts_obj)) {
         return -1;
+    }
+    new_opts_arg = PyLong_AsUnsignedLongLong(new_opts_obj);
+    if (new_opts_arg == (unsigned long long)-1 && PyErr_Occurred()) {
+        return -1;
+    }
+    Py_BUILD_ASSERT(sizeof(new_opts) >= sizeof(new_opts_arg));
+    new_opts = (uint64_t)new_opts_arg;
+
     opts = SSL_CTX_get_options(self->ctx);
     clear = opts & ~new_opts;
     set = ~opts & new_opts;
@@ -3648,8 +3659,9 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     if (clear) {
         SSL_CTX_clear_options(self->ctx, clear);
     }
-    if (set)
+    if (set) {
         SSL_CTX_set_options(self->ctx, set);
+    }
     return 0;
 }
 
@@ -4529,6 +4541,50 @@ set_sni_callback(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x30300000L
+static X509_OBJECT *x509_object_dup(const X509_OBJECT *obj)
+{
+    int ok;
+    X509_OBJECT *ret = X509_OBJECT_new();
+    if (ret == NULL) {
+        return NULL;
+    }
+    switch (X509_OBJECT_get_type(obj)) {
+        case X509_LU_X509:
+            ok = X509_OBJECT_set1_X509(ret, X509_OBJECT_get0_X509(obj));
+            break;
+        case X509_LU_CRL:
+            /* X509_OBJECT_get0_X509_CRL was not const-correct prior to 3.0.*/
+            ok = X509_OBJECT_set1_X509_CRL(
+                ret, X509_OBJECT_get0_X509_CRL((X509_OBJECT *)obj));
+            break;
+        default:
+            /* We cannot duplicate unrecognized types in a polyfill, but it is
+             * safe to leave an empty object. The caller will ignore it. */
+            ok = 1;
+            break;
+    }
+    if (!ok) {
+        X509_OBJECT_free(ret);
+        return NULL;
+    }
+    return ret;
+}
+
+static STACK_OF(X509_OBJECT) *
+X509_STORE_get1_objects(X509_STORE *store)
+{
+    STACK_OF(X509_OBJECT) *ret;
+    if (!X509_STORE_lock(store)) {
+        return NULL;
+    }
+    ret = sk_X509_OBJECT_deep_copy(X509_STORE_get0_objects(store),
+                                   x509_object_dup, X509_OBJECT_free);
+    X509_STORE_unlock(store);
+    return ret;
+}
+#endif
+
 PyDoc_STRVAR(PySSLContext_sni_callback_doc,
 "Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n\
 \n\
@@ -4558,7 +4614,12 @@ _ssl__SSLContext_cert_store_stats_impl(PySSLContext *self)
     int x509 = 0, crl = 0, ca = 0, i;
 
     store = SSL_CTX_get_cert_store(self->ctx);
-    objs = X509_STORE_get0_objects(store);
+    objs = X509_STORE_get1_objects(store);
+    if (objs == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "failed to query cert store");
+        return NULL;
+    }
+
     for (i = 0; i < sk_X509_OBJECT_num(objs); i++) {
         obj = sk_X509_OBJECT_value(objs, i);
         switch (X509_OBJECT_get_type(obj)) {
@@ -4572,12 +4633,11 @@ _ssl__SSLContext_cert_store_stats_impl(PySSLContext *self)
                 crl++;
                 break;
             default:
-                /* Ignore X509_LU_FAIL, X509_LU_RETRY, X509_LU_PKEY.
-                 * As far as I can tell they are internal states and never
-                 * stored in a cert store */
+                /* Ignore unrecognized types. */
                 break;
         }
     }
+    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
     return Py_BuildValue("{sisisi}", "x509", x509, "crl", crl,
         "x509_ca", ca);
 }
@@ -4609,7 +4669,12 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
     }
 
     store = SSL_CTX_get_cert_store(self->ctx);
-    objs = X509_STORE_get0_objects(store);
+    objs = X509_STORE_get1_objects(store);
+    if (objs == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "failed to query cert store");
+        goto error;
+    }
+
     for (i = 0; i < sk_X509_OBJECT_num(objs); i++) {
         X509_OBJECT *obj;
         X509 *cert;
@@ -4637,9 +4702,11 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
         }
         Py_CLEAR(ci);
     }
+    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
     return rlist;
 
   error:
+    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
     Py_XDECREF(ci);
     Py_XDECREF(rlist);
     return NULL;
@@ -5780,10 +5847,24 @@ sslmodule_init_socketapi(PyObject *module)
     return 0;
 }
 
+
+static int
+sslmodule_add_option(PyObject *m, const char *name, uint64_t value)
+{
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(value));
+    PyObject *obj = PyLong_FromUnsignedLongLong(value);
+    if (obj == NULL) {
+        return -1;
+    }
+    int res = PyModule_AddObjectRef(m, name, obj);
+    Py_DECREF(obj);
+    return res;
+}
+
+
 static int
 sslmodule_init_constants(PyObject *m)
 {
-
     PyModule_AddStringConstant(m, "_DEFAULT_CIPHERS",
                                PY_SSL_DEFAULT_CIPHER_STRING);
 
@@ -5907,40 +5988,41 @@ sslmodule_init_constants(PyObject *m)
     PyModule_AddIntConstant(m, "PROTOCOL_TLSv1_2",
                             PY_SSL_VERSION_TLS1_2);
 
+#define ADD_OPTION(NAME, VALUE) if (sslmodule_add_option(m, NAME, (VALUE)) < 0) return -1
+
     /* protocol options */
-    PyModule_AddIntConstant(m, "OP_ALL",
-                            SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
-    PyModule_AddIntConstant(m, "OP_NO_SSLv2", SSL_OP_NO_SSLv2);
-    PyModule_AddIntConstant(m, "OP_NO_SSLv3", SSL_OP_NO_SSLv3);
-    PyModule_AddIntConstant(m, "OP_NO_TLSv1", SSL_OP_NO_TLSv1);
-    PyModule_AddIntConstant(m, "OP_NO_TLSv1_1", SSL_OP_NO_TLSv1_1);
-    PyModule_AddIntConstant(m, "OP_NO_TLSv1_2", SSL_OP_NO_TLSv1_2);
+    ADD_OPTION("OP_ALL", SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
+    ADD_OPTION("OP_NO_SSLv2", SSL_OP_NO_SSLv2);
+    ADD_OPTION("OP_NO_SSLv3", SSL_OP_NO_SSLv3);
+    ADD_OPTION("OP_NO_TLSv1", SSL_OP_NO_TLSv1);
+    ADD_OPTION("OP_NO_TLSv1_1", SSL_OP_NO_TLSv1_1);
+    ADD_OPTION("OP_NO_TLSv1_2", SSL_OP_NO_TLSv1_2);
 #ifdef SSL_OP_NO_TLSv1_3
-    PyModule_AddIntConstant(m, "OP_NO_TLSv1_3", SSL_OP_NO_TLSv1_3);
+    ADD_OPTION("OP_NO_TLSv1_3", SSL_OP_NO_TLSv1_3);
 #else
-    PyModule_AddIntConstant(m, "OP_NO_TLSv1_3", 0);
+    ADD_OPTION("OP_NO_TLSv1_3", 0);
 #endif
-    PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
+    ADD_OPTION("OP_CIPHER_SERVER_PREFERENCE",
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
-    PyModule_AddIntConstant(m, "OP_SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE);
-    PyModule_AddIntConstant(m, "OP_NO_TICKET", SSL_OP_NO_TICKET);
+    ADD_OPTION("OP_SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE);
+    ADD_OPTION("OP_NO_TICKET", SSL_OP_NO_TICKET);
 #ifdef SSL_OP_SINGLE_ECDH_USE
-    PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
+    ADD_OPTION("OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
 #endif
 #ifdef SSL_OP_NO_COMPRESSION
-    PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
+    ADD_OPTION("OP_NO_COMPRESSION",
                             SSL_OP_NO_COMPRESSION);
 #endif
 #ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
-    PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT",
+    ADD_OPTION("OP_ENABLE_MIDDLEBOX_COMPAT",
                             SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
 #endif
 #ifdef SSL_OP_NO_RENEGOTIATION
-    PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION",
+    ADD_OPTION("OP_NO_RENEGOTIATION",
                             SSL_OP_NO_RENEGOTIATION);
 #endif
 #ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
-    PyModule_AddIntConstant(m, "OP_IGNORE_UNEXPECTED_EOF",
+    ADD_OPTION("OP_IGNORE_UNEXPECTED_EOF",
                             SSL_OP_IGNORE_UNEXPECTED_EOF);
 #endif
 

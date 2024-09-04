@@ -885,8 +885,10 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
+"\n"
+"Splitting starts at the front of the string and works to the end.\n"
 "\n"
 "Note, str.split() is mainly useful for data that has been intentionally\n"
 "delimited.  With natural text that includes punctuation, consider using\n"
@@ -986,7 +988,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
 "Splitting starts at the end of the string and works to the front.");
@@ -1353,4 +1355,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=11519887c1619a4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c25ec2c388409c94 input=a9049054013a1b77]*/

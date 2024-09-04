@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-20.04
     env:
-      OPENSSL_VER: 3.0.11
+      OPENSSL_VER: 3.0.13
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -41,6 +41,9 @@ jobs:
         echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: ${{ github.event_name == 'push' }}
+        max-size: "200M"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-ro-srcdir)" >> $GITHUB_ENV
@@ -49,11 +52,13 @@ jobs:
       run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
     - name: Bind mount sources read-only
       run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
+    - name: Runner image version
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ inputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: ${{ inputs.options }}

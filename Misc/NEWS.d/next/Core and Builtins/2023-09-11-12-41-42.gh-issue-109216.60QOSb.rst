@@ -1,2 +1,0 @@
-Fix possible memory leak in :opcode:`BUILD_MAP`.
-

@@ -6,7 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
-from test.support import os_helper
+from test.support import os_helper, requires_resource
 
 if sys.platform != 'win32':
     raise unittest.SkipTest("test only relevant on win32")
@@ -140,6 +140,7 @@ class WindowsConsoleIOTests(unittest.TestCase):
             sys.stdin = old_stdin
         self.assertEqual(actual, text)
 
+    @requires_resource('console')
     def test_input(self):
         # ASCII
         self.assertStdinRoundTrip('abc123')
@@ -154,6 +155,7 @@ class WindowsConsoleIOTests(unittest.TestCase):
         # Non-BMP
         self.assertStdinRoundTrip('\U00100000\U0010ffff\U0010fffd')
 
+    @requires_resource('console')
     def test_partial_reads(self):
         # Test that reading less than 1 full character works when stdin
         # contains multibyte UTF-8 sequences
@@ -189,6 +191,7 @@ class WindowsConsoleIOTests(unittest.TestCase):
 
                 self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
 
+    @requires_resource('console')
     def test_ctrl_z(self):
         with open('CONIN$', 'rb', buffering=0) as stdin:
             source = '\xC4\x1A\r\n'.encode('utf-16-le')

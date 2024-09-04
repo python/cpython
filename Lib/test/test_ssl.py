@@ -350,6 +350,15 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_TLSv1_2
         self.assertEqual(ssl.PROTOCOL_TLS, ssl.PROTOCOL_SSLv23)
 
+    def test_options(self):
+        # gh-106687: SSL options values are unsigned integer (uint64_t)
+        for name in dir(ssl):
+            if not name.startswith('OP_'):
+                continue
+            with self.subTest(option=name):
+                value = getattr(ssl, name)
+                self.assertGreaterEqual(value, 0, f"ssl.{name}")
+
     def test_ssl_types(self):
         ssl_types = [
             _ssl._SSLContext,
@@ -1197,6 +1206,7 @@ class ContextTests(unittest.TestCase):
         )
 
     def test_options(self):
+        # Test default SSLContext options
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         # OP_ALL | OP_NO_SSLv2 | OP_NO_SSLv3 is the default value
         default = (ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3)
@@ -1205,15 +1215,29 @@ class ContextTests(unittest.TestCase):
                     OP_SINGLE_DH_USE | OP_SINGLE_ECDH_USE |
                     OP_ENABLE_MIDDLEBOX_COMPAT)
         self.assertEqual(default, ctx.options)
+
+        # disallow TLSv1
         with warnings_helper.check_warnings():
             ctx.options |= ssl.OP_NO_TLSv1
         self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
+
+        # allow TLSv1
         with warnings_helper.check_warnings():
             ctx.options = (ctx.options & ~ssl.OP_NO_TLSv1)
         self.assertEqual(default, ctx.options)
+
+        # clear all options
         ctx.options = 0
         # Ubuntu has OP_NO_SSLv3 forced on by default
         self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
+
+        # invalid options
+        with self.assertRaises(OverflowError):
+            ctx.options = -1
+        with self.assertRaises(OverflowError):
+            ctx.options = 2 ** 100
+        with self.assertRaises(TypeError):
+            ctx.options = "abc"
 
     def test_verify_mode_protocol(self):
         with warnings_helper.check_warnings():
@@ -2419,14 +2443,15 @@ def _test_get_server_certificate(test, host, port, cert=None):
         sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
 
 def _test_get_server_certificate_fail(test, host, port):
-    try:
-        pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
-    except ssl.SSLError as x:
-        #should fail
-        if support.verbose:
-            sys.stdout.write("%s\n" % x)
-    else:
-        test.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
+    with warnings_helper.check_no_resource_warning(test):
+        try:
+            pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
+        except ssl.SSLError as x:
+            #should fail
+            if support.verbose:
+                sys.stdout.write("%s\n" % x)
+        else:
+            test.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
 
 
 from test.ssl_servers import make_https_server
@@ -3239,6 +3264,16 @@ class ThreadedTests(unittest.TestCase):
                                      server_hostname="python.example.org") as s:
                 with self.assertRaises(ssl.CertificateError):
                     s.connect((HOST, server.port))
+        with ThreadedEchoServer(context=server_context, chatty=True) as server:
+            with warnings_helper.check_no_resource_warning(self):
+                with self.assertRaises(UnicodeError):
+                    context.wrap_socket(socket.socket(),
+                            server_hostname='.pythontest.net')
+        with ThreadedEchoServer(context=server_context, chatty=True) as server:
+            with warnings_helper.check_no_resource_warning(self):
+                with self.assertRaises(UnicodeDecodeError):
+                    context.wrap_socket(socket.socket(),
+                            server_hostname=b'k\xf6nig.idn.pythontest.net')
 
     def test_wrong_cert_tls12(self):
         """Connecting when the server rejects the client's certificate
@@ -5116,7 +5151,8 @@ class TestPreHandshakeClose(unittest.TestCase):
             self.assertIsNone(wrap_error.library, msg="attr must exist")
         finally:
             # gh-108342: Explicitly break the reference cycle
-            wrap_error = None
+            with warnings_helper.check_no_resource_warning(self):
+                wrap_error = None
             server = None
 
     def test_https_client_non_tls_response_ignored(self):
@@ -5165,7 +5201,8 @@ class TestPreHandshakeClose(unittest.TestCase):
         # socket; that fails if the connection is broken. It may seem pointless
         # to test this. It serves as an illustration of something that we never
         # want to happen... properly not happening.
-        with self.assertRaises(OSError):
+        with warnings_helper.check_no_resource_warning(self), \
+                self.assertRaises(OSError):
             connection.request("HEAD", "/test", headers={"Host": "localhost"})
             response = connection.getresponse()
 

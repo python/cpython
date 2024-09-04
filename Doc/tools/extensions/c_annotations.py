@@ -126,7 +126,8 @@ class Annotations:
                         f"Object type mismatch in limited API annotation "
                         f"for {name}: {record['role']!r} != {objtype!r}")
                 stable_added = record['added']
-                message = ' Part of the '
+                message = sphinx_gettext('Part of the')
+                message = message.center(len(message) + 2)
                 emph_node = nodes.emphasis(message, message,
                                            classes=['stableabi'])
                 ref_node = addnodes.pending_xref(
@@ -134,25 +135,25 @@ class Annotations:
                     reftype='ref', refexplicit="False")
                 struct_abi_kind = record['struct_abi_kind']
                 if struct_abi_kind in {'opaque', 'members'}:
-                    ref_node += nodes.Text('Limited API')
+                    ref_node += nodes.Text(sphinx_gettext('Limited API'))
                 else:
-                    ref_node += nodes.Text('Stable ABI')
+                    ref_node += nodes.Text(sphinx_gettext('Stable ABI'))
                 emph_node += ref_node
                 if struct_abi_kind == 'opaque':
-                    emph_node += nodes.Text(' (as an opaque struct)')
+                    emph_node += nodes.Text(' ' + sphinx_gettext('(as an opaque struct)'))
                 elif struct_abi_kind == 'full-abi':
-                    emph_node += nodes.Text(' (including all members)')
+                    emph_node += nodes.Text(' ' + sphinx_gettext('(including all members)'))
                 if record['ifdef_note']:
                     emph_node += nodes.Text(' ' + record['ifdef_note'])
                 if stable_added == '3.2':
                     # Stable ABI was introduced in 3.2.
                     pass
                 else:
-                    emph_node += nodes.Text(f' since version {stable_added}')
+                    emph_node += nodes.Text(' ' + sphinx_gettext('since version %s') % stable_added)
                 emph_node += nodes.Text('.')
                 if struct_abi_kind == 'members':
                     emph_node += nodes.Text(
-                        ' (Only some members are part of the stable ABI.)')
+                        ' ' + sphinx_gettext('(Only some members are part of the stable ABI.)'))
                 node.insert(0, emph_node)
 
             # Return value annotation

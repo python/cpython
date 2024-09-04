@@ -16,6 +16,7 @@ to modify the meaning of the API call itself.
 import collections
 import collections.abc
 import concurrent.futures
+import errno
 import functools
 import heapq
 import itertools
@@ -1280,9 +1281,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
-            if sock.type != socket.SOCK_DGRAM:
+            if sock.type == socket.SOCK_STREAM:
                 raise ValueError(
-                    f'A UDP Socket was expected, got {sock!r}')
+                    f'A datagram socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
                     family or proto or flags or
                     reuse_port or allow_broadcast):
@@ -1522,9 +1523,22 @@ class BaseEventLoop(events.AbstractEventLoop):
                     try:
                         sock.bind(sa)
                     except OSError as err:
-                        raise OSError(err.errno, 'error while attempting '
-                                      'to bind on address %r: %s'
-                                      % (sa, err.strerror.lower())) from None
+                        msg = ('error while attempting '
+                               'to bind on address %r: %s'
+                               % (sa, err.strerror.lower()))
+                        if err.errno == errno.EADDRNOTAVAIL:
+                            # Assume the family is not enabled (bpo-30945)
+                            sockets.pop()
+                            sock.close()
+                            if self._debug:
+                                logger.warning(msg)
+                            continue
+                        raise OSError(err.errno, msg) from None
+
+                if not sockets:
+                    raise OSError('could not bind on any address out of %r'
+                                  % ([info[4] for info in infos],))
+
                 completed = True
             finally:
                 if not completed:

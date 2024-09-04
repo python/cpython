@@ -17,7 +17,7 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls);
 static PyObject *
 MD5Type_copy(MD5object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -119,4 +119,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e5dac1237beb2788 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=662764b684599176 input=a9049054013a1b77]*/

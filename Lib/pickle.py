@@ -861,13 +861,13 @@ class _Pickler:
             else:
                 self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
-            obj = obj.replace("\\", "\\u005c")
-            obj = obj.replace("\0", "\\u0000")
-            obj = obj.replace("\n", "\\u000a")
-            obj = obj.replace("\r", "\\u000d")
-            obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
-            self.write(UNICODE + obj.encode('raw-unicode-escape') +
-                       b'\n')
+            # Escape what raw-unicode-escape doesn't, but memoize the original.
+            tmp = obj.replace("\\", "\\u005c")
+            tmp = tmp.replace("\0", "\\u0000")
+            tmp = tmp.replace("\n", "\\u000a")
+            tmp = tmp.replace("\r", "\\u000d")
+            tmp = tmp.replace("\x1a", "\\u001a")  # EOF on DOS
+            self.write(UNICODE + tmp.encode('raw-unicode-escape') + b'\n')
         self.memoize(obj)
     dispatch[str] = save_str
 
@@ -1799,7 +1799,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files')
     parser.add_argument(
-        'pickle_file', type=argparse.FileType('br'),
+        'pickle_file',
         nargs='*', help='the pickle file')
     parser.add_argument(
         '-t', '--test', action='store_true',
@@ -1815,6 +1815,10 @@ if __name__ == "__main__":
             parser.print_help()
         else:
             import pprint
-            for f in args.pickle_file:
-                obj = load(f)
+            for fn in args.pickle_file:
+                if fn == '-':
+                    obj = load(sys.stdin.buffer)
+                else:
+                    with open(fn, 'rb') as f:
+                        obj = load(f)
                 pprint.pprint(obj)

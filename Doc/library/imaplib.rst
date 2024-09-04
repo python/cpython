@@ -632,7 +632,7 @@ retrieves and prints all messages::
 
    import getpass, imaplib
 
-   M = imaplib.IMAP4()
+   M = imaplib.IMAP4(host='example.org')
    M.login(getpass.getuser(), getpass.getpass())
    M.select()
    typ, data = M.search(None, 'ALL')

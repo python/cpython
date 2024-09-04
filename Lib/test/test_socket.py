@@ -45,6 +45,7 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
     import _socket
@@ -467,6 +468,7 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
         ThreadableTest.clientTearDown(self)
 
 @unittest.skipIf(fcntl is None, "need fcntl")
+@unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
 @unittest.skipUnless(get_cid() != 2,
@@ -483,6 +485,7 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
         self.serv.listen()
         self.serverExplicitReady()
+        self.serv.settimeout(support.LOOPBACK_TIMEOUT)
         self.conn, self.connaddr = self.serv.accept()
         self.addCleanup(self.conn.close)
 
@@ -539,19 +542,27 @@ class SocketPairTest(unittest.TestCase, ThreadableTest):
     def __init__(self, methodName='runTest'):
         unittest.TestCase.__init__(self, methodName=methodName)
         ThreadableTest.__init__(self)
+        self.cli = None
+        self.serv = None
+
+    def socketpair(self):
+        # To be overridden by some child classes.
+        return socket.socketpair()
 
     def setUp(self):
-        self.serv, self.cli = socket.socketpair()
+        self.serv, self.cli = self.socketpair()
 
     def tearDown(self):
-        self.serv.close()
+        if self.serv:
+            self.serv.close()
         self.serv = None
 
     def clientSetUp(self):
         pass
 
     def clientTearDown(self):
-        self.cli.close()
+        if self.cli:
+            self.cli.close()
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
@@ -1066,7 +1077,20 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_indextoname() not available.')
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
+        self.assertRaises(OverflowError, socket.if_indextoname, -1)
+        self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
+        if hasattr(socket, 'if_nameindex'):
+            indices = dict(socket.if_nameindex())
+            for index in indices:
+                index2 = index + 2**32
+                if index2 not in indices:
+                    with self.assertRaises((OverflowError, OSError)):
+                        socket.if_indextoname(index2)
+            for index in 2**32-1, 2**64-1:
+                if index not in indices:
+                    with self.assertRaises((OverflowError, OSError)):
+                        socket.if_indextoname(index)
 
     @unittest.skipUnless(hasattr(socket, 'if_nametoindex'),
                          'socket.if_nametoindex() not available.')
@@ -4651,6 +4675,112 @@ class BasicSocketPairTest(SocketPairTest):
         self.assertEqual(msg, MSG)
 
 
+class PurePythonSocketPairTest(SocketPairTest):
+    # Explicitly use socketpair AF_INET or AF_INET6 to ensure that is the
+    # code path we're using regardless platform is the pure python one where
+    # `_socket.socketpair` does not exist.  (AF_INET does not work with
+    # _socket.socketpair on many platforms).
+    def socketpair(self):
+        # called by super().setUp().
+        try:
+            return socket.socketpair(socket.AF_INET6)
+        except OSError:
+            return socket.socketpair(socket.AF_INET)
+
+    # Local imports in this class make for easy security fix backporting.
+
+    def setUp(self):
+        if hasattr(_socket, "socketpair"):
+            self._orig_sp = socket.socketpair
+            # This forces the version using the non-OS provided socketpair
+            # emulation via an AF_INET socket in Lib/socket.py.
+            socket.socketpair = socket._fallback_socketpair
+        else:
+            # This platform already uses the non-OS provided version.
+            self._orig_sp = None
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+        if self._orig_sp is not None:
+            # Restore the default socket.socketpair definition.
+            socket.socketpair = self._orig_sp
+
+    def test_recv(self):
+        msg = self.serv.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def _test_recv(self):
+        self.cli.send(MSG)
+
+    def test_send(self):
+        self.serv.send(MSG)
+
+    def _test_send(self):
+        msg = self.cli.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def test_ipv4(self):
+        cli, srv = socket.socketpair(socket.AF_INET)
+        cli.close()
+        srv.close()
+
+    def _test_ipv4(self):
+        pass
+
+    @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
+                     not hasattr(_socket, 'IPV6_V6ONLY'),
+                     "IPV6_V6ONLY option not supported")
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
+    def test_ipv6(self):
+        cli, srv = socket.socketpair(socket.AF_INET6)
+        cli.close()
+        srv.close()
+
+    def _test_ipv6(self):
+        pass
+
+    def test_injected_authentication_failure(self):
+        orig_getsockname = socket.socket.getsockname
+        inject_sock = None
+
+        def inject_getsocketname(self):
+            nonlocal inject_sock
+            sockname = orig_getsockname(self)
+            # Connect to the listening socket ahead of the
+            # client socket.
+            if inject_sock is None:
+                inject_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                inject_sock.setblocking(False)
+                try:
+                    inject_sock.connect(sockname[:2])
+                except (BlockingIOError, InterruptedError):
+                    pass
+                inject_sock.setblocking(True)
+            return sockname
+
+        sock1 = sock2 = None
+        try:
+            socket.socket.getsockname = inject_getsocketname
+            with self.assertRaises(OSError):
+                sock1, sock2 = socket.socketpair()
+        finally:
+            socket.socket.getsockname = orig_getsockname
+            if inject_sock:
+                inject_sock.close()
+            if sock1:  # This cleanup isn't needed on a successful test.
+                sock1.close()
+            if sock2:
+                sock2.close()
+
+    def _test_injected_authentication_failure(self):
+        # No-op.  Exists for base class threading infrastructure to call.
+        # We could refactor this test into its own lesser class along with the
+        # setUp and tearDown code to construct an ideal; it is simpler to keep
+        # it here and live with extra overhead one this _one_ failure test.
+        pass
+
+
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -4705,10 +4835,10 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             self.skipTest('needs UINT_MAX < ULONG_MAX')
 
         self.serv.setblocking(False)
-        self.assertEqual(self.serv.gettimeout(), 0.0)
+        self.assert_sock_timeout(self.serv, 0.0)
 
         self.serv.setblocking(_testcapi.UINT_MAX + 1)
-        self.assertIsNone(self.serv.gettimeout())
+        self.assert_sock_timeout(self.serv, None)
 
     _testSetBlocking_overflow = support.cpython_only(_testSetBlocking)
 

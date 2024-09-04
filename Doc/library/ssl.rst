@@ -25,7 +25,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    Some behavior may be platform dependent, since calls are made to the
    operating system socket APIs.  The installed version of OpenSSL may also
-   cause variations in behavior. For example, TLSv1.3 with OpenSSL version
+   cause variations in behavior. For example, TLSv1.3 comes with OpenSSL version
    1.1.1.
 
 .. warning::
@@ -846,11 +846,11 @@ Constants
    When Python has been compiled against an older version of OpenSSL, the
    flag defaults to *0*.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.6.3
 
    .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
-      3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
+      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15 and
+      3.6.3 for backwards compatibility with OpenSSL 1.0.2.
 
 .. data:: OP_NO_RENEGOTIATION
 
@@ -1860,6 +1860,9 @@ to speed up repeated connections from the same clients.
 
    *session*, see :attr:`~SSLSocket.session`.
 
+   To wrap an :class:`SSLSocket` in another :class:`SSLSocket`, use
+   :meth:`SSLContext.wrap_bio`.
+
    .. versionchanged:: 3.5
       Always allow a server_hostname to be passed, even if OpenSSL does not
       have SNI.
@@ -2045,7 +2048,7 @@ to speed up repeated connections from the same clients.
 
    .. versionchanged:: 3.10
 
-      The flag had no effect with OpenSSL before version 1.1.1k. Python 3.8.9,
+      The flag had no effect with OpenSSL before version 1.1.1l. Python 3.8.9,
       3.9.3, and 3.10 include workarounds for previous versions.
 
 .. attribute:: SSLContext.security_level

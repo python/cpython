@@ -1,2 +1,0 @@
-Change docstrings of :attr:`~object.__dict__` and
-:attr:`~object.__weakref__`.

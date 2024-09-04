@@ -19,6 +19,7 @@ import io
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import sysconfig
@@ -192,6 +193,45 @@ class HelperFunctionsTests(unittest.TestCase):
             pth_file.create()
             site.addsitedir(pth_file.base_dir, set())
             self.pth_file_tests(pth_file)
+        finally:
+            pth_file.cleanup()
+
+    def test_addsitedir_dotfile(self):
+        pth_file = PthFile('.dotfile')
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
+    def test_addsitedir_hidden_flags(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            st = os.stat(pth_file.file_path)
+            os.chflags(pth_file.file_path, st.st_flags | stat.UF_HIDDEN)
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'test needs Windows')
+    @support.requires_subprocess()
+    def test_addsitedir_hidden_file_attribute(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            subprocess.check_call(['attrib', '+H', pth_file.file_path])
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
         finally:
             pth_file.cleanup()
 
@@ -604,10 +644,24 @@ class _pthFileTests(unittest.TestCase):
             sys_path.append(abs_path)
         return sys_path
 
+    def _get_pth_lines(self, libpath: str, *, import_site: bool):
+        pth_lines = ['fake-path-name']
+        # include 200 lines of `libpath` in _pth lines (or fewer
+        # if the `libpath` is long enough to get close to 32KB
+        # see https://github.com/python/cpython/issues/113628)
+        encoded_libpath_length = len(libpath.encode("utf-8"))
+        repetitions = min(200, 30000 // encoded_libpath_length)
+        if repetitions <= 2:
+            self.skipTest(
+                f"Python stdlib path is too long ({encoded_libpath_length:,} bytes)")
+        pth_lines.extend(libpath for _ in range(repetitions))
+        pth_lines.extend(['', '# comment'])
+        if import_site:
+            pth_lines.append('import site')
+        return pth_lines
+
     @support.requires_subprocess()
     def test_underpth_basic(self):
-        libpath = test.support.STDLIB_DIR
-        exe_prefix = os.path.dirname(sys.executable)
         pth_lines = ['#.', '# ..', *sys.path, '.', '..']
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
@@ -629,12 +683,7 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_nosite_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        pth_lines = [
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-        ]
+        pth_lines = self._get_pth_lines(libpath, import_site=False)
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
             os.path.dirname(exe_file),
@@ -658,13 +707,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ])
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True))
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
@@ -683,13 +727,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_dll_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ], exe_pth=False)
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True), exe_pth=False)
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'

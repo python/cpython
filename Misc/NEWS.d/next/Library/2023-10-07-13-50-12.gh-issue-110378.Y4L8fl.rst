@@ -1,3 +1,0 @@
-:func:`~contextlib.contextmanager` and
-:func:`~contextlib.asynccontextmanager` context managers now close an invalid
-underlying generator object that yields more then one value.

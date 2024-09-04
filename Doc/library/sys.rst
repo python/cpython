@@ -16,11 +16,11 @@ always available.
    On POSIX systems where Python was built with the standard ``configure``
    script, this contains the ABI flags as specified by :pep:`3149`.
 
+   .. versionadded:: 3.2
+
    .. versionchanged:: 3.8
       Default flags became an empty string (``m`` flag for pymalloc has been
       removed).
-
-   .. versionadded:: 3.2
 
 
 .. function:: addaudithook(hook)
@@ -1240,7 +1240,10 @@ always available.
    The list of the original command line arguments passed to the Python
    executable.
 
-   See also :data:`sys.argv`.
+   The elements of :data:`sys.orig_argv` are the arguments to the Python interpreter,
+   while the elements of :data:`sys.argv` are the arguments to the user's program.
+   Arguments consumed by the interpreter itself will be present in :data:`sys.orig_argv`
+   and missing from :data:`sys.argv`.
 
    .. versionadded:: 3.10
 
@@ -1554,7 +1557,8 @@ always available.
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
-      :attr:`!f_trace_lines` to :const:`False` on that :ref:`frame <frame-objects>`.
+      :attr:`~frame.f_trace_lines` to :const:`False` on that
+      :ref:`frame <frame-objects>`.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1572,7 +1576,7 @@ always available.
       opcode details).  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.
       Per-opcode events are not emitted by default: they must be explicitly
-      requested by setting :attr:`!f_trace_opcodes` to :const:`True` on the
+      requested by setting :attr:`~frame.f_trace_opcodes` to :const:`True` on the
       :ref:`frame <frame-objects>`.
 
    Note that as an exception is propagated down the chain of callers, an
@@ -1602,10 +1606,10 @@ always available.
 
    .. versionchanged:: 3.7
 
-      ``'opcode'`` event type added; :attr:`!f_trace_lines` and
-      :attr:`!f_trace_opcodes` attributes added to frames
+      ``'opcode'`` event type added; :attr:`~frame.f_trace_lines` and
+      :attr:`~frame.f_trace_opcodes` attributes added to frames
 
-.. function:: set_asyncgen_hooks(firstiter, finalizer)
+.. function:: set_asyncgen_hooks([firstiter] [, finalizer])
 
    Accepts two optional keyword arguments which are callables that accept an
    :term:`asynchronous generator iterator` as an argument. The *firstiter*

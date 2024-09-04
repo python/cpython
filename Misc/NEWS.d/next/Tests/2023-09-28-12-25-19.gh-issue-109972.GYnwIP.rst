@@ -1,2 +1,0 @@
-Split test_gdb.py file into a test_gdb package made of multiple tests, so tests
-can now be run in parallel. Patch by Victor Stinner.

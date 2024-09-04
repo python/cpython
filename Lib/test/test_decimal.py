@@ -37,7 +37,8 @@ from test.support import (is_resource_enabled,
                           requires_legacy_unicode_capi, check_sanitizer)
 from test.support import (TestFailed,
                           run_with_locale, cpython_only,
-                          darwin_malloc_err_warning, is_emscripten)
+                          darwin_malloc_err_warning, is_emscripten,
+                          skip_on_s390x)
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -1121,6 +1122,13 @@ class FormatTest:
             ('z>z6.1f', '-0.', 'zzz0.0'),
             ('x>z6.1f', '-0.', 'xxx0.0'),
             ('🖤>z6.1f', '-0.', '🖤🖤🖤0.0'),  # multi-byte fill char
+            ('\x00>z6.1f', '-0.', '\x00\x00\x000.0'),  # null fill char
+
+            # issue 114563 ('z' format on F type in cdecimal)
+            ('z3,.10F', '-6.24E-323', '0.0000000000'),
+
+            # issue 91060 ('#' format in cdecimal)
+            ('#', '0', '0.'),
 
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
@@ -5647,6 +5655,9 @@ class CWhitebox(unittest.TestCase):
     @unittest.skipIf(check_sanitizer(address=True, memory=True),
                      "ASAN/MSAN sanitizer defaults to crashing "
                      "instead of returning NULL for malloc failure.")
+    # gh-114331: The test allocates 784 271 641 GiB and mimalloc does not fail
+    # to allocate it when using mimalloc on s390x.
+    @skip_on_s390x
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due
@@ -5711,6 +5722,21 @@ class CWhitebox(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, err_msg):
             sd.copy()
+
+    def test_format_fallback_capitals(self):
+        # Fallback to _pydecimal formatting (triggered by `#` format which
+        # is unsupported by mpdecimal) should honor the current context.
+        x = C.Decimal('6.09e+23')
+        self.assertEqual(format(x, '#'), '6.09E+23')
+        with C.localcontext(capitals=0):
+            self.assertEqual(format(x, '#'), '6.09e+23')
+
+    def test_format_fallback_rounding(self):
+        y = C.Decimal('6.09')
+        self.assertEqual(format(y, '#.1f'), '6.1')
+        with C.localcontext(rounding=C.ROUND_DOWN):
+            self.assertEqual(format(y, '#.1f'), '6.0')
+
 
 @requires_docstrings
 @requires_cdecimal

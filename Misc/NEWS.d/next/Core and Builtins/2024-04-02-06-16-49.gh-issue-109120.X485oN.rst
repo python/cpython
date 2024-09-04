@@ -1,0 +1,2 @@
+Added handle of incorrect star expressions, e.g ``f(3, *)``. Patch by
+Grigoryev Semyon

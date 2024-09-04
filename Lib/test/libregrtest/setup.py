@@ -124,7 +124,8 @@ def setup_tests(runtests: RunTests):
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
     if runtests.hunt_refleak:
-        unittest.BaseTestSuite._cleanup = False
+        # private attribute that mypy doesn't know about:
+        unittest.BaseTestSuite._cleanup = False  # type: ignore[attr-defined]
 
     if runtests.gc_threshold is not None:
         gc.set_threshold(runtests.gc_threshold)

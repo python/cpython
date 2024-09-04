@@ -92,6 +92,8 @@ TOKEN_ENDS = TSPECIALS | WSP
 ASPECIALS = TSPECIALS | set("*'%")
 ATTRIBUTE_ENDS = ASPECIALS | WSP
 EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
+NLSET = {'\n', '\r'}
+SPECIALSNL = SPECIALS | NLSET
 
 def quote_string(value):
     return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
@@ -949,6 +951,8 @@ class _InvalidEwError(errors.HeaderParseError):
 # up other parse trees.  Maybe should have  tests for that, too.
 DOT = ValueTerminal('.', 'dot')
 ListSeparator = ValueTerminal(',', 'list-separator')
+ListSeparator.as_ew_allowed = False
+ListSeparator.syntactic_break = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 #
@@ -2022,7 +2026,7 @@ def get_address_list(value):
             address_list.defects.append(errors.InvalidHeaderDefect(
                 "invalid address in address-list"))
         if value:  # Must be a , at this point.
-            address_list.append(ValueTerminal(',', 'list-separator'))
+            address_list.append(ListSeparator)
             value = value[1:]
     return address_list, value
 
@@ -2768,6 +2772,7 @@ def _refold_parse_tree(parse_tree, *, policy):
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']
     last_ew = None
+    last_charset = None
     wrap_as_ew_blocked = 0
     want_encoding = False
     end_ew_not_allowed = Terminal('', 'wrap_as_ew_blocked')
@@ -2778,9 +2783,13 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
-        if part.token_type == 'ptext' and set(tstr) & SPECIALS:
-            # Encode if tstr contains special characters.
-            want_encoding = True
+        if not want_encoding:
+            if part.token_type == 'ptext':
+                # Encode if tstr contains special characters.
+                want_encoding = not SPECIALSNL.isdisjoint(tstr)
+            else:
+                # Encode if tstr contains newlines.
+                want_encoding = not NLSET.isdisjoint(tstr)
         try:
             tstr.encode(encoding)
             charset = encoding
@@ -2819,13 +2828,28 @@ def _refold_parse_tree(parse_tree, *, policy):
             if not hasattr(part, 'encode'):
                 # It's not a Terminal, do each piece individually.
                 parts = list(part) + parts
-            else:
+                want_encoding = False
+                continue
+            elif part.as_ew_allowed:
                 # It's a terminal, wrap it as an encoded word, possibly
                 # combining it with previously encoded words if allowed.
+                if (last_ew is not None and
+                    charset != last_charset and
+                    (last_charset == 'unknown-8bit' or
+                     last_charset == 'utf-8' and charset != 'us-ascii')):
+                    last_ew = None
                 last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
                                       part.ew_combine_allowed, charset)
-            want_encoding = False
-            continue
+                last_charset = charset
+                want_encoding = False
+                continue
+            else:
+                # It's a terminal which should be kept non-encoded
+                # (e.g. a ListSeparator).
+                last_ew = None
+                want_encoding = False
+                # fall through
+
         if len(tstr) <= maxlen - len(lines[-1]):
             lines[-1] += tstr
             continue

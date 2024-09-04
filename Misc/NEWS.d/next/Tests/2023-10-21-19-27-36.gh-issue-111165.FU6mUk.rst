@@ -1,2 +1,0 @@
-Remove no longer used functions ``run_unittest()`` and ``run_doctest()`` and
-class ``BasicTestRunner`` from the :mod:`test.support` module.

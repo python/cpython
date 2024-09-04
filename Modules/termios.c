@@ -84,6 +84,8 @@ termios_tcgetattr_impl(PyObject *module, int fd)
     struct termios mode;
     int r;
 
+    /* Alpine Linux can leave some fields uninitialized. */
+    memset(&mode, 0, sizeof(mode));
     Py_BEGIN_ALLOW_THREADS
     r = tcgetattr(fd, &mode);
     Py_END_ALLOW_THREADS

@@ -2693,9 +2693,18 @@ class _TestPool(BaseTestCase):
 
     def test_terminate(self):
         # Simulate slow tasks which take "forever" to complete
+        sleep_time = support.LONG_TIMEOUT
+
+        if self.TYPE == 'threads':
+            # Thread pool workers can't be forced to quit, so if the first
+            # task starts early enough, we will end up waiting for it.
+            # Sleep for a shorter time, so the test doesn't block.
+            sleep_time = 1
+
         p = self.Pool(3)
-        args = [support.LONG_TIMEOUT for i in range(10_000)]
+        args = [sleep_time for i in range(10_000)]
         result = p.map_async(time.sleep, args, chunksize=1)
+        time.sleep(0.2)  # give some tasks a chance to start
         p.terminate()
         p.join()
 
@@ -3456,6 +3465,30 @@ class _TestListener(BaseTestCase):
         if self.TYPE == 'processes':
             self.assertRaises(OSError, l.accept)
 
+    def test_empty_authkey(self):
+        # bpo-43952: allow empty bytes as authkey
+        def handler(*args):
+            raise RuntimeError('Connection took too long...')
+
+        def run(addr, authkey):
+            client = self.connection.Client(addr, authkey=authkey)
+            client.send(1729)
+
+        key = b''
+
+        with self.connection.Listener(authkey=key) as listener:
+            thread = threading.Thread(target=run, args=(listener.address, key))
+            thread.start()
+            try:
+                with listener.accept() as d:
+                    self.assertEqual(d.recv(), 1729)
+            finally:
+                thread.join()
+
+        if self.TYPE == 'processes':
+            with self.assertRaises(OSError):
+                listener.accept()
+
     @unittest.skipUnless(util.abstract_sockets_supported,
                          "test needs abstract socket support")
     def test_abstract_socket(self):
@@ -3923,6 +3956,21 @@ class _TestSharedMemory(BaseTestCase):
         # test_multiprocessing_spawn, etc) in parallel.
         return prefix + str(os.getpid())
 
+    def test_shared_memory_name_with_embedded_null(self):
+        name_tsmb = self._new_shm_name('test01_null')
+        sms = shared_memory.SharedMemory(name_tsmb, create=True, size=512)
+        self.addCleanup(sms.unlink)
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(name_tsmb + '\0a', create=False, size=512)
+        if shared_memory._USE_POSIX:
+            orig_name = sms._name
+            try:
+                sms._name = orig_name + '\0a'
+                with self.assertRaises(ValueError):
+                    sms.unlink()
+            finally:
+                sms._name = orig_name
+
     def test_shared_memory_basics(self):
         name_tsmb = self._new_shm_name('test01_tsmb')
         sms = shared_memory.SharedMemory(name_tsmb, create=True, size=512)
@@ -4057,7 +4105,7 @@ class _TestSharedMemory(BaseTestCase):
             self.addCleanup(shm2.unlink)
             self.assertEqual(shm2._name, names[1])
 
-    def test_invalid_shared_memory_cration(self):
+    def test_invalid_shared_memory_creation(self):
         # Test creating a shared memory segment with negative size
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True, size=-1)
@@ -4628,6 +4676,29 @@ class _TestLogging(BaseTestCase):
 
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
+
+    def test_filename(self):
+        logger = multiprocessing.get_logger()
+        original_level = logger.level
+        try:
+            logger.setLevel(util.DEBUG)
+            stream = io.StringIO()
+            handler = logging.StreamHandler(stream)
+            logging_format = '[%(levelname)s] [%(filename)s] %(message)s'
+            handler.setFormatter(logging.Formatter(logging_format))
+            logger.addHandler(handler)
+            logger.info('1')
+            util.info('2')
+            logger.debug('3')
+            filename = os.path.basename(__file__)
+            log_record = stream.getvalue()
+            self.assertIn(f'[INFO] [{filename}] 1', log_record)
+            self.assertIn(f'[INFO] [{filename}] 2', log_record)
+            self.assertIn(f'[DEBUG] [{filename}] 3', log_record)
+        finally:
+            logger.setLevel(original_level)
+            logger.removeHandler(handler)
+            handler.close()
 
 
 # class _TestLoggingProcessName(BaseTestCase):

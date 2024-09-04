@@ -270,12 +270,32 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~object.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
          the exact value is unimportant you may use :class:`auto` instances and an
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
+
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
+
+   .. attribute:: Enum._name_
+
+      Name of the member.
+
+   .. attribute:: Enum._value_
+
+      Value of the member, can be set in :meth:`~object.__new__`.
+
+   .. attribute:: Enum._order_
+
+      No longer used, kept for backward compatibility.
+      (class attribute, removed during class creation).
 
    .. attribute:: Enum._ignore_
 
@@ -493,9 +513,7 @@ Data Types
          >>> list(purple)
          [<Color.RED: 1>, <Color.BLUE: 4>]
 
-      .. versionchanged:: 3.11
-
-         Aliases are no longer returned during iteration.
+      .. versionadded:: 3.11
 
    .. method:: __len__(self):
 
@@ -768,18 +786,17 @@ all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
-
-- ``_missing_`` -- a lookup function used when a value is not found; may be
-  overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
-  that will not be transformed into members, and will be removed from the final
-  class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
-  (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used to get an appropriate value for an enum
-  member; may be overridden
+- :attr:`~Enum._name_` -- name of the member
+- :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
+- :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
+  may be overridden
+- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
+  :class:`str`, that will not be transformed into members, and will be removed
+  from the final class
+- :attr:`~Enum._order_` -- no longer used, kept for backward
+  compatibility (class attribute, removed during class creation)
+- :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
+  an enum member; may be overridden
 
   .. note::
 
@@ -811,7 +828,7 @@ Utilities and Decorators
 
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
-      used to create the ``SECOND`` enum member;
+     used to create the ``SECOND`` enum member;
    * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
      create the ``THREE`` enum member)
 

@@ -615,7 +615,7 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
 static PyObject *
 array_arrayiterator___reduce__(arrayiterobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
         return NULL;
     }
@@ -630,4 +630,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=85a5fec90d9615b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=62cb180955450ca3 input=a9049054013a1b77]*/

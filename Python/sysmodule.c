@@ -1282,7 +1282,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks(* [, firstiter] [, finalizer])\n\
+"set_asyncgen_hooks([firstiter] [, finalizer])\n\
 \n\
 Set a finalizer for async generators objects."
 );
@@ -1363,31 +1363,33 @@ get_hash_info(PyThreadState *tstate)
     int field = 0;
     PyHash_FuncDef *hashfunc;
     hash_info = PyStructSequence_New(&Hash_InfoType);
-    if (hash_info == NULL)
-        return NULL;
-    hashfunc = PyHash_GetFuncDef();
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(8*sizeof(Py_hash_t)));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromSsize_t(_PyHASH_MODULUS));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(_PyHASH_INF));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(0));  // This is no longer used
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(_PyHASH_IMAG));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyUnicode_FromString(hashfunc->name));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(hashfunc->hash_bits));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(hashfunc->seed_bits));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(Py_HASH_CUTOFF));
-    if (_PyErr_Occurred(tstate)) {
-        Py_CLEAR(hash_info);
+    if (hash_info == NULL) {
         return NULL;
     }
+    hashfunc = PyHash_GetFuncDef();
+
+#define SET_HASH_INFO_ITEM(CALL)                             \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_CLEAR(hash_info);                             \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(hash_info, field++, item); \
+    } while(0)
+
+    SET_HASH_INFO_ITEM(PyLong_FromLong(8 * sizeof(Py_hash_t)));
+    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(_PyHASH_MODULUS));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_INF));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(0));  // This is no longer used
+    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_IMAG));
+    SET_HASH_INFO_ITEM(PyUnicode_FromString(hashfunc->name));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->hash_bits));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->seed_bits));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(Py_HASH_CUTOFF));
+
+#undef SET_HASH_INFO_ITEM
+
     return hash_info;
 }
 /*[clinic input]
@@ -1477,15 +1479,24 @@ sys_getwindowsversion_impl(PyObject *module)
     if (version == NULL)
         return NULL;
 
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwMajorVersion));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwMinorVersion));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwBuildNumber));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwPlatformId));
-    PyStructSequence_SET_ITEM(version, pos++, PyUnicode_FromWideChar(ver.szCSDVersion, -1));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMajor));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMinor));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
+#define SET_VERSION_INFO(CALL)                               \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            goto error;                                      \
+        }                                                    \
+        PyStructSequence_SET_ITEM(version, pos++, item);     \
+    } while(0)
+
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwMajorVersion));
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwMinorVersion));
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwBuildNumber));
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwPlatformId));
+    SET_VERSION_INFO(PyUnicode_FromWideChar(ver.szCSDVersion, -1));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wServicePackMajor));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wServicePackMinor));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wSuiteMask));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wProductType));
 
     realMajor = ver.dwMajorVersion;
     realMinor = ver.dwMinorVersion;
@@ -1512,17 +1523,19 @@ sys_getwindowsversion_impl(PyObject *module)
         }
         PyMem_RawFree(verblock);
     }
-    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
+    SET_VERSION_INFO(Py_BuildValue("(kkk)",
         realMajor,
         realMinor,
         realBuild
     ));
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(version);
-        return NULL;
-    }
+#undef SET_VERSION_INFO
+
     return version;
+
+error:
+    Py_DECREF(version);
+    return NULL;
 }
 
 #pragma warning(pop)

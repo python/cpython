@@ -2,6 +2,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
+from functools import partial
 from test import support, test_tools
 from test.support import os_helper
 from test.support import SHORT_TIMEOUT, requires_subprocess
@@ -19,6 +20,20 @@ test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
+
+
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, clinic.converters,
+                        clinic.converters.copy())
+    testcase.addCleanup(restore_dict, clinic.legacy_converters,
+                        clinic.legacy_converters.copy())
+    testcase.addCleanup(restore_dict, clinic.return_converters,
+                        clinic.return_converters.copy())
 
 
 class _ParserBase(TestCase):
@@ -107,6 +122,7 @@ class FakeClinic:
 
 class ClinicWholeFileTest(_ParserBase):
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
 
     def expect_failure(self, raw):
@@ -1316,6 +1332,9 @@ class ClinicExternalTest(TestCase):
     maxDiff = None
     clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
 
+    def setUp(self):
+        save_restore_converters(self)
+
     def _do_test(self, *args, expect_success=True):
         with subprocess.Popen(
             [sys.executable, "-Xutf8", self.clinic_py, *args],
@@ -2031,6 +2050,26 @@ class ClinicFunctionalTest(unittest.TestCase):
         expected_error = r'gh_99240_double_free\(\) argument 2 must be encoded string without null bytes, not str'
         with self.assertRaisesRegex(TypeError, expected_error):
             ac_tester.gh_99240_double_free('a', '\0b')
+
+    def test_meth_method_no_params(self):
+        obj = ac_tester.TestClass()
+        meth = obj.meth_method_no_params
+        check = partial(self.assertRaisesRegex, TypeError, "no arguments")
+        check(meth, 1)
+        check(meth, a=1)
+
+    def test_meth_method_no_params_capi(self):
+        from _testcapi import pyobject_vectorcall
+        obj = ac_tester.TestClass()
+        meth = obj.meth_method_no_params
+        pyobject_vectorcall(meth, None, None)
+        pyobject_vectorcall(meth, (), None)
+        pyobject_vectorcall(meth, (), ())
+        pyobject_vectorcall(meth, None, ())
+
+        check = partial(self.assertRaisesRegex, TypeError, "no arguments")
+        check(pyobject_vectorcall, meth, (1,), None)
+        check(pyobject_vectorcall, meth, (1,), ("a",))
 
 
 class PermutationTests(unittest.TestCase):

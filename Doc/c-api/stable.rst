@@ -16,7 +16,7 @@ CPython's Application Binary Interface (ABI) is forward- and
 backwards-compatible across a minor release (if these are compiled the same
 way; see :ref:`stable-abi-platform` below).
 So, code compiled for Python 3.10.0 will work on 3.10.8 and vice versa,
-but will need to be compiled separately for 3.9.x and 3.10.x.
+but will need to be compiled separately for 3.9.x and 3.11.x.
 
 Names prefixed by an underscore, such as ``_Py_InternalState``,
 are private API that can change without notice even in patch releases.

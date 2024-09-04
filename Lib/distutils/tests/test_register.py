@@ -291,6 +291,8 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
         cmd = self._get_cmd()
         with check_warnings() as w:
             warnings.simplefilter("always")
+            warnings.filterwarnings("ignore", ".*OptionParser class will be replaced.*")
+            warnings.filterwarnings("ignore", ".*Option class will be removed.*")
             cmd.check_metadata()
             self.assertEqual(len(w.warnings), 1)
 

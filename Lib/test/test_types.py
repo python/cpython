@@ -1,6 +1,6 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only
+from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
 import collections.abc
 from collections import namedtuple
 import copy
@@ -597,6 +597,8 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
         self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_dunder_get_signature(self):
         sig = inspect.signature(object.__init__.__get__)
         self.assertEqual(list(sig.parameters), ["instance", "owner"])
@@ -706,6 +708,26 @@ class UnionTests(unittest.TestCase):
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
         self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
+
+    def test_union_of_unhashable(self):
+        class UnhashableMeta(type):
+            __hash__ = None
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        self.assertEqual((A | B).__args__, (A, B))
+        union1 = A | B
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = int | B
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = A | int
+        with self.assertRaises(TypeError):
+            hash(union3)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):

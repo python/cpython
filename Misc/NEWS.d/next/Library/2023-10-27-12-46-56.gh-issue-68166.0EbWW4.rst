@@ -1,4 +1,0 @@
-Remove mention of not supported "vsapi" element type in
-:meth:`tkinter.ttk.Style.element_create`. Add tests for ``element_create()``
-and other ``ttk.Style`` methods. Add examples for ``element_create()`` in
-the documentation.

@@ -164,6 +164,7 @@ def _widget_redirector(parent):  # htest #
         original_insert(*args)
     original_insert = redir.register("insert", my_insert)
 
+
 if __name__ == "__main__":
     from unittest import main
     main('idlelib.idle_test.test_redirector', verbosity=2, exit=False)
