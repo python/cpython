@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-22.04
     env:
-      OPENSSL_VER: 3.0.13
+      OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
