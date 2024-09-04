@@ -36,6 +36,16 @@ class WithFloat:
 class ComplexSubclass(complex):
     pass
 
+class OtherComplexSubclass(complex):
+    pass
+
+class MyInt:
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+
 class WithComplex:
     def __init__(self, value):
         self.value = value
@@ -675,10 +685,39 @@ class ComplexTest(unittest.TestCase):
             if not any(ch in lit for ch in 'xXoObB'):
                 self.assertRaises(ValueError, complex, lit)
 
+    def test_from_number(self, cls=complex):
+        def eq(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertIs(type(actual), cls)
+
+        eq(cls.from_number(3.14), 3.14+0j)
+        eq(cls.from_number(3.14j), 3.14j)
+        eq(cls.from_number(314), 314.0+0j)
+        eq(cls.from_number(OtherComplexSubclass(3.14, 2.72)), 3.14+2.72j)
+        eq(cls.from_number(WithComplex(3.14+2.72j)), 3.14+2.72j)
+        eq(cls.from_number(WithFloat(3.14)), 3.14+0j)
+        eq(cls.from_number(WithIndex(314)), 314.0+0j)
+
+        cNAN = complex(NAN, NAN)
+        x = cls.from_number(cNAN)
+        self.assertTrue(x != x)
+        self.assertIs(type(x), cls)
+        if cls is complex:
+            self.assertIs(cls.from_number(cNAN), cNAN)
+
+        self.assertRaises(TypeError, cls.from_number, '3.14')
+        self.assertRaises(TypeError, cls.from_number, b'3.14')
+        self.assertRaises(TypeError, cls.from_number, MyInt(314))
+        self.assertRaises(TypeError, cls.from_number, {})
+        self.assertRaises(TypeError, cls.from_number)
+
+    def test_from_number_subclass(self):
+        self.test_from_number(ComplexSubclass)
+
     def test_hash(self):
         for x in range(-30, 30):
             self.assertEqual(hash(x), hash(complex(x, 0)))
-            x /= 3.0    # now check against floating point
+            x /= 3.0    # now check against floating-point
             self.assertEqual(hash(x), hash(complex(x, 0.)))
 
         self.assertNotEqual(hash(2000005 - 1j), -1)

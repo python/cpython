@@ -90,6 +90,7 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
 # Internal constant list
 Python/initconfig.c	-	PYCONFIG_SPEC	-
+Python/initconfig.c	-	PYPRECONFIG_SPEC	-
 
 
 ##-----------------------
@@ -742,3 +743,7 @@ Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
+
+
+## False positives
+Python/specialize.c	-	_Py_InitCleanup	-
