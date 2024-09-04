@@ -498,7 +498,7 @@ class TestTurtleScreen(unittest.TestCase):
                 f"the file '{file_path}' already exists. To overwrite it use"
                 " the 'overwrite=True' argument of the save function."
             )
-            with self.assertRaisesRegex(ValueError, msg):
+            with self.assertRaisesRegex(FileExistsError, msg):
                 turtle.TurtleScreen.save(screen, file_path)
 
     def test_save_overwrites_if_specified(self) -> None:

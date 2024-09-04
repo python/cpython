@@ -1513,7 +1513,7 @@ class TurtleScreen(TurtleScreenBase):
                 " Cannot save to it"
             )
         if not overwrite and filename.exists():
-            raise ValueError(
+            raise FileExistsError(
                 f"the file '{filename}' already exists. To overwrite it use"
                 " the 'overwrite=True' argument of the save function."
             )
