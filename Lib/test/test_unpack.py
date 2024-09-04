@@ -149,8 +149,8 @@ Unpacking to an empty iterable should raise ValueError
       ...
     ValueError: too many values to unpack (expected 0, got 1)
 
-Unpacking a larger iterable should raise UnpackError, but it shouldn't consume the
-iterable entirely
+Unpacking a larger iterable should raise ValuleError, but it
+should not entirely consume the iterable
 
     >>> it = iter(range(100))
     >>> x, y, z = it
