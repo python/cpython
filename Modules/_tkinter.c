@@ -3422,7 +3422,7 @@ static struct PyModuleDef _tkintermodule = {
     .m_methods = moduleMethods,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = module_free,
+    .m_free = module_free
 };
 
 PyMODINIT_FUNC
