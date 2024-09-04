@@ -1419,12 +1419,6 @@ context_dealloc(PyDecContextObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-#ifndef WITH_DECIMAL_CONTEXTVAR
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
-    if (self == state->cached_context) {
-        state->cached_context = NULL;
-    }
-#endif
     (void)context_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1701,7 +1695,8 @@ current_context_from_dict(decimal_state *modstate)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    modstate->cached_context = (PyDecContextObject *)tl_context;
+    Py_XSETREF(modstate->cached_context,
+               (PyDecContextObject *)Py_NewRef(tl_context));
     modstate->cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
