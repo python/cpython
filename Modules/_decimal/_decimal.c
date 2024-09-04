@@ -6117,6 +6117,16 @@ decimal_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Rational);
     Py_VISIT(state->SignalTuple);
 
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
+    if (state->cond_map != NULL) {
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
     return 0;
 }
 
