@@ -1,1 +1,1 @@
-Remove duplicative dereference counting in cases where call optimization errors.
+Fix a double decref in rare cases on experimental JIT builds.
