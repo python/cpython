@@ -3040,7 +3040,6 @@ codegen_from_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, LOC(s), IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
-        _Py_DECLARE_STR(empty, "");
         ADDOP_NAME(c, LOC(s), IMPORT_NAME, _Py_EMPTY_STRING, names);
     }
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -4115,8 +4114,7 @@ codegen_joined_str(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
     if (value_count > STACK_USE_GUIDELINE) {
-        _Py_DECLARE_STR(empty, "");
-        ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(_Py_EMPTY_STRING));
+        ADDOP_LOAD_CONST_NEW(c, loc, _Py_EMPTY_STRING);
         ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, loc, BUILD_LIST, 0);
         for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.JoinedStr.values); i++) {
@@ -4131,8 +4129,7 @@ codegen_joined_str(struct compiler *c, expr_ty e)
             ADDOP_I(c, loc, BUILD_STRING, value_count);
         }
         else if (value_count == 0) {
-            _Py_DECLARE_STR(empty, "");
-            ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(_Py_EMPTY_STRING));
+            ADDOP_LOAD_CONST_NEW(c, loc, _Py_EMPTY_STRING);
         }
     }
     return SUCCESS;

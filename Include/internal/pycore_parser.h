@@ -30,7 +30,6 @@ struct _parser_runtime_state {
     struct _expr dummy_name;
 };
 
-_Py_DECLARE_STR(empty, "")
 #if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
 #define _parser_runtime_state_INIT \
     { \

@@ -797,7 +797,6 @@ struct _Py_global_strings {
      ? (PyObject*)&_Py_SINGLETON(strings).ascii[(CH)] \
      : (PyObject*)&_Py_SINGLETON(strings).latin1[(CH) - 128])
 
-#define _Py_DECLARE_EMPTY_STRING    _Py_DECLARE_STR(empty, "")
 #define _Py_EMPTY_STRING            ((PyObject *)(&_Py_STR(empty)))
 
 #define _Py_EMPTY_BYTES             ((PyObject *)&_Py_SINGLETON(bytes_empty))
@@ -806,7 +805,7 @@ struct _Py_global_strings {
 
    This is true even if the same string has already been declared
    elsewhere, even in the same file.  Mismatched duplicates are detected
-   by Tools/scripts/generate-global-objects.py.
+   by Tools/build/generate_global_objects.py.
 
    Pairing _Py_DECLARE_STR() with every use of _Py_STR() makes sure the
    string keeps working even if the declaration is removed somewhere
