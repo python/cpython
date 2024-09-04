@@ -61,7 +61,7 @@ tuple_alloc(Py_ssize_t size)
 static inline PyObject *
 tuple_get_empty(void)
 {
-    return (PyObject *)&_Py_SINGLETON(tuple_empty);
+    return _Py_EMPTY_TUPLE;
 }
 
 PyObject *
@@ -185,7 +185,7 @@ tupledealloc(PyTupleObject *op)
 {
     if (Py_SIZE(op) == 0) {
         /* The empty tuple is statically allocated. */
-        if (op == &_Py_SINGLETON(tuple_empty)) {
+        if (op == (PyTupleObject *)(_Py_EMPTY_TUPLE)) {
 #ifdef Py_DEBUG
             _Py_FatalRefcountError("deallocating the empty tuple singleton");
 #else
@@ -942,7 +942,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     if (oldsize == 0) {
 #ifdef Py_DEBUG
-        assert(v == &_Py_SINGLETON(tuple_empty));
+        assert(v == (PyTupleObject *)(_Py_EMPTY_TUPLE));
 #endif
         /* The empty tuple is statically allocated so we never
            resize it in-place. */

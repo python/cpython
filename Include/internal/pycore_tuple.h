@@ -18,6 +18,7 @@ extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
 
 /* other API */
 
+#define _Py_EMPTY_TUPLE    ((PyObject *)&_Py_SINGLETON(tuple_empty))
 #define _PyTuple_ITEMS(op) _Py_RVALUE(_PyTuple_CAST(op)->ob_item)
 
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
