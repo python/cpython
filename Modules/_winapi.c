@@ -461,7 +461,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateFile", "uIIII",
+    if (PySys_Audit("_winapi.CreateFile", "sIIII",
                     file_name, desired_access, share_mode,
                     creation_disposition, flags_and_attributes) < 0) {
         return INVALID_HANDLE_VALUE;
@@ -682,7 +682,7 @@ _winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateNamedPipe", "uII",
+    if (PySys_Audit("_winapi.CreateNamedPipe", "sII",
                     name, open_mode, pipe_mode) < 0) {
         return INVALID_HANDLE_VALUE;
     }
