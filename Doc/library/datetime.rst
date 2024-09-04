@@ -288,17 +288,17 @@ Instance attributes (read-only):
 
 .. attribute:: timedelta.days
 
-   Between ``-999999999`` and ``999999999`` inclusive.
+   Between -999,999,999 and 999,999,999 inclusive.
 
 
 .. attribute:: timedelta.seconds
 
-   Between ``0`` and ``86399`` inclusive.
+   Between 0 and 86,399 inclusive.
 
 
 .. attribute:: timedelta.microseconds
 
-   Between ``0`` and ``999999`` inclusive.
+   Between 0 and 999,999 inclusive.
 
 
 Supported operations:
