@@ -1030,14 +1030,18 @@ typedef struct {
 static PyObject *heapctype_vectorcall_vectorcall(PyObject *self,
                                                  PyObject *const *args_in,
                                                  size_t nargsf,
-                                                 PyObject *kwargs_in) {
-    if (kwargs_in || PyVectorcall_NARGS(nargsf))
+                                                 PyObject *kwargs_in)
+{
+    if (kwargs_in || PyVectorcall_NARGS(nargsf)) {
         return PyErr_Format(PyExc_IndexError, "HeapCTypeVectorcall() takes no arguments!");
+    }
 
     HeapCTypeVectorcallObject *r =
         PyObject_New(HeapCTypeVectorcallObject, (PyTypeObject *) self);
-    if (!r)
+
+    if (!r) {
         return NULL;
+    }
 
     r->value = 1;
 
@@ -1045,9 +1049,11 @@ static PyObject *heapctype_vectorcall_vectorcall(PyObject *self,
 }
 
 static PyObject *
-heapctype_vectorcall_new(PyTypeObject* type, PyObject* args, PyObject *kwargs) {
-    if (PyTuple_GET_SIZE(args) || kwargs)
+heapctype_vectorcall_new(PyTypeObject* type, PyObject* args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) || kwargs) {
         return PyErr_Format(PyExc_IndexError, "HeapCTypeVectorcall() takes no arguments!");
+    }
 
     return (PyObject *) PyObject_New(HeapCTypeVectorcallObject, type);
 }
