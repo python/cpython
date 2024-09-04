@@ -1775,6 +1775,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_initconfig_exit(self):
         self.run_embedded_interpreter("test_initconfig_exit")
 
+    def test_initconfig_module(self):
+        self.run_embedded_interpreter("test_initconfig_module")
+
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")
         # ignore output

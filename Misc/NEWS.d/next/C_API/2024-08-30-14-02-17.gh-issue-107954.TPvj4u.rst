@@ -12,6 +12,7 @@ Add functions to configure the Python initialization (:pep:`741`):
 * :c:func:`PyInitConfig_SetInt`
 * :c:func:`PyInitConfig_SetStr`
 * :c:func:`PyInitConfig_SetStrList`
+* :c:func:`PyInitConfig_AddModule`
 * :c:func:`Py_InitializeFromInitConfig`
 
 Patch by Victor Stinner.
