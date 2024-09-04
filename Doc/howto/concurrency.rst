@@ -25,8 +25,6 @@ concurrency support.  The overall focus is on the following:
 * `key concurrency primitives <concurrency-primitives_>`_
 * `high-level, app-oriented practical examples <concurrency-workload-examples_>`_
 
-.. TODO Add a summary and section about key concurrency patterns
-
 .. note::
 
    You should always make sure concurrency is the right tool for the job
