@@ -616,9 +616,6 @@ APIs:
 
    Return the length of the Unicode object, in code points.
 
-   Check that *unicode* is a Unicode object, unlike :c:func:`PyUnicode_GET_LENGTH`,
-   which performs no error checking.
-
    On error, set an exception and return ``-1``.
 
    .. versionadded:: 3.3
