@@ -3390,7 +3390,7 @@ DisableEventHook(void)
 }
 
 static int
-module_clear(PyObject *mod)
+module_clear(PyObject *Py_UNUSED(mod))
 {
     Py_CLEAR(Tkinter_TclError);
     Py_CLEAR(Tkapp_Type);
@@ -3400,7 +3400,7 @@ module_clear(PyObject *mod)
 }
 
 static int
-module_traverse(PyObject *module, visitproc visit, void *arg)
+module_traverse(PyObject *Py_UNUSED(module), visitproc visit, void *arg)
 {
     Py_VISIT(Tkinter_TclError);
     Py_VISIT(Tkapp_Type);
@@ -3412,7 +3412,7 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
 static void
 module_free(void *mod)
 {
-    module_clear((PyObject *)mod);
+    (void)module_clear((PyObject *)mod);
 }
 
 static struct PyModuleDef _tkintermodule = {
