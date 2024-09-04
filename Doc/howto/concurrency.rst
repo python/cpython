@@ -442,6 +442,45 @@ the opt-in sharing means the set of shared data to manage is
 explicitly defined (and often small) instead of covering
 *all* memory in the process.
 
+.. _python-gil:
+
+The Global Interpreter Lock (GIL)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While physical threads are the direct route to multi-core parallelism,
+Python's threads have always had an extra wrinkle that gets in the way:
+the :term:`global interpreter lock` (GIL).
+
+The :term:`!GIL` is very efficient tool for keeping the Python
+implementation simple, which is an important constraint for the project.
+In fact, it protects Python's maintainers *and* users from a large
+category of concurrency problems that one must normally face when
+threads are involved.
+
+The big tradeoff is that the bytecode interpreter, which executes your
+Python code, only runs while holding the :term:`!GIL`.  That means only
+one thread can be running Python code at a time.  Threads will take
+short turns, so none have to wait too long, but it still prevents
+any actual parallelism of CPU-bound code.
+
+That said, the Python runtime (and extension modules) can release the
+:term:`!GIL` when the thread is going to be doing something unrelated
+to Python, particularly something slow or long,
+like a blocking IO operation.
+
+There is also an ongoing effort to eliminate the :term:`!GIL`:
+:pep:`630`.  Any attempt to remove the :term:`!GIL` necessarily involves
+some slowdown to single-threaded performance and extra maintenance
+burden to the Python project and extension module maintainers.
+However, there is sufficient interest in unlocking full multi-core
+parallelism to justify the current experiment.
+
+You can also move from free-threading to isolated threads using multiple
+interpreters.  Each interpreter has has its own
+:term:`GIL <global interpreter lock>`.  Thus, If you want multi-core
+parallelism, run a different interpreter in each thread.  Their
+isolation means that each can run unblocked in that thread.
+
 Thread isolation and multiple interpreters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -485,6 +524,39 @@ aren't implicitly involved.
 Multi-processing and distributed computing provide similar isolation,
 though with some tradeoffs.
 
+.. _python-stdlib-interpreters:
+
+A stdlib module for using multiple interpreters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While use of multiple interpreters has been part of Python's C-API
+for decades, the feature hasn't been exposed to Python code through
+the stdlib.  :pep:`734` proposes changing that by adding a new
+:mod:`!interpreters` module.
+
+In the meantime, an implementation of that PEP is available for
+Python 3.13+ on PyPI: :pypi:`interpreters-pep-734`.
+
+.. _python-interpreters-overhead:
+
+Improving performance for multiple interpreters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The long effort to improve on Python's implementation of multiple
+interpreters focused on isolation and stability.  There was very little
+done to improve performance.  This has the most impact on:
+
+* how much memory each interpreter uses
+  (i.e. how many can run at the same time)
+* how long it takes to create a new interpreter
+
+It also impacts how efficiently data/objects can be passed between
+interpreters, and how effectively objects can be shared.
+
+As the work on isolation wraps up, improvements will shift to focus
+on performance and memory usage.  Thus the overhead associated with
+using multiple interpreters will drastically decrease over time.
+
 Shared resources
 ^^^^^^^^^^^^^^^^
 
@@ -527,78 +599,6 @@ was started is valuable when debugging, as is knowing where a callback
 was registered.
 
 
-
-.. _python-gil:
-
-The Global Interpreter Lock (GIL)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-While physical threads are the direct route to multi-core parallelism,
-Python's threads have always had an extra wrinkle that gets in the way:
-the :term:`global interpreter lock` (GIL).
-
-The :term:`!GIL` is very efficient tool for keeping the Python
-implementation simple, which is an important constraint for the project.
-In fact, it protects Python's maintainers *and* users from a large
-category of concurrency problems that one must normally face when
-threads are involved.
-
-The big tradeoff is that the bytecode interpreter, which executes your
-Python code, only runs while holding the :term:`!GIL`.  That means only
-one thread can be running Python code at a time.  Threads will take
-short turns, so none have to wait too long, but it still prevents
-any actual parallelism of CPU-bound code.
-
-That said, the Python runtime (and extension modules) can release the
-:term:`!GIL` when the thread is going to be doing something unrelated
-to Python, particularly something slow or long,
-like a blocking IO operation.
-
-There is also an ongoing effort to eliminate the :term:`!GIL`:
-:pep:`630`.  Any attempt to remove the :term:`!GIL` necessarily involves
-some slowdown to single-threaded performance and extra maintenance
-burden to the Python project and extension module maintainers.
-However, there is sufficient interest in unlocking full multi-core
-parallelism to justify the current experiment.
-
-You can also move from free-threading to isolated threads using multiple
-interpreters.  Each interpreter has has its own
-:term:`GIL <global interpreter lock>`.  Thus, If you want multi-core
-parallelism, run a different interpreter in each thread.  Their
-isolation means that each can run unblocked in that thread.
-
-.. _python-stdlib-interpreters:
-
-A stdlib module for using multiple interpreters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-While use of multiple interpreters has been part of Python's C-API
-for decades, the feature hasn't been exposed to Python code through
-the stdlib.  :pep:`734` proposes changing that by adding a new
-:mod:`!interpreters` module.
-
-In the meantime, an implementation of that PEP is available for
-Python 3.13+ on PyPI: :pypi:`interpreters-pep-734`.
-
-.. _python-interpreters-overhead:
-
-Improving performance for multiple interpreters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The long effort to improve on Python's implementation of multiple
-interpreters focused on isolation and stability.  There was very little
-done to improve performance.  This has the most impact on:
-
-* how much memory each interpreter uses
-  (i.e. how many can run at the same time)
-* how long it takes to create a new interpreter
-
-It also impacts how efficiently data/objects can be passed between
-interpreters, and how effectively objects can be shared.
-
-As the work on isolation wraps up, improvements will shift to focus
-on performance and memory usage.  Thus the overhead associated with
-using multiple interpreters will drastically decrease over time.
 
 Coroutines are contagious
 ^^^^^^^^^^^^^^^^^^^^^^^^^
