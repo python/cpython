@@ -1086,7 +1086,7 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
                     f.truncate()
                     f.write(data)
 
-                with self.assertRaisesRegex(tarfile.ReadError, r"method tar: ReadError\('invalid header'\)"):
+                with self.assertRaisesRegex(tarfile.ReadError, r"file could not be opened successfully"):
                     tarfile.open(tmpname, encoding="iso8859-1")
 
 
