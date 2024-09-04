@@ -824,7 +824,7 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 .. class:: EnumDict
 
@@ -842,6 +842,7 @@ Data Types
 
       Update the dictionary from the given iterable or dictionary members and more_members.
 
+   .. versionadded:: 3.13
 
 ---------------
 
