@@ -1,0 +1,2 @@
+A deadlock in ``pystate.c`` at fork is now fixed. Patch by ChuBoning based
+on previous Python 3.12 fix by Victor Stinner from GH-20596.
