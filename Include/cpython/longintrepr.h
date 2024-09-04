@@ -188,6 +188,7 @@ PyAPI_FUNC(PyLongWriter*) PyLongWriter_Create(
     void **digits,
     const PyLongLayout *layout);
 PyAPI_FUNC(PyObject*) PyLongWriter_Finish(PyLongWriter *writer);
+PyAPI_FUNC(PyObject*) PyLongWriter_Discard(PyLongWriter *writer);
 
 #ifdef __cplusplus
 }

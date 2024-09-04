@@ -6855,6 +6855,14 @@ PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digit
 }
 
 
+void PyLongWriter_Discard(PyLongWriter *writer)
+{
+    PyLongObject *obj = (PyLongObject *)writer;
+    assert(Py_REFCNT(obj) == 1);
+    Py_DECREF(obj);
+}
+
+
 PyObject* PyLongWriter_Finish(PyLongWriter *writer)
 {
     PyLongObject *obj = (PyLongObject *)writer;

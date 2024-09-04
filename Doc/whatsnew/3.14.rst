@@ -534,7 +534,8 @@ New Features
   * :c:func:`PyLong_AsDigitArray`;
   * :c:func:`PyLong_FreeDigitArray`;
   * :c:func:`PyLongWriter_Create`;
-  * :c:func:`PyLongWriter_Finish`.
+  * :c:func:`PyLongWriter_Finish`;
+  * :c:func:`PyLongWriter_Discard`.
 
   (Contributed by Victor Stinner in :gh:`102471`.)
 

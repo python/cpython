@@ -756,6 +756,11 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    On error, set an exception and return ``NULL``.
 
 
+.. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
+
+   Discard the internal object and destroy the writer instance.
+
+
 Example creating an integer from an array of digits::
 
     PyObject *
