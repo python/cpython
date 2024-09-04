@@ -381,6 +381,10 @@ Logging Flow
 The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
+.. only:: not html
+
+   .. image:: logging_flow.*
+
 .. raw:: html
    :file: logging_flow.svg
 
