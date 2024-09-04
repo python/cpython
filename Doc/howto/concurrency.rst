@@ -485,9 +485,11 @@ Shared resources
 Aside from memory, all physical threads in a process share the
 following resources:
 
+* commandline arguments ("argv")
 * env vars
-* file descriptors
-* ...
+* current working directory
+* signals, IPC, etc.
+* open I/O resources (file descriptors, sockets, etc.)
 
 Tracing execution
 ^^^^^^^^^^^^^^^^^
