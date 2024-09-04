@@ -6175,7 +6175,7 @@ static PyObject *
 int_bit_length_impl(PyObject *self)
 /*[clinic end generated code: output=fc1977c9353d6a59 input=e4eb7a587e849a32]*/
 {
-    uint64_t nbits =_PyLong_NumBits(self);
+    uint64_t nbits = _PyLong_NumBits(self);
     assert(!PyErr_Occurred());
     return PyLong_FromUInt64(nbits);
 }
