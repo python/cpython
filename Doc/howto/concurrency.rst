@@ -476,6 +476,9 @@ Note that no threads were involved.  That's because running in an
 interpreter happens relative to the current thread.  New threads
 aren't implicitly involved.
 
+Multi-processing and distributed computing provide similar isolation,
+though with some tradeoffs.
+
 Shared resources
 ^^^^^^^^^^^^^^^^
 
@@ -597,49 +600,36 @@ with the new, almost identical async one.
 You can see how that can proliferate, leading to possible extra
 maintenance/development costs.
 
+Processes consume extra resources
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-
-
-
-Multi-processing
-^^^^^^^^^^^^^^^^
-
-The stdlib :mod:`multiprocessing` module, which has been around many
-years, provides an API for using multiple processes for concurrency.
-Furthermore, processes are always isolated, so you have many of the
-same benefits of using multiple interpreters, including multi-core
-parallelism.
-
-There are some obstacles however.  First of all, using multiple
-processes has a higher overhead than operating in a single process,
-sometimes significantly higher.  This applies in just about every
-dimension of overhead.  Secondly, the :mod:`multiprocessing` module's
-API is substantially larger and more complex that what we use for
-threads and multiple interpreters.  Finally, there are some scaling
-issues with using multiple processes, related both to the performance
-overhead and to how the operating system assigns resources like
-file handles.
-
-The similarity with :class:`threading.Thread` is intentional.
-On top of that, the :mod:`multiprocessing` module provides an extensive
-API to address a variety of needs, including machinery for inter-process
-shared memory.  Also note that that API can be used for threads and
-(eventually) interpreters using different backends.
-
-Distributed
-^^^^^^^^^^^
-
-When it comes to concurrency at scale, through distributed concurrency,
-one of the best examples is :pypi:`dask`.
+When using multi-processing for concurrency, keep in mind that the
+operating system will assign a certain set of limited resources to each
+process.  For example, each process has its own PID and handle to the
+executable.  You can run only so many processes before you run out of
+these resources.  Concurrency in a single process doesn't have this
+problem, and a distributed program can work around it.
 
 .. _multiprocessing-distributed:
 
 Using multiprocessing for distributed computing
------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-...
+Not only does the :mod:`multiprocessing` module support concurrency
+with multiple local processes, it can also support a distributed model
+using remote computers.  That said, consider first looking into tools
+that have been designed specifically for distributed computing,
+like :pypi:`dask`.
 
+Resilience to crashes
+^^^^^^^^^^^^^^^^^^^^^
+
+A process can crash if it does something it shouldn't, like try to
+access memory outside what the OS has provided it.  If your program
+is running in multiple processes (incl. distributed) then you can
+more easily recover from a crash in any one process.  Recovering
+from a crash when using free-threading, multiple interpreters, or
+coroutines isn't nearly so easy.
 
 
 
