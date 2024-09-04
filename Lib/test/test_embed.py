@@ -494,6 +494,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
 
 
+def config_dev_mode(preconfig, config):
+    preconfig['allocator'] = PYMEM_ALLOCATOR_DEBUG
+    preconfig['dev_mode'] = 1
+    config['dev_mode'] = 1
+    config['warnoptions'] = ['default']
+    config['faulthandler'] = 1
+
+
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
@@ -1102,23 +1110,20 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                api=API_COMPAT)
 
     def test_init_dev_mode(self):
-        preconfig = {
-            'allocator': PYMEM_ALLOCATOR_DEBUG,
-        }
+        preconfig = {}
         config = {
             'faulthandler': True,
             'dev_mode': True,
             'warnoptions': ['default'],
         }
+        config_dev_mode(preconfig, config)
         self.check_all_configs("test_init_dev_mode", config, preconfig,
                                api=API_PYTHON)
 
     def test_preinit_parse_argv(self):
         # Pre-initialize implicitly using argv: make sure that -X dev
         # is used to configure the allocation in preinitialization
-        preconfig = {
-            'allocator': PYMEM_ALLOCATOR_DEBUG,
-        }
+        preconfig = {}
         config = {
             'argv': ['script.py'],
             'orig_argv': ['python3', '-X', 'dev', '-P', 'script.py'],
@@ -1129,6 +1134,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'xoptions': {'dev': True},
             'safe_path': True,
         }
+        config_dev_mode(preconfig, config)
         self.check_all_configs("test_preinit_parse_argv", config, preconfig,
                                api=API_PYTHON)
 
@@ -1728,16 +1734,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'ignore:::PySys_AddWarnOption2',  # PySys_AddWarnOption()
             'ignore:::PyConfig_BeforeRead',   # PyConfig.warnoptions
             'ignore:::PyConfig_AfterRead']    # PyWideStringList_Append()
-        preconfig = dict(allocator=PYMEM_ALLOCATOR_DEBUG)
+        preconfig = {}
         config = {
-            'dev_mode': 1,
-            'faulthandler': 1,
             'bytes_warning': 1,
-            'warnoptions': warnoptions,
             'orig_argv': ['python3',
                           '-Wignore:::cmdline1',
                           '-Wignore:::cmdline2'],
         }
+        config_dev_mode(preconfig, config)
+        config['warnoptions'] = warnoptions
         self.check_all_configs("test_init_warnoptions", config, preconfig,
                                api=API_PYTHON)
 
@@ -1749,6 +1754,27 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_all_configs("test_init_set_config", config,
                                api=API_ISOLATED)
+
+    def test_initconfig_api(self):
+        preconfig = {
+            'configure_locale': True,
+        }
+        config = {
+            'pycache_prefix': 'conf_pycache_prefix',
+            'xoptions': {'faulthandler': True},
+            'hash_seed': 10,
+            'use_hash_seed': True,
+        }
+        config_dev_mode(preconfig, config)
+        config['faulthandler'] = 0
+        self.check_all_configs("test_initconfig_api", config, preconfig,
+                               api=API_ISOLATED)
+
+    def test_initconfig_get_api(self):
+        self.run_embedded_interpreter("test_initconfig_get_api")
+
+    def test_initconfig_exit(self):
+        self.run_embedded_interpreter("test_initconfig_exit")
 
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")

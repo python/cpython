@@ -52,7 +52,9 @@ the setsockopt() and getsockopt() methods.
 import _socket
 from _socket import *
 
-import os, sys, io, selectors
+import io
+import os
+import sys
 from enum import IntEnum, IntFlag
 
 try:
@@ -110,102 +112,103 @@ def _intenum_converter(value, enum_klass):
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):
-    errorTab = {}
-    errorTab[6] = "Specified event object handle is invalid."
-    errorTab[8] = "Insufficient memory available."
-    errorTab[87] = "One or more parameters are invalid."
-    errorTab[995] = "Overlapped operation aborted."
-    errorTab[996] = "Overlapped I/O event object not in signaled state."
-    errorTab[997] = "Overlapped operation will complete later."
-    errorTab[10004] = "The operation was interrupted."
-    errorTab[10009] = "A bad file handle was passed."
-    errorTab[10013] = "Permission denied."
-    errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
-    errorTab[10022] = "An invalid operation was attempted."
-    errorTab[10024] = "Too many open files."
-    errorTab[10035] = "The socket operation would block."
-    errorTab[10036] = "A blocking operation is already in progress."
-    errorTab[10037] = "Operation already in progress."
-    errorTab[10038] = "Socket operation on nonsocket."
-    errorTab[10039] = "Destination address required."
-    errorTab[10040] = "Message too long."
-    errorTab[10041] = "Protocol wrong type for socket."
-    errorTab[10042] = "Bad protocol option."
-    errorTab[10043] = "Protocol not supported."
-    errorTab[10044] = "Socket type not supported."
-    errorTab[10045] = "Operation not supported."
-    errorTab[10046] = "Protocol family not supported."
-    errorTab[10047] = "Address family not supported by protocol family."
-    errorTab[10048] = "The network address is in use."
-    errorTab[10049] = "Cannot assign requested address."
-    errorTab[10050] = "Network is down."
-    errorTab[10051] = "Network is unreachable."
-    errorTab[10052] = "Network dropped connection on reset."
-    errorTab[10053] = "Software caused connection abort."
-    errorTab[10054] = "The connection has been reset."
-    errorTab[10055] = "No buffer space available."
-    errorTab[10056] = "Socket is already connected."
-    errorTab[10057] = "Socket is not connected."
-    errorTab[10058] = "The network has been shut down."
-    errorTab[10059] = "Too many references."
-    errorTab[10060] = "The operation timed out."
-    errorTab[10061] = "Connection refused."
-    errorTab[10062] = "Cannot translate name."
-    errorTab[10063] = "The name is too long."
-    errorTab[10064] = "The host is down."
-    errorTab[10065] = "The host is unreachable."
-    errorTab[10066] = "Directory not empty."
-    errorTab[10067] = "Too many processes."
-    errorTab[10068] = "User quota exceeded."
-    errorTab[10069] = "Disk quota exceeded."
-    errorTab[10070] = "Stale file handle reference."
-    errorTab[10071] = "Item is remote."
-    errorTab[10091] = "Network subsystem is unavailable."
-    errorTab[10092] = "Winsock.dll version out of range."
-    errorTab[10093] = "Successful WSAStartup not yet performed."
-    errorTab[10101] = "Graceful shutdown in progress."
-    errorTab[10102] = "No more results from WSALookupServiceNext."
-    errorTab[10103] = "Call has been canceled."
-    errorTab[10104] = "Procedure call table is invalid."
-    errorTab[10105] = "Service provider is invalid."
-    errorTab[10106] = "Service provider failed to initialize."
-    errorTab[10107] = "System call failure."
-    errorTab[10108] = "Service not found."
-    errorTab[10109] = "Class type not found."
-    errorTab[10110] = "No more results from WSALookupServiceNext."
-    errorTab[10111] = "Call was canceled."
-    errorTab[10112] = "Database query was refused."
-    errorTab[11001] = "Host not found."
-    errorTab[11002] = "Nonauthoritative host not found."
-    errorTab[11003] = "This is a nonrecoverable error."
-    errorTab[11004] = "Valid name, no data record requested type."
-    errorTab[11005] = "QoS receivers."
-    errorTab[11006] = "QoS senders."
-    errorTab[11007] = "No QoS senders."
-    errorTab[11008] = "QoS no receivers."
-    errorTab[11009] = "QoS request confirmed."
-    errorTab[11010] = "QoS admission error."
-    errorTab[11011] = "QoS policy failure."
-    errorTab[11012] = "QoS bad style."
-    errorTab[11013] = "QoS bad object."
-    errorTab[11014] = "QoS traffic control error."
-    errorTab[11015] = "QoS generic error."
-    errorTab[11016] = "QoS service type error."
-    errorTab[11017] = "QoS flowspec error."
-    errorTab[11018] = "Invalid QoS provider buffer."
-    errorTab[11019] = "Invalid QoS filter style."
-    errorTab[11020] = "Invalid QoS filter style."
-    errorTab[11021] = "Incorrect QoS filter count."
-    errorTab[11022] = "Invalid QoS object length."
-    errorTab[11023] = "Incorrect QoS flow count."
-    errorTab[11024] = "Unrecognized QoS object."
-    errorTab[11025] = "Invalid QoS policy object."
-    errorTab[11026] = "Invalid QoS flow descriptor."
-    errorTab[11027] = "Invalid QoS provider-specific flowspec."
-    errorTab[11028] = "Invalid QoS provider-specific filterspec."
-    errorTab[11029] = "Invalid QoS shape discard mode object."
-    errorTab[11030] = "Invalid QoS shaping rate object."
-    errorTab[11031] = "Reserved policy QoS element type."
+    errorTab = {
+        6: "Specified event object handle is invalid.",
+        8: "Insufficient memory available.",
+        87: "One or more parameters are invalid.",
+        995: "Overlapped operation aborted.",
+        996: "Overlapped I/O event object not in signaled state.",
+        997: "Overlapped operation will complete later.",
+        10004: "The operation was interrupted.",
+        10009: "A bad file handle was passed.",
+        10013: "Permission denied.",
+        10014: "A fault occurred on the network??",
+        10022: "An invalid operation was attempted.",
+        10024: "Too many open files.",
+        10035: "The socket operation would block.",
+        10036: "A blocking operation is already in progress.",
+        10037: "Operation already in progress.",
+        10038: "Socket operation on nonsocket.",
+        10039: "Destination address required.",
+        10040: "Message too long.",
+        10041: "Protocol wrong type for socket.",
+        10042: "Bad protocol option.",
+        10043: "Protocol not supported.",
+        10044: "Socket type not supported.",
+        10045: "Operation not supported.",
+        10046: "Protocol family not supported.",
+        10047: "Address family not supported by protocol family.",
+        10048: "The network address is in use.",
+        10049: "Cannot assign requested address.",
+        10050: "Network is down.",
+        10051: "Network is unreachable.",
+        10052: "Network dropped connection on reset.",
+        10053: "Software caused connection abort.",
+        10054: "The connection has been reset.",
+        10055: "No buffer space available.",
+        10056: "Socket is already connected.",
+        10057: "Socket is not connected.",
+        10058: "The network has been shut down.",
+        10059: "Too many references.",
+        10060: "The operation timed out.",
+        10061: "Connection refused.",
+        10062: "Cannot translate name.",
+        10063: "The name is too long.",
+        10064: "The host is down.",
+        10065: "The host is unreachable.",
+        10066: "Directory not empty.",
+        10067: "Too many processes.",
+        10068: "User quota exceeded.",
+        10069: "Disk quota exceeded.",
+        10070: "Stale file handle reference.",
+        10071: "Item is remote.",
+        10091: "Network subsystem is unavailable.",
+        10092: "Winsock.dll version out of range.",
+        10093: "Successful WSAStartup not yet performed.",
+        10101: "Graceful shutdown in progress.",
+        10102: "No more results from WSALookupServiceNext.",
+        10103: "Call has been canceled.",
+        10104: "Procedure call table is invalid.",
+        10105: "Service provider is invalid.",
+        10106: "Service provider failed to initialize.",
+        10107: "System call failure.",
+        10108: "Service not found.",
+        10109: "Class type not found.",
+        10110: "No more results from WSALookupServiceNext.",
+        10111: "Call was canceled.",
+        10112: "Database query was refused.",
+        11001: "Host not found.",
+        11002: "Nonauthoritative host not found.",
+        11003: "This is a nonrecoverable error.",
+        11004: "Valid name, no data record requested type.",
+        11005: "QoS receivers.",
+        11006: "QoS senders.",
+        11007: "No QoS senders.",
+        11008: "QoS no receivers.",
+        11009: "QoS request confirmed.",
+        11010: "QoS admission error.",
+        11011: "QoS policy failure.",
+        11012: "QoS bad style.",
+        11013: "QoS bad object.",
+        11014: "QoS traffic control error.",
+        11015: "QoS generic error.",
+        11016: "QoS service type error.",
+        11017: "QoS flowspec error.",
+        11018: "Invalid QoS provider buffer.",
+        11019: "Invalid QoS filter style.",
+        11020: "Invalid QoS filter style.",
+        11021: "Incorrect QoS filter count.",
+        11022: "Invalid QoS object length.",
+        11023: "Incorrect QoS flow count.",
+        11024: "Unrecognized QoS object.",
+        11025: "Invalid QoS policy object.",
+        11026: "Invalid QoS flow descriptor.",
+        11027: "Invalid QoS provider-specific flowspec.",
+        11028: "Invalid QoS provider-specific filterspec.",
+        11029: "Invalid QoS shape discard mode object.",
+        11030: "Invalid QoS shaping rate object.",
+        11031: "Reserved policy QoS element type."
+    }
     __all__.append("errorTab")
 
 
@@ -348,6 +351,9 @@ class socket(_socket.socket):
     if hasattr(os, 'sendfile'):
 
         def _sendfile_use_sendfile(self, file, offset=0, count=None):
+            # Lazy import to improve module import time
+            import selectors
+
             self._check_sendfile_params(file, offset, count)
             sockno = self.fileno()
             try:
@@ -549,20 +555,18 @@ def fromfd(fd, family, type, proto=0):
     return socket(family, type, proto, nfd)
 
 if hasattr(_socket.socket, "sendmsg"):
-    import array
-
     def send_fds(sock, buffers, fds, flags=0, address=None):
         """ send_fds(sock, buffers, fds[, flags[, address]]) -> integer
 
         Send the list of file descriptors fds over an AF_UNIX socket.
         """
+        import array
+
         return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
             _socket.SCM_RIGHTS, array.array("i", fds))])
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
-    import array
-
     def recv_fds(sock, bufsize, maxfds, flags=0):
         """ recv_fds(sock, bufsize, maxfds[, flags]) -> (data, list of file
         descriptors, msg_flags, address)
@@ -570,6 +574,8 @@ if hasattr(_socket.socket, "recvmsg"):
         Receive up to maxfds file descriptors returning the message
         data and a list containing the descriptors.
         """
+        import array
+
         # Array of ints
         fds = array.array("i")
         msg, ancdata, flags, addr = sock.recvmsg(bufsize,
