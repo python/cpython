@@ -397,6 +397,7 @@ class AbstractBuilder(object):
 class BuildOpenSSL(AbstractBuilder):
     library = "OpenSSL"
     url_templates = (
+        "https://github.com/openssl/openssl/releases/download/openssl-{v}/openssl-{v}.tar.gz",
         "https://www.openssl.org/source/openssl-{v}.tar.gz",
         "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz"
     )
@@ -438,6 +439,7 @@ class BuildOpenSSL(AbstractBuilder):
             # OpenSSL 3.0.0 -> /old/3.0/
             parsed = parsed[:2]
         return ".".join(str(i) for i in parsed)
+
 
 class BuildLibreSSL(AbstractBuilder):
     library = "LibreSSL"
