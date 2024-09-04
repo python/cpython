@@ -491,6 +491,8 @@ following resources:
 * signals, IPC, etc.
 * open I/O resources (file descriptors, sockets, etc.)
 
+When relevant, these must be managed in a thread-safe way.
+
 Tracing execution
 ^^^^^^^^^^^^^^^^^
 
@@ -715,9 +717,11 @@ it's crucial that you understand the problem well.
 How can concurrency help?
 -------------------------
 
+.. TODO finish
+
 Here are the benefits concurrency can bring to the table:
 
-* 
+* ...
 
 
 Primarily, concurrency can be helpful by making your program faster
@@ -740,7 +744,9 @@ Other possible benefits:
 How can concurrency hurt?
 -------------------------
 
-...
+.. TODO finish
+
+TBD
 
 The main challenge when using concurrency is the (potential) extra
 complexity.  This complexity comes from the effect of multiple logical
@@ -753,100 +759,11 @@ changes somewhere else).
 .. _concurrency-identify-tasks:
 
 Identifying the logical tasks in your program
-------------------------------------------------
+---------------------------------------------
 
-...
+.. TODO finish
 
-.. _concurrency-characteristics:
-
-The concurrency characteristics of your program
-------------------------------------------------
-
-...
-
-.. _concurrency-pick-a-model:
-
-Picking a concurrency model
----------------------------
-
-...
-
-As mentioned earlier, each concurrency model has its own set of tradeoffs.
-Free-threading probably has the most notoriety and the most examples,
-but is also has the most pitfalls (see `Critical caveats`_ above).
-Isolated threads have few of those pitfalls but are less familiar
-and at least a little less efficient.
-Multiprocessing and distributed are likewise isolated, but less
-efficient, which can have a larger negative impact at smaller scales.
-Async can be straightforward, but may cascade throughout a code base
-and doesn't necessarily give you parallelism.
-
-free-threading:
-
-* main value: efficient multi-core
-* main costs: races & conceptual overhead
-
-* minimal conceptual indirection: closely tied to low-level physical threads
-* the most direct route to taking advantage of multi-core parallelism
-
-
-A high-level look:
-
-.. list-table::
-   :header-rows: 1
-   :class: borderless vert-aligned
-   :align: left
-
-   * - model
-     - pros
-     - cons
-   * - free threading
-     - * very light-weight and efficient
-       * wide-spread
-       * can enable multi-core parallelism (`caveat: GIL <python-gil_>`_)
-     - * all memory is shared, subject to races
-       * some IO may have races (e.g. writing to stdout)
-       * can be hard for humans to follow what's happening in different
-         threads at any given point
-   * - multiple interpreters (isolated threads)
-     - * isolation eliminates nearly all races, by default
-         (sharing is strictly opt-in)
-       * synchronization is built in to cross-interpreter interaction
-       * enables full multi-core parallelism of all Python code
-     - * unfamiliar to many
-       * less efficient than threads
-       * (currently) limited in what data can be shared between
-         interpreters
-   * - coroutines (async/await)
-     - * not subject to races
-       * increasingly familiar to many; popular in newer languages
-       * has a long history in Python (e.g. ``twisted``)
-     - * async and non-async functions don't mix well,
-         potentially leading to duplication of code
-       * switching to async can require substantial cascading code churn
-       * callbacks can make it difficult to follow program logic,
-         making debugging harder
-       * does not enable multi-core parallelism
-   * - multiprocessing
-     - * isolated (no races)
-       * enables full multi-core parallelism of all Python code
-     - * substantially less efficient than using a single process
-       * can lead to exhaustion of system resources
-         (e.g. file handles, PIDs)
-       * API can be hard to use
-   * - distributed
-     - * isolated (no races)
-       * fully parallel
-       * facilitates massive scaling
-     - * not necessarily a good fit for small-scale applications
-       * often requires configuration
-
-
-
-
-* are there libraries that can take care of the concurrency parts?
-
-
+TBD
 
 At its most fundamental, concurrency means doing multiple things at once,
 from a strictly *logical* viewpoint.
@@ -867,26 +784,14 @@ One important observation is that most concurrent programs
 can be represented instead as a single task, with the code of the
 concurrent tasks merged into a single sequence.
 
+.. _concurrency-characteristics:
 
-What problems can concurrency help solve?
------------------------------------------
+The concurrency characteristics of your program
+-----------------------------------------------
 
+.. TODO finish
 
-synchronization
----------------
-
-Additionally, concurrency often involves some degree of synchronization
-between the logical threads.  At the most basic conceptual level:
-one thread may wait for another to finish.
-
-shared resources
-----------------
-
-Aside from code running at the same time, concurrency typically
-also involves some amount of resources shared between the concurrent
-tasks.  That may include memory, files, and sockets.
-
-
+TBD
 
 For a given workload, here are some characteristics that will help you
 understand the problem and, potentially, which concurrency model would
@@ -981,13 +886,104 @@ concurrency can be helpful:
 * scaling
 * handle asynchronous events
 
+.. _concurrency-pick-a-model:
+
+Picking a concurrency model
+---------------------------
+
+.. TODO finish
+
+TBD
+
+As mentioned earlier, each concurrency model has its own set of tradeoffs.
+Free-threading probably has the most notoriety and the most examples,
+but is also has the most pitfalls (see `Critical caveats`_ above).
+Isolated threads have few of those pitfalls but are less familiar
+and at least a little less efficient.
+Multiprocessing and distributed are likewise isolated, but less
+efficient, which can have a larger negative impact at smaller scales.
+Async can be straightforward, but may cascade throughout a code base
+and doesn't necessarily give you parallelism.
+
+free-threading:
+
+* main value: efficient multi-core
+* main costs: races & conceptual overhead
+
+* minimal conceptual indirection: closely tied to low-level physical threads
+* the most direct route to taking advantage of multi-core parallelism
+
+
+A high-level look:
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - model
+     - pros
+     - cons
+   * - free threading
+     - * very light-weight and efficient
+       * wide-spread
+       * can enable multi-core parallelism (`caveat: GIL <python-gil_>`_)
+     - * all memory is shared, subject to races
+       * some IO may have races (e.g. writing to stdout)
+       * can be hard for humans to follow what's happening in different
+         threads at any given point
+   * - multiple interpreters (isolated threads)
+     - * isolation eliminates nearly all races, by default
+         (sharing is strictly opt-in)
+       * synchronization is built in to cross-interpreter interaction
+       * enables full multi-core parallelism of all Python code
+     - * unfamiliar to many
+       * less efficient than threads
+       * (currently) limited in what data can be shared between
+         interpreters
+   * - coroutines (async/await)
+     - * not subject to races
+       * increasingly familiar to many; popular in newer languages
+       * has a long history in Python (e.g. ``twisted``)
+     - * async and non-async functions don't mix well,
+         potentially leading to duplication of code
+       * switching to async can require substantial cascading code churn
+       * callbacks can make it difficult to follow program logic,
+         making debugging harder
+       * does not enable multi-core parallelism
+   * - multiprocessing
+     - * isolated (no races)
+       * enables full multi-core parallelism of all Python code
+     - * substantially less efficient than using a single process
+       * can lead to exhaustion of system resources
+         (e.g. file handles, PIDs)
+       * API can be hard to use
+   * - distributed
+     - * isolated (no races)
+       * fully parallel
+       * facilitates massive scaling
+     - * not necessarily a good fit for small-scale applications
+       * often requires configuration
+
+Other considerations
+--------------------
+
+.. TODO finish
+
+TBD
+
+* are there libraries that can take care of the concurrency parts?
+* ...
+
 
 .. _concurrency-primitives:
 
 Python Concurrency Primitives
 =============================
 
-...
+.. TODO finish
+
+TBD
 
 Dealing with data races is often managed using locks (AKA mutexes),
 at a low level, and thread-safe types and APIs at a high level.
@@ -998,6 +994,19 @@ to an extent.  On top of that, there are tools that can help identify
 potential races via static analysis.  Unfortunately, none of these aids
 is foolproof and the risk of hitting a race is always looming.
 
+synchronization
+---------------
+
+Additionally, concurrency often involves some degree of synchronization
+between the logical threads.  At the most basic conceptual level:
+one thread may wait for another to finish.
+
+shared resources
+----------------
+
+Aside from code running at the same time, concurrency typically
+also involves some amount of resources shared between the concurrent
+tasks.  That may include memory, files, and sockets.
 
 .. _concurrency-workload-examples:
 
