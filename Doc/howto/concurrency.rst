@@ -13,7 +13,7 @@ Python supports the following concurrency models directly:
 
 * **free-threading** (stdlib, C-API)
 * **isolated threads**, *AKA CSP/actor model* (stdlib\*, C-API)
-* **coroutines, AKA** *async/await* (language, stdlib, C-API)
+* **coroutines**, *AKA async/await* (language, stdlib, C-API)
 * **multi-processing** (stdlib)
 * **distributed**, *e.g. SMP* (stdlib)
 
@@ -51,8 +51,9 @@ concurrency support.  The overall focus is on the following:
    community-maintained PyPI packages.  One well-known example is
    :pypi:`dask`, which supports "distributed" computing.
 
-Glossary
---------
+
+Quick reference
+===============
 
 We'll be using the following terms and ideas throughout:
 
@@ -78,9 +79,6 @@ concurrency (multitasking)
 parallelism (multi-core)
    running a program's multiple logical threads on multiple physical
    threads (CPU cores)
-
-Quick reference
----------------
 
 .. raw:: html
 
