@@ -149,7 +149,7 @@ Python supports directly:
    :align: left
 
    * - model
-     - Python API
+     - Python stdlib
      - description
    * - free threading
      - :mod:`threading`
@@ -167,8 +167,7 @@ Python supports directly:
      - :mod:`multiprocessing`
      - using multiple isolated processes
    * - distributed
-     - | :pypi:`dask`
-       | (`multiprocessing <multiprocessing-distributed_>`_)
+     - `multiprocessing <multiprocessing-distributed_>`_
      - multiprocessing across multiple computers
 
 There are tradeoffs to each, whether in performance or complexity.
@@ -401,11 +400,10 @@ concurrency models in Python.
 
 .. _concurrency-races:
 
-Data races, AKA non-deterministic scheduling (free-threading)
+Data races and non-deterministic scheduling (free-threading)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Python threads are light wrappers around physical threads
-and thus have the same caveats.  The principal one is that each thread
+The principal caveat for physical threads is that each thread
 shares the *full* memory of the process with all its other threads.
 Combined with their non-deterministic scheduling (and parallel
 execution), threads expose programs to a significant risk of races.
@@ -416,10 +414,11 @@ scheduling of threads means it is both hard to reproduce races and to
 track down where a race happened.  These qualities make these bugs
 especially frustrating and worth diligently avoiding.
 
-The majority of data in a Python program is mutable and *all* of the
-program's data is subject to potential modification by any thread
-at any moment.  This requires extra effort, to synchronize around
-reads and writes.  Furthermore, given the maximally-broad scope
+Python threads are light wrappers around physical threads and thus have
+the same caveats.  The majority of data in a Python program is mutable
+and *all* of the program's data is subject to potential modification
+by any thread at any moment.  This requires extra effort, to synchronize
+around reads and writes.  Furthermore, given the maximally-broad scope
 of the data involved, it's difficult to be sure all possible races
 have been dealt with, especially as a code base changes over time.
 
