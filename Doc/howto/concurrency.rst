@@ -232,7 +232,7 @@ overhead details
    :class: borderless vert-aligned
    :align: left
 
-   * - model
+   * -
      - memory
      - startup
      - cross-task
