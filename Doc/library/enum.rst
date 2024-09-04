@@ -527,7 +527,7 @@ Data Types
 
    ``Flag`` is the same as :class:`Enum`, but its members support the bitwise
    operators ``&`` (*AND*), ``|`` (*OR*), ``^`` (*XOR*), and ``~`` (*INVERT*);
-   the results of those operators are members of the enumeration.
+   the results of those operations are (aliases of) members of the enumeration.
 
    .. method:: __contains__(self, value)
 
@@ -569,6 +569,8 @@ Data Types
          1
          >>> len(white)
          3
+
+      .. versionadded:: 3.11
 
    .. method:: __bool__(self):
 
@@ -629,7 +631,7 @@ Data Types
       of two, starting with ``1``.
 
    .. versionchanged:: 3.11 The *repr()* of zero-valued flags has changed.  It
-      is now::
+      is now:
 
          >>> Color(0) # doctest: +SKIP
          <Color: 0>
@@ -661,7 +663,7 @@ Data Types
    * the result is a valid *IntFlag*: an *IntFlag* is returned
    * the result is not a valid *IntFlag*: the result depends on the :class:`FlagBoundary` setting
 
-   The :func:`repr()` of unnamed zero-valued flags has changed.  It is now:
+   The :func:`repr` of unnamed zero-valued flags has changed.  It is now:
 
       >>> Color(0)
       <Color: 0>

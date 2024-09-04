@@ -11,12 +11,16 @@ from setuptools import setup, Extension
 
 
 SOURCE = 'extension.c'
+
 if not support.MS_WINDOWS:
     # C compiler flags for GCC and clang
     CFLAGS = [
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+
+        # gh-120593: Check the 'const' qualifier
+        '-Wcast-qual',
     ]
     if not support.Py_GIL_DISABLED:
         CFLAGS.append(
@@ -25,8 +29,11 @@ if not support.MS_WINDOWS:
             '-Werror=declaration-after-statement',
         )
 else:
-    # Don't pass any compiler flag to MSVC
-    CFLAGS = []
+    # MSVC compiler flags
+    CFLAGS = [
+        # Treat all compiler warnings as compiler errors
+        '/WX',
+    ]
 
 
 def main():

@@ -5,7 +5,7 @@
 """Quoted-printable content transfer encoding per RFCs 2045-2047.
 
 This module handles the content transfer encoding method defined in RFC 2045
-to encode US ASCII-like 8-bit data called `quoted-printable'.  It is used to
+to encode US ASCII-like 8-bit data called 'quoted-printable'.  It is used to
 safely encode text that is in a character set similar to the 7-bit US ASCII
 character set, but that includes some 8-bit characters that are normally not
 allowed in email bodies or headers.
@@ -17,7 +17,7 @@ This module provides an interface to encode and decode both headers and bodies
 with quoted-printable encoding.
 
 RFC 2045 defines a method for including character set information in an
-`encoded-word' in a header.  This method is commonly used for 8-bit real names
+'encoded-word' in a header.  This method is commonly used for 8-bit real names
 in To:/From:/Cc: etc. fields, as well as Subject: lines.
 
 This module does not do the line wrapping or end-of-line character
@@ -127,7 +127,7 @@ def quote(c):
 def header_encode(header_bytes, charset='iso-8859-1'):
     """Encode a single header line with quoted-printable (like) encoding.
 
-    Defined in RFC 2045, this `Q' encoding is similar to quoted-printable, but
+    Defined in RFC 2045, this 'Q' encoding is similar to quoted-printable, but
     used specifically for email header fields to allow charsets with mostly 7
     bit characters (and some 8 bit) to remain more or less readable in non-RFC
     2045 aware mail clients.
@@ -290,7 +290,7 @@ def _unquote_match(match):
 
 # Header decoding is done a bit differently
 def header_decode(s):
-    """Decode a string encoded with RFC 2045 MIME header `Q' encoding.
+    """Decode a string encoded with RFC 2045 MIME header 'Q' encoding.
 
     This function does not parse a full MIME header value encoded with
     quoted-printable (like =?iso-8859-1?q?Hello_World?=) -- please use

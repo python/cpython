@@ -42,6 +42,14 @@ The module defines the following functions:
    :term:`file <file object>` or :term:`file-like object` to
    receive the output.
 
+   .. note::
+
+      The meaning of the *limit* parameter is different than the meaning
+      of :const:`sys.tracebacklimit`. A negative *limit* value corresponds to
+      a positive value of :const:`!sys.tracebacklimit`, whereas the behaviour of
+      a positive *limit* value cannot be achieved with
+      :const:`!sys.tracebacklimit`.
+
    .. versionchanged:: 3.5
        Added negative *limit* support.
 
@@ -473,7 +481,7 @@ in a :ref:`traceback <traceback-objects>`.
    attribute accessed (which also happens when casting it to a :class:`tuple`).
    :attr:`~FrameSummary.line` may be directly provided, and will prevent line
    lookups happening at all. *locals* is an optional local variable
-   dictionary, and if supplied the variable representations are stored in the
+   mapping, and if supplied the variable representations are stored in the
    summary for later display.
 
    :class:`!FrameSummary` instances have the following attributes:

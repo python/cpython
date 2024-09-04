@@ -69,9 +69,6 @@ PACKAGE_TO_FILES = {
             "Lib/ctypes/macholib/fetch_macholib.bat",
         ],
     ),
-    "libb2": PackageFiles(
-        include=["Modules/_blake2/impl/**"]
-    ),
     "hacl-star": PackageFiles(
         include=["Modules/_hacl/**"],
         exclude=[
@@ -96,6 +93,19 @@ def error_if(value: bool, error_message: str) -> None:
         sys.exit(1)
 
 
+def is_root_directory_git_index() -> bool:
+    """Checks if the root directory is a git index"""
+    try:
+        subprocess.check_call(
+            ["git", "-C", str(CPYTHON_ROOT_DIR), "rev-parse"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
 def filter_gitignored_paths(paths: list[str]) -> list[str]:
     """
     Filter out paths excluded by the gitignore file.
@@ -108,6 +118,10 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
 
         '.gitignore:9:*.a    Tools/lib.a'
     """
+    # No paths means no filtering to be done.
+    if not paths:
+        return []
+
     # Filter out files in gitignore.
     # Non-matching files show up as '::<whitespace><path>'
     git_check_ignore_proc = subprocess.run(
@@ -305,7 +319,21 @@ def create_externals_sbom() -> None:
 
     # Set the versionInfo and downloadLocation fields for all packages.
     for package in sbom_data["packages"]:
-        package["versionInfo"] = externals_name_to_version[package["name"]]
+        package_version = externals_name_to_version[package["name"]]
+
+        # Update the version information in all the locations.
+        package["versionInfo"] = package_version
+        for external_ref in package["externalRefs"]:
+            if external_ref["referenceType"] != "cpe23Type":
+                continue
+            # Version is the fifth field of a CPE.
+            cpe23ref = external_ref["referenceLocator"]
+            external_ref["referenceLocator"] = re.sub(
+                r"\A(cpe(?::[^:]+){4}):[^:]+:",
+                fr"\1:{package_version}:",
+                cpe23ref
+            )
+
         download_location = (
             f"https://github.com/python/cpython-source-deps/archive/refs/tags/{externals_name_to_git_tag[package['name']]}.tar.gz"
         )
@@ -323,6 +351,11 @@ def create_externals_sbom() -> None:
 
 
 def main() -> None:
+    # Don't regenerate the SBOM if we're not a git repository.
+    if not is_root_directory_git_index():
+        print("Skipping SBOM generation due to not being a git repository")
+        return
+
     create_source_sbom()
     create_externals_sbom()
 

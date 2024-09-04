@@ -53,6 +53,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'abc'), b'abc')
         self.assertEqual(fromstringandsize(b'abc', 2), b'ab')
         self.assertEqual(fromstringandsize(b'abc\0def'), b'abc\0def')
+        self.assertEqual(fromstringandsize(b'a'), b'a')
+        self.assertEqual(fromstringandsize(b'a', 1), b'a')
         self.assertEqual(fromstringandsize(b'', 0), b'')
         self.assertEqual(fromstringandsize(NULL, 0), b'')
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
@@ -246,6 +248,46 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES resize(NULL, 0, False)
         # CRASHES resize(NULL, 3, False)
+
+    def test_join(self):
+        """Test PyBytes_Join()"""
+        bytes_join = _testcapi.bytes_join
+
+        self.assertEqual(bytes_join(b'', []), b'')
+        self.assertEqual(bytes_join(b'sep', []), b'')
+
+        self.assertEqual(bytes_join(b'', [b'a', b'b', b'c']), b'abc')
+        self.assertEqual(bytes_join(b'-', [b'a', b'b', b'c']), b'a-b-c')
+        self.assertEqual(bytes_join(b' - ', [b'a', b'b', b'c']), b'a - b - c')
+        self.assertEqual(bytes_join(b'-', [bytearray(b'abc'),
+                                           memoryview(b'def')]),
+                         b'abc-def')
+
+        self.assertEqual(bytes_join(b'-', iter([b'a', b'b', b'c'])), b'a-b-c')
+
+        # invalid 'sep' argument
+        with self.assertRaises(TypeError):
+            bytes_join(bytearray(b'sep'), [])
+        with self.assertRaises(TypeError):
+            bytes_join(memoryview(b'sep'), [])
+        with self.assertRaises(TypeError):
+            bytes_join('', [])  # empty Unicode string
+        with self.assertRaises(TypeError):
+            bytes_join('unicode', [])
+        with self.assertRaises(TypeError):
+            bytes_join(123, [])
+        with self.assertRaises(SystemError):
+            self.assertEqual(bytes_join(NULL, [b'a', b'b', b'c']), b'abc')
+
+        # invalid 'iterable' argument
+        with self.assertRaises(TypeError):
+            bytes_join(b'', [b'bytes', 'unicode'])
+        with self.assertRaises(TypeError):
+            bytes_join(b'', [b'bytes', 123])
+        with self.assertRaises(TypeError):
+            bytes_join(b'', 123)
+        with self.assertRaises(SystemError):
+            bytes_join(b'', NULL)
 
 
 if __name__ == "__main__":

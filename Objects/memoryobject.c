@@ -268,7 +268,7 @@ PyTypeObject _PyManagedBuffer_Type = {
 /* Assumptions: ndim >= 1. The macro tests for a corner case that should
    perhaps be explicitly forbidden in the PEP. */
 #define HAVE_SUBOFFSETS_IN_LAST_DIM(view) \
-    (view->suboffsets && view->suboffsets[dest->ndim-1] >= 0)
+    (view->suboffsets && view->suboffsets[view->ndim-1] >= 0)
 
 static inline int
 last_dim_is_contiguous(const Py_buffer *dest, const Py_buffer *src)
@@ -3087,7 +3087,7 @@ memory_hash(PyObject *_self)
         }
 
         /* Can't fail */
-        self->hash = _Py_HashBytes(mem, view->len);
+        self->hash = Py_HashBuffer(mem, view->len);
 
         if (mem != view->buf)
             PyMem_Free(mem);

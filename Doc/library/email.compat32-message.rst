@@ -7,6 +7,7 @@
    :synopsis: The base class representing email messages in a fashion
               backward compatible with Python 3.2
    :noindex:
+   :no-index:
 
 
 The :class:`Message` class is very similar to the
@@ -104,7 +105,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __str__()
 
-      Equivalent to :meth:`.as_string()`.  Allows ``str(msg)`` to produce a
+      Equivalent to :meth:`.as_string`.  Allows ``str(msg)`` to produce a
       string containing the formatted message.
 
 
@@ -142,7 +143,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the formatted message.
 
       .. versionadded:: 3.4

@@ -25,6 +25,8 @@ def package_to_anchor(func):
     >>> files('a', 'b')
     Traceback (most recent call last):
     TypeError: files() takes from 0 to 1 positional arguments but 2 were given
+
+    Remove this compatibility in Python 3.14.
     """
     undefined = object()
 
@@ -180,7 +182,7 @@ def _(path):
 @contextlib.contextmanager
 def _temp_path(dir: tempfile.TemporaryDirectory):
     """
-    Wrap tempfile.TemporyDirectory to return a pathlib object.
+    Wrap tempfile.TemporaryDirectory to return a pathlib object.
     """
     with dir as result:
         yield pathlib.Path(result)

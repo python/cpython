@@ -853,7 +853,7 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
     }
 
     wchar_t filename[MAXLEN];
-    if (wcsncpy_s(filename, MAXLEN, command, lastDot)) {
+    if (wcsncpy_s(filename, MAXLEN, command, commandLength)) {
         return RC_BAD_VIRTUAL_PATH;
     }
 
