@@ -481,7 +481,9 @@ class TestTurtleScreen(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             parent = os.path.join(tmpdir, "unknown_parent")
-            msg = f"the directory '{parent}' does not exist. Cannot save to it"
+            msg = (
+                f"the directory '{parent}' does not exist. Cannot save to it"
+            ).replace("\\", "\\"*2)  # Escape backslashes in Windows paths
 
             with self.assertRaisesRegex(FileNotFoundError, msg):
                 turtle.TurtleScreen.save(screen, os.path.join(parent, "a.ps"))
