@@ -469,7 +469,7 @@ class TestTurtleScreen(unittest.TestCase):
     def test_save_raises_if_wrong_extension(self) -> None:
         screen = unittest.mock.Mock()
 
-        msg = "unknown file extension: '.png', must be one of {'.ps', '.eps'}"
+        msg = "Unknown file extension: '.png', must be one of {'.ps', '.eps'}"
         with (
             tempfile.TemporaryDirectory() as tmpdir,
             self.assertRaisesRegex(ValueError, msg)
@@ -482,7 +482,7 @@ class TestTurtleScreen(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             parent = os.path.join(tmpdir, "unknown_parent")
             msg = (
-                f"the directory '{parent}' does not exist. Cannot save to it"
+                f"The directory '{parent}' does not exist. Cannot save to it"
             ).replace("\\", "\\"*2)  # Escape backslashes in Windows paths
 
             with self.assertRaisesRegex(FileNotFoundError, msg):
@@ -497,7 +497,7 @@ class TestTurtleScreen(unittest.TestCase):
                 f.write("some text")
 
             msg = (
-                f"the file '{file_path}' already exists. To overwrite it use"
+                f"The file '{file_path}' already exists. To overwrite it use"
                 " the 'overwrite=True' argument of the save function."
             ).replace("\\", "\\"*2)  # Escape backslashes in Windows paths
             with self.assertRaisesRegex(FileExistsError, msg):

@@ -2285,7 +2285,7 @@ Methods specific to Screen, not inherited from TurtleScreen
 
       >>> screen.save("my_drawing.ps")
       >>> screen.save("my_drawing.ps", overwrite=True)
-      
+
    .. versionadded:: 3.14
 
 .. function:: setup(width=_CFG["width"], height=_CFG["height"], startx=_CFG["leftright"], starty=_CFG["topbottom"])
