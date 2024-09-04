@@ -4806,15 +4806,16 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
 
 
 class TCPCloserTest(ThreadedTCPSocketTest):
+    def __init__(self, methodName='runTest'):
+        super().__init__(methodName)
 
     def testClose(self):
         conn, addr = self.serv.accept()
-        conn.close()
 
         sd = self.cli
-        read, write, err = select.select([sd], [], [], 1.0)
-        self.assertEqual(read, [sd])
-        self.assertEqual(sd.recv(1), b'')
+        read, write, err = select.select([conn], [], [], 1.0)
+        self.assertEqual(read, [conn])
+        self.assertEqual(conn.recv(1), b'')
 
         # Calling close() many times should be safe.
         conn.close()
