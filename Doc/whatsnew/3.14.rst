@@ -75,8 +75,8 @@ New Features
 Other Language Changes
 ======================
 
-* :pep:`618`: The :func:`map` function now has an optional ``strict`` flag, used
-  to require that all the iterables have an equal length.
+* The :func:`map` function now has an optional ``strict`` flag like
+  :func:`zip`, used to require that all the iterables have an equal length.
   (Contributed by Wannes Boeykens in :gh:`119793`.)
 
 New Modules
