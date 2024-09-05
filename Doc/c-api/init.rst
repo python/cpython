@@ -921,8 +921,8 @@ interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but switching between interpreters via the
 ``PyGILState_*`` API is unsupported. On the other hand, *creating*
-sub-interpreters (whether they have a per-interprter GIL or not in
-the sense of :pep:`684`) still require to hold the :term:`GIL`.
+sub-interpreters (whether they have a per-interpreter :term:`GIL` or not in
+the sense of :pep:`684`) still require to hold the GIL.
 
 
 .. _fork-and-threads:
