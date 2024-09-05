@@ -1885,10 +1885,10 @@ are always available.  They are listed here in alphabetical order.
    ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
    then :func:`super` searches ``C -> A -> object``.
 
-   The :attr:`~class.__mro__` attribute of the *object_or_type* lists the method
-   resolution search order used by both :func:`getattr` and :func:`super`.  The
-   attribute is dynamic and can change whenever the inheritance hierarchy is
-   updated.
+   The :attr:`~class.__mro__` attribute of the class corresponding to
+   *object_or_type* lists the method resolution search order used by both
+   :func:`getattr` and :func:`super`.  The attribute is dynamic and can change
+   whenever the inheritance hierarchy is updated.
 
    If the second argument is omitted, the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
