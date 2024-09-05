@@ -382,6 +382,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     // GH-123321: We need to acquire the lock before setting
     // _PyOS_ReadlineTState, otherwise the variable may be nullified by a
     // different thread.
+    Py_BEGIN_ALLOW_THREADS
     PyMutex_Lock(&_PyOS_ReadlineLock);
     _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, tstate);
     if (PyOS_ReadlineFunctionPointer == NULL) {
@@ -415,6 +416,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     // taking the GIL. Otherwise a deadlock or segfault may occur.
     _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, NULL);
     PyMutex_Unlock(&_PyOS_ReadlineLock);
+    Py_END_ALLOW_THREADS
 
     if (rv == NULL)
         return NULL;
