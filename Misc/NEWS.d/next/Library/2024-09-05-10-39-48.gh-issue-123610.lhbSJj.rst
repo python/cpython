@@ -1,1 +1,3 @@
-In wintypes.py added missing handle types including `HCONV`, `HCONVLIST`, `HCURSOR`, `HDDEDATA`, `HDROP`, `HFILE`, `HRESULT` and `HSZ`.
+In wintypes.py added missing handle types including
+HCONV, HCONVLIST, HCURSOR, HDDEDATA,
+HDROP, HFILE, HRESULT, HSZ.
