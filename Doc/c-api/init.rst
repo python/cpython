@@ -920,9 +920,10 @@ Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but switching between interpreters via the
-``PyGILState_*`` API is unsupported.  With that being said, you still need
-to hold the :term:`GIL` in order to _create_ a subinterpreter, even if
-using a per-interpreter GIL (see :pep:`684`).
+``PyGILState_*`` API is unsupported. With that being said, you still need
+to hold the :term:`GIL` in order to _create_ a subinterpreter, even if using
+a per-interpreter GIL (see :pep:`684`). The need for :c:expr:`PyGILState_STATE`
+doesn't go away when creating isolated subinterpreters!
 
 
 .. _fork-and-threads:
