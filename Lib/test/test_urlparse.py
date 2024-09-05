@@ -106,7 +106,7 @@ class UrlParseTestCase(unittest.TestCase):
              result.query, result.fragment)
         self.assertEqual(t, split)
         result2 = urllib.parse.urlunsplit(result)
-        self.assertEqual(result2, url)
+        self.assertEqual(result2, url2)
         self.assertEqual(result2, result.geturl())
 
         # check the fixpoint property of re-parsing the result of geturl()
