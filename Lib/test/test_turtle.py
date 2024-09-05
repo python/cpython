@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 import unittest
 import unittest.mock
 import tempfile
@@ -472,7 +473,7 @@ class TestTurtleScreen(unittest.TestCase):
         msg = "Unknown file extension: '.png', must be one of {'.ps', '.eps'}"
         with (
             tempfile.TemporaryDirectory() as tmpdir,
-            self.assertRaises(ValueError, msg=msg)
+            self.assertRaisesRegex(ValueError, re.escape(msg))
         ):
             turtle.TurtleScreen.save(screen, os.path.join(tmpdir, "file.png"))
 
@@ -482,7 +483,8 @@ class TestTurtleScreen(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             parent = os.path.join(tmpdir, "unknown_parent")
             msg = f"The directory '{parent}' does not exist. Cannot save to it"
-            with self.assertRaises(FileNotFoundError, msg=msg):
+
+            with self.assertRaisesRegex(FileNotFoundError, re.escape(msg)):
                 turtle.TurtleScreen.save(screen, os.path.join(parent, "a.ps"))
 
     def test_save_raises_if_file_found(self) -> None:
@@ -497,7 +499,7 @@ class TestTurtleScreen(unittest.TestCase):
                 f"The file '{file_path}' already exists. To overwrite it use"
                 " the 'overwrite=True' argument of the save function."
             )
-            with self.assertRaises(FileExistsError, msg=msg):
+            with self.assertRaisesRegex(FileExistsError, re.escape(msg)):
                 turtle.TurtleScreen.save(screen, file_path)
 
     def test_save_overwrites_if_specified(self) -> None:
