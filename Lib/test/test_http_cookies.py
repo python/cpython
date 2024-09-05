@@ -62,6 +62,8 @@ class CookieTests(unittest.TestCase):
     def test_obsolete_rfc850_date_format(self):
         # Test cases with different days and dates in obsolete RFC 850 format
         test_cases = [
+            # test cases from RFC 850
+            # https://datatracker.ietf.org/doc/html/rfc850#section-2
             {
                 'data': 'key=value; expires=Saturday, 01-Jan-83 00:00:00 EST',
                 'output': 'Saturday, 01-Jan-83 00:00:00 EST'
@@ -70,6 +72,7 @@ class CookieTests(unittest.TestCase):
                 'data': 'key=value; expires=Friday, 19-Nov-82 16:59:30 EST',
                 'output': 'Friday, 19-Nov-82 16:59:30 EST'
             },
+            # other test cases
             {
                 'data': 'key=value; expires=Sunday, 06-Nov-94 08:49:37 GMT',
                 'output': 'Sunday, 06-Nov-94 08:49:37 GMT'
