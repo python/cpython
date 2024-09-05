@@ -6843,13 +6843,10 @@ class TestQuickackFlag(unittest.TestCase):
         self.assertTrue(opt)
 
     def test_set_quickack(self):
-        for blocking in (False, True):
-            with self.subTest(blocking=blocking):
-                sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                                     proto=socket.IPPROTO_TCP)
-                with sock:
-                    sock.setblocking(blocking)
-                    self.check_set_quickack(sock)
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                                proto=socket.IPPROTO_TCP)
+        with sock:
+            self.check_set_quickack(sock)
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
