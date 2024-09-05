@@ -78,7 +78,7 @@ typedef struct {
     PyObject *tls_context_key;
     /* Invariant: NULL or a strong reference to the most recently accessed
        thread local context. */
-    struct PyDecContextObject *cached_context;  /* Do not borrow */
+    struct PyDecContextObject *cached_context;  /* Not borrowed */
 #else
     PyObject *current_context_var;
 #endif
