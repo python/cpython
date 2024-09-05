@@ -2387,7 +2387,7 @@ class Path:
 
     @property
     def name(self):
-        return pathlib.Path(self.at).name or self.filename.name
+        return pathlib.PurePosixPath(self.at).name or self.filename.name
 
     @property
     def filename(self):

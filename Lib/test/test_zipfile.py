@@ -5,7 +5,6 @@ import io
 import itertools
 import os
 import pathlib
-import platform
 import posixpath
 import string
 import struct
@@ -3299,7 +3298,6 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
         assert list(map(str, root.iterdir())) == ['../']
         assert root.joinpath('..').joinpath('parent.txt').read_bytes() == b'content'
 
-    @unittest.skipIf(platform.system() == "Windows", "GH-123693")
     def test_unsupported_names(self):
         """
         Path segments with special characters are readable.
@@ -3320,7 +3318,6 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
         assert item.name == 'V: NMS.flac', item.name
         assert root.joinpath('V: NMS.flac').read_bytes() == b"fLaC..."
 
-    @unittest.skipIf(platform.system() == "Windows", "GH-123693")
     def test_backslash_not_separator(self):
         """
         In a zip file, backslashes are not separators.
