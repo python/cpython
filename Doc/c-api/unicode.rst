@@ -349,7 +349,7 @@ APIs:
    * On success, fill *view*, and return ``0``.
    * On error, set an exception and return ``-1``.
 
-   The export must be released by :c:func:`PyBuffer_Release`.
+   The *view* buffer must be released by :c:func:`PyBuffer_Release`.
    The contents of the buffer are valid until they are released.
 
    The buffer is read-only and must not be modified.
@@ -372,7 +372,8 @@ APIs:
 
    *requested_formats* can be a single format or a bitwise combination of the
    formats in the table above.
-   On success, *\*format* will be set to a single one of the requested flags.
+   To determine the format that was selected for output, call
+   :c:func:`PyUnicode_GetBufferFormat`.
 
    Note that future versions of Python may introduce additional formats.
 
@@ -383,7 +384,7 @@ APIs:
 
    Get the format of the buffer *view*.
 
-   * On success, set *\*result* to the corresponding `PyUnicode_FORMAT_*` value
+   * On success, set *\*format* to the corresponding ``PyUnicode_FORMAT_*`` value
      and return ``0``.
    * On error, set an exception and return ``-1``.
 
@@ -394,7 +395,7 @@ APIs:
 
 .. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t nbytes, uint32_t format)
 
-   Create a string object from a buffer in an “export format”.
+   Create a Unicode string object from a buffer in a supported format.
 
    * Return a reference to a new string object on success.
    * Set an exception and return ``NULL`` on error.
