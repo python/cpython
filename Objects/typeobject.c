@@ -4642,6 +4642,41 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
     return 1;
 }
 
+/* Set *dest to the offset specified by a special "__*offset__" member.
+ * Return 0 on success, -1 on failure.
+ */
+static inline int
+special_offset_from_member(
+            const PyMemberDef *memb /* may be NULL */,
+            Py_ssize_t type_data_offset,
+            Py_ssize_t *dest /* not NULL */)
+{
+    if (memb == NULL) {
+        *dest = 0;
+        return 0;
+    }
+    if (memb->type != Py_T_PYSSIZET) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "type of %s must be Py_T_PYSSIZET",
+            memb->name);
+        return -1;
+    }
+    if (memb->flags == Py_READONLY) {
+        *dest = memb->offset;
+        return 0;
+    }
+    else if (memb->flags == (Py_READONLY | Py_RELATIVE_OFFSET)) {
+        *dest = memb->offset + type_data_offset;
+        return 0;
+    }
+    PyErr_Format(
+        PyExc_SystemError,
+        "flags for %s must be Py_READONLY or (Py_READONLY | Py_RELATIVE_OFFSET)",
+        memb->name);
+    return -1;
+}
+
 static PyObject *
 _PyType_FromMetaclass_impl(
     PyTypeObject *metaclass, PyObject *module,
@@ -4667,10 +4702,11 @@ _PyType_FromMetaclass_impl(
 
     const PyType_Slot *slot;
     Py_ssize_t nmembers = 0;
-    Py_ssize_t weaklistoffset, dictoffset, vectorcalloffset;
+    const PyMemberDef *weaklistoffset_member = NULL;
+    const PyMemberDef *dictoffset_member = NULL;
+    const PyMemberDef *vectorcalloffset_member = NULL;
     char *res_start;
 
-    nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot < 0
             || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
@@ -4687,24 +4723,6 @@ _PyType_FromMetaclass_impl(
             }
             for (const PyMemberDef *memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
-                if (strcmp(memb->name, "__weaklistoffset__") == 0) {
-                    // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == Py_T_PYSSIZET);
-                    assert(memb->flags == Py_READONLY);
-                    weaklistoffset = memb->offset;
-                }
-                if (strcmp(memb->name, "__dictoffset__") == 0) {
-                    // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == Py_T_PYSSIZET);
-                    assert(memb->flags == Py_READONLY);
-                    dictoffset = memb->offset;
-                }
-                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
-                    // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == Py_T_PYSSIZET);
-                    assert(memb->flags == Py_READONLY);
-                    vectorcalloffset = memb->offset;
-                }
                 if (memb->flags & Py_RELATIVE_OFFSET) {
                     if (spec->basicsize > 0) {
                         PyErr_SetString(
@@ -4718,6 +4736,15 @@ _PyType_FromMetaclass_impl(
                             "Member offset out of range (0..-basicsize)");
                         goto finally;
                     }
+                }
+                if (strcmp(memb->name, "__weaklistoffset__") == 0) {
+                    weaklistoffset_member = memb;
+                }
+                if (strcmp(memb->name, "__dictoffset__") == 0) {
+                    dictoffset_member = memb;
+                }
+                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
+                    vectorcalloffset_member = memb;
                 }
             }
             break;
@@ -4881,6 +4908,24 @@ _PyType_FromMetaclass_impl(
     }
 
     Py_ssize_t itemsize = spec->itemsize;
+
+    /* Compute special offsets */
+
+    Py_ssize_t weaklistoffset = 0;
+    if (special_offset_from_member(weaklistoffset_member, type_data_offset,
+                                  &weaklistoffset) < 0) {
+        goto finally;
+    }
+    Py_ssize_t dictoffset = 0;
+    if (special_offset_from_member(dictoffset_member, type_data_offset,
+                                  &dictoffset) < 0) {
+        goto finally;
+    }
+    Py_ssize_t vectorcalloffset = 0;
+    if (special_offset_from_member(vectorcalloffset_member, type_data_offset,
+                                  &vectorcalloffset) < 0) {
+        goto finally;
+    }
 
     /* Allocate the new type
      *
