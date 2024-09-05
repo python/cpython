@@ -2446,7 +2446,8 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
                               1, "B", PyUnicode_FORMAT_UTF8);
     }
 
-    PyErr_Format(PyExc_ValueError, "unable to find a matching export format");
+    PyErr_SetString(PyExc_ValueError,
+                    "unable to find a matching export format");
     return -1;
 
 #undef BUFFER_UCS4
