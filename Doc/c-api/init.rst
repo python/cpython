@@ -922,7 +922,7 @@ supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but switching between interpreters via the
 ``PyGILState_*`` API is unsupported. With that being said, you still need
 to hold the :term:`GIL` in order to _create_ a subinterpreter, even if using
-a per-interpreter GIL (see :pep:`684`). The need for :c:expr:`PyGILState_STATE`
+a per-interpreter GIL (see :pep:`684`). The need for :c:type:`PyGILState_STATE`
 doesn't go away when creating isolated subinterpreters!
 
 
