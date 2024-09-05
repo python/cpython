@@ -295,7 +295,7 @@ random_seed(RandomObject *self, PyObject *arg)
     int result = -1;  /* guilty until proved innocent */
     PyObject *n = NULL;
     uint32_t *key = NULL;
-    uint64_t bits;
+    int64_t bits;
     size_t keyused;
     int res;
 
@@ -335,6 +335,7 @@ random_seed(RandomObject *self, PyObject *arg)
 
     /* Now split n into 32-bit chunks, from the right. */
     bits = _PyLong_NumBits(n);
+    assert(bits >= 0);
     assert(!PyErr_Occurred());
 
     /* Figure out how many 32-bit chunks this gives us. */

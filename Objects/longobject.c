@@ -137,11 +137,11 @@ long_normalize(PyLongObject *v)
 # define MAX_LONG_DIGITS \
     ((PY_SSIZE_T_MAX - offsetof(PyLongObject, long_value.ob_digit))/sizeof(digit))
 #else
-/* Guarantee that the number of bits fits in uint64_t.
-   This is more than 2 exbibytes, that is more than many of modern
+/* Guarantee that the number of bits fits in int64_t.
+   This is more than an exbibyte, that is more than many of modern
    architectures support in principle.
    -1 is added to avoid overflow in _PyLong_Frexp(). */
-# define MAX_LONG_DIGITS ((UINT64_MAX-1) / (uint64_t)PyLong_SHIFT)
+# define MAX_LONG_DIGITS ((INT64_MAX-1) / PyLong_SHIFT)
 #endif
 
 PyLongObject *
@@ -812,11 +812,11 @@ bit_length_digit(digit x)
     return _Py_bit_length((unsigned long)x);
 }
 
-uint64_t
+int64_t
 _PyLong_NumBits(PyObject *vv)
 {
     PyLongObject *v = (PyLongObject *)vv;
-    uint64_t result = 0;
+    int64_t result = 0;
     Py_ssize_t ndigits;
     int msd_bits;
 
@@ -826,8 +826,8 @@ _PyLong_NumBits(PyObject *vv)
     assert(ndigits == 0 || v->long_value.ob_digit[ndigits - 1] != 0);
     if (ndigits > 0) {
         digit msd = v->long_value.ob_digit[ndigits - 1];
-        assert((uint64_t)ndigits <= UINT64_MAX / (uint64_t)PyLong_SHIFT);
-        result = (uint64_t)(ndigits - 1) * (uint64_t)PyLong_SHIFT;
+        assert(ndigits <= INT64_MAX / PyLong_SHIFT);
+        result = (int64_t)(ndigits - 1) * PyLong_SHIFT;
         msd_bits = bit_length_digit(msd);
         result += msd_bits;
     }
@@ -1246,7 +1246,8 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
 
         /* Calculates the number of bits required for the *absolute* value
          * of v. This does not take sign into account, only magnitude. */
-        uint64_t nb = _PyLong_NumBits((PyObject *)v);
+        int64_t nb = _PyLong_NumBits((PyObject *)v);
+        assert(nb >= 0);
         /* Normally this would be ((nb - 1) / 8) + 1 to avoid rounding up
          * multiples of 8 to the next byte, but we add an implied bit for
          * the sign and it cancels out. */
@@ -3408,11 +3409,11 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 #endif
 
 double
-_PyLong_Frexp(PyLongObject *a, uint64_t *e)
+_PyLong_Frexp(PyLongObject *a, int64_t *e)
 {
     Py_ssize_t a_size, shift_digits, x_size;
     int shift_bits;
-    uint64_t a_bits;
+    int64_t a_bits;
     /* See below for why x_digits is always large enough. */
     digit rem;
     digit x_digits[2 + (DBL_MANT_DIG + 1) / PyLong_SHIFT] = {0,};
@@ -3494,7 +3495,7 @@ _PyLong_Frexp(PyLongObject *a, uint64_t *e)
     /* Rescale;  make correction if result is 1.0. */
     dx /= 4.0 * EXP2_DBL_MANT_DIG;
     if (dx == 1.0) {
-        assert(a_bits < UINT64_MAX);
+        assert(a_bits < INT64_MAX);
         dx = 0.5;
         a_bits += 1;
     }
@@ -3509,7 +3510,7 @@ _PyLong_Frexp(PyLongObject *a, uint64_t *e)
 double
 PyLong_AsDouble(PyObject *v)
 {
-    uint64_t exponent;
+    int64_t exponent;
     double x;
 
     if (v == NULL) {
@@ -3528,6 +3529,7 @@ PyLong_AsDouble(PyObject *v)
         return (double)medium_value((PyLongObject *)v);
     }
     x = _PyLong_Frexp((PyLongObject *)v, &exponent);
+    assert(exponent >= 0);
     assert(!PyErr_Occurred());
     if (exponent > DBL_MAX_EXP) {
         PyErr_SetString(PyExc_OverflowError,
@@ -5292,7 +5294,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 static PyObject *
 long_rshift(PyObject *a, PyObject *b)
 {
-    uint64_t shiftby;
+    int64_t shiftby;
 
     CHECK_BINOP(a, b);
 
@@ -5303,7 +5305,7 @@ long_rshift(PyObject *a, PyObject *b)
     if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
-    if (PyLong_AsUInt64(b, &shiftby) < 0) {
+    if (PyLong_AsInt64(b, &shiftby) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
             return NULL;
         }
@@ -5320,17 +5322,18 @@ long_rshift(PyObject *a, PyObject *b)
 
 /* Return a >> shiftby. */
 PyObject *
-_PyLong_Rshift(PyObject *a, uint64_t shiftby)
+_PyLong_Rshift(PyObject *a, int64_t shiftby)
 {
     Py_ssize_t wordshift;
     digit remshift;
 
     assert(PyLong_Check(a));
+    assert(shiftby >= 0);
     if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
-#if PY_SSIZE_T_MAX <= UINT64_MAX / PyLong_SHIFT
-    if (shiftby > (uint64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
+#if PY_SSIZE_T_MAX <= INT64_MAX / PyLong_SHIFT
+    if (shiftby > (int64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
         if (_PyLong_IsNegative((PyLongObject *)a)) {
             return PyLong_FromLong(-1);
         }
@@ -5388,7 +5391,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 static PyObject *
 long_lshift(PyObject *a, PyObject *b)
 {
-    uint64_t shiftby;
+    int64_t shiftby;
 
     CHECK_BINOP(a, b);
 
@@ -5399,7 +5402,7 @@ long_lshift(PyObject *a, PyObject *b)
     if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
-    if (PyLong_AsUInt64(b, &shiftby) < 0) {
+    if (PyLong_AsInt64(b, &shiftby) < 0) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_SetString(PyExc_OverflowError,
                             "too many digits in integer");
@@ -5411,17 +5414,18 @@ long_lshift(PyObject *a, PyObject *b)
 
 /* Return a << shiftby. */
 PyObject *
-_PyLong_Lshift(PyObject *a, uint64_t shiftby)
+_PyLong_Lshift(PyObject *a, int64_t shiftby)
 {
     Py_ssize_t wordshift;
     digit remshift;
 
     assert(PyLong_Check(a));
+    assert(shiftby >= 0);
     if (_PyLong_IsZero((PyLongObject *)a)) {
         return PyLong_FromLong(0);
     }
-#if PY_SSIZE_T_MAX <= UINT64_MAX / PyLong_SHIFT
-    if (shiftby > (uint64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
+#if PY_SSIZE_T_MAX <= INT64_MAX / PyLong_SHIFT
+    if (shiftby > (int64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
         PyErr_SetString(PyExc_OverflowError,
                         "too many digits in integer");
         return NULL;
@@ -6175,9 +6179,10 @@ static PyObject *
 int_bit_length_impl(PyObject *self)
 /*[clinic end generated code: output=fc1977c9353d6a59 input=e4eb7a587e849a32]*/
 {
-    uint64_t nbits = _PyLong_NumBits(self);
+    int64_t nbits = _PyLong_NumBits(self);
+    assert(nbits >= 0);
     assert(!PyErr_Occurred());
-    return PyLong_FromUInt64(nbits);
+    return PyLong_FromInt64(nbits);
 }
 
 static int
@@ -6211,13 +6216,13 @@ int_bit_count_impl(PyObject *self)
 
     PyLongObject *z = (PyLongObject *)self;
     Py_ssize_t ndigits = _PyLong_DigitCount(z);
-    uint64_t bit_count = 0;
+    int64_t bit_count = 0;
 
     for (Py_ssize_t i = 0; i < ndigits; i++) {
         bit_count += popcount_digit(z->long_value.ob_digit[i]);
     }
 
-    return PyLong_FromUInt64(bit_count);
+    return PyLong_FromInt64(bit_count);
 }
 
 /*[clinic input]

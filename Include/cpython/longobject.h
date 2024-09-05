@@ -73,7 +73,7 @@ PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
    v must not be NULL, and must be a normalized long.
    Always successful.
 */
-PyAPI_FUNC(uint64_t) _PyLong_NumBits(PyObject *v);
+PyAPI_FUNC(int64_t) _PyLong_NumBits(PyObject *v);
 
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
    base 256, and return a Python int with the same numeric value.
