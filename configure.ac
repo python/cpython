@@ -758,7 +758,7 @@ if test "$cross_compiling" = yes; then
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
 		AC_MSG_CHECKING([iOS deployment target])
-		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IPHONEOS_DEPLOYMENT_TARGET=$(echo ${_host_os} | cut -c4-)
 		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
 		AC_MSG_RESULT([$IPHONEOS_DEPLOYMENT_TARGET])
 
