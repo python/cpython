@@ -239,7 +239,7 @@ def summarize_address_range(first, last):
     else:
         raise ValueError('unknown IP version')
 
-    ip_bits = first._max_prefixlen
+    ip_bits = first.max_prefixlen
     first_int = first._ip
     last_int = last._ip
     while first_int <= last_int:
@@ -326,12 +326,12 @@ def collapse_addresses(addresses):
     # split IP addresses and networks
     for ip in addresses:
         if isinstance(ip, _BaseAddress):
-            if ips and ips[-1]._version != ip._version:
+            if ips and ips[-1].version != ip.version:
                 raise TypeError("%s and %s are not of the same version" % (
                                  ip, ips[-1]))
             ips.append(ip)
-        elif ip._prefixlen == ip._max_prefixlen:
-            if ips and ips[-1]._version != ip._version:
+        elif ip._prefixlen == ip.max_prefixlen:
+            if ips and ips[-1].version != ip.version:
                 raise TypeError("%s and %s are not of the same version" % (
                                  ip, ips[-1]))
             try:
@@ -339,7 +339,7 @@ def collapse_addresses(addresses):
             except AttributeError:
                 ips.append(ip.network_address)
         else:
-            if nets and nets[-1]._version != ip._version:
+            if nets and nets[-1].version != ip.version:
                 raise TypeError("%s and %s are not of the same version" % (
                                  ip, nets[-1]))
             nets.append(ip)
@@ -407,26 +407,21 @@ class _IPAddressBase:
         """
         return self._reverse_pointer()
 
-    @property
-    def version(self):
-        msg = '%200s has no version specified' % (type(self),)
-        raise NotImplementedError(msg)
-
     def _check_int_address(self, address):
         if address < 0:
             msg = "%d (< 0) is not permitted as an IPv%d address"
-            raise AddressValueError(msg % (address, self._version))
+            raise AddressValueError(msg % (address, self.version))
         if address > self._ALL_ONES:
             msg = "%d (>= 2**%d) is not permitted as an IPv%d address"
-            raise AddressValueError(msg % (address, self._max_prefixlen,
-                                           self._version))
+            raise AddressValueError(msg % (address, self.max_prefixlen,
+                                           self.version))
 
     def _check_packed_address(self, address, expected_len):
         address_len = len(address)
         if address_len != expected_len:
             msg = "%r (len %d != %d) is not permitted as an IPv%d address"
             raise AddressValueError(msg % (address, address_len,
-                                           expected_len, self._version))
+                                           expected_len, self.version))
 
     @classmethod
     def _ip_int_from_prefix(cls, prefixlen):
@@ -455,12 +450,12 @@ class _IPAddressBase:
             ValueError: If the input intermingles zeroes & ones
         """
         trailing_zeroes = _count_righthand_zero_bits(ip_int,
-                                                     cls._max_prefixlen)
-        prefixlen = cls._max_prefixlen - trailing_zeroes
+                                                     cls.max_prefixlen)
+        prefixlen = cls.max_prefixlen - trailing_zeroes
         leading_ones = ip_int >> trailing_zeroes
         all_ones = (1 << prefixlen) - 1
         if leading_ones != all_ones:
-            byteslen = cls._max_prefixlen // 8
+            byteslen = cls.max_prefixlen // 8
             details = ip_int.to_bytes(byteslen, 'big')
             msg = 'Netmask pattern %r mixes zeroes & ones'
             raise ValueError(msg % details)
@@ -492,7 +487,7 @@ class _IPAddressBase:
             prefixlen = int(prefixlen_str)
         except ValueError:
             cls._report_invalid_netmask(prefixlen_str)
-        if not (0 <= prefixlen <= cls._max_prefixlen):
+        if not (0 <= prefixlen <= cls.max_prefixlen):
             cls._report_invalid_netmask(prefixlen_str)
         return prefixlen
 
@@ -542,7 +537,7 @@ class _IPAddressBase:
         """
         # a packed address or integer
         if isinstance(address, (bytes, int)):
-            return address, cls._max_prefixlen
+            return address, cls.max_prefixlen
 
         if not isinstance(address, tuple):
             # Assume input argument to be string or any object representation
@@ -552,7 +547,7 @@ class _IPAddressBase:
         # Constructing from a tuple (addr, [mask])
         if len(address) > 1:
             return address
-        return address[0], cls._max_prefixlen
+        return address[0], cls.max_prefixlen
 
     def __reduce__(self):
         return self.__class__, (str(self),)
@@ -577,14 +572,14 @@ class _BaseAddress(_IPAddressBase):
     def __eq__(self, other):
         try:
             return (self._ip == other._ip
-                    and self._version == other._version)
+                    and self.version == other.version)
         except AttributeError:
             return NotImplemented
 
     def __lt__(self, other):
         if not isinstance(other, _BaseAddress):
             return NotImplemented
-        if self._version != other._version:
+        if self.version != other.version:
             raise TypeError('%s and %s are not of the same version' % (
                              self, other))
         if self._ip != other._ip:
@@ -613,7 +608,7 @@ class _BaseAddress(_IPAddressBase):
         return hash(hex(int(self._ip)))
 
     def _get_address_key(self):
-        return (self._version, self)
+        return (self.version, self)
 
     def __reduce__(self):
         return self.__class__, (self._ip,)
@@ -649,15 +644,15 @@ class _BaseAddress(_IPAddressBase):
 
         # Set some defaults
         if fmt_base == 'n':
-            if self._version == 4:
+            if self.version == 4:
                 fmt_base = 'b'  # Binary is default for ipv4
             else:
                 fmt_base = 'x'  # Hex is default for ipv6
 
         if fmt_base == 'b':
-            padlen = self._max_prefixlen
+            padlen = self.max_prefixlen
         else:
-            padlen = self._max_prefixlen // 4
+            padlen = self.max_prefixlen // 4
 
         if grouping:
             padlen += padlen // 4 - 1
@@ -716,7 +711,7 @@ class _BaseNetwork(_IPAddressBase):
     def __lt__(self, other):
         if not isinstance(other, _BaseNetwork):
             return NotImplemented
-        if self._version != other._version:
+        if self.version != other.version:
             raise TypeError('%s and %s are not of the same version' % (
                              self, other))
         if self.network_address != other.network_address:
@@ -727,7 +722,7 @@ class _BaseNetwork(_IPAddressBase):
 
     def __eq__(self, other):
         try:
-            return (self._version == other._version and
+            return (self.version == other.version and
                     self.network_address == other.network_address and
                     int(self.netmask) == int(other.netmask))
         except AttributeError:
@@ -738,7 +733,7 @@ class _BaseNetwork(_IPAddressBase):
 
     def __contains__(self, other):
         # always false if one is v4 and the other is v6.
-        if self._version != other._version:
+        if self.version != other.version:
             return False
         # dealing with another network.
         if isinstance(other, _BaseNetwork):
@@ -829,7 +824,7 @@ class _BaseNetwork(_IPAddressBase):
             ValueError: If other is not completely contained by self.
 
         """
-        if not self._version == other._version:
+        if not self.version == other.version:
             raise TypeError("%s and %s are not of the same version" % (
                              self, other))
 
@@ -901,10 +896,10 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         # does this need to raise a ValueError?
-        if self._version != other._version:
+        if self.version != other.version:
             raise TypeError('%s and %s are not of the same type' % (
                              self, other))
-        # self._version == other._version below here:
+        # self.version == other.version below here:
         if self.network_address < other.network_address:
             return -1
         if self.network_address > other.network_address:
@@ -924,7 +919,7 @@ class _BaseNetwork(_IPAddressBase):
         and list.sort().
 
         """
-        return (self._version, self.network_address, self.netmask)
+        return (self.version, self.network_address, self.netmask)
 
     def subnets(self, prefixlen_diff=1, new_prefix=None):
         """The subnets which join to make the current subnet.
@@ -952,7 +947,7 @@ class _BaseNetwork(_IPAddressBase):
               number means a larger network)
 
         """
-        if self._prefixlen == self._max_prefixlen:
+        if self._prefixlen == self.max_prefixlen:
             yield self
             return
 
@@ -967,7 +962,7 @@ class _BaseNetwork(_IPAddressBase):
             raise ValueError('prefix length diff must be > 0')
         new_prefixlen = self._prefixlen + prefixlen_diff
 
-        if new_prefixlen > self._max_prefixlen:
+        if new_prefixlen > self.max_prefixlen:
             raise ValueError(
                 'prefix length diff %d is invalid for netblock %s' % (
                     new_prefixlen, self))
@@ -1036,7 +1031,7 @@ class _BaseNetwork(_IPAddressBase):
     def _is_subnet_of(a, b):
         try:
             # Always false if one is v4 and the other is v6.
-            if a._version != b._version:
+            if a.version != b.version:
                 raise TypeError(f"{a} and {b} are not of the same version")
             return (b.network_address <= a.network_address and
                     b.broadcast_address >= a.broadcast_address)
@@ -1146,11 +1141,11 @@ class _BaseV4:
     """
 
     __slots__ = ()
-    _version = 4
+    version = 4
     # Equivalent to 255.255.255.255 or 32 bits of 1's.
     _ALL_ONES = (2**IPV4LENGTH) - 1
 
-    _max_prefixlen = IPV4LENGTH
+    max_prefixlen = IPV4LENGTH
     # There are only a handful of valid v4 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
     _netmask_cache = {}
@@ -1170,7 +1165,7 @@ class _BaseV4:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
-                if not (0 <= prefixlen <= cls._max_prefixlen):
+                if not (0 <= prefixlen <= cls.max_prefixlen):
                     cls._report_invalid_netmask(prefixlen)
             else:
                 try:
@@ -1267,15 +1262,6 @@ class _BaseV4:
         """
         reverse_octets = str(self).split('.')[::-1]
         return '.'.join(reverse_octets) + '.in-addr.arpa'
-
-    @property
-    def max_prefixlen(self):
-        return self._max_prefixlen
-
-    @property
-    def version(self):
-        return self._version
-
 
 class IPv4Address(_BaseV4, _BaseAddress):
 
@@ -1556,9 +1542,9 @@ class IPv4Network(_BaseV4, _BaseNetwork):
                 self.network_address = IPv4Address(packed &
                                                    int(self.netmask))
 
-        if self._prefixlen == (self._max_prefixlen - 1):
+        if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
-        elif self._prefixlen == (self._max_prefixlen):
+        elif self._prefixlen == (self.max_prefixlen):
             self.hosts = lambda: [IPv4Address(addr)]
 
     @property
@@ -1628,11 +1614,11 @@ class _BaseV6:
     """
 
     __slots__ = ()
-    _version = 6
+    version = 6
     _ALL_ONES = (2**IPV6LENGTH) - 1
     _HEXTET_COUNT = 8
     _HEX_DIGITS = frozenset('0123456789ABCDEFabcdef')
-    _max_prefixlen = IPV6LENGTH
+    max_prefixlen = IPV6LENGTH
 
     # There are only a bunch of valid v6 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
@@ -1650,7 +1636,7 @@ class _BaseV6:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
-                if not (0 <= prefixlen <= cls._max_prefixlen):
+                if not (0 <= prefixlen <= cls.max_prefixlen):
                     cls._report_invalid_netmask(prefixlen)
             else:
                 prefixlen = cls._prefix_from_prefix_string(arg)
@@ -1911,15 +1897,6 @@ class _BaseV6:
         elif not scope_id or '%' in scope_id:
             raise AddressValueError('Invalid IPv6 address: "%r"' % ip_str)
         return addr, scope_id
-
-    @property
-    def max_prefixlen(self):
-        return self._max_prefixlen
-
-    @property
-    def version(self):
-        return self._version
-
 
 class IPv6Address(_BaseV6, _BaseAddress):
 
@@ -2332,9 +2309,9 @@ class IPv6Network(_BaseV6, _BaseNetwork):
                 self.network_address = IPv6Address(packed &
                                                    int(self.netmask))
 
-        if self._prefixlen == (self._max_prefixlen - 1):
+        if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
-        elif self._prefixlen == self._max_prefixlen:
+        elif self._prefixlen == self.max_prefixlen:
             self.hosts = lambda: [IPv6Address(addr)]
 
     def hosts(self):

@@ -1031,7 +1031,6 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->dev_mode = 0;
     config->install_signal_handlers = 0;
     config->use_hash_seed = 0;
-    config->faulthandler = 0;
     config->tracemalloc = 0;
     config->perf_profiling = 0;
     config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
@@ -3424,6 +3423,8 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 struct PyInitConfig {
     PyPreConfig preconfig;
     PyConfig config;
+    struct _inittab *inittab;
+    Py_ssize_t inittab_size;
     PyStatus status;
     char *err_msg;
 };
@@ -3753,7 +3754,7 @@ PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
         return -1;
     }
 
-    if (strcmp(name, "hash_seed")) {
+    if (strcmp(name, "hash_seed") == 0) {
         config->config.use_hash_seed = 1;
     }
 
@@ -3863,13 +3864,53 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
         return -1;
     }
     PyWideStringList *list = raw_member;
-    return _PyWideStringList_FromUTF8(config, list, length, items);
+    if (_PyWideStringList_FromUTF8(config, list, length, items) < 0) {
+        return -1;
+    }
+
+    if (strcmp(name, "module_search_paths") == 0) {
+        config->config.module_search_paths_set = 1;
+    }
+    return 0;
+}
+
+
+int
+PyInitConfig_AddModule(PyInitConfig *config, const char *name,
+                       PyObject* (*initfunc)(void))
+{
+    size_t size = sizeof(struct _inittab) * (config->inittab_size + 2);
+    struct _inittab *new_inittab = PyMem_RawRealloc(config->inittab, size);
+    if (new_inittab == NULL) {
+        config->status = _PyStatus_NO_MEMORY();
+        return -1;
+    }
+    config->inittab = new_inittab;
+
+    struct _inittab *entry = &config->inittab[config->inittab_size];
+    entry->name = name;
+    entry->initfunc = initfunc;
+
+    // Terminator entry
+    entry = &config->inittab[config->inittab_size + 1];
+    entry->name = NULL;
+    entry->initfunc = NULL;
+
+    config->inittab_size++;
+    return 0;
 }
 
 
 int
 Py_InitializeFromInitConfig(PyInitConfig *config)
 {
+    if (config->inittab_size >= 1) {
+        if (PyImport_ExtendInittab(config->inittab) < 0) {
+            config->status = _PyStatus_NO_MEMORY();
+            return -1;
+        }
+    }
+
     _PyPreConfig_GetConfig(&config->preconfig, &config->config);
 
     config->status = Py_PreInitializeFromArgs(

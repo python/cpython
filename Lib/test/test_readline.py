@@ -7,11 +7,12 @@ import sys
 import tempfile
 import textwrap
 import unittest
-from test.support import verbose
+from test.support import requires_gil_enabled, verbose
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink, temp_dir, TESTFN
 from test.support.pty_helper import run_pty
 from test.support.script_helper import assert_python_ok
+from test.support.threading_helper import requires_working_threading
 
 # Skip tests if there is no readline module
 readline = import_module('readline')
@@ -348,6 +349,31 @@ readline.write_history_file(history_file)
                 lines = f.readlines()
             self.assertEqual(len(lines), history_size)
             self.assertEqual(lines[-1].strip(), b"last input")
+
+    @requires_working_threading()
+    @requires_gil_enabled()
+    def test_gh123321_threadsafe(self):
+        """gh-123321: readline should be thread-safe and not crash"""
+        script = textwrap.dedent(r"""
+            import threading
+            from test.support.threading_helper import join_thread
+
+            def func():
+                input()
+
+            thread1 = threading.Thread(target=func)
+            thread2 = threading.Thread(target=func)
+            thread1.start()
+            thread2.start()
+            join_thread(thread1)
+            join_thread(thread2)
+            print("done")
+        """)
+
+        output = run_pty(script, input=b"input1\rinput2\r")
+
+        self.assertIn(b"done", output)
+
 
     def test_write_read_limited_history(self):
         previous_length = readline.get_history_length()
