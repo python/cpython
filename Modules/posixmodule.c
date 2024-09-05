@@ -472,10 +472,10 @@ PyOS_AfterFork_Child(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
     _PyGILState_Reinit(runtime);
+    _PyRuntimeState_ReInitThreads(runtime);
     _PyEval_ReInitThreads(runtime);
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
-    _PyRuntimeState_ReInitThreads(runtime);
     _PyInterpreterState_DeleteExceptMain(runtime);
 
     run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
