@@ -76,7 +76,8 @@ typedef struct {
 #ifndef WITH_DECIMAL_CONTEXTVAR
     /* Key for thread state dictionary */
     PyObject *tls_context_key;
-    /* Invariant: NULL or the most recently accessed thread local context */
+    /* Invariant: NULL or a strong reference to the most recently accessed
+       thread local context object, not a borrowed reference. */
     struct PyDecContextObject *cached_context;
 #else
     PyObject *current_context_var;
@@ -1764,7 +1765,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
         Py_INCREF(v);
     }
 
-    state->cached_context = NULL;
+    Py_CLEAR(state->cached_context);
     if (PyDict_SetItem(dict, state->tls_context_key, v) < 0) {
         Py_DECREF(v);
         return NULL;
