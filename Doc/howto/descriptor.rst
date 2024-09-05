@@ -471,6 +471,7 @@ The descriptors prevent invalid instances from being created:
     Traceback (most recent call last):
         ...
     ValueError: Expected -5 to be at least 0
+
     >>> Component('WIDGET', 'metal', 'V')    # Blocked: 'V' isn't a number
     Traceback (most recent call last):
         ...
