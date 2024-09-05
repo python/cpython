@@ -1,2 +1,2 @@
-The ``http.cookies`` module now supports parsing obsolete RFC 850 date
-formats, in accordance with RFC 9110 requirements.
+The :mod:`http.cookies` module now supports parsing obsolete :rfc:`850`
+date formats, in accordance with :rfc:`9110` requirements.
