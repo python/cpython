@@ -20,6 +20,13 @@
 
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
 
+/*[clinic input]
+module _ctypes
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
+
+#include "clinic/cfield.c.h"
+
 static void pymem_destructor(PyObject *ptr)
 {
     void *p = PyCapsule_GetPointer(ptr, CTYPES_CFIELD_CAPSULE_NAME_PYMEM);
@@ -33,6 +40,10 @@ static void pymem_destructor(PyObject *ptr)
 /*
   PyCField_Type
 */
+/*[clinic input]
+class _ctypes.CField "PyObject *" "PyObject"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=602817ea3ffc709c]*/
 
 static inline
 Py_ssize_t round_down(Py_ssize_t numToRound, Py_ssize_t multiple)
@@ -61,237 +72,141 @@ Py_ssize_t LOW_BIT(Py_ssize_t offset);
 static inline
 Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
 
-/* PyCField_FromDesc creates and returns a struct/union field descriptor.
 
-The function expects to be called repeatedly for all fields in a struct or
-union.  It uses helper functions PyCField_FromDesc_gcc and
-PyCField_FromDesc_msvc to simulate the corresponding compilers.
+/*[clinic input]
+@classmethod
+_ctypes.CField.__new__ as PyCField_new
 
-GCC mode places fields one after another, bit by bit.  But "each bit field must
-fit within a single object of its specified type" (GCC manual, section 15.8
-"Bit Field Packing"). When it doesn't, we insert a few bits of padding to
-avoid that.
+    name: object(subclass_of='&PyUnicode_Type')
+    type as proto: object
+    size: Py_ssize_t
+    offset: Py_ssize_t
+    index: Py_ssize_t
+    bit_size as bit_size_obj: object = None
 
-MSVC mode works similar except for bitfield packing.  Adjacent bit-fields are
-packed into the same 1-, 2-, or 4-byte allocation unit if the integral types
-are the same size and if the next bit-field fits into the current allocation
-unit without crossing the boundary imposed by the common alignment requirements
-of the bit-fields.
+[clinic start generated code]*/
 
-See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#index-mms-bitfields for details.
-
-We do not support zero length bitfields.  In fact we use bitsize != 0 elsewhere
-to indicate a bitfield. Here, non-bitfields need bitsize set to size*8.
-
-PyCField_FromDesc manages:
-- *psize: the size of the structure / union so far.
-- *poffset, *pbitofs: 8* (*poffset) + *pbitofs points to where the next field
-  would start.
-- *palign: the alignment requirements of the last field we placed.
-*/
-
-static int
-PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                CFieldObject* self, StgInfo* info,
-                int is_bitfield
-                )
+static PyObject *
+PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
+                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
+                  PyObject *bit_size_obj)
+/*[clinic end generated code: output=43649ef9157c5f58 input=3d813f56373c4caa]*/
 {
-    // We don't use poffset here, so clear it, if it has been set.
-    *pbitofs += *poffset * 8;
-    *poffset = 0;
+    CFieldObject* self = NULL;
+    if (size < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "size of field %R must not be negative, got %zd",
+                     name, size);
+        goto error;
+    }
+    // assert: no overflow;
+    if ((unsigned long long int) size
+            >= (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8) {
+        PyErr_Format(PyExc_ValueError,
+                     "size of field %R is too big: %zd", name, size);
+        goto error;
+    }
 
-    *palign = info->align;
-
-    if (bitsize > 0) {
-        // Determine whether the bit field, if placed at the next free bit,
-        // fits within a single object of its specified type.
-        // That is: determine a "slot", sized & aligned for the specified type,
-        // which contains the bitfield's beginning:
-        Py_ssize_t slot_start_bit = round_down(*pbitofs, 8 * info->align);
-        Py_ssize_t slot_end_bit = slot_start_bit + 8 * info->size;
-        // And see if it also contains the bitfield's last bit:
-        Py_ssize_t field_end_bit = *pbitofs + bitsize;
-        if (field_end_bit > slot_end_bit) {
-            // It doesn't: add padding (bump up to the next alignment boundary)
-            *pbitofs = round_up(*pbitofs, 8*info->align);
+    PyTypeObject *tp = type;
+    ctypes_state *st = get_module_state_by_class(tp);
+    self = (CFieldObject *)tp->tp_alloc(tp, 0);
+    if (!self) {
+        return NULL;
+    }
+    if (PyUnicode_CheckExact(name)) {
+        self->name = Py_NewRef(name);
+    } else {
+        self->name = PyObject_Str(name);
+        if (!self->name) {
+            goto error;
         }
     }
-    assert(*poffset == 0);
 
-    self->offset = round_down(*pbitofs, 8*info->align) / 8;
-    if(is_bitfield) {
-        Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
-        self->size = BUILD_SIZE(bitsize, effective_bitsof);
-        assert(effective_bitsof <= info->size * 8);
-    } else {
-        self->size = info->size;
-    }
-
-    *pbitofs += bitsize;
-    *psize = round_up(*pbitofs, 8) / 8;
-
-    return 0;
-}
-
-static int
-PyCField_FromDesc_msvc(
-                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
-                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
-                Py_ssize_t *palign, int pack,
-                CFieldObject* self, StgInfo* info,
-                int is_bitfield
-                )
-{
-    if (pack) {
-        *palign = Py_MIN(pack, info->align);
-    } else {
-        *palign = info->align;
-    }
-
-    // *poffset points to end of current bitfield.
-    // *pbitofs is generally non-positive,
-    // and 8 * (*poffset) + *pbitofs points just behind
-    // the end of the last field we placed.
-    if (0 < *pbitofs + bitsize || 8 * info->size != *pfield_size) {
-        // Close the previous bitfield (if any).
-        // and start a new bitfield:
-        *poffset = round_up(*poffset, *palign);
-
-        *poffset += info->size;
-
-        *pfield_size = info->size * 8;
-        // Reminder: 8 * (*poffset) + *pbitofs points to where we would start a
-        // new field.  Ie just behind where we placed the last field plus an
-        // allowance for alignment.
-        *pbitofs = - *pfield_size;
-    }
-
-    assert(8 * info->size == *pfield_size);
-
-    self->offset = *poffset - (*pfield_size) / 8;
-    if(is_bitfield) {
-        assert(0 <= (*pfield_size + *pbitofs));
-        assert((*pfield_size + *pbitofs) < info->size * 8);
-        self->size = BUILD_SIZE(bitsize, *pfield_size + *pbitofs);
-    } else {
-        self->size = info->size;
-    }
-    assert(*pfield_size + *pbitofs <= info->size * 8);
-
-    *pbitofs += bitsize;
-    *psize = *poffset;
-
-    return 0;
-}
-
-PyObject *
-PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
-                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian, LayoutMode layout_mode)
-{
-    PyTypeObject *tp = st->PyCField_Type;
-    CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
-    if (self == NULL) {
-        return NULL;
-    }
     StgInfo *info;
-    if (PyStgInfo_FromType(st, desc, &info) < 0) {
-        Py_DECREF(self);
-        return NULL;
+    if (PyStgInfo_FromType(st, proto, &info) < 0) {
+        goto error;
     }
-    if (!info) {
-        PyErr_SetString(PyExc_TypeError,
-                        "has no _stginfo_");
-        Py_DECREF(self);
-        return NULL;
+    if (info == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "type of field %R must be a C type", self->name);
+        goto error;
     }
 
-    PyObject* proto = desc;
+    Py_ssize_t bit_size = NUM_BITS(size);
+    if (bit_size) {
+        assert(bit_size > 0);
+        assert(bit_size <= info->size * 8);
+        switch(info->ffi_type_pointer.type) {
+            case FFI_TYPE_UINT8:
+            case FFI_TYPE_UINT16:
+            case FFI_TYPE_UINT32:
+            case FFI_TYPE_SINT64:
+            case FFI_TYPE_UINT64:
+                break;
 
-    /*  Field descriptors for 'c_char * n' are be scpecial cased to
+            case FFI_TYPE_SINT8:
+            case FFI_TYPE_SINT16:
+            case FFI_TYPE_SINT32:
+                if (info->getfunc != _ctypes_get_fielddesc("c")->getfunc
+                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc)
+                {
+                    break;
+                }
+                _Py_FALLTHROUGH;  /* else fall through */
+            default:
+                PyErr_Format(PyExc_TypeError,
+                             "bit fields not allowed for type %s",
+                             ((PyTypeObject*)proto)->tp_name);
+                goto error;
+        }
+    }
+
+    self->proto = Py_NewRef(proto);
+    self->size = size;
+    self->offset = offset;
+
+    self->index = index;
+
+    /*  Field descriptors for 'c_char * n' are be special cased to
         return a Python string instead of an Array object instance...
     */
-    SETFUNC setfunc = NULL;
-    GETFUNC getfunc = NULL;
+    self->setfunc = NULL;
+    self->getfunc = NULL;
     if (PyCArrayTypeObject_Check(st, proto)) {
         StgInfo *ainfo;
         if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
-            Py_DECREF(self);
-            return NULL;
+            goto error;
         }
 
         if (ainfo && ainfo->proto) {
             StgInfo *iinfo;
             if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
-                Py_DECREF(self);
-                return NULL;
+                goto error;
             }
             if (!iinfo) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
-                Py_DECREF(self);
-                return NULL;
+                goto error;
             }
             if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("s");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
+                self->getfunc = fd->getfunc;
+                self->setfunc = fd->setfunc;
             }
             if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
+                self->getfunc = fd->getfunc;
+                self->setfunc = fd->setfunc;
             }
         }
     }
 
-    self->setfunc = setfunc;
-    self->getfunc = getfunc;
-    self->index = index;
-
-    self->proto = Py_NewRef(proto);
-
-    int is_bitfield = !!bitsize;
-    if(!is_bitfield) {
-        assert(info->size >= 0);
-        // assert: no overflow;
-        assert((unsigned long long int) info->size
-            < (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8);
-        bitsize = 8 * info->size;
-        // Caution: bitsize might still be 0 now.
-    }
-    assert(bitsize <= info->size * 8);
-
-    int result;
-    if (layout_mode == LAYOUT_MODE_MS) {
-        result = PyCField_FromDesc_msvc(
-                pfield_size, bitsize, pbitofs,
-                psize, poffset, palign,
-                pack,
-                self, info,
-                is_bitfield
-                );
-    } else {
-        assert(pack == 0);
-        result = PyCField_FromDesc_gcc(
-                bitsize, pbitofs,
-                psize, poffset, palign,
-                self, info,
-                is_bitfield
-                );
-    }
-    if (result < 0) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
-    if(big_endian && is_bitfield) {
-        self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
-    }
     return (PyObject *)self;
+error:
+    Py_XDECREF(self);
+    return NULL;
 }
+
 
 static int
 PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
@@ -371,8 +286,10 @@ PyCField_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    (void)PyCField_clear((CFieldObject *)self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    CFieldObject *self_cf = (CFieldObject *)self;
+    (void)PyCField_clear(self_cf);
+    Py_CLEAR(self_cf->name);
+    Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -398,6 +315,7 @@ PyCField_repr(CFieldObject *self)
 }
 
 static PyType_Slot cfield_slots[] = {
+    {Py_tp_new, PyCField_new},
     {Py_tp_dealloc, PyCField_dealloc},
     {Py_tp_repr, PyCField_repr},
     {Py_tp_doc, (void *)PyDoc_STR("Structure/Union member")},
@@ -413,7 +331,7 @@ PyType_Spec cfield_spec = {
     .name = "_ctypes.CField",
     .basicsize = sizeof(CFieldObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = cfield_slots,
 };
 

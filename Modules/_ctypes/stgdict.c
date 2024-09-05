@@ -211,154 +211,41 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
-  Allocate a memory block for a pep3118 format string, copy prefix (if
-  non-null) into it and append `{padding}x` to the end.
-  Returns NULL on failure, with the error indicator set.
-*/
-char *
-_ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
-{
-    /* int64 decimal characters + x + null */
-    char buf[19 + 1 + 1];
-
-    assert(padding > 0);
-
-    if (padding == 1) {
-        /* Use x instead of 1x, for brevity */
-        return _ctypes_alloc_format_string(prefix, "x");
-    }
-
-    int ret = PyOS_snprintf(buf, sizeof(buf), "%zdx", padding); (void)ret;
-    assert(0 <= ret && ret < (Py_ssize_t)sizeof(buf));
-    return _ctypes_alloc_format_string(prefix, buf);
-}
-
-/*
   Retrieve the (optional) _pack_ attribute from a type, the _fields_ attribute,
   and initialize StgInfo.  Used for Structure and Union subclasses.
 */
 int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
-    Py_ssize_t len, offset, size, align, i;
-    Py_ssize_t union_size, total_align, aligned_size;
-    Py_ssize_t field_size = 0;
-    Py_ssize_t bitofs = 0;
     PyObject *tmp;
-    int pack;
-    int forced_alignment = 1;
     Py_ssize_t ffi_ofs;
-    int big_endian;
     int arrays_seen = 0;
 
-    if (fields == NULL)
+    int retval = -1;
+    // The following are NULL or hold strong references.
+    // They're cleared on error.
+    PyObject *layout_fields = NULL;
+    PyObject *layout = NULL;
+    PyObject *format_spec_obj = NULL;
+
+    if (fields == NULL) {
         return 0;
-
-    int rc = PyObject_HasAttrWithError(type, &_Py_ID(_swappedbytes_));
-    if (rc < 0) {
-        return -1;
-    }
-    if (rc) {
-        big_endian = !PY_BIG_ENDIAN;
-    }
-    else {
-        big_endian = PY_BIG_ENDIAN;
-    }
-
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
-        return -1;
-    }
-    if (tmp) {
-        pack = PyLong_AsInt(tmp);
-        Py_DECREF(tmp);
-        if (pack < 0) {
-            if (!PyErr_Occurred() ||
-                PyErr_ExceptionMatches(PyExc_TypeError) ||
-                PyErr_ExceptionMatches(PyExc_OverflowError))
-            {
-                PyErr_SetString(PyExc_ValueError,
-                                "_pack_ must be a non-negative integer");
-            }
-            return -1;
-        }
-    }
-    else {
-        /* Setting `_pack_ = 0` amounts to using the default alignment */
-        pack = 0;
-    }
-
-    #ifdef MS_WIN32
-    LayoutMode layout_mode = LAYOUT_MODE_MS;
-    #else
-    LayoutMode layout_mode = (pack > 0) ? LAYOUT_MODE_MS : LAYOUT_MODE_GCC_SYSV;
-    #endif
-
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_layout_), &tmp) < 0) {
-        return -1;
-    }
-    if (tmp) {
-        if (!PyUnicode_Check(tmp)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "_layout_ must be a string");
-            return -1;
-        }
-        if (PyUnicode_CompareWithASCIIString(tmp, "ms") == 0) {
-            layout_mode = LAYOUT_MODE_MS;
-        }
-        else if (PyUnicode_CompareWithASCIIString(tmp, "gcc-sysv") == 0) {
-            layout_mode = LAYOUT_MODE_GCC_SYSV;
-            if (pack > 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "_pack_ is not compatible with _layout_=\"gcc-sysv\"");
-                return -1;
-            }
-        }
-        else {
-            PyErr_Format(PyExc_ValueError,
-                            "unknown _layout_ %R", tmp);
-            return -1;
-        }
-    }
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_align_), &tmp) < 0) {
-        return -1;
-    }
-    if (tmp) {
-        forced_alignment = PyLong_AsInt(tmp);
-        Py_DECREF(tmp);
-        if (forced_alignment < 0) {
-            if (!PyErr_Occurred() ||
-                PyErr_ExceptionMatches(PyExc_TypeError) ||
-                PyErr_ExceptionMatches(PyExc_OverflowError))
-            {
-                PyErr_SetString(PyExc_ValueError,
-                                "_align_ must be a non-negative integer");
-            }
-            return -1;
-        }
-    }
-    else {
-        /* Setting `_align_ = 0` amounts to using the default alignment */
-        forced_alignment = 1;
-    }
-
-    len = PySequence_Size(fields);
-    if (len == -1) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "'_fields_' must be a sequence of pairs");
-        }
-        return -1;
     }
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     StgInfo *stginfo;
     if (PyStgInfo_FromType(st, type, &stginfo) < 0) {
-        return -1;
+        goto error;
     }
     if (!stginfo) {
         PyErr_SetString(PyExc_TypeError,
                         "ctypes state is not initialized");
-        return -1;
+        goto error;
+    }
+    PyObject *base = (PyObject *)((PyTypeObject *)type)->tp_base;
+    StgInfo *baseinfo;
+    if (PyStgInfo_FromType(st, base, &baseinfo) < 0) {
+        goto error;
     }
 
     /* If this structure/union is already marked final we cannot assign
@@ -367,40 +254,114 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (stginfo->flags & DICTFLAG_FINAL) {/* is final ? */
         PyErr_SetString(PyExc_AttributeError,
                         "_fields_ is final");
-        return -1;
+        goto error;
+    }
+
+    PyObject *layout_func = _PyImport_GetModuleAttrString("ctypes._layout",
+                                                          "get_layout");
+    if (!layout_func) {
+        goto error;
+    }
+    PyObject *kwnames = PyTuple_Pack(
+        2,
+        &_Py_ID(is_struct),
+        &_Py_ID(base));
+    if (!kwnames) {
+        goto error;
+    }
+    layout = PyObject_Vectorcall(
+        layout_func,
+        1 + (PyObject*[]){
+            NULL,
+            /* positional args */
+            type,
+            fields,
+            /* keyword args */
+            isStruct ? Py_True : Py_False,
+            baseinfo ? base : Py_None},
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames);
+    Py_DECREF(kwnames);
+    Py_DECREF(layout_func);
+    fields = NULL; // a borrowed reference we won't be using again
+    if (!layout) {
+        goto error;
+    }
+
+    tmp = PyObject_GetAttr(layout, &_Py_ID(align));
+    if (!tmp) {
+        goto error;
+    }
+    Py_ssize_t total_align = PyLong_AsInt(tmp);
+    Py_DECREF(tmp);
+    if (total_align < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "align must be a non-negative integer");
+        }
+        goto error;
+    }
+
+    tmp = PyObject_GetAttr(layout, &_Py_ID(size));
+    if (!tmp) {
+        goto error;
+    }
+    Py_ssize_t total_size = PyLong_AsInt(tmp);
+    Py_DECREF(tmp);
+    if (total_size < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "size must be a non-negative integer");
+        }
+        goto error;
+    }
+
+    format_spec_obj = PyObject_GetAttr(layout, &_Py_ID(format_spec));
+    if (!format_spec_obj) {
+        goto error;
+    }
+    Py_ssize_t format_spec_size;
+    const char *format_spec = PyUnicode_AsUTF8AndSize(format_spec_obj,
+                                                      &format_spec_size);
+    if (!format_spec) {
+        goto error;
     }
 
     if (stginfo->format) {
         PyMem_Free(stginfo->format);
         stginfo->format = NULL;
     }
+    stginfo->format = PyMem_Malloc(format_spec_size + 1);
+    if (!stginfo->format) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    memcpy(stginfo->format, format_spec, format_spec_size + 1);
 
-    if (stginfo->ffi_type_pointer.elements)
+    PyObject *layout_fields_obj = PyObject_GetAttr(layout, &_Py_ID(fields));
+    if (!layout_fields_obj) {
+        goto error;
+    }
+    layout_fields = PySequence_Tuple(layout_fields_obj);
+    Py_DECREF(layout_fields_obj);
+    if (!layout_fields) {
+        goto error;
+    }
+    Py_CLEAR(layout);
+
+    Py_ssize_t len = PyTuple_GET_SIZE(layout_fields);
+
+    if (stginfo->ffi_type_pointer.elements) {
         PyMem_Free(stginfo->ffi_type_pointer.elements);
+        stginfo->ffi_type_pointer.elements = NULL;
+    }
 
-    StgInfo *baseinfo;
-    if (PyStgInfo_FromType(st, (PyObject *)((PyTypeObject *)type)->tp_base,
-                           &baseinfo) < 0) {
-        return -1;
-    }
     if (baseinfo) {
-        stginfo->flags |= (baseinfo->flags &
-                           (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD));
-    }
-    if (!isStruct) {
-        stginfo->flags |= TYPEFLAG_HASUNION;
-    }
-    if (baseinfo) {
-        size = offset = baseinfo->size;
-        align = baseinfo->align;
-        union_size = 0;
-        total_align = align ? align : 1;
-        total_align = max(total_align, forced_alignment);
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, baseinfo->length + len + 1);
         if (stginfo->ffi_type_pointer.elements == NULL) {
             PyErr_NoMemory();
-            return -1;
+            goto error;
         }
         memset(stginfo->ffi_type_pointer.elements, 0,
                sizeof(ffi_type *) * (baseinfo->length + len + 1));
@@ -411,231 +372,61 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         }
         ffi_ofs = baseinfo->length;
     } else {
-        offset = 0;
-        size = 0;
-        align = 0;
-        union_size = 0;
-        total_align = forced_alignment;
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, len + 1);
         if (stginfo->ffi_type_pointer.elements == NULL) {
             PyErr_NoMemory();
-            return -1;
+            goto error;
         }
         memset(stginfo->ffi_type_pointer.elements, 0,
                sizeof(ffi_type *) * (len + 1));
         ffi_ofs = 0;
     }
 
-    assert(stginfo->format == NULL);
-    if (isStruct) {
-        stginfo->format = _ctypes_alloc_format_string(NULL, "T{");
-    } else {
-        /* PEP3118 doesn't support union. Use 'B' for bytes. */
-        stginfo->format = _ctypes_alloc_format_string(NULL, "B");
-    }
-    if (stginfo->format == NULL)
-        return -1;
+    for (Py_ssize_t i = 0; i < len; ++i) {
+        PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i);
+        assert(prop_obj);
+        if (!PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type)) {
+            PyErr_Format(PyExc_TypeError,
+                         "fields must be of type CField, got %T", prop_obj);
+            goto error;
 
-    for (i = 0; i < len; ++i) {
-        PyObject *name = NULL, *desc = NULL;
-        PyObject *pair = PySequence_GetItem(fields, i);
-        PyObject *prop;
-        Py_ssize_t bitsize = 0;
-
-        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &name, &desc, &bitsize)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "'_fields_' must be a sequence of (name, C type) pairs");
-            Py_XDECREF(pair);
-            return -1;
         }
-        if (PyCArrayTypeObject_Check(st, desc)) {
+        CFieldObject *prop = (CFieldObject *)prop_obj; // borrow from prop_obj
+
+        if (prop->index != i) {
+            PyErr_Format(PyExc_ValueError,
+                         "field %R index mismatch (expected %zd, got %zd)",
+                         prop->name, i, prop->index);
+            goto error;
+        }
+
+        if (PyCArrayTypeObject_Check(st, prop->proto)) {
             arrays_seen = 1;
         }
 
         StgInfo *info;
-        if (PyStgInfo_FromType(st, desc, &info) < 0) {
-            Py_DECREF(pair);
-            return -1;
+        if (PyStgInfo_FromType(st, prop->proto, &info) < 0) {
+            goto error;
         }
-        if (info == NULL) {
-            Py_DECREF(pair);
-            PyErr_Format(PyExc_TypeError,
-                         "second item in _fields_ tuple (index %zd) must be a C type",
-                         i);
-            return -1;
-        }
+        assert(info);
 
         stginfo->ffi_type_pointer.elements[ffi_ofs + i] = &info->ffi_type_pointer;
         if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stginfo->flags |= TYPEFLAG_HASPOINTER;
-        stginfo->flags |= info->flags & (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD);
         info->flags |= DICTFLAG_FINAL; /* mark field type final */
-        if (PyTuple_Size(pair) == 3) { /* bits specified */
-            stginfo->flags |= TYPEFLAG_HASBITFIELD;
-            switch(info->ffi_type_pointer.type) {
-            case FFI_TYPE_UINT8:
-            case FFI_TYPE_UINT16:
-            case FFI_TYPE_UINT32:
-            case FFI_TYPE_SINT64:
-            case FFI_TYPE_UINT64:
-                break;
 
-            case FFI_TYPE_SINT8:
-            case FFI_TYPE_SINT16:
-            case FFI_TYPE_SINT32:
-                if (info->getfunc != _ctypes_get_fielddesc("c")->getfunc
-                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc)
-                {
-                    break;
-                }
-                _Py_FALLTHROUGH;  /* else fall through */
-            default:
-                PyErr_Format(PyExc_TypeError,
-                             "bit fields not allowed for type %s",
-                             ((PyTypeObject *)desc)->tp_name);
-                Py_DECREF(pair);
-                return -1;
-            }
-            if (bitsize <= 0 || bitsize > info->size * 8) {
-                PyErr_Format(PyExc_ValueError,
-                                "number of bits invalid for bit field %R",
-                                name);
-                Py_DECREF(pair);
-                return -1;
-            }
-        } else
-            bitsize = 0;
-
-        if (isStruct) {
-            const char *fieldfmt = info->format ? info->format : "B";
-            const char *fieldname = PyUnicode_AsUTF8(name);
-            char *ptr;
-            Py_ssize_t len;
-            char *buf;
-            Py_ssize_t last_size = size;
-            Py_ssize_t padding;
-
-            if (fieldname == NULL)
-            {
-                Py_DECREF(pair);
-                return -1;
-            }
-
-            /* construct the field now, as `prop->offset` is `offset` with
-               corrected alignment */
-            prop = PyCField_FromDesc(st, desc, i,
-                                   &field_size, bitsize, &bitofs,
-                                   &size, &offset, &align,
-                                   pack, big_endian, layout_mode);
-            if (prop == NULL) {
-                Py_DECREF(pair);
-                return -1;
-            }
-
-            /* number of bytes between the end of the last field and the start
-               of this one */
-            padding = ((CFieldObject *)prop)->offset - last_size;
-
-            if (padding > 0) {
-                ptr = stginfo->format;
-                stginfo->format = _ctypes_alloc_format_padding(ptr, padding);
-                PyMem_Free(ptr);
-                if (stginfo->format == NULL) {
-                    Py_DECREF(pair);
-                    Py_DECREF(prop);
-                    return -1;
-                }
-            }
-
-            len = strlen(fieldname) + strlen(fieldfmt);
-
-            buf = PyMem_Malloc(len + 2 + 1);
-            if (buf == NULL) {
-                Py_DECREF(pair);
-                Py_DECREF(prop);
-                PyErr_NoMemory();
-                return -1;
-            }
-            sprintf(buf, "%s:%s:", fieldfmt, fieldname);
-
-            ptr = stginfo->format;
-            if (info->shape != NULL) {
-                stginfo->format = _ctypes_alloc_format_string_with_shape(
-                    info->ndim, info->shape, stginfo->format, buf);
-            } else {
-                stginfo->format = _ctypes_alloc_format_string(stginfo->format, buf);
-            }
-            PyMem_Free(ptr);
-            PyMem_Free(buf);
-
-            if (stginfo->format == NULL) {
-                Py_DECREF(pair);
-                Py_DECREF(prop);
-                return -1;
-            }
-        } else /* union */ {
-            field_size = 0;
-            size = 0;
-            bitofs = 0;
-            offset = 0;
-            align = 0;
-            prop = PyCField_FromDesc(st, desc, i,
-                                   &field_size, bitsize, &bitofs,
-                                   &size, &offset, &align,
-                                   pack, big_endian, layout_mode);
-            if (prop == NULL) {
-                Py_DECREF(pair);
-                return -1;
-            }
-            union_size = max(size, union_size);
+        if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
+            goto error;
         }
-        total_align = max(align, total_align);
-
-        if (-1 == PyObject_SetAttr(type, name, prop)) {
-            Py_DECREF(prop);
-            Py_DECREF(pair);
-            return -1;
-        }
-        Py_DECREF(pair);
-        Py_DECREF(prop);
-    }
-
-    if (!isStruct) {
-        size = union_size;
-    }
-
-    /* Adjust the size according to the alignment requirements */
-    aligned_size = ((size + total_align - 1) / total_align) * total_align;
-
-    if (isStruct) {
-        char *ptr;
-        Py_ssize_t padding;
-
-        /* Pad up to the full size of the struct */
-        padding = aligned_size - size;
-        if (padding > 0) {
-            ptr = stginfo->format;
-            stginfo->format = _ctypes_alloc_format_padding(ptr, padding);
-            PyMem_Free(ptr);
-            if (stginfo->format == NULL) {
-                return -1;
-            }
-        }
-
-        ptr = stginfo->format;
-        stginfo->format = _ctypes_alloc_format_string(stginfo->format, "}");
-        PyMem_Free(ptr);
-        if (stginfo->format == NULL)
-            return -1;
     }
 
     stginfo->ffi_type_pointer.alignment = Py_SAFE_DOWNCAST(total_align,
                                                            Py_ssize_t,
                                                            unsigned short);
-    stginfo->ffi_type_pointer.size = aligned_size;
+    stginfo->ffi_type_pointer.size = total_size;
 
-    stginfo->size = aligned_size;
+    stginfo->size = total_size;
     stginfo->align = total_align;
     stginfo->length = ffi_ofs + len;
 
@@ -650,7 +441,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 #  define MAX_STRUCT_SIZE 16
 #endif
 
-    if (arrays_seen && (size <= MAX_STRUCT_SIZE)) {
+    if (arrays_seen && (total_size <= MAX_STRUCT_SIZE)) {
         /*
          * See bpo-22273 and gh-110190. Arrays are normally treated as
          * pointers, which is fine when an array name is being passed as
@@ -725,35 +516,19 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         Py_ssize_t struct_index = 0; /* index into dummy structs */
 
         /* first pass to see how much memory to allocate */
-        for (i = 0; i < len; ++i) {
-            PyObject *name, *desc;
-            PyObject *pair = PySequence_GetItem(fields, i);
-            int bitsize = 0;
-
-            if (pair == NULL) {
-                return -1;
-            }
-            if (!PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
-                PyErr_SetString(PyExc_TypeError,
-                    "'_fields_' must be a sequence of (name, C type) pairs");
-                Py_DECREF(pair);
-                return -1;
-            }
+        for (Py_ssize_t i = 0; i < len; ++i) {
+            PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i); // borrowed
+            assert(prop_obj);
+            assert(PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type));
+            CFieldObject *prop = (CFieldObject *)prop_obj; // borrowed
 
             StgInfo *info;
-            if (PyStgInfo_FromType(st, desc, &info) < 0) {
-                Py_DECREF(pair);
-                return -1;
+            if (PyStgInfo_FromType(st, prop->proto, &info) < 0) {
+                goto error;
             }
-            if (info == NULL) {
-                Py_DECREF(pair);
-                PyErr_Format(PyExc_TypeError,
-                    "second item in _fields_ tuple (index %zd) must be a C type",
-                    i);
-                return -1;
-            }
+            assert(info);
 
-            if (!PyCArrayTypeObject_Check(st, desc)) {
+            if (!PyCArrayTypeObject_Check(st, prop->proto)) {
                 /* Not an array. Just need an ffi_type pointer. */
                 num_ffi_type_pointers++;
             }
@@ -763,15 +538,13 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
                 StgInfo *einfo;
                 if (PyStgInfo_FromType(st, info->proto, &einfo) < 0) {
-                    Py_DECREF(pair);
-                    return -1;
+                    goto error;
                 }
                 if (einfo == NULL) {
-                    Py_DECREF(pair);
                     PyErr_Format(PyExc_TypeError,
                         "second item in _fields_ tuple (index %zd) must be a C type",
                         i);
-                    return -1;
+                    goto error;
                 }
                 /*
                  * We need one extra ffi_type to hold the struct, and one
@@ -781,7 +554,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 num_ffi_types++;
                 num_ffi_type_pointers += length + 1;
             }
-            Py_DECREF(pair);
         }
 
         /*
@@ -798,7 +570,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
         if (type_block == NULL) {
             PyErr_NoMemory();
-            return -1;
+            goto error;
         }
         /*
          * the first block takes up ffi_ofs + len + 1 which is the pointers *
@@ -822,48 +594,21 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         element_index = ffi_ofs;
 
         /* second pass to actually set the type pointers */
-        for (i = 0; i < len; ++i) {
-            PyObject *name, *desc;
-            PyObject *pair = PySequence_GetItem(fields, i);
-            int bitsize = 0;
-
-            if (pair == NULL) {
-                PyMem_Free(type_block);
-                return -1;
-            }
-            /* In theory, we made this call in the first pass, so it *shouldn't*
-             * fail. However, you never know, and the code above might change
-             * later - keeping the check in here is a tad defensive but it
-             * will affect program size only slightly and performance hardly at
-             * all.
-             */
-            if (!PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "'_fields_' must be a sequence of (name, C type) pairs");
-                Py_DECREF(pair);
-                PyMem_Free(type_block);
-                return -1;
-            }
+        for (Py_ssize_t i = 0; i < len; ++i) {
+            PyObject *prop_obj = PyTuple_GET_ITEM(layout_fields, i); // borrowed
+            assert(prop_obj);
+            assert(PyType_IsSubtype(Py_TYPE(prop_obj), st->PyCField_Type));
+            CFieldObject *prop = (CFieldObject *)prop_obj; // borrowed
 
             StgInfo *info;
-            if (PyStgInfo_FromType(st, desc, &info) < 0) {
-                Py_DECREF(pair);
+            if (PyStgInfo_FromType(st, prop->proto, &info) < 0) {
                 PyMem_Free(type_block);
-                return -1;
+                goto error;
             }
-
-            /* Possibly this check could be avoided, but see above comment. */
-            if (info == NULL) {
-                Py_DECREF(pair);
-                PyMem_Free(type_block);
-                PyErr_Format(PyExc_TypeError,
-                             "second item in _fields_ tuple (index %zd) must be a C type",
-                             i);
-                return -1;
-            }
+            assert(info);
 
             assert(element_index < (ffi_ofs + len)); /* will be used below */
-            if (!PyCArrayTypeObject_Check(st, desc)) {
+            if (!PyCArrayTypeObject_Check(st, prop->proto)) {
                 /* Not an array. Just copy over the element ffi_type. */
                 element_types[element_index++] = &info->ffi_type_pointer;
             }
@@ -871,17 +616,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 Py_ssize_t length = info->length;
                 StgInfo *einfo;
                 if (PyStgInfo_FromType(st, info->proto, &einfo) < 0) {
-                    Py_DECREF(pair);
                     PyMem_Free(type_block);
-                    return -1;
+                    goto error;
                 }
                 if (einfo == NULL) {
-                    Py_DECREF(pair);
                     PyMem_Free(type_block);
                     PyErr_Format(PyExc_TypeError,
                                  "second item in _fields_ tuple (index %zd) must be a C type",
                                  i);
-                    return -1;
+                    goto error;
                 }
                 element_types[element_index++] = &structs[struct_index];
                 structs[struct_index].size = length * einfo->ffi_type_pointer.size;
@@ -898,7 +641,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 assert(dummy_index < (num_ffi_type_pointers));
                 dummy_types[dummy_index++] = NULL;
             }
-            Py_DECREF(pair);
         }
 
         element_types[element_index] = NULL;
@@ -916,9 +658,14 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (stginfo->flags & DICTFLAG_FINAL) {
         PyErr_SetString(PyExc_AttributeError,
                         "Structure or union cannot contain itself");
-        return -1;
+        goto error;
     }
     stginfo->flags |= DICTFLAG_FINAL;
 
-    return MakeAnonFields(type);
+    retval = MakeAnonFields(type);
+error:
+    Py_XDECREF(layout_fields);
+    Py_XDECREF(layout);
+    Py_XDECREF(format_spec_obj);
+    return retval;
 }
