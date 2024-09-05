@@ -689,10 +689,6 @@ Export API
 
       Read-only array of unsigned digits.
 
-   .. c:member:: const PyLongLayout *layout
-
-      Layout of the :c:member:`digits`.
-
 
 .. c:function:: int PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
 
@@ -727,7 +723,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    The instance must be destroyed by :c:func:`PyLongWriter_Finish`.
 
 
-.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, size_t ndigits, void **digits, const PyLongLayout *layout)
+.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, size_t ndigits, void **digits)
 
    Create a :c:type:`PyLongWriter`.
 

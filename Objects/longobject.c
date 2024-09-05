@@ -6806,7 +6806,6 @@ PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
         array->ndigits = 1;
     }
     array->digits = self->long_value.ob_digit;
-    array->layout = &PyLong_LAYOUT;
     return 0;
 }
 
@@ -6823,17 +6822,9 @@ PyLong_FreeDigitArray(PyLong_DigitArray *array)
 
 /* --- PyLongWriter API --------------------------------------------------- */
 
-PyLongWriter* PyLongWriter_Create(int negative, size_t ndigits, void **digits,
-                                  const PyLongLayout *layout)
+PyLongWriter* PyLongWriter_Create(int negative, size_t ndigits, void **digits)
 {
     assert(digits != NULL);
-    // First, compare pointers (fast-path) since it's faster
-    if (layout != &PyLong_LAYOUT
-        && (memcmp(layout, &PyLong_LAYOUT, sizeof(*layout)) != 0))
-    {
-        PyErr_SetString(PyExc_ValueError, "only the native layout is supported");
-        return NULL;
-    }
 
     if (ndigits > (size_t)PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError,

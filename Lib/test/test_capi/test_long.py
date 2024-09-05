@@ -687,11 +687,11 @@ class LongTests(unittest.TestCase):
         base = 2 ** layout['bits_per_digit']
 
         pylong_asdigitarray = _testcapi.pylong_asdigitarray
-        self.assertEqual(pylong_asdigitarray(0), (0, [0], layout))
-        self.assertEqual(pylong_asdigitarray(123), (0, [123], layout))
-        self.assertEqual(pylong_asdigitarray(-123), (1, [123], layout))
+        self.assertEqual(pylong_asdigitarray(0), (0, [0]))
+        self.assertEqual(pylong_asdigitarray(123), (0, [123]))
+        self.assertEqual(pylong_asdigitarray(-123), (1, [123]))
         self.assertEqual(pylong_asdigitarray(base**2 * 3 + base * 2 + 1),
-                         (0, [1, 2, 3], layout))
+                         (0, [1, 2, 3]))
 
         with self.assertRaises(TypeError):
             pylong_asdigitarray(1.0)
@@ -706,24 +706,24 @@ class LongTests(unittest.TestCase):
         base = 2 ** layout['bits_per_digit']
 
         pylongwriter_create = _testcapi.pylongwriter_create
-        self.assertEqual(pylongwriter_create(0, [], layout), 0)
-        self.assertEqual(pylongwriter_create(0, [0], layout), 0)
-        self.assertEqual(pylongwriter_create(0, [123], layout), 123)
-        self.assertEqual(pylongwriter_create(1, [123], layout), -123)
-        self.assertEqual(pylongwriter_create(1, [1, 2], layout),
+        self.assertEqual(pylongwriter_create(0, []), 0)
+        self.assertEqual(pylongwriter_create(0, [0]), 0)
+        self.assertEqual(pylongwriter_create(0, [123]), 123)
+        self.assertEqual(pylongwriter_create(1, [123]), -123)
+        self.assertEqual(pylongwriter_create(1, [1, 2]),
                          -(base * 2 + 1))
-        self.assertEqual(pylongwriter_create(0, [1, 2, 3], layout),
+        self.assertEqual(pylongwriter_create(0, [1, 2, 3]),
                          base**2 * 3 + base * 2 + 1)
         max_digit = base - 1
-        self.assertEqual(pylongwriter_create(0, [max_digit, max_digit, max_digit], layout),
+        self.assertEqual(pylongwriter_create(0, [max_digit, max_digit, max_digit]),
                          base**2 * max_digit + base * max_digit + max_digit)
 
         # normalize
-        self.assertEqual(pylongwriter_create(0, [123, 0, 0], layout), 123)
+        self.assertEqual(pylongwriter_create(0, [123, 0, 0]), 123)
 
         # test singletons + normalize
         for num in (-2, 0, 1, 5, 42, 100):
-            self.assertIs(pylongwriter_create(bool(num < 0), [abs(num), 0], layout),
+            self.assertIs(pylongwriter_create(bool(num < 0), [abs(num), 0]),
                           num)
 
         # round trip: Python int -> export -> Python int
@@ -732,29 +732,9 @@ class LongTests(unittest.TestCase):
         numbers.extend(-num for num in list(numbers))
         for num in numbers:
             with self.subTest(num=num):
-                negative, digits, layout = pylong_asdigitarray(num)
-                self.assertEqual(pylongwriter_create(negative, digits, layout), num,
-                                 (negative, digits, layout))
-
-        # invalid layout
-        with self.assertRaises(ValueError):
-            layout = _testcapi.get_pylong_layout()
-            layout['bits_per_digit'] += 1
-            pylongwriter_create(0, [123], layout)
-        with self.assertRaises(ValueError):
-            layout = _testcapi.get_pylong_layout()
-            layout['digit_size'] *= 2
-            pylongwriter_create(0, [123], layout)
-        def change_endian(endian):
-            return (-endian if endian else 1)
-        with self.assertRaises(ValueError):
-            layout = _testcapi.get_pylong_layout()
-            layout['digits_order'] = change_endian(layout['digits_order'])
-            pylongwriter_create(0, [123], layout)
-        with self.assertRaises(ValueError):
-            layout = _testcapi.get_pylong_layout()
-            layout['endian'] = change_endian(layout['endian'])
-            pylongwriter_create(0, [123], layout)
+                negative, digits = pylong_asdigitarray(num)
+                self.assertEqual(pylongwriter_create(negative, digits), num,
+                                 (negative, digits))
 
 
 if __name__ == "__main__":

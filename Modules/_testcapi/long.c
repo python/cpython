@@ -173,71 +173,6 @@ error:
 }
 
 
-static int
-layout_from_dict_get(PyObject *dict, const char *key, int is_signed, long *pvalue)
-{
-    PyObject *item;
-    int res = PyDict_GetItemStringRef(dict, key, &item);
-    if (res <= 0) {
-        return -1;
-    }
-
-    long value = PyLong_AsLong(item);
-    Py_DECREF(item);
-    if (value == -1 && PyErr_Occurred()) {
-        return -1;
-    }
-
-    if (is_signed) {
-        if (value < INT8_MIN || value > INT8_MAX) {
-            return -1;
-        }
-    }
-    else {
-        if (value < 0 || value > (long)UINT8_MAX) {
-            return -1;
-        }
-    }
-
-    *pvalue = value;
-    return 0;
-}
-
-
-static int
-layout_from_dict(PyLongLayout *layout, PyObject *dict)
-{
-    long value;
-    if (layout_from_dict_get(dict, "bits_per_digit", 0, &value) < 0) {
-        goto error;
-    }
-    layout->bits_per_digit = (uint8_t)value;
-
-    if (layout_from_dict_get(dict, "digit_size", 0, &value) < 0) {
-        goto error;
-    }
-    layout->digit_size = (uint8_t)value;
-
-    if (layout_from_dict_get(dict, "digits_order", 1, &value) < 0) {
-        goto error;
-    }
-    layout->digits_order = (int8_t)value;
-
-    if (layout_from_dict_get(dict, "endian", 1, &value) < 0) {
-        goto error;
-    }
-    layout->endian = (int8_t)value;
-
-    return 0;
-
-error:
-    if (!PyErr_Occurred()) {
-        PyErr_SetString(PyExc_ValueError, "invalid layout");
-    }
-    return -1;
-}
-
-
 static PyObject *
 pylong_asdigitarray(PyObject *module, PyObject *obj)
 {
@@ -246,7 +181,7 @@ pylong_asdigitarray(PyObject *module, PyObject *obj)
         return NULL;
     }
 
-    assert(array.layout->digit_size == sizeof(Py_digit));
+    assert(PyLong_GetNativeLayout()->digit_size == sizeof(Py_digit));
     const Py_digit *array_digits = array.digits;
 
     PyObject *digits = PyList_New(0);
@@ -264,12 +199,7 @@ pylong_asdigitarray(PyObject *module, PyObject *obj)
         Py_DECREF(digit);
     }
 
-    PyObject *layout_dict = layout_to_dict(array.layout);
-    if (layout_dict == NULL) {
-        goto error;
-    }
-
-    PyObject *res = Py_BuildValue("(iNN)", array.negative, digits, layout_dict);
+    PyObject *res = Py_BuildValue("(iN)", array.negative, digits);
     PyLong_FreeDigitArray(&array);
     return res;
 
@@ -284,21 +214,14 @@ static PyObject *
 pylongwriter_create(PyObject *module, PyObject *args)
 {
     int negative;
-    PyObject *list, *layout_dict;
-    if (!PyArg_ParseTuple(args, "iO!O!",
+    PyObject *list;
+    if (!PyArg_ParseTuple(args, "iO!",
                           &negative,
-                          &PyList_Type, &list,
-                          &PyDict_Type, &layout_dict))
+                          &PyList_Type, &list))
     {
         return NULL;
     }
     Py_ssize_t ndigits = PyList_GET_SIZE(list);
-
-    PyLongLayout layout;
-    memset(&layout, 0, sizeof(layout));
-    if (layout_from_dict(&layout, layout_dict) < 0) {
-        return NULL;
-    }
 
     Py_digit *digits = PyMem_Malloc(ndigits * sizeof(Py_digit));
     if (digits == NULL) {
@@ -323,11 +246,11 @@ pylongwriter_create(PyObject *module, PyObject *args)
 
     void *writer_digits;
     PyLongWriter *writer = PyLongWriter_Create(negative, (size_t)ndigits,
-                                               &writer_digits, &layout);
+                                               &writer_digits);
     if (writer == NULL) {
         goto error;
     }
-    assert(layout.digit_size == sizeof(Py_digit));
+    assert(PyLong_GetNativeLayout()->digit_size == sizeof(Py_digit));
     memcpy(writer_digits, digits, ndigits * sizeof(Py_digit));
     PyObject *res = PyLongWriter_Finish(writer);
     PyMem_Free(digits);
