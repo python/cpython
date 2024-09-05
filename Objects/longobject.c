@@ -6778,8 +6778,8 @@ int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
 
 const PyLongLayout PyLong_LAYOUT = {
     .bits_per_digit = PyLong_SHIFT,
-    .digits_order = PY_LITTLE_ENDIAN ? -1 : 1,
-    .endian = -1,  // least significant first
+    .digits_order = -1,  // least significant first
+    .endian = PY_LITTLE_ENDIAN ? -1 : 1,
     .digit_size = sizeof(digit),
 };
 

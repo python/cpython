@@ -670,14 +670,14 @@ class LongTests(unittest.TestCase):
                               negative_value_error=ValueError)
 
     def test_long_layout(self):
-        # Test PyLong_LAYOUT
+        # Test PyLong_GetNativeLayout()
         int_info = sys.int_info
         layout = _testcapi.get_pylong_layout()
         expected = {
-            'endian': -1,
             'bits_per_digit': int_info.bits_per_digit,
             'digit_size': int_info.sizeof_digit,
-            'digits_order': -1 if sys.byteorder == 'little' else 1,
+            'digits_order': -1,
+            'endian': -1 if sys.byteorder == 'little' else 1,
         }
         self.assertEqual(layout, expected)
 
