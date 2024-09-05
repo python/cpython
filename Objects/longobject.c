@@ -6823,13 +6823,9 @@ PyLong_FreeDigitArray(PyLong_DigitArray *array)
 
 /* --- PyLongWriter API --------------------------------------------------- */
 
-PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits,
+PyLongWriter* PyLongWriter_Create(int negative, size_t ndigits, void **digits,
                                   const PyLongLayout *layout)
 {
-    if (ndigits < 0) {
-        PyErr_SetString(PyExc_ValueError, "ndigits must be positive");
-        return NULL;
-    }
     assert(digits != NULL);
     // First, compare pointers (fast-path) since it's faster
     if (layout != &PyLong_LAYOUT
@@ -6839,7 +6835,12 @@ PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digit
         return NULL;
     }
 
-    PyLongObject *obj = _PyLong_New(ndigits);
+    if (ndigits > (size_t)PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "too many digits in integer");
+        return NULL;
+    }
+    PyLongObject *obj = _PyLong_New((Py_ssize_t)ndigits);
     if (obj == NULL) {
         return NULL;
     }
