@@ -311,7 +311,7 @@ PyPreConfig
       * Set :c:member:`PyConfig.filesystem_encoding` to ``"mbcs"``,
       * Set :c:member:`PyConfig.filesystem_errors` to ``"replace"``.
 
-      Initialized the from :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
+      Initialized from the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
       variable value.
 
       Only available on Windows. ``#ifdef MS_WINDOWS`` macro can be used for
