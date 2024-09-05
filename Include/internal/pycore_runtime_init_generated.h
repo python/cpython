@@ -736,7 +736,6 @@ extern "C" {
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
     INIT_ID(_active), \
-    INIT_ID(_align_), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \
     INIT_ID(_as_parameter_), \
@@ -757,21 +756,18 @@ extern "C" {
     INIT_ID(_initializing), \
     INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
-    INIT_ID(_layout_), \
     INIT_ID(_length_), \
     INIT_ID(_limbo), \
     INIT_ID(_lock_unlock_module), \
     INIT_ID(_loop), \
     INIT_ID(_needs_com_addref_), \
     INIT_ID(_only_immortal), \
-    INIT_ID(_pack_), \
     INIT_ID(_restype_), \
     INIT_ID(_showwarnmsg), \
     INIT_ID(_shutdown), \
     INIT_ID(_slotnames), \
     INIT_ID(_strptime), \
     INIT_ID(_strptime_datetime), \
-    INIT_ID(_swappedbytes_), \
     INIT_ID(_type_), \
     INIT_ID(_uninitialized_submodules), \
     INIT_ID(_warn_unawaited_coroutine), \
@@ -785,6 +781,7 @@ extern "C" {
     INIT_ID(after_in_parent), \
     INIT_ID(aggregate_class), \
     INIT_ID(alias), \
+    INIT_ID(align), \
     INIT_ID(allow_code), \
     INIT_ID(append), \
     INIT_ID(arg), \
@@ -804,6 +801,7 @@ extern "C" {
     INIT_ID(before), \
     INIT_ID(big), \
     INIT_ID(binary_form), \
+    INIT_ID(bit_size), \
     INIT_ID(block), \
     INIT_ID(bound), \
     INIT_ID(buffer), \
@@ -932,6 +930,7 @@ extern "C" {
     INIT_ID(fd2), \
     INIT_ID(fdel), \
     INIT_ID(fget), \
+    INIT_ID(fields), \
     INIT_ID(file), \
     INIT_ID(file_actions), \
     INIT_ID(filename), \
@@ -948,6 +947,7 @@ extern "C" {
     INIT_ID(fold), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
+    INIT_ID(format_spec), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
@@ -984,6 +984,7 @@ extern "C" {
     INIT_ID(importlib), \
     INIT_ID(in_fd), \
     INIT_ID(incoming), \
+    INIT_ID(index), \
     INIT_ID(indexgroup), \
     INIT_ID(inf), \
     INIT_ID(infer_variance), \
@@ -1004,6 +1005,7 @@ extern "C" {
     INIT_ID(intersection), \
     INIT_ID(interval), \
     INIT_ID(is_running), \
+    INIT_ID(is_struct), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
     INIT_ID(isoformat), \
