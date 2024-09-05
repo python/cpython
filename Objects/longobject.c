@@ -133,7 +133,7 @@ long_normalize(PyLongObject *v)
 /* Allocate a new int object with size digits.
    Return NULL and set exception if we run out of memory. */
 
-#if SIZEOF_SIZE_T < 4
+#if SIZEOF_SIZE_T < 8
 # define MAX_LONG_DIGITS \
     ((PY_SSIZE_T_MAX - offsetof(PyLongObject, long_value.ob_digit))/sizeof(digit))
 #else
@@ -141,7 +141,7 @@ long_normalize(PyLongObject *v)
    This is more than 2 exbibytes, that is more than many of modern
    architectures support in principle.
    -1 is added to avoid overflow in _PyLong_Frexp(). */
-# define MAX_LONG_DIGITS ((UINT64_MAX-1) / (uint64_t)PyLong_SHIFT)
+# define MAX_LONG_DIGITS ((UINT64_MAX-1U) / (uint64_t)PyLong_SHIFT)
 #endif
 
 PyLongObject *
