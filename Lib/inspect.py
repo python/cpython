@@ -24,8 +24,6 @@ Here are some of the useful functions provided by this module:
     stack(), trace() - get info about frames on the stack or in a traceback
 
     signature() - get a Signature object for the callable
-
-    get_annotations() - safely compute an object's annotations
 """
 
 # This module is in the public domain.  No warranties.
@@ -142,7 +140,7 @@ __all__ = [
 
 
 import abc
-from annotationlib import get_annotations
+from annotationlib import get_annotations  # re-exported
 import ast
 import dis
 import collections.abc
@@ -972,10 +970,10 @@ def findsource(object):
 
     if isclass(object):
         try:
-            firstlineno = object.__firstlineno__
-        except AttributeError:
+            firstlineno = vars(object)['__firstlineno__']
+        except (TypeError, KeyError):
             raise OSError('source code not available')
-        return lines, object.__firstlineno__ - 1
+        return lines, firstlineno - 1
 
     if ismethod(object):
         object = object.__func__

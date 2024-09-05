@@ -169,9 +169,9 @@ safe_multiply(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
     ) {
-        size_t vbits = _PyLong_NumBits(v);
-        size_t wbits = _PyLong_NumBits(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+        uint64_t vbits = _PyLong_NumBits(v);
+        uint64_t wbits = _PyLong_NumBits(w);
+        if (vbits == (uint64_t)-1 || wbits == (uint64_t)-1) {
             return NULL;
         }
         if (vbits + wbits > MAX_INT_SIZE) {
@@ -215,9 +215,9 @@ safe_power(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
     ) {
-        size_t vbits = _PyLong_NumBits(v);
+        uint64_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+        if (vbits == (uint64_t)-1 || wbits == (size_t)-1) {
             return NULL;
         }
         if (vbits > MAX_INT_SIZE / wbits) {
@@ -234,9 +234,9 @@ safe_lshift(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
     ) {
-        size_t vbits = _PyLong_NumBits(v);
+        uint64_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+        if (vbits == (uint64_t)-1 || wbits == (size_t)-1) {
             return NULL;
         }
         if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
@@ -1087,10 +1087,13 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
     switch (node_->kind) {
         case TypeVar_kind:
             CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.bound);
+            CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.default_value);
             break;
         case ParamSpec_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.ParamSpec.default_value);
             break;
         case TypeVarTuple_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVarTuple.default_value);
             break;
     }
     return 1;

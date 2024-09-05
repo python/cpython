@@ -1060,9 +1060,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     if (co_code == NULL) {
         return NULL;
     }
-    _Py_CODEUNIT *code = (_Py_CODEUNIT *)PyBytes_AS_STRING(co_code);
     int64_t *stacks = PyMem_New(int64_t, len+1);
-    int i, j, opcode;
 
     if (stacks == NULL) {
         PyErr_NoMemory();
@@ -1077,22 +1075,25 @@ mark_stacks(PyCodeObject *code_obj, int len)
     while (todo) {
         todo = 0;
         /* Scan instructions */
-        for (i = 0; i < len;) {
+        for (int i = 0; i < len;) {
+            int j;
             int64_t next_stack = stacks[i];
-            opcode = _Py_GetBaseOpcode(code_obj, i);
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code_obj, i);
+            int opcode = inst.op.code;
             int oparg = 0;
             while (opcode == EXTENDED_ARG) {
-                oparg = (oparg << 8) | code[i].op.arg;
+                oparg = (oparg << 8) | inst.op.arg;
                 i++;
-                opcode = _Py_GetBaseOpcode(code_obj, i);
+                inst = _Py_GetBaseCodeUnit(code_obj, i);
+                opcode = inst.op.code;
                 stacks[i] = next_stack;
             }
+            oparg = (oparg << 8) | inst.op.arg;
             int next_i = i + _PyOpcode_Caches[opcode] + 1;
             if (next_stack == UNINITIALIZED) {
                 i = next_i;
                 continue;
             }
-            oparg = (oparg << 8) | code[i].op.arg;
             switch (opcode) {
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
@@ -1100,7 +1101,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_NOT_NONE:
                 {
                     int64_t target_stack;
-                    int j = next_i + oparg;
+                    j = next_i + oparg;
                     assert(j < len);
                     next_stack = pop_value(next_stack);
                     target_stack = next_stack;
@@ -1795,8 +1796,7 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_Initialize(frame, (PyFunctionObject*)Py_NewRef(func),
-                        Py_XNewRef(locals), code, 0);
-    frame->previous = NULL;
+                        Py_XNewRef(locals), code, 0, NULL);
 }
 
 PyFrameObject*

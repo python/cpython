@@ -342,10 +342,10 @@ class backspace_dedent(commands.Command):
 class _ReadlineWrapper:
     f_in: int = -1
     f_out: int = -1
-    reader: ReadlineAlikeReader | None = None
+    reader: ReadlineAlikeReader | None = field(default=None, repr=False)
     saved_history_length: int = -1
     startup_hook: Callback | None = None
-    config: ReadlineConfig = field(default_factory=ReadlineConfig)
+    config: ReadlineConfig = field(default_factory=ReadlineConfig, repr=False)
 
     def __post_init__(self) -> None:
         if self.f_in == -1:
@@ -365,8 +365,12 @@ class _ReadlineWrapper:
         except _error:
             assert raw_input is not None
             return raw_input(prompt)
-        reader.ps1 = str(prompt)
-        return reader.readline(startup_hook=self.startup_hook)
+        prompt_str = str(prompt)
+        reader.ps1 = prompt_str
+        sys.audit("builtins.input", prompt_str)
+        result = reader.readline(startup_hook=self.startup_hook)
+        sys.audit("builtins.input/result", result)
+        return result
 
     def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> str:
         """Read an input on possibly multiple lines, asking for more
@@ -479,15 +483,14 @@ class _ReadlineWrapper:
     def set_startup_hook(self, function: Callback | None = None) -> None:
         self.startup_hook = function
 
-    def get_line_buffer(self) -> bytes:
-        buf_str = self.get_reader().get_unicode()
-        return buf_str.encode(ENCODING)
+    def get_line_buffer(self) -> str:
+        return self.get_reader().get_unicode()
 
     def _get_idxs(self) -> tuple[int, int]:
         start = cursor = self.get_reader().pos
         buf = self.get_line_buffer()
         for i in range(cursor - 1, -1, -1):
-            if str(buf[i]) in self.get_completer_delims():
+            if buf[i] in self.get_completer_delims():
                 break
             start = i
         return start, cursor

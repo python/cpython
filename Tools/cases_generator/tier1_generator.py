@@ -33,6 +33,7 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 FOOTER = "#undef TIER_ONE\n"
 
+
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
@@ -61,8 +62,14 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                 required.remove(var.name)
                 declare_variable(var, out)
 
+
 def write_uop(
-    uop: Part, emitter: Emitter, offset: int, stack: Stack, inst: Instruction, braces: bool
+    uop: Part,
+    emitter: Emitter,
+    offset: int,
+    stack: Stack,
+    inst: Instruction,
+    braces: bool,
 ) -> int:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
@@ -93,6 +100,16 @@ def write_uop(
         if braces:
             emitter.emit("{\n")
         emitter.out.emit(stack.define_output_arrays(uop.stack.outputs))
+        outputs: list[Local] = []
+        for var in uop.stack.outputs:
+            if not var.peek:
+                if var.name in locals:
+                    local = locals[var.name]
+                elif var.name == "unused":
+                    local = Local.unused(var)
+                else:
+                    local = Local.local(var)
+                outputs.append(local)
 
         for cache in uop.caches:
             if cache.name != "unused":
@@ -109,15 +126,11 @@ def write_uop(
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
         emitter.emit_tokens(uop, stack, inst)
-        for i, var in enumerate(uop.stack.outputs):
-            if not var.peek:
-                if var.name in locals:
-                    local = locals[var.name]
-                elif var.name == "unused":
-                    local = Local.unused(var)
-                else:
-                    local = Local.local(var)
-                emitter.emit(stack.push(local))
+        for output in outputs:
+            if output.name in uop.deferred_refs.values():
+                # We've already spilled this when emitting tokens
+                output.cached = False
+            stack.push(output)
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")
@@ -188,8 +201,6 @@ def generate_tier1(
         out.start_line()
         if not inst.parts[-1].properties.always_exits:
             stack.flush(out)
-            if inst.parts[-1].properties.ends_with_eval_breaker:
-                out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")

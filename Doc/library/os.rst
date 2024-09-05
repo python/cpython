@@ -113,8 +113,8 @@ of the UTF-8 encoding:
 
 * Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
   handler>`.
-* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
-* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
+* :func:`sys.getfilesystemencoding` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding` returns ``'utf-8'`` (the *do_setlocale*
   argument has no effect).
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
   UTF-8 as their text encoding, with the ``surrogateescape``
@@ -133,8 +133,8 @@ level APIs also exhibit different default behaviours:
 
 * Command line arguments, environment variables and filenames are decoded
   to text using the UTF-8 encoding.
-* :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
-* :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
+* :func:`os.fsdecode` and :func:`os.fsencode` use the UTF-8 encoding.
+* :func:`open`, :func:`io.open`, and :func:`codecs.open` use the UTF-8
   encoding by default. However, they still use the strict error handler by
   default so that attempting to open a binary file in text mode is likely
   to raise an exception rather than producing nonsense data.
@@ -193,7 +193,7 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
-   The :meth:`!os.environ.refresh()` method updates :data:`os.environ` with
+   The :meth:`!os.environ.refresh` method updates :data:`os.environ` with
    changes to the environment made by :func:`os.putenv`, by
    :func:`os.unsetenv`, or made outside Python in the same process.
 
@@ -230,7 +230,7 @@ process and user.
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
    .. versionchanged:: 3.14
-      Added the :meth:`!os.environ.refresh()` method.
+      Added the :meth:`!os.environ.refresh` method.
 
 
 .. data:: environb
@@ -794,7 +794,7 @@ process and user.
    ``socket.gethostbyaddr(socket.gethostname())``.
 
    On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
-   ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname()`
+   ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname`
    can be used to get the user-facing operating system name and version on iOS and
    Android.
 
@@ -2860,7 +2860,7 @@ features:
 
    .. versionchanged:: 3.6
       Added support for the :term:`context manager` protocol and the
-      :func:`~scandir.close()` method.  If a :func:`scandir` iterator is neither
+      :func:`~scandir.close` method.  If a :func:`scandir` iterator is neither
       exhausted nor explicitly closed a :exc:`ResourceWarning` will be emitted
       in its destructor.
 
@@ -3891,6 +3891,8 @@ features:
 
    .. versionadded:: 3.10
 
+
+.. _os-timerfd:
 
 Timer File Descriptors
 ~~~~~~~~~~~~~~~~~~~~~~
